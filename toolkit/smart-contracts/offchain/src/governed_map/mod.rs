@@ -48,20 +48,14 @@ pub async fn run_insert<
 
 	let tx_hash_opt = match get_current_value(validator_utxos, key.clone(), policy.policy_id()) {
 		Some(current_value) if current_value != value => {
-			return Err(anyhow!(
-				"There is already a value stored for key '{key}': {current_value:?}"
-			));
+			return Err(anyhow!("There is already a value stored for key '{key}'."));
 		},
-		Some(current_value) => {
-			log::info!(
-				"Value for key '{}' is already set to {:?}. Skipping insert.",
-				key,
-				current_value
-			);
+		Some(_current_value) => {
+			log::info!("Value for key '{key}' is already set to the same value. Skipping insert.");
 			None
 		},
 		None => {
-			log::info!("There is no value stored for key '{}'. Inserting new one.", key);
+			log::info!("There is no value stored for key '{key}'. Inserting new one.");
 			Some(
 				insert(&validator, &policy, key, value, ctx, genesis_utxo, ogmios_client, await_tx)
 					.await?,
@@ -311,7 +305,7 @@ pub async fn run_remove<
 
 	let tx_hash_opt = match utxos_for_key.len() {
 		0 => {
-			log::info!("There is no value stored for key '{}'. Skipping remove.", key);
+			log::info!("There is no value stored for key '{key}'. Skipping remove.");
 			None
 		},
 		_ => Some(
@@ -382,7 +376,7 @@ fn remove_key_value_tx(
 	}
 	tx_builder.set_inputs(&inputs);
 
-	let burn_amount = (-1 as i32) * (utxos_for_key.len() as i32);
+	let burn_amount = (utxos_for_key.len() as i32).neg();
 	tx_builder.add_mint_script_tokens(
 		policy,
 		&empty_asset_name(),

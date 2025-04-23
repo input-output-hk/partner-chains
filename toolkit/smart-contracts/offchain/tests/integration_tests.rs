@@ -283,54 +283,31 @@ async fn governed_map_operations() {
 	// Use the governance authority key
 	let skey = governance_authority_payment_key();
 
+	let insert = |k, v| run_governance_map_insert(genesis_utxo, k, v, &skey, &client, &await_tx);
+	let remove = |k| run_governance_map_remove(genesis_utxo, k, &skey, &client, &await_tx);
+
 	// Insert first key-value pair, should succeed
 	let key1 = "test_key".to_string();
 	let value1 = ByteString::from(hex::decode("0123456789abcdef").unwrap());
-	let result1 = run_governance_map_insert(
-		genesis_utxo,
-		key1.clone(),
-		value1.clone(),
-		&skey,
-		&client,
-		&await_tx,
-	)
-	.await;
+	let result1 = insert(key1.clone(), value1.clone()).await;
 	assert!(result1.is_ok_and(|x| x.is_some()), "First key-value insertion should succeed");
 
 	// Try to insert the same key again, should fail
-	let result2 = run_governance_map_insert(
-		genesis_utxo,
-		key1.clone(),
-		value1.clone(),
-		&skey,
-		&client,
-		&await_tx,
-	)
-	.await;
+	let result2 = insert(key1.clone(), value1.clone()).await;
 	assert!(
 		result2.is_ok_and(|x| x.is_none()),
 		"Inserting the same key twice with the same valueshould be a no-op"
 	);
 
 	let value3 = ByteString::from(hex::decode("0000").unwrap());
-	let result3 =
-		run_governance_map_insert(genesis_utxo, key1.clone(), value3, &skey, &client, &await_tx)
-			.await;
+	let result3 = insert(key1.clone(), value3).await;
 
 	assert!(result3.is_err(), "Inserting the same key with a different value should fail");
 
 	// Insert a different key, should succeed
 	let key4 = "another_key".to_string();
 	let value4 = ByteString::from(hex::decode("fedcba9876543210").unwrap());
-	let result4 = run_governance_map_insert(
-		genesis_utxo,
-		key4.clone(),
-		value4.clone(),
-		&skey,
-		&client,
-		&await_tx,
-	)
-	.await;
+	let result4 = insert(key4.clone(), value4.clone()).await;
 	assert!(result4.is_ok_and(|x| x.is_some()), "Inserting a different key should succeed");
 
 	let listed_values: Vec<_> = run_list(genesis_utxo, &client)
@@ -360,13 +337,11 @@ async fn governed_map_operations() {
 	.await;
 	assert!(result_force.is_ok_and(|x| x.is_some()), "force insertion succeed");
 	// Remove a key that exists, should succeed
-	let remove_result1 =
-		run_governance_map_remove(genesis_utxo, key4.clone(), &skey, &client, &await_tx).await;
+	let remove_result1 = remove(key4.clone()).await;
 	assert!(remove_result1.is_ok_and(|x| x.is_some()), "Removing an existing key should succeed");
 
 	// Try to remove the same key again, should be a no-op
-	let remove_result2 =
-		run_governance_map_remove(genesis_utxo, key4.clone(), &skey, &client, &await_tx).await;
+	let remove_result2 = remove(key4.clone()).await;
 	assert!(
 		remove_result2.is_ok_and(|x| x.is_none()),
 		"Removing a non-existent key should be a no-op"
@@ -374,8 +349,7 @@ async fn governed_map_operations() {
 
 	// Try to remove a key that never existed, should be a no-op
 	let never_existed_key = "key_never_existed".to_string();
-	let remove_result3 =
-		run_governance_map_remove(genesis_utxo, never_existed_key, &skey, &client, &await_tx).await;
+	let remove_result3 = remove(never_existed_key).await;
 	assert!(
 		remove_result3.is_ok_and(|x| x.is_none()),
 		"Removing a non-existent key should be a no-op"
@@ -404,6 +378,7 @@ async fn governed_map_update() {
 	let update = |k, v, expected| {
 		run_governance_map_update(genesis_utxo, k, v, expected, &skey, &client, &await_tx)
 	};
+	let get = |k| run_get(genesis_utxo, k, &client);
 
 	let key1 = "test_key".to_string();
 	let missing_key = "missing key".to_string();
@@ -421,6 +396,11 @@ async fn governed_map_update() {
 
 	let result = update(key1.clone(), value2.clone(), None).await;
 	assert!(result.is_ok_and(|x| x.is_some()), "Updating an existing key should succeed");
+	let result = get(key1.clone()).await;
+	assert!(
+		result.is_ok_and(|x| x.is_some_and(|x| x == value2.clone())),
+		"Updated entry should have correct value"
+	);
 
 	let result = update(key1.clone(), value3.clone(), Some(value2.clone())).await;
 	assert!(

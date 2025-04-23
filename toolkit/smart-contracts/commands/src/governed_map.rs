@@ -39,9 +39,9 @@ impl GovernedMapCmd {
 pub struct InsertCmd {
 	#[clap(flatten)]
 	common_arguments: crate::CommonArguments,
-	#[arg(long)]
+	#[arg(long, help = "The key of the entry, UTF-8 encodable string.")]
 	key: String,
-	#[arg(long)]
+	#[arg(long, help = "The value of the entry, hex encoded bytes.")]
 	value: ByteString,
 	#[clap(flatten)]
 	payment_key_file: PaymentFilePath,
@@ -78,7 +78,7 @@ pub struct UpdateCmd {
 	value: ByteString,
 	#[arg(
 		long,
-		help = "If provided update will fail unless the current value matches the one on the ledger."
+		help = "If provided, update will fail unless the current value matches the one on the ledger."
 	)]
 	current_value: Option<ByteString>,
 	#[clap(flatten)]
@@ -111,7 +111,7 @@ impl UpdateCmd {
 pub struct RemoveCmd {
 	#[clap(flatten)]
 	common_arguments: crate::CommonArguments,
-	#[arg(long)]
+	#[arg(long, help = "The key of the entry, UTF-8 encodable string.")]
 	key: String,
 	#[clap(flatten)]
 	payment_key_file: PaymentFilePath,
