@@ -57,6 +57,7 @@
 //! }
 //! ```
 #![cfg_attr(not(feature = "std"), no_std)]
+#![deny(missing_docs)]
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -80,6 +81,7 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
+		/// Weight info for this pallet's extrinsics
 		type WeightInfo: crate::weights::WeightInfo;
 
 		/// Type identifying the producer of a block on the Partner Chain
