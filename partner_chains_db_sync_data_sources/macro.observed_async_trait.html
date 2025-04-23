@@ -4,7 +4,7 @@
 		$(async fn $method:ident(&amp;$self:tt $(,$param_name:ident: $param_type:ty)* $(,)?) -&gt; $res:ty $body:block)*
 	}) =&gt; { ... };
 }</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Logs each method invocation and each returned result.
-Has to be made at the level of trait, because otherwise #<a href="https://docs.rs/async-trait/0.1.81/async_trait/index.html" title="mod async_trait">async_trait</a> is expanded first.
+Has to be made at the level of trait, because otherwise #<a href="https://docs.rs/async-trait/0.1.88/async_trait/index.html" title="mod async_trait">async_trait</a> is expanded first.
 ‘&amp;self’ matching yields “__self” identifier not found error, so “&amp;$self:tt” is required.
 Works only if return type is Result.</p>
 </div></details></section></div></main></body></html>

@@ -120,47 +120,48 @@
 <a href=#120 id=120 data-nosnippet>120</a>		balances: BalancesConfig {
 <a href=#121 id=121 data-nosnippet>121</a>			<span class="comment">// Configure endowed accounts with initial balance of 1 &lt;&lt; 60.
 <a href=#122 id=122 data-nosnippet>122</a>			</span>balances: endowed_accounts.iter().cloned().map(|k| (k, <span class="number">1 </span>&lt;&lt; <span class="number">60</span>)).collect(),
-<a href=#123 id=123 data-nosnippet>123</a>		},
-<a href=#124 id=124 data-nosnippet>124</a>		aura: AuraConfig { authorities: <span class="macro">vec!</span>[] },
-<a href=#125 id=125 data-nosnippet>125</a>		grandpa: GrandpaConfig { authorities: <span class="macro">vec!</span>[], ..Default::default() },
-<a href=#126 id=126 data-nosnippet>126</a>		sudo: SudoConfig {
-<a href=#127 id=127 data-nosnippet>127</a>			<span class="comment">// Assign network admin rights.
-<a href=#128 id=128 data-nosnippet>128</a>			</span>key: root_key,
-<a href=#129 id=129 data-nosnippet>129</a>		},
-<a href=#130 id=130 data-nosnippet>130</a>		transaction_payment: Default::default(),
-<a href=#131 id=131 data-nosnippet>131</a>		session: SessionConfig {
-<a href=#132 id=132 data-nosnippet>132</a>			initial_validators: initial_authorities
-<a href=#133 id=133 data-nosnippet>133</a>				.iter()
-<a href=#134 id=134 data-nosnippet>134</a>				.map(|authority_keys| {
-<a href=#135 id=135 data-nosnippet>135</a>					(authority_keys.cross_chain.clone().into(), authority_keys.session.clone())
-<a href=#136 id=136 data-nosnippet>136</a>				})
-<a href=#137 id=137 data-nosnippet>137</a>				.collect(),
-<a href=#138 id=138 data-nosnippet>138</a>		},
-<a href=#139 id=139 data-nosnippet>139</a>		sidechain: SidechainConfig {
-<a href=#140 id=140 data-nosnippet>140</a>			genesis_utxo: sp_sidechain::read_genesis_utxo_from_env_with_defaults()<span class="question-mark">?</span>,
-<a href=#141 id=141 data-nosnippet>141</a>			..Default::default()
-<a href=#142 id=142 data-nosnippet>142</a>		},
-<a href=#143 id=143 data-nosnippet>143</a>		pallet_session: Default::default(),
-<a href=#144 id=144 data-nosnippet>144</a>		session_committee_management: SessionCommitteeManagementConfig {
-<a href=#145 id=145 data-nosnippet>145</a>			initial_authorities: initial_authorities
-<a href=#146 id=146 data-nosnippet>146</a>				.into_iter()
-<a href=#147 id=147 data-nosnippet>147</a>				.map(|keys| CommitteeMember::permissioned(keys.cross_chain, keys.session))
-<a href=#148 id=148 data-nosnippet>148</a>				.collect(),
-<a href=#149 id=149 data-nosnippet>149</a>			main_chain_scripts: sp_session_validator_management::MainChainScripts::read_from_env()<span class="question-mark">?</span>,
-<a href=#150 id=150 data-nosnippet>150</a>		},
-<a href=#151 id=151 data-nosnippet>151</a>		native_token_management: NativeTokenManagementConfig {
-<a href=#152 id=152 data-nosnippet>152</a>			main_chain_scripts: sp_native_token_management::MainChainScripts::read_from_env()<span class="question-mark">?</span>,
-<a href=#153 id=153 data-nosnippet>153</a>			..Default::default()
-<a href=#154 id=154 data-nosnippet>154</a>		},
-<a href=#155 id=155 data-nosnippet>155</a>		governed_map: GovernedMapConfig {
-<a href=#156 id=156 data-nosnippet>156</a>			main_chain_script: <span class="prelude-val">Some</span>(Default::default()),
-<a href=#157 id=157 data-nosnippet>157</a>			..Default::default()
-<a href=#158 id=158 data-nosnippet>158</a>		},
-<a href=#159 id=159 data-nosnippet>159</a>		test_helper_pallet: TestHelperPalletConfig {
-<a href=#160 id=160 data-nosnippet>160</a>			participation_data_release_period: <span class="number">30</span>,
-<a href=#161 id=161 data-nosnippet>161</a>			..Default::default()
-<a href=#162 id=162 data-nosnippet>162</a>		},
-<a href=#163 id=163 data-nosnippet>163</a>	};
-<a href=#164 id=164 data-nosnippet>164</a>
-<a href=#165 id=165 data-nosnippet>165</a>	<span class="prelude-val">Ok</span>(serde_json::to_value(config).expect(<span class="string">"Genesis config must be serialized correctly"</span>))
-<a href=#166 id=166 data-nosnippet>166</a>}</code></pre></div></section></main></body></html>
+<a href=#123 id=123 data-nosnippet>123</a>			dev_accounts: <span class="prelude-val">None</span>,
+<a href=#124 id=124 data-nosnippet>124</a>		},
+<a href=#125 id=125 data-nosnippet>125</a>		aura: AuraConfig { authorities: <span class="macro">vec!</span>[] },
+<a href=#126 id=126 data-nosnippet>126</a>		grandpa: GrandpaConfig { authorities: <span class="macro">vec!</span>[], ..Default::default() },
+<a href=#127 id=127 data-nosnippet>127</a>		sudo: SudoConfig {
+<a href=#128 id=128 data-nosnippet>128</a>			<span class="comment">// Assign network admin rights.
+<a href=#129 id=129 data-nosnippet>129</a>			</span>key: root_key,
+<a href=#130 id=130 data-nosnippet>130</a>		},
+<a href=#131 id=131 data-nosnippet>131</a>		transaction_payment: Default::default(),
+<a href=#132 id=132 data-nosnippet>132</a>		session: SessionConfig {
+<a href=#133 id=133 data-nosnippet>133</a>			initial_validators: initial_authorities
+<a href=#134 id=134 data-nosnippet>134</a>				.iter()
+<a href=#135 id=135 data-nosnippet>135</a>				.map(|authority_keys| {
+<a href=#136 id=136 data-nosnippet>136</a>					(authority_keys.cross_chain.clone().into(), authority_keys.session.clone())
+<a href=#137 id=137 data-nosnippet>137</a>				})
+<a href=#138 id=138 data-nosnippet>138</a>				.collect(),
+<a href=#139 id=139 data-nosnippet>139</a>		},
+<a href=#140 id=140 data-nosnippet>140</a>		sidechain: SidechainConfig {
+<a href=#141 id=141 data-nosnippet>141</a>			genesis_utxo: sp_sidechain::read_genesis_utxo_from_env_with_defaults()<span class="question-mark">?</span>,
+<a href=#142 id=142 data-nosnippet>142</a>			..Default::default()
+<a href=#143 id=143 data-nosnippet>143</a>		},
+<a href=#144 id=144 data-nosnippet>144</a>		pallet_session: Default::default(),
+<a href=#145 id=145 data-nosnippet>145</a>		session_committee_management: SessionCommitteeManagementConfig {
+<a href=#146 id=146 data-nosnippet>146</a>			initial_authorities: initial_authorities
+<a href=#147 id=147 data-nosnippet>147</a>				.into_iter()
+<a href=#148 id=148 data-nosnippet>148</a>				.map(|keys| CommitteeMember::permissioned(keys.cross_chain, keys.session))
+<a href=#149 id=149 data-nosnippet>149</a>				.collect(),
+<a href=#150 id=150 data-nosnippet>150</a>			main_chain_scripts: sp_session_validator_management::MainChainScripts::read_from_env()<span class="question-mark">?</span>,
+<a href=#151 id=151 data-nosnippet>151</a>		},
+<a href=#152 id=152 data-nosnippet>152</a>		native_token_management: NativeTokenManagementConfig {
+<a href=#153 id=153 data-nosnippet>153</a>			main_chain_scripts: sp_native_token_management::MainChainScripts::read_from_env()<span class="question-mark">?</span>,
+<a href=#154 id=154 data-nosnippet>154</a>			..Default::default()
+<a href=#155 id=155 data-nosnippet>155</a>		},
+<a href=#156 id=156 data-nosnippet>156</a>		governed_map: GovernedMapConfig {
+<a href=#157 id=157 data-nosnippet>157</a>			main_chain_script: <span class="prelude-val">Some</span>(Default::default()),
+<a href=#158 id=158 data-nosnippet>158</a>			..Default::default()
+<a href=#159 id=159 data-nosnippet>159</a>		},
+<a href=#160 id=160 data-nosnippet>160</a>		test_helper_pallet: TestHelperPalletConfig {
+<a href=#161 id=161 data-nosnippet>161</a>			participation_data_release_period: <span class="number">30</span>,
+<a href=#162 id=162 data-nosnippet>162</a>			..Default::default()
+<a href=#163 id=163 data-nosnippet>163</a>		},
+<a href=#164 id=164 data-nosnippet>164</a>	};
+<a href=#165 id=165 data-nosnippet>165</a>
+<a href=#166 id=166 data-nosnippet>166</a>	<span class="prelude-val">Ok</span>(serde_json::to_value(config).expect(<span class="string">"Genesis config must be serialized correctly"</span>))
+<a href=#167 id=167 data-nosnippet>167</a>}</code></pre></div></section></main></body></html>
