@@ -140,6 +140,7 @@ pub fn new_partial(
 			data_sources.authority_selection.clone(),
 			data_sources.native_token.clone(),
 			data_sources.block_participation.clone(),
+			data_sources.governed_map.clone(),
 		),
 		spawner: &task_manager.spawn_essential_handle(),
 		registry: config.prometheus_registry(),
@@ -203,7 +204,7 @@ pub async fn new_full<Network: sc_network::NetworkBackend<Block, <Block as Block
 		Vec::default(),
 	));
 
-	let (network, system_rpc_tx, tx_handler_controller, network_starter, sync_service) =
+	let (network, system_rpc_tx, tx_handler_controller, sync_service) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
 			config: &config,
 			net_config,
@@ -315,6 +316,7 @@ pub async fn new_full<Network: sc_network::NetworkBackend<Block, <Block as Block
 				data_sources.authority_selection.clone(),
 				data_sources.native_token.clone(),
 				data_sources.block_participation,
+				data_sources.governed_map,
 			),
 			force_authoring,
 			backoff_authoring_blocks,
@@ -379,6 +381,5 @@ pub async fn new_full<Network: sc_network::NetworkBackend<Block, <Block as Block
 		);
 	}
 
-	network_starter.start_network();
 	Ok(task_manager)
 }

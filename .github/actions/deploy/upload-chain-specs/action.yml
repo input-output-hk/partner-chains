@@ -1,21 +1,29 @@
-name: "Upload Chain Spec Artifacts to Kubernetes"
-description: "Uploads chain spec artifacts to Kubernetes secrets for devnet, staging-preview, and staging-preprod environments."
+name: Upload Chain Spec Artifacts to Kubernetes PVC
+description: Uploads chain‑spec artifacts to PVCs for devnet, staging‑preview and staging‑preprod.
+
 inputs:
   sha:
-    description: "Commit SHA to append to chain spec secret name"
+    description: Commit SHA to append to chain‑spec file
     required: true
 
 outputs: {}
 
 runs:
-  using: "composite"
+  using: composite
   steps:
-    - name: Install kubectl and awscli
+    - name: Install kubectl, kubernetes-helm, and awscli
       run: |
         # Install kubectl
         curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" > /dev/null 2>&1 || { echo "❌ Failed to download kubectl"; exit 1; }
         chmod +x ./kubectl
         sudo mv ./kubectl /usr/local/bin/kubectl
+
+        # Install Helm
+        curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null || { echo "❌ Failed to setup Helm GPG"; exit 1; }
+        sudo apt-get install apt-transport-https --yes || { echo "❌ Failed to install apt-transport-https"; exit 1; }
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+        sudo apt-get update || { echo "❌ Failed to update apt"; exit 1; }
+        sudo apt-get install helm || { echo "❌ Failed to install Helm"; exit 1; }
 
         # Install or update AWS CLI v2
         curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" > /dev/null 2>&1 || { echo "❌ Failed to download AWS CLI"; exit 1; }
@@ -24,10 +32,6 @@ runs:
       shell: bash
 
     - name: Configure kubectl
-      env:
-        KUBECONFIG_BASE64: ${{ env.kubeconfig_base64 }}
-        K8S_SERVER: ${{ env.K8S_SERVER }}
-        K8S_SA_TOKEN: ${{ env.K8S_SA_TOKEN }}
       run: |
         echo "${KUBECONFIG_BASE64}" | base64 --decode > ${{ runner.temp }}/kubeconfig.yaml || { echo "❌ Failed to decode kubeconfig"; exit 1; }
         kubectl config set-cluster my-cluster --server=${K8S_SERVER} --insecure-skip-tls-verify=true > /dev/null 2>&1 || { echo "❌ Failed to set cluster"; exit 1; }
@@ -36,51 +40,28 @@ runs:
         kubectl config use-context my-context > /dev/null 2>&1 || { echo "❌ Failed to use context"; exit 1; }
       shell: bash
 
-    - name: Download chain spec artifacts
+    - name: Download chain‑spec artifacts
       uses: actions/download-artifact@v4
       with:
         name: chain-specs
 
-    - name: Update Kubernetes secret for devnet chain spec
-      run: |
-        if [ -f ./devnet_chain_spec.json ]; then
-          SECRET_NAME="devnet-chain-spec-${{ inputs.sha }}"
-          kubectl delete secret "$SECRET_NAME" --namespace=sc --ignore-not-found
-          kubectl create secret generic "$SECRET_NAME" \
-            --from-file=devnet_chain_spec.json=./devnet_chain_spec.json \
-            --namespace=sc
-        fi
+    - name: Upload chain-spec artifacts to chain-specs PVC via pvc-uploader pods
       shell: bash
+      run: |
+        set -e
 
-    - name: Update Kubernetes secret for ci-preview chain spec
-      run: |
+        if [ -f ./devnet_chain_spec.json ]; then
+          kubectl cp ./devnet_chain_spec.json sc/pvc-uploader-sc:/mnt/chain-spec/devnet-chain-spec-${{ inputs.sha }}.json
+        fi
+
         if [ -f ./ci_preview_chain_spec.json ]; then
-          SECRET_NAME="ci-preview-chain-spec-${{ inputs.sha }}"
-          kubectl delete secret "$SECRET_NAME" --namespace=ci-preview --ignore-not-found
-          kubectl create secret generic "$SECRET_NAME" \
-            --from-file=ci_preview_chain_spec.json=./ci_preview_chain_spec.json \
-            --namespace=ci-preview
+          kubectl cp ./ci_preview_chain_spec.json ci-preview/pvc-uploader-ci-preview:/mnt/chain-spec/ci-preview-chain-spec-${{ inputs.sha }}.json
         fi
-      shell: bash
-    
-    - name: Update Kubernetes secret for staging-preview chain spec
-      run: |
+
         if [ -f ./staging_preview_chain_spec.json ]; then
-          SECRET_NAME="staging-preview-chain-spec-${{ inputs.sha }}"
-          kubectl delete secret "$SECRET_NAME" --namespace=staging-preview --ignore-not-found
-          kubectl create secret generic "$SECRET_NAME" \
-            --from-file=staging_preview_chain_spec.json=./staging_preview_chain_spec.json \
-            --namespace=staging-preview
+          kubectl cp ./staging_preview_chain_spec.json staging-preview/pvc-uploader-staging-preview:/mnt/chain-spec/staging-preview-chain-spec-${{ inputs.sha }}.json
         fi
-      shell: bash
-    
-    - name: Update Kubernetes secret for staging-preprod chain spec
-      run: |
+
         if [ -f ./staging_preprod_chain_spec.json ]; then
-          SECRET_NAME="staging-preprod-chain-spec-${{ inputs.sha }}"
-          kubectl delete secret "$SECRET_NAME" --namespace=staging-preprod --ignore-not-found
-          kubectl create secret generic "$SECRET_NAME" \
-            --from-file=staging_preprod_chain_spec.json=./staging_preprod_chain_spec.json \
-            --namespace=staging-preprod
+          kubectl cp ./staging_preprod_chain_spec.json staging-preprod/pvc-uploader-staging-preprod:/mnt/chain-spec/staging-preprod-chain-spec-${{ inputs.sha }}.json
         fi
-      shell: bash

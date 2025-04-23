@@ -4,13 +4,14 @@ pub use pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use crate::AccountId;
-	use crate::BlockAuthor;
+	use crate::{AccountId, BlockAuthor, MaxKeyLength, MaxValueLength};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::OriginFor;
 	use frame_system::{ensure_none, ensure_root};
+	use sidechain_domain::byte_string::BoundedString;
 	use sidechain_domain::*;
 	use sp_block_participation::BlockProductionData;
+	use sp_core::bytes::*;
 	use sp_inherents::IsFatalError;
 
 	type ParticipationData = BlockProductionData<BlockAuthor, DelegatorKey>;
@@ -85,6 +86,38 @@ pub mod pallet {
 		fn handle_token_transfer(token_amount: NativeTokenAmount) -> DispatchResult {
 			log::info!("💸 Registered transfer of {} native tokens", token_amount.0);
 			Ok(())
+		}
+	}
+
+	impl<T: Config> sp_governed_map::OnGovernedMappingChange<MaxKeyLength, MaxValueLength>
+		for Pallet<T>
+	{
+		fn on_governed_mapping_change(
+			key: BoundedString<MaxKeyLength>,
+			new_value: Option<BoundedVec<u8, MaxValueLength>>,
+			old_value: Option<BoundedVec<u8, MaxValueLength>>,
+		) {
+			match (new_value, old_value) {
+				(Some(new_value), Some(old_value)) => log::info!(
+					"Governed Map value for key '{key}' has changed: {} → {}",
+					to_hex(&old_value, false),
+					to_hex(&new_value, false)
+				),
+				(Some(new_value), None) => {
+					log::info!(
+						"New Governed Map value for key '{key}': {}",
+						to_hex(&new_value, false)
+					)
+				},
+
+				(None, Some(old_value)) => {
+					log::info!(
+						"Governed Map value for key '{key}' deleted, old value: {}",
+						to_hex(&old_value, false)
+					)
+				},
+				_ => { /* technically unreachable */ },
+			}
 		}
 	}
 

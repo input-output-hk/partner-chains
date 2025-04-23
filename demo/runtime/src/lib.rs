@@ -8,6 +8,8 @@ extern crate frame_benchmarking;
 
 extern crate alloc;
 
+use alloc::collections::BTreeMap;
+use alloc::string::String;
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 use authority_selection_inherents::filter_invalid_candidates::{
 	validate_permissioned_candidate_data, PermissionedCandidateDataError, RegistrationDataError,
@@ -29,10 +31,10 @@ use pallet_block_producer_metadata;
 use pallet_grandpa::AuthorityId as GrandpaId;
 use pallet_session_validator_management::session_manager::ValidatorManagementSessionManager;
 use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier};
-use parity_scale_codec::MaxEncodedLen;
-use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
+use sidechain_domain::byte_string::ByteString;
 use sidechain_domain::byte_string::{BoundedString, SizedByteString};
 use sidechain_domain::{
 	CrossChainPublicKey, DelegatorKey, MainchainKeyHash, PermissionedCandidateData,
@@ -45,6 +47,7 @@ use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 #[cfg(feature = "runtime-benchmarks")]
 use sp_core::ByteArray;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
+use sp_governed_map::MainChainScriptsV1;
 use sp_inherents::InherentIdentifier;
 use sp_runtime::{
 	generic, impl_opaque_keys,
@@ -427,7 +430,18 @@ impl pallet_sidechain::Config for Runtime {
 pub type BeneficiaryId = sidechain_domain::byte_string::SizedByteString<32>;
 
 #[derive(
-	MaxEncodedLen, Encode, Decode, Clone, TypeInfo, PartialEq, Eq, Debug, Hash, PartialOrd, Ord,
+	MaxEncodedLen,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	Clone,
+	TypeInfo,
+	PartialEq,
+	Eq,
+	Debug,
+	Hash,
+	PartialOrd,
+	Ord,
 )]
 pub enum BlockAuthor {
 	Incentivized(CrossChainPublic, StakePoolPublicKey),
@@ -464,7 +478,17 @@ impl AsCardanoSPO for BlockAuthor {
 pub const MAX_METADATA_URL_LENGTH: u32 = 512;
 
 #[derive(
-	Clone, Debug, MaxEncodedLen, Encode, Decode, Serialize, Deserialize, PartialEq, Eq, TypeInfo,
+	Clone,
+	Debug,
+	MaxEncodedLen,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	Serialize,
+	Deserialize,
+	PartialEq,
+	Eq,
+	TypeInfo,
 )]
 pub struct BlockProducerMetadataType {
 	pub url: BoundedString<ConstU32<MAX_METADATA_URL_LENGTH>>,
@@ -566,6 +590,24 @@ impl pallet_block_participation::Config for Runtime {
 	const TARGET_INHERENT_ID: InherentIdentifier = TestHelperPallet::INHERENT_IDENTIFIER;
 }
 
+parameter_types! {
+	pub const MaxChanges: u32 = 16;
+	pub const MaxKeyLength: u32 = 64;
+	pub const MaxValueLength: u32 = 512;
+}
+
+impl pallet_governed_map::Config for Runtime {
+	type MaxChanges = MaxChanges;
+	type MaxKeyLength = MaxKeyLength;
+	type MaxValueLength = MaxValueLength;
+	type WeightInfo = pallet_governed_map::weights::SubstrateWeight<Runtime>;
+
+	type OnGovernedMappingChange = TestHelperPallet;
+
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = ();
+}
+
 impl crate::test_helper_pallet::Config for Runtime {}
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -594,6 +636,7 @@ construct_runtime!(
 		// The order matters!! pallet_partner_chains_session needs to come last for correct initialization order
 		Session: pallet_partner_chains_session,
 		NativeTokenManagement: pallet_native_token_management,
+		GovernedMap: pallet_governed_map,
 		TestHelperPallet: crate::test_helper_pallet,
 	}
 );
@@ -648,6 +691,7 @@ mod benches {
 		[pallet_address_associations, AddressAssociations]
 		[pallet_block_producer_metadata, BlockProducerMetadata]
 		[pallet_block_participation, BlockParticipation]
+		[pallet_governed_map, GovernedMap]
 	);
 }
 
@@ -842,7 +886,7 @@ impl_runtime_apis! {
 			Vec<frame_benchmarking::BenchmarkList>,
 			Vec<frame_support::traits::StorageInfo>,
 		) {
-			use frame_benchmarking::{baseline, Benchmarking, BenchmarkList};
+			use frame_benchmarking::{baseline, BenchmarkList};
 			use frame_support::traits::StorageInfoTrait;
 			use frame_system_benchmarking::Pallet as SystemBench;
 			use baseline::Pallet as BaselineBench;
@@ -858,7 +902,7 @@ impl_runtime_apis! {
 		fn dispatch_benchmark(
 			config: frame_benchmarking::BenchmarkConfig
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, alloc::string::String> {
-			use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch};
+			use frame_benchmarking::{baseline, BenchmarkBatch};
 			use sp_storage::TrackedStorageKey;
 			use frame_system_benchmarking::Pallet as SystemBench;
 			use baseline::Pallet as BaselineBench;
@@ -995,6 +1039,19 @@ impl_runtime_apis! {
 		}
 		fn target_inherent_id() -> InherentIdentifier {
 			<Runtime as pallet_block_participation::Config>::TARGET_INHERENT_ID
+		}
+	}
+
+	impl sp_governed_map::GovernedMapIDPApi<Block> for Runtime {
+		fn get_stored_mappings() -> BTreeMap<String, ByteString> {
+			GovernedMap::get_all_key_value_pairs_unbounded()
+				.collect()
+		}
+		fn get_main_chain_scripts() -> Option<MainChainScriptsV1> {
+			GovernedMap::get_main_chain_scripts()
+		}
+		fn get_pallet_version() -> u32 {
+			GovernedMap::get_version()
 		}
 	}
 }

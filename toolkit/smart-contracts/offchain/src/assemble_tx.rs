@@ -11,6 +11,7 @@ pub trait AssembleTx {
 	#[allow(async_fn_in_trait)]
 	async fn assemble_tx(
 		&self,
+		retries: &FixedDelayRetries,
 		transaction: Transaction,
 		witnesses: Vec<Vkeywitness>,
 	) -> anyhow::Result<McTxHash>;
@@ -19,10 +20,11 @@ pub trait AssembleTx {
 impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId> AssembleTx for C {
 	async fn assemble_tx(
 		&self,
+		retries: &FixedDelayRetries,
 		transaction: Transaction,
 		witnesses: Vec<Vkeywitness>,
 	) -> anyhow::Result<McTxHash> {
-		assemble_tx(transaction, witnesses, self, &FixedDelayRetries::two_minutes()).await
+		assemble_tx(transaction, witnesses, self, retries).await
 	}
 }
 

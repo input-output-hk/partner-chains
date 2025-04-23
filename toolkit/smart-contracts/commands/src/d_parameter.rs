@@ -1,7 +1,6 @@
-use crate::{option_to_json, PaymentFilePath};
-use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
+use crate::{option_to_json, GenesisUtxo, PaymentFilePath};
 use partner_chains_cardano_offchain::d_param::upsert_d_param;
-use sidechain_domain::{DParameter, UtxoId};
+use sidechain_domain::DParameter;
 
 #[derive(Clone, Debug, clap::Parser)]
 pub struct UpsertDParameterCmd {
@@ -13,8 +12,8 @@ pub struct UpsertDParameterCmd {
 	registered_candidates_count: u16,
 	#[clap(flatten)]
 	payment_key_file: PaymentFilePath,
-	#[arg(long, short('c'))]
-	genesis_utxo: UtxoId,
+	#[clap(flatten)]
+	genesis_utxo: GenesisUtxo,
 }
 
 impl UpsertDParameterCmd {
@@ -27,11 +26,11 @@ impl UpsertDParameterCmd {
 		let client = self.common_arguments.get_ogmios_client().await?;
 
 		let result = upsert_d_param(
-			self.genesis_utxo,
+			self.genesis_utxo.into(),
 			&d_param,
 			&payment_key,
 			&client,
-			&FixedDelayRetries::two_minutes(),
+			&self.common_arguments.retries(),
 		)
 		.await?;
 

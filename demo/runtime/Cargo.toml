@@ -85,6 +85,8 @@ pallet-block-producer-metadata = { workspace = true }
 sp-block-producer-metadata = { workspace = true }
 pallet-block-participation = { workspace = true }
 sp-block-participation = { workspace = true }
+pallet-governed-map = { workspace = true }
+sp-governed-map = { workspace = true }
 
 [dev-dependencies]
 sp-io = { workspace = true }
@@ -160,6 +162,8 @@ std = [
 	"sp-block-production-log/std",
 	"pallet-block-participation/std",
 	"sp-block-participation/std",
+	"pallet-governed-map/std",
+	"sp-governed-map/std",
 ]
 
 runtime-benchmarks = [
@@ -177,6 +181,7 @@ runtime-benchmarks = [
 	"pallet-address-associations/runtime-benchmarks",
 	"pallet-block-producer-metadata/runtime-benchmarks",
 	"pallet-block-participation/runtime-benchmarks",
+	"pallet-governed-map/runtime-benchmarks",
 ]
 try-runtime = [
 	"frame-try-runtime/try-runtime",

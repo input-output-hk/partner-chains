@@ -7,7 +7,7 @@ use crate::ogmios::config::tests::{
 use crate::prepare_configuration::tests::{prompt, prompt_with_default};
 use crate::setup_main_chain_state::SetupMainChainStateCmd;
 use crate::tests::{MockIO, MockIOContext, OffchainMock, OffchainMocks};
-use crate::{verify_json, CmdRun};
+use crate::{verify_json, CmdRun, CommonArguments};
 use hex_literal::hex;
 use partner_chains_cardano_offchain::multisig::MultiSigSmartContractResult;
 use serde_json::json;
@@ -27,7 +27,7 @@ fn no_ariadne_parameters_on_main_chain_no_updates() {
 			prompt_d_parameter_update_io(false),
 			print_post_update_info_io(),
 		]);
-	let result = SetupMainChainStateCmd.run(&mock_context);
+	let result = setup_main_chain_state_cmd().run(&mock_context);
 
 	result.expect("should succeed");
 	verify_json!(mock_context, RESOURCES_CONFIG_FILE_PATH, no_updates_resources_json());
@@ -63,7 +63,7 @@ fn no_ariadne_parameters_on_main_chain_do_updates() {
 			insert_d_parameter_io(),
 			print_post_update_info_io(),
 		]);
-	let result = SetupMainChainStateCmd.run(&mock_context);
+	let result = setup_main_chain_state_cmd().run(&mock_context);
 	result.expect("should succeed");
 	verify_json!(mock_context, RESOURCES_CONFIG_FILE_PATH, post_updates_resources_json());
 }
@@ -82,7 +82,7 @@ fn ariadne_parameters_are_on_main_chain_no_updates() {
 			prompt_d_parameter_update_io(false),
 			print_post_update_info_io(),
 		]);
-	let result = SetupMainChainStateCmd.run(&mock_context);
+	let result = setup_main_chain_state_cmd().run(&mock_context);
 	result.expect("should succeed");
 	verify_json!(mock_context, RESOURCES_CONFIG_FILE_PATH, no_updates_resources_json());
 }
@@ -118,7 +118,7 @@ fn ariadne_parameters_are_on_main_chain_do_update() {
 			update_d_parameter_io(),
 			print_post_update_info_io(),
 		]);
-	let result = SetupMainChainStateCmd.run(&mock_context);
+	let result = setup_main_chain_state_cmd().run(&mock_context);
 	result.expect("should succeed");
 	verify_json!(mock_context, RESOURCES_CONFIG_FILE_PATH, post_updates_resources_json());
 }
@@ -142,7 +142,7 @@ fn fails_if_update_permissioned_candidates_fail() {
 			prompt_permissioned_candidates_update_io(true),
 			upsert_permissioned_candidates_failed_io(),
 		]);
-	let result = SetupMainChainStateCmd.run(&mock_context);
+	let result = setup_main_chain_state_cmd().run(&mock_context);
 	result.expect_err("should return error");
 	verify_json!(mock_context, RESOURCES_CONFIG_FILE_PATH, post_updates_resources_json());
 }
@@ -160,9 +160,15 @@ fn candidates_on_main_chain_are_same_as_in_config_no_updates() {
 			prompt_d_parameter_update_io(false),
 			print_post_update_info_io(),
 		]);
-	let result = SetupMainChainStateCmd.run(&mock_context);
+	let result = setup_main_chain_state_cmd().run(&mock_context);
 	result.expect("should succeed");
 	verify_json!(mock_context, RESOURCES_CONFIG_FILE_PATH, no_updates_resources_json());
+}
+
+fn setup_main_chain_state_cmd() -> SetupMainChainStateCmd {
+	SetupMainChainStateCmd {
+		common_arguments: CommonArguments { retry_delay_seconds: 5, retry_count: 59 },
+	}
 }
 
 fn print_info_io() -> MockIO {

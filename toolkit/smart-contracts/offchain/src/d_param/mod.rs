@@ -33,6 +33,7 @@ pub trait UpsertDParam {
 	#[allow(async_fn_in_trait)]
 	async fn upsert_d_param(
 		&self,
+		retries: FixedDelayRetries,
 		genesis_utxo: UtxoId,
 		d_parameter: &DParameter,
 		payment_signing_key: &CardanoPaymentSigningKey,
@@ -42,18 +43,12 @@ pub trait UpsertDParam {
 impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId> UpsertDParam for C {
 	async fn upsert_d_param(
 		&self,
+		retries: FixedDelayRetries,
 		genesis_utxo: UtxoId,
 		d_parameter: &DParameter,
 		payment_signing_key: &CardanoPaymentSigningKey,
 	) -> anyhow::Result<Option<MultiSigSmartContractResult>> {
-		upsert_d_param(
-			genesis_utxo,
-			d_parameter,
-			payment_signing_key,
-			self,
-			&FixedDelayRetries::two_minutes(),
-		)
-		.await
+		upsert_d_param(genesis_utxo, d_parameter, payment_signing_key, self, &retries).await
 	}
 }
 
@@ -88,6 +83,7 @@ pub async fn upsert_d_param<
 					ctx,
 					genesis_utxo,
 					ogmios_client,
+					await_tx,
 				)
 				.await?,
 			)
@@ -95,8 +91,16 @@ pub async fn upsert_d_param<
 		None => {
 			log::info!("There is no D-parameter set. Inserting new one.");
 			Some(
-				insert_d_param(&validator, &policy, d_parameter, ctx, genesis_utxo, ogmios_client)
-					.await?,
+				insert_d_param(
+					&validator,
+					&policy,
+					d_parameter,
+					ctx,
+					genesis_utxo,
+					ogmios_client,
+					await_tx,
+				)
+				.await?,
 			)
 		},
 	};
@@ -128,13 +132,17 @@ fn get_current_d_parameter(
 	}
 }
 
-async fn insert_d_param<C: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId>(
+async fn insert_d_param<
+	C: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+	A: AwaitTx,
+>(
 	validator: &PlutusScript,
 	policy: &PlutusScript,
 	d_parameter: &DParameter,
 	ctx: TransactionContext,
 	genesis_utxo: UtxoId,
 	client: &C,
+	await_tx: &A,
 ) -> anyhow::Result<MultiSigSmartContractResult> {
 	let gov_data = GovernanceData::get(genesis_utxo, client).await?;
 
@@ -144,12 +152,15 @@ async fn insert_d_param<C: QueryLedgerState + Transactions + QueryNetwork + Quer
 		|costs, ctx| mint_d_param_token_tx(validator, policy, d_parameter, &gov_data, costs, &ctx),
 		"Insert D-parameter",
 		client,
-		&FixedDelayRetries::two_minutes(),
+		await_tx,
 	)
 	.await
 }
 
-async fn update_d_param<C: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId>(
+async fn update_d_param<
+	C: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+	A: AwaitTx,
+>(
 	validator: &PlutusScript,
 	policy: &PlutusScript,
 	d_parameter: &DParameter,
@@ -157,6 +168,7 @@ async fn update_d_param<C: QueryLedgerState + Transactions + QueryNetwork + Quer
 	ctx: TransactionContext,
 	genesis_utxo: UtxoId,
 	client: &C,
+	await_tx: &A,
 ) -> anyhow::Result<MultiSigSmartContractResult> {
 	let governance_data = GovernanceData::get(genesis_utxo, client).await?;
 
@@ -176,7 +188,7 @@ async fn update_d_param<C: QueryLedgerState + Transactions + QueryNetwork + Quer
 		},
 		"Update D-parameter",
 		client,
-		&FixedDelayRetries::two_minutes(),
+		await_tx,
 	)
 	.await
 }

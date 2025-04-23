@@ -1,9 +1,9 @@
 use crate::chain_spec::*;
 use authority_selection_inherents::CommitteeMember;
 use partner_chains_demo_runtime::{
-	AccountId, AuraConfig, BalancesConfig, GrandpaConfig, NativeTokenManagementConfig,
-	RuntimeGenesisConfig, SessionCommitteeManagementConfig, SessionConfig, SidechainConfig,
-	SudoConfig, SystemConfig, TestHelperPalletConfig,
+	AccountId, AuraConfig, BalancesConfig, GovernedMapConfig, GrandpaConfig,
+	NativeTokenManagementConfig, RuntimeGenesisConfig, SessionCommitteeManagementConfig,
+	SessionConfig, SidechainConfig, SudoConfig, SystemConfig, TestHelperPalletConfig,
 };
 use sc_service::ChainType;
 use sidechain_domain::*;
@@ -171,6 +171,7 @@ pub fn testnet_genesis(
 		balances: BalancesConfig {
 			// Configure endowed accounts with initial balance of 1 << 60.
 			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
+			dev_accounts: None,
 		},
 		aura: AuraConfig { authorities: vec![] },
 		grandpa: GrandpaConfig { authorities: vec![], ..Default::default() },
@@ -202,6 +203,10 @@ pub fn testnet_genesis(
 		},
 		native_token_management: NativeTokenManagementConfig {
 			main_chain_scripts: sp_native_token_management::MainChainScripts::read_from_env()?,
+			..Default::default()
+		},
+		governed_map: GovernedMapConfig {
+			main_chain_script: Some(Default::default()),
 			..Default::default()
 		},
 		test_helper_pallet: TestHelperPalletConfig {

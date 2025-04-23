@@ -22,7 +22,7 @@ log = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 sidechain-domain = { workspace = true }
-sp-governed-map = { workspace = true }
+sp-governed-map = { workspace = true, features = ["serde"] }
 
 [dev-dependencies]
 pretty_assertions = { workspace = true }

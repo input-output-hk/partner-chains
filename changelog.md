@@ -16,10 +16,12 @@ respectively. Moved both crates to `demo/` directory.
 the mock data source has been changed to `MOCK_REGISTRATIONS_FILE` to match. Prometheus metrics
 `mc_follower_method_time_elapsed` and `mc_follower_method_call_count` were also renamed to
 `partner_chains_data_source_method_time_elapsed` and `partner_chains_data_source_method_call_count` respectively.
+* Default `smart-contracts` timeout from 2 minutes to 5 minutes
+* Update polkadot-sdk to polkadot-stable2503.
 
 ## Removed
 
-* Obsolete `block-rewards` pallet and its companion primitives crate. Block authorship information can be tracked
+* [**BREAKING CHANGE**] Obsolete `block-rewards` pallet and its companion primitives crate. Block authorship information can be tracked
 using the `block-production-log` pallet instead.
 * Crate `pallet-session-runtime-stub` which provided stub config for Substrate's `pallet-session` when using `pallet-partner-chains-session`.
 Its functionality was merged into `pallet-partner-chains-session` under the feature `pallet-session-compat`.
@@ -32,6 +34,7 @@ the feature `pallet-session-compat`.
 * `governance init` when genesis utxo had a script attached, then transaction fee was sometimes calculated incorrectly
 
 ## Added
+* `governed-map remove` command, that removes a key-value pair from the governed map
 * `governed-map insert` command, that inserts a key-value pair into the governed map
 * `ariadne_v2` selection algorithm that selects committee respecting D-parameter and candidates
 weights, but has much less variance, thanks to assigning guaranteed seats to candidates with
@@ -60,24 +63,38 @@ Signing and transaction submission can be done in other ways as well.
 
 `governance get-policy` subcommand prints the current Governance Policy.
 
-### Other addtions
+### Other additions
 
 * `sign-tx` command to `smart-contracts` commands for signing transactions
 * `sign-block-producer-metadata` command to `cli-commands` for signing block producer metadata upsert message
-* `db-sync-sqlx` crate containing Rust types representing Cardano primitives present in postgress tables populated by Db-Sync
+* `db-sync-sqlx` crate containing Rust types representing Cardano primitives present in postgres tables populated by Db-Sync
+
+# v1.6.1
+
+## Changed
+
+* Default `smart-contracts` timeout from 2 minutes to 5 minutes
+
+## Fixed
+
+* `governance init` when genesis utxo had a script attached, then transaction fee was sometimes calculated incorrectly
+
+## Removed
+
+* Removed unnecessary transitive dependencies from multiple crates
 
 # v1.6.0
 
 ## Changed
 
-* Split MainchainPublicKey to StakePoolPublicKey and StakePublicKey. Some parameters names has been changed as well, so potentially compiliation of downstream projects could be broken.
+* Split MainchainPublicKey to StakePoolPublicKey and StakePublicKey. Some parameters names has been changed as well, so potentially compilation of downstream projects could be broken.
 * Update polkadot-sdk to polkadot-stable2412-1.
 WARNING: Benchmarking command has been removed, because `frame-benchmarking-cli` crate became GPLv3 without any exception.
 * Made Cardano slot duration configurable with default of 1000ms. If your partner chain's main chain is Cardano
 mainnet or one of the official testnets, you don't need to change anything. Otherwise, the duration can
 be set through `MC__SLOT_DURATION_MILLIS` environment variable.
 * e2e-tests: updated python to 3.12 and libs versions.
-* Committee member data stored by the Session Validator Management Pallet is now fullly generic. To migrate to this version,
+* Committee member data stored by the Session Validator Management Pallet is now fully generic. To migrate to this version,
 define your own `CommitteeMember` type and implement the trait `CommitteeMember` for it. See the `CommitteeMember`
 type implemented in `node/runtime/src/lib.rs` for reference using Ariadne.
 * Merged functionality of `NativeTokenManagementInherentDataProvider::new_if_pallet_present` into `new`. Use this single constructor from now on.
@@ -91,10 +108,25 @@ type implemented in `node/runtime/src/lib.rs` for reference using Ariadne.
 ## Added
 
 * block-production-log pallet, see it's readme for more details.
-* Block participaton pallet and inherent data provider, making available data on block producers
+* Block participation pallet and inherent data provider, making available data on block producers
   and their delegators. This feature is meant to be used by Partner Chains developers to implement
   block production reward payouts in their own runtimes. See `toolkit/primitives/block-participation/README.md`
   for more information.
+
+# v1.5.1
+
+## Changed
+
+* Default `smart-contracts` timeout from 2 minutes to 5 minutes
+
+## Fixed
+
+* Failure of `smart-contracts reserve release` command when releasing all tokens in the reserve
+* Failure of `smart-contracts reserve handover` command when reserve is empty
+
+## Removed
+
+* Removed unnecessary transitive dependencies from multiple crates
 
 # v1.5.0
 
@@ -183,7 +215,7 @@ provider will not query the main chain state or produce inherent data at all.
 * * Specific changes will depend on the node implementation.
 * Update toolchain to 1.81.0
 * Implemented batch queries and caching for the native token observability. Improves performance of the full-sync.
-* Added ogmios-client interal library for communication with Ogmios
+* Added ogmios-client internal library for communication with Ogmios
 * Using Ogmios for reading Cardano Network parameters in `partner-chains-cli`, instead of asking user to choose them
 * Bugfix: rephrased vague log message when selecting the epoch committee
 * Removed the `main-chain-follower-api` completely. Each crate that depended on it now defines its own `*DataSource`

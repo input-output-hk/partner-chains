@@ -1,5 +1,4 @@
 use crate::mock::*;
-use crate::pallet::*;
 use crate::*;
 use frame_support::traits::UnfilteredDispatchable;
 use sp_core::bounded_vec;
@@ -100,6 +99,33 @@ mod inherent {
 			let mappings_in_storage = Mapping::<Test>::iter().collect::<Vec<_>>();
 
 			assert_eq!(mappings_in_storage, vec![(bstring("key2"), bvec(&[1, 2])),])
+		})
+	}
+
+	#[test]
+	fn calls_the_on_change_hook() {
+		new_test_ext().execute_with(|| {
+			Mapping::<Test>::set(bstring("key1"), Some(bvec(&[1])));
+			Mapping::<Test>::set(bstring("key2"), Some(bvec(&[1, 2])));
+
+			Call::<Test>::register_changes {
+				changes: bounded_vec![
+					(bstring("key1"), Some(bvec(&[1, 1, 1]))),
+					(bstring("key2"), None),
+					(bstring("key3"), Some(bvec(&[2]))),
+				],
+			}
+			.dispatch_bypass_filter(RuntimeOrigin::none())
+			.expect("Should succeed");
+
+			assert_eq!(
+				mock_pallet::HookCalls::<Test>::get(),
+				vec![
+					(bstring("key1"), Some(bvec(&[1, 1, 1])), Some(bvec(&[1]))),
+					(bstring("key2"), None, Some(bvec(&[1, 2]))),
+					(bstring("key3"), Some(bvec(&[2])), None),
+				]
+			)
 		})
 	}
 

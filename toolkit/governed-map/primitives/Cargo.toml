@@ -23,7 +23,7 @@ serde = { workspace = true, optional = true }
 sidechain-domain = { workspace = true }
 sp-api = { workspace = true }
 sp-inherents = { workspace = true }
-sp-runtime = { workspace = true, optional = true }
+sp-runtime = { workspace = true }
 thiserror = { workspace = true, optional = true }
 
 [dev-dependencies]
@@ -39,7 +39,6 @@ std = [
     "sidechain-domain/std",
     "sp-api/std",
     "sp-inherents/std",
-    "sp-runtime",
     "sp-runtime/std",
     "thiserror",
 ]

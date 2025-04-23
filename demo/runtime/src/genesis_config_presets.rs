@@ -15,13 +15,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{test_helper_pallet, AccountId, BalancesConfig, RuntimeGenesisConfig, SudoConfig};
+use crate::{
+	test_helper_pallet, AccountId, BalancesConfig, GovernedMapConfig, RuntimeGenesisConfig,
+	SudoConfig,
+};
 use alloc::{vec, vec::Vec};
 use serde_json::Value;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
 use sp_genesis_builder::{self, PresetId};
-use sp_keyring::AccountKeyring;
+use sp_keyring::Sr25519Keyring;
 
 // Returns the genesis config presets populated with given parameters.
 fn testnet_genesis(
@@ -36,6 +39,7 @@ fn testnet_genesis(
 				.cloned()
 				.map(|k| (k, 1u128 << 60))
 				.collect::<Vec<_>>(),
+			dev_accounts: None,
 		},
 		aura: pallet_aura::GenesisConfig {
 			authorities: initial_authorities.iter().map(|x| (x.0.clone())).collect::<Vec<_>>(),
@@ -57,6 +61,10 @@ fn testnet_genesis(
 		pallet_session: Default::default(),
 		session: Default::default(),
 		native_token_management: Default::default(),
+		governed_map: GovernedMapConfig {
+			main_chain_script: Some(sp_governed_map::MainChainScriptsV1::default()),
+			..Default::default()
+		},
 	};
 
 	serde_json::to_value(config).expect("Could not build genesis config.")
@@ -70,12 +78,12 @@ pub fn development_config_genesis() -> Value {
 			sp_keyring::Ed25519Keyring::Alice.public().into(),
 		)],
 		vec![
-			AccountKeyring::Alice.to_account_id(),
-			AccountKeyring::Bob.to_account_id(),
-			AccountKeyring::AliceStash.to_account_id(),
-			AccountKeyring::BobStash.to_account_id(),
+			Sr25519Keyring::Alice.to_account_id(),
+			Sr25519Keyring::Bob.to_account_id(),
+			Sr25519Keyring::AliceStash.to_account_id(),
+			Sr25519Keyring::BobStash.to_account_id(),
 		],
-		sp_keyring::AccountKeyring::Alice.to_account_id(),
+		sp_keyring::Sr25519Keyring::Alice.to_account_id(),
 	)
 }
 
@@ -92,11 +100,11 @@ pub fn local_config_genesis() -> Value {
 				sp_keyring::Ed25519Keyring::Bob.public().into(),
 			),
 		],
-		AccountKeyring::iter()
-			.filter(|v| v != &AccountKeyring::One && v != &AccountKeyring::Two)
+		Sr25519Keyring::iter()
+			.filter(|v| v != &Sr25519Keyring::One && v != &Sr25519Keyring::Two)
 			.map(|v| v.to_account_id())
 			.collect::<Vec<_>>(),
-		AccountKeyring::Alice.to_account_id(),
+		Sr25519Keyring::Alice.to_account_id(),
 	)
 }
 

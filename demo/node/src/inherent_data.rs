@@ -27,6 +27,7 @@ use sp_consensus_aura::{
 	inherents::InherentDataProvider as AuraIDP, sr25519::AuthorityPair as AuraPair, Slot,
 };
 use sp_core::Pair;
+use sp_governed_map::{GovernedMapDataSource, GovernedMapIDPApi, GovernedMapInherentDataProvider};
 use sp_inherents::CreateInherentDataProviders;
 use sp_native_token_management::{
 	NativeTokenManagementApi, NativeTokenManagementDataSource,
@@ -47,6 +48,7 @@ pub struct ProposalCIDP<T> {
 	authority_selection_data_source: Arc<dyn AuthoritySelectionDataSource + Send + Sync>,
 	native_token_data_source: Arc<dyn NativeTokenManagementDataSource + Send + Sync>,
 	block_participation_data_source: Arc<dyn BlockParticipationDataSource + Send + Sync>,
+	governed_map_data_source: Arc<dyn GovernedMapDataSource + Send + Sync>,
 }
 
 #[async_trait]
@@ -63,6 +65,7 @@ where
 	T::Api: NativeTokenManagementApi<Block>,
 	T::Api: BlockProductionLogApi<Block, CommitteeMember<CrossChainPublic, SessionKeys>>,
 	T::Api: BlockParticipationApi<Block, BlockAuthor>,
+	T::Api: GovernedMapIDPApi<Block>,
 {
 	type InherentDataProviders = (
 		AuraIDP,
@@ -72,6 +75,7 @@ where
 		BlockAuthorInherentProvider<BlockAuthor>,
 		NativeTokenIDP,
 		BlockParticipationInherentDataProvider<BlockAuthor, DelegatorKey>,
+		GovernedMapInherentDataProvider,
 	);
 
 	async fn create_inherent_data_providers(
@@ -86,6 +90,7 @@ where
 			authority_selection_data_source,
 			native_token_data_source,
 			block_participation_data_source,
+			governed_map_data_source,
 		} = self;
 		let CreateInherentDataConfig { mc_epoch_config, sc_slot_config, time_source } = config;
 
@@ -131,6 +136,14 @@ where
 		)
 		.await?;
 
+		let governed_map = GovernedMapInherentDataProvider::new(
+			client.as_ref(),
+			parent_hash,
+			mc_hash.mc_hash(),
+			governed_map_data_source.as_ref(),
+		)
+		.await?;
+
 		Ok((
 			slot,
 			timestamp,
@@ -139,6 +152,7 @@ where
 			block_producer_id_provider,
 			native_token,
 			payouts,
+			governed_map,
 		))
 	}
 }
@@ -151,6 +165,7 @@ pub struct VerifierCIDP<T> {
 	authority_selection_data_source: Arc<dyn AuthoritySelectionDataSource + Send + Sync>,
 	native_token_data_source: Arc<dyn NativeTokenManagementDataSource + Send + Sync>,
 	block_participation_data_source: Arc<dyn BlockParticipationDataSource + Send + Sync>,
+	governed_map_data_source: Arc<dyn GovernedMapDataSource + Send + Sync>,
 }
 
 impl<T: Send + Sync> CurrentSlotProvider for VerifierCIDP<T> {
@@ -172,6 +187,7 @@ where
 	T::Api: NativeTokenManagementApi<Block>,
 	T::Api: BlockProductionLogApi<Block, CommitteeMember<CrossChainPublic, SessionKeys>>,
 	T::Api: BlockParticipationApi<Block, BlockAuthor>,
+	T::Api: GovernedMapIDPApi<Block>,
 {
 	type InherentDataProviders = (
 		TimestampIDP,
@@ -179,6 +195,7 @@ where
 		BlockAuthorInherentProvider<BlockAuthor>,
 		NativeTokenIDP,
 		BlockParticipationInherentDataProvider<BlockAuthor, DelegatorKey>,
+		GovernedMapInherentDataProvider,
 	);
 
 	async fn create_inherent_data_providers(
@@ -193,6 +210,7 @@ where
 			authority_selection_data_source,
 			native_token_data_source,
 			block_participation_data_source,
+			governed_map_data_source,
 		} = self;
 		let CreateInherentDataConfig { mc_epoch_config, sc_slot_config, time_source, .. } = config;
 
@@ -223,7 +241,7 @@ where
 		let native_token = NativeTokenIDP::new(
 			client.clone(),
 			native_token_data_source.as_ref(),
-			mc_hash,
+			mc_hash.clone(),
 			parent_hash,
 		)
 		.await?;
@@ -241,7 +259,22 @@ where
 		)
 		.await?;
 
-		Ok((timestamp, ariadne_data_provider, block_producer_id_provider, native_token, payouts))
+		let governed_map = GovernedMapInherentDataProvider::new(
+			client.as_ref(),
+			parent_hash,
+			mc_hash,
+			governed_map_data_source.as_ref(),
+		)
+		.await?;
+
+		Ok((
+			timestamp,
+			ariadne_data_provider,
+			block_producer_id_provider,
+			native_token,
+			payouts,
+			governed_map,
+		))
 	}
 }
 

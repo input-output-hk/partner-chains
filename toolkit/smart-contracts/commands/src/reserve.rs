@@ -1,14 +1,11 @@
-use crate::{option_to_json, transaction_submitted_json, PaymentFilePath};
-use partner_chains_cardano_offchain::{
-	await_tx::FixedDelayRetries,
-	reserve::{
-		create::{create_reserve_utxo, ReserveParameters},
-		deposit::deposit_to_reserve,
-		handover::handover_reserve,
-		init::init_reserve_management,
-		release::release_reserve_funds,
-		update_settings::update_reserve_settings,
-	},
+use crate::{option_to_json, transaction_submitted_json, GenesisUtxo, PaymentFilePath};
+use partner_chains_cardano_offchain::reserve::{
+	create::{create_reserve_utxo, ReserveParameters},
+	deposit::deposit_to_reserve,
+	handover::handover_reserve,
+	init::init_reserve_management,
+	release::release_reserve_funds,
+	update_settings::update_reserve_settings,
 };
 use sidechain_domain::{AssetId, ScriptHash, UtxoId};
 use std::num::NonZero;
@@ -49,9 +46,8 @@ pub struct InitReserveCmd {
 	common_arguments: crate::CommonArguments,
 	#[clap(flatten)]
 	payment_key_file: PaymentFilePath,
-	/// Genesis UTXO of the partner-chain.
-	#[arg(long, short('c'))]
-	genesis_utxo: UtxoId,
+	#[clap(flatten)]
+	genesis_utxo: GenesisUtxo,
 }
 
 impl InitReserveCmd {
@@ -59,10 +55,10 @@ impl InitReserveCmd {
 		let payment_key = self.payment_key_file.read_key()?;
 		let client = self.common_arguments.get_ogmios_client().await?;
 		let result = init_reserve_management(
-			self.genesis_utxo,
+			self.genesis_utxo.into(),
 			&payment_key,
 			&client,
-			&FixedDelayRetries::two_minutes(),
+			&self.common_arguments.retries(),
 		)
 		.await?;
 		Ok(serde_json::json!(result))
@@ -75,9 +71,8 @@ pub struct CreateReserveCmd {
 	common_arguments: crate::CommonArguments,
 	#[clap(flatten)]
 	payment_key_file: PaymentFilePath,
-	/// Genesis UTXO of the partner-chain.
-	#[arg(long, short('c'))]
-	genesis_utxo: UtxoId,
+	#[clap(flatten)]
+	genesis_utxo: GenesisUtxo,
 	/// Script hash of the 'total accrued function', also called V-function, that computes how many tokens could be released from the reserve at given moment.
 	#[arg(long)]
 	total_accrued_function_script_hash: ScriptHash,
@@ -99,10 +94,10 @@ impl CreateReserveCmd {
 				token: self.token,
 				initial_deposit: self.initial_deposit_amount,
 			},
-			self.genesis_utxo,
+			self.genesis_utxo.into(),
 			&payment_key,
 			&client,
-			&FixedDelayRetries::two_minutes(),
+			&self.common_arguments.retries(),
 		)
 		.await?;
 		Ok(serde_json::json!(result))
@@ -115,9 +110,8 @@ pub struct DepositReserveCmd {
 	common_arguments: crate::CommonArguments,
 	#[clap(flatten)]
 	payment_key_file: PaymentFilePath,
-	/// Genesis UTXO of the partner-chain, identifies the partner chain and its reserve.
-	#[arg(long, short('c'))]
-	genesis_utxo: UtxoId,
+	#[clap(flatten)]
+	genesis_utxo: GenesisUtxo,
 	/// Amount of tokens to deposit. They must be present in the payment wallet.
 	#[arg(long)]
 	amount: u64,
@@ -129,10 +123,10 @@ impl DepositReserveCmd {
 		let client = self.common_arguments.get_ogmios_client().await?;
 		let result = deposit_to_reserve(
 			self.amount,
-			self.genesis_utxo,
+			self.genesis_utxo.into(),
 			&payment_key,
 			&client,
-			&FixedDelayRetries::two_minutes(),
+			&self.common_arguments.retries(),
 		)
 		.await?;
 		Ok(serde_json::json!(result))
@@ -162,7 +156,7 @@ impl UpdateReserveSettingsCmd {
 			&payment_key,
 			self.total_accrued_function_script_hash,
 			&client,
-			&FixedDelayRetries::two_minutes(),
+			&self.common_arguments.retries(),
 		)
 		.await?;
 		Ok(option_to_json(result))
@@ -188,7 +182,7 @@ impl HandoverReserveCmd {
 			self.genesis_utxo,
 			&payment_key,
 			&client,
-			&FixedDelayRetries::two_minutes(),
+			&self.common_arguments.retries(),
 		)
 		.await?;
 		Ok(serde_json::json!(result))
@@ -222,7 +216,7 @@ impl ReleaseReserveCmd {
 			self.reference_utxo,
 			&payment_key,
 			&client,
-			&FixedDelayRetries::two_minutes(),
+			&self.common_arguments.retries(),
 		)
 		.await?;
 		Ok(transaction_submitted_json(result))

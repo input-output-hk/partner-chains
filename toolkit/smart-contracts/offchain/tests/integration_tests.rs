@@ -8,6 +8,7 @@
 
 use cardano_serialization_lib::{NetworkIdKind, Transaction, Vkeywitness};
 use hex_literal::hex;
+use itertools::Itertools;
 use ogmios_client::{
 	jsonrpsee::{client_for_url, OgmiosClients},
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
@@ -20,7 +21,7 @@ use partner_chains_cardano_offchain::{
 	cardano_keys::CardanoPaymentSigningKey,
 	d_param,
 	governance::MultiSigParameters,
-	governed_map::run_insert,
+	governed_map::{run_get, run_insert, run_insert_with_force, run_list, run_remove, run_update},
 	init_governance,
 	multisig::{MultiSigSmartContractResult, MultiSigTransactionData},
 	permissioned_candidates,
@@ -282,41 +283,133 @@ async fn governed_map_operations() {
 	// Use the governance authority key
 	let skey = governance_authority_payment_key();
 
+	let insert = |k, v| run_governance_map_insert(genesis_utxo, k, v, &skey, &client, &await_tx);
+	let remove = |k| run_governance_map_remove(genesis_utxo, k, &skey, &client, &await_tx);
+
 	// Insert first key-value pair, should succeed
 	let key1 = "test_key".to_string();
 	let value1 = ByteString::from(hex::decode("0123456789abcdef").unwrap());
-	let result1 = run_governance_map_insert(
-		genesis_utxo,
-		key1.clone(),
-		value1.clone(),
-		&skey,
-		&client,
-		&await_tx,
-	)
-	.await;
+	let result1 = insert(key1.clone(), value1.clone()).await;
 	assert!(result1.is_ok_and(|x| x.is_some()), "First key-value insertion should succeed");
 
 	// Try to insert the same key again, should fail
-	let result2 =
-		run_governance_map_insert(genesis_utxo, key1.clone(), value1, &skey, &client, &await_tx)
-			.await;
+	let result2 = insert(key1.clone(), value1.clone()).await;
 	assert!(
 		result2.is_ok_and(|x| x.is_none()),
 		"Inserting the same key twice with the same valueshould be a no-op"
 	);
 
 	let value3 = ByteString::from(hex::decode("0000").unwrap());
-	let result3 =
-		run_governance_map_insert(genesis_utxo, key1, value3, &skey, &client, &await_tx).await;
+	let result3 = insert(key1.clone(), value3).await;
 
 	assert!(result3.is_err(), "Inserting the same key with a different value should fail");
 
 	// Insert a different key, should succeed
 	let key4 = "another_key".to_string();
 	let value4 = ByteString::from(hex::decode("fedcba9876543210").unwrap());
-	let result4 =
-		run_governance_map_insert(genesis_utxo, key4, value4, &skey, &client, &await_tx).await;
+	let result4 = insert(key4.clone(), value4.clone()).await;
 	assert!(result4.is_ok_and(|x| x.is_some()), "Inserting a different key should succeed");
+
+	let listed_values: Vec<_> = run_list(genesis_utxo, &client)
+		.await
+		.unwrap()
+		.map(|d| (d.key, d.value))
+		.collect();
+
+	assert_eq!(
+		listed_values.iter().sorted().collect::<Vec<_>>(),
+		vec![(key1.clone(), value1.clone()), (key4.clone(), value4.clone()),]
+			.iter()
+			.sorted()
+			.collect::<Vec<_>>(),
+		"All inserted and not changed or deleted keys should be listed"
+	);
+	// Now test the remove functionality
+
+	let result_force = run_governance_map_insert_with_force(
+		genesis_utxo,
+		key4.clone(),
+		value4.clone(),
+		&skey,
+		&client,
+		&await_tx,
+	)
+	.await;
+	assert!(result_force.is_ok_and(|x| x.is_some()), "force insertion succeed");
+	// Remove a key that exists, should succeed
+	let remove_result1 = remove(key4.clone()).await;
+	assert!(remove_result1.is_ok_and(|x| x.is_some()), "Removing an existing key should succeed");
+
+	// Try to remove the same key again, should be a no-op
+	let remove_result2 = remove(key4.clone()).await;
+	assert!(
+		remove_result2.is_ok_and(|x| x.is_none()),
+		"Removing a non-existent key should be a no-op"
+	);
+
+	// Try to remove a key that never existed, should be a no-op
+	let never_existed_key = "key_never_existed".to_string();
+	let remove_result3 = remove(never_existed_key).await;
+	assert!(
+		remove_result3.is_ok_and(|x| x.is_none()),
+		"Removing a non-existent key should be a no-op"
+	);
+
+	let get_key1_result = run_get(genesis_utxo, key1, &client).await.unwrap();
+	assert_eq!(get_key1_result, Some(value1), "Existing key value should be returned by get");
+
+	let get_removed_key_result = run_get(genesis_utxo, key4, &client).await.unwrap();
+	assert_eq!(get_removed_key_result, None, "Get for non-existent key should return None");
+}
+
+#[tokio::test]
+async fn governed_map_update() {
+	// Initialize client and container
+	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
+	let client = Cli::default();
+	let container = client.run(image);
+	let client = initialize(&container).await;
+	let genesis_utxo = run_init_goveranance(&client).await;
+	let await_tx = FixedDelayRetries::new(Duration::from_millis(500), 100);
+	// Use the governance authority key
+	let skey = governance_authority_payment_key();
+
+	let insert = |k, v| run_governance_map_insert(genesis_utxo, k, v, &skey, &client, &await_tx);
+	let update = |k, v, expected| {
+		run_governance_map_update(genesis_utxo, k, v, expected, &skey, &client, &await_tx)
+	};
+	let get = |k| run_get(genesis_utxo, k, &client);
+
+	let key1 = "test_key".to_string();
+	let missing_key = "missing key".to_string();
+	let value1 = ByteString::from(hex::decode("0badfeed").unwrap());
+	let value2 = ByteString::from(hex::decode("0beefbed").unwrap());
+	let value3 = ByteString::from(hex::decode("0fabdeed").unwrap());
+	let value4 = ByteString::from(hex::decode("0cafedad").unwrap());
+	let wrong_value = ByteString::from(hex::decode("0000000000").unwrap());
+
+	let result = insert(key1.clone(), value1.clone()).await;
+	assert!(result.is_ok_and(|x| x.is_some()), "First key-value insertion should succeed");
+
+	let result = update(missing_key, value1, None).await;
+	assert!(result.is_err(), "Updating a non-existing key should fail");
+
+	let result = update(key1.clone(), value2.clone(), None).await;
+	assert!(result.is_ok_and(|x| x.is_some()), "Updating an existing key should succeed");
+	let result = get(key1.clone()).await;
+	assert!(
+		result.is_ok_and(|x| x.is_some_and(|x| x == value2.clone())),
+		"Updated entry should have correct value"
+	);
+
+	let result = update(key1.clone(), value3.clone(), Some(value2.clone())).await;
+	assert!(
+		result.is_ok_and(|x| x.is_some()),
+		"Updating an existing key should succeed with correct expected value"
+	);
+
+	let result = update(key1.clone(), value4.clone(), Some(wrong_value)).await;
+	assert!(result.is_err(), "Updating an existing key should fail with incorrect expected value");
 }
 
 async fn initialize<'a>(container: &Container<'a, GenericImage>) -> OgmiosClients {
@@ -580,6 +673,7 @@ async fn run_register<T: QueryLedgerState + Transactions + QueryNetwork + QueryU
 	let registration_utxo = eve_utxos.first().unwrap().utxo_id();
 	client
 		.register(
+			FixedDelayRetries::five_minutes(),
 			genesis_utxo,
 			&CandidateRegistration {
 				stake_ownership: AdaBasedStaking {
@@ -782,6 +876,65 @@ async fn run_governance_map_insert<
 	await_tx: &A,
 ) -> Result<Option<MultiSigSmartContractResult>, anyhow::Error> {
 	let result = run_insert(genesis_utxo, key, value, payment_signing_key, client, await_tx).await;
+	result.iter().for_each(|x| x.iter().for_each(cleanup_temp_wallet_file));
+	result
+}
+
+async fn run_governance_map_insert_with_force<
+	T: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,
+	A: AwaitTx,
+>(
+	genesis_utxo: UtxoId,
+	key: String,
+	value: ByteString,
+	payment_signing_key: &CardanoPaymentSigningKey,
+	client: &T,
+	await_tx: &A,
+) -> Result<Option<MultiSigSmartContractResult>, anyhow::Error> {
+	let result =
+		run_insert_with_force(genesis_utxo, key, value, payment_signing_key, client, await_tx)
+			.await;
+	result.iter().for_each(|x| x.iter().for_each(cleanup_temp_wallet_file));
+	result
+}
+
+async fn run_governance_map_remove<
+	T: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,
+	A: AwaitTx,
+>(
+	genesis_utxo: UtxoId,
+	key: String,
+	payment_signing_key: &CardanoPaymentSigningKey,
+	client: &T,
+	await_tx: &A,
+) -> Result<Option<MultiSigSmartContractResult>, anyhow::Error> {
+	let result = run_remove(genesis_utxo, key, payment_signing_key, client, await_tx).await;
+	result.iter().for_each(|x| x.iter().for_each(cleanup_temp_wallet_file));
+	result
+}
+
+async fn run_governance_map_update<
+	T: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,
+	A: AwaitTx,
+>(
+	genesis_utxo: UtxoId,
+	key: String,
+	value: ByteString,
+	expected_current_value: Option<ByteString>,
+	payment_signing_key: &CardanoPaymentSigningKey,
+	client: &T,
+	await_tx: &A,
+) -> Result<Option<MultiSigSmartContractResult>, anyhow::Error> {
+	let result = run_update(
+		genesis_utxo,
+		key,
+		value,
+		expected_current_value,
+		payment_signing_key,
+		client,
+		await_tx,
+	)
+	.await;
 	result.iter().for_each(|x| x.iter().for_each(cleanup_temp_wallet_file));
 	result
 }

@@ -25,7 +25,6 @@ hex-literal = { workspace = true }
 log = { workspace = true }
 minicbor = { workspace = true }
 ogmios-client = { workspace = true, features = ["jsonrpsee-client"] }
-pallas-addresses = { workspace = true }
 pallas-primitives = { workspace = true }
 plutus = { workspace = true }
 raw-scripts = { workspace = true }
@@ -42,3 +41,4 @@ proptest = { workspace = true }
 time = { workspace = true, features = ["std", "serde", "parsing"] }
 pretty_assertions = { workspace = true }
 testcontainers = { workspace = true }
+itertools = { workspace = true }

@@ -44,9 +44,9 @@ class StakeDistributionCommittee(Base):
     pc_pub_key: Mapped[str] = mapped_column(String(128))
     pool_id: Mapped[Optional[str]] = mapped_column(String(128))
     stake_delegation: Mapped[Optional[int]] = mapped_column(BigInteger)
-    probability: Mapped[Optional[float]] = mapped_column(default=0.0)
     actual_attendance: Mapped[Optional[int]]
     expected_attendance: Mapped[Optional[float]]
+    guaranteed_seats: Mapped[Optional[int]]
 
     def __repr__(self) -> str:
         return (
