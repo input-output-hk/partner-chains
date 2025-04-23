@@ -37,61 +37,23 @@ runs:
       with:
         name: chain-specs
 
-    - name: Upload chain‑spec artifacts to PVCs
+    - name: Upload chain-spec artifacts to chain-specs PVC via pvc-uploader pods
       shell: bash
       run: |
-        JSON_OVERRIDE='{
-          "spec":{
-            "containers":[{
-              "name":"uploader",
-              "image":"alpine",
-              "command":["sleep","600"],
-              "volumeMounts":[{"name":"chain-spec","mountPath":"/mnt/chain-spec"}]
-            }],
-            "volumes":[{"name":"chain-spec","persistentVolumeClaim":{"claimName":"chain-spec-pvc"}}]
-          }
-        }'
+        set -e
 
-        # -------- devnet / sc --------
-        POD=sc                         # namespace
-        kubectl run pvc-uploader-sc -n "$POD" --restart=Never --image=alpine --command --overrides="$JSON_OVERRIDE" -- sleep 600
-        kubectl wait --for=condition=Ready pod/pvc-uploader-sc -n "$POD" --timeout=60s
         if [ -f ./devnet_chain_spec.json ]; then
-          kubectl cp ./devnet_chain_spec.json "$POD"/pvc-uploader-sc:/mnt/chain-spec/devnet-chain-spec-${{ inputs.sha }}.json
+          kubectl cp ./devnet_chain_spec.json sc/pvc-uploader-sc:/mnt/chain-spec/devnet-chain-spec-${{ inputs.sha }}.json
         fi
-        kubectl delete pod pvc-uploader-sc -n "$POD" --wait
 
-        # -------- ci-preview --------
-        POD=ci-preview
-        kubectl run pvc-uploader-ci-preview -n "$POD" --restart=Never --image=alpine --command --overrides="$JSON_OVERRIDE" -- sleep 600
-        kubectl wait --for=condition=Ready pod/pvc-uploader-ci-preview -n "$POD" --timeout=60s
         if [ -f ./ci_preview_chain_spec.json ]; then
-          kubectl cp ./ci_preview_chain_spec.json "$POD"/pvc-uploader-ci-preview:/mnt/chain-spec/ci-preview-chain-spec-${{ inputs.sha }}.json
+          kubectl cp ./ci_preview_chain_spec.json ci-preview/pvc-uploader-ci-preview:/mnt/chain-spec/ci-preview-chain-spec-${{ inputs.sha }}.json
         fi
-        kubectl delete pod pvc-uploader-ci-preview -n "$POD" --wait
 
-        # -------- staging-preview --------
-        POD=staging-preview
-        kubectl run pvc-uploader-staging-preview -n "$POD" --restart=Never --image=alpine --command --overrides="$JSON_OVERRIDE" -- sleep 600
-        kubectl wait --for=condition=Ready pod/pvc-uploader-staging-preview -n "$POD" --timeout=60s
         if [ -f ./staging_preview_chain_spec.json ]; then
-          kubectl cp ./staging_preview_chain_spec.json "$POD"/pvc-uploader-staging-preview:/mnt/chain-spec/staging-preview-chain-spec-${{ inputs.sha }}.json
+          kubectl cp ./staging_preview_chain_spec.json staging-preview/pvc-uploader-staging-preview:/mnt/chain-spec/staging-preview-chain-spec-${{ inputs.sha }}.json
         fi
-        kubectl delete pod pvc-uploader-staging-preview -n "$POD" --wait
 
-        # -------- staging-preprod --------
-        POD=staging-preprod
-        kubectl run pvc-uploader-staging-preprod -n "$POD" --restart=Never --image=alpine --command --overrides="$JSON_OVERRIDE" -- sleep 600
-        kubectl wait --for=condition=Ready pod/pvc-uploader-staging-preprod -n "$POD" --timeout=60s
         if [ -f ./staging_preprod_chain_spec.json ]; then
-          kubectl cp ./staging_preprod_chain_spec.json "$POD"/pvc-uploader-staging-preprod:/mnt/chain-spec/staging-preprod-chain-spec-${{ inputs.sha }}.json
+          kubectl cp ./staging_preprod_chain_spec.json staging-preprod/pvc-uploader-staging-preprod:/mnt/chain-spec/staging-preprod-chain-spec-${{ inputs.sha }}.json
         fi
-        kubectl delete pod pvc-uploader-staging-preprod -n "$POD" --wait
-
-    - name: Cleanup temp uploader pods
-      shell: bash
-      run: |
-        kubectl delete pod pvc-uploader-sc              -n sc              --ignore-not-found --wait
-        kubectl delete pod pvc-uploader-ci-preview      -n ci-preview      --ignore-not-found --wait
-        kubectl delete pod pvc-uploader-staging-preview -n staging-preview --ignore-not-found --wait
-        kubectl delete pod pvc-uploader-staging-preprod -n staging-preprod --ignore-not-found --wait
