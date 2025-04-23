@@ -405,10 +405,10 @@ class BlockchainApi(ABC):
         self, metadata: dict, cross_chain_signing_key: str
     ) -> BlockProducerMetadataSignature:
         """
-        Creates a signature for block procuder metadata.
+        Creates a signature for block producer metadata.
 
         Arguments:
-            metadata {dict} -- block procuder metadata
+            metadata {dict} -- block producer metadata
             cross_chain_signing_key {str} -- Cross Chain Signing key in hex format
 
         Returns:
