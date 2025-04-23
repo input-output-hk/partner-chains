@@ -41,3 +41,4 @@ proptest = { workspace = true }
 time = { workspace = true, features = ["std", "serde", "parsing"] }
 pretty_assertions = { workspace = true }
 testcontainers = { workspace = true }
+itertools = { workspace = true }

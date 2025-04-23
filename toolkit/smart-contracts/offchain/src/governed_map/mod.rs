@@ -27,6 +27,7 @@ use partner_chains_plutus_data::governed_map::{
 };
 use sidechain_domain::byte_string::ByteString;
 use sidechain_domain::{PolicyId, UtxoId};
+use std::ops::Neg;
 
 pub async fn run_insert<
 	C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,
@@ -271,7 +272,7 @@ fn remove_key_value_tx(
 		inputs.add_script_utxo_input(
 			utxo,
 			validator,
-			&PlutusData::new_bytes(vec![]),
+			&unit_plutus_data(),
 			&costs.get_spend(*spend_indicies.get(ix).unwrap_or(&0)),
 		)?;
 	}
@@ -315,4 +316,148 @@ pub async fn run_insert_with_force<
 		await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_hash.0, 0)).await?;
 	}
 	Ok(tx_hash_opt)
+}
+
+pub async fn run_update<
+	C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,
+	A: AwaitTx,
+>(
+	genesis_utxo: UtxoId,
+	key: String,
+	value: ByteString,
+	expected_current_value: Option<ByteString>,
+	payment_signing_key: &CardanoPaymentSigningKey,
+	ogmios_client: &C,
+	await_tx: &A,
+) -> anyhow::Result<Option<MultiSigSmartContractResult>> {
+	let ctx = TransactionContext::for_payment_key(payment_signing_key, ogmios_client).await?;
+	let (validator, policy) = crate::scripts_data::governed_map_scripts(genesis_utxo, ctx.network)?;
+	let validator_address = validator.address_bech32(ctx.network)?;
+	let validator_utxos = ogmios_client.query_utxos(&[validator_address]).await?;
+	let utxos_for_key = get_utxos_for_key(validator_utxos.clone(), key.clone(), policy.policy_id());
+
+	let Some(actual_current_value) =
+		get_current_value(validator_utxos.clone(), key.clone(), policy.policy_id())
+	else {
+		return Err(anyhow!("Cannot update nonexistent key :'{key}'."));
+	};
+
+	if matches!(expected_current_value,
+		Some(ref expected_current_value) if *expected_current_value != actual_current_value)
+	{
+		return Err(anyhow!("Value for key '{key}' is set to a different value than expected."));
+	}
+
+	let tx_hash_opt = {
+		if actual_current_value != value {
+			Some(
+				update(
+					&validator,
+					&policy,
+					key,
+					value,
+					&utxos_for_key,
+					ctx,
+					genesis_utxo,
+					ogmios_client,
+				)
+				.await?,
+			)
+		} else {
+			log::info!("Value for key '{key}' is already set to the same value. Skipping update.");
+			None
+		}
+	};
+
+	if let Some(TransactionSubmitted(tx_hash)) = tx_hash_opt {
+		await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_hash.0, 0)).await?;
+	}
+	Ok(tx_hash_opt)
+}
+
+async fn update<C: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId>(
+	validator: &PlutusScript,
+	policy: &PlutusScript,
+	key: String,
+	value: ByteString,
+	utxos_for_key: &[OgmiosUtxo],
+	ctx: TransactionContext,
+	genesis_utxo: UtxoId,
+	client: &C,
+) -> anyhow::Result<MultiSigSmartContractResult> {
+	let governance_data = GovernanceData::get(genesis_utxo, client).await?;
+
+	submit_or_create_tx_to_sign(
+		&governance_data,
+		ctx,
+		|costs, ctx| {
+			update_key_value_tx(
+				validator,
+				policy,
+				key.clone(),
+				value.clone(),
+				utxos_for_key,
+				&governance_data,
+				costs,
+				&ctx,
+			)
+		},
+		"Update Key-Value pair",
+		client,
+		&FixedDelayRetries::five_minutes(),
+	)
+	.await
+}
+
+fn update_key_value_tx(
+	validator: &PlutusScript,
+	policy: &PlutusScript,
+	key: String,
+	value: ByteString,
+	utxos_for_key: &[OgmiosUtxo],
+	governance_data: &GovernanceData,
+	costs: Costs,
+	ctx: &TransactionContext,
+) -> anyhow::Result<Transaction> {
+	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
+
+	let gov_tx_input = governance_data.utxo_id_as_tx_input();
+	tx_builder.add_mint_one_script_token_using_reference_script(
+		&governance_data.policy.script(),
+		&gov_tx_input,
+		&costs,
+	)?;
+
+	let spend_indicies = costs.get_spend_indices();
+
+	let mut inputs = TxInputsBuilder::new();
+	for (ix, utxo) in utxos_for_key.iter().enumerate() {
+		inputs.add_script_utxo_input(
+			utxo,
+			validator,
+			&PlutusData::new_bytes(vec![]),
+			&costs.get_spend(*spend_indicies.get(ix).unwrap_or(&0)),
+		)?;
+	}
+	tx_builder.set_inputs(&inputs);
+
+	if utxos_for_key.len() > 1 {
+		let burn_amount = (utxos_for_key.len() as i32 - 1).neg();
+		tx_builder.add_mint_script_tokens(
+			policy,
+			&empty_asset_name(),
+			&unit_plutus_data(),
+			&costs.get_mint(&policy.clone()),
+			&Int::new_i32(burn_amount),
+		)?;
+	}
+
+	tx_builder.add_output_with_one_script_token(
+		validator,
+		policy,
+		&governed_map_datum_to_plutus_data(&GovernedMapDatum::new(key, value)),
+		ctx,
+	)?;
+
+	Ok(tx_builder.balance_update_and_build(ctx)?.remove_native_script_witnesses())
 }

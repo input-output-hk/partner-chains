@@ -8,6 +8,7 @@
 
 use cardano_serialization_lib::{NetworkIdKind, Transaction, Vkeywitness};
 use hex_literal::hex;
+use itertools::Itertools;
 use ogmios_client::{
 	jsonrpsee::{client_for_url, OgmiosClients},
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
@@ -20,7 +21,7 @@ use partner_chains_cardano_offchain::{
 	cardano_keys::CardanoPaymentSigningKey,
 	d_param,
 	governance::MultiSigParameters,
-	governed_map::{run_get, run_insert, run_insert_with_force, run_list, run_remove},
+	governed_map::{run_get, run_insert, run_insert_with_force, run_list, run_remove, run_update},
 	init_governance,
 	multisig::{MultiSigSmartContractResult, MultiSigTransactionData},
 	permissioned_candidates,
@@ -339,8 +340,11 @@ async fn governed_map_operations() {
 		.collect();
 
 	assert_eq!(
-		listed_values,
-		vec![(key1.clone(), value1.clone()), (key4.clone(), value4.clone()),],
+		listed_values.iter().sorted().collect::<Vec<_>>(),
+		vec![(key1.clone(), value1.clone()), (key4.clone(), value4.clone()),]
+			.iter()
+			.sorted()
+			.collect::<Vec<_>>(),
 		"All inserted and not changed or deleted keys should be listed"
 	);
 	// Now test the remove functionality
@@ -382,6 +386,50 @@ async fn governed_map_operations() {
 
 	let get_removed_key_result = run_get(genesis_utxo, key4, &client).await.unwrap();
 	assert_eq!(get_removed_key_result, None, "Get for non-existent key should return None");
+}
+
+#[tokio::test]
+async fn governed_map_update() {
+	// Initialize client and container
+	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
+	let client = Cli::default();
+	let container = client.run(image);
+	let client = initialize(&container).await;
+	let genesis_utxo = run_init_goveranance(&client).await;
+	let await_tx = FixedDelayRetries::new(Duration::from_millis(500), 100);
+	// Use the governance authority key
+	let skey = governance_authority_payment_key();
+
+	let insert = |k, v| run_governance_map_insert(genesis_utxo, k, v, &skey, &client, &await_tx);
+	let update = |k, v, expected| {
+		run_governance_map_update(genesis_utxo, k, v, expected, &skey, &client, &await_tx)
+	};
+
+	let key1 = "test_key".to_string();
+	let missing_key = "missing key".to_string();
+	let value1 = ByteString::from(hex::decode("0badfeed").unwrap());
+	let value2 = ByteString::from(hex::decode("0beefbed").unwrap());
+	let value3 = ByteString::from(hex::decode("0fabdeed").unwrap());
+	let value4 = ByteString::from(hex::decode("0cafedad").unwrap());
+	let wrong_value = ByteString::from(hex::decode("0000000000").unwrap());
+
+	let result = insert(key1.clone(), value1.clone()).await;
+	assert!(result.is_ok_and(|x| x.is_some()), "First key-value insertion should succeed");
+
+	let result = update(missing_key, value1, None).await;
+	assert!(result.is_err(), "Updating a non-existing key should fail");
+
+	let result = update(key1.clone(), value2.clone(), None).await;
+	assert!(result.is_ok_and(|x| x.is_some()), "Updating an existing key should succeed");
+
+	let result = update(key1.clone(), value3.clone(), Some(value2.clone())).await;
+	assert!(
+		result.is_ok_and(|x| x.is_some()),
+		"Updating an existing key should succeed with correct expected value"
+	);
+
+	let result = update(key1.clone(), value4.clone(), Some(wrong_value)).await;
+	assert!(result.is_err(), "Updating an existing key should fail with incorrect expected value");
 }
 
 async fn initialize<'a>(container: &Container<'a, GenericImage>) -> OgmiosClients {
@@ -880,6 +928,32 @@ async fn run_governance_map_remove<
 	await_tx: &A,
 ) -> Result<Option<MultiSigSmartContractResult>, anyhow::Error> {
 	let result = run_remove(genesis_utxo, key, payment_signing_key, client, await_tx).await;
+	result.iter().for_each(|x| x.iter().for_each(cleanup_temp_wallet_file));
+	result
+}
+
+async fn run_governance_map_update<
+	T: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,
+	A: AwaitTx,
+>(
+	genesis_utxo: UtxoId,
+	key: String,
+	value: ByteString,
+	expected_current_value: Option<ByteString>,
+	payment_signing_key: &CardanoPaymentSigningKey,
+	client: &T,
+	await_tx: &A,
+) -> Result<Option<MultiSigSmartContractResult>, anyhow::Error> {
+	let result = run_update(
+		genesis_utxo,
+		key,
+		value,
+		expected_current_value,
+		payment_signing_key,
+		client,
+		await_tx,
+	)
+	.await;
 	result.iter().for_each(|x| x.iter().for_each(cleanup_temp_wallet_file));
 	result
 }

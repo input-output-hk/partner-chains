@@ -1,4 +1,4 @@
-use crate::{option_to_json, transaction_submitted_json, PaymentFilePath};
+use crate::{option_to_json, transaction_submitted_json, GenesisUtxo, PaymentFilePath};
 use partner_chains_cardano_offchain::{
 	await_tx::FixedDelayRetries,
 	reserve::{
@@ -49,9 +49,8 @@ pub struct InitReserveCmd {
 	common_arguments: crate::CommonArguments,
 	#[clap(flatten)]
 	payment_key_file: PaymentFilePath,
-	/// Genesis UTXO of the partner-chain.
-	#[arg(long, short('c'))]
-	genesis_utxo: UtxoId,
+	#[clap(flatten)]
+	genesis_utxo: GenesisUtxo,
 }
 
 impl InitReserveCmd {
@@ -59,7 +58,7 @@ impl InitReserveCmd {
 		let payment_key = self.payment_key_file.read_key()?;
 		let client = self.common_arguments.get_ogmios_client().await?;
 		let result = init_reserve_management(
-			self.genesis_utxo,
+			self.genesis_utxo.into(),
 			&payment_key,
 			&client,
 			&FixedDelayRetries::five_minutes(),
@@ -75,9 +74,8 @@ pub struct CreateReserveCmd {
 	common_arguments: crate::CommonArguments,
 	#[clap(flatten)]
 	payment_key_file: PaymentFilePath,
-	/// Genesis UTXO of the partner-chain.
-	#[arg(long, short('c'))]
-	genesis_utxo: UtxoId,
+	#[clap(flatten)]
+	genesis_utxo: GenesisUtxo,
 	/// Script hash of the 'total accrued function', also called V-function, that computes how many tokens could be released from the reserve at given moment.
 	#[arg(long)]
 	total_accrued_function_script_hash: ScriptHash,
@@ -99,7 +97,7 @@ impl CreateReserveCmd {
 				token: self.token,
 				initial_deposit: self.initial_deposit_amount,
 			},
-			self.genesis_utxo,
+			self.genesis_utxo.into(),
 			&payment_key,
 			&client,
 			&FixedDelayRetries::five_minutes(),
@@ -115,9 +113,8 @@ pub struct DepositReserveCmd {
 	common_arguments: crate::CommonArguments,
 	#[clap(flatten)]
 	payment_key_file: PaymentFilePath,
-	/// Genesis UTXO of the partner-chain, identifies the partner chain and its reserve.
-	#[arg(long, short('c'))]
-	genesis_utxo: UtxoId,
+	#[clap(flatten)]
+	genesis_utxo: GenesisUtxo,
 	/// Amount of tokens to deposit. They must be present in the payment wallet.
 	#[arg(long)]
 	amount: u64,
@@ -129,7 +126,7 @@ impl DepositReserveCmd {
 		let client = self.common_arguments.get_ogmios_client().await?;
 		let result = deposit_to_reserve(
 			self.amount,
-			self.genesis_utxo,
+			self.genesis_utxo.into(),
 			&payment_key,
 			&client,
 			&FixedDelayRetries::five_minutes(),

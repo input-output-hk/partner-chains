@@ -1,86 +1,97 @@
-name: "Upload Chain Spec Artifacts to Kubernetes"
-description: "Uploads chain spec artifacts to Kubernetes secrets for devnet, staging-preview, and staging-preprod environments."
+name: Upload Chain Spec Artifacts to Kubernetes PVC
+description: Uploads chain‑spec artifacts to PVCs for devnet, staging‑preview and staging‑preprod.
+
 inputs:
   sha:
-    description: "Commit SHA to append to chain spec secret name"
+    description: Commit SHA to append to chain‑spec file
     required: true
 
 outputs: {}
 
 runs:
-  using: "composite"
+  using: composite
   steps:
-    - name: Install kubectl and awscli
+    - name: Install kubectl, kubernetes-helm, and awscli
       run: |
-        # Install kubectl
         curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
         chmod +x ./kubectl
         sudo mv ./kubectl /usr/local/bin/kubectl
-  
-        # Install or update AWS CLI v2
-        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-        unzip -o awscliv2.zip
-        sudo ./aws/install --update
+        curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
+        sudo apt-get install apt-transport-https --yes
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+        sudo apt-get update
+        sudo apt-get install helm
       shell: bash
 
     - name: Configure kubectl
-      env:
-        KUBECONFIG_BASE64: ${{ env.kubeconfig_base64 }}
-        K8S_SERVER: ${{ env.K8S_SERVER }}
-        K8S_SA_TOKEN: ${{ env.K8S_SA_TOKEN }}
       run: |
-        echo "${KUBECONFIG_BASE64}" | base64 --decode > ${{ runner.temp }}/kubeconfig.yaml
-        kubectl config set-cluster my-cluster --server=${K8S_SERVER} --insecure-skip-tls-verify=true
-        kubectl config set-credentials github-actions --token=${K8S_SA_TOKEN}
+        echo "${{ env.kubeconfig_base64 }}" | base64 --decode > ${{ runner.temp }}/kubeconfig.yaml
+        kubectl config set-cluster my-cluster --server=${{ env.K8S_SERVER }} --insecure-skip-tls-verify=true
+        kubectl config set-credentials github-actions --token=${{ env.K8S_SA_TOKEN }}
         kubectl config set-context my-context --cluster=my-cluster --user=github-actions --namespace=default
         kubectl config use-context my-context
       shell: bash
 
-    - name: Download chain spec artifacts
+    - name: Download chain‑spec artifacts
       uses: actions/download-artifact@v4
       with:
         name: chain-specs
 
-    - name: Update Kubernetes secret for devnet chain spec
-      run: |
-        if [ -f ./devnet_chain_spec.json ]; then
-          SECRET_NAME="devnet-chain-spec-${{ inputs.sha }}"
-          kubectl delete secret "$SECRET_NAME" --namespace=sc --ignore-not-found
-          kubectl create secret generic "$SECRET_NAME" \
-            --from-file=devnet_chain_spec.json=./devnet_chain_spec.json \
-            --namespace=sc
-        fi
+    - name: Upload chain‑spec artifacts to PVCs
       shell: bash
+      run: |
+        JSON_OVERRIDE='{
+          "spec":{
+            "containers":[{
+              "name":"uploader",
+              "image":"alpine",
+              "command":["sleep","600"],
+              "volumeMounts":[{"name":"chain-spec","mountPath":"/mnt/chain-spec"}]
+            }],
+            "volumes":[{"name":"chain-spec","persistentVolumeClaim":{"claimName":"chain-spec-pvc"}}]
+          }
+        }'
 
-    - name: Update Kubernetes secret for ci-preview chain spec
-      run: |
+        # -------- devnet / sc --------
+        POD=sc                         # namespace
+        kubectl run pvc-uploader-sc -n "$POD" --restart=Never --image=alpine --command --overrides="$JSON_OVERRIDE" -- sleep 600
+        kubectl wait --for=condition=Ready pod/pvc-uploader-sc -n "$POD" --timeout=60s
+        if [ -f ./devnet_chain_spec.json ]; then
+          kubectl cp ./devnet_chain_spec.json "$POD"/pvc-uploader-sc:/mnt/chain-spec/devnet-chain-spec-${{ inputs.sha }}.json
+        fi
+        kubectl delete pod pvc-uploader-sc -n "$POD" --wait
+
+        # -------- ci-preview --------
+        POD=ci-preview
+        kubectl run pvc-uploader-ci-preview -n "$POD" --restart=Never --image=alpine --command --overrides="$JSON_OVERRIDE" -- sleep 600
+        kubectl wait --for=condition=Ready pod/pvc-uploader-ci-preview -n "$POD" --timeout=60s
         if [ -f ./ci_preview_chain_spec.json ]; then
-          SECRET_NAME="ci-preview-chain-spec-${{ inputs.sha }}"
-          kubectl delete secret "$SECRET_NAME" --namespace=ci-preview --ignore-not-found
-          kubectl create secret generic "$SECRET_NAME" \
-            --from-file=ci_preview_chain_spec.json=./ci_preview_chain_spec.json \
-            --namespace=ci-preview
+          kubectl cp ./ci_preview_chain_spec.json "$POD"/pvc-uploader-ci-preview:/mnt/chain-spec/ci-preview-chain-spec-${{ inputs.sha }}.json
         fi
-      shell: bash
-    
-    - name: Update Kubernetes secret for staging-preview chain spec
-      run: |
+        kubectl delete pod pvc-uploader-ci-preview -n "$POD" --wait
+
+        # -------- staging-preview --------
+        POD=staging-preview
+        kubectl run pvc-uploader-staging-preview -n "$POD" --restart=Never --image=alpine --command --overrides="$JSON_OVERRIDE" -- sleep 600
+        kubectl wait --for=condition=Ready pod/pvc-uploader-staging-preview -n "$POD" --timeout=60s
         if [ -f ./staging_preview_chain_spec.json ]; then
-          SECRET_NAME="staging-preview-chain-spec-${{ inputs.sha }}"
-          kubectl delete secret "$SECRET_NAME" --namespace=staging-preview --ignore-not-found
-          kubectl create secret generic "$SECRET_NAME" \
-            --from-file=staging_preview_chain_spec.json=./staging_preview_chain_spec.json \
-            --namespace=staging-preview
+          kubectl cp ./staging_preview_chain_spec.json "$POD"/pvc-uploader-staging-preview:/mnt/chain-spec/staging-preview-chain-spec-${{ inputs.sha }}.json
         fi
-      shell: bash
-    
-    - name: Update Kubernetes secret for staging-preprod chain spec
-      run: |
+        kubectl delete pod pvc-uploader-staging-preview -n "$POD" --wait
+
+        # -------- staging-preprod --------
+        POD=staging-preprod
+        kubectl run pvc-uploader-staging-preprod -n "$POD" --restart=Never --image=alpine --command --overrides="$JSON_OVERRIDE" -- sleep 600
+        kubectl wait --for=condition=Ready pod/pvc-uploader-staging-preprod -n "$POD" --timeout=60s
         if [ -f ./staging_preprod_chain_spec.json ]; then
-          SECRET_NAME="staging-preprod-chain-spec-${{ inputs.sha }}"
-          kubectl delete secret "$SECRET_NAME" --namespace=staging-preprod --ignore-not-found
-          kubectl create secret generic "$SECRET_NAME" \
-            --from-file=staging_preprod_chain_spec.json=./staging_preprod_chain_spec.json \
-            --namespace=staging-preprod
+          kubectl cp ./staging_preprod_chain_spec.json "$POD"/pvc-uploader-staging-preprod:/mnt/chain-spec/staging-preprod-chain-spec-${{ inputs.sha }}.json
         fi
+        kubectl delete pod pvc-uploader-staging-preprod -n "$POD" --wait
+
+    - name: Cleanup temp uploader pods
       shell: bash
+      run: |
+        kubectl delete pod pvc-uploader-sc              -n sc              --ignore-not-found --wait
+        kubectl delete pod pvc-uploader-ci-preview      -n ci-preview      --ignore-not-found --wait
+        kubectl delete pod pvc-uploader-staging-preview -n staging-preview --ignore-not-found --wait
+        kubectl delete pod pvc-uploader-staging-preprod -n staging-preprod --ignore-not-found --wait

@@ -84,11 +84,11 @@ runs:
     - name: Deploy with chain-spec and image override
       run: |
         cd sidechains-infra-priv/src/kube/helm/partner-chains-node-chart/
-        helm upgrade --install staging-preprod-validator-1 . -f values/chains/staging-preprod.yaml -f values/nodes/staging-preprod/validator/staging-preprod-validator-1 --set images.substrateNode="${{ inputs.image }}" --set chain.chainspec_secretName="staging-preprod-chain-spec-${{ inputs.sha }}"
-        helm upgrade --install staging-preprod-validator-2 . -f values/chains/staging-preprod.yaml -f values/nodes/staging-preprod/validator/staging-preprod-validator-2 --set images.substrateNode="${{ inputs.image }}" --set chain.chainspec_secretName="staging-preprod-chain-spec-${{ inputs.sha }}"
-        helm upgrade --install staging-preprod-validator-3 . -f values/chains/staging-preprod.yaml -f values/nodes/staging-preprod/validator/staging-preprod-validator-3 --set images.substrateNode="${{ inputs.image }}" --set chain.chainspec_secretName="staging-preprod-chain-spec-${{ inputs.sha }}"
-        helm upgrade --install staging-preprod-validator-4 . -f values/chains/staging-preprod.yaml -f values/nodes/staging-preprod/validator/staging-preprod-validator-4 --set images.substrateNode="${{ inputs.image }}" --set chain.chainspec_secretName="staging-preprod-chain-spec-${{ inputs.sha }}"
-        helm upgrade --install staging-preprod-validator-5 . -f values/chains/staging-preprod.yaml -f values/nodes/staging-preprod/validator/staging-preprod-validator-5 --set images.substrateNode="${{ inputs.image }}" --set chain.chainspec_secretName="staging-preprod-chain-spec-${{ inputs.sha }}"
+        helm upgrade --install staging-preprod-validator-1 . -f values/chains/staging-preprod.yaml -f values/nodes/staging-preprod/validator/staging-preprod-validator-1 --set images.substrateNode="${{ inputs.image }}"
+        helm upgrade --install staging-preprod-validator-2 . -f values/chains/staging-preprod.yaml -f values/nodes/staging-preprod/validator/staging-preprod-validator-2 --set images.substrateNode="${{ inputs.image }}"
+        helm upgrade --install staging-preprod-validator-3 . -f values/chains/staging-preprod.yaml -f values/nodes/staging-preprod/validator/staging-preprod-validator-3 --set images.substrateNode="${{ inputs.image }}"
+        helm upgrade --install staging-preprod-validator-4 . -f values/chains/staging-preprod.yaml -f values/nodes/staging-preprod/validator/staging-preprod-validator-4 --set images.substrateNode="${{ inputs.image }}"
+        helm upgrade --install staging-preprod-validator-5 . -f values/chains/staging-preprod.yaml -f values/nodes/staging-preprod/validator/staging-preprod-validator-5 --set images.substrateNode="${{ inputs.image }}"
       shell: bash
 
     - name: Wait

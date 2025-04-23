@@ -1,9 +1,6 @@
-use crate::option_to_json;
-use crate::parse_partnerchain_public_keys;
-use crate::PaymentFilePath;
+use crate::{option_to_json, parse_partnerchain_public_keys, GenesisUtxo, PaymentFilePath};
 use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
 use partner_chains_cardano_offchain::permissioned_candidates::upsert_permissioned_candidates;
-use sidechain_domain::UtxoId;
 use std::fs::read_to_string;
 
 #[derive(Clone, Debug, clap::Parser)]
@@ -16,8 +13,8 @@ pub struct UpsertPermissionedCandidatesCmd {
 	permissioned_candidates_file: String,
 	#[clap(flatten)]
 	payment_key_file: PaymentFilePath,
-	#[arg(long, short('c'))]
-	genesis_utxo: UtxoId,
+	#[clap(flatten)]
+	genesis_utxo: GenesisUtxo,
 }
 
 impl UpsertPermissionedCandidatesCmd {
@@ -45,7 +42,7 @@ impl UpsertPermissionedCandidatesCmd {
 		let client = self.common_arguments.get_ogmios_client().await?;
 
 		let result = upsert_permissioned_candidates(
-			self.genesis_utxo,
+			self.genesis_utxo.into(),
 			&permissioned_candidates,
 			&payment_key,
 			&client,

@@ -1,5 +1,6 @@
 use crate::{
-	option_to_json, parse_partnerchain_public_keys, transaction_submitted_json, PaymentFilePath,
+	option_to_json, parse_partnerchain_public_keys, transaction_submitted_json, GenesisUtxo,
+	PaymentFilePath,
 };
 use partner_chains_cardano_offchain::{
 	await_tx::FixedDelayRetries,
@@ -14,9 +15,8 @@ use sidechain_domain::{
 pub struct RegisterCmd {
 	#[clap(flatten)]
 	common_arguments: crate::CommonArguments,
-	/// Genesis UTXO of the partner-chain
-	#[arg(long)]
-	genesis_utxo: UtxoId,
+	#[clap(flatten)]
+	genesis_utxo: GenesisUtxo,
 	/// UTXO that will be spend when executing registration transaction, part of the registration message
 	#[arg(long)]
 	registration_utxo: UtxoId,
@@ -59,7 +59,7 @@ impl RegisterCmd {
 		};
 
 		let result = run_register(
-			self.genesis_utxo,
+			self.genesis_utxo.into(),
 			&candidate_registration,
 			&payment_key,
 			&client,
@@ -74,9 +74,8 @@ impl RegisterCmd {
 pub struct DeregisterCmd {
 	#[clap(flatten)]
 	common_arguments: crate::CommonArguments,
-	/// Genesis UTXO of the partner-chain
-	#[arg(long)]
-	genesis_utxo: UtxoId,
+	#[clap(flatten)]
+	genesis_utxo: GenesisUtxo,
 	#[clap(flatten)]
 	payment_key_file: PaymentFilePath,
 	/// Hex string representing bytes of the Stake Pool Verification Key
@@ -90,7 +89,7 @@ impl DeregisterCmd {
 		let client = self.common_arguments.get_ogmios_client().await?;
 
 		let result = run_deregister(
-			self.genesis_utxo,
+			self.genesis_utxo.into(),
 			&payment_signing_key,
 			self.spo_public_key,
 			&client,
