@@ -1,5 +1,5 @@
 name: "Create Draft Release"
-description: "Creates a draft release and uploads partner-chains artifacts to GitHub."
+description: "Creates a draft release on GitHub."
 inputs:
   tag:
     description: "Tag for the release"
@@ -11,34 +11,6 @@ outputs: {}
 runs:
   using: "composite"
   steps:
-    - name: Set filename variables
-      id: set-filenames
-      run: |
-        echo "PARTNER_CHAINS_NODE_X86_64_LINUX=partner-chains-node-${{ inputs.tag }}-x86_64-linux" >> $GITHUB_ENV
-        echo "PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN=partner-chains-node-${{ inputs.tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
-        echo "PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN=partner-chains-node-${{ inputs.tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
-      shell: bash
-    - name: Download partner-chains-node-linux-artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: partner-chains-node-linux-artifact
-        path: artifact-linux/
-    - name: Download partner-chains-node-macos-x86_64-artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: partner-chains-node-macos-x86_64-artifact
-        path: artifact-macos-x86_64/
-    - name: Download partner-chains-node-macos-arm64-artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: partner-chains-node-macos-arm64-artifact
-        path: artifact-macos-arm64/
-    - name: Rename artifacts to use tag
-      run: |
-        mv "artifact-linux/partner-chains-node-${{ inputs.sha }}-x86_64-linux" "artifact-linux/${{ env.PARTNER_CHAINS_NODE_X86_64_LINUX }}"
-        mv "artifact-macos-x86_64/partner-chains-node-${{ inputs.sha }}-x86_64-apple-darwin" "artifact-macos-x86_64/${{ env.PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN }}"
-        mv "artifact-macos-arm64/partner-chains-node-${{ inputs.sha }}-aarch64-apple-darwin" "artifact-macos-arm64/${{ env.PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN }}"
-      shell: bash
     - name: Check if release already exists
       id: check_release
       run: |
@@ -72,25 +44,3 @@ runs:
         generate_release_notes: false
       env:
         GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
-    - name: Upload artifacts to release
-      if: ${{ steps.check_release.outputs.release_exists == 'true' || steps.create_release.outputs.id != '' }}
-      run: |
-        # Extract the release ID
-        release_id="${{ steps.create_release.outputs.id }}"
-        if [ -z "$release_id" ]; then
-          release_id="${{ steps.check_release.outputs.release_id }}"
-        fi
-        echo "Uploading artifacts to release ID $release_id..."
-    
-        for artifact in "artifact-linux/${{ env.PARTNER_CHAINS_NODE_X86_64_LINUX }}" \
-                        "artifact-macos-x86_64/${{ env.PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN }}" \
-                        "artifact-macos-arm64/${{ env.PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN }}"; do
-          echo "Uploading artifact: $(basename $artifact)"
-          chmod +x "$artifact"
-          curl -s -X POST \
-            -H "Authorization: token ${{ env.GITHUB_TOKEN }}" \
-            -H "Content-Type: application/octet-stream" \
-            --data-binary @"$artifact" \
-            "https://uploads.github.com/repos/${{ github.repository }}/releases/$release_id/assets?name=$(basename $artifact)"
-        done
-      shell: bash
