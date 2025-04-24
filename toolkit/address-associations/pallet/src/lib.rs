@@ -38,6 +38,7 @@
 //!
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![deny(missing_docs)]
 
 extern crate alloc;
 
@@ -47,10 +48,10 @@ mod benchmarking;
 pub mod weights;
 
 #[cfg(test)]
-pub mod mock;
+mod mock;
 
 #[cfg(test)]
-pub mod tests;
+mod tests;
 
 use parity_scale_codec::Encode;
 use sidechain_domain::MainchainKeyHash;
@@ -59,12 +60,17 @@ use sidechain_domain::{StakePublicKey, UtxoId};
 /// Schema of the message signed by a User to verify validity of submitted address association
 #[derive(Debug, Clone, Encode)]
 pub struct AddressAssociationSignedMessage<PartnerChainAddress> {
+	/// Cardano stake public key to be associated
 	pub stake_public_key: StakePublicKey,
+	/// Partner Chain address to be associated
 	pub partnerchain_address: PartnerChainAddress,
+	/// Genesis UTXO of the Partner Chain on which the association is to be registered
 	pub genesis_utxo: UtxoId,
 }
 
+/// Handler for new associations
 pub trait OnNewAssociation<PartnerChainAddress> {
+	/// Function called every time a new address association is created
 	fn on_new_association(
 		partner_chain_address: PartnerChainAddress,
 		main_chain_key_hash: MainchainKeyHash,
@@ -86,6 +92,7 @@ pub mod pallet {
 	use frame_system::pallet_prelude::OriginFor;
 	use sidechain_domain::{MainchainKeyHash, StakeKeySignature, StakePublicKey, UtxoId};
 
+	/// Current version of the pallet
 	pub const PALLET_VERSION: u32 = 1;
 
 	#[pallet::pallet]
@@ -104,9 +111,13 @@ pub mod pallet {
 		/// This typically should be wired with the `genesis_utxo` function exposed by `pallet_sidechain`.
 		fn genesis_utxo() -> UtxoId;
 
+		/// Handler that is called for each new address association.
+		///
+		/// If no handling logic is needed, [()] can be used for a no-op implementation.
 		type OnNewAssociation: OnNewAssociation<Self::PartnerChainAddress>;
 	}
 
+	/// Storage of address association
 	#[pallet::storage]
 	pub type AddressAssociations<T: Config> = StorageMap<
 		Hasher = Blake2_128Concat,
@@ -115,9 +126,12 @@ pub mod pallet {
 		QueryKind = OptionQuery,
 	>;
 
+	/// Error type returned by the pallet's extrinsic
 	#[pallet::error]
 	pub enum Error<T> {
+		/// Signals that the Cardano key is already associated
 		MainchainKeyAlreadyAssociated,
+		/// Signals an invalid Cardano key signature
 		InvalidMainchainSignature,
 	}
 
