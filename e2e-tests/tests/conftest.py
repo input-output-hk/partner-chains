@@ -671,3 +671,17 @@ def set_governance_to_multisig(multisig, api: BlockchainApi, governance_authorit
 
     assert response.returncode == 0
     logging.info("Governance restored to single key successfully")
+
+
+@pytest.fixture
+def candidate_skey_with_cli(candidate: Candidates, config: ApiConfig):
+    """Fixture to provide candidate signing key with CLI access."""
+    # Get the candidate's signing key
+    skey = candidate.skey
+    
+    # Ensure the key is properly formatted
+    if not skey.startswith('0x'):
+        skey = f'0x{skey}'
+    
+    # Return the formatted key
+    return skey

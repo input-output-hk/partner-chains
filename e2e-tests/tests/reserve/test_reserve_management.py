@@ -1,5 +1,6 @@
 import logging
 import random
+import time
 from config.api_config import ApiConfig
 from src.blockchain_api import BlockchainApi
 from src.partner_chains_node.models import VFunction
@@ -266,3 +267,37 @@ class TestHandoverReserve:
     ):
         circulation = api.get_mc_balance(addresses["IlliquidCirculationSupplyValidator"], reserve_asset_id)
         assert circulation_supply_initial_balance + reserve_initial_balance == circulation
+
+
+def test_native_token_initial_balance(
+    api: BlockchainApi,
+    governance_address: str,
+    reserve_asset_id: str,
+    mint_token,
+    config: ApiConfig,
+):
+    """Test that the native token balance is updated correctly after minting."""
+    # Mint tokens
+    amount = 1000
+    result = mint_token(amount)
+    assert "Transaction successfully submitted" in result, f"Failed to mint tokens: {result}"
+    
+    # Wait for balance to update with retries
+    max_retries = 3
+    retry_delay = 10
+    for attempt in range(max_retries):
+        try:
+            wait_until(
+                lambda: api.cardano_cli.get_token_balance(governance_address, reserve_asset_id) == amount,
+                timeout=config.timeouts.main_chain_tx,
+            )
+            break
+        except TimeoutError as e:
+            if attempt == max_retries - 1:
+                current_balance = api.cardano_cli.get_token_balance(governance_address, reserve_asset_id)
+                raise TimeoutError(
+                    f"Token balance did not update to expected value after {config.timeouts.main_chain_tx}s. "
+                    f"Expected: {amount}, Current: {current_balance}"
+                ) from e
+            logging.warning(f"Balance update attempt {attempt + 1} failed, retrying in {retry_delay}s...")
+            time.sleep(retry_delay)

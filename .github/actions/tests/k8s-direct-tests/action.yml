@@ -364,42 +364,31 @@ runs:
         echo "Committee members:"
         echo "$COMMITTEE_RESPONSE" | jq -r '.result.committee[]'
         
-        # Calculate expected ratio
-        EXPECTED_RATIO=$(echo "scale=4; $NUM_PERMISSIONED / ($NUM_PERMISSIONED + $NUM_REGISTERED)" | bc)
+        # Calculate expected ratio (P/T)
+        EXPECTED_RATIO=$(echo "scale=4; $NUM_PERMISSIONED / $NUM_REGISTERED" | bc)
         echo "Expected ratio: $EXPECTED_RATIO"
         
-        # Get committee members and calculate actual ratio
-        COMMITTEE_MEMBERS=$(echo "$COMMITTEE_RESPONSE" | jq -r '.result.committee | length')
+        # Get committee members and calculate actual ratio (P/T)
         PERMISSIONED_MEMBERS=$(echo "$COMMITTEE_RESPONSE" | jq -r '.result.committee | map(select(.sidechainPubKey | startswith("0x02"))) | length')
+        TRUSTLESS_MEMBERS=$(echo "$COMMITTEE_RESPONSE" | jq -r '.result.committee | map(select(.sidechainPubKey | startswith("0x03"))) | length')
         
-        if [ "$COMMITTEE_MEMBERS" -eq 0 ]; then
+        if [ "$PERMISSIONED_MEMBERS" -eq 0 ] && [ "$TRUSTLESS_MEMBERS" -eq 0 ]; then
           echo "❌ No committee members found"
           exit 1
         fi
         
-        ACTUAL_RATIO=$(echo "scale=4; $PERMISSIONED_MEMBERS / $COMMITTEE_MEMBERS" | bc)
+        ACTUAL_RATIO=$(echo "scale=4; $PERMISSIONED_MEMBERS / $TRUSTLESS_MEMBERS" | bc)
         echo "Actual ratio: $ACTUAL_RATIO"
         
-        # Calculate tolerance based on number of epochs and d-parameter values
-        PC_EPOCHS_IN_MC_EPOCH=10  # This should be configurable
-        P_PROB=$(echo "scale=4; $NUM_PERMISSIONED / ($NUM_PERMISSIONED + $NUM_REGISTERED)" | bc)
-        TOLERANCE=$(echo "scale=4; 1.1 * (1 / ($P_PROB * $PC_EPOCHS_IN_MC_EPOCH) - 1)" | bc)
-        TOLERANCE=$(echo "scale=4; $EXPECTED_RATIO * $TOLERANCE" | bc)
-        
-        # Compare ratios with calculated tolerance
-        RATIO_DIFF=$(echo "scale=4; $ACTUAL_RATIO - $EXPECTED_RATIO" | bc)
-        RATIO_DIFF_ABS=$(echo "scale=4; if ($RATIO_DIFF < 0) -($RATIO_DIFF) else $RATIO_DIFF fi" | bc)
-        
-        if (( $(echo "$RATIO_DIFF_ABS <= $TOLERANCE" | bc -l) )); then
+        # Compare ratios
+        if (( $(echo "$ACTUAL_RATIO == $EXPECTED_RATIO" | bc -l) )); then
           echo "✅ Committee ratio compliance test passed."
           echo "Expected ratio: $EXPECTED_RATIO"
           echo "Actual ratio: $ACTUAL_RATIO"
-          echo "Difference: $RATIO_DIFF (within tolerance of $TOLERANCE)"
         else
           echo "❌ Committee ratio compliance test failed."
           echo "Expected ratio: $EXPECTED_RATIO"
           echo "Actual ratio: $ACTUAL_RATIO"
-          echo "Difference: $RATIO_DIFF (exceeds tolerance of $TOLERANCE)"
           exit 1
         fi
 
@@ -619,9 +608,16 @@ runs:
         
         # Check if association response is valid
         if ! echo "$ASSOCIATION" | jq -e '.result' > /dev/null; then
-          echo "⚠️ Address association not available yet (this is expected during initial sync)"
-          echo "Response: $ASSOCIATION"
-          exit 0  # Exit with success since this is expected behavior
+          # Check if the error is UnknownBlock, which is expected during initial sync
+          if echo "$ASSOCIATION" | jq -e '.error.message | contains("UnknownBlock")' > /dev/null; then
+            echo "⚠️ Address association not available yet (this is expected during initial sync)"
+            echo "Response: $ASSOCIATION"
+            exit 0  # Exit with success since this is expected behavior
+          else
+            echo "❌ Failed to get address association: $(echo "$ASSOCIATION" | jq -r '.error.message // "Unknown error"')"
+            echo "Full association response: $ASSOCIATION"
+            exit 1
+          fi
         fi
         
         # Verify association exists and has valid format
@@ -671,9 +667,17 @@ runs:
         
         # Check if production log response is valid
         if ! echo "$PRODUCTION_LOG" | jq -e '.result' > /dev/null; then
-          echo "⚠️ Block production log not available yet (this is expected during initial sync)"
-          echo "Response: $PRODUCTION_LOG"
-          exit 0  # Exit with success since this is expected behavior
+          # Check if the error is UnknownBlock or if result is null, which is expected during initial sync
+          if echo "$PRODUCTION_LOG" | jq -e '.error.message | contains("UnknownBlock")' > /dev/null || \
+             echo "$PRODUCTION_LOG" | jq -e '.result == null' > /dev/null; then
+            echo "⚠️ Block production log not available yet (this is expected during initial sync)"
+            echo "Response: $PRODUCTION_LOG"
+            exit 0  # Exit with success since this is expected behavior
+          else
+            echo "❌ Failed to get block production log: $(echo "$PRODUCTION_LOG" | jq -r '.error.message // "Unknown error"')"
+            echo "Full production log response: $PRODUCTION_LOG"
+            exit 1
+          fi
         fi
         
         # Verify production log exists and has valid format

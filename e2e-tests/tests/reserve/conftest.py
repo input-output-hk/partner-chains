@@ -5,6 +5,7 @@ from src.cardano_cli import cbor_to_bech32, hex_to_bech32
 from src.partner_chains_node.models import Reserve, VFunction
 import json
 import logging
+import time
 
 
 @fixture(scope="session")
@@ -129,8 +130,16 @@ def v_function_factory(
             logging.info(f"Attaching V-function to UTXO at address {v_function_address}...")
             attach_v_function_to_utxo(v_function_address, script_path)
             
+            # Add a small delay to allow the transaction to be processed
+            time.sleep(5)
+            
             logging.info("Waiting for reference UTXO to be available...")
             try:
+                # First check if we can see any UTXOs at the address
+                current_utxos = api.cardano_cli.get_utxos(v_function_address)
+                logging.info(f"Current UTXOs at address before wait: {current_utxos}")
+                
+                # Try to find the reference UTXO
                 utxo = wait_until(
                     reference_utxo, 
                     v_function_address, 
@@ -148,6 +157,14 @@ def v_function_factory(
                     logging.error(f"Current UTXOs at address: {current_utxos}")
                 except Exception as utxo_err:
                     logging.error(f"Failed to get current UTXOs: {utxo_err}")
+                
+                # Check if the transaction was submitted successfully
+                try:
+                    tx_status = api.cardano_cli.get_transaction_status(script_hash)
+                    logging.error(f"Transaction status: {tx_status}")
+                except Exception as tx_err:
+                    logging.error(f"Failed to get transaction status: {tx_err}")
+                
                 raise TimeoutError(f"V-function reference UTXO not found after {config.timeouts.main_chain_tx}s. Check logs for details.") from e
             
             v_function = VFunction(
