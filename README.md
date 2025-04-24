@@ -2,7 +2,7 @@
 
 :chains: Toolkit for maintaining and securing [Substrate](https://polkadot.com/) based blockchains with the Cardano ecosystem
 
-![polkadot-sdk](https://img.shields.io/badge/polkadot--sdk-stable2412--1-blue)
+![polkadot-sdk](https://img.shields.io/badge/polkadot--sdk-stable2503-blue)
 [![language](https://img.shields.io/badge/language-Rust-239120)]()
 [![OS](https://img.shields.io/badge/OS-linux%2C%20macOS-0078D4)]()
 [![CPU](https://img.shields.io/badge/CPU-x64%2C%20ARM64-FF8C00)]()
