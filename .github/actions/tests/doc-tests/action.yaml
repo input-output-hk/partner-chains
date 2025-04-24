@@ -1,8 +1,5 @@
 name: "Documentation Tests"
 description: "Verifies documentation correctness"
-inputs: {}
-
-outputs: {}
 
 runs:
   using: "composite"
