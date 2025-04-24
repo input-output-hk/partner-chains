@@ -10,7 +10,7 @@ const DB_CONNECTION_STRING: &str =
 const SIDECHAIN_BLOCK_BENEFICIARY_STRING: &str =
 	"01e552298e47454041ea31273b4b630c64c104e4514aa3643490b8aaca9cf8ed";
 fn keystore_path() -> String {
-	format!("{DATA_PATH}/chains/{DEFAULT_CHAIN_NAME}/keystore")
+	format!("{DATA_PATH}/keystore")
 }
 const GRANDPA_PREFIX: &str = "6772616e"; // "gran" in hex
 const CROSS_CHAIN_PREFIX: &str = "63726368"; // "crch" in hex
@@ -80,7 +80,7 @@ fn default_chain_config_run_command() -> String {
          MC__FIRST_SLOT_NUMBER='{FIRST_SLOT_NUMBER}' \\
          BLOCK_STABILITY_MARGIN='0' \\
 		 SIDECHAIN_BLOCK_BENEFICIARY='{SIDECHAIN_BLOCK_BENEFICIARY_STRING}' \\
- <mock executable> --validator --chain {CHAIN_SPEC_FILE} --base-path {DATA_PATH} --port {node_ws_port} --bootnodes {BOOTNODE}"
+ <mock executable> --validator --chain {CHAIN_SPEC_FILE} --base-path {DATA_PATH} --keystore-path {DATA_PATH}/keystore --node-key-file {DATA_PATH}/network/secret_ed25519 --port {node_ws_port} --bootnodes {BOOTNODE}"
 	)
 }
 

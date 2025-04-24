@@ -1,5 +1,4 @@
 use self::config::KEYS_FILE_PATH;
-use crate::config::config_values::DEFAULT_CHAIN_NAME;
 use crate::io::IOContext;
 use crate::keystore::*;
 use crate::permissioned_candidates::PermissionedCandidateKeys;
@@ -16,31 +15,31 @@ pub struct GenerateKeysCmd {}
 
 #[derive(Debug)]
 pub struct GenerateKeysConfig {
-	pub chain_name: String,
 	pub substrate_node_base_path: String,
 }
 impl GenerateKeysConfig {
 	pub fn load<C: IOContext>(context: &C) -> Self {
 		Self {
-			chain_name: DEFAULT_CHAIN_NAME.into(),
 			substrate_node_base_path: config_fields::SUBSTRATE_NODE_DATA_BASE_PATH
 				.load_or_prompt_and_save(context),
 		}
 	}
 	fn keystore_path(&self) -> String {
-		keystore_path(&self.substrate_node_base_path, &self.chain_name)
+		keystore_path(&self.substrate_node_base_path)
 	}
+
 	fn network_key_path(&self) -> String {
-		let Self { chain_name, substrate_node_base_path, .. } = self;
-		network_key_path(substrate_node_base_path, chain_name)
+		let Self { substrate_node_base_path, .. } = self;
+		network_key_path(substrate_node_base_path)
 	}
 }
 
-pub fn network_key_path(substrate_node_base_path: &str, chain_name: &str) -> String {
-	format!("{substrate_node_base_path}/chains/{chain_name}/network/secret_ed25519")
+fn network_key_directory(substrate_node_base_path: &str) -> String {
+	format!("{substrate_node_base_path}/network")
 }
-pub fn keystore_path(substrate_node_base_path: &str, chain_name: &str) -> String {
-	format!("{substrate_node_base_path}/chains/{chain_name}/keystore")
+
+pub fn network_key_path(substrate_node_base_path: &str) -> String {
+	format!("{}/secret_ed25519", network_key_directory(substrate_node_base_path))
 }
 
 impl CmdRun for GenerateKeysCmd {
@@ -162,12 +161,15 @@ pub fn generate_network_key<C: IOContext>(
 }
 
 fn run_generate_network_key<C: IOContext>(
-	GenerateKeysConfig { substrate_node_base_path, .. }: &GenerateKeysConfig,
+	config: &GenerateKeysConfig,
 	context: &C,
 ) -> anyhow::Result<()> {
 	let node_executable = context.current_executable()?;
+	let network_key_directory = network_key_directory(&config.substrate_node_base_path);
+	let network_key_path = config.network_key_path();
+	context.run_command(&format!("mkdir -p {network_key_directory}"))?;
 	context.run_command(&format!(
-		"{node_executable} key generate-node-key --base-path {substrate_node_base_path}"
+		"{node_executable} key generate-node-key --file {network_key_path}"
 	))?;
 	Ok(())
 }
@@ -200,17 +202,17 @@ pub fn generate_keys<C: IOContext>(
 
 pub fn store_keys<C: IOContext>(
 	context: &C,
-	GenerateKeysConfig { chain_name, substrate_node_base_path: base_path }: &GenerateKeysConfig,
+	GenerateKeysConfig { substrate_node_base_path: base_path }: &GenerateKeysConfig,
 	key_def: &KeyDefinition,
 	KeyGenerationOutput { secret_phrase, public_key }: &KeyGenerationOutput,
 ) -> anyhow::Result<()> {
 	let node_executable = context.current_executable()?;
 	let KeyDefinition { scheme, key_type, name } = key_def;
 	context.eprint(&format!("💾 Inserting {name} ({scheme}) key"));
-	let cmd = format!("{node_executable} key insert --base-path {base_path} --scheme {scheme} --key-type {key_type} --suri '{secret_phrase}'");
+	let keystore_path = keystore_path(base_path);
+	let cmd = format!("{node_executable} key insert --keystore-path {keystore_path} --scheme {scheme} --key-type {key_type} --suri '{secret_phrase}'");
 	let _ = context.run_command(&cmd)?;
-	let store_path =
-		format!("{base_path}/chains/{chain_name}/keystore/{}{public_key}", key_def.key_type_hex(),);
+	let store_path = format!("{}/{}{public_key}", keystore_path, key_def.key_type_hex(),);
 	context.eprint(&format!("💾 {name} key stored at {store_path}",));
 	Ok(())
 }

@@ -1,5 +1,4 @@
 use crate::config::config_fields::{BOOTNODES, SUBSTRATE_NODE_DATA_BASE_PATH};
-use crate::config::config_values::DEFAULT_CHAIN_NAME;
 use crate::generate_keys::network_key_path;
 use crate::io::IOContext;
 use crate::prepare_configuration::prepare_main_chain_config::prepare_main_chain_config;
@@ -115,12 +114,10 @@ fn deconstruct_bootnode(bootnode_opt: Option<String>) -> Option<(Protocol, Strin
 }
 
 fn peer_id_from_config(context: &impl IOContext) -> anyhow::Result<String> {
-	let chain_name: String = DEFAULT_CHAIN_NAME.into();
-
 	let substrate_node_base_path =
 		SUBSTRATE_NODE_DATA_BASE_PATH.prompt_with_default_from_file_and_save(context);
 
-	let network_key_path = network_key_path(&substrate_node_base_path, &chain_name);
+	let network_key_path = network_key_path(&substrate_node_base_path);
 
 	peer_id_from_network_key(
 		context
@@ -213,11 +210,10 @@ pub mod tests {
 	use crate::{verify_json, CommonArguments};
 
 	const KEY: &str = "962515971a22aa95706c2109ba6e9502c7f39b33bdf63024f46f77894424f1fe";
-	pub const CHAIN_NAME: &str = "partner_chains_template";
 	pub const DATA_PATH: &str = "/path/to/data";
 
 	fn network_key_file() -> String {
-		format!("{DATA_PATH}/chains/{CHAIN_NAME}/network/secret_ed25519")
+		format!("{DATA_PATH}/network/secret_ed25519")
 	}
 
 	pub mod scenarios {
