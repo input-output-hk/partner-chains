@@ -13,13 +13,12 @@ _Note_: _This alpha release is just the beginning of the journey. It is intended
 
 
 ### Table of Contents
-
-- [About](#about)
-- [Prerequisites](#prerequisites)
-- [How to Build](#how_to_build)
-- [How to Test](#how_to_test)
-- [Documentation](#documentation)
-- [License](#license)
+  * [About](#information_source-about)
+  * [Prerequisites](#warning-prerequisites)
+  * [How to Build](#hammer_and_wrench-how-to-build)
+  * [How to Test](#white_check_mark-how-to-test)
+  * [Documentation](#books-documentation)
+  * [License](#-license)
 
 ### :information_source: About
 
