@@ -87,7 +87,7 @@ pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"blokpart";
 pub struct DelegatorBlockParticipationData<DelegatorId> {
 	/// Delegator Id
 	pub id: DelegatorId,
-	/// Share of the delegator's stake _in the context of the enclosing block producer's data_.
+	/// Number of this delegator's shares in the pool operated by the block producer of the enclosing [BlockProducerParticipationData].
 	pub share: u64,
 }
 
