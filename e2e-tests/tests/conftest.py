@@ -18,6 +18,7 @@ from filelock import FileLock
 from typing import Generator
 import time
 import uuid
+import pytest
 
 _config: ApiConfig = None
 partner_chain_rpc_api: PartnerChainRpc = None
