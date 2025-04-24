@@ -6976,8 +6976,6 @@ dependencies = [
  "partner-chains-demo-runtime",
  "partner-chains-mock-data-sources",
  "partner-chains-node-commands",
- "plutus",
- "plutus-datum-derive",
  "sc-basic-authorship",
  "sc-cli",
  "sc-client-api",
@@ -7372,8 +7370,6 @@ dependencies = [
  "minicbor",
  "num-bigint",
  "num-traits",
- "serde",
- "serde_json",
 ]
 
 [[package]]

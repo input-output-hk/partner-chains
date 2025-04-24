@@ -44,8 +44,6 @@ sp-consensus-grandpa = { workspace = true }
 sc-client-api = { workspace = true }
 # This node template uses RocksDB as the storage backend by default.
 sc-client-db = { workspace = true, features = ["rocksdb"] }
-plutus = { workspace = true }
-plutus-datum-derive = { workspace = true }
 sp-runtime = { workspace = true }
 sp-io = { workspace = true }
 sp-timestamp = { workspace = true }
