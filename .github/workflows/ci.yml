@@ -204,6 +204,64 @@ jobs:
           ./report_slack.sh $repository $slack_ref_name $job_url $env $github_actor_username null
         shell: bash
 
+  local-env-multisig-tests:
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
+    needs: build-linux-x86_64-pre-merge
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Deploy and test against local environment
+        uses: ./.github/actions/tests/local-environment-tests
+        with:
+          tag: CI
+          image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
+          sha: ${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
+          tests: premerge
+          multisig: true
+        env:
+          SUBSTRATE_REPO_SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
+          EARTHLY_TAR: ${{ secrets.EARTHLY_TAR }}
+          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+          AWS_REGION: ${{ env.AWS_REGION }}
+          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
+          TEST_ENVIRONMENT: local
+
+  local-env-multisig-tests-alert:
+    needs: local-env-multisig-tests
+    if: always() && needs.local-env-multisig-tests.result != 'skipped' && github.event_name == 'pull_request' && github.event.pull_request.merged == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Create logs directory
+        run: mkdir -p e2e-tests/logs
+      - name: Download test report
+        uses: actions/download-artifact@v4
+        with:
+          name: test-results
+          path: e2e-tests/logs
+      - name: Report to slack
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          JIRA_URL: ${{ secrets.JIRA_URL }}
+          repository: ${{ github.repository }}
+          slack_ref_name: ${{ github.ref_name }}
+          job_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          github_actor_username: ${{ github.actor }}
+          env: local-pre-merge-multisig
+        run: |
+          cd e2e-tests
+          ./report_slack.sh $repository $slack_ref_name $job_url $env $github_actor_username null
+        shell: bash
+
   devshell-tests:
     needs: build-linux-x86_64-pre-merge
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
@@ -257,13 +315,14 @@ jobs:
 
   pre-merge-checks-complete:
     if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.merged == false }}
-    needs: [build-linux-x86_64-pre-merge, local-environment-tests, devshell-tests, upload-chain-specs-pre-merge]
+    needs: [build-linux-x86_64-pre-merge, local-environment-tests, local-env-multisig-tests, devshell-tests, upload-chain-specs-pre-merge]
     runs-on: ubuntu-latest
     steps:
       - name: Check if any needed job failed
         run: |
           if [[ "${{ needs.build-linux-x86_64-pre-merge.result }}" != "success" ||
                 "${{ needs.local-environment-tests.result }}" != "success" ||
+                "${{ needs.local-env-multisig-tests.result }}" != "success" ||
                 "${{ needs.devshell-tests.result }}" != "success" ||
                 "${{ needs.upload-chain-specs-pre-merge.result }}" != "success" ]]; then
             echo "One or more needed jobs failed."
