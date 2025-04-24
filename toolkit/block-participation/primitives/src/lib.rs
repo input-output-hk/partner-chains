@@ -275,7 +275,7 @@ pub mod inherent_data {
 	///   from the block production log pallet.
 	#[derive(Debug, Clone, PartialEq)]
 	pub enum BlockParticipationInherentDataProvider<BlockProducerId, DelegatorId> {
-		/// Active varian of the IDP that will provide inherent data stored in `block_production_data` at the
+		/// Active variant of the IDP that will provide inherent data stored in `block_production_data` at the
 		/// inherent ID stored in `target_inherent_id`.
 		Active {
 			/// Inherent ID under which inherent data will be provided
