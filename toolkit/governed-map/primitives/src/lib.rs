@@ -97,8 +97,8 @@ use sidechain_domain::{byte_string::*, *};
 #[cfg(feature = "std")]
 use sp_api::*;
 use sp_inherents::*;
-use sp_runtime::BoundedVec;
 use sp_runtime::traits::Get;
+use sp_runtime::BoundedVec;
 
 #[cfg(any(test, feature = "mock"))]
 mod mock;
@@ -125,8 +125,8 @@ pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"govrnmap";
 pub struct MainChainScriptsV1 {
 	/// Cardano address of the Governed Map validator, at which UTXOs containig key-value pairs are located
 	pub validator_address: MainchainAddress,
-	/// Policy of the asset used to mark the UTXOs containing the Governed Map's key-value pairs
-	pub asset_policy_id: PolicyId,
+	/// Asset used to mark the UTXOs containing the Governed Map's key-value pairs
+	pub asset: AssetId,
 }
 
 /// Type describing a change made to a single key-value pair in the Governed Map.
@@ -284,7 +284,7 @@ impl sp_inherents::InherentDataProvider for GovernedMapInherentDataProvider {
 #[cfg(feature = "std")]
 #[async_trait::async_trait]
 pub trait GovernedMapDataSource {
-	/// Queries all changes that occurred in the mappings of the Governed Map on Cardano in the given range of blocks.
+	/// Queries all changes that occured in the mappings of the Governed Map on Cardano in the given range of blocks.
 	///
 	/// # Arguments:
 	/// - `since_mc_block`: lower bound (exclusive). If [None], the data source should return all changes since the genesis block.

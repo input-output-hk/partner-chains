@@ -72,7 +72,10 @@ async fn test_governed_map_upsert(pool: PgPool) {
 
 fn scripts() -> MainChainScriptsV1 {
 	MainChainScriptsV1 {
-		asset_policy_id: PolicyId(hex!("500000000000000000000000000000000000434845434b504f494e69")),
+		asset: AssetId {
+			policy_id: PolicyId(hex!("500000000000000000000000000000000000434845434b504f494e69")),
+			asset_name: AssetName::empty(),
+		},
 		validator_address: MainchainAddress::from_str("governed_map_test_address").unwrap(),
 	}
 }

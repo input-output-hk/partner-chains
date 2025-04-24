@@ -1,7 +1,6 @@
 use crate::DataSourceError::ExpectedDataNotFound;
 use crate::Result;
 use crate::{metrics::McFollowerMetrics, observed_async_trait};
-use db_sync_sqlx::Asset;
 use derive_new::new;
 use log::warn;
 use partner_chains_plutus_data::governed_map::GovernedMapDatum;
@@ -71,7 +70,7 @@ impl GovernedMapDataSourceImpl {
 			&self.pool,
 			&scripts.validator_address.into(),
 			block.block_no,
-			Asset::new(scripts.asset_policy_id),
+			scripts.asset.into(),
 		)
 		.await?;
 
