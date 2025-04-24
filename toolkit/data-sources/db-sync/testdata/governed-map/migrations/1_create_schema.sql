@@ -159,7 +159,8 @@ CREATE TABLE tx_out (
     payment_cred hash28type,
     stake_address_id bigint,
     value lovelace NOT NULL,
-    data_hash hash32type
+    data_hash hash32type,
+    comment varchar
 );
 
 CREATE TABLE redeemer (

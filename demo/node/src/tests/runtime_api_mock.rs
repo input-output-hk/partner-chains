@@ -4,7 +4,6 @@ use authority_selection_inherents::CommitteeMember;
 use hex_literal::hex;
 use partner_chains_demo_runtime::opaque::SessionKeys;
 use partner_chains_demo_runtime::{BlockAuthor, CrossChainPublic};
-use sidechain_domain::byte_string::ByteString;
 use sidechain_domain::*;
 use sidechain_mc_hash::McHashInherentDigest;
 use sidechain_slots::Slot;
@@ -140,9 +139,6 @@ sp_api::mock_impl_runtime_apis! {
 	}
 
 	impl sp_governed_map::GovernedMapIDPApi<Block> for TestApi {
-		fn get_stored_mappings() -> BTreeMap<String, ByteString> {
-			Default::default()
-		}
 		fn get_main_chain_scripts() -> Option<MainChainScriptsV1> {
 			Default::default()
 		}

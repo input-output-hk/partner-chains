@@ -96,8 +96,9 @@ pub async fn create_cached_db_sync_data_sources(
 			metrics_opt,
 			STAKE_CACHE_SIZE,
 		)),
-		governed_map: Arc::new(GovernedMapDataSourceMock::new(
-			[("key1".into(), vec![1, 2, 3].into())].into(),
-		)),
+		governed_map: Arc::new(GovernedMapDataSourceMock::new(vec![(
+			"key1".into(),
+			Some(vec![1, 2, 3].into()),
+		)])),
 	})
 }
