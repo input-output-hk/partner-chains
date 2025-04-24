@@ -73,5 +73,8 @@ Chain Toolkit offers and how to use it for different use-cases.
 
 ### 📃 License
 
-This project is distributed under the Apache License 2.0. You can review the full license agreement
-at the following link: [LICENSE](./LICENSE).
+This project is primarly distributed under the Apache License 2.0. You can review the full license
+agreement at the following link: [LICENSE](./LICENSE).
+Parts of the code are distributed under the GPL v3.0 with "Classpath exception". You can review
+the full license at the following link:
+[GPL v3.0 with Classpath exception](./LICENSE-GPL3-with-classpath-exception).
