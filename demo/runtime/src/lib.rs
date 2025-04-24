@@ -975,7 +975,7 @@ impl_runtime_apis! {
 		fn get_metadata_for(
 			cross_chain_pub_key: &CrossChainPublicKey,
 		) -> Option<BlockProducerMetadataType> {
-			pallet_block_producer_metadata::BlockProducerMetadataStorage::<Runtime>::get(cross_chain_pub_key.hash())
+			BlockProducerMetadata::get_metadata_for(&cross_chain_pub_key)
 		}
 	}
 
