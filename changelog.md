@@ -30,6 +30,7 @@ the feature `pallet-session-compat`.
 
 ## Fixed
 
+* `prepare-configuration` wizard now updates existing `chain_parameters.genesis_utxo` field in `pc-chain-config.json`
 * MC Hash inherent data provider will not propose older MC state than one already present in the ledger
 * `governance init` when genesis utxo had a script attached, then transaction fee was sometimes calculated incorrectly
 

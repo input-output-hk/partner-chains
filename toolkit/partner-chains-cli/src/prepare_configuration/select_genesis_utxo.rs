@@ -1,6 +1,6 @@
 use crate::cardano_key;
 use crate::config::config_fields::{self, GENESIS_UTXO};
-use crate::config::{ConfigFieldDefinition, ServiceConfig};
+use crate::config::ServiceConfig;
 use crate::io::IOContext;
 use crate::ogmios::config::prompt_ogmios_configuration;
 use crate::ogmios::get_shelley_config;
@@ -8,7 +8,6 @@ use crate::select_utxo::{query_utxos, select_from_utxos};
 use anyhow::anyhow;
 use partner_chains_cardano_offchain::cardano_keys::CardanoPaymentSigningKey;
 use partner_chains_cardano_offchain::csl::NetworkTypeExt;
-use serde::de::DeserializeOwned;
 use sidechain_domain::{NetworkType, UtxoId};
 
 pub fn select_genesis_utxo<C: IOContext>(
@@ -29,7 +28,7 @@ pub fn select_genesis_utxo<C: IOContext>(
 	let genesis_utxo =
 		select_from_utxos(context, "Select an UTXO to use as the genesis UTXO", utxo_query_result)?;
 
-	save_if_missing(GENESIS_UTXO, genesis_utxo, context);
+	GENESIS_UTXO.save_to_file(&genesis_utxo, context);
 	Ok((genesis_utxo, private_key, ogmios_configuration))
 }
 
@@ -39,15 +38,6 @@ fn get_private_key<C: IOContext>(context: &C) -> Result<CardanoPaymentSigningKey
 	let pkey =
 		cardano_key::get_mc_payment_signing_key_from_file(&cardano_signing_key_file, context)?;
 	Ok(pkey)
-}
-
-fn save_if_missing<T, C: IOContext>(field: ConfigFieldDefinition<'_, T>, new_value: T, context: &C)
-where
-	T: DeserializeOwned + std::fmt::Display + serde::Serialize,
-{
-	if field.load_from_file_and_print(context).is_none() {
-		field.save_to_file(&new_value, context);
-	}
 }
 
 fn derive_address(
@@ -66,7 +56,7 @@ const INTRO: &str = "Now, let's set up the genesis UTXO. It identifies the partn
 #[cfg(test)]
 mod tests {
 	use crate::config::config_fields::GENESIS_UTXO;
-	use crate::config::RESOURCES_CONFIG_FILE_PATH;
+	use crate::config::{CHAIN_CONFIG_FILE_PATH, RESOURCES_CONFIG_FILE_PATH};
 	use crate::ogmios::config::tests::{
 		default_ogmios_config_json, default_ogmios_service_config, prompt_ogmios_configuration_io,
 	};
@@ -89,6 +79,7 @@ mod tests {
 	fn happy_path() {
 		let mock_context = MockIOContext::new()
 			.with_file(RESOURCES_CONFIG_FILE_PATH, "{}")
+			.with_file(CHAIN_CONFIG_FILE_PATH, &chain_config_file_with_old_genesis_utxo())
 			.with_json_file("payment.skey", payment_key_content())
 			.with_expected_io(vec![
 				MockIO::eprint(INTRO),
@@ -119,6 +110,10 @@ mod tests {
 			RESOURCES_CONFIG_FILE_PATH,
 			serde_json::json!({"cardano_payment_signing_key_file": "payment.skey", "ogmios": default_ogmios_config_json()})
 		);
+	}
+
+	fn chain_config_file_with_old_genesis_utxo() -> String {
+		serde_json::json!({"chain_parameters": {"genesis_utxo": "0000000000000000000000000000000000000000000000000000000000000000#1"}}).to_string()
 	}
 
 	fn read_shelly_config_to_get_network() -> MockIO {
