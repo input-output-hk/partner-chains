@@ -149,7 +149,7 @@ pub struct ListCmd {
 impl ListCmd {
 	pub async fn execute(self) -> crate::SubCmdResult {
 		let client = self.common_arguments.get_ogmios_client().await?;
-		let mut kv_pairs: HashMap<_, _> = run_list(self.genesis_utxo.into(), &client)
+		let kv_pairs: HashMap<_, _> = run_list(self.genesis_utxo.into(), &client)
 			.await?
 			.map(|datum| (datum.key, datum.value.to_hex_string()))
 			.collect();
