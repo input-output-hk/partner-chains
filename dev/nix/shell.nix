@@ -4,14 +4,37 @@
       isLinux = pkgs.lib.hasSuffix "linux" system;
       isDarwin = pkgs.lib.hasSuffix "darwin" system;
       fenixPkgs = inputs'.fenix.packages;
-      rustToolchain = with fenixPkgs;
-        fromToolchainFile {
+      rustToolchain = fenixPkgs.fromToolchainFile {
           file = ../../rust-toolchain.toml;
           sha256 = "X/4ZBHO3iW0fOenQ3foEvscgAPJYl2abspaBThDOukI=";
         };
     in
     {
       devShells = {
+
+        # This shell is provided only for generating cargo docs which requires
+        # cargo doc from nightly to generate an index page
+        nightly = pkgs.mkShell rec {
+          RUST_SRC_PATH = "${rustToolchain}/lib/rustlib/src/rust/library";
+          LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
+          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [ rustToolchain pkgs.stdenv.cc.cc pkgs.libz ];
+
+          nightlyCargo = (fenixPkgs.toolchainOf {
+            channel = "nightly";
+            sha256 = "sha256-Xq3Xj6F7Rsi0vbSVY+HO5YdhxfEKgGhJ9259iDozjDs=";
+          }).cargo;
+
+          gen-cargo-docs = pkgs.writeScriptBin "gen-cargo-docs" ''
+            RUSTDOCFLAGS="--enable-index-page -Zunstable-options" ${nightlyCargo}/bin/cargo doc --no-deps
+          '';
+
+          packages = with pkgs; [
+            gen-cargo-docs
+            pkg-config
+            protobuf
+          ];
+        };
+
         default = pkgs.mkShell {
           # envs needed for rust toochain
           RUST_SRC_PATH = "${rustToolchain}/lib/rustlib/src/rust/library";
