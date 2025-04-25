@@ -7,9 +7,7 @@ mod inherent_provider {
 	use crate::inherent_provider::*;
 	use crate::{InherentError, MainChainScripts, INHERENT_IDENTIFIER};
 	use sidechain_domain::*;
-	use sidechain_mc_hash::MC_HASH_DIGEST_ID;
 	use sp_inherents::{InherentData, InherentDataProvider};
-	use sp_runtime::testing::{Digest, DigestItem};
 	use std::sync::Arc;
 
 	#[test]
@@ -34,8 +32,6 @@ mod inherent_provider {
 
 	#[tokio::test]
 	async fn correctly_fetches_total_transfer_between_two_hashes() {
-		let parent_number = 1; // not genesis
-
 		let mc_hash = McBlockHash([1; 32]);
 		let parent_hash = Hash::from([2; 32]);
 		let parent_mc_hash = Some(McBlockHash([3; 32]));
@@ -44,12 +40,13 @@ mod inherent_provider {
 		let data_source =
 			create_data_source(parent_mc_hash.clone(), mc_hash.clone(), total_transfered);
 		let main_chain_scripts = Some(MainChainScripts::default());
-		let client = create_client(parent_hash, parent_mc_hash, parent_number, main_chain_scripts);
+		let client = create_client(main_chain_scripts);
 
 		let inherent_provider = NativeTokenManagementInherentDataProvider::new(
 			client,
 			&data_source,
 			mc_hash,
+			parent_mc_hash,
 			parent_hash,
 		)
 		.await
@@ -60,8 +57,6 @@ mod inherent_provider {
 
 	#[tokio::test]
 	async fn fetches_with_no_lower_bound_when_parent_is_genesis() {
-		let parent_number = 0; // genesis
-
 		let mc_hash = McBlockHash([1; 32]);
 		let parent_hash = Hash::from([2; 32]);
 		let parent_mc_hash = None; // genesis doesn't refer to any mc hash
@@ -70,12 +65,13 @@ mod inherent_provider {
 		let data_source =
 			create_data_source(parent_mc_hash.clone(), mc_hash.clone(), total_transfered);
 		let main_chain_scripts = Some(MainChainScripts::default());
-		let client = create_client(parent_hash, parent_mc_hash, parent_number, main_chain_scripts);
+		let client = create_client(main_chain_scripts);
 
 		let inherent_provider = NativeTokenManagementInherentDataProvider::new(
 			client,
 			&data_source,
 			mc_hash,
+			parent_mc_hash,
 			parent_hash,
 		)
 		.await
@@ -86,20 +82,19 @@ mod inherent_provider {
 
 	#[tokio::test]
 	async fn defaults_to_none_when_no_data() {
-		let parent_number = 1;
-
 		let mc_hash = McBlockHash([1; 32]);
 		let parent_hash = Hash::from([2; 32]);
 		let parent_mc_hash = Some(McBlockHash([3; 32]));
 
 		let data_source = MockNativeTokenDataSource::new([].into());
 		let main_chain_scripts = Some(MainChainScripts::default());
-		let client = create_client(parent_hash, parent_mc_hash, parent_number, main_chain_scripts);
+		let client = create_client(main_chain_scripts);
 
 		let inherent_provider = NativeTokenManagementInherentDataProvider::new(
 			client,
 			&data_source,
 			mc_hash,
+			parent_mc_hash,
 			parent_hash,
 		)
 		.await
@@ -110,8 +105,6 @@ mod inherent_provider {
 
 	#[tokio::test]
 	async fn defaults_to_none_when_scripts_are_unset() {
-		let parent_number = 1; // not genesis
-
 		let mc_hash = McBlockHash([1; 32]);
 		let parent_hash = Hash::from([2; 32]);
 		let parent_mc_hash = Some(McBlockHash([3; 32]));
@@ -120,12 +113,13 @@ mod inherent_provider {
 		let data_source =
 			create_data_source(parent_mc_hash.clone(), mc_hash.clone(), total_transfered);
 		let main_chain_scripts = None;
-		let client = create_client(parent_hash, parent_mc_hash, parent_number, main_chain_scripts);
+		let client = create_client(main_chain_scripts);
 
 		let inherent_provider = NativeTokenManagementInherentDataProvider::new(
 			client,
 			&data_source,
 			mc_hash,
+			parent_mc_hash,
 			parent_hash,
 		)
 		.await
@@ -165,33 +159,7 @@ mod inherent_provider {
 		MockNativeTokenDataSource::new([((parent_mc_hash, mc_hash), total_transfered)].into())
 	}
 
-	fn create_client(
-		parent_hash: Hash,
-		parent_mc_hash: Option<McBlockHash>,
-		parent_number: u32,
-		main_chain_scripts: Option<MainChainScripts>,
-	) -> Arc<TestApi> {
-		Arc::new(TestApi {
-			headers: [(
-				parent_hash,
-				Header {
-					digest: Digest {
-						logs: match parent_mc_hash {
-							None => vec![],
-							Some(parent_mc_hash) => vec![DigestItem::PreRuntime(
-								MC_HASH_DIGEST_ID,
-								parent_mc_hash.0.to_vec(),
-							)],
-						},
-					},
-					extrinsics_root: Default::default(),
-					number: parent_number,
-					parent_hash,
-					state_root: Default::default(),
-				},
-			)]
-			.into(),
-			main_chain_scripts,
-		})
+	fn create_client(main_chain_scripts: Option<MainChainScripts>) -> Arc<TestApi> {
+		Arc::new(TestApi { main_chain_scripts })
 	}
 }
