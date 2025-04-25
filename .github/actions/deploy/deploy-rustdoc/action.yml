@@ -10,13 +10,6 @@ outputs: {}
 runs:
   using: "composite"
   steps:
-    - name: Install tooling
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y protobuf-compiler
-        protoc --version
-      shell: bash
-
     - name: Checkout repository
       uses: actions/checkout@v4
 
@@ -28,19 +21,11 @@ runs:
         ssh-add - <<< "${{ inputs.ssh_key }}"
       shell: bash
 
-    - name: Rust versions
-      run: rustup show
-      shell: bash
-
     - name: Rust cache
       uses: Swatinem/rust-cache@v2.6.2
 
     - name: Build rustdocs
-      run: SKIP_WASM_BUILD=1 cargo doc --all --no-deps
-      shell: bash
-
-    - name: Make index.html
-      run: echo "<meta http-equiv=refresh content=0;url=partner_chains_demo_node/index.html>" > ./target/doc/index.html
+      run: nix develop .#nightly -c gen-cargo-docs
       shell: bash
 
     - name: Deploy documentation
