@@ -1,30 +1,30 @@
+use authority_selection_inherents::CommitteeMember;
 use authority_selection_inherents::ariadne_inherent_data_provider::AriadneInherentDataProvider as AriadneIDP;
 use authority_selection_inherents::authority_selection_inputs::{
 	AuthoritySelectionDataSource, AuthoritySelectionInputs,
 };
-use authority_selection_inherents::CommitteeMember;
 use derive_new::new;
 use jsonrpsee::core::async_trait;
 use partner_chains_demo_runtime::{
-	opaque::{Block, SessionKeys},
 	BlockAuthor, CrossChainPublic,
+	opaque::{Block, SessionKeys},
 };
-use sc_consensus_aura::{find_pre_digest, SlotDuration};
+use sc_consensus_aura::{SlotDuration, find_pre_digest};
 use sc_service::Arc;
 use sidechain_domain::{
-	mainchain_epoch::MainchainEpochConfig, DelegatorKey, McBlockHash, ScEpochNumber,
+	DelegatorKey, McBlockHash, ScEpochNumber, mainchain_epoch::MainchainEpochConfig,
 };
 use sidechain_mc_hash::{McHashDataSource, McHashInherentDataProvider as McHashIDP};
 use sidechain_slots::ScSlotConfig;
 use sp_api::ProvideRuntimeApi;
 use sp_block_participation::{
-	inherent_data::{BlockParticipationDataSource, BlockParticipationInherentDataProvider},
 	BlockParticipationApi,
+	inherent_data::{BlockParticipationDataSource, BlockParticipationInherentDataProvider},
 };
 use sp_block_production_log::{BlockAuthorInherentProvider, BlockProductionLogApi};
 use sp_blockchain::HeaderBackend;
 use sp_consensus_aura::{
-	inherents::InherentDataProvider as AuraIDP, sr25519::AuthorityPair as AuraPair, Slot,
+	Slot, inherents::InherentDataProvider as AuraIDP, sr25519::AuthorityPair as AuraPair,
 };
 use sp_core::Pair;
 use sp_governed_map::{GovernedMapDataSource, GovernedMapIDPApi, GovernedMapInherentDataProvider};
@@ -57,11 +57,11 @@ where
 	T: ProvideRuntimeApi<Block> + Send + Sync + 'static,
 	T: HeaderBackend<Block>,
 	T::Api: SessionValidatorManagementApi<
-		Block,
-		CommitteeMember<CrossChainPublic, SessionKeys>,
-		AuthoritySelectionInputs,
-		ScEpochNumber,
-	>,
+			Block,
+			CommitteeMember<CrossChainPublic, SessionKeys>,
+			AuthoritySelectionInputs,
+			ScEpochNumber,
+		>,
 	T::Api: NativeTokenManagementApi<Block>,
 	T::Api: BlockProductionLogApi<Block, CommitteeMember<CrossChainPublic, SessionKeys>>,
 	T::Api: BlockParticipationApi<Block, BlockAuthor>,
@@ -179,11 +179,11 @@ impl<T> CreateInherentDataProviders<Block, (Slot, McBlockHash)> for VerifierCIDP
 where
 	T: ProvideRuntimeApi<Block> + Send + Sync + HeaderBackend<Block>,
 	T::Api: SessionValidatorManagementApi<
-		Block,
-		CommitteeMember<CrossChainPublic, SessionKeys>,
-		AuthoritySelectionInputs,
-		ScEpochNumber,
-	>,
+			Block,
+			CommitteeMember<CrossChainPublic, SessionKeys>,
+			AuthoritySelectionInputs,
+			ScEpochNumber,
+		>,
 	T::Api: NativeTokenManagementApi<Block>,
 	T::Api: BlockProductionLogApi<Block, CommitteeMember<CrossChainPublic, SessionKeys>>,
 	T::Api: BlockParticipationApi<Block, BlockAuthor>,

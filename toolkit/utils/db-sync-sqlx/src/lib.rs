@@ -13,7 +13,7 @@ use sqlx::*;
 /// See txindex, word31 and word63 types in db-sync schema definition.
 #[macro_export]
 macro_rules! sqlx_implementations_for_wrapper {
-	($WRAPPED:ty, $DBTYPE:expr, $NAME:ty, $DOMAIN:ty) => {
+	($WRAPPED:ty, $DBTYPE:expr_2021, $NAME:ty, $DOMAIN:ty) => {
 		impl sqlx::Type<Postgres> for $NAME {
 			fn type_info() -> <Postgres as sqlx::Database>::TypeInfo {
 				PgTypeInfo::with_name($DBTYPE)

@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
-use quote::quote;
 use quote::ToTokens;
+use quote::quote;
 use syn::Generics;
 
 extern crate alloc;
@@ -50,11 +50,11 @@ fn impl_byte_string_derive(attr: TokenStream, ast: &syn::DeriveInput) -> TokenSt
 		},
 		_ => {
 			return quote! { compile_error!("byte_string needs to wrap an array or (bounded) vec") }
-				.into()
+				.into();
 		},
 	};
 
-	let mut gen = quote! {
+	let mut r#gen = quote! {
 		#ast
 	};
 
@@ -72,13 +72,13 @@ fn impl_byte_string_derive(attr: TokenStream, ast: &syn::DeriveInput) -> TokenSt
 			_other => return quote! { compile_error!("Incorrect byte_string option") }.into(),
 		};
 
-		chunk.to_tokens(&mut gen)
+		chunk.to_tokens(&mut r#gen)
 	}
 
-	gen.into()
+	r#gen.into()
 }
 
-fn gen_debug(name: &syn::Ident, generics: &Generics) -> impl ToTokens {
+fn gen_debug(name: &syn::Ident, generics: &Generics) -> impl ToTokens + use<> {
 	let format_str = format!("{}({{hex}})", name);
 	let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 	quote! {
@@ -91,7 +91,7 @@ fn gen_debug(name: &syn::Ident, generics: &Generics) -> impl ToTokens {
 	}
 }
 
-fn gen_hex_serialize(name: &syn::Ident, generics: &Generics) -> impl ToTokens {
+fn gen_hex_serialize(name: &syn::Ident, generics: &Generics) -> impl ToTokens + use<> {
 	let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
 	quote! {
@@ -111,7 +111,7 @@ fn gen_hex_deserialize(
 	name: &syn::Ident,
 	ty: &SupportedType,
 	generics: &Generics,
-) -> impl ToTokens {
+) -> impl ToTokens + use<> {
 	let type_params = generics.params.clone().into_iter();
 	let (_, ty_generics, where_clause) = generics.split_for_impl();
 
@@ -145,7 +145,11 @@ fn gen_hex_deserialize(
 	}
 }
 
-fn gen_from_num(name: &syn::Ident, ty: &SupportedType, generics: &Generics) -> impl ToTokens {
+fn gen_from_num(
+	name: &syn::Ident,
+	ty: &SupportedType,
+	generics: &Generics,
+) -> impl ToTokens + use<> {
 	let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
 	match ty {
@@ -170,7 +174,11 @@ fn gen_from_num(name: &syn::Ident, ty: &SupportedType, generics: &Generics) -> i
 	}
 }
 
-fn gen_from_bytes(name: &syn::Ident, ty: &SupportedType, generics: &Generics) -> impl ToTokens {
+fn gen_from_bytes(
+	name: &syn::Ident,
+	ty: &SupportedType,
+	generics: &Generics,
+) -> impl ToTokens + use<> {
 	let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
 	match ty {
@@ -192,7 +200,11 @@ fn gen_from_bytes(name: &syn::Ident, ty: &SupportedType, generics: &Generics) ->
 	}
 }
 
-fn gen_from_hex(name: &syn::Ident, ty: &SupportedType, generics: &Generics) -> impl ToTokens {
+fn gen_from_hex(
+	name: &syn::Ident,
+	ty: &SupportedType,
+	generics: &Generics,
+) -> impl ToTokens + use<> {
 	let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
 	let decode_hex = match ty {
@@ -237,7 +249,7 @@ fn gen_from_hex(name: &syn::Ident, ty: &SupportedType, generics: &Generics) -> i
 	}
 }
 
-fn gen_to_hex(name: &syn::Ident, generics: &Generics) -> impl ToTokens {
+fn gen_to_hex(name: &syn::Ident, generics: &Generics) -> impl ToTokens + use<> {
 	let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
 	quote! {
@@ -249,7 +261,7 @@ fn gen_to_hex(name: &syn::Ident, generics: &Generics) -> impl ToTokens {
 	}
 }
 
-fn gen_as_ref(name: &syn::Ident, generics: &Generics) -> impl ToTokens {
+fn gen_as_ref(name: &syn::Ident, generics: &Generics) -> impl ToTokens + use<> {
 	let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
 	quote! {

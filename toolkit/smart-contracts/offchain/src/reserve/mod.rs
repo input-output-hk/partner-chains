@@ -41,17 +41,18 @@ impl ReserveData {
 		client: &T,
 	) -> Result<Self, anyhow::Error> {
 		let version_oracle = scripts_data::version_oracle(genesis_utxo, ctx.network)?;
-		let auth_policy_version_utxo =
-			find_script_utxo(
-				raw_scripts::ScriptId::ReserveAuthPolicy as u32,
-				&version_oracle,
-				ctx,
-				client,
+		let auth_policy_version_utxo = find_script_utxo(
+			raw_scripts::ScriptId::ReserveAuthPolicy as u32,
+			&version_oracle,
+			ctx,
+			client,
+		)
+		.await?
+		.ok_or_else(|| {
+			anyhow!(
+				"Reserve Auth Version Utxo not found, is the Reserve Token Management initialized?"
 			)
-			.await?
-			.ok_or_else(|| {
-				anyhow!("Reserve Auth Version Utxo not found, is the Reserve Token Management initialized?")
-			})?;
+		})?;
 		let validator_version_utxo = find_script_utxo(
 			raw_scripts::ScriptId::ReserveValidator as u32,
 			&version_oracle,
@@ -60,7 +61,9 @@ impl ReserveData {
 		)
 		.await?
 		.ok_or_else(|| {
-			anyhow!("Reserve Validator Version Utxo not found, is the Reserve Token Management initialized?")
+			anyhow!(
+				"Reserve Validator Version Utxo not found, is the Reserve Token Management initialized?"
+			)
 		})?;
 		let illiquid_circulation_supply_validator_version_utxo = find_script_utxo(
 			raw_scripts::ScriptId::IlliquidCirculationSupplyValidator as u32,

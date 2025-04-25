@@ -4,7 +4,7 @@ use frame_support::inherent::{InherentData, ProvideInherent};
 use frame_system::Origin;
 use pretty_assertions::assert_eq;
 use sp_block_participation::BlockProductionData;
-use sp_block_participation::{Slot, INHERENT_IDENTIFIER};
+use sp_block_participation::{INHERENT_IDENTIFIER, Slot};
 use sp_runtime::BoundedVec;
 
 #[test]

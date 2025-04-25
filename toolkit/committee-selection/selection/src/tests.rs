@@ -4,7 +4,7 @@ use quickcheck_macros::*;
 use crate::{Weight, WeightedRandomSelectionConfig};
 
 macro_rules! assert_subset {
-	($type: ident, $subset:expr, $superset:expr) => {
+	($type: ident, $subset:expr_2021, $superset:expr_2021) => {
 		let subset = std::collections::HashSet::<$type>::from_iter($subset.iter().cloned());
 		let superset = std::collections::HashSet::<$type>::from_iter($superset.iter().cloned());
 		assert!(subset.is_subset(&superset), "{:?} was not a subset of {:?}?", subset, superset);

@@ -1,10 +1,10 @@
 use crate::csl::{
-	empty_asset_name, get_builder_config, unit_plutus_data, CostStore, Costs, InputsBuilderExt,
-	NetworkTypeExt, TransactionBuilderExt, TransactionExt,
+	CostStore, Costs, InputsBuilderExt, NetworkTypeExt, TransactionBuilderExt, TransactionExt,
+	empty_asset_name, get_builder_config, unit_plutus_data,
 };
 use crate::governance::GovernanceData;
-use crate::multisig::submit_or_create_tx_to_sign;
 use crate::multisig::MultiSigSmartContractResult::TransactionSubmitted;
+use crate::multisig::submit_or_create_tx_to_sign;
 use crate::plutus_script::PlutusScript;
 use crate::{
 	await_tx::AwaitTx, cardano_keys::CardanoPaymentSigningKey, csl::TransactionContext,
@@ -21,7 +21,7 @@ use ogmios_client::{
 	types::OgmiosUtxo,
 };
 use partner_chains_plutus_data::governed_map::{
-	governed_map_datum_to_plutus_data, GovernedMapDatum,
+	GovernedMapDatum, governed_map_datum_to_plutus_data,
 };
 use sidechain_domain::byte_string::ByteString;
 use sidechain_domain::{PolicyId, UtxoId};
@@ -391,7 +391,7 @@ fn remove_key_value_tx(
 pub async fn run_list<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId>(
 	genesis_utxo: UtxoId,
 	ogmios_client: &C,
-) -> anyhow::Result<impl Iterator<Item = GovernedMapDatum>> {
+) -> anyhow::Result<impl Iterator<Item = GovernedMapDatum> + use<C>> {
 	let network = ogmios_client.shelley_genesis_configuration().await?.network.to_csl();
 	let (validator, policy) = crate::scripts_data::governed_map_scripts(genesis_utxo, network)?;
 	let validator_address = validator.address_bech32(network)?;

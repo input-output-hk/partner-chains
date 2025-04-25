@@ -8,8 +8,8 @@ use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sidechain_domain::{byte_string::*, *};
 use sp_inherents::*;
-use sp_runtime::traits::Get;
 use sp_runtime::BoundedVec;
+use sp_runtime::traits::Get;
 #[cfg(feature = "std")]
 use {sp_api::*, std::collections::BTreeMap};
 

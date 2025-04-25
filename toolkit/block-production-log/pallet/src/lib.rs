@@ -189,11 +189,16 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_finalize(block: BlockNumberFor<T>) {
-			if let Some(block_producer_id) = CurrentProducer::<T>::take() {
-				log::info!("👷 Block {block:?} producer is {block_producer_id:?}");
-				Log::<T>::append((T::current_slot(), block_producer_id));
-			} else {
-				log::warn!("👷 Block {block:?} producer not set. This should occur only at the beginning of the production log pallet's lifetime.")
+			match CurrentProducer::<T>::take() {
+				Some(block_producer_id) => {
+					log::info!("👷 Block {block:?} producer is {block_producer_id:?}");
+					Log::<T>::append((T::current_slot(), block_producer_id));
+				},
+				_ => {
+					log::warn!(
+						"👷 Block {block:?} producer not set. This should occur only at the beginning of the production log pallet's lifetime."
+					)
+				},
 			}
 		}
 	}

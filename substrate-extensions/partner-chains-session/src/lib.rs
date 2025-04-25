@@ -90,17 +90,17 @@ extern crate alloc;
 
 use alloc::collections::BTreeSet;
 use frame_support::{
+	ConsensusEngineId,
 	traits::{
 		EstimateNextNewSession, EstimateNextSessionRotation, FindAuthor, OneSessionHandler,
 		ValidatorRegistration,
 	},
 	weights::Weight,
-	ConsensusEngineId,
 };
-use frame_system::pallet_prelude::BlockNumberFor;
 use frame_system::DecRefStatus;
+use frame_system::pallet_prelude::BlockNumberFor;
 pub use pallet::*;
-use sp_runtime::{traits::OpaqueKeys, DispatchError, KeyTypeId, RuntimeAppPublic};
+use sp_runtime::{DispatchError, KeyTypeId, RuntimeAppPublic, traits::OpaqueKeys};
 pub use sp_staking::SessionIndex;
 use sp_std::prelude::*;
 
@@ -406,11 +406,12 @@ impl<T: Config> Pallet<T> {
 		let session_index = session_index + 1;
 		<CurrentIndex<T>>::put(session_index);
 
-		let (validators, changed) = if let Some(validators) = Self::new_session(session_index) {
-			Self::rotate_validators(&validators);
-			(validators, true)
-		} else {
-			(ValidatorsAndKeys::<T>::get(), false)
+		let (validators, changed) = match Self::new_session(session_index) {
+			Some(validators) => {
+				Self::rotate_validators(&validators);
+				(validators, true)
+			},
+			_ => (ValidatorsAndKeys::<T>::get(), false),
 		};
 
 		T::SessionManager::start_session(session_index);
@@ -469,7 +470,9 @@ impl<T: Config> Pallet<T> {
 			Self::inc_provider(account);
 		}
 		for account in to_dec {
-			Self::dec_provider(account).expect("We always match dec_providers with corresponding inc_providers, thus it cannot fail");
+			Self::dec_provider(account).expect(
+				"We always match dec_providers with corresponding inc_providers, thus it cannot fail",
+			);
 		}
 	}
 

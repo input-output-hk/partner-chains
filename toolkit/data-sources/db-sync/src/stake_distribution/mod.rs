@@ -109,10 +109,9 @@ impl Cache {
 		epoch: McEpochNumber,
 		pool_hash: &MainchainKeyHash,
 	) -> Option<PoolDelegation> {
-		if let Ok(mut cache) = self.distribution_per_pool_cache.lock() {
-			cache.get(&(epoch, *pool_hash)).map(|e| e.clone())
-		} else {
-			None
+		match self.distribution_per_pool_cache.lock() {
+			Ok(mut cache) => cache.get(&(epoch, *pool_hash)).map(|e| e.clone()),
+			_ => None,
 		}
 	}
 

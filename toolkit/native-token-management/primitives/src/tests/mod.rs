@@ -5,7 +5,7 @@ mod inherent_provider {
 	use super::runtime_api_mock::*;
 	use crate::inherent_provider::mock::*;
 	use crate::inherent_provider::*;
-	use crate::{InherentError, MainChainScripts, INHERENT_IDENTIFIER};
+	use crate::{INHERENT_IDENTIFIER, InherentError, MainChainScripts};
 	use sidechain_domain::*;
 	use sidechain_mc_hash::MC_HASH_DIGEST_ID;
 	use sp_inherents::{InherentData, InherentDataProvider};

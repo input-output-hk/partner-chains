@@ -1,11 +1,11 @@
 use crate::{
+	DataSourceError::*,
 	data_sources::read_mc_epoch_config,
 	db_model::{self, Block, BlockNumber, SlotNumber},
-	DataSourceError::*,
 };
 use chrono::{DateTime, NaiveDateTime, TimeDelta};
 use derive_new::new;
-use figment::{providers::Env, Figment};
+use figment::{Figment, providers::Env};
 use log::{debug, info};
 use serde::Deserialize;
 use sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
@@ -70,10 +70,9 @@ impl BlockDataSourceImpl {
 		&self,
 		hash: McBlockHash,
 	) -> Result<Option<MainchainBlock>, Box<dyn std::error::Error + Send + Sync>> {
-		let from_cache = if let Ok(cache) = self.stable_blocks_cache.lock() {
-			cache.find_by_hash(hash.clone())
-		} else {
-			None
+		let from_cache = match self.stable_blocks_cache.lock() {
+			Ok(cache) => cache.find_by_hash(hash.clone()),
+			_ => None,
 		};
 		let block_opt = match from_cache {
 			Some(block) => Some(block),
@@ -197,12 +196,11 @@ impl BlockDataSourceImpl {
 		hash: McBlockHash,
 		reference_timestamp: NaiveDateTime,
 	) -> Option<Block> {
-		if let Ok(cache) = self.stable_blocks_cache.lock() {
-			cache
+		match self.stable_blocks_cache.lock() {
+			Ok(cache) => cache
 				.find_by_hash(hash)
-				.filter(|block| self.is_block_time_valid(block, reference_timestamp))
-		} else {
-			None
+				.filter(|block| self.is_block_time_valid(block, reference_timestamp)),
+			_ => None,
 		}
 	}
 

@@ -1,6 +1,6 @@
-use crate::{option_to_json, GenesisUtxo, PaymentFilePath};
+use crate::{GenesisUtxo, PaymentFilePath, option_to_json};
 use partner_chains_cardano_offchain::{
-	governance::{get_governance_policy_summary, MultiSigParameters},
+	governance::{MultiSigParameters, get_governance_policy_summary},
 	init_governance::run_init_governance,
 	update_governance::run_update_governance,
 };

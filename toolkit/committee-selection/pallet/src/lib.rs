@@ -186,16 +186,19 @@ pub mod pallet {
 				let for_epoch_number = CurrentCommittee::<T>::get().epoch + One::one();
 				let (authority_selection_inputs, selection_inputs_hash) =
 					Self::inherent_data_to_authority_selection_inputs(data);
-				if let Some(validators) =
-					T::select_authorities(authority_selection_inputs, for_epoch_number)
-				{
-					Some(Call::set { validators, for_epoch_number, selection_inputs_hash })
-				} else {
-					let current_committee = CurrentCommittee::<T>::get();
-					let current_committee_epoch = current_committee.epoch;
-					warn!("Committee for epoch {for_epoch_number} is the same as for epoch {current_committee_epoch}");
-					let validators = current_committee.committee;
-					Some(Call::set { validators, for_epoch_number, selection_inputs_hash })
+				match T::select_authorities(authority_selection_inputs, for_epoch_number) {
+					Some(validators) => {
+						Some(Call::set { validators, for_epoch_number, selection_inputs_hash })
+					},
+					_ => {
+						let current_committee = CurrentCommittee::<T>::get();
+						let current_committee_epoch = current_committee.epoch;
+						warn!(
+							"Committee for epoch {for_epoch_number} is the same as for epoch {current_committee_epoch}"
+						);
+						let validators = current_committee.committee;
+						Some(Call::set { validators, for_epoch_number, selection_inputs_hash })
+					},
 				}
 			}
 		}
@@ -204,7 +207,7 @@ pub mod pallet {
 		fn check_inherent(call: &Self::Call, data: &InherentData) -> Result<(), Self::Error> {
 			let (validators_param, for_epoch_number_param, call_selection_inputs_hash) = match call
 			{
-				Call::set { ref validators, ref for_epoch_number, ref selection_inputs_hash } => {
+				Call::set { validators, for_epoch_number, selection_inputs_hash } => {
 					(validators, for_epoch_number, selection_inputs_hash)
 				},
 				_ => return Ok(()),
@@ -274,7 +277,10 @@ pub mod pallet {
 			let expected_epoch_number = CurrentCommittee::<T>::get().epoch + One::one();
 			ensure!(for_epoch_number == expected_epoch_number, Error::<T>::InvalidEpoch);
 			let len = validators.len();
-			info!("💼 Storing committee of size {len} for epoch {for_epoch_number}, input data hash: {}", selection_inputs_hash.to_hex_string());
+			info!(
+				"💼 Storing committee of size {len} for epoch {for_epoch_number}, input data hash: {}",
+				selection_inputs_hash.to_hex_string()
+			);
 			NextCommittee::<T>::put(CommitteeInfo {
 				epoch: for_epoch_number,
 				committee: validators,
@@ -328,13 +334,13 @@ pub mod pallet {
 			committee.get(index % committee.len() as usize).cloned()
 		}
 
-		pub fn current_committee_storage(
-		) -> CommitteeInfo<T::ScEpochNumber, T::CommitteeMember, T::MaxValidators> {
+		pub fn current_committee_storage()
+		-> CommitteeInfo<T::ScEpochNumber, T::CommitteeMember, T::MaxValidators> {
 			CurrentCommittee::<T>::get()
 		}
 
-		pub fn next_committee_storage(
-		) -> Option<CommitteeInfo<T::ScEpochNumber, T::CommitteeMember, T::MaxValidators>> {
+		pub fn next_committee_storage()
+		-> Option<CommitteeInfo<T::ScEpochNumber, T::CommitteeMember, T::MaxValidators>> {
 			NextCommittee::<T>::get()
 		}
 

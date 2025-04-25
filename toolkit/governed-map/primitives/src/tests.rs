@@ -1,5 +1,5 @@
 mod idp_v1 {
-	use crate::{mock::*, GovernedMapInherentDataProvider, *};
+	use crate::{GovernedMapInherentDataProvider, mock::*, *};
 	use sidechain_domain::McBlockHash;
 	use sp_inherents::{InherentData, InherentDataProvider};
 	use sp_runtime::traits::Block as BlockT;
@@ -96,10 +96,12 @@ mod idp_v1 {
 		let mut inherent_data = InherentData::new();
 		idp.provide_inherent_data(&mut inherent_data).await.unwrap();
 
-		assert!(inherent_data
-			.get_data::<ChangesV1>(&INHERENT_IDENTIFIER)
-			.expect("Should succeed")
-			.is_none());
+		assert!(
+			inherent_data
+				.get_data::<ChangesV1>(&INHERENT_IDENTIFIER)
+				.expect("Should succeed")
+				.is_none()
+		);
 	}
 
 	#[tokio::test]
@@ -109,9 +111,11 @@ mod idp_v1 {
 		let mut inherent_data = InherentData::new();
 		idp.provide_inherent_data(&mut inherent_data).await.unwrap();
 
-		assert!(inherent_data
-			.get_data::<ChangesV1>(&INHERENT_IDENTIFIER)
-			.expect("Should succeed")
-			.is_none());
+		assert!(
+			inherent_data
+				.get_data::<ChangesV1>(&INHERENT_IDENTIFIER)
+				.expect("Should succeed")
+				.is_none()
+		);
 	}
 }

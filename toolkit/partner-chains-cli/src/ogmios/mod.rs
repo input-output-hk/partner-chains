@@ -149,9 +149,11 @@ pub(crate) fn get_shelley_config<C: IOContext>(
 ) -> anyhow::Result<ShelleyGenesisConfiguration> {
 	let response = context.ogmios_rpc(addr, OgmiosRequest::QueryNetworkShelleyGenesis)?;
 	match response {
-        OgmiosResponse::QueryNetworkShelleyGenesis(shelley_config) => Ok(shelley_config),
-        other => Err(anyhow::anyhow!(format!("Unexpected response from Ogmios when quering for shelley genesis configuration: {other:?}"))),
-    }
+		OgmiosResponse::QueryNetworkShelleyGenesis(shelley_config) => Ok(shelley_config),
+		other => Err(anyhow::anyhow!(format!(
+			"Unexpected response from Ogmios when quering for shelley genesis configuration: {other:?}"
+		))),
+	}
 }
 
 #[cfg(test)]

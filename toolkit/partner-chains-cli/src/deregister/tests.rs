@@ -4,7 +4,7 @@ use crate::ogmios::config::tests::{
 	default_ogmios_config_json, default_ogmios_service_config, establish_ogmios_configuration_io,
 };
 use crate::tests::{MockIO, MockIOContext, OffchainMock, OffchainMocks};
-use crate::{verify_json, CmdRun, CommonArguments};
+use crate::{CmdRun, CommonArguments, verify_json};
 use hex_literal::hex;
 use partner_chains_cardano_offchain::OffchainError;
 use serde_json::json;
@@ -72,7 +72,7 @@ fn fails_when_chain_config_is_not_valid() {
 		MockIOContext::new().with_json_file(CHAIN_CONFIG_FILE_PATH, invalid_chain_config_content());
 	let result = deregister_cmd().run(&mock_context);
 	assert_eq!(
-	    result.err().unwrap().to_string(),
+		result.err().unwrap().to_string(),
 		"Couldn't parse chain configuration file pc-chain-config.json. The chain configuration file that was used for registration is required in the working directory."
 	);
 }
@@ -132,9 +132,11 @@ Committee Candidate Validator Address is 'addr_test1wz5qc7fk2pat0058w4zwvkw35ytp
 
 fn read_keys_io() -> MockIO {
 	MockIO::Group(vec![
-        MockIO::print("Payment signing key and cold verification key used for registration are required to deregister."),
-        read_payment_signing_key(),
-        read_cold_verification_key(),
+		MockIO::print(
+			"Payment signing key and cold verification key used for registration are required to deregister.",
+		),
+		read_payment_signing_key(),
+		read_cold_verification_key(),
 	])
 }
 

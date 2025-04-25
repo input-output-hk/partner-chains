@@ -5,7 +5,7 @@ use frame_support::{
 	traits::{Hooks, UnfilteredDispatchable},
 };
 use mock::*;
-use sp_block_production_log::{InherentError, INHERENT_IDENTIFIER};
+use sp_block_production_log::{INHERENT_IDENTIFIER, InherentError};
 use sp_consensus_slots::Slot;
 
 fn make_id(i: u64) -> [u8; 32] {

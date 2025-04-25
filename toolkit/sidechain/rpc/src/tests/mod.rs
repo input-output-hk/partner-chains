@@ -3,8 +3,8 @@ mod runtime_api_mock;
 
 use super::SidechainRpc;
 use super::*;
-use crate::mock::Block;
 use crate::SidechainRpcApiServer;
+use crate::mock::Block;
 use rpc_mock::*;
 
 mod get_status_tests {

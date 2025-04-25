@@ -1,5 +1,5 @@
-use crate::block::BlockDataSourceMock;
 use crate::Result;
+use crate::block::BlockDataSourceMock;
 use pallet_sidechain_rpc::SidechainRpcDataSource;
 use sidechain_domain::MainchainBlock;
 use std::sync::Arc;

@@ -1,6 +1,6 @@
-use crate::{option_to_json, transaction_submitted_json, GenesisUtxo, PaymentFilePath};
+use crate::{GenesisUtxo, PaymentFilePath, option_to_json, transaction_submitted_json};
 use partner_chains_cardano_offchain::reserve::{
-	create::{create_reserve_utxo, ReserveParameters},
+	create::{ReserveParameters, create_reserve_utxo},
 	deposit::deposit_to_reserve,
 	handover::handover_reserve,
 	init::init_reserve_management,

@@ -1,6 +1,6 @@
 use derive_new::new;
 use jsonrpsee::{
-	core::{async_trait, RpcResult},
+	core::{RpcResult, async_trait},
 	proc_macros::rpc,
 	types::{ErrorObject, ErrorObjectOwned},
 };

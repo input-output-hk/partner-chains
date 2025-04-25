@@ -54,8 +54,8 @@ fn use_mock_follower() -> bool {
 		.unwrap_or(false)
 }
 
-pub fn create_mock_data_sources(
-) -> std::result::Result<DataSources, Box<dyn Error + Send + Sync + 'static>> {
+pub fn create_mock_data_sources()
+-> std::result::Result<DataSources, Box<dyn Error + Send + Sync + 'static>> {
 	let block = Arc::new(BlockDataSourceMock::new_from_env()?);
 	Ok(DataSources {
 		sidechain_rpc: Arc::new(SidechainRpcDataSourceMock::new(block.clone())),
