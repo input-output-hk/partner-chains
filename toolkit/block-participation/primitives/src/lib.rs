@@ -58,6 +58,7 @@
 //!
 //!
 #![cfg_attr(not(feature = "std"), no_std)]
+#![deny(missing_docs)]
 
 extern crate alloc;
 
@@ -71,6 +72,10 @@ use sp_inherents::{InherentIdentifier, IsFatalError};
 #[cfg(test)]
 mod tests;
 
+/// Inherent identifier used by the Block Participation pallet
+///
+/// This identifier is used for internal operation of the feature and is different from the target inherent ID
+/// provided through [BlockParticipationApi].
 pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"blokpart";
 
 /// Represents a block producer's delegator along with their number of shares in that block producer's pool.
@@ -80,8 +85,10 @@ pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"blokpart";
 	Clone, Debug, PartialEq, Eq, Decode, DecodeWithMemTracking, Encode, TypeInfo, PartialOrd, Ord,
 )]
 pub struct DelegatorBlockParticipationData<DelegatorId> {
-	id: DelegatorId,
-	share: u64,
+	/// Delegator Id
+	pub id: DelegatorId,
+	/// Number of this delegator's shares in the pool operated by the block producer of the enclosing [BlockProducerParticipationData].
+	pub share: u64,
 }
 
 /// Aggregated data on block production of one block producer in one aggregation period.
@@ -92,13 +99,13 @@ pub struct DelegatorBlockParticipationData<DelegatorId> {
 )]
 pub struct BlockProducerParticipationData<BlockProducerId, DelegatorId> {
 	/// Block producer ID
-	block_producer: BlockProducerId,
+	pub block_producer: BlockProducerId,
 	/// Number of block prodcued in the aggregation period represented by the current [BlockProducerParticipationData]
-	block_count: u32,
+	pub block_count: u32,
 	/// Total sum of shares of delegators in `delegators` field
-	delegator_total_shares: u64,
+	pub delegator_total_shares: u64,
 	/// List of delegators of `block_producer` along with their share in the block producer's stake pool
-	delegators: Vec<DelegatorBlockParticipationData<DelegatorId>>,
+	pub delegators: Vec<DelegatorBlockParticipationData<DelegatorId>>,
 }
 
 /// Aggregated data on block production, grouped by the block producer and aggregation period (main chain epoch).
@@ -134,10 +141,12 @@ impl<BlockProducerId, DelegatorId> BlockProductionData<BlockProducerId, Delegato
 		Self { up_to_slot, producer_participation }
 	}
 
+	/// Returns the upper slot boundary of the aggregation range of `self`
 	pub fn up_to_slot(&self) -> Slot {
 		self.up_to_slot
 	}
 
+	/// Returns aggregated participation data per block producer
 	pub fn producer_participation(
 		&self,
 	) -> &[BlockProducerParticipationData<BlockProducerId, DelegatorId>] {
@@ -145,6 +154,7 @@ impl<BlockProducerId, DelegatorId> BlockProductionData<BlockProducerId, Delegato
 	}
 }
 
+/// Error type returned by the Block Participation pallet's inherent
 #[derive(Encode, PartialEq)]
 #[cfg_attr(not(feature = "std"), derive(Debug))]
 #[cfg_attr(
@@ -152,12 +162,16 @@ impl<BlockProducerId, DelegatorId> BlockProductionData<BlockProducerId, Delegato
 	derive(Decode, DecodeWithMemTracking, thiserror::Error, sp_runtime::RuntimeDebug)
 )]
 pub enum InherentError {
+	/// Indicates that inherent was not producer when expected
 	#[cfg_attr(feature = "std", error("Block participation inherent not produced when expected"))]
 	InherentRequired,
+	/// Indicates that inherent was producer when not expected
 	#[cfg_attr(feature = "std", error("Block participation inherent produced when not expected"))]
 	UnexpectedInherent,
+	/// Indicates that the inherent was produced with incorrect slot boundary
 	#[cfg_attr(feature = "std", error("Block participation up_to_slot incorrect"))]
 	IncorrectSlotBoundary,
+	/// Indicates that the inherent was producer with incorrect participatition data
 	#[cfg_attr(feature = "std", error("Inherent data provided by the node is invalid"))]
 	InvalidInherentData,
 }
@@ -195,6 +209,7 @@ impl AsCardanoSPO for Option<MainchainKeyHash> {
 
 /// Signifies that a type represents a Cardano delegator
 pub trait CardanoDelegator {
+	/// Converts a Cardano delegator key to [Self]
 	fn from_delegator_key(key: DelegatorKey) -> Self;
 }
 impl<T: From<DelegatorKey>> CardanoDelegator for T {
@@ -203,6 +218,7 @@ impl<T: From<DelegatorKey>> CardanoDelegator for T {
 	}
 }
 
+/// Inherent data provider definitions and implementation for Block Producer feature
 #[cfg(feature = "std")]
 pub mod inherent_data {
 	use super::*;
@@ -227,14 +243,24 @@ pub mod inherent_data {
 		) -> Result<StakeDistribution, Box<dyn std::error::Error + Send + Sync>>;
 	}
 
+	/// Error returned by [BlockParticipationInherentDataProvider] constructors
 	#[derive(thiserror::Error, Debug)]
 	pub enum InherentDataCreationError<BlockProducerId: Debug> {
+		/// Indicates that a runtime API failed
 		#[error("Runtime API call failed: {0}")]
 		ApiError(#[from] ApiError),
+		/// Indicates that a data source call returned an error
 		#[error("Data source call failed: {0}")]
 		DataSourceError(Box<dyn Error + Send + Sync>),
+		/// Indicates that Cardano stake delegation is missing for the epoch from which a block producer was selected
+		///
+		/// This error should never occur in normal operation of a node, unless the data source has been corrupted.
 		#[error("Missing epoch {0} data for {1:?}")]
 		DataMissing(McEpochNumber, BlockProducerId),
+		/// Indicates that the Cardano epoch covering a producer block could not be computed while respecting the
+		/// offset defined by [sidechain_domain::DATA_MC_EPOCH_OFFSET].
+		///
+		/// This error should never occur in normal operation of a node.
 		#[error("Offset of {1} can not be applied to main chain epoch {0}")]
 		McEpochBelowOffset(McEpochNumber, u32),
 	}
@@ -249,10 +275,15 @@ pub mod inherent_data {
 	///   from the block production log pallet.
 	#[derive(Debug, Clone, PartialEq)]
 	pub enum BlockParticipationInherentDataProvider<BlockProducerId, DelegatorId> {
+		/// Active variant of the IDP that will provide inherent data stored in `block_production_data` at the
+		/// inherent ID stored in `target_inherent_id`.
 		Active {
+			/// Inherent ID under which inherent data will be provided
 			target_inherent_id: InherentIdentifier,
+			/// Inherent data containing aggregated block participation data
 			block_production_data: BlockProductionData<BlockProducerId, DelegatorId>,
 		},
+		/// Inactive variant of the IDP that will not provide any data and will not raise any errors
 		Inert,
 	}
 
