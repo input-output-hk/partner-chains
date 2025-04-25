@@ -1,4 +1,4 @@
-use crate::{Weight, WeightedRandomSelectionConfig};
+use crate::Weight;
 use alloc::vec::Vec;
 use core::iter::repeat_n;
 use rand::seq::SliceRandom;
@@ -110,12 +110,8 @@ fn select_remaining<T: Clone>(
 	n: u16,
 	rng: &mut ChaCha20Rng,
 ) -> Vec<T> {
-	crate::weighted_random::select_authorities(
-		weighted_candidates,
-		rng.get_seed(),
-		&WeightedRandomSelectionConfig { size: n },
-	)
-	.unwrap_or_else(|| Vec::with_capacity(0))
+	crate::weighted_random::select_authorities(weighted_candidates, rng.get_seed(), n)
+		.unwrap_or_else(|| Vec::with_capacity(0))
 }
 
 #[cfg(test)]
