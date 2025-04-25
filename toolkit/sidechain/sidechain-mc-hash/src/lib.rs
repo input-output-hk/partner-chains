@@ -18,6 +18,11 @@ mod test;
 pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"scmchash";
 pub const MC_HASH_DIGEST_ID: [u8; 4] = *b"mcsh";
 
+/// Inherent data provider that provides the hash of the latest stable Cardano block observed by the Partner Chain to be included
+/// in the header of the currently produced PC block or verifies the validity of a hash included in an imported blocks' header.
+///
+/// This IDP also exposes further information about the currently referenced Cardano block and the block referenced by the parent
+/// block of the current one, for use by other inherent data providers.
 #[derive(Debug)]
 pub struct McHashInherentDataProvider {
 	mc_block: MainchainBlock,
@@ -104,6 +109,17 @@ pub trait McHashDataSource {
 }
 
 impl McHashInherentDataProvider {
+	/// Creates a new [McHashInherentDataProvider] for proposing a new Partner Chain block by querying the
+	/// current state of Cardano and returning an instance referencing the latest stable block there.
+	///
+	/// # Argumens
+	/// - `parent_header`: header of the parent of the block being produced
+	/// - `data_source`: data source implementing [McHashDataSource]
+	/// - `slot`: current Partner Chain slot
+	/// - `slot_duration`: duration of the Partner Chain slot
+	///
+	/// The referenced Cardano block is guaranteed to be later or equal to the one referenced by the parent block
+	/// and within a bounded time distance from `slot`.
 	pub async fn new_proposal<Header>(
 		parent_header: Header,
 		data_source: &(dyn McHashDataSource + Send + Sync),
@@ -143,6 +159,21 @@ impl McHashInherentDataProvider {
 		}
 	}
 
+	/// Verifies a Cardano reference hash and creates a new [McHashInherentDataProvider] for an imported Partner Chain block.
+	///
+	/// # Argumens
+	/// - `parent_header`: header of the parent of the block being produced or validated
+	/// - `parent_slot`: slot of the parent block. [None] for genesis
+	/// - `verified_block_slot`: Partner Chain slot of the block being verified
+	/// - `mc_state_reference_hash`: Cardano block hash referenced by the block being verified
+	/// - `slot_duration`: duration of the Partner Chain slot
+	/// - `block_source`: data source implementing [McHashDataSource]
+	///
+	/// # Returns
+	/// This function will return an error if `mc_state_reference_hash` is not found or is before the block referenced by
+	/// the parent of the block being verified.
+	///
+	/// Otherwise, the returned [McHashInherentDataProvider] instance will reference `mc_state_reference_hash`.
 	pub async fn new_verification<Header>(
 		parent_header: Header,
 		parent_slot: Option<Slot>,
