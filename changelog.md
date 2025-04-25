@@ -29,6 +29,8 @@ using the `block-production-log` pallet instead.
 Its functionality was merged into `pallet-partner-chains-session` under the feature `pallet-session-compat`.
 * Crate `session-manager`. Its functionality was merged into `pallet-session-validator-management` under
 the feature `pallet-session-compat`.
+* `TryFrom<&serde_json::Value> for Datum` and `From<&Datum> for serde_json::Value` instances from `plutus`.
+* `ATMSPlainAggregatePubKey`, `ValidatorHash` and `SidechainPublicKeysSorted` types from `domain`.
 
 ## Fixed
 
