@@ -636,7 +636,3 @@ pub mod config_fields {
 			_marker: PhantomData,
 		};
 }
-
-pub mod config_values {
-	pub const DEFAULT_CHAIN_NAME: &str = "partner_chains_template";
-}

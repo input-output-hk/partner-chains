@@ -6,6 +6,8 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Changed
 
+* BREAKING: Wizards are not generating keys nor looking for them in `<base_path>/chains/partner_chains_template` but use `<base_path>` instead.
+This change requires users that generated keystores and network key using previous versions of the wizards to move their keys two directories above.
 * Wizards are adjusted to use multiple governance authorities from the chain governance initialization through setting up Ariadne parameters
 * Added implementation of `FindAccountFromAuthorIndex` trait for `pallet_partner_chains_session`.
 * Unified `*toml` files package data

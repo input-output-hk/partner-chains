@@ -1,9 +1,7 @@
 use super::RegisterValidatorMessage;
-use crate::config::config_values::DEFAULT_CHAIN_NAME;
 use crate::config::KEYS_FILE_PATH;
-use crate::generate_keys::keystore_path;
 use crate::io::IOContext;
-use crate::keystore::CROSS_CHAIN;
+use crate::keystore::{keystore_path, CROSS_CHAIN};
 use crate::{config::config_fields, *};
 use anyhow::anyhow;
 use ogmios::config::prompt_ogmios_configuration;
@@ -72,7 +70,7 @@ impl CmdRun for Register1Cmd {
 
 		let ecdsa_pair = get_ecdsa_pair_from_file(
 			context,
-			&keystore_path(&node_data_base_path, DEFAULT_CHAIN_NAME),
+			&keystore_path(&node_data_base_path),
 			&sidechain_pub_key,
 		)
 		.map_err(|e| {
@@ -494,7 +492,7 @@ mod tests {
 		]
 	}
 
-	const ECDSA_KEY_PATH: &str = "/path/to/data/chains/partner_chains_template/keystore/63726368031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6";
+	const ECDSA_KEY_PATH: &str = "/path/to/data/keystore/63726368031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6";
 
 	fn invalid_chain_config_io() -> Vec<MockIO> {
 		vec![MockIO::eprint("⚠️ The chain configuration file `pc-chain-config.json` is missing or invalid.\n If you are the governance authority, please make sure you have run the `prepare-configuration` command to generate the chain configuration file.\n If you are a validator, you can obtain the chain configuration file from the governance authority.")]

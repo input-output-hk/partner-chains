@@ -1,8 +1,8 @@
 use crate::config::config_fields::{
 	NODE_P2P_PORT, POSTGRES_CONNECTION_STRING, SIDECHAIN_BLOCK_BENEFICIARY,
 };
-use crate::config::config_values::*;
 use crate::config::{CardanoParameters, CHAIN_CONFIG_FILE_PATH, CHAIN_SPEC_PATH};
+use crate::generate_keys::network_key_path;
 use crate::io::IOContext;
 use crate::keystore::*;
 use crate::{config::config_fields, *};
@@ -36,7 +36,7 @@ impl StartNodeConfig {
 		}
 	}
 	pub fn keystore_path(&self) -> String {
-		keystore_path(&self.substrate_node_base_path, DEFAULT_CHAIN_NAME)
+		keystore_path(&self.substrate_node_base_path)
 	}
 }
 
@@ -217,8 +217,10 @@ pub fn start_node<C: IOContext>(
 			.expect("Default NODE_WS_PORT should be valid u16"),
 		context,
 	);
+	let keystore_path = keystore_path(&substrate_node_base_path);
+	let network_key_path = network_key_path(&substrate_node_base_path);
 	context.run_command(&format!(
-		"{environment_prefix} {executable} --validator --chain {CHAIN_SPEC_PATH} --base-path {substrate_node_base_path} --port {ws_port} {bootnodes}",
+		"{environment_prefix} {executable} --validator --chain {CHAIN_SPEC_PATH} --base-path {substrate_node_base_path} --keystore-path {keystore_path} --node-key-file {network_key_path} --port {ws_port} {bootnodes}",
 	))?;
 
 	Ok(())

@@ -17,8 +17,8 @@ pub const GRANDPA: KeyDefinition<'static> =
 pub const CROSS_CHAIN: KeyDefinition<'static> =
 	KeyDefinition { name: "Cross-chain", scheme: "ecdsa", key_type: "crch" };
 
-pub fn keystore_path(substrate_node_base_path: &str, chain_name: &str) -> String {
-	format!("{substrate_node_base_path}/chains/{chain_name}/keystore")
+pub fn keystore_path(substrate_node_base_path: &str) -> String {
+	format!("{substrate_node_base_path}/keystore")
 }
 
 pub fn find_existing_key(existing_keys: &[String], key_def: &KeyDefinition) -> Option<String> {
