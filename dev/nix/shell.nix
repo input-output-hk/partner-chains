@@ -25,7 +25,7 @@
           }).cargo;
 
           gen-cargo-docs = pkgs.writeScriptBin "gen-cargo-docs" ''
-            RUSTDOCFLAGS="--enable-index-page -Zunstable-options" ${nightlyCargo}/bin/cargo doc --no-deps
+            RUSTDOCFLAGS="--enable-index-page -Zunstable-options" SKIP_WASM_BUILD=1 ${nightlyCargo}/bin/cargo doc --no-deps
           '';
 
           packages = with pkgs; [
