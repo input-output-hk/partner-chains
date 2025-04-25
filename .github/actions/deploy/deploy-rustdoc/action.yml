@@ -40,7 +40,7 @@ runs:
       shell: bash
 
     - name: Make index.html
-      run: echo "<meta http-equiv=refresh content=0;url=node_template/index.html>" > ./target/doc/index.html
+      run: echo "<meta http-equiv=refresh content=0;url=partner_chains_demo_node/index.html>" > ./target/doc/index.html
       shell: bash
 
     - name: Deploy documentation
