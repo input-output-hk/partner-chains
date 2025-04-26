@@ -16,7 +16,6 @@ use sp_runtime::{
 
 pub type Block = frame_system::mocking::MockBlock<Test>;
 pub type AccountId = AccountId32;
-pub type PartnerChainAddress = AccountId32;
 
 construct_runtime! {
 	pub enum Test {

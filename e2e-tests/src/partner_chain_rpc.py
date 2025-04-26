@@ -112,6 +112,6 @@ class PartnerChainRpc:
         return PartnerChainRpcResponse.model_validate(json_data)
 
     def partner_chain_get_block_producer_metadata(self, cross_chain_pub_key_hash: str) -> PartnerChainRpcResponse:
-        json_data = self.__exec_rpc("block-producer-metadata_getMetadata", [f"0x{cross_chain_pub_key_hash}"])
+        json_data = self.__exec_rpc("pc_getMetadata", [f"0x{cross_chain_pub_key_hash}"])
         logger.debug(json_data)
         return PartnerChainRpcResponse.model_validate(json_data)
