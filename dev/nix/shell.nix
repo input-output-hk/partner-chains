@@ -5,9 +5,9 @@
       isDarwin = pkgs.lib.hasSuffix "darwin" system;
       fenixPkgs = inputs'.fenix.packages;
       rustToolchain = fenixPkgs.fromToolchainFile {
-          file = ../../rust-toolchain.toml;
-          sha256 = "X/4ZBHO3iW0fOenQ3foEvscgAPJYl2abspaBThDOukI=";
-        };
+        file = ../../rust-toolchain.toml;
+        sha256 = "X/4ZBHO3iW0fOenQ3foEvscgAPJYl2abspaBThDOukI=";
+      };
     in
     {
       devShells = {
@@ -15,22 +15,27 @@
         # This shell is provided only for generating cargo docs which requires
         # cargo doc from nightly to generate an index page
         nightly = pkgs.mkShell rec {
-          RUST_SRC_PATH = "${rustToolchain}/lib/rustlib/src/rust/library";
+          RUST_SRC_PATH = "${nightlyToolchain}/lib/rustlib/src/rust/library";
           LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
-          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [ rustToolchain pkgs.stdenv.cc.cc pkgs.libz ];
+          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [ nightlyToolchain pkgs.stdenv.cc.cc pkgs.libz ];
 
-          nightlyCargo = rustToolchain; # This makes nightlyCargo use toolchain.toml
-
-          # nightlyCargo = (fenixPkgs.toolchainOf {
-          #   channel = "nightly";
-          #   sha256 = "sha256-6oexOcgMfjXSi09nceCXmECRXhQkgqx8OgbNRGoXMWQ=";
-          # }).cargo;
+          nightlyToolchain = (fenixPkgs.toolchainOf {
+            channel = "nightly";
+            sha256 = "sha256-6oexOcgMfjXSi09nceCXmECRXhQkgqx8OgbNRGoXMWQ=";
+          }).withComponents [
+            "cargo"
+            "clippy"
+            "rust-src"
+            "rustc"
+            "rustfmt"
+          ];
 
           gen-cargo-docs = pkgs.writeScriptBin "gen-cargo-docs" ''
-            RUSTDOCFLAGS="--enable-index-page -Zunstable-options" SKIP_WASM_BUILD=1 ${nightlyCargo}/bin/cargo doc --no-deps
+            RUSTDOCFLAGS="--enable-index-page -Zunstable-options" SKIP_WASM_BUILD=1 cargo doc --no-deps
           '';
 
           packages = with pkgs; [
+            nightlyToolchain
             gen-cargo-docs
             pkg-config
             protobuf
