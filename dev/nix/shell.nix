@@ -18,6 +18,7 @@
           RUST_SRC_PATH = "${nightlyToolchain}/lib/rustlib/src/rust/library";
           LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
           LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [ nightlyToolchain pkgs.stdenv.cc.cc pkgs.libz ];
+          CFLAGS = "-DJEMALLOC_STRERROR_R_RETURNS_CHAR_WITH_GNU_SOURCE";
 
           nightlyToolchain = (fenixPkgs.toolchainOf {
             channel = "nightly";
