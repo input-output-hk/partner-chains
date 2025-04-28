@@ -46,8 +46,23 @@ runs:
         nix run github:nix-community/fenix -- from-toolchain-file --print-hash rust-toolchain.toml || true
       shell: bash
 
+    - name: Prove which rustc/cargo is actually running in shell
+      run: |
+        which cargo
+        which rustc
+        cargo --version
+        rustc --version
+        env | grep -i rust
+      shell: bash
+
+    - name: Prove which cargo/rustc will run via gen-cargo-docs
+      run: |
+        . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh || true
+        $(which gen-cargo-docs)
+      shell: bash
+
     - name: Build Rustdocs
-      run: nix develop .#nightly -c gen-cargo-docs
+      run: nix develop .#nightly -c bash -c 'cargo --version && rustc --version && gen-cargo-docs'
       shell: bash
 
     - name: Deploy documentation
