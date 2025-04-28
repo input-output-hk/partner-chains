@@ -23,9 +23,8 @@
           nightlyToolchain = rustToolchain;
 
           gen-cargo-docs = pkgs.writeScriptBin "gen-cargo-docs" ''
-            RUSTDOCFLAGS="--enable-index-page" SKIP_WASM_BUILD=1 ${nightlyToolchain}/bin/cargo doc --no-deps
+            RUSTDOCFLAGS="--enable-index-page" SKIP_WASM_BUILD=1 ${nightlyToolchain}/bin/cargo doc --no-deps -Z unstable-options
           '';
-
 
           packages = with pkgs; [
             nightlyToolchain
