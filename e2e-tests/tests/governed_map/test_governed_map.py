@@ -66,11 +66,8 @@ class TestGetGovernedMap:
         result = api.partner_chains_node.smart_contracts.governed_map.list()
         expected_value = string_to_hex_bytes(random_value)
         assert result.returncode == 0
-        assert any(
-            item["key"] == random_key for item in result.json
-        ), f"Key {random_key} not found in governed map list"
-        found_item = next((item for item in result.json if item["key"] == random_key), None)
-        assert found_item["value"] == expected_value, f"Value mismatch for key {random_key} in governed map list"
+        assert random_key in result.json
+        assert expected_value == result.json[random_key], f"Value mismatch for key {random_key} in governed map list"
 
 
 @fixture(scope="class")
@@ -124,3 +121,39 @@ class TestUpdateGovernedMapWithNonMatchingCurrentValue:
         assert (
             string_to_hex_bytes(random_value) == get_result.json
         ), "Data should not be updated in governed map retrieval"
+
+
+class TestUpdateGovernedMapWithNonExistentKey:
+    @fixture(scope="class", autouse=True)
+    def update_data(self, api: BlockchainApi, random_key, new_value, payment_key):
+        result = api.partner_chains_node.smart_contracts.governed_map.update(random_key, new_value, payment_key)
+        return result
+
+    def test_update_returncode(self, update_data):
+        assert update_data.returncode == 1
+
+    def test_update_value(self, api: BlockchainApi, random_key):
+        get_result = api.partner_chains_node.smart_contracts.governed_map.get(random_key)
+        assert {} == get_result.json
+
+
+class TestDeleteGovernedMap:
+    @fixture(scope="class", autouse=True)
+    def delete_data(self, api: BlockchainApi, insert_data, random_key, payment_key):
+        result = api.partner_chains_node.smart_contracts.governed_map.remove(random_key, payment_key)
+        return result
+
+    def test_delete_returncode(self, delete_data):
+        assert delete_data.returncode == 0
+
+    def test_get_after_delete(self, api: BlockchainApi, random_key):
+        result = api.partner_chains_node.smart_contracts.governed_map.get(random_key)
+        assert {} == result.json
+        assert 0 == result.returncode
+
+
+class TestSetStoreAddress:
+    def test_set_store_address(self, api: BlockchainApi, payment_key):
+        _, vkey = api.cardano_cli.generate_payment_keys()
+        address = api.cardano_cli.build_address(vkey)
+        api.set_new_governed_map_address(address)

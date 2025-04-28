@@ -308,7 +308,8 @@ class SmartContracts:
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
             response = self.run_command.run(cmd)
-            return parse_json_response(response)
+            parsed_response = parse_json_response(response)
+            return handle_governance_signature(parsed_response, self.parent)
 
         def list(self):
             cmd = (
@@ -328,7 +329,8 @@ class SmartContracts:
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
             response = self.run_command.run(cmd)
-            return parse_json_response(response)
+            parsed_response = parse_json_response(response)
+            return handle_governance_signature(parsed_response, self.parent)
 
         def get(self, key):
             cmd = (
@@ -352,4 +354,5 @@ class SmartContracts:
             if current_value:
                 cmd += f" --current-value {current_value}"
             response = self.run_command.run(cmd)
-            return parse_json_response(response)
+            parsed_response = parse_json_response(response)
+            return handle_governance_signature(parsed_response, self.parent)

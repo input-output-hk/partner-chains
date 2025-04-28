@@ -508,3 +508,16 @@ class BlockchainApi(ABC):
             int -- initial PC epoch
         """
         pass
+
+    @abstractmethod
+    def set_new_governed_map_address(self, new_address: str) -> bool:
+        """
+        Sets a new address to store governed map.
+
+        Arguments:
+            new_address {str} -- New address to be set
+
+        Returns:
+            bool -- True if successful, False otherwise
+        """
+        pass

@@ -678,7 +678,9 @@ class SubstrateApi(BlockchainApi):
         return result.value
 
     def get_block_producer_metadata(self, cross_chain_public_key_hash: str):
-        result = self.substrate.query("BlockProducerMetadata", "BlockProducerMetadataStorage", [f"0x{cross_chain_public_key_hash}"])
+        result = self.substrate.query(
+            "BlockProducerMetadata", "BlockProducerMetadataStorage", [f"0x{cross_chain_public_key_hash}"]
+        )
         logger.debug(f"Block producer metadata for {cross_chain_public_key_hash}: {result}")
         return result.value
 
@@ -700,3 +702,29 @@ class SubstrateApi(BlockchainApi):
         logger.debug(f"Current session index: {session_index_result}, epoch number: {epoch_result}")
         initial_epoch = epoch_result.value - session_index_result.value
         return initial_epoch
+
+    @long_running_function
+    def set_new_governed_map_address(self, signature, wallet):
+        tx = Transaction()
+        tx._unsigned = self.substrate.compose_call(
+            call_module="AddressAssociations",
+            call_function="associate_address",
+            call_params={
+                "partnerchain_address": signature.partner_chain_address,
+                "signature": signature.signature,
+                "stake_public_key": signature.stake_public_key,
+            },
+        )
+        logger.debug(f"Transaction built {tx._unsigned}")
+
+        if wallet.crypto_type and wallet.crypto_type == KeypairType.ECDSA:
+            tx._signed = self.__create_signed_ecdsa_extrinsic(call=tx._unsigned, keypair=wallet.raw)
+        else:
+            tx._signed = self.substrate.create_signed_extrinsic(call=tx._unsigned, keypair=wallet.raw)
+        logger.debug(f"Transaction signed {tx._signed}")
+
+        tx._receipt = self.substrate.submit_extrinsic(tx._signed, wait_for_inclusion=True)
+        logger.debug(f"Transaction sent {tx._receipt.extrinsic}")
+        tx.hash = tx._receipt.extrinsic_hash
+        tx.total_fee_amount = tx._receipt.total_fee_amount
+        return tx
