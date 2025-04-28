@@ -45,6 +45,7 @@
 //!     client: &T,
 //!     governed_map_data_source: &(impl GovernedMapDataSource + Send + Sync),
 //!     parent_hash: Block::Hash,
+//! #   // Arguments below should be provided by the MC Hash IDP from `sidechain_mc_hash` crate
 //! #   mc_hash: McBlockHash,
 //! #   previous_mc_hash: Option<McBlockHash>,
 //! ) -> Result<InherentDataProviders, Box<dyn std::error::Error + Send + Sync>>
