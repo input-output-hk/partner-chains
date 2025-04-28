@@ -5,8 +5,6 @@ inputs:
     description: "SSH key to read Substrate Repo"
     required: true
 
-outputs: {}
-
 runs:
   using: "composite"
   steps:
@@ -21,10 +19,11 @@ runs:
         ssh-add - <<< "${{ inputs.ssh_key }}"
       shell: bash
 
-    - name: Build rustdocs
-      steps:
-        - uses: DeterminateSystems/nix-installer-action@main
-        - run: nix develop .#nightly -c gen-cargo-docs
+    - name: Install Nix
+      uses: DeterminateSystems/nix-installer-action@main
+
+    - name: Build Rustdocs
+      run: nix develop .#nightly -c gen-cargo-docs
       shell: bash
 
     - name: Deploy documentation
@@ -34,3 +33,4 @@ runs:
         github_token: ${{ env.GITHUB_TOKEN }}
         publish_branch: gh-pages
         publish_dir: ./target/doc
+
