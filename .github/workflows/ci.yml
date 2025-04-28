@@ -25,6 +25,23 @@ jobs:
 
 ### Pre merge workflow ###############################################################################################################
 
+  deploy-rustdoc-test:
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: master
+      - name: Deploy Rust Docs
+        uses: ./.github/actions/deploy/deploy-rustdoc
+        with:
+          ssh_key: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+
 #  ci-preview-direct-tests-pre-merge:
 #    if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
 #    runs-on: ubuntu-latest
@@ -507,7 +524,7 @@ jobs:
   deploy-rustdoc:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
     needs: build-linux-x86_64-post-merge
-    runs-on: nixos
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
