@@ -1,11 +1,75 @@
 //! Pallet exposing the key-value pairs sourced from the Cardano ledger as part of the Governed Map feature.
 //!
-//! # Purpose of this pallet
+//! ## Purpose of this pallet
 //!
 //! This pallet stores the most recent state of the key-value pairs in the Governed Map on Cardano for use
 //! by other runtime components. It also exposes hooks for other components to be notified when particular
 //! key-value pair is inserted, updated or deleted.
+//!
+//!
+//! ## Usage - PC Builder
+//!
+//!
+//! ### Adding to the runtime
+//!
+//! The pallet requires some configuration. Consult the documentation for [pallet::Config] for details.
+//!
+//! An example configuration for a runtime might look like this:
+//!
+//! ```rust,ignore
+//! parameter_types! {
+//!     pub const MaxChanges: u32 = 16;
+//!     pub const MaxKeyLength: u32 = 64;
+//!     pub const MaxValueLength: u32 = 512;
+//! }
+//!
+//! impl pallet_governed_map::Config for Runtime {
+//!     type MaxChanges = MaxChanges;
+//!     type MaxKeyLength = MaxKeyLength;
+//!     type MaxValueLength = MaxValueLength;
+//!     type WeightInfo = pallet_governed_map::weights::SubstrateWeight<Runtime>;
+//!
+//!     type OnGovernedMappingChange = TestHelperPallet;
+//! }
+//! ```
+//!
+//! #### Defining on-change hooks
+//!
+//! ```rust,ignore
+//! impl<T: Config> sp_governed_map::OnGovernedMappingChange<MaxKeyLength, MaxValueLength>
+//!     for Pallet<T>
+//! {
+//!     fn on_governed_mapping_change(
+//!         key: BoundedString<MaxKeyLength>,
+//!         new_value: Option<BoundedVec<u8, MaxValueLength>>,
+//!         old_value: Option<BoundedVec<u8, MaxValueLength>>,
+//!     ) {
+//!         match (new_value, old_value) {
+//!             (Some(new_value), Some(old_value)) => log::info!(
+//!                 "Governed Map value for key '{key}' has changed: {} → {}",
+//!                 to_hex(&old_value, false),
+//!                 to_hex(&new_value, false)
+//!             ),
+//!             (Some(new_value), None) => {
+//!                 log::info!(
+//!                     "New Governed Map value for key '{key}': {}",
+//!                     to_hex(&new_value, false)
+//!                 )
+//!             },
+//!             (None, Some(old_value)) => {
+//!                 log::info!(
+//!                     "Governed Map value for key '{key}' deleted, old value: {}",
+//!                     to_hex(&old_value, false)
+//!                 )
+//!             },
+//!             _ => { /* technically unreachable */ },
+//!         }
+//!     }
+//! }
+//! ```
+//!
 #![cfg_attr(not(feature = "std"), no_std)]
+#![deny(missing_docs)]
 
 extern crate alloc;
 
@@ -36,6 +100,7 @@ pub mod pallet {
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
 
+	/// Current version of the pallet
 	pub const PALLET_VERSION: u32 = 1;
 
 	#[pallet::config]
@@ -73,8 +138,11 @@ pub mod pallet {
 		type BenchmarkHelper: crate::benchmarking::BenchmarkHelper<Self>;
 	}
 
+	/// Current version of the pallet
 	pub type MapKey<T> = BoundedString<<T as Config>::MaxKeyLength>;
+	/// Current version of the pallet
 	pub type MapValue<T> = BoundedVec<u8, <T as Config>::MaxValueLength>;
+	/// Current version of the pallet
 	pub type Changes<T> = BoundedVec<(MapKey<T>, Option<MapValue<T>>), <T as Config>::MaxChanges>;
 
 	/// Stores the latest state of the Governed Map that was observed on Cardano.
@@ -94,6 +162,7 @@ pub mod pallet {
 		///
 		/// If it is left empty, the Governance Map pallet will be inactive until the address is set via extrinsic.
 		pub main_chain_script: Option<MainChainScriptsV1>,
+		/// Current version of the pallet
 		pub _marker: PhantomData<T>,
 	}
 
@@ -131,9 +200,9 @@ pub mod pallet {
 		}
 
 		fn is_inherent_required(data: &InherentData) -> Result<Option<Self::Error>, Self::Error> {
-			match Self::decode_inherent_data(data) {
+			match Self::decode_inherent_data(data)? {
 				None => Ok(None),
-				Some(_) => Ok(Some(Self::Error::InherentMissing)),
+				Some(_) => Ok(Some(Self::Error::InherentRequired)),
 			}
 		}
 	}
@@ -141,15 +210,15 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		fn decode_inherent_data(
 			data: &InherentData,
-		) -> Option<alloc::vec::Vec<GovernedMapChangeV1>> {
+		) -> Result<Option<alloc::vec::Vec<GovernedMapChangeV1>>, InherentError> {
 			data.get_data::<alloc::vec::Vec<GovernedMapChangeV1>>(&INHERENT_IDENTIFIER)
-				.expect("Governed Map inherent data is not encoded correctly")
+				.map_err(|_| InherentError::InvalidInherentData)
 		}
 
 		fn create_inherent_or_err(data: &InherentData) -> Result<Option<Call<T>>, InherentError> {
 			use InherentError::*;
 
-			let Some(raw_changes) = Self::decode_inherent_data(data) else { return Ok(None) };
+			let Some(raw_changes) = Self::decode_inherent_data(data)? else { return Ok(None) };
 
 			if raw_changes.len() > T::MaxChanges::get() as usize {
 				return Err(TooManyChanges);

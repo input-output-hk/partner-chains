@@ -18,6 +18,7 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+/// Inherent identifier used by the Governed Map pallet
 pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"govrnmap";
 
 /// Cardano identifiers necessary for observation of the Governed Map
@@ -35,21 +36,29 @@ pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"govrnmap";
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct MainChainScriptsV1 {
+	/// Mainchain address where map entry UTXOs are located
 	pub validator_address: MainchainAddress,
+	/// Asset id of tokens carrying Map entries
 	pub asset: AssetId,
 }
 
 /// Type describing a change made to a single key-value pair in the Governed Map.
 #[derive(Decode, Encode, TypeInfo, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GovernedMapChangeV1 {
+	/// Key of the entry being changed
 	pub key: String,
+	/// New value associated with the key.
+	/// * [None] value signifies deletion
+	/// * [Some] value signifies insertion or update
 	pub new_value: Option<ByteString>,
 }
 
 impl GovernedMapChangeV1 {
+	/// Constructs [GovernedMapChangeV1] value representing `upsert` action.
 	pub fn upsert(key: &str, new_value: &[u8]) -> Self {
 		Self { key: key.into(), new_value: Some(new_value.into()) }
 	}
+	/// Constructs [GovernedMapChangeV1] value representing `delete` action.
 	pub fn delete(key: &str) -> Self {
 		Self { key: key.into(), new_value: None }
 	}
@@ -59,21 +68,30 @@ impl GovernedMapChangeV1 {
 #[derive(Decode, Encode, Debug, PartialEq)]
 #[cfg_attr(feature = "std", derive(thiserror::Error))]
 pub enum InherentError {
-	#[cfg_attr(feature = "std", error("Inherent missing for Governed Map pallet"))]
-	InherentMissing,
+	/// Inherent was not produced when expected
+	#[cfg_attr(feature = "std", error("Governed Map inherent not produced when expected"))]
+	InherentRequired,
+	/// Inherent was produced when not expected
 	#[cfg_attr(feature = "std", error("Unexpected inherent for Governed Map pallet"))]
 	InherentNotExpected,
+	/// Data in the pallet inherent differs from inherent data
 	#[cfg_attr(
 		feature = "std",
 		error("Data in Governed Map pallet inherent differs from inherent data")
 	)]
 	IncorrectInherent,
+	/// The provided Governed Map key exceeds size bounds
 	#[cfg_attr(feature = "std", error("Governed Map key {0} exceeds size bounds"))]
 	KeyExceedsBounds(String),
+	/// The provided Governed Map value exceeds size bounds
 	#[cfg_attr(feature = "std", error("Governed Map value {1:?} for key {0} exceeds size bounds"))]
 	ValueExceedsBounds(String, ByteString),
+	/// Number of changes to the Governed Map exceeds the limit
 	#[cfg_attr(feature = "std", error("Number of changes to the Governed Map exceeds the limit"))]
 	TooManyChanges,
+	/// The inherent was produced with incorrect production data
+	#[cfg_attr(feature = "std", error("Governed Map inherent data is not correctly encoded"))]
+	InvalidInherentData,
 }
 
 impl IsFatalError for InherentError {
@@ -145,7 +163,10 @@ pub enum GovernedMapInherentDataProvider {
 	/// Inactive variant that will not provide any data and will not raise any errors.
 	Inert,
 	/// Active variant that will provide data.
-	ActiveV1 { changes: ChangesV1 },
+	ActiveV1 {
+		/// List of changes that occurred since previous observation.
+		changes: ChangesV1,
+	},
 }
 
 #[cfg(feature = "std")]
@@ -194,10 +215,13 @@ pub trait GovernedMapDataSource {
 #[cfg(feature = "std")]
 #[derive(Debug, thiserror::Error)]
 pub enum InherentProviderCreationError {
+	/// Runtime API call failed
 	#[error("Runtime API call failed: {0}")]
 	ApiError(#[from] sp_api::ApiError),
+	/// Data source call failed
 	#[error("Data source call failed: {0}")]
 	DataSourceError(Box<dyn std::error::Error + Send + Sync>),
+	/// Unsupported pallet version
 	#[error("Unsupported pallet version {0} (highest supported version: {1})")]
 	UnsupportedPalletVersion(u32, u32),
 }
