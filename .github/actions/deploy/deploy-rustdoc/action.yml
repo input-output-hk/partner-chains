@@ -22,6 +22,30 @@ runs:
     - name: Install Nix
       uses: DeterminateSystems/nix-installer-action@main
 
+    - name: Print working directory and list files
+      run: |
+        pwd
+        ls -alh
+      shell: bash
+    
+    - name: Show rust-toolchain.toml
+      run: |
+        echo "====== rust-toolchain.toml ======"
+        cat rust-toolchain.toml
+        echo "================================="
+      shell: bash
+    
+    - name: Show Rust version used in Nix dev shell
+      run: |
+        nix develop .#nightly -c rustc --version
+        nix develop .#nightly -c cargo --version
+      shell: bash
+    
+    - name: Show required fenix hash for rust-toolchain.toml
+      run: |
+        nix run github:nix-community/fenix -- from-toolchain-file --print-hash rust-toolchain.toml || true
+      shell: bash
+
     - name: Build Rustdocs
       run: nix develop .#nightly -c gen-cargo-docs
       shell: bash
