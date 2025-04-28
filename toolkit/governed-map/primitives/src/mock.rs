@@ -1,22 +1,22 @@
 use crate::*;
 use sidechain_domain::byte_string::ByteString;
 use sp_api::ProvideRuntimeApi;
-use std::collections::BTreeMap;
 
 #[cfg(feature = "std")]
 pub struct MockGovernedMapDataSource {
-	pub current_mappings: Result<BTreeMap<String, ByteString>, String>,
+	pub changes: Vec<(String, Option<ByteString>)>,
 }
 
 #[cfg(feature = "std")]
 #[async_trait::async_trait]
 impl GovernedMapDataSource for MockGovernedMapDataSource {
-	async fn get_current_mappings(
+	async fn get_mapping_changes(
 		&self,
-		_mc_block: McBlockHash,
+		_since_mc_block: Option<McBlockHash>,
+		_up_to_mc_block: McBlockHash,
 		_main_chain_scripts: MainChainScriptsV1,
-	) -> Result<BTreeMap<String, ByteString>, Box<dyn std::error::Error + Send + Sync>> {
-		Ok(self.current_mappings.clone()?)
+	) -> Result<Vec<(String, Option<ByteString>)>, Box<dyn std::error::Error + Send + Sync>> {
+		Ok(self.changes.clone())
 	}
 }
 
@@ -27,9 +27,7 @@ pub(crate) type Block = sp_runtime::generic::Block<
 >;
 
 #[derive(Clone, Default)]
-pub(crate) struct TestApiV1 {
-	pub stored_mappings: BTreeMap<String, ByteString>,
-}
+pub(crate) struct TestApiV1;
 
 impl ProvideRuntimeApi<Block> for TestApiV1 {
 	type Api = Self;
@@ -41,9 +39,6 @@ impl ProvideRuntimeApi<Block> for TestApiV1 {
 
 sp_api::mock_impl_runtime_apis! {
 	impl GovernedMapIDPApi<Block> for TestApiV1 {
-		fn get_stored_mappings() -> BTreeMap<String, ByteString> {
-			self.stored_mappings.clone()
-		}
 		fn get_main_chain_scripts() -> Option<MainChainScriptsV1> {
 			Some(Default::default())
 		}

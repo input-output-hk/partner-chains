@@ -6,22 +6,23 @@ use sp_governed_map::{GovernedMapDataSource, MainChainScriptsV1};
 
 #[derive(Debug, Default)]
 pub struct GovernedMapDataSourceMock {
-	mappings: BTreeMap<String, ByteString>,
+	changes: Vec<(String, Option<ByteString>)>,
 }
 
 impl GovernedMapDataSourceMock {
-	pub fn new(mappings: BTreeMap<String, ByteString>) -> Self {
-		Self { mappings }
+	pub fn new(changes: Vec<(String, Option<ByteString>)>) -> Self {
+		Self { changes }
 	}
 }
 
 #[async_trait]
 impl GovernedMapDataSource for GovernedMapDataSourceMock {
-	async fn get_current_mappings(
+	async fn get_mapping_changes(
 		&self,
-		_mc_block: McBlockHash,
+		_since_mc_block: Option<McBlockHash>,
+		_up_to_mc_block: McBlockHash,
 		_scripts: MainChainScriptsV1,
-	) -> Result<BTreeMap<String, ByteString>> {
-		Ok(self.mappings.clone())
+	) -> Result<Vec<(String, Option<ByteString>)>> {
+		Ok(self.changes.clone())
 	}
 }

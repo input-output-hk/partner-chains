@@ -141,6 +141,7 @@ where
 			client.as_ref(),
 			parent_hash,
 			mc_hash.mc_hash(),
+			mc_hash.previous_mc_hash(),
 			governed_map_data_source.as_ref(),
 		)
 		.await?;
@@ -265,6 +266,7 @@ where
 			client.as_ref(),
 			parent_hash,
 			mc_hash,
+			mc_state_reference.previous_mc_hash(),
 			governed_map_data_source.as_ref(),
 		)
 		.await?;
