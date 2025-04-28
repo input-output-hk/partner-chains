@@ -10,8 +10,6 @@ use sp_consensus_slots::Slot;
 type AccountId = u32;
 type Block = frame_system::mocking::MockBlock<Test>;
 
-pub const MAX_LOG_SIZE: u32 = 100000;
-
 #[frame_support::pallet]
 pub mod mock_pallet {
 	#[pallet::pallet]

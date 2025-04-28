@@ -120,6 +120,7 @@ pub mod pallet {
 		fn current_slot() -> Slot;
 
 		#[cfg(feature = "runtime-benchmarks")]
+		/// Benchmark helper type used for running benchmarks
 		type BenchmarkHelper: benchmarking::BenchmarkHelper<Self::BlockProducerId>;
 	}
 
