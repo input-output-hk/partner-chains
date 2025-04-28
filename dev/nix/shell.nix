@@ -19,10 +19,12 @@
           LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
           LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [ rustToolchain pkgs.stdenv.cc.cc pkgs.libz ];
 
-          nightlyCargo = (fenixPkgs.toolchainOf {
-            channel = "nightly";
-            sha256 = "sha256-6oexOcgMfjXSi09nceCXmECRXhQkgqx8OgbNRGoXMWQ=";
-          }).cargo;
+          nightlyCargo = rustToolchain; # This makes nightlyCargo use toolchain.toml
+
+          # nightlyCargo = (fenixPkgs.toolchainOf {
+          #   channel = "nightly";
+          #   sha256 = "sha256-6oexOcgMfjXSi09nceCXmECRXhQkgqx8OgbNRGoXMWQ=";
+          # }).cargo;
 
           gen-cargo-docs = pkgs.writeScriptBin "gen-cargo-docs" ''
             RUSTDOCFLAGS="--enable-index-page -Zunstable-options" SKIP_WASM_BUILD=1 ${nightlyCargo}/bin/cargo doc --no-deps
