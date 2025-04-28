@@ -22,52 +22,9 @@ runs:
     - name: Install Nix
       uses: DeterminateSystems/nix-installer-action@main
 
-    - name: Print working directory and list files
+    - name: Build Rustdocs 
       run: |
-        pwd
-        ls -alh
-      shell: bash
-    
-    - name: Show rust-toolchain.toml
-      run: |
-        echo "====== rust-toolchain.toml ======"
-        cat rust-toolchain.toml
-        echo "================================="
-      shell: bash
-    
-    - name: Show Rust version used in Nix dev shell
-      run: |
-        nix develop .#nightly -c rustc --version
-        nix develop .#nightly -c cargo --version
-      shell: bash
-    
-    - name: Show required fenix hash for rust-toolchain.toml
-      run: |
-        nix run github:nix-community/fenix -- from-toolchain-file --print-hash rust-toolchain.toml || true
-      shell: bash
-
-    - name: Prove which rustc/cargo is actually running in shell
-      run: |
-        which cargo
-        which rustc
-        cargo --version
-        rustc --version
-        env | grep -i rust
-      shell: bash
-
-    - name: Prove which cargo/rustc will run via gen-cargo-docs
-      run: |
-        . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh || true
-        $(which gen-cargo-docs)
-      shell: bash
-
-    - name: Build Rustdocs (force Nix cargo/rustc)
-      run: |
-        NIX_BIN=$(nix develop .#nightly -c bash -c 'dirname $(which cargo)')
-        export PATH="$NIX_BIN:$PATH"
-        cargo --version
-        rustc --version
-        gen-cargo-docs
+        nix develop .#nightly -c gen-cargo-docs
       shell: bash
 
     - name: Deploy documentation
