@@ -61,8 +61,13 @@ runs:
         $(which gen-cargo-docs)
       shell: bash
 
-    - name: Build Rustdocs
-      run: nix develop .#nightly -c bash -c 'cargo --version && rustc --version && gen-cargo-docs'
+    - name: Build Rustdocs (force Nix cargo/rustc)
+      run: |
+        NIX_BIN=$(nix develop .#nightly -c bash -c 'dirname $(which cargo)')
+        export PATH="$NIX_BIN:$PATH"
+        cargo --version
+        rustc --version
+        gen-cargo-docs
       shell: bash
 
     - name: Deploy documentation
