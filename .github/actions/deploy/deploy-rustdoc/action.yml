@@ -30,6 +30,7 @@ runs:
     - name: Build rustdocs
       run: |
         . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+        export NIX_CONFIG="experimental-features = nix-command flakes"
         nix develop .#nightly -c gen-cargo-docs
       shell: bash
 
