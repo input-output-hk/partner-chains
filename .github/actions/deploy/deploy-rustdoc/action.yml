@@ -21,9 +21,6 @@ runs:
         ssh-add - <<< "${{ inputs.ssh_key }}"
       shell: bash
 
-    - name: Rust cache
-      uses: Swatinem/rust-cache@v2.6.2
-
     - name: Build rustdocs
       run: nix develop .#nightly -c gen-cargo-docs
       shell: bash
