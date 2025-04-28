@@ -20,20 +20,12 @@
           LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [ nightlyToolchain pkgs.stdenv.cc.cc pkgs.libz ];
           CFLAGS = "-DJEMALLOC_STRERROR_R_RETURNS_CHAR_WITH_GNU_SOURCE";
 
-          nightlyToolchain = (fenixPkgs.toolchainOf {
-            channel = "nightly";
-            sha256 = "sha256-6oexOcgMfjXSi09nceCXmECRXhQkgqx8OgbNRGoXMWQ=";
-          }).withComponents [
-            "cargo"
-            "clippy"
-            "rust-src"
-            "rustc"
-            "rustfmt"
-          ];
+          nightlyToolchain = rustToolchain;
 
           gen-cargo-docs = pkgs.writeScriptBin "gen-cargo-docs" ''
-            RUSTDOCFLAGS="--enable-index-page -Zunstable-options" SKIP_WASM_BUILD=1 cargo doc --no-deps
+            RUSTDOCFLAGS="--enable-index-page" SKIP_WASM_BUILD=1 ${nightlyToolchain}/bin/cargo doc --no-deps
           '';
+
 
           packages = with pkgs; [
             nightlyToolchain

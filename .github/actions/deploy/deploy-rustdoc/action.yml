@@ -11,14 +11,6 @@ runs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Add SSH key to read Substrate Repo
-      run: |
-        mkdir -p ~/.ssh
-        ssh-keyscan github.com >> ~/.ssh/known_hosts
-        ssh-agent -a /tmp/ssh_agent.sock > /dev/null
-        ssh-add - <<< "${{ inputs.ssh_key }}"
-      shell: bash
-
     - name: Install Nix
       uses: DeterminateSystems/nix-installer-action@main
 
