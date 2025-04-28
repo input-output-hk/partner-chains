@@ -26,9 +26,11 @@ runs:
         sh <(curl -L https://nixos.org/nix/install) --daemon
         . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
       shell: bash
-
+    
     - name: Build rustdocs
-      run: nix develop .#nightly -c gen-cargo-docs
+      run: |
+        . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+        nix develop .#nightly -c gen-cargo-docs
       shell: bash
 
     - name: Deploy documentation
