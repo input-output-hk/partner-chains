@@ -21,7 +21,7 @@
 
           nightlyCargo = (fenixPkgs.toolchainOf {
             channel = "nightly";
-            sha256 = "sha256-Xq3Xj6F7Rsi0vbSVY+HO5YdhxfEKgGhJ9259iDozjDs=";
+            sha256 = "sha256-6oexOcgMfjXSi09nceCXmECRXhQkgqx8OgbNRGoXMWQ=";
           }).cargo;
 
           gen-cargo-docs = pkgs.writeScriptBin "gen-cargo-docs" ''
