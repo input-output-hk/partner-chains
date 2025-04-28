@@ -16,7 +16,7 @@ use sidechain_domain::{
 use sidechain_mc_hash::mock::MockMcHashDataSource;
 use sp_block_participation::BlockProductionData;
 use sp_consensus_aura::Slot;
-use sp_core::{ecdsa, H256};
+use sp_core::ecdsa;
 use sp_inherents::CreateInherentDataProviders;
 use sp_inherents::{InherentData, InherentDataProvider};
 use sp_native_token_management::mock::MockNativeTokenDataSource;
@@ -32,8 +32,15 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 	);
 
 	let native_token_data_source = MockNativeTokenDataSource::new(
-		[((None, McBlockHash([1; 32])), NativeTokenAmount(1000))].into(),
+		[((Some(McBlockHash([0; 32])), McBlockHash([1; 32])), NativeTokenAmount(1000))].into(),
 	);
+	let parent_stable_block = MainchainBlock {
+		number: McBlockNumber(0),
+		hash: McBlockHash([0; 32]),
+		epoch: McEpochNumber(2),
+		slot: McSlotNumber(2),
+		timestamp: 3,
+	};
 	let stable_block = MainchainBlock {
 		number: McBlockNumber(1),
 		hash: McBlockHash([1; 32]),
@@ -41,12 +48,13 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 		slot: McSlotNumber(3),
 		timestamp: 4,
 	};
-	let mc_hash_data_source = MockMcHashDataSource::from(vec![stable_block.clone()]);
+	let mc_hash_data_source =
+		MockMcHashDataSource::from(vec![parent_stable_block.clone(), stable_block.clone()]);
 
 	let inherent_data_providers = ProposalCIDP::new(
 		test_create_inherent_data_config(),
 		TestApi::new(ScEpochNumber(2))
-			.with_headers([(H256::zero(), mock_header())])
+			.with_headers([(mock_header().hash(), mock_header())])
 			.into(),
 		Arc::new(mc_hash_data_source),
 		Arc::new(MockAuthoritySelectionDataSource::default()),
@@ -54,7 +62,7 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 		Arc::new(StakeDistributionDataSourceMock::new()),
 		Arc::new(GovernedMapDataSourceMock::default()),
 	)
-	.create_inherent_data_providers(H256::zero(), ())
+	.create_inherent_data_providers(mock_header().hash(), ())
 	.await
 	.unwrap();
 

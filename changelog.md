@@ -20,6 +20,11 @@ the mock data source has been changed to `MOCK_REGISTRATIONS_FILE` to match. Pro
 `partner_chains_data_source_method_time_elapsed` and `partner_chains_data_source_method_call_count` respectively.
 * Default `smart-contracts` timeout from 2 minutes to 5 minutes
 * Update polkadot-sdk to polkadot-stable2503.
+* `McHashInherentDataProvider` now also exposes the Cardano block hash referenced by the previous block,
+if any. It can be accessed through `previous_mc_hash` function.
+* `NativeTokenManagementInherentDataProvider` now expects to be passed the previous main chain reference
+block hash on construction instead of retrieving it by itself. Use `McHashInherentDataProvider::previous_mc_hash`
+to provide it in your IDP stack.
 
 ## Removed
 

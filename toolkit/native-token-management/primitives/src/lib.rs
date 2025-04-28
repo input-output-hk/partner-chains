@@ -93,9 +93,7 @@ impl IsFatalError for InherentError {
 #[cfg(feature = "std")]
 mod inherent_provider {
 	use super::*;
-	use sidechain_mc_hash::get_mc_hash_for_block;
 	use sp_api::{ApiError, ApiExt, ProvideRuntimeApi};
-	use sp_blockchain::HeaderBackend;
 	use std::error::Error;
 	use std::sync::Arc;
 
@@ -110,6 +108,10 @@ mod inherent_provider {
 		) -> Result<NativeTokenAmount, Box<dyn std::error::Error + Send + Sync>>;
 	}
 
+	/// Inherent data provider that provides aggregate number of native token transfers to the illiquid supply on Cardano
+	/// in some time range.
+	///
+	/// This IDP will not provide any inherent data if `token_amount` is [None], but *will* provide data for `Some(0)`.
 	pub struct NativeTokenManagementInherentDataProvider {
 		pub token_amount: Option<NativeTokenAmount>,
 	}
@@ -120,8 +122,6 @@ mod inherent_provider {
 		DataSourceError(Box<dyn Error + Send + Sync>),
 		#[error("Failed to call runtime API: {0:?}")]
 		ApiError(ApiError),
-		#[error("Failed to retrieve previous MC hash: {0:?}")]
-		McHashError(Box<dyn Error + Send + Sync>),
 	}
 
 	impl From<ApiError> for IDPCreationError {
@@ -131,17 +131,30 @@ mod inherent_provider {
 	}
 
 	impl NativeTokenManagementInherentDataProvider {
-		/// Creates inherent data provider only if the pallet is present in the runtime.
-		/// Returns zero transfers if not.
+		/// Creates a [NativeTokenManagementInherentDataProvider] that will provide as inherent data the aggregate number of
+		/// native token transfers into the illiquid supply on Cardano after the block with hash `parent_mc_hash` up to and
+		/// including the block with hash `mc_hash`.
+		///
+		/// This function is runtime-aware and will only create an active [NativeTokenManagementInherentDataProvider] instance
+		/// if the pallet is present and configured. Otherwise the returned inherent data provider will be inactive.
+		///
+		/// # Arguments
+		/// - `client`: runtime client exposing the [NativeTokenManagementApi] runtime API
+		/// - `data-source`: data source implementing [NativeTokenManagementDataSource]
+		/// - `mc_hash`: main chain block hash referenced by the currently produced or validated block
+		/// - `parent_mc_hash`: main chain block hash referenced by the parent of the currently producer or validated block.
+		///                     This argument should be [None] if the parent block was the genesis block or didn't reference
+		///                     any main chain block.
+		/// - `parent_hash`: block hash of the parent block of the currently produced or validated block
 		pub async fn new<Block, C>(
 			client: Arc<C>,
 			data_source: &(dyn NativeTokenManagementDataSource + Send + Sync),
 			mc_hash: McBlockHash,
+			parent_mc_hash: Option<McBlockHash>,
 			parent_hash: <Block as BlockT>::Hash,
 		) -> Result<Self, IDPCreationError>
 		where
 			Block: BlockT,
-			C: HeaderBackend<Block>,
 			C: ProvideRuntimeApi<Block> + Send + Sync,
 			C::Api: NativeTokenManagementApi<Block>,
 		{
@@ -152,12 +165,6 @@ mod inherent_provider {
 				let api = client.runtime_api();
 				let Some(scripts) = api.get_main_chain_scripts(parent_hash)? else {
 					return Ok(Self { token_amount: None });
-				};
-				let parent_mc_hash: Option<McBlockHash> = if api.initialized(parent_hash)? {
-					get_mc_hash_for_block(client.as_ref(), parent_hash)
-						.map_err(IDPCreationError::McHashError)?
-				} else {
-					None
 				};
 				let token_amount = data_source
 					.get_total_native_token_transfer(parent_mc_hash, mc_hash, scripts)
