@@ -284,7 +284,7 @@ impl sp_inherents::InherentDataProvider for GovernedMapInherentDataProvider {
 #[cfg(feature = "std")]
 #[async_trait::async_trait]
 pub trait GovernedMapDataSource {
-	/// Queries all changes that occured in the mappings of the Governed Map on Cardano in the given range of blocks.
+	/// Queries all changes that occurred in the mappings of the Governed Map on Cardano in the given range of blocks.
 	///
 	/// # Arguments:
 	/// - `since_mc_block`: lower bound (exclusive). If [None], the data source should return all changes since the genesis block.
