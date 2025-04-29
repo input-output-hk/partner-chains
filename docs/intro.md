@@ -1,5 +1,24 @@
 # Partner Chains Toolkit Documentation
 
+## Table Of Contents
+
+  * [Basics](#basics)
+    * [What is a Partner Chain](#what-is-a-partner-chain)
+    * [Shared security with Cardano](#shared-security-with-cardano)
+    * [Mixed validator committee](#mixed-validator-committee)
+    * [Registered and Permissioned Validators](#registered-and-permissioned-validators)
+      * [Registered Validator](#registered-validator)
+      * [Permissioned Validator](#permissioned-validator)
+  * [Features](#features)
+    * [Block Participation Rewards](#block-participation-rewards)
+    * [Partner Chains Governance](#partner-chains-governance)
+    * [Native Token Reserve Management](#native-token-reserve-management)
+  * [Upgrade &amp; Migration Guides](#upgrade--migration-guides)
+      * [1\.3\.0 to 1\.3\.1](#130-to-131)
+      * [1\.3\.1 to 1\.4\.0](#131-to-140)
+      * [1\.3\.1 to 1\.4\.0](#131-to-140-1)
+  * [Rust Docs](#rust-docs)
+
 ### Basics
 
 The Partner Chain Toolkit provides tools and features to build and maintain partner chains that are
@@ -14,7 +33,7 @@ and functionality.
 #### Shared security with Cardano
 Cardano has a robust set of Stake Pool Operators (SPOs) with a proven history of providing security to the Cardano network. The Partner Chains Toolkit allows those SPOs to bring that same security to new partner chains, right out of the box.
 
-The partner chain maintains awareness of Cardano's state through a chain indexer, which constantly updates the partner chain with relevant information from Cardano. 
+The partner chain maintains awareness of Cardano's state through a chain indexer, which constantly updates the partner chain with relevant information from Cardano.
 
 Network parameters stored securely on Cardano can be viewed from the partner chain, helping the partner chain defend against possible parameter attacks. Cardano also provides a native token reserve management system that the partner chain can use to store treasury tokens.
 
@@ -69,6 +88,10 @@ Please refer to
 details o how to setting up and maintaining a native token reserve on Cardano to  be used with a
 partner chain.
 
+### Rust Docs
+
+Rust Docs for all crates provided by the toolkit are available to browse online:
+[https://input-output-hk.github.io/partner-chains/](https://input-output-hk.github.io/partner-chains/)
 
 ### Upgrade & Migration Guides
 The following migration guides outline how to upgrade a running partner chain from one version to
