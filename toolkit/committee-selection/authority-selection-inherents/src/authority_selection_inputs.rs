@@ -16,14 +16,24 @@ pub struct AuthoritySelectionInputs {
 #[cfg(feature = "std")]
 #[derive(Debug, thiserror::Error)]
 pub enum AuthoritySelectionInputsCreationError {
-	#[cfg_attr(feature = "std", error("Failed to get Ariadne parameters for epoch: {0}, D-parameter: {1:?}, permissioned candidates: {2:?}: {3}"))]
+	#[cfg_attr(
+		feature = "std",
+		error(
+			"Failed to get Ariadne parameters for epoch: {0}, D-parameter: {1:?}, permissioned candidates: {2:?}: {3}"
+		)
+	)]
 	AriadneParametersQuery(
 		McEpochNumber,
 		PolicyId,
 		PolicyId,
 		Box<dyn std::error::Error + Send + Sync>,
 	),
-	#[cfg_attr(feature = "std", error("Failed to get registered candidates for epoch: {0}, committee candidate address: {1}: {2}."))]
+	#[cfg_attr(
+		feature = "std",
+		error(
+			"Failed to get registered candidates for epoch: {0}, committee candidate address: {1}: {2}."
+		)
+	)]
 	GetCandidatesQuery(McEpochNumber, String, Box<dyn std::error::Error + Send + Sync>),
 	#[cfg_attr(feature = "std", error("Failed to get epoch nonce for epoch: {0}: {1}."))]
 	GetEpochNonceQuery(McEpochNumber, Box<dyn std::error::Error + Send + Sync>),
@@ -117,7 +127,7 @@ impl AuthoritySelectionInputs {
 					scripts.d_parameter_policy_id,
 					scripts.permissioned_candidates_policy_id,
 					("Expected Data Not Found: Permissioned Candidates List".to_string()).into(),
-				))
+				));
 			},
 			Some(permissioned_candidates) => permissioned_candidates
 				.into_iter()

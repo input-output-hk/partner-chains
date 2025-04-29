@@ -7,9 +7,9 @@ start_node() {
     /usr/local/bin/partner-chains-node \
         --validator \
         --chain=/shared/chain-spec.json \
-        --node-key-file=/data/chains/partner_chains_template/network/secret_ed25519 \
+        --node-key-file=/data/network/secret_ed25519 \
         --base-path=/data \
-        --keystore-path=/data/chains/partner_chains_template/keystore \
+        --keystore-path=/data/keystore \
         --unsafe-rpc-external \
         --rpc-port=9933 \
         --rpc-cors=all \

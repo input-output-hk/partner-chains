@@ -4,10 +4,10 @@ mod header_verification {
 	use parity_scale_codec::Encode;
 	use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 	use sp_consensus_aura::sr25519::AuthoritySignature as AuraSignature;
-	use sp_core::crypto::Ss58Codec;
 	use sp_core::H256;
-	use sp_runtime::traits::{BlakeTwo256, Hash};
+	use sp_core::crypto::Ss58Codec;
 	use sp_runtime::RuntimeAppPublic;
+	use sp_runtime::traits::{BlakeTwo256, Hash};
 
 	#[test]
 	fn test_header_hashing() {
@@ -30,7 +30,9 @@ mod header_verification {
 		let public_key =
 			AuraId::from_ss58check("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY").unwrap();
 		let header_hash = calculate_header_hash(header);
-		let signature_bytes = hex!("9ee2ad67e2646c4d8331787b22d3ca793a491a5ec6d4def9d526de3a6f3ffb0adafc42111ef5743f4213692b0f30301f4ab97a8cb9bb8d5f7e5d7f0090287085");
+		let signature_bytes = hex!(
+			"9ee2ad67e2646c4d8331787b22d3ca793a491a5ec6d4def9d526de3a6f3ffb0adafc42111ef5743f4213692b0f30301f4ab97a8cb9bb8d5f7e5d7f0090287085"
+		);
 		let aura_signature: AuraSignature =
 			AuraSignature::try_from(signature_bytes.as_ref()).unwrap();
 		let verification_result = AuraId::verify(&public_key, &header_hash.0, &aura_signature);

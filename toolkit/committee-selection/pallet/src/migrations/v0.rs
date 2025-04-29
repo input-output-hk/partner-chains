@@ -1,5 +1,5 @@
 use frame_support::pallet_prelude::{OptionQuery, ValueQuery, Zero};
-use frame_support::{storage_alias, BoundedVec, CloneNoBound};
+use frame_support::{BoundedVec, CloneNoBound, storage_alias};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 

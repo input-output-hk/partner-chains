@@ -26,7 +26,7 @@ use num_derive::*;
 use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen, WrapperTypeEncode};
 use plutus_datum_derive::*;
 use scale_info::TypeInfo;
-use sp_core::{bounded::BoundedVec, ecdsa, ed25519, sr25519, ConstU32};
+use sp_core::{ConstU32, bounded::BoundedVec, ecdsa, ed25519, sr25519};
 #[cfg(feature = "serde")]
 use {
 	derive_more::FromStr,
@@ -81,7 +81,6 @@ impl Display for McEpochNumber {
 	Decode,
 	DecodeWithMemTracking,
 	TypeInfo,
-	ToDatum,
 	PartialEq,
 	Eq,
 	PartialOrd,
@@ -105,7 +104,6 @@ impl StakeDelegation {
 	Decode,
 	DecodeWithMemTracking,
 	TypeInfo,
-	ToDatum,
 	PartialEq,
 	Eq,
 	From,
@@ -207,7 +205,6 @@ pub struct MainchainBlock {
 	DecodeWithMemTracking,
 	PartialOrd,
 	Ord,
-	ToDatum,
 	TypeInfo,
 	MaxEncodedLen,
 )]
@@ -286,16 +283,7 @@ pub type ScriptHash = PolicyId;
 pub const MAX_ASSET_NAME_LEN: u32 = 32;
 
 #[derive(
-	Clone,
-	Default,
-	PartialEq,
-	Eq,
-	Encode,
-	Decode,
-	DecodeWithMemTracking,
-	ToDatum,
-	TypeInfo,
-	MaxEncodedLen,
+	Clone, Default, PartialEq, Eq, Encode, Decode, DecodeWithMemTracking, TypeInfo, MaxEncodedLen,
 )]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 pub struct AssetName(pub BoundedVec<u8, ConstU32<MAX_ASSET_NAME_LEN>>);
@@ -354,7 +342,6 @@ const STAKE_POOL_PUBLIC_KEY_LEN: usize = 32;
 	Encode,
 	Decode,
 	DecodeWithMemTracking,
-	ToDatum,
 	TypeInfo,
 	MaxEncodedLen,
 	Hash,
@@ -384,16 +371,7 @@ impl TryFrom<Vec<u8>> for StakePoolPublicKey {
 const STAKE_PUBLIC_KEY_LEN: usize = 32;
 
 #[derive(
-	Clone,
-	PartialEq,
-	Eq,
-	Encode,
-	Decode,
-	DecodeWithMemTracking,
-	ToDatum,
-	TypeInfo,
-	MaxEncodedLen,
-	Hash,
+	Clone, PartialEq, Eq, Encode, Decode, DecodeWithMemTracking, TypeInfo, MaxEncodedLen, Hash,
 )]
 #[cfg_attr(feature = "std", byte_string(to_hex_string))]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
@@ -422,7 +400,6 @@ const MAINCHAIN_KEY_HASH_LEN: usize = 28;
 	PartialEq,
 	Ord,
 	PartialOrd,
-	ToDatum,
 	TypeInfo,
 )]
 #[byte_string(debug)]
@@ -627,7 +604,6 @@ const CROSS_CHAIN_KEY_HASH_LEN: usize = 28;
 	PartialEq,
 	Ord,
 	PartialOrd,
-	ToDatum,
 	TypeInfo,
 )]
 #[byte_string(debug, to_hex_string)]
@@ -808,7 +784,6 @@ impl TryFrom<Vec<u8>> for McTxHash {
 	PartialEq,
 	Eq,
 	TypeInfo,
-	ToDatum,
 	MaxEncodedLen,
 	Hash,
 )]
@@ -872,10 +847,6 @@ impl std::fmt::Display for NetworkType {
 	}
 }
 
-#[derive(Default, Clone, PartialEq, Eq, Encode, Decode)]
-#[byte_string(debug, hex_serialize, hex_deserialize)]
-pub struct CommitteeHash(pub Vec<u8>);
-
 /// UTxO Output of a Registration Transaction on Cardano
 ///
 /// Note: A Registration Transaction is called by a user on Cardano to register themselves as a Sidechain Authority Candidate
@@ -921,56 +892,6 @@ impl CandidateRegistrations {
 
 	pub fn registrations(&self) -> &[RegistrationData] {
 		&self.registrations
-	}
-}
-
-/// Hash of concatenated private keys. It should match:
-/// -- | Invariant: 'ATMSPlainAggregatePubKey' is the sorted concatenated hash of
-/// -- sidechain public keys. More precisely,
-/// -- @
-/// -- committeePubKeys = sort([key1, key2, ..., keyN])
-/// -- committeePubKeysHash = blake2b_256(concat(committeePubKeys))
-/// -- keyi - 33 bytes compressed ECDSA public key of a committee member
-/// -- @
-/// newtype ATMSPlainAggregatePubKey = ATMSPlainAggregatePubKey ByteString
-/// <https://github.com/input-output-hk/partner-chains-smart-contracts/blob/5b19d25a95c3ab49ae0e4c6ce0ec3376f13b3766/docs/Specification.md#L554-L561>
-#[derive(Clone, Debug, Decode, DecodeWithMemTracking, Encode, Eq, PartialEq, ToDatum, TypeInfo)]
-pub struct ATMSPlainAggregatePubKey(pub [u8; 32]);
-
-impl ATMSPlainAggregatePubKey {
-	pub fn new(mut keys: Vec<SidechainPublicKey>) -> Self {
-		keys.sort_by(|a, b| a.0.cmp(&b.0));
-		let concatenated: Vec<u8> = keys.into_iter().flat_map(|k| k.0).collect();
-		let hashed = sp_crypto_hashing::blake2_256(concatenated.as_slice());
-		Self(hashed)
-	}
-}
-
-pub const VALIDATOR_HASH_LEN: usize = 28;
-
-#[derive(
-	Clone,
-	Decode,
-	DecodeWithMemTracking,
-	Default,
-	Eq,
-	Encode,
-	MaxEncodedLen,
-	PartialEq,
-	TypeInfo,
-	ToDatum,
-)]
-#[byte_string(debug, decode_hex, hex_serialize, hex_deserialize)]
-pub struct ValidatorHash(pub [u8; VALIDATOR_HASH_LEN]);
-
-#[derive(Debug, Clone, TypeInfo, Decode, DecodeWithMemTracking, Encode, Eq, PartialEq, ToDatum)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct SidechainPublicKeysSorted(Vec<SidechainPublicKey>);
-
-impl SidechainPublicKeysSorted {
-	pub fn new(mut keys: Vec<SidechainPublicKey>) -> Self {
-		keys.sort_by(|a, b| a.0.cmp(&b.0));
-		Self(keys)
 	}
 }
 
@@ -1093,7 +1014,12 @@ mod tests {
 		)
 		.unwrap();
 		let serialized = serde_json::to_value(&address).unwrap();
-		assert_eq!(serialized, serde_json::json!("0x616464725f7465737431777a35716337666b327061743030353877347a77766b77333579747074656a336e7563336a65326b6774616e356471337274347363"));
+		assert_eq!(
+			serialized,
+			serde_json::json!(
+				"0x616464725f7465737431777a35716337666b327061743030353877347a77766b77333579747074656a336e7563336a65326b6774616e356471337274347363"
+			)
+		);
 		let deserialized = serde_json::from_value(serialized).unwrap();
 		assert_eq!(address, deserialized);
 	}
@@ -1138,7 +1064,9 @@ mod tests {
 		let pubkey = CrossChainPublicKey(
 			hex!("020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1").to_vec(),
 		);
-		let signed_data = hex!("84020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a16c68747470733a2f2f636f6f6c2e73747566662f73706f2e6a736f6e000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
+		let signed_data = hex!(
+			"84020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a16c68747470733a2f2f636f6f6c2e73747566662f73706f2e6a736f6e000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+		);
 
 		assert!(signature.verify(&pubkey, &signed_data).is_ok())
 	}

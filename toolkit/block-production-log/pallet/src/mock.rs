@@ -1,7 +1,7 @@
 use crate::mock::sp_runtime::testing::H256;
 use frame_support::sp_runtime::{
-	traits::{BlakeTwo256, IdentityLookup},
 	BuildStorage,
+	traits::{BlakeTwo256, IdentityLookup},
 };
 use frame_support::traits::{ConstU16, ConstU32, ConstU64};
 use frame_support::*;
@@ -9,8 +9,6 @@ use sp_consensus_slots::Slot;
 
 type AccountId = u32;
 type Block = frame_system::mocking::MockBlock<Test>;
-
-pub const MAX_LOG_SIZE: u32 = 100000;
 
 #[frame_support::pallet]
 pub mod mock_pallet {

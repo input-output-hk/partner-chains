@@ -21,11 +21,11 @@ pub mod import_queue;
 
 use futures::prelude::*;
 use parity_scale_codec::Codec;
-use sc_client_api::{backend::AuxStore, BlockOf};
+use sc_client_api::{BlockOf, backend::AuxStore};
 use sc_consensus::block_import::BlockImport;
 use sc_consensus::{BlockImportParams, ForkChoiceStrategy, StateAction};
 use sc_consensus_aura::{
-	find_pre_digest, BuildAuraWorkerParams, CompatibilityMode, StartAuraParams,
+	BuildAuraWorkerParams, CompatibilityMode, StartAuraParams, find_pre_digest,
 };
 use sc_consensus_slots::{
 	BackoffAuthoringBlocksStrategy, InherentDataProviderExt, SimpleSlotWorkerToSlotWorker,
@@ -374,22 +374,22 @@ mod tests {
 	use sc_block_builder::BlockBuilderBuilder;
 	use sc_client_api::BlockchainEvents;
 	use sc_consensus::BoxJustificationImport;
-	use sc_consensus_aura::{standalone::slot_duration, CheckForEquivocation};
+	use sc_consensus_aura::{CheckForEquivocation, standalone::slot_duration};
 	use sc_consensus_slots::{BackoffAuthoringOnFinalizedHeadLagging, SimpleSlotWorker};
 	use sc_keystore::LocalKeystore;
 	use sc_network_test::{Block as TestBlock, *};
-	use sp_application_crypto::{key_types::AURA, AppCrypto};
+	use sp_application_crypto::{AppCrypto, key_types::AURA};
 	use sp_consensus::{DisableProofRecording, NoNetwork as DummyOracle, Proposal};
+	use sp_consensus_aura::SlotDuration;
 	use sp_consensus_aura::inherents::InherentDataProvider;
 	use sp_consensus_aura::sr25519::AuthorityPair;
-	use sp_consensus_aura::SlotDuration;
 	use sp_inherents::InherentData;
 	use sp_keyring::sr25519::Keyring;
 	use sp_keystore::Keystore;
 	use sp_partner_chains_consensus_aura::CurrentSlotProvider;
 	use sp_runtime::{
-		traits::{Block as BlockT, Header as _},
 		Digest,
+		traits::{Block as BlockT, Header as _},
 	};
 	use sp_timestamp::Timestamp;
 	use std::{
@@ -397,8 +397,8 @@ mod tests {
 		time::{Duration, Instant},
 	};
 	use substrate_test_runtime_client::{
-		runtime::{Header, H256},
 		TestClient,
+		runtime::{H256, Header},
 	};
 
 	const SLOT_DURATION_MS: u64 = 1000;

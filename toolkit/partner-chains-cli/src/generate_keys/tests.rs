@@ -1,7 +1,7 @@
 use super::*;
+use crate::CmdRun;
 use crate::config::RESOURCES_CONFIG_FILE_PATH;
 use crate::tests::*;
-use crate::CmdRun;
 use scenarios::key_file_content;
 use scenarios::resources_file_content;
 
@@ -12,18 +12,15 @@ const CROSS_CHAIN_PREFIX: &str = "63726368"; // "crch" in hex
 const AURA_PREFIX: &str = "61757261"; // "aura" in hex
 
 fn default_config() -> GenerateKeysConfig {
-	GenerateKeysConfig {
-		chain_name: DEFAULT_CHAIN_NAME.into(),
-		substrate_node_base_path: DATA_PATH.into(),
-	}
+	GenerateKeysConfig { substrate_node_base_path: DATA_PATH.into() }
 }
 
 fn network_key_file() -> String {
-	format!("{DATA_PATH}/chains/{DEFAULT_CHAIN_NAME}/network/secret_ed25519")
+	format!("{DATA_PATH}/network/secret_ed25519")
 }
 
 fn keystore_path() -> String {
-	format!("{DATA_PATH}/chains/{DEFAULT_CHAIN_NAME}/keystore")
+	format!("{DATA_PATH}/keystore")
 }
 
 pub mod scenarios {
@@ -31,11 +28,13 @@ pub mod scenarios {
 
 	pub fn show_intro() -> MockIO {
 		MockIO::Group(vec![
-			MockIO::eprint("This 🧙 wizard will generate the following keys and save them to your node's keystore:"),
+			MockIO::eprint(
+				"This 🧙 wizard will generate the following keys and save them to your node's keystore:",
+			),
 			MockIO::eprint("→  an ECDSA Cross-chain key"),
 			MockIO::eprint("→  an ED25519 Grandpa key"),
 			MockIO::eprint("→  an SR25519 Aura key"),
-			MockIO::eprint("It will also generate a network key for your node if needed.")
+			MockIO::eprint("It will also generate a network key for your node if needed."),
 		])
 	}
 
@@ -55,29 +54,60 @@ pub mod scenarios {
 		MockIO::Group(vec![
 			MockIO::list_dir(&keystore_path(), None),
 			MockIO::eprint("⚙️ Generating Cross-chain (ecdsa) key"),
-			MockIO::run_command_json(&"<mock executable> key generate --scheme ecdsa --output-type json".to_string(),
-				&serde_json::json!({"publicKey": cross_chain_key, "secretPhrase": "cross-chain secret phrase"})),
+			MockIO::run_command_json(
+				&"<mock executable> key generate --scheme ecdsa --output-type json".to_string(),
+				&serde_json::json!({"publicKey": cross_chain_key, "secretPhrase": "cross-chain secret phrase"}),
+			),
 			MockIO::eprint("💾 Inserting Cross-chain (ecdsa) key"),
-			MockIO::run_command(&format!("<mock executable> key insert --base-path {DATA_PATH} --scheme ecdsa --key-type crch --suri 'cross-chain secret phrase'"), ""),
-			MockIO::eprint(&format!("💾 Cross-chain key stored at {}/{CROSS_CHAIN_PREFIX}{cross_chain_key}", &keystore_path())),
+			MockIO::run_command(
+				&format!(
+					"<mock executable> key insert --keystore-path {} --scheme ecdsa --key-type crch --suri 'cross-chain secret phrase'",
+					keystore_path()
+				),
+				"",
+			),
+			MockIO::eprint(&format!(
+				"💾 Cross-chain key stored at {}/{CROSS_CHAIN_PREFIX}{cross_chain_key}",
+				&keystore_path()
+			)),
 			MockIO::enewline(),
-
 			MockIO::list_dir(&keystore_path(), None),
 			MockIO::eprint("⚙️ Generating Grandpa (ed25519) key"),
-			MockIO::run_command_json(&"<mock executable> key generate --scheme ed25519 --output-type json".to_string(),
-				&serde_json::json!({"publicKey": grandpa_key, "secretPhrase": "grandpa secret phrase"})),
+			MockIO::run_command_json(
+				&"<mock executable> key generate --scheme ed25519 --output-type json".to_string(),
+				&serde_json::json!({"publicKey": grandpa_key, "secretPhrase": "grandpa secret phrase"}),
+			),
 			MockIO::eprint("💾 Inserting Grandpa (ed25519) key"),
-			MockIO::run_command(&format!("<mock executable> key insert --base-path {DATA_PATH} --scheme ed25519 --key-type gran --suri 'grandpa secret phrase'"), ""),
-			MockIO::eprint(&format!("💾 Grandpa key stored at {}/{GRANDPA_PREFIX}{grandpa_key}", &keystore_path())),
+			MockIO::run_command(
+				&format!(
+					"<mock executable> key insert --keystore-path {} --scheme ed25519 --key-type gran --suri 'grandpa secret phrase'",
+					keystore_path()
+				),
+				"",
+			),
+			MockIO::eprint(&format!(
+				"💾 Grandpa key stored at {}/{GRANDPA_PREFIX}{grandpa_key}",
+				&keystore_path()
+			)),
 			MockIO::enewline(),
-
 			MockIO::list_dir(&keystore_path(), None),
 			MockIO::eprint("⚙️ Generating Aura (sr25519) key"),
-			MockIO::run_command_json(&"<mock executable> key generate --scheme sr25519 --output-type json".to_string(),
-				&serde_json::json!({"publicKey": aura_key, "secretPhrase": "aura secret phrase"})),
+			MockIO::run_command_json(
+				&"<mock executable> key generate --scheme sr25519 --output-type json".to_string(),
+				&serde_json::json!({"publicKey": aura_key, "secretPhrase": "aura secret phrase"}),
+			),
 			MockIO::eprint("💾 Inserting Aura (sr25519) key"),
-			MockIO::run_command(&format!("<mock executable> key insert --base-path {DATA_PATH} --scheme sr25519 --key-type aura --suri 'aura secret phrase'"), ""),
-			MockIO::eprint(&format!("💾 Aura key stored at {}/{AURA_PREFIX}{aura_key}", &keystore_path())),
+			MockIO::run_command(
+				&format!(
+					"<mock executable> key insert --keystore-path {} --scheme sr25519 --key-type aura --suri 'aura secret phrase'",
+					keystore_path()
+				),
+				"",
+			),
+			MockIO::eprint(&format!(
+				"💾 Aura key stored at {}/{AURA_PREFIX}{aura_key}",
+				&keystore_path()
+			)),
 			MockIO::enewline(),
 		])
 	}
@@ -85,8 +115,9 @@ pub mod scenarios {
 	pub fn generate_network_key() -> MockIO {
 		MockIO::Group(vec![
 			MockIO::eprint("⚙️ Generating network key"),
+			MockIO::run_command(&format!("mkdir -p {DATA_PATH}/network"), "irrelevant"),
 			MockIO::run_command(
-				&format!("<mock executable> key generate-node-key --base-path {DATA_PATH}"),
+				&format!("<mock executable> key generate-node-key --file {}", network_key_file()),
 				"irrelevant",
 			),
 		])
@@ -100,7 +131,9 @@ pub mod scenarios {
 	}
 	pub fn write_key_file(aura: &str, grandpa: &str, cross_chain: &str) -> MockIO {
 		MockIO::Group(vec![
-			MockIO::eprint("🔑 The following public keys were generated and saved to the partner-chains-public-keys.json file:"),
+			MockIO::eprint(
+				"🔑 The following public keys were generated and saved to the partner-chains-public-keys.json file:",
+			),
 			MockIO::print(&format!(
 				"{{
   \"sidechain_pub_key\": \"{cross_chain}\",
@@ -182,7 +215,6 @@ mod config_read {
 
 		let result = GenerateKeysConfig::load(&context);
 
-		assert_eq!(result.chain_name, DEFAULT_CHAIN_NAME);
 		assert_eq!(result.substrate_node_base_path, DATA_PATH);
 	}
 
@@ -201,7 +233,6 @@ mod config_read {
 
 		let result = GenerateKeysConfig::load(&context);
 
-		assert_eq!(result.chain_name, DEFAULT_CHAIN_NAME);
 		assert_eq!(result.substrate_node_base_path, DATA_PATH);
 	}
 }
@@ -290,8 +321,9 @@ mod generate_network_key {
 	fn generates_new_key_when_missing() {
 		let context = MockIOContext::new().with_expected_io(vec![
 			MockIO::eprint("⚙️ Generating network key"),
+			MockIO::run_command(&format!("mkdir -p {DATA_PATH}/network"), "irrelevant"),
 			MockIO::run_command(
-				&format!("<mock executable> key generate-node-key --base-path {DATA_PATH}"),
+				&format!("<mock executable> key generate-node-key --file {}", network_key_file()),
 				"irrelevant",
 			),
 		]);
@@ -308,7 +340,9 @@ mod generate_network_key {
 
 		let context =
 			MockIOContext::new().with_file(&network_key_file(), key).with_expected_io(vec![
-				MockIO::eprint("🔑 A valid network key is already present in the keystore, skipping generation")
+				MockIO::eprint(
+					"🔑 A valid network key is already present in the keystore, skipping generation",
+				),
 			]);
 
 		let result = generate_network_key(&default_config(), &context);
@@ -328,8 +362,12 @@ mod generate_network_key {
 				),
 				MockIO::eprint("⚙️ Regenerating the network key"),
 				MockIO::delete_file(&network_key_file()),
+				MockIO::run_command(&format!("mkdir -p {DATA_PATH}/network"), "irrelevant"),
 				MockIO::run_command(
-					&format!("<mock executable> key generate-node-key --base-path {DATA_PATH}"),
+					&format!(
+						"<mock executable> key generate-node-key --file {}",
+						network_key_file()
+					),
 					"irrelevant",
 				),
 			]);

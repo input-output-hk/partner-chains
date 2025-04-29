@@ -1,30 +1,37 @@
+#![allow(missing_docs)]
+
+impl crate::GovernedMapChangeV1 {
+	pub fn upsert(key: &str, new_value: &[u8]) -> Self {
+		Self { key: key.into(), new_value: Some(new_value.into()) }
+	}
+	pub fn delete(key: &str) -> Self {
+		Self { key: key.into(), new_value: None }
+	}
+}
+
 mod idp_v1 {
-	use crate::{mock::*, GovernedMapInherentDataProvider, *};
+	use crate::{GovernedMapInherentDataProvider, mock::*, *};
 	use sidechain_domain::McBlockHash;
 	use sp_inherents::{InherentData, InherentDataProvider};
 	use sp_runtime::traits::Block as BlockT;
 
 	#[tokio::test]
 	async fn calculates_changes_and_returns_active_if_non_empty() {
-		let api = TestApiV1 {
-			stored_mappings: [
-				("deleted_key".into(), vec![1].into()),
-				("updated_key".into(), vec![1, 2].into()),
+		let api = TestApiV1;
+		let data_source = MockGovernedMapDataSource {
+			changes: vec![
+				("updated_key".into(), Some(vec![63].into())),
+				("inserted_key".into(), Some(vec![1, 2, 3].into())),
+				("deleted_key".into(), None),
 			]
 			.into(),
-		};
-		let data_source = MockGovernedMapDataSource {
-			current_mappings: Ok([
-				("updated_key".into(), vec![63].into()),
-				("inserted_key".into(), vec![1, 2, 3].into()),
-			]
-			.into()),
 		};
 
 		let idp = GovernedMapInherentDataProvider::new(
 			&api,
 			<Block as BlockT>::Hash::default(),
 			McBlockHash::default(),
+			Some(McBlockHash::default()),
 			&data_source,
 		)
 		.await
@@ -45,20 +52,14 @@ mod idp_v1 {
 
 	#[tokio::test]
 	async fn is_empty_when_there_are_no_changes() {
-		let api = TestApiV1 {
-			stored_mappings: [
-				("deleted_key".into(), vec![1].into()),
-				("updated_key".into(), vec![1, 2].into()),
-			]
-			.into(),
-		};
-		let data_source =
-			MockGovernedMapDataSource { current_mappings: Ok(api.stored_mappings.clone()) };
+		let api = TestApiV1;
+		let data_source = MockGovernedMapDataSource { changes: vec![] };
 
 		let idp = GovernedMapInherentDataProvider::new(
 			&api,
 			<Block as BlockT>::Hash::default(),
 			McBlockHash::default(),
+			Some(McBlockHash::default()),
 			&data_source,
 		)
 		.await
@@ -96,10 +97,12 @@ mod idp_v1 {
 		let mut inherent_data = InherentData::new();
 		idp.provide_inherent_data(&mut inherent_data).await.unwrap();
 
-		assert!(inherent_data
-			.get_data::<ChangesV1>(&INHERENT_IDENTIFIER)
-			.expect("Should succeed")
-			.is_none());
+		assert!(
+			inherent_data
+				.get_data::<ChangesV1>(&INHERENT_IDENTIFIER)
+				.expect("Should succeed")
+				.is_none()
+		);
 	}
 
 	#[tokio::test]
@@ -109,9 +112,11 @@ mod idp_v1 {
 		let mut inherent_data = InherentData::new();
 		idp.provide_inherent_data(&mut inherent_data).await.unwrap();
 
-		assert!(inherent_data
-			.get_data::<ChangesV1>(&INHERENT_IDENTIFIER)
-			.expect("Should succeed")
-			.is_none());
+		assert!(
+			inherent_data
+				.get_data::<ChangesV1>(&INHERENT_IDENTIFIER)
+				.expect("Should succeed")
+				.is_none()
+		);
 	}
 }

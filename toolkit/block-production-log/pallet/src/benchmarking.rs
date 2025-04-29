@@ -9,7 +9,9 @@ use frame_system::RawOrigin;
 use sp_consensus_slots::Slot;
 use sp_std::vec::Vec;
 
+/// Trait for injecting chain-specific test values for benchmarking.
 pub trait BenchmarkHelper<BlockProducerId> {
+	/// Returns block producer id
 	fn producer_id() -> BlockProducerId;
 }
 

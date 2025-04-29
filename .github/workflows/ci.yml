@@ -231,6 +231,19 @@ jobs:
           "s3://cache.sc.iog.io?secret-key=${{ runner.temp }}/nix-key&region=$AWS_DEFAULT_REGION" \
           && rm /tmp/outputs
 
+  documentation-tests:
+    needs: build-linux-x86_64-pre-merge
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Run Documentation Tests
+        uses: ./.github/actions/tests/doc-tests
+
   upload-chain-specs-pre-merge:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
     needs: build-linux-x86_64-pre-merge
@@ -252,7 +265,7 @@ jobs:
 
   pre-merge-checks-complete:
     if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.merged == false }}
-    needs: [build-linux-x86_64-pre-merge, local-environment-tests, devshell-tests, upload-chain-specs-pre-merge]
+    needs: [build-linux-x86_64-pre-merge, local-environment-tests, devshell-tests, upload-chain-specs-pre-merge, documentation-tests]
     runs-on: ubuntu-latest
     steps:
       - name: Check if any needed job failed
@@ -260,26 +273,13 @@ jobs:
           if [[ "${{ needs.build-linux-x86_64-pre-merge.result }}" != "success" ||
                 "${{ needs.local-environment-tests.result }}" != "success" ||
                 "${{ needs.devshell-tests.result }}" != "success" ||
-                "${{ needs.upload-chain-specs-pre-merge.result }}" != "success" ]]; then
+                "${{ needs.upload-chain-specs-pre-merge.result }}" != "success" ||
+                "${{ needs.documentation-tests.result }}" != "success" ]]; then
             echo "One or more needed jobs failed."
             exit 1
           else
             echo "All needed jobs passed."
           fi
-
-#  pre-merge-checks-complete:
-#    if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.merged == false }}
-#    needs: [ci-preview-tests-pre-merge]
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Check if any needed job failed
-#        run: |
-#          if [[ "${{ needs.ci-preview-tests-pre-merge.result }}" != "success" ]]; then
-#            echo "One or more needed jobs failed."
-#            exit 1
-#          else
-#            echo "All needed jobs passed."
-#          fi
 
 ### Post merge workflow ###############################################################################################################
 
@@ -496,11 +496,8 @@ jobs:
           ref: master
       - name: Deploy Rust Docs
         uses: ./.github/actions/deploy/deploy-rustdoc
-        with:
-          ssh_key: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
 
   local-environment-tests-post-merge:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == true

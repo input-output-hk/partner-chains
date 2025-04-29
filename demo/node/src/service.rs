@@ -3,15 +3,15 @@
 use crate::data_sources::DataSources;
 use crate::inherent_data::{CreateInherentDataConfig, ProposalCIDP, VerifierCIDP};
 use crate::rpc::GrandpaDeps;
-use partner_chains_db_sync_data_sources::metrics::register_metrics_warn_errors;
 use partner_chains_db_sync_data_sources::metrics::McFollowerMetrics;
-use partner_chains_demo_runtime::{self, opaque::Block, RuntimeApi};
+use partner_chains_db_sync_data_sources::metrics::register_metrics_warn_errors;
+use partner_chains_demo_runtime::{self, RuntimeApi, opaque::Block};
 use sc_client_api::BlockBackend;
 use sc_consensus_aura::{ImportQueueParams, SlotProportion, StartAuraParams};
 use sc_consensus_grandpa::SharedVoterState;
 pub use sc_executor::WasmExecutor;
 use sc_partner_chains_consensus_aura::import_queue as partner_chains_aura_import_queue;
-use sc_service::{error::Error as ServiceError, Configuration, TaskManager, WarpSyncConfig};
+use sc_service::{Configuration, TaskManager, WarpSyncConfig, error::Error as ServiceError};
 use sc_telemetry::{Telemetry, TelemetryWorker};
 use sc_transaction_pool_api::OffchainTransactionPoolFactory;
 use sidechain_domain::mainchain_epoch::MainchainEpochConfig;

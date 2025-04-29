@@ -10,7 +10,7 @@ const DB_CONNECTION_STRING: &str =
 const SIDECHAIN_BLOCK_BENEFICIARY_STRING: &str =
 	"01e552298e47454041ea31273b4b630c64c104e4514aa3643490b8aaca9cf8ed";
 fn keystore_path() -> String {
-	format!("{DATA_PATH}/chains/{DEFAULT_CHAIN_NAME}/keystore")
+	format!("{DATA_PATH}/keystore")
 }
 const GRANDPA_PREFIX: &str = "6772616e"; // "gran" in hex
 const CROSS_CHAIN_PREFIX: &str = "63726368"; // "crch" in hex
@@ -80,7 +80,7 @@ fn default_chain_config_run_command() -> String {
          MC__FIRST_SLOT_NUMBER='{FIRST_SLOT_NUMBER}' \\
          BLOCK_STABILITY_MARGIN='0' \\
 		 SIDECHAIN_BLOCK_BENEFICIARY='{SIDECHAIN_BLOCK_BENEFICIARY_STRING}' \\
- <mock executable> --validator --chain {CHAIN_SPEC_FILE} --base-path {DATA_PATH} --port {node_ws_port} --bootnodes {BOOTNODE}"
+ <mock executable> --validator --chain {CHAIN_SPEC_FILE} --base-path {DATA_PATH} --keystore-path {DATA_PATH}/keystore --node-key-file {DATA_PATH}/network/secret_ed25519 --port {node_ws_port} --bootnodes {BOOTNODE}"
 	)
 }
 
@@ -109,7 +109,9 @@ fn value_check_prompt() -> MockIO {
 #[test]
 fn happy_path() {
 	let keystore_files = vec![
-		format!("{CROSS_CHAIN_PREFIX}020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1"),
+		format!(
+			"{CROSS_CHAIN_PREFIX}020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1"
+		),
 		format!("{AURA_PREFIX}aura-key"),
 		format!("{GRANDPA_PREFIX}grandpa-key"),
 	];
@@ -153,7 +155,9 @@ mod check_chain_spec {
 	fn fails_if_not_present() {
 		let context = MockIOContext::new().with_expected_io(vec![
 			MockIO::eprint("Chain spec file chain-spec.json missing."),
-			MockIO::eprint("Please run the create-chain-spec wizard first or you can get it from your chain governance."),
+			MockIO::eprint(
+				"Please run the create-chain-spec wizard first or you can get it from your chain governance.",
+			),
 		]);
 
 		let result = check_chain_spec(&context);

@@ -1,10 +1,9 @@
 use super::mock::mock_genesis_utxo;
-use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 use authority_selection_inherents::CommitteeMember;
+use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 use hex_literal::hex;
 use partner_chains_demo_runtime::opaque::SessionKeys;
 use partner_chains_demo_runtime::{BlockAuthor, CrossChainPublic};
-use sidechain_domain::byte_string::ByteString;
 use sidechain_domain::*;
 use sidechain_mc_hash::McHashInherentDigest;
 use sidechain_slots::Slot;
@@ -13,8 +12,8 @@ use sp_blockchain::HeaderBackend;
 use sp_core::{ecdsa, ed25519, sr25519};
 use sp_governed_map::MainChainScriptsV1;
 use sp_inherents::InherentIdentifier;
-use sp_runtime::traits::{Block as BlockT, Header as HeaderT, NumberFor, Zero};
 use sp_runtime::Digest;
+use sp_runtime::traits::{Block as BlockT, Header as HeaderT, NumberFor, Zero};
 use sp_sidechain::GetGenesisUtxo;
 use std::collections::HashMap;
 
@@ -140,9 +139,6 @@ sp_api::mock_impl_runtime_apis! {
 	}
 
 	impl sp_governed_map::GovernedMapIDPApi<Block> for TestApi {
-		fn get_stored_mappings() -> BTreeMap<String, ByteString> {
-			Default::default()
-		}
 		fn get_main_chain_scripts() -> Option<MainChainScriptsV1> {
 			Default::default()
 		}
@@ -201,6 +197,6 @@ pub fn mock_header() -> <Block as BlockT>::Header {
 		Default::default(),
 		Default::default(),
 		Default::default(),
-		Digest { logs: McHashInherentDigest::from_mc_block_hash(McBlockHash([1; 32])) },
+		Digest { logs: McHashInherentDigest::from_mc_block_hash(McBlockHash([0; 32])) },
 	)
 }

@@ -3,7 +3,7 @@ use frame_support::{assert_ok, inherent::ProvideInherent, traits::Hooks};
 
 mod inherent_tests {
 	use super::*;
-	use crate::{pallet, CommitteeInfo, Error};
+	use crate::{CommitteeInfo, Error, pallet};
 	use frame_support::assert_err;
 	use sidechain_domain::byte_string::SizedByteString;
 	use sp_runtime::DispatchError;
@@ -94,8 +94,8 @@ mod inherent_tests {
 	}
 
 	#[test]
-	fn check_inherent_uses_current_committee_when_cannot_calculate_from_data_and_next_committee_is_not_set(
-	) {
+	fn check_inherent_uses_current_committee_when_cannot_calculate_from_data_and_next_committee_is_not_set()
+	 {
 		// This case if for `check_inherent` verifying block number 1 when committee cannot be calculated from the inherent data.
 		// It is the only situation when NextCommittee is not set.
 		let genesis_validators = [ALICE, BOB];

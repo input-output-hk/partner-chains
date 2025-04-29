@@ -30,11 +30,11 @@ pub async fn cli_get_registration_status(
 mod tests {
 	use super::*;
 	use crate::{
+		QueryResult,
 		types::{
 			AriadneParameters, CandidateRegistrationEntry, DParameter, GetCommitteeResponse,
 			GetRegistrationsResponseMap, PermissionedCandidateData,
 		},
-		QueryResult,
 	};
 	use async_trait::async_trait;
 	use hex_literal::hex;

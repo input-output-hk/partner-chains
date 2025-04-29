@@ -1,52 +1,56 @@
 name: "Deploy Rust Docs"
 description: "Installs necessary tooling, generates Rust documentation, and deploys it to GitHub Pages."
-inputs:
-  ssh_key:
-    description: "SSH key to read Substrate Repo"
-    required: true
-
-outputs: {}
 
 runs:
   using: "composite"
   steps:
-    - name: Install tooling
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y protobuf-compiler
-        protoc --version
-      shell: bash
-
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Add SSH key to read Substrate Repo
-      run: |
-        mkdir -p ~/.ssh
-        ssh-keyscan github.com >> ~/.ssh/known_hosts
-        ssh-agent -a /tmp/ssh_agent.sock > /dev/null
-        ssh-add - <<< "${{ inputs.ssh_key }}"
+    - name: install rust
+      uses: actions-rust-lang/setup-rust-toolchain@v1
+      with:
+        toolchain: nightly
+
+    - name: install protoc
+      run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
       shell: bash
 
-    - name: Rust versions
-      run: rustup show
-      shell: bash
+    - name: Cache cargo registry
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/registry
+        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-registry-
 
-    - name: Rust cache
-      uses: Swatinem/rust-cache@v2.6.2
+    - name: Cache cargo git deps
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/git
+        key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-git-
 
-    - name: Build rustdocs
-      run: SKIP_WASM_BUILD=1 cargo doc --all --no-deps
-      shell: bash
+    - name: Cache build output (target/)
+      uses: actions/cache@v4
+      with:
+        path: target
+        key: ${{ runner.os }}-cargo-target-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-target-
 
-    - name: Make index.html
-      run: echo "<meta http-equiv=refresh content=0;url=node_template/index.html>" > ./target/doc/index.html
+    - name: Generate documentation
+      env:
+        RUSTDOCFLAGS: "--enable-index-page -Zunstable-options"
+        SKIP_WASM_BUILD: "1"
+      run: cargo doc --no-deps
       shell: bash
 
     - name: Deploy documentation
-      if: ${{ github.ref_name == 'master' }}
       uses: peaceiris/actions-gh-pages@v3.9.3
       with:
         github_token: ${{ env.GITHUB_TOKEN }}
         publish_branch: gh-pages
         publish_dir: ./target/doc
+

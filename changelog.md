@@ -6,6 +6,8 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Changed
 
+* BREAKING: Wizards are not generating keys nor looking for them in `<base_path>/chains/partner_chains_template` but use `<base_path>` instead.
+This change requires users that generated keystores and network key using previous versions of the wizards to move their keys two directories above.
 * Wizards are adjusted to use multiple governance authorities from the chain governance initialization through setting up Ariadne parameters
 * Added implementation of `FindAccountFromAuthorIndex` trait for `pallet_partner_chains_session`.
 * Unified `*toml` files package data
@@ -18,6 +20,11 @@ the mock data source has been changed to `MOCK_REGISTRATIONS_FILE` to match. Pro
 `partner_chains_data_source_method_time_elapsed` and `partner_chains_data_source_method_call_count` respectively.
 * Default `smart-contracts` timeout from 2 minutes to 5 minutes
 * Update polkadot-sdk to polkadot-stable2503.
+* `McHashInherentDataProvider` now also exposes the Cardano block hash referenced by the previous block,
+if any. It can be accessed through `previous_mc_hash` function.
+* `NativeTokenManagementInherentDataProvider` now expects to be passed the previous main chain reference
+block hash on construction instead of retrieving it by itself. Use `McHashInherentDataProvider::previous_mc_hash`
+to provide it in your IDP stack.
 
 ## Removed
 
@@ -27,9 +34,12 @@ using the `block-production-log` pallet instead.
 Its functionality was merged into `pallet-partner-chains-session` under the feature `pallet-session-compat`.
 * Crate `session-manager`. Its functionality was merged into `pallet-session-validator-management` under
 the feature `pallet-session-compat`.
+* `TryFrom<&serde_json::Value> for Datum` and `From<&Datum> for serde_json::Value` instances from `plutus`.
+* `ATMSPlainAggregatePubKey`, `ValidatorHash` and `SidechainPublicKeysSorted` types from `domain`.
 
 ## Fixed
 
+* `prepare-configuration` wizard now updates existing `chain_parameters.genesis_utxo` field in `pc-chain-config.json`
 * MC Hash inherent data provider will not propose older MC state than one already present in the ledger
 * `governance init` when genesis utxo had a script attached, then transaction fee was sometimes calculated incorrectly
 

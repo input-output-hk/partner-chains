@@ -16,8 +16,8 @@
 // limitations under the License.
 
 use crate::{
-	test_helper_pallet, AccountId, BalancesConfig, GovernedMapConfig, RuntimeGenesisConfig,
-	SudoConfig,
+	AccountId, BalancesConfig, GovernedMapConfig, RuntimeGenesisConfig, SudoConfig,
+	test_helper_pallet,
 };
 use alloc::{vec, vec::Vec};
 use serde_json::Value;

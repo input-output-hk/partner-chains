@@ -172,9 +172,11 @@ mod inherent {
 		#[test]
 		fn does_not_require_an_inherent_when_data_not_present() {
 			let inherent_data = InherentData::new();
-			assert!(GovernedMap::is_inherent_required(&inherent_data)
-				.expect("Should not fail")
-				.is_none())
+			assert!(
+				GovernedMap::is_inherent_required(&inherent_data)
+					.expect("Should not fail")
+					.is_none()
+			)
 		}
 
 		#[test]

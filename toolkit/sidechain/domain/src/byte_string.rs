@@ -10,8 +10,8 @@ use scale_info::TypeInfo;
 use serde::de::Error as DeError;
 use serde::ser::Error as SerError;
 use serde::{Deserialize, Serialize};
-use sp_core::bounded::BoundedVec;
 use sp_core::Get;
+use sp_core::bounded::BoundedVec;
 
 /// Wrapper for bytes that is serialized as hex string
 /// To be used for binary data that we want to display nicely but

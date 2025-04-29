@@ -2,9 +2,9 @@ use authority_selection_inherents::authority_selection_inputs::AuthoritySelectio
 use pallet_sidechain_rpc::SidechainRpcDataSource;
 use partner_chains_db_sync_data_sources::{
 	block::BlockDataSourceImpl, candidates::CandidatesDataSourceImpl,
-	mc_hash::McHashDataSourceImpl, metrics::McFollowerMetrics,
-	native_token::NativeTokenManagementDataSourceImpl, sidechain_rpc::SidechainRpcDataSourceImpl,
-	stake_distribution::StakeDistributionDataSourceImpl,
+	governed_map::GovernedMapDataSourceImpl, mc_hash::McHashDataSourceImpl,
+	metrics::McFollowerMetrics, native_token::NativeTokenManagementDataSourceImpl,
+	sidechain_rpc::SidechainRpcDataSourceImpl, stake_distribution::StakeDistributionDataSourceImpl,
 };
 use partner_chains_mock_data_sources::{
 	block::BlockDataSourceMock, candidate::AuthoritySelectionDataSourceMock,
@@ -54,8 +54,8 @@ fn use_mock_follower() -> bool {
 		.unwrap_or(false)
 }
 
-pub fn create_mock_data_sources(
-) -> std::result::Result<DataSources, Box<dyn Error + Send + Sync + 'static>> {
+pub fn create_mock_data_sources()
+-> std::result::Result<DataSources, Box<dyn Error + Send + Sync + 'static>> {
 	let block = Arc::new(BlockDataSourceMock::new_from_env()?);
 	Ok(DataSources {
 		sidechain_rpc: Arc::new(SidechainRpcDataSourceMock::new(block.clone())),
@@ -92,12 +92,10 @@ pub async fn create_cached_db_sync_data_sources(
 			metrics_opt.clone(),
 		)?),
 		block_participation: Arc::new(StakeDistributionDataSourceImpl::new(
-			pool,
-			metrics_opt,
+			pool.clone(),
+			metrics_opt.clone(),
 			STAKE_CACHE_SIZE,
 		)),
-		governed_map: Arc::new(GovernedMapDataSourceMock::new(
-			[("key1".into(), vec![1, 2, 3].into())].into(),
-		)),
+		governed_map: Arc::new(GovernedMapDataSourceImpl::new(pool, metrics_opt)),
 	})
 }

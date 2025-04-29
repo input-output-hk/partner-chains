@@ -1,4 +1,4 @@
-use crate::{option_to_json, parse_partnerchain_public_keys, GenesisUtxo, PaymentFilePath};
+use crate::{GenesisUtxo, PaymentFilePath, option_to_json, parse_partnerchain_public_keys};
 use partner_chains_cardano_offchain::permissioned_candidates::upsert_permissioned_candidates;
 use std::fs::read_to_string;
 

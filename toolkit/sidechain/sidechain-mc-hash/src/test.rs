@@ -29,8 +29,8 @@ mod inherent_digest_tests {
 }
 
 mod validation_tests {
-	use crate::mock::MockMcHashDataSource;
 	use crate::McHashInherentError::*;
+	use crate::mock::MockMcHashDataSource;
 	use crate::*;
 	use sp_consensus_slots::Slot;
 	use sp_consensus_slots::SlotDuration;

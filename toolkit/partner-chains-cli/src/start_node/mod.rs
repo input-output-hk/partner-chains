@@ -1,8 +1,8 @@
 use crate::config::config_fields::{
 	NODE_P2P_PORT, POSTGRES_CONNECTION_STRING, SIDECHAIN_BLOCK_BENEFICIARY,
 };
-use crate::config::config_values::*;
-use crate::config::{CardanoParameters, CHAIN_CONFIG_FILE_PATH, CHAIN_SPEC_PATH};
+use crate::config::{CHAIN_CONFIG_FILE_PATH, CHAIN_SPEC_PATH, CardanoParameters};
+use crate::generate_keys::network_key_path;
 use crate::io::IOContext;
 use crate::keystore::*;
 use crate::{config::config_fields, *};
@@ -10,9 +10,9 @@ use anyhow::anyhow;
 use secp256k1::PublicKey;
 use serde::Deserialize;
 use sp_core::crypto::AccountId32;
+use sp_runtime::MultiSigner;
 use sp_runtime::app_crypto::ecdsa;
 use sp_runtime::traits::IdentifyAccount;
-use sp_runtime::MultiSigner;
 use std::str::FromStr;
 
 #[cfg(test)]
@@ -36,7 +36,7 @@ impl StartNodeConfig {
 		}
 	}
 	pub fn keystore_path(&self) -> String {
-		keystore_path(&self.substrate_node_base_path, DEFAULT_CHAIN_NAME)
+		keystore_path(&self.substrate_node_base_path)
 	}
 }
 
@@ -127,7 +127,9 @@ fn check_chain_spec<C: IOContext>(context: &C) -> bool {
 		true
 	} else {
 		context.eprint(&format!("Chain spec file {} missing.", CHAIN_SPEC_PATH));
-		context.eprint("Please run the create-chain-spec wizard first or you can get it from your chain governance.");
+		context.eprint(
+			"Please run the create-chain-spec wizard first or you can get it from your chain governance.",
+		);
 		false
 	}
 }
@@ -217,8 +219,10 @@ pub fn start_node<C: IOContext>(
 			.expect("Default NODE_WS_PORT should be valid u16"),
 		context,
 	);
+	let keystore_path = keystore_path(&substrate_node_base_path);
+	let network_key_path = network_key_path(&substrate_node_base_path);
 	context.run_command(&format!(
-		"{environment_prefix} {executable} --validator --chain {CHAIN_SPEC_PATH} --base-path {substrate_node_base_path} --port {ws_port} {bootnodes}",
+		"{environment_prefix} {executable} --validator --chain {CHAIN_SPEC_PATH} --base-path {substrate_node_base_path} --keystore-path {keystore_path} --node-key-file {network_key_path} --port {ws_port} {bootnodes}",
 	))?;
 
 	Ok(())

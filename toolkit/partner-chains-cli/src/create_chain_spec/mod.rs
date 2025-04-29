@@ -3,8 +3,8 @@ use crate::io::IOContext;
 use crate::permissioned_candidates::{ParsedPermissionedCandidatesKeys, PermissionedCandidateKeys};
 use crate::runtime_bindings::PartnerChainRuntime;
 use crate::runtime_bindings::PartnerChainRuntimeBindings;
-use crate::{config::config_fields, CmdRun};
-use anyhow::{anyhow, Context};
+use crate::{CmdRun, config::config_fields};
+use anyhow::{Context, anyhow};
 use serde_json::Value as JValue;
 use sidechain_domain::UtxoId;
 use sp_runtime::DeserializeOwned;
@@ -79,7 +79,10 @@ impl<T: CreateChainSpecRuntimeBindings> CreateChainSpecCmd<T> {
 		use colored::Colorize;
 		if config.initial_permissioned_candidates_raw.is_empty() {
 			context.print("WARNING: The list of initial permissioned candidates is empty. Generated chain spec will not allow the chain to start.".red().to_string().as_str());
-			let update_msg = format!("Update 'initial_permissioned_candidates' field of {} file with keys of initial committee.", config_fields::INITIAL_PERMISSIONED_CANDIDATES.config_file);
+			let update_msg = format!(
+				"Update 'initial_permissioned_candidates' field of {} file with keys of initial committee.",
+				config_fields::INITIAL_PERMISSIONED_CANDIDATES.config_file
+			);
 			context.print(update_msg.red().to_string().as_str());
 			context.print(INITIAL_PERMISSIONED_CANDIDATES_EXAMPLE.yellow().to_string().as_str());
 		} else {

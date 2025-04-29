@@ -7,8 +7,8 @@
 use crate::await_tx::{AwaitTx, FixedDelayRetries};
 use crate::cardano_keys::CardanoPaymentSigningKey;
 use crate::csl::{
-	empty_asset_name, get_builder_config, unit_plutus_data, CostStore, Costs, InputsBuilderExt,
-	TransactionBuilderExt, TransactionContext, TransactionExt,
+	CostStore, Costs, InputsBuilderExt, TransactionBuilderExt, TransactionContext, TransactionExt,
+	empty_asset_name, get_builder_config, unit_plutus_data,
 };
 use crate::governance::GovernanceData;
 use crate::multisig::submit_or_create_tx_to_sign;
@@ -23,7 +23,7 @@ use ogmios_client::{
 	query_ledger_state::QueryLedgerState, query_network::QueryNetwork, transactions::Transactions,
 	types::OgmiosUtxo,
 };
-use partner_chains_plutus_data::d_param::{d_parameter_to_plutus_data, DParamDatum};
+use partner_chains_plutus_data::d_param::{DParamDatum, d_parameter_to_plutus_data};
 use sidechain_domain::{DParameter, UtxoId};
 
 #[cfg(test)]
@@ -120,12 +120,14 @@ fn get_current_d_parameter(
 		let datum_plutus_data = PlutusData::from_bytes(datum.bytes).map_err(|e| {
 			anyhow!("Internal error: could not decode datum of D-parameter validator script: {}", e)
 		})?;
-		let current_d_param: DParameter =
-			DParamDatum::try_from(datum_plutus_data)
-				.map_err(|e| {
-					anyhow!("Internal error: could not decode datum of D-parameter validator script: {}", e)
-				})?
-				.into();
+		let current_d_param: DParameter = DParamDatum::try_from(datum_plutus_data)
+			.map_err(|e| {
+				anyhow!(
+					"Internal error: could not decode datum of D-parameter validator script: {}",
+					e
+				)
+			})?
+			.into();
 		Ok(Some((utxo.clone(), current_d_param)))
 	} else {
 		Ok(None)

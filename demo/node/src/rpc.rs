@@ -8,15 +8,15 @@
 use crate::data_sources::DataSources;
 use authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
 use authority_selection_inherents::{
-	authority_selection_inputs::AuthoritySelectionInputs, CommitteeMember,
+	CommitteeMember, authority_selection_inputs::AuthoritySelectionInputs,
 };
 use jsonrpsee::RpcModule;
 use pallet_block_producer_metadata_rpc::*;
 use pallet_session_validator_management_rpc::*;
 use pallet_sidechain_rpc::*;
 use partner_chains_demo_runtime::{
-	opaque::{Block, SessionKeys},
 	AccountId, Balance, Nonce,
+	opaque::{Block, SessionKeys},
 };
 use partner_chains_demo_runtime::{BlockNumber, BlockProducerMetadataType, CrossChainPublic, Hash};
 use sc_consensus_grandpa::{
@@ -25,8 +25,8 @@ use sc_consensus_grandpa::{
 use sc_consensus_grandpa_rpc::{Grandpa, GrandpaApiServer};
 use sc_rpc::SubscriptionTaskExecutor;
 use sc_transaction_pool_api::TransactionPool;
-use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 use sidechain_domain::ScEpochNumber;
+use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
@@ -79,11 +79,11 @@ where
 	C::Api: sp_sidechain::GetSidechainStatus<Block>,
 	C::Api: sp_block_producer_metadata::BlockProducerMetadataApi<Block, BlockProducerMetadataType>,
 	C::Api: sp_session_validator_management::SessionValidatorManagementApi<
-		Block,
-		CommitteeMember<CrossChainPublic, SessionKeys>,
-		AuthoritySelectionInputs,
-		ScEpochNumber,
-	>,
+			Block,
+			CommitteeMember<CrossChainPublic, SessionKeys>,
+			AuthoritySelectionInputs,
+			ScEpochNumber,
+		>,
 	C::Api: CandidateValidationApi<Block>,
 	P: TransactionPool + 'static,
 	B: sc_client_api::Backend<Block> + Send + Sync + 'static,

@@ -92,17 +92,17 @@ INSERT INTO tx ( id         , hash   , block_id, block_index, out_sum, fee, depo
               ,( ups_tx_id  , thash_6, 7       , 0          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        )
 ;
 
-INSERT INTO tx_out ( id   , tx_id      , index, address     , address_raw, address_has_script, payment_cred, stake_address_id, value, data_hash )
-            VALUES ( 0    , cons_tx_id , 0    , 'other_addr', ''         , TRUE              , NULL        , NULL            , 0    , NULL      )
-                  ,( 1    , cons_tx_id , 1    , 'other_addr', ''         , TRUE              , NULL        , NULL            , 0    , NULL      )
-                  ,( 2    , cons_tx_id , 2    , 'other_addr', ''         , TRUE              , NULL        , NULL            , 0    , NULL      )
-                  ,( 3    , ins_tx_ida , 0    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , dhash_1   ) -- add key2a
-                  ,( 4    , ins_tx_id  , 0    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , dhash_2   ) -- add key1
-                  ,( 5    , ins_tx_id  , 1    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , dhash_3   ) -- add invalid
-                  ,( 7    , ins_tx_id  , 2    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , dhash_4   ) -- add key2 simulating 2 utxos with the same key
-                  ,( 8    , del_tx_id  , 0    , 'other_addr', ''         , TRUE              , NULL        , NULL            , 0    , NULL      ) -- delete key1
-                  ,( 9    , ins_tx_id2 , 0    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , dhash_5   ) -- add key3
-                  ,( 10   , ups_tx_id  , 0    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , dhash_6   ) -- upsert key3
+INSERT INTO tx_out ( id   , tx_id      , index, address     , address_raw, address_has_script, payment_cred, stake_address_id, value, data_hash, comment          )
+            VALUES ( 0    , cons_tx_id , 0    , 'other_addr', ''         , TRUE              , NULL        , NULL            , 0    , NULL     , NULL             )
+                  ,( 1    , cons_tx_id , 1    , 'other_addr', ''         , TRUE              , NULL        , NULL            , 0    , NULL     , NULL             )
+                  ,( 2    , cons_tx_id , 2    , 'other_addr', ''         , TRUE              , NULL        , NULL            , 0    , NULL     , NULL             )
+                  ,( 3    , ins_tx_ida , 0    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , dhash_1  , 'add key2'       )
+                  ,( 4    , ins_tx_id  , 0    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , dhash_2  , 'add key1'       )
+                  ,( 5    , ins_tx_id  , 1    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , dhash_3  , 'add invalid'    )
+                  ,( 7    , ins_tx_id  , 2    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , dhash_4  , 'duplicate key2' )
+                  ,( 8    , del_tx_id  , 0    , 'other_addr', ''         , TRUE              , NULL        , NULL            , 0    , NULL     , 'delete key1'    )
+                  ,( 9    , ins_tx_id2 , 0    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , dhash_5  , 'add key3'       )
+                  ,( 10   , ups_tx_id  , 0    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , dhash_6  , 'upsert key3'    )
 ;
 
 INSERT INTO ma_tx_out ( id   , quantity , tx_out_id , ident)

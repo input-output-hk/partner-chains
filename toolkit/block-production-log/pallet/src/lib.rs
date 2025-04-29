@@ -10,7 +10,7 @@
 //!
 //! ## Usage - PC Builder
 //!
-//! This pallet requires inherent data provided by the inherent data provider defined by `sp_block_producerion_log`
+//! This pallet requires inherent data provided by the inherent data provider defined by `sp_block_production_log`
 //! crate. Consult the crate's documentation for instruction on how to wire it into the node correctly.
 //!
 //! ### Adding to the runtime
@@ -81,13 +81,16 @@
 //!
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![deny(missing_docs)]
 
 pub mod benchmarking;
-#[cfg(test)]
-pub mod mock;
-#[cfg(test)]
-pub mod test;
 pub mod weights;
+
+#[cfg(test)]
+mod mock;
+
+#[cfg(test)]
+mod test;
 
 pub use pallet::*;
 pub use weights::WeightInfo;
@@ -107,7 +110,7 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// ID type that can represent any block producer in the network.
-		/// This type should be defined by the Parnter Chain Depending on its consensus mechanism and possible block producer types.
+		/// This type should be defined by the Partner Chain Depending on its consensus mechanism and possible block producer types.
 		type BlockProducerId: Member + Parameter + MaxEncodedLen;
 
 		/// Weight information on extrinsic in the pallet. For convenience weights in [weights] module can be used.
@@ -117,6 +120,7 @@ pub mod pallet {
 		fn current_slot() -> Slot;
 
 		#[cfg(feature = "runtime-benchmarks")]
+		/// Benchmark helper type used for running benchmarks
 		type BenchmarkHelper: benchmarking::BenchmarkHelper<Self::BlockProducerId>;
 	}
 
@@ -193,7 +197,9 @@ pub mod pallet {
 				log::info!("👷 Block {block:?} producer is {block_producer_id:?}");
 				Log::<T>::append((T::current_slot(), block_producer_id));
 			} else {
-				log::warn!("👷 Block {block:?} producer not set. This should occur only at the beginning of the production log pallet's lifetime.")
+				log::warn!(
+					"👷 Block {block:?} producer not set. This should occur only at the beginning of the production log pallet's lifetime."
+				)
 			}
 		}
 	}
@@ -203,7 +209,7 @@ pub mod pallet {
 			data: &InherentData,
 		) -> Result<Option<T::BlockProducerId>, InherentError> {
 			data.get_data::<T::BlockProducerId>(&Self::INHERENT_IDENTIFIER)
-				.map_err(|_| InherentError::InvalidData)
+				.map_err(|_| InherentError::InvalidInherentData)
 		}
 
 		/// Returns all entries up to `slot` (inclusive) and removes them from the log

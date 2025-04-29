@@ -14,7 +14,7 @@ use {
 	sp_runtime::traits::Block as BlockT,
 	sp_session_validator_management::CommitteeMember as CommitteeMemberT,
 	sp_session_validator_management::{
-		InherentError, MainChainScripts, SessionValidatorManagementApi, INHERENT_IDENTIFIER,
+		INHERENT_IDENTIFIER, InherentError, MainChainScripts, SessionValidatorManagementApi,
 	},
 };
 
@@ -57,11 +57,11 @@ impl AriadneInherentDataProvider {
 		Block: BlockT,
 		T: ProvideRuntimeApi<Block> + Send + Sync,
 		T::Api: SessionValidatorManagementApi<
-			Block,
-			CommitteeMember,
-			AuthoritySelectionInputs,
-			ScEpochNumber,
-		>,
+				Block,
+				CommitteeMember,
+				AuthoritySelectionInputs,
+				ScEpochNumber,
+			>,
 	{
 		let for_mc_epoch = mc_epoch_for_next_ariadne_cidp(
 			client,
@@ -118,11 +118,11 @@ where
 	CommitteeMember::AuthorityId: Decode + Encode,
 	T: ProvideRuntimeApi<Block> + Send + Sync,
 	T::Api: SessionValidatorManagementApi<
-		Block,
-		CommitteeMember,
-		AuthoritySelectionInputs,
-		ScEpochNumber,
-	>,
+			Block,
+			CommitteeMember,
+			AuthoritySelectionInputs,
+			ScEpochNumber,
+		>,
 {
 	let next_unset_epoch = client.runtime_api().get_next_unset_epoch_number(parent_hash)?;
 
@@ -197,11 +197,11 @@ mod tests {
 	use crate::ariadne_inherent_data_provider::AriadneInherentDataProvider;
 	use crate::mock::MockAuthoritySelectionDataSource;
 	use crate::runtime_api_mock::*;
+	use SlotDuration;
 	use sidechain_domain::mainchain_epoch::*;
 	use sidechain_slots::*;
-	use sp_core::offchain::Timestamp;
 	use sp_core::H256;
-	use SlotDuration;
+	use sp_core::offchain::Timestamp;
 
 	#[tokio::test]
 	async fn return_empty_ariadne_cidp_if_runtime_requests_too_new_epoch() {
