@@ -10,10 +10,10 @@ from src.blockchain_types import BlockchainTypes
 from src.pc_epoch_calculator import PartnerChainEpochCalculator
 from src.partner_chain_rpc import PartnerChainRpc
 from src.run_command import Runner, RunnerFactory
-from config.api_config import ApiConfig
+from config.api_config import ApiConfig, Node
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-from src.db.models import Base
+from src.db.models import Base, Candidates
 from filelock import FileLock
 from typing import Generator
 import time
@@ -677,8 +677,14 @@ def set_governance_to_multisig(multisig, api: BlockchainApi, governance_authorit
 @pytest.fixture
 def candidate_skey_with_cli(candidate: Candidates, config: ApiConfig):
     """Fixture to provide candidate signing key with CLI access."""
-    # Get the candidate's signing key
-    skey = candidate.skey
+    # Get the candidate's signing key from the config based on the candidate name
+    candidate_name = candidate.name
+    if candidate_name not in config.nodes_config.nodes:
+        raise ValueError(f"Candidate {candidate_name} not found in config")
+    
+    # Get the signing key from the node config
+    node = config.nodes_config.nodes[candidate_name]
+    skey = node.mainchain_key
     
     # Ensure the key is properly formatted
     if not skey.startswith('0x'):
