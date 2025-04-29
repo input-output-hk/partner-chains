@@ -52,7 +52,6 @@ runs:
       shell: bash
 
     - name: Deploy documentation
-      if: ${{ github.ref_name == 'master' }}
       uses: peaceiris/actions-gh-pages@v3.9.3
       with:
         github_token: ${{ env.GITHUB_TOKEN }}
