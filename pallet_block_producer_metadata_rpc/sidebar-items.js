@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["error_object_from"],"struct":["BlockProducerMetadataRpc"],"trait":["BlockProducerMetadataRpcApiClient","BlockProducerMetadataRpcApiServer"]};
+window.SIDEBAR_ITEMS = {"struct":["BlockProducerMetadataRpc"],"trait":["BlockProducerMetadataRpcApiClient","BlockProducerMetadataRpcApiServer"]};

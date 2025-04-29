@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["select_authorities"],"struct":["WeightedRandomSelectionConfig"],"type":["Weight"]};
+window.SIDEBAR_ITEMS = {"fn":["select_authorities"]};

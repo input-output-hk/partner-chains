@@ -1,9 +1,9 @@
 (function() {
-    var implementors = Object.fromEntries([["pallet_partner_chains_session",[["impl&lt;T&gt; Convert&lt;T, <a class=\"enum\" href=\"https://doc.rust-lang.org/1.86.0/core/option/enum.Option.html\" title=\"enum core::option::Option\">Option</a>&lt;T&gt;&gt; for <a class=\"struct\" href=\"pallet_partner_chains_session/pallet_session_compat/struct.PalletSessionStubImpls.html\" title=\"struct pallet_partner_chains_session::pallet_session_compat::PalletSessionStubImpls\">PalletSessionStubImpls</a>"]]]]);
+    var implementors = Object.fromEntries([["pallet_partner_chains_session",[["impl&lt;T&gt; Convert&lt;T, <a class=\"enum\" href=\"https://doc.rust-lang.org/nightly/core/option/enum.Option.html\" title=\"enum core::option::Option\">Option</a>&lt;T&gt;&gt; for <a class=\"struct\" href=\"pallet_partner_chains_session/pallet_session_compat/struct.PalletSessionStubImpls.html\" title=\"struct pallet_partner_chains_session::pallet_session_compat::PalletSessionStubImpls\">PalletSessionStubImpls</a>"]]]]);
     if (window.register_implementors) {
         window.register_implementors(implementors);
     } else {
         window.pending_implementors = implementors;
     }
 })()
-//{"start":57,"fragment_lengths":[457]}
+//{"start":57,"fragment_lengths":[458]}
