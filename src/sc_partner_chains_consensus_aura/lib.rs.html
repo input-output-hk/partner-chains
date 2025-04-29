@@ -21,11 +21,11 @@
 <a href=#21 id=21 data-nosnippet>21</a>
 <a href=#22 id=22 data-nosnippet>22</a><span class="kw">use </span>futures::prelude::<span class="kw-2">*</span>;
 <a href=#23 id=23 data-nosnippet>23</a><span class="kw">use </span>parity_scale_codec::Codec;
-<a href=#24 id=24 data-nosnippet>24</a><span class="kw">use </span>sc_client_api::{backend::AuxStore, BlockOf};
+<a href=#24 id=24 data-nosnippet>24</a><span class="kw">use </span>sc_client_api::{BlockOf, backend::AuxStore};
 <a href=#25 id=25 data-nosnippet>25</a><span class="kw">use </span>sc_consensus::block_import::BlockImport;
 <a href=#26 id=26 data-nosnippet>26</a><span class="kw">use </span>sc_consensus::{BlockImportParams, ForkChoiceStrategy, StateAction};
 <a href=#27 id=27 data-nosnippet>27</a><span class="kw">use </span>sc_consensus_aura::{
-<a href=#28 id=28 data-nosnippet>28</a>	find_pre_digest, BuildAuraWorkerParams, CompatibilityMode, StartAuraParams,
+<a href=#28 id=28 data-nosnippet>28</a>	BuildAuraWorkerParams, CompatibilityMode, StartAuraParams, find_pre_digest,
 <a href=#29 id=29 data-nosnippet>29</a>};
 <a href=#30 id=30 data-nosnippet>30</a><span class="kw">use </span>sc_consensus_slots::{
 <a href=#31 id=31 data-nosnippet>31</a>	BackoffAuthoringBlocksStrategy, InherentDataProviderExt, SimpleSlotWorkerToSlotWorker,
@@ -374,22 +374,22 @@
 <a href=#374 id=374 data-nosnippet>374</a>	<span class="kw">use </span>sc_block_builder::BlockBuilderBuilder;
 <a href=#375 id=375 data-nosnippet>375</a>	<span class="kw">use </span>sc_client_api::BlockchainEvents;
 <a href=#376 id=376 data-nosnippet>376</a>	<span class="kw">use </span>sc_consensus::BoxJustificationImport;
-<a href=#377 id=377 data-nosnippet>377</a>	<span class="kw">use </span>sc_consensus_aura::{standalone::slot_duration, CheckForEquivocation};
+<a href=#377 id=377 data-nosnippet>377</a>	<span class="kw">use </span>sc_consensus_aura::{CheckForEquivocation, standalone::slot_duration};
 <a href=#378 id=378 data-nosnippet>378</a>	<span class="kw">use </span>sc_consensus_slots::{BackoffAuthoringOnFinalizedHeadLagging, SimpleSlotWorker};
 <a href=#379 id=379 data-nosnippet>379</a>	<span class="kw">use </span>sc_keystore::LocalKeystore;
 <a href=#380 id=380 data-nosnippet>380</a>	<span class="kw">use </span>sc_network_test::{Block <span class="kw">as </span>TestBlock, <span class="kw-2">*</span>};
-<a href=#381 id=381 data-nosnippet>381</a>	<span class="kw">use </span>sp_application_crypto::{key_types::AURA, AppCrypto};
+<a href=#381 id=381 data-nosnippet>381</a>	<span class="kw">use </span>sp_application_crypto::{AppCrypto, key_types::AURA};
 <a href=#382 id=382 data-nosnippet>382</a>	<span class="kw">use </span>sp_consensus::{DisableProofRecording, NoNetwork <span class="kw">as </span>DummyOracle, Proposal};
-<a href=#383 id=383 data-nosnippet>383</a>	<span class="kw">use </span>sp_consensus_aura::inherents::InherentDataProvider;
-<a href=#384 id=384 data-nosnippet>384</a>	<span class="kw">use </span>sp_consensus_aura::sr25519::AuthorityPair;
-<a href=#385 id=385 data-nosnippet>385</a>	<span class="kw">use </span>sp_consensus_aura::SlotDuration;
+<a href=#383 id=383 data-nosnippet>383</a>	<span class="kw">use </span>sp_consensus_aura::SlotDuration;
+<a href=#384 id=384 data-nosnippet>384</a>	<span class="kw">use </span>sp_consensus_aura::inherents::InherentDataProvider;
+<a href=#385 id=385 data-nosnippet>385</a>	<span class="kw">use </span>sp_consensus_aura::sr25519::AuthorityPair;
 <a href=#386 id=386 data-nosnippet>386</a>	<span class="kw">use </span>sp_inherents::InherentData;
 <a href=#387 id=387 data-nosnippet>387</a>	<span class="kw">use </span>sp_keyring::sr25519::Keyring;
 <a href=#388 id=388 data-nosnippet>388</a>	<span class="kw">use </span>sp_keystore::Keystore;
 <a href=#389 id=389 data-nosnippet>389</a>	<span class="kw">use </span>sp_partner_chains_consensus_aura::CurrentSlotProvider;
 <a href=#390 id=390 data-nosnippet>390</a>	<span class="kw">use </span>sp_runtime::{
-<a href=#391 id=391 data-nosnippet>391</a>		traits::{Block <span class="kw">as </span>BlockT, Header <span class="kw">as _</span>},
-<a href=#392 id=392 data-nosnippet>392</a>		Digest,
+<a href=#391 id=391 data-nosnippet>391</a>		Digest,
+<a href=#392 id=392 data-nosnippet>392</a>		traits::{Block <span class="kw">as </span>BlockT, Header <span class="kw">as _</span>},
 <a href=#393 id=393 data-nosnippet>393</a>	};
 <a href=#394 id=394 data-nosnippet>394</a>	<span class="kw">use </span>sp_timestamp::Timestamp;
 <a href=#395 id=395 data-nosnippet>395</a>	<span class="kw">use </span>std::{
@@ -397,8 +397,8 @@
 <a href=#397 id=397 data-nosnippet>397</a>		time::{Duration, Instant},
 <a href=#398 id=398 data-nosnippet>398</a>	};
 <a href=#399 id=399 data-nosnippet>399</a>	<span class="kw">use </span>substrate_test_runtime_client::{
-<a href=#400 id=400 data-nosnippet>400</a>		runtime::{Header, H256},
-<a href=#401 id=401 data-nosnippet>401</a>		TestClient,
+<a href=#400 id=400 data-nosnippet>400</a>		TestClient,
+<a href=#401 id=401 data-nosnippet>401</a>		runtime::{H256, Header},
 <a href=#402 id=402 data-nosnippet>402</a>	};
 <a href=#403 id=403 data-nosnippet>403</a>
 <a href=#404 id=404 data-nosnippet>404</a>	<span class="kw">const </span>SLOT_DURATION_MS: u64 = <span class="number">1000</span>;

@@ -8,15 +8,15 @@
 <a href=#8 id=8 data-nosnippet>8</a></span><span class="kw">use </span><span class="kw">crate</span>::data_sources::DataSources;
 <a href=#9 id=9 data-nosnippet>9</a><span class="kw">use </span>authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
 <a href=#10 id=10 data-nosnippet>10</a><span class="kw">use </span>authority_selection_inherents::{
-<a href=#11 id=11 data-nosnippet>11</a>	authority_selection_inputs::AuthoritySelectionInputs, CommitteeMember,
+<a href=#11 id=11 data-nosnippet>11</a>	CommitteeMember, authority_selection_inputs::AuthoritySelectionInputs,
 <a href=#12 id=12 data-nosnippet>12</a>};
 <a href=#13 id=13 data-nosnippet>13</a><span class="kw">use </span>jsonrpsee::RpcModule;
 <a href=#14 id=14 data-nosnippet>14</a><span class="kw">use </span>pallet_block_producer_metadata_rpc::<span class="kw-2">*</span>;
 <a href=#15 id=15 data-nosnippet>15</a><span class="kw">use </span>pallet_session_validator_management_rpc::<span class="kw-2">*</span>;
 <a href=#16 id=16 data-nosnippet>16</a><span class="kw">use </span>pallet_sidechain_rpc::<span class="kw-2">*</span>;
 <a href=#17 id=17 data-nosnippet>17</a><span class="kw">use </span>partner_chains_demo_runtime::{
-<a href=#18 id=18 data-nosnippet>18</a>	opaque::{Block, SessionKeys},
-<a href=#19 id=19 data-nosnippet>19</a>	AccountId, Balance, Nonce,
+<a href=#18 id=18 data-nosnippet>18</a>	AccountId, Balance, Nonce,
+<a href=#19 id=19 data-nosnippet>19</a>	opaque::{Block, SessionKeys},
 <a href=#20 id=20 data-nosnippet>20</a>};
 <a href=#21 id=21 data-nosnippet>21</a><span class="kw">use </span>partner_chains_demo_runtime::{BlockNumber, BlockProducerMetadataType, CrossChainPublic, Hash};
 <a href=#22 id=22 data-nosnippet>22</a><span class="kw">use </span>sc_consensus_grandpa::{
@@ -25,8 +25,8 @@
 <a href=#25 id=25 data-nosnippet>25</a><span class="kw">use </span>sc_consensus_grandpa_rpc::{Grandpa, GrandpaApiServer};
 <a href=#26 id=26 data-nosnippet>26</a><span class="kw">use </span>sc_rpc::SubscriptionTaskExecutor;
 <a href=#27 id=27 data-nosnippet>27</a><span class="kw">use </span>sc_transaction_pool_api::TransactionPool;
-<a href=#28 id=28 data-nosnippet>28</a><span class="kw">use </span>sidechain_domain::mainchain_epoch::MainchainEpochConfig;
-<a href=#29 id=29 data-nosnippet>29</a><span class="kw">use </span>sidechain_domain::ScEpochNumber;
+<a href=#28 id=28 data-nosnippet>28</a><span class="kw">use </span>sidechain_domain::ScEpochNumber;
+<a href=#29 id=29 data-nosnippet>29</a><span class="kw">use </span>sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 <a href=#30 id=30 data-nosnippet>30</a><span class="kw">use </span>sp_api::ProvideRuntimeApi;
 <a href=#31 id=31 data-nosnippet>31</a><span class="kw">use </span>sp_block_builder::BlockBuilder;
 <a href=#32 id=32 data-nosnippet>32</a><span class="kw">use </span>sp_blockchain::{Error <span class="kw">as </span>BlockChainError, HeaderBackend, HeaderMetadata};
@@ -79,11 +79,11 @@
 <a href=#79 id=79 data-nosnippet>79</a>	C::Api: sp_sidechain::GetSidechainStatus&lt;Block&gt;,
 <a href=#80 id=80 data-nosnippet>80</a>	C::Api: sp_block_producer_metadata::BlockProducerMetadataApi&lt;Block, BlockProducerMetadataType&gt;,
 <a href=#81 id=81 data-nosnippet>81</a>	C::Api: sp_session_validator_management::SessionValidatorManagementApi&lt;
-<a href=#82 id=82 data-nosnippet>82</a>		Block,
-<a href=#83 id=83 data-nosnippet>83</a>		CommitteeMember&lt;CrossChainPublic, SessionKeys&gt;,
-<a href=#84 id=84 data-nosnippet>84</a>		AuthoritySelectionInputs,
-<a href=#85 id=85 data-nosnippet>85</a>		ScEpochNumber,
-<a href=#86 id=86 data-nosnippet>86</a>	&gt;,
+<a href=#82 id=82 data-nosnippet>82</a>			Block,
+<a href=#83 id=83 data-nosnippet>83</a>			CommitteeMember&lt;CrossChainPublic, SessionKeys&gt;,
+<a href=#84 id=84 data-nosnippet>84</a>			AuthoritySelectionInputs,
+<a href=#85 id=85 data-nosnippet>85</a>			ScEpochNumber,
+<a href=#86 id=86 data-nosnippet>86</a>		&gt;,
 <a href=#87 id=87 data-nosnippet>87</a>	C::Api: CandidateValidationApi&lt;Block&gt;,
 <a href=#88 id=88 data-nosnippet>88</a>	P: TransactionPool + <span class="lifetime">'static</span>,
 <a href=#89 id=89 data-nosnippet>89</a>	B: sc_client_api::Backend&lt;Block&gt; + Send + Sync + <span class="lifetime">'static</span>,

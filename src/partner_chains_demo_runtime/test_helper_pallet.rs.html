@@ -54,129 +54,125 @@
 <a href=#54 id=54 data-nosnippet>54</a>		<span class="kw">pub fn </span>should_release_participation_data(
 <a href=#55 id=55 data-nosnippet>55</a>			slot: sidechain_slots::Slot,
 <a href=#56 id=56 data-nosnippet>56</a>		) -&gt; <span class="prelude-ty">Option</span>&lt;sidechain_slots::Slot&gt; {
-<a href=#57 id=57 data-nosnippet>57</a>			<span class="kw">if </span><span class="kw-2">*</span>slot % ParticipationDataReleasePeriod::&lt;T&gt;::get() == <span class="number">0 </span>{
-<a href=#58 id=58 data-nosnippet>58</a>				<span class="prelude-val">Some</span>(slot)
-<a href=#59 id=59 data-nosnippet>59</a>			} <span class="kw">else </span>{
-<a href=#60 id=60 data-nosnippet>60</a>				<span class="prelude-val">None
-<a href=#61 id=61 data-nosnippet>61</a>			</span>}
-<a href=#62 id=62 data-nosnippet>62</a>		}
-<a href=#63 id=63 data-nosnippet>63</a>	}
-<a href=#64 id=64 data-nosnippet>64</a>
-<a href=#65 id=65 data-nosnippet>65</a>	<span class="kw">impl</span>&lt;T: Config&gt; sp_sidechain::OnNewEpoch <span class="kw">for </span>Pallet&lt;T&gt; {
-<a href=#66 id=66 data-nosnippet>66</a>		<span class="kw">fn </span>on_new_epoch(
-<a href=#67 id=67 data-nosnippet>67</a>			_old_epoch: ScEpochNumber,
-<a href=#68 id=68 data-nosnippet>68</a>			_new_epoch: ScEpochNumber,
-<a href=#69 id=69 data-nosnippet>69</a>		) -&gt; sp_weights::Weight {
-<a href=#70 id=70 data-nosnippet>70</a>			<span class="kw">crate</span>::RuntimeDbWeight::get().reads_writes(<span class="number">0</span>, <span class="number">0</span>)
-<a href=#71 id=71 data-nosnippet>71</a>		}
-<a href=#72 id=72 data-nosnippet>72</a>	}
-<a href=#73 id=73 data-nosnippet>73</a>
-<a href=#74 id=74 data-nosnippet>74</a>	<span class="kw">impl</span>&lt;T: Config&gt; pallet_address_associations::OnNewAssociation&lt;AccountId&gt; <span class="kw">for </span>Pallet&lt;T&gt; {
-<a href=#75 id=75 data-nosnippet>75</a>		<span class="kw">fn </span>on_new_association(
-<a href=#76 id=76 data-nosnippet>76</a>			partner_chain_address: AccountId,
-<a href=#77 id=77 data-nosnippet>77</a>			main_chain_key_hash: MainchainKeyHash,
-<a href=#78 id=78 data-nosnippet>78</a>		) {
-<a href=#79 id=79 data-nosnippet>79</a>			<span class="macro">log::info!</span>(
-<a href=#80 id=80 data-nosnippet>80</a>				<span class="string">"New address association: {partner_chain_address:?} -&gt; {main_chain_key_hash:?}"
-<a href=#81 id=81 data-nosnippet>81</a>			</span>);
-<a href=#82 id=82 data-nosnippet>82</a>		}
-<a href=#83 id=83 data-nosnippet>83</a>	}
-<a href=#84 id=84 data-nosnippet>84</a>
-<a href=#85 id=85 data-nosnippet>85</a>	<span class="kw">impl</span>&lt;T: Config&gt; pallet_native_token_management::TokenTransferHandler <span class="kw">for </span>Pallet&lt;T&gt; {
-<a href=#86 id=86 data-nosnippet>86</a>		<span class="kw">fn </span>handle_token_transfer(token_amount: NativeTokenAmount) -&gt; DispatchResult {
-<a href=#87 id=87 data-nosnippet>87</a>			<span class="macro">log::info!</span>(<span class="string">"💸 Registered transfer of {} native tokens"</span>, token_amount.<span class="number">0</span>);
-<a href=#88 id=88 data-nosnippet>88</a>			<span class="prelude-val">Ok</span>(())
-<a href=#89 id=89 data-nosnippet>89</a>		}
-<a href=#90 id=90 data-nosnippet>90</a>	}
-<a href=#91 id=91 data-nosnippet>91</a>
-<a href=#92 id=92 data-nosnippet>92</a>	<span class="kw">impl</span>&lt;T: Config&gt; sp_governed_map::OnGovernedMappingChange&lt;MaxKeyLength, MaxValueLength&gt;
-<a href=#93 id=93 data-nosnippet>93</a>		<span class="kw">for </span>Pallet&lt;T&gt;
-<a href=#94 id=94 data-nosnippet>94</a>	{
-<a href=#95 id=95 data-nosnippet>95</a>		<span class="kw">fn </span>on_governed_mapping_change(
-<a href=#96 id=96 data-nosnippet>96</a>			key: BoundedString&lt;MaxKeyLength&gt;,
-<a href=#97 id=97 data-nosnippet>97</a>			new_value: <span class="prelude-ty">Option</span>&lt;BoundedVec&lt;u8, MaxValueLength&gt;&gt;,
-<a href=#98 id=98 data-nosnippet>98</a>			old_value: <span class="prelude-ty">Option</span>&lt;BoundedVec&lt;u8, MaxValueLength&gt;&gt;,
-<a href=#99 id=99 data-nosnippet>99</a>		) {
-<a href=#100 id=100 data-nosnippet>100</a>			<span class="kw">match </span>(new_value, old_value) {
-<a href=#101 id=101 data-nosnippet>101</a>				(<span class="prelude-val">Some</span>(new_value), <span class="prelude-val">Some</span>(old_value)) =&gt; <span class="macro">log::info!</span>(
-<a href=#102 id=102 data-nosnippet>102</a>					<span class="string">"Governed Map value for key '{key}' has changed: {} → {}"</span>,
-<a href=#103 id=103 data-nosnippet>103</a>					to_hex(<span class="kw-2">&amp;</span>old_value, <span class="bool-val">false</span>),
-<a href=#104 id=104 data-nosnippet>104</a>					to_hex(<span class="kw-2">&amp;</span>new_value, <span class="bool-val">false</span>)
-<a href=#105 id=105 data-nosnippet>105</a>				),
-<a href=#106 id=106 data-nosnippet>106</a>				(<span class="prelude-val">Some</span>(new_value), <span class="prelude-val">None</span>) =&gt; {
-<a href=#107 id=107 data-nosnippet>107</a>					<span class="macro">log::info!</span>(
-<a href=#108 id=108 data-nosnippet>108</a>						<span class="string">"New Governed Map value for key '{key}': {}"</span>,
-<a href=#109 id=109 data-nosnippet>109</a>						to_hex(<span class="kw-2">&amp;</span>new_value, <span class="bool-val">false</span>)
-<a href=#110 id=110 data-nosnippet>110</a>					)
-<a href=#111 id=111 data-nosnippet>111</a>				},
-<a href=#112 id=112 data-nosnippet>112</a>
-<a href=#113 id=113 data-nosnippet>113</a>				(<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(old_value)) =&gt; {
-<a href=#114 id=114 data-nosnippet>114</a>					<span class="macro">log::info!</span>(
-<a href=#115 id=115 data-nosnippet>115</a>						<span class="string">"Governed Map value for key '{key}' deleted, old value: {}"</span>,
-<a href=#116 id=116 data-nosnippet>116</a>						to_hex(<span class="kw-2">&amp;</span>old_value, <span class="bool-val">false</span>)
-<a href=#117 id=117 data-nosnippet>117</a>					)
-<a href=#118 id=118 data-nosnippet>118</a>				},
-<a href=#119 id=119 data-nosnippet>119</a>				<span class="kw">_ </span>=&gt; { <span class="comment">/* technically unreachable */ </span>},
-<a href=#120 id=120 data-nosnippet>120</a>			}
-<a href=#121 id=121 data-nosnippet>121</a>		}
-<a href=#122 id=122 data-nosnippet>122</a>	}
-<a href=#123 id=123 data-nosnippet>123</a>
-<a href=#124 id=124 data-nosnippet>124</a>	<span class="attr">#[pallet::call]
-<a href=#125 id=125 data-nosnippet>125</a>	</span><span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt; {
-<a href=#126 id=126 data-nosnippet>126</a>		<span class="attr">#[pallet::call_index(<span class="number">0</span>)]
-<a href=#127 id=127 data-nosnippet>127</a>		#[pallet::weight((<span class="number">0</span>, DispatchClass::Mandatory))]
-<a href=#128 id=128 data-nosnippet>128</a>		</span><span class="kw">pub fn </span>handle_participation_data(
-<a href=#129 id=129 data-nosnippet>129</a>			origin: OriginFor&lt;T&gt;,
-<a href=#130 id=130 data-nosnippet>130</a>			data: ParticipationData,
-<a href=#131 id=131 data-nosnippet>131</a>		) -&gt; DispatchResult {
-<a href=#132 id=132 data-nosnippet>132</a>			ensure_none(origin)<span class="question-mark">?</span>;
-<a href=#133 id=133 data-nosnippet>133</a>			<span class="macro">log::info!</span>(<span class="string">"📊 Block participation inherent data released"</span>);
-<a href=#134 id=134 data-nosnippet>134</a>			LatestParticipationData::&lt;T&gt;::put(data);
-<a href=#135 id=135 data-nosnippet>135</a>			<span class="prelude-val">Ok</span>(())
-<a href=#136 id=136 data-nosnippet>136</a>		}
-<a href=#137 id=137 data-nosnippet>137</a>
-<a href=#138 id=138 data-nosnippet>138</a>		<span class="attr">#[pallet::call_index(<span class="number">1</span>)]
-<a href=#139 id=139 data-nosnippet>139</a>		#[pallet::weight(<span class="number">0</span>)]
-<a href=#140 id=140 data-nosnippet>140</a>		</span><span class="kw">pub fn </span>set_block_participation_data_release_period(
-<a href=#141 id=141 data-nosnippet>141</a>			origin: OriginFor&lt;T&gt;,
-<a href=#142 id=142 data-nosnippet>142</a>			period: u64,
-<a href=#143 id=143 data-nosnippet>143</a>		) -&gt; DispatchResult {
-<a href=#144 id=144 data-nosnippet>144</a>			ensure_root(origin)<span class="question-mark">?</span>;
-<a href=#145 id=145 data-nosnippet>145</a>			<span class="macro">log::info!</span>(<span class="string">"📊 Block participation data release period changed to {period}"</span>);
-<a href=#146 id=146 data-nosnippet>146</a>			ParticipationDataReleasePeriod::&lt;T&gt;::put(period);
-<a href=#147 id=147 data-nosnippet>147</a>			<span class="prelude-val">Ok</span>(())
-<a href=#148 id=148 data-nosnippet>148</a>		}
-<a href=#149 id=149 data-nosnippet>149</a>	}
-<a href=#150 id=150 data-nosnippet>150</a>
-<a href=#151 id=151 data-nosnippet>151</a>	<span class="attr">#[derive(Clone, Debug, Encode, Decode)]
-<a href=#152 id=152 data-nosnippet>152</a>	</span><span class="kw">pub enum </span>InherentError {}
-<a href=#153 id=153 data-nosnippet>153</a>	<span class="kw">impl </span>IsFatalError <span class="kw">for </span>InherentError {
-<a href=#154 id=154 data-nosnippet>154</a>		<span class="kw">fn </span>is_fatal_error(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
-<a href=#155 id=155 data-nosnippet>155</a>			<span class="bool-val">true
-<a href=#156 id=156 data-nosnippet>156</a>		</span>}
-<a href=#157 id=157 data-nosnippet>157</a>	}
-<a href=#158 id=158 data-nosnippet>158</a>
-<a href=#159 id=159 data-nosnippet>159</a>	<span class="attr">#[pallet::inherent]
-<a href=#160 id=160 data-nosnippet>160</a>	</span><span class="kw">impl</span>&lt;T: Config&gt; ProvideInherent <span class="kw">for </span>Pallet&lt;T&gt; {
-<a href=#161 id=161 data-nosnippet>161</a>		<span class="kw">type </span>Call = Call&lt;T&gt;;
-<a href=#162 id=162 data-nosnippet>162</a>		<span class="kw">type </span>Error = InherentError;
-<a href=#163 id=163 data-nosnippet>163</a>		<span class="kw">const </span>INHERENT_IDENTIFIER: InherentIdentifier = <span class="kw-2">*</span><span class="string">b"testhelp"</span>;
-<a href=#164 id=164 data-nosnippet>164</a>
-<a href=#165 id=165 data-nosnippet>165</a>		<span class="kw">fn </span>create_inherent(data: <span class="kw-2">&amp;</span>InherentData) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Call&gt; {
-<a href=#166 id=166 data-nosnippet>166</a>			<span class="kw">let </span>inherent = data
-<a href=#167 id=167 data-nosnippet>167</a>				.get_data::&lt;ParticipationData&gt;(<span class="kw-2">&amp;</span><span class="self">Self</span>::INHERENT_IDENTIFIER)
-<a href=#168 id=168 data-nosnippet>168</a>				.expect(<span class="string">"Block participation inherent data invalid"</span>)
-<a href=#169 id=169 data-nosnippet>169</a>				.map(|data| <span class="self">Self</span>::Call::handle_participation_data { data });
-<a href=#170 id=170 data-nosnippet>170</a>
-<a href=#171 id=171 data-nosnippet>171</a>			inherent
-<a href=#172 id=172 data-nosnippet>172</a>		}
+<a href=#57 id=57 data-nosnippet>57</a>			<span class="kw">if </span><span class="kw-2">*</span>slot % ParticipationDataReleasePeriod::&lt;T&gt;::get() == <span class="number">0 </span>{ <span class="prelude-val">Some</span>(slot) } <span class="kw">else </span>{ <span class="prelude-val">None </span>}
+<a href=#58 id=58 data-nosnippet>58</a>		}
+<a href=#59 id=59 data-nosnippet>59</a>	}
+<a href=#60 id=60 data-nosnippet>60</a>
+<a href=#61 id=61 data-nosnippet>61</a>	<span class="kw">impl</span>&lt;T: Config&gt; sp_sidechain::OnNewEpoch <span class="kw">for </span>Pallet&lt;T&gt; {
+<a href=#62 id=62 data-nosnippet>62</a>		<span class="kw">fn </span>on_new_epoch(
+<a href=#63 id=63 data-nosnippet>63</a>			_old_epoch: ScEpochNumber,
+<a href=#64 id=64 data-nosnippet>64</a>			_new_epoch: ScEpochNumber,
+<a href=#65 id=65 data-nosnippet>65</a>		) -&gt; sp_weights::Weight {
+<a href=#66 id=66 data-nosnippet>66</a>			<span class="kw">crate</span>::RuntimeDbWeight::get().reads_writes(<span class="number">0</span>, <span class="number">0</span>)
+<a href=#67 id=67 data-nosnippet>67</a>		}
+<a href=#68 id=68 data-nosnippet>68</a>	}
+<a href=#69 id=69 data-nosnippet>69</a>
+<a href=#70 id=70 data-nosnippet>70</a>	<span class="kw">impl</span>&lt;T: Config&gt; pallet_address_associations::OnNewAssociation&lt;AccountId&gt; <span class="kw">for </span>Pallet&lt;T&gt; {
+<a href=#71 id=71 data-nosnippet>71</a>		<span class="kw">fn </span>on_new_association(
+<a href=#72 id=72 data-nosnippet>72</a>			partner_chain_address: AccountId,
+<a href=#73 id=73 data-nosnippet>73</a>			main_chain_key_hash: MainchainKeyHash,
+<a href=#74 id=74 data-nosnippet>74</a>		) {
+<a href=#75 id=75 data-nosnippet>75</a>			<span class="macro">log::info!</span>(
+<a href=#76 id=76 data-nosnippet>76</a>				<span class="string">"New address association: {partner_chain_address:?} -&gt; {main_chain_key_hash:?}"
+<a href=#77 id=77 data-nosnippet>77</a>			</span>);
+<a href=#78 id=78 data-nosnippet>78</a>		}
+<a href=#79 id=79 data-nosnippet>79</a>	}
+<a href=#80 id=80 data-nosnippet>80</a>
+<a href=#81 id=81 data-nosnippet>81</a>	<span class="kw">impl</span>&lt;T: Config&gt; pallet_native_token_management::TokenTransferHandler <span class="kw">for </span>Pallet&lt;T&gt; {
+<a href=#82 id=82 data-nosnippet>82</a>		<span class="kw">fn </span>handle_token_transfer(token_amount: NativeTokenAmount) -&gt; DispatchResult {
+<a href=#83 id=83 data-nosnippet>83</a>			<span class="macro">log::info!</span>(<span class="string">"💸 Registered transfer of {} native tokens"</span>, token_amount.<span class="number">0</span>);
+<a href=#84 id=84 data-nosnippet>84</a>			<span class="prelude-val">Ok</span>(())
+<a href=#85 id=85 data-nosnippet>85</a>		}
+<a href=#86 id=86 data-nosnippet>86</a>	}
+<a href=#87 id=87 data-nosnippet>87</a>
+<a href=#88 id=88 data-nosnippet>88</a>	<span class="kw">impl</span>&lt;T: Config&gt; sp_governed_map::OnGovernedMappingChange&lt;MaxKeyLength, MaxValueLength&gt;
+<a href=#89 id=89 data-nosnippet>89</a>		<span class="kw">for </span>Pallet&lt;T&gt;
+<a href=#90 id=90 data-nosnippet>90</a>	{
+<a href=#91 id=91 data-nosnippet>91</a>		<span class="kw">fn </span>on_governed_mapping_change(
+<a href=#92 id=92 data-nosnippet>92</a>			key: BoundedString&lt;MaxKeyLength&gt;,
+<a href=#93 id=93 data-nosnippet>93</a>			new_value: <span class="prelude-ty">Option</span>&lt;BoundedVec&lt;u8, MaxValueLength&gt;&gt;,
+<a href=#94 id=94 data-nosnippet>94</a>			old_value: <span class="prelude-ty">Option</span>&lt;BoundedVec&lt;u8, MaxValueLength&gt;&gt;,
+<a href=#95 id=95 data-nosnippet>95</a>		) {
+<a href=#96 id=96 data-nosnippet>96</a>			<span class="kw">match </span>(new_value, old_value) {
+<a href=#97 id=97 data-nosnippet>97</a>				(<span class="prelude-val">Some</span>(new_value), <span class="prelude-val">Some</span>(old_value)) =&gt; <span class="macro">log::info!</span>(
+<a href=#98 id=98 data-nosnippet>98</a>					<span class="string">"Governed Map value for key '{key}' has changed: {} → {}"</span>,
+<a href=#99 id=99 data-nosnippet>99</a>					to_hex(<span class="kw-2">&amp;</span>old_value, <span class="bool-val">false</span>),
+<a href=#100 id=100 data-nosnippet>100</a>					to_hex(<span class="kw-2">&amp;</span>new_value, <span class="bool-val">false</span>)
+<a href=#101 id=101 data-nosnippet>101</a>				),
+<a href=#102 id=102 data-nosnippet>102</a>				(<span class="prelude-val">Some</span>(new_value), <span class="prelude-val">None</span>) =&gt; {
+<a href=#103 id=103 data-nosnippet>103</a>					<span class="macro">log::info!</span>(
+<a href=#104 id=104 data-nosnippet>104</a>						<span class="string">"New Governed Map value for key '{key}': {}"</span>,
+<a href=#105 id=105 data-nosnippet>105</a>						to_hex(<span class="kw-2">&amp;</span>new_value, <span class="bool-val">false</span>)
+<a href=#106 id=106 data-nosnippet>106</a>					)
+<a href=#107 id=107 data-nosnippet>107</a>				},
+<a href=#108 id=108 data-nosnippet>108</a>
+<a href=#109 id=109 data-nosnippet>109</a>				(<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(old_value)) =&gt; {
+<a href=#110 id=110 data-nosnippet>110</a>					<span class="macro">log::info!</span>(
+<a href=#111 id=111 data-nosnippet>111</a>						<span class="string">"Governed Map value for key '{key}' deleted, old value: {}"</span>,
+<a href=#112 id=112 data-nosnippet>112</a>						to_hex(<span class="kw-2">&amp;</span>old_value, <span class="bool-val">false</span>)
+<a href=#113 id=113 data-nosnippet>113</a>					)
+<a href=#114 id=114 data-nosnippet>114</a>				},
+<a href=#115 id=115 data-nosnippet>115</a>				<span class="kw">_ </span>=&gt; { <span class="comment">/* technically unreachable */ </span>},
+<a href=#116 id=116 data-nosnippet>116</a>			}
+<a href=#117 id=117 data-nosnippet>117</a>		}
+<a href=#118 id=118 data-nosnippet>118</a>	}
+<a href=#119 id=119 data-nosnippet>119</a>
+<a href=#120 id=120 data-nosnippet>120</a>	<span class="attr">#[pallet::call]
+<a href=#121 id=121 data-nosnippet>121</a>	</span><span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt; {
+<a href=#122 id=122 data-nosnippet>122</a>		<span class="attr">#[pallet::call_index(<span class="number">0</span>)]
+<a href=#123 id=123 data-nosnippet>123</a>		#[pallet::weight((<span class="number">0</span>, DispatchClass::Mandatory))]
+<a href=#124 id=124 data-nosnippet>124</a>		</span><span class="kw">pub fn </span>handle_participation_data(
+<a href=#125 id=125 data-nosnippet>125</a>			origin: OriginFor&lt;T&gt;,
+<a href=#126 id=126 data-nosnippet>126</a>			data: ParticipationData,
+<a href=#127 id=127 data-nosnippet>127</a>		) -&gt; DispatchResult {
+<a href=#128 id=128 data-nosnippet>128</a>			ensure_none(origin)<span class="question-mark">?</span>;
+<a href=#129 id=129 data-nosnippet>129</a>			<span class="macro">log::info!</span>(<span class="string">"📊 Block participation inherent data released"</span>);
+<a href=#130 id=130 data-nosnippet>130</a>			LatestParticipationData::&lt;T&gt;::put(data);
+<a href=#131 id=131 data-nosnippet>131</a>			<span class="prelude-val">Ok</span>(())
+<a href=#132 id=132 data-nosnippet>132</a>		}
+<a href=#133 id=133 data-nosnippet>133</a>
+<a href=#134 id=134 data-nosnippet>134</a>		<span class="attr">#[pallet::call_index(<span class="number">1</span>)]
+<a href=#135 id=135 data-nosnippet>135</a>		#[pallet::weight(<span class="number">0</span>)]
+<a href=#136 id=136 data-nosnippet>136</a>		</span><span class="kw">pub fn </span>set_block_participation_data_release_period(
+<a href=#137 id=137 data-nosnippet>137</a>			origin: OriginFor&lt;T&gt;,
+<a href=#138 id=138 data-nosnippet>138</a>			period: u64,
+<a href=#139 id=139 data-nosnippet>139</a>		) -&gt; DispatchResult {
+<a href=#140 id=140 data-nosnippet>140</a>			ensure_root(origin)<span class="question-mark">?</span>;
+<a href=#141 id=141 data-nosnippet>141</a>			<span class="macro">log::info!</span>(<span class="string">"📊 Block participation data release period changed to {period}"</span>);
+<a href=#142 id=142 data-nosnippet>142</a>			ParticipationDataReleasePeriod::&lt;T&gt;::put(period);
+<a href=#143 id=143 data-nosnippet>143</a>			<span class="prelude-val">Ok</span>(())
+<a href=#144 id=144 data-nosnippet>144</a>		}
+<a href=#145 id=145 data-nosnippet>145</a>	}
+<a href=#146 id=146 data-nosnippet>146</a>
+<a href=#147 id=147 data-nosnippet>147</a>	<span class="attr">#[derive(Clone, Debug, Encode, Decode)]
+<a href=#148 id=148 data-nosnippet>148</a>	</span><span class="kw">pub enum </span>InherentError {}
+<a href=#149 id=149 data-nosnippet>149</a>	<span class="kw">impl </span>IsFatalError <span class="kw">for </span>InherentError {
+<a href=#150 id=150 data-nosnippet>150</a>		<span class="kw">fn </span>is_fatal_error(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
+<a href=#151 id=151 data-nosnippet>151</a>			<span class="bool-val">true
+<a href=#152 id=152 data-nosnippet>152</a>		</span>}
+<a href=#153 id=153 data-nosnippet>153</a>	}
+<a href=#154 id=154 data-nosnippet>154</a>
+<a href=#155 id=155 data-nosnippet>155</a>	<span class="attr">#[pallet::inherent]
+<a href=#156 id=156 data-nosnippet>156</a>	</span><span class="kw">impl</span>&lt;T: Config&gt; ProvideInherent <span class="kw">for </span>Pallet&lt;T&gt; {
+<a href=#157 id=157 data-nosnippet>157</a>		<span class="kw">type </span>Call = Call&lt;T&gt;;
+<a href=#158 id=158 data-nosnippet>158</a>		<span class="kw">type </span>Error = InherentError;
+<a href=#159 id=159 data-nosnippet>159</a>		<span class="kw">const </span>INHERENT_IDENTIFIER: InherentIdentifier = <span class="kw-2">*</span><span class="string">b"testhelp"</span>;
+<a href=#160 id=160 data-nosnippet>160</a>
+<a href=#161 id=161 data-nosnippet>161</a>		<span class="kw">fn </span>create_inherent(data: <span class="kw-2">&amp;</span>InherentData) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Call&gt; {
+<a href=#162 id=162 data-nosnippet>162</a>			<span class="kw">let </span>inherent = data
+<a href=#163 id=163 data-nosnippet>163</a>				.get_data::&lt;ParticipationData&gt;(<span class="kw-2">&amp;</span><span class="self">Self</span>::INHERENT_IDENTIFIER)
+<a href=#164 id=164 data-nosnippet>164</a>				.expect(<span class="string">"Block participation inherent data invalid"</span>)
+<a href=#165 id=165 data-nosnippet>165</a>				.map(|data| <span class="self">Self</span>::Call::handle_participation_data { data });
+<a href=#166 id=166 data-nosnippet>166</a>
+<a href=#167 id=167 data-nosnippet>167</a>			inherent
+<a href=#168 id=168 data-nosnippet>168</a>		}
+<a href=#169 id=169 data-nosnippet>169</a>
+<a href=#170 id=170 data-nosnippet>170</a>		<span class="kw">fn </span>is_inherent(_call: <span class="kw-2">&amp;</span><span class="self">Self</span>::Call) -&gt; bool {
+<a href=#171 id=171 data-nosnippet>171</a>			<span class="bool-val">true
+<a href=#172 id=172 data-nosnippet>172</a>		</span>}
 <a href=#173 id=173 data-nosnippet>173</a>
-<a href=#174 id=174 data-nosnippet>174</a>		<span class="kw">fn </span>is_inherent(_call: <span class="kw-2">&amp;</span><span class="self">Self</span>::Call) -&gt; bool {
-<a href=#175 id=175 data-nosnippet>175</a>			<span class="bool-val">true
-<a href=#176 id=176 data-nosnippet>176</a>		</span>}
-<a href=#177 id=177 data-nosnippet>177</a>
-<a href=#178 id=178 data-nosnippet>178</a>		<span class="kw">fn </span>is_inherent_required(_data: <span class="kw-2">&amp;</span>InherentData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Error&gt;, <span class="self">Self</span>::Error&gt; {
-<a href=#179 id=179 data-nosnippet>179</a>			<span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
-<a href=#180 id=180 data-nosnippet>180</a>		}
-<a href=#181 id=181 data-nosnippet>181</a>	}
-<a href=#182 id=182 data-nosnippet>182</a>}</code></pre></div></section></main></body></html>
+<a href=#174 id=174 data-nosnippet>174</a>		<span class="kw">fn </span>is_inherent_required(_data: <span class="kw-2">&amp;</span>InherentData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Error&gt;, <span class="self">Self</span>::Error&gt; {
+<a href=#175 id=175 data-nosnippet>175</a>			<span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
+<a href=#176 id=176 data-nosnippet>176</a>		}
+<a href=#177 id=177 data-nosnippet>177</a>	}
+<a href=#178 id=178 data-nosnippet>178</a>}</code></pre></div></section></main></body></html>

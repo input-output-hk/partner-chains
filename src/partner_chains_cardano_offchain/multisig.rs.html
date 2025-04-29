@@ -2,8 +2,8 @@
 <a href=#2 id=2 data-nosnippet>2</a>	await_tx::AwaitTx,
 <a href=#3 id=3 data-nosnippet>3</a>	cardano_keys::CardanoPaymentSigningKey,
 <a href=#4 id=4 data-nosnippet>4</a>	csl::{
-<a href=#5 id=5 data-nosnippet>5</a>		get_builder_config, key_hash_address, Costs, OgmiosUtxoExt, TransactionBuilderExt,
-<a href=#6 id=6 data-nosnippet>6</a>		TransactionContext,
+<a href=#5 id=5 data-nosnippet>5</a>		Costs, OgmiosUtxoExt, TransactionBuilderExt, TransactionContext, get_builder_config,
+<a href=#6 id=6 data-nosnippet>6</a>		key_hash_address,
 <a href=#7 id=7 data-nosnippet>7</a>	},
 <a href=#8 id=8 data-nosnippet>8</a>	governance::GovernanceData,
 <a href=#9 id=9 data-nosnippet>9</a>};
@@ -17,7 +17,7 @@
 <a href=#17 id=17 data-nosnippet>17</a>	transactions::Transactions,
 <a href=#18 id=18 data-nosnippet>18</a>};
 <a href=#19 id=19 data-nosnippet>19</a><span class="kw">use </span>serde::{Serialize, Serializer};
-<a href=#20 id=20 data-nosnippet>20</a><span class="kw">use </span>sidechain_domain::{crypto::blake2b, McTxHash, UtxoId, UtxoIndex};
+<a href=#20 id=20 data-nosnippet>20</a><span class="kw">use </span>sidechain_domain::{McTxHash, UtxoId, UtxoIndex, crypto::blake2b};
 <a href=#21 id=21 data-nosnippet>21</a>
 <a href=#22 id=22 data-nosnippet>22</a><span class="doccomment">/// Successfull smart contracts offchain results in either transaction submission or creating transaction that has to be signed by the governance authorities
 <a href=#23 id=23 data-nosnippet>23</a></span><span class="attr">#[derive(Clone, Debug, Serialize)]

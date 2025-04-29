@@ -6,8 +6,8 @@
 <a href=#6 id=6 data-nosnippet>6</a><span class="kw">use </span>ogmios_client::{
 <a href=#7 id=7 data-nosnippet>7</a>	query_ledger_state::QueryLedgerState, query_network::QueryNetwork, types::OgmiosUtxo,
 <a href=#8 id=8 data-nosnippet>8</a>};
-<a href=#9 id=9 data-nosnippet>9</a><span class="kw">use </span>partner_chains_plutus_data::version_oracle::VersionOracleDatum;
-<a href=#10 id=10 data-nosnippet>10</a><span class="kw">use </span>partner_chains_plutus_data::PlutusDataExtensions <span class="kw">as _</span>;
+<a href=#9 id=9 data-nosnippet>9</a><span class="kw">use </span>partner_chains_plutus_data::PlutusDataExtensions <span class="kw">as _</span>;
+<a href=#10 id=10 data-nosnippet>10</a><span class="kw">use </span>partner_chains_plutus_data::version_oracle::VersionOracleDatum;
 <a href=#11 id=11 data-nosnippet>11</a><span class="kw">use </span>serde::Serialize;
 <a href=#12 id=12 data-nosnippet>12</a><span class="kw">use </span>sidechain_domain::byte_string::ByteString;
 <a href=#13 id=13 data-nosnippet>13</a><span class="kw">use </span>sidechain_domain::{MainchainKeyHash, UtxoId};
@@ -298,7 +298,7 @@
 <a href=#298 id=298 data-nosnippet>298</a>
 <a href=#299 id=299 data-nosnippet>299</a><span class="attr">#[cfg(test)]
 <a href=#300 id=300 data-nosnippet>300</a></span><span class="kw">mod </span>tests {
-<a href=#301 id=301 data-nosnippet>301</a>	<span class="kw">use super</span>::{read_policy, GovernancePolicySummary};
+<a href=#301 id=301 data-nosnippet>301</a>	<span class="kw">use super</span>::{GovernancePolicySummary, read_policy};
 <a href=#302 id=302 data-nosnippet>302</a>	<span class="kw">use crate</span>::{
 <a href=#303 id=303 data-nosnippet>303</a>		governance::{GovernancePolicyScript, PartnerChainsMultisigPolicy, SimpleAtLeastN},
 <a href=#304 id=304 data-nosnippet>304</a>		plutus_script::PlutusScript,

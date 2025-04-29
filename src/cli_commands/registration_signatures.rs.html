@@ -5,8 +5,8 @@
 <a href=#5 id=5 data-nosnippet>5</a><span class="kw">use </span>serde::Serialize;
 <a href=#6 id=6 data-nosnippet>6</a><span class="kw">use </span>serde_json;
 <a href=#7 id=7 data-nosnippet>7</a><span class="kw">use </span>sidechain_domain::{
-<a href=#8 id=8 data-nosnippet>8</a>	crypto::<span class="kw-2">*</span>, MainchainSignature, SidechainPublicKey, SidechainSignature, StakePoolPublicKey,
-<a href=#9 id=9 data-nosnippet>9</a>	UtxoId,
+<a href=#8 id=8 data-nosnippet>8</a>	MainchainSignature, SidechainPublicKey, SidechainSignature, StakePoolPublicKey, UtxoId,
+<a href=#9 id=9 data-nosnippet>9</a>	crypto::<span class="kw-2">*</span>,
 <a href=#10 id=10 data-nosnippet>10</a>};
 <a href=#11 id=11 data-nosnippet>11</a><span class="kw">use </span>std::fmt::{Display, Formatter};
 <a href=#12 id=12 data-nosnippet>12</a>
@@ -119,6 +119,9 @@
 <a href=#119 id=119 data-nosnippet>119</a>				.unwrap();
 <a href=#120 id=120 data-nosnippet>120</a>		<span class="kw">let </span>message =
 <a href=#121 id=121 data-nosnippet>121</a>			RegisterValidatorMessage::new(genesis_utxo, sidechain_pub_key, registration_utxo);
-<a href=#122 id=122 data-nosnippet>122</a>		<span class="macro">assert_eq!</span>(hex::encode(to_datum_cbor_bytes(message)), <span class="string">"d8799fd8799fd8799f5820e41c9b57841e582c207bb68d5e9736fb48c7af5f1ec29ade00692fa5e0e47efaff04ff582102dbfc8b66c22f931a6647fd86db2fc073dd564b99837226a1bdfe7a99578854ecd8799fd8799f58208ea10040249ad3033ae7c4d4b69e0b2e2b50a90741b783491cb5ddf8ced0d861ff04ffff"</span>)
-<a href=#123 id=123 data-nosnippet>123</a>	}
-<a href=#124 id=124 data-nosnippet>124</a>}</code></pre></div></section></main></body></html>
+<a href=#122 id=122 data-nosnippet>122</a>		<span class="macro">assert_eq!</span>(
+<a href=#123 id=123 data-nosnippet>123</a>			hex::encode(to_datum_cbor_bytes(message)),
+<a href=#124 id=124 data-nosnippet>124</a>			<span class="string">"d8799fd8799fd8799f5820e41c9b57841e582c207bb68d5e9736fb48c7af5f1ec29ade00692fa5e0e47efaff04ff582102dbfc8b66c22f931a6647fd86db2fc073dd564b99837226a1bdfe7a99578854ecd8799fd8799f58208ea10040249ad3033ae7c4d4b69e0b2e2b50a90741b783491cb5ddf8ced0d861ff04ffff"
+<a href=#125 id=125 data-nosnippet>125</a>		</span>)
+<a href=#126 id=126 data-nosnippet>126</a>	}
+<a href=#127 id=127 data-nosnippet>127</a>}</code></pre></div></section></main></body></html>

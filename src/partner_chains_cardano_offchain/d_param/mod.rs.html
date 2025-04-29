@@ -7,8 +7,8 @@
 <a href=#7 id=7 data-nosnippet>7</a></span><span class="kw">use </span><span class="kw">crate</span>::await_tx::{AwaitTx, FixedDelayRetries};
 <a href=#8 id=8 data-nosnippet>8</a><span class="kw">use </span><span class="kw">crate</span>::cardano_keys::CardanoPaymentSigningKey;
 <a href=#9 id=9 data-nosnippet>9</a><span class="kw">use </span><span class="kw">crate</span>::csl::{
-<a href=#10 id=10 data-nosnippet>10</a>	empty_asset_name, get_builder_config, unit_plutus_data, CostStore, Costs, InputsBuilderExt,
-<a href=#11 id=11 data-nosnippet>11</a>	TransactionBuilderExt, TransactionContext, TransactionExt,
+<a href=#10 id=10 data-nosnippet>10</a>	CostStore, Costs, InputsBuilderExt, TransactionBuilderExt, TransactionContext, TransactionExt,
+<a href=#11 id=11 data-nosnippet>11</a>	empty_asset_name, get_builder_config, unit_plutus_data,
 <a href=#12 id=12 data-nosnippet>12</a>};
 <a href=#13 id=13 data-nosnippet>13</a><span class="kw">use </span><span class="kw">crate</span>::governance::GovernanceData;
 <a href=#14 id=14 data-nosnippet>14</a><span class="kw">use </span><span class="kw">crate</span>::multisig::submit_or_create_tx_to_sign;
@@ -23,7 +23,7 @@
 <a href=#23 id=23 data-nosnippet>23</a>	query_ledger_state::QueryLedgerState, query_network::QueryNetwork, transactions::Transactions,
 <a href=#24 id=24 data-nosnippet>24</a>	types::OgmiosUtxo,
 <a href=#25 id=25 data-nosnippet>25</a>};
-<a href=#26 id=26 data-nosnippet>26</a><span class="kw">use </span>partner_chains_plutus_data::d_param::{d_parameter_to_plutus_data, DParamDatum};
+<a href=#26 id=26 data-nosnippet>26</a><span class="kw">use </span>partner_chains_plutus_data::d_param::{DParamDatum, d_parameter_to_plutus_data};
 <a href=#27 id=27 data-nosnippet>27</a><span class="kw">use </span>sidechain_domain::{DParameter, UtxoId};
 <a href=#28 id=28 data-nosnippet>28</a>
 <a href=#29 id=29 data-nosnippet>29</a><span class="attr">#[cfg(test)]
@@ -120,145 +120,147 @@
 <a href=#120 id=120 data-nosnippet>120</a>		<span class="kw">let </span>datum_plutus_data = PlutusData::from_bytes(datum.bytes).map_err(|e| {
 <a href=#121 id=121 data-nosnippet>121</a>			<span class="macro">anyhow!</span>(<span class="string">"Internal error: could not decode datum of D-parameter validator script: {}"</span>, e)
 <a href=#122 id=122 data-nosnippet>122</a>		})<span class="question-mark">?</span>;
-<a href=#123 id=123 data-nosnippet>123</a>		<span class="kw">let </span>current_d_param: DParameter =
-<a href=#124 id=124 data-nosnippet>124</a>			DParamDatum::try_from(datum_plutus_data)
-<a href=#125 id=125 data-nosnippet>125</a>				.map_err(|e| {
-<a href=#126 id=126 data-nosnippet>126</a>					<span class="macro">anyhow!</span>(<span class="string">"Internal error: could not decode datum of D-parameter validator script: {}"</span>, e)
-<a href=#127 id=127 data-nosnippet>127</a>				})<span class="question-mark">?
-<a href=#128 id=128 data-nosnippet>128</a>				</span>.into();
-<a href=#129 id=129 data-nosnippet>129</a>		<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>((utxo.clone(), current_d_param)))
-<a href=#130 id=130 data-nosnippet>130</a>	} <span class="kw">else </span>{
-<a href=#131 id=131 data-nosnippet>131</a>		<span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
-<a href=#132 id=132 data-nosnippet>132</a>	}
-<a href=#133 id=133 data-nosnippet>133</a>}
-<a href=#134 id=134 data-nosnippet>134</a>
-<a href=#135 id=135 data-nosnippet>135</a><span class="kw">async fn </span>insert_d_param&lt;
-<a href=#136 id=136 data-nosnippet>136</a>	C: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
-<a href=#137 id=137 data-nosnippet>137</a>	A: AwaitTx,
-<a href=#138 id=138 data-nosnippet>138</a>&gt;(
-<a href=#139 id=139 data-nosnippet>139</a>	validator: <span class="kw-2">&amp;</span>PlutusScript,
-<a href=#140 id=140 data-nosnippet>140</a>	policy: <span class="kw-2">&amp;</span>PlutusScript,
-<a href=#141 id=141 data-nosnippet>141</a>	d_parameter: <span class="kw-2">&amp;</span>DParameter,
-<a href=#142 id=142 data-nosnippet>142</a>	ctx: TransactionContext,
-<a href=#143 id=143 data-nosnippet>143</a>	genesis_utxo: UtxoId,
-<a href=#144 id=144 data-nosnippet>144</a>	client: <span class="kw-2">&amp;</span>C,
-<a href=#145 id=145 data-nosnippet>145</a>	await_tx: <span class="kw-2">&amp;</span>A,
-<a href=#146 id=146 data-nosnippet>146</a>) -&gt; anyhow::Result&lt;MultiSigSmartContractResult&gt; {
-<a href=#147 id=147 data-nosnippet>147</a>	<span class="kw">let </span>gov_data = GovernanceData::get(genesis_utxo, client).<span class="kw">await</span><span class="question-mark">?</span>;
-<a href=#148 id=148 data-nosnippet>148</a>
-<a href=#149 id=149 data-nosnippet>149</a>	submit_or_create_tx_to_sign(
-<a href=#150 id=150 data-nosnippet>150</a>		<span class="kw-2">&amp;</span>gov_data,
-<a href=#151 id=151 data-nosnippet>151</a>		ctx,
-<a href=#152 id=152 data-nosnippet>152</a>		|costs, ctx| mint_d_param_token_tx(validator, policy, d_parameter, <span class="kw-2">&amp;</span>gov_data, costs, <span class="kw-2">&amp;</span>ctx),
-<a href=#153 id=153 data-nosnippet>153</a>		<span class="string">"Insert D-parameter"</span>,
-<a href=#154 id=154 data-nosnippet>154</a>		client,
-<a href=#155 id=155 data-nosnippet>155</a>		await_tx,
-<a href=#156 id=156 data-nosnippet>156</a>	)
-<a href=#157 id=157 data-nosnippet>157</a>	.<span class="kw">await
-<a href=#158 id=158 data-nosnippet>158</a></span>}
-<a href=#159 id=159 data-nosnippet>159</a>
-<a href=#160 id=160 data-nosnippet>160</a><span class="kw">async fn </span>update_d_param&lt;
-<a href=#161 id=161 data-nosnippet>161</a>	C: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
-<a href=#162 id=162 data-nosnippet>162</a>	A: AwaitTx,
-<a href=#163 id=163 data-nosnippet>163</a>&gt;(
-<a href=#164 id=164 data-nosnippet>164</a>	validator: <span class="kw-2">&amp;</span>PlutusScript,
-<a href=#165 id=165 data-nosnippet>165</a>	policy: <span class="kw-2">&amp;</span>PlutusScript,
-<a href=#166 id=166 data-nosnippet>166</a>	d_parameter: <span class="kw-2">&amp;</span>DParameter,
-<a href=#167 id=167 data-nosnippet>167</a>	current_utxo: <span class="kw-2">&amp;</span>OgmiosUtxo,
-<a href=#168 id=168 data-nosnippet>168</a>	ctx: TransactionContext,
-<a href=#169 id=169 data-nosnippet>169</a>	genesis_utxo: UtxoId,
-<a href=#170 id=170 data-nosnippet>170</a>	client: <span class="kw-2">&amp;</span>C,
-<a href=#171 id=171 data-nosnippet>171</a>	await_tx: <span class="kw-2">&amp;</span>A,
-<a href=#172 id=172 data-nosnippet>172</a>) -&gt; anyhow::Result&lt;MultiSigSmartContractResult&gt; {
-<a href=#173 id=173 data-nosnippet>173</a>	<span class="kw">let </span>governance_data = GovernanceData::get(genesis_utxo, client).<span class="kw">await</span><span class="question-mark">?</span>;
-<a href=#174 id=174 data-nosnippet>174</a>
-<a href=#175 id=175 data-nosnippet>175</a>	submit_or_create_tx_to_sign(
-<a href=#176 id=176 data-nosnippet>176</a>		<span class="kw-2">&amp;</span>governance_data,
-<a href=#177 id=177 data-nosnippet>177</a>		ctx,
-<a href=#178 id=178 data-nosnippet>178</a>		|costs, ctx| {
-<a href=#179 id=179 data-nosnippet>179</a>			update_d_param_tx(
-<a href=#180 id=180 data-nosnippet>180</a>				validator,
-<a href=#181 id=181 data-nosnippet>181</a>				policy,
-<a href=#182 id=182 data-nosnippet>182</a>				d_parameter,
-<a href=#183 id=183 data-nosnippet>183</a>				current_utxo,
-<a href=#184 id=184 data-nosnippet>184</a>				<span class="kw-2">&amp;</span>governance_data,
-<a href=#185 id=185 data-nosnippet>185</a>				costs,
-<a href=#186 id=186 data-nosnippet>186</a>				<span class="kw-2">&amp;</span>ctx,
-<a href=#187 id=187 data-nosnippet>187</a>			)
-<a href=#188 id=188 data-nosnippet>188</a>		},
-<a href=#189 id=189 data-nosnippet>189</a>		<span class="string">"Update D-parameter"</span>,
-<a href=#190 id=190 data-nosnippet>190</a>		client,
-<a href=#191 id=191 data-nosnippet>191</a>		await_tx,
-<a href=#192 id=192 data-nosnippet>192</a>	)
-<a href=#193 id=193 data-nosnippet>193</a>	.<span class="kw">await
-<a href=#194 id=194 data-nosnippet>194</a></span>}
-<a href=#195 id=195 data-nosnippet>195</a>
-<a href=#196 id=196 data-nosnippet>196</a><span class="kw">fn </span>mint_d_param_token_tx(
-<a href=#197 id=197 data-nosnippet>197</a>	validator: <span class="kw-2">&amp;</span>PlutusScript,
-<a href=#198 id=198 data-nosnippet>198</a>	policy: <span class="kw-2">&amp;</span>PlutusScript,
-<a href=#199 id=199 data-nosnippet>199</a>	d_parameter: <span class="kw-2">&amp;</span>DParameter,
-<a href=#200 id=200 data-nosnippet>200</a>	governance_data: <span class="kw-2">&amp;</span>GovernanceData,
-<a href=#201 id=201 data-nosnippet>201</a>	costs: Costs,
-<a href=#202 id=202 data-nosnippet>202</a>	ctx: <span class="kw-2">&amp;</span>TransactionContext,
-<a href=#203 id=203 data-nosnippet>203</a>) -&gt; anyhow::Result&lt;Transaction&gt; {
-<a href=#204 id=204 data-nosnippet>204</a>	<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>get_builder_config(ctx)<span class="question-mark">?</span>);
-<a href=#205 id=205 data-nosnippet>205</a>	<span class="comment">// The essence of transaction: mint D-Param token and set output with it, mint a governance token.
-<a href=#206 id=206 data-nosnippet>206</a>	</span>tx_builder.add_mint_one_script_token(
-<a href=#207 id=207 data-nosnippet>207</a>		policy,
-<a href=#208 id=208 data-nosnippet>208</a>		<span class="kw-2">&amp;</span>empty_asset_name(),
-<a href=#209 id=209 data-nosnippet>209</a>		<span class="kw-2">&amp;</span>unit_plutus_data(),
-<a href=#210 id=210 data-nosnippet>210</a>		<span class="kw-2">&amp;</span>costs.get_mint(<span class="kw-2">&amp;</span>policy.clone()),
-<a href=#211 id=211 data-nosnippet>211</a>	)<span class="question-mark">?</span>;
-<a href=#212 id=212 data-nosnippet>212</a>	tx_builder.add_output_with_one_script_token(
-<a href=#213 id=213 data-nosnippet>213</a>		validator,
-<a href=#214 id=214 data-nosnippet>214</a>		policy,
-<a href=#215 id=215 data-nosnippet>215</a>		<span class="kw-2">&amp;</span>d_parameter_to_plutus_data(d_parameter),
-<a href=#216 id=216 data-nosnippet>216</a>		ctx,
-<a href=#217 id=217 data-nosnippet>217</a>	)<span class="question-mark">?</span>;
-<a href=#218 id=218 data-nosnippet>218</a>
-<a href=#219 id=219 data-nosnippet>219</a>	<span class="kw">let </span>gov_tx_input = governance_data.utxo_id_as_tx_input();
-<a href=#220 id=220 data-nosnippet>220</a>	tx_builder.add_mint_one_script_token_using_reference_script(
-<a href=#221 id=221 data-nosnippet>221</a>		<span class="kw-2">&amp;</span>governance_data.policy.script(),
-<a href=#222 id=222 data-nosnippet>222</a>		<span class="kw-2">&amp;</span>gov_tx_input,
-<a href=#223 id=223 data-nosnippet>223</a>		<span class="kw-2">&amp;</span>costs,
-<a href=#224 id=224 data-nosnippet>224</a>	)<span class="question-mark">?</span>;
-<a href=#225 id=225 data-nosnippet>225</a>
-<a href=#226 id=226 data-nosnippet>226</a>	<span class="prelude-val">Ok</span>(tx_builder.balance_update_and_build(ctx)<span class="question-mark">?</span>.remove_native_script_witnesses())
-<a href=#227 id=227 data-nosnippet>227</a>}
-<a href=#228 id=228 data-nosnippet>228</a>
-<a href=#229 id=229 data-nosnippet>229</a><span class="kw">fn </span>update_d_param_tx(
-<a href=#230 id=230 data-nosnippet>230</a>	validator: <span class="kw-2">&amp;</span>PlutusScript,
-<a href=#231 id=231 data-nosnippet>231</a>	policy: <span class="kw-2">&amp;</span>PlutusScript,
-<a href=#232 id=232 data-nosnippet>232</a>	d_parameter: <span class="kw-2">&amp;</span>DParameter,
-<a href=#233 id=233 data-nosnippet>233</a>	script_utxo: <span class="kw-2">&amp;</span>OgmiosUtxo,
-<a href=#234 id=234 data-nosnippet>234</a>	governance_data: <span class="kw-2">&amp;</span>GovernanceData,
-<a href=#235 id=235 data-nosnippet>235</a>	costs: Costs,
-<a href=#236 id=236 data-nosnippet>236</a>	ctx: <span class="kw-2">&amp;</span>TransactionContext,
-<a href=#237 id=237 data-nosnippet>237</a>) -&gt; anyhow::Result&lt;Transaction&gt; {
-<a href=#238 id=238 data-nosnippet>238</a>	<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>get_builder_config(ctx)<span class="question-mark">?</span>);
-<a href=#239 id=239 data-nosnippet>239</a>
-<a href=#240 id=240 data-nosnippet>240</a>	<span class="kw">let </span><span class="kw-2">mut </span>inputs = TxInputsBuilder::new();
-<a href=#241 id=241 data-nosnippet>241</a>	inputs.add_script_utxo_input(
-<a href=#242 id=242 data-nosnippet>242</a>		script_utxo,
-<a href=#243 id=243 data-nosnippet>243</a>		validator,
-<a href=#244 id=244 data-nosnippet>244</a>		<span class="kw-2">&amp;</span>unit_plutus_data(),
-<a href=#245 id=245 data-nosnippet>245</a>		<span class="kw-2">&amp;</span>costs.get_one_spend(),
-<a href=#246 id=246 data-nosnippet>246</a>	)<span class="question-mark">?</span>;
-<a href=#247 id=247 data-nosnippet>247</a>	tx_builder.set_inputs(<span class="kw-2">&amp;</span>inputs);
-<a href=#248 id=248 data-nosnippet>248</a>
-<a href=#249 id=249 data-nosnippet>249</a>	tx_builder.add_output_with_one_script_token(
-<a href=#250 id=250 data-nosnippet>250</a>		validator,
-<a href=#251 id=251 data-nosnippet>251</a>		policy,
-<a href=#252 id=252 data-nosnippet>252</a>		<span class="kw-2">&amp;</span>d_parameter_to_plutus_data(d_parameter),
-<a href=#253 id=253 data-nosnippet>253</a>		ctx,
-<a href=#254 id=254 data-nosnippet>254</a>	)<span class="question-mark">?</span>;
-<a href=#255 id=255 data-nosnippet>255</a>
-<a href=#256 id=256 data-nosnippet>256</a>	<span class="kw">let </span>gov_tx_input = governance_data.utxo_id_as_tx_input();
-<a href=#257 id=257 data-nosnippet>257</a>	tx_builder.add_mint_one_script_token_using_reference_script(
-<a href=#258 id=258 data-nosnippet>258</a>		<span class="kw-2">&amp;</span>governance_data.policy.script(),
-<a href=#259 id=259 data-nosnippet>259</a>		<span class="kw-2">&amp;</span>gov_tx_input,
-<a href=#260 id=260 data-nosnippet>260</a>		<span class="kw-2">&amp;</span>costs,
-<a href=#261 id=261 data-nosnippet>261</a>	)<span class="question-mark">?</span>;
-<a href=#262 id=262 data-nosnippet>262</a>
-<a href=#263 id=263 data-nosnippet>263</a>	<span class="prelude-val">Ok</span>(tx_builder.balance_update_and_build(ctx)<span class="question-mark">?</span>.remove_native_script_witnesses())
-<a href=#264 id=264 data-nosnippet>264</a>}</code></pre></div></section></main></body></html>
+<a href=#123 id=123 data-nosnippet>123</a>		<span class="kw">let </span>current_d_param: DParameter = DParamDatum::try_from(datum_plutus_data)
+<a href=#124 id=124 data-nosnippet>124</a>			.map_err(|e| {
+<a href=#125 id=125 data-nosnippet>125</a>				<span class="macro">anyhow!</span>(
+<a href=#126 id=126 data-nosnippet>126</a>					<span class="string">"Internal error: could not decode datum of D-parameter validator script: {}"</span>,
+<a href=#127 id=127 data-nosnippet>127</a>					e
+<a href=#128 id=128 data-nosnippet>128</a>				)
+<a href=#129 id=129 data-nosnippet>129</a>			})<span class="question-mark">?
+<a href=#130 id=130 data-nosnippet>130</a>			</span>.into();
+<a href=#131 id=131 data-nosnippet>131</a>		<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>((utxo.clone(), current_d_param)))
+<a href=#132 id=132 data-nosnippet>132</a>	} <span class="kw">else </span>{
+<a href=#133 id=133 data-nosnippet>133</a>		<span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
+<a href=#134 id=134 data-nosnippet>134</a>	}
+<a href=#135 id=135 data-nosnippet>135</a>}
+<a href=#136 id=136 data-nosnippet>136</a>
+<a href=#137 id=137 data-nosnippet>137</a><span class="kw">async fn </span>insert_d_param&lt;
+<a href=#138 id=138 data-nosnippet>138</a>	C: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+<a href=#139 id=139 data-nosnippet>139</a>	A: AwaitTx,
+<a href=#140 id=140 data-nosnippet>140</a>&gt;(
+<a href=#141 id=141 data-nosnippet>141</a>	validator: <span class="kw-2">&amp;</span>PlutusScript,
+<a href=#142 id=142 data-nosnippet>142</a>	policy: <span class="kw-2">&amp;</span>PlutusScript,
+<a href=#143 id=143 data-nosnippet>143</a>	d_parameter: <span class="kw-2">&amp;</span>DParameter,
+<a href=#144 id=144 data-nosnippet>144</a>	ctx: TransactionContext,
+<a href=#145 id=145 data-nosnippet>145</a>	genesis_utxo: UtxoId,
+<a href=#146 id=146 data-nosnippet>146</a>	client: <span class="kw-2">&amp;</span>C,
+<a href=#147 id=147 data-nosnippet>147</a>	await_tx: <span class="kw-2">&amp;</span>A,
+<a href=#148 id=148 data-nosnippet>148</a>) -&gt; anyhow::Result&lt;MultiSigSmartContractResult&gt; {
+<a href=#149 id=149 data-nosnippet>149</a>	<span class="kw">let </span>gov_data = GovernanceData::get(genesis_utxo, client).<span class="kw">await</span><span class="question-mark">?</span>;
+<a href=#150 id=150 data-nosnippet>150</a>
+<a href=#151 id=151 data-nosnippet>151</a>	submit_or_create_tx_to_sign(
+<a href=#152 id=152 data-nosnippet>152</a>		<span class="kw-2">&amp;</span>gov_data,
+<a href=#153 id=153 data-nosnippet>153</a>		ctx,
+<a href=#154 id=154 data-nosnippet>154</a>		|costs, ctx| mint_d_param_token_tx(validator, policy, d_parameter, <span class="kw-2">&amp;</span>gov_data, costs, <span class="kw-2">&amp;</span>ctx),
+<a href=#155 id=155 data-nosnippet>155</a>		<span class="string">"Insert D-parameter"</span>,
+<a href=#156 id=156 data-nosnippet>156</a>		client,
+<a href=#157 id=157 data-nosnippet>157</a>		await_tx,
+<a href=#158 id=158 data-nosnippet>158</a>	)
+<a href=#159 id=159 data-nosnippet>159</a>	.<span class="kw">await
+<a href=#160 id=160 data-nosnippet>160</a></span>}
+<a href=#161 id=161 data-nosnippet>161</a>
+<a href=#162 id=162 data-nosnippet>162</a><span class="kw">async fn </span>update_d_param&lt;
+<a href=#163 id=163 data-nosnippet>163</a>	C: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+<a href=#164 id=164 data-nosnippet>164</a>	A: AwaitTx,
+<a href=#165 id=165 data-nosnippet>165</a>&gt;(
+<a href=#166 id=166 data-nosnippet>166</a>	validator: <span class="kw-2">&amp;</span>PlutusScript,
+<a href=#167 id=167 data-nosnippet>167</a>	policy: <span class="kw-2">&amp;</span>PlutusScript,
+<a href=#168 id=168 data-nosnippet>168</a>	d_parameter: <span class="kw-2">&amp;</span>DParameter,
+<a href=#169 id=169 data-nosnippet>169</a>	current_utxo: <span class="kw-2">&amp;</span>OgmiosUtxo,
+<a href=#170 id=170 data-nosnippet>170</a>	ctx: TransactionContext,
+<a href=#171 id=171 data-nosnippet>171</a>	genesis_utxo: UtxoId,
+<a href=#172 id=172 data-nosnippet>172</a>	client: <span class="kw-2">&amp;</span>C,
+<a href=#173 id=173 data-nosnippet>173</a>	await_tx: <span class="kw-2">&amp;</span>A,
+<a href=#174 id=174 data-nosnippet>174</a>) -&gt; anyhow::Result&lt;MultiSigSmartContractResult&gt; {
+<a href=#175 id=175 data-nosnippet>175</a>	<span class="kw">let </span>governance_data = GovernanceData::get(genesis_utxo, client).<span class="kw">await</span><span class="question-mark">?</span>;
+<a href=#176 id=176 data-nosnippet>176</a>
+<a href=#177 id=177 data-nosnippet>177</a>	submit_or_create_tx_to_sign(
+<a href=#178 id=178 data-nosnippet>178</a>		<span class="kw-2">&amp;</span>governance_data,
+<a href=#179 id=179 data-nosnippet>179</a>		ctx,
+<a href=#180 id=180 data-nosnippet>180</a>		|costs, ctx| {
+<a href=#181 id=181 data-nosnippet>181</a>			update_d_param_tx(
+<a href=#182 id=182 data-nosnippet>182</a>				validator,
+<a href=#183 id=183 data-nosnippet>183</a>				policy,
+<a href=#184 id=184 data-nosnippet>184</a>				d_parameter,
+<a href=#185 id=185 data-nosnippet>185</a>				current_utxo,
+<a href=#186 id=186 data-nosnippet>186</a>				<span class="kw-2">&amp;</span>governance_data,
+<a href=#187 id=187 data-nosnippet>187</a>				costs,
+<a href=#188 id=188 data-nosnippet>188</a>				<span class="kw-2">&amp;</span>ctx,
+<a href=#189 id=189 data-nosnippet>189</a>			)
+<a href=#190 id=190 data-nosnippet>190</a>		},
+<a href=#191 id=191 data-nosnippet>191</a>		<span class="string">"Update D-parameter"</span>,
+<a href=#192 id=192 data-nosnippet>192</a>		client,
+<a href=#193 id=193 data-nosnippet>193</a>		await_tx,
+<a href=#194 id=194 data-nosnippet>194</a>	)
+<a href=#195 id=195 data-nosnippet>195</a>	.<span class="kw">await
+<a href=#196 id=196 data-nosnippet>196</a></span>}
+<a href=#197 id=197 data-nosnippet>197</a>
+<a href=#198 id=198 data-nosnippet>198</a><span class="kw">fn </span>mint_d_param_token_tx(
+<a href=#199 id=199 data-nosnippet>199</a>	validator: <span class="kw-2">&amp;</span>PlutusScript,
+<a href=#200 id=200 data-nosnippet>200</a>	policy: <span class="kw-2">&amp;</span>PlutusScript,
+<a href=#201 id=201 data-nosnippet>201</a>	d_parameter: <span class="kw-2">&amp;</span>DParameter,
+<a href=#202 id=202 data-nosnippet>202</a>	governance_data: <span class="kw-2">&amp;</span>GovernanceData,
+<a href=#203 id=203 data-nosnippet>203</a>	costs: Costs,
+<a href=#204 id=204 data-nosnippet>204</a>	ctx: <span class="kw-2">&amp;</span>TransactionContext,
+<a href=#205 id=205 data-nosnippet>205</a>) -&gt; anyhow::Result&lt;Transaction&gt; {
+<a href=#206 id=206 data-nosnippet>206</a>	<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>get_builder_config(ctx)<span class="question-mark">?</span>);
+<a href=#207 id=207 data-nosnippet>207</a>	<span class="comment">// The essence of transaction: mint D-Param token and set output with it, mint a governance token.
+<a href=#208 id=208 data-nosnippet>208</a>	</span>tx_builder.add_mint_one_script_token(
+<a href=#209 id=209 data-nosnippet>209</a>		policy,
+<a href=#210 id=210 data-nosnippet>210</a>		<span class="kw-2">&amp;</span>empty_asset_name(),
+<a href=#211 id=211 data-nosnippet>211</a>		<span class="kw-2">&amp;</span>unit_plutus_data(),
+<a href=#212 id=212 data-nosnippet>212</a>		<span class="kw-2">&amp;</span>costs.get_mint(<span class="kw-2">&amp;</span>policy.clone()),
+<a href=#213 id=213 data-nosnippet>213</a>	)<span class="question-mark">?</span>;
+<a href=#214 id=214 data-nosnippet>214</a>	tx_builder.add_output_with_one_script_token(
+<a href=#215 id=215 data-nosnippet>215</a>		validator,
+<a href=#216 id=216 data-nosnippet>216</a>		policy,
+<a href=#217 id=217 data-nosnippet>217</a>		<span class="kw-2">&amp;</span>d_parameter_to_plutus_data(d_parameter),
+<a href=#218 id=218 data-nosnippet>218</a>		ctx,
+<a href=#219 id=219 data-nosnippet>219</a>	)<span class="question-mark">?</span>;
+<a href=#220 id=220 data-nosnippet>220</a>
+<a href=#221 id=221 data-nosnippet>221</a>	<span class="kw">let </span>gov_tx_input = governance_data.utxo_id_as_tx_input();
+<a href=#222 id=222 data-nosnippet>222</a>	tx_builder.add_mint_one_script_token_using_reference_script(
+<a href=#223 id=223 data-nosnippet>223</a>		<span class="kw-2">&amp;</span>governance_data.policy.script(),
+<a href=#224 id=224 data-nosnippet>224</a>		<span class="kw-2">&amp;</span>gov_tx_input,
+<a href=#225 id=225 data-nosnippet>225</a>		<span class="kw-2">&amp;</span>costs,
+<a href=#226 id=226 data-nosnippet>226</a>	)<span class="question-mark">?</span>;
+<a href=#227 id=227 data-nosnippet>227</a>
+<a href=#228 id=228 data-nosnippet>228</a>	<span class="prelude-val">Ok</span>(tx_builder.balance_update_and_build(ctx)<span class="question-mark">?</span>.remove_native_script_witnesses())
+<a href=#229 id=229 data-nosnippet>229</a>}
+<a href=#230 id=230 data-nosnippet>230</a>
+<a href=#231 id=231 data-nosnippet>231</a><span class="kw">fn </span>update_d_param_tx(
+<a href=#232 id=232 data-nosnippet>232</a>	validator: <span class="kw-2">&amp;</span>PlutusScript,
+<a href=#233 id=233 data-nosnippet>233</a>	policy: <span class="kw-2">&amp;</span>PlutusScript,
+<a href=#234 id=234 data-nosnippet>234</a>	d_parameter: <span class="kw-2">&amp;</span>DParameter,
+<a href=#235 id=235 data-nosnippet>235</a>	script_utxo: <span class="kw-2">&amp;</span>OgmiosUtxo,
+<a href=#236 id=236 data-nosnippet>236</a>	governance_data: <span class="kw-2">&amp;</span>GovernanceData,
+<a href=#237 id=237 data-nosnippet>237</a>	costs: Costs,
+<a href=#238 id=238 data-nosnippet>238</a>	ctx: <span class="kw-2">&amp;</span>TransactionContext,
+<a href=#239 id=239 data-nosnippet>239</a>) -&gt; anyhow::Result&lt;Transaction&gt; {
+<a href=#240 id=240 data-nosnippet>240</a>	<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>get_builder_config(ctx)<span class="question-mark">?</span>);
+<a href=#241 id=241 data-nosnippet>241</a>
+<a href=#242 id=242 data-nosnippet>242</a>	<span class="kw">let </span><span class="kw-2">mut </span>inputs = TxInputsBuilder::new();
+<a href=#243 id=243 data-nosnippet>243</a>	inputs.add_script_utxo_input(
+<a href=#244 id=244 data-nosnippet>244</a>		script_utxo,
+<a href=#245 id=245 data-nosnippet>245</a>		validator,
+<a href=#246 id=246 data-nosnippet>246</a>		<span class="kw-2">&amp;</span>unit_plutus_data(),
+<a href=#247 id=247 data-nosnippet>247</a>		<span class="kw-2">&amp;</span>costs.get_one_spend(),
+<a href=#248 id=248 data-nosnippet>248</a>	)<span class="question-mark">?</span>;
+<a href=#249 id=249 data-nosnippet>249</a>	tx_builder.set_inputs(<span class="kw-2">&amp;</span>inputs);
+<a href=#250 id=250 data-nosnippet>250</a>
+<a href=#251 id=251 data-nosnippet>251</a>	tx_builder.add_output_with_one_script_token(
+<a href=#252 id=252 data-nosnippet>252</a>		validator,
+<a href=#253 id=253 data-nosnippet>253</a>		policy,
+<a href=#254 id=254 data-nosnippet>254</a>		<span class="kw-2">&amp;</span>d_parameter_to_plutus_data(d_parameter),
+<a href=#255 id=255 data-nosnippet>255</a>		ctx,
+<a href=#256 id=256 data-nosnippet>256</a>	)<span class="question-mark">?</span>;
+<a href=#257 id=257 data-nosnippet>257</a>
+<a href=#258 id=258 data-nosnippet>258</a>	<span class="kw">let </span>gov_tx_input = governance_data.utxo_id_as_tx_input();
+<a href=#259 id=259 data-nosnippet>259</a>	tx_builder.add_mint_one_script_token_using_reference_script(
+<a href=#260 id=260 data-nosnippet>260</a>		<span class="kw-2">&amp;</span>governance_data.policy.script(),
+<a href=#261 id=261 data-nosnippet>261</a>		<span class="kw-2">&amp;</span>gov_tx_input,
+<a href=#262 id=262 data-nosnippet>262</a>		<span class="kw-2">&amp;</span>costs,
+<a href=#263 id=263 data-nosnippet>263</a>	)<span class="question-mark">?</span>;
+<a href=#264 id=264 data-nosnippet>264</a>
+<a href=#265 id=265 data-nosnippet>265</a>	<span class="prelude-val">Ok</span>(tx_builder.balance_update_and_build(ctx)<span class="question-mark">?</span>.remove_native_script_witnesses())
+<a href=#266 id=266 data-nosnippet>266</a>}</code></pre></div></section></main></body></html>

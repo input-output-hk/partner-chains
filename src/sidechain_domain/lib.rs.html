@@ -26,7 +26,7 @@
 <a href=#26 id=26 data-nosnippet>26</a><span class="kw">use </span>parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen, WrapperTypeEncode};
 <a href=#27 id=27 data-nosnippet>27</a><span class="kw">use </span>plutus_datum_derive::<span class="kw-2">*</span>;
 <a href=#28 id=28 data-nosnippet>28</a><span class="kw">use </span>scale_info::TypeInfo;
-<a href=#29 id=29 data-nosnippet>29</a><span class="kw">use </span>sp_core::{bounded::BoundedVec, ecdsa, ed25519, sr25519, ConstU32};
+<a href=#29 id=29 data-nosnippet>29</a><span class="kw">use </span>sp_core::{ConstU32, bounded::BoundedVec, ecdsa, ed25519, sr25519};
 <a href=#30 id=30 data-nosnippet>30</a><span class="attr">#[cfg(feature = <span class="string">"serde"</span>)]
 <a href=#31 id=31 data-nosnippet>31</a></span><span class="kw">use </span>{
 <a href=#32 id=32 data-nosnippet>32</a>	derive_more::FromStr,
@@ -1014,103 +1014,110 @@
 <a href=#1014 id=1014 data-nosnippet>1014</a>		)
 <a href=#1015 id=1015 data-nosnippet>1015</a>		.unwrap();
 <a href=#1016 id=1016 data-nosnippet>1016</a>		<span class="kw">let </span>serialized = serde_json::to_value(<span class="kw-2">&amp;</span>address).unwrap();
-<a href=#1017 id=1017 data-nosnippet>1017</a>		<span class="macro">assert_eq!</span>(serialized, <span class="macro">serde_json::json!</span>(<span class="string">"0x616464725f7465737431777a35716337666b327061743030353877347a77766b77333579747074656a336e7563336a65326b6774616e356471337274347363"</span>));
-<a href=#1018 id=1018 data-nosnippet>1018</a>		<span class="kw">let </span>deserialized = serde_json::from_value(serialized).unwrap();
-<a href=#1019 id=1019 data-nosnippet>1019</a>		<span class="macro">assert_eq!</span>(address, deserialized);
-<a href=#1020 id=1020 data-nosnippet>1020</a>	}
-<a href=#1021 id=1021 data-nosnippet>1021</a>
-<a href=#1022 id=1022 data-nosnippet>1022</a>	<span class="attr">#[test]
-<a href=#1023 id=1023 data-nosnippet>1023</a>	</span><span class="kw">fn </span>main_chain_address_string_from_str_to_string_round_trip() {
-<a href=#1024 id=1024 data-nosnippet>1024</a>		<span class="kw">let </span>address = MainchainAddress::from_str(
-<a href=#1025 id=1025 data-nosnippet>1025</a>			<span class="string">"addr_test1wz5qc7fk2pat0058w4zwvkw35ytptej3nuc3je2kgtan5dq3rt4sc"</span>,
-<a href=#1026 id=1026 data-nosnippet>1026</a>		)
-<a href=#1027 id=1027 data-nosnippet>1027</a>		.unwrap();
-<a href=#1028 id=1028 data-nosnippet>1028</a>		<span class="kw">let </span>str = address.to_string();
-<a href=#1029 id=1029 data-nosnippet>1029</a>		<span class="kw">let </span>from_str = MainchainAddress::from_str(<span class="kw-2">&amp;</span>str).unwrap();
-<a href=#1030 id=1030 data-nosnippet>1030</a>		<span class="macro">assert_eq!</span>(address, from_str);
-<a href=#1031 id=1031 data-nosnippet>1031</a>	}
-<a href=#1032 id=1032 data-nosnippet>1032</a>
-<a href=#1033 id=1033 data-nosnippet>1033</a>	<span class="attr">#[test]
-<a href=#1034 id=1034 data-nosnippet>1034</a>	</span><span class="kw">fn </span>main_chain_signature_should_be_backward_compatible_with_vec() {
-<a href=#1035 id=1035 data-nosnippet>1035</a>		<span class="attr">#[derive(Clone, Encode, Decode, DecodeWithMemTracking, TypeInfo, PartialEq, Eq, Hash)]
-<a href=#1036 id=1036 data-nosnippet>1036</a>		#[byte_string(debug, hex_serialize, decode_hex)]
-<a href=#1037 id=1037 data-nosnippet>1037</a>		</span><span class="kw">struct </span>LegacyMCSignature(<span class="kw">pub </span>Vec&lt;u8&gt;);
-<a href=#1038 id=1038 data-nosnippet>1038</a>
-<a href=#1039 id=1039 data-nosnippet>1039</a>		<span class="kw">let </span>legacy_encoded = LegacyMCSignature(<span class="macro">vec!</span>[<span class="number">10</span>; <span class="number">64</span>]).encode();
-<a href=#1040 id=1040 data-nosnippet>1040</a>
-<a href=#1041 id=1041 data-nosnippet>1041</a>		<span class="kw">let </span>legacy_decoded = MainchainSignature::decode(<span class="kw-2">&amp;mut </span>legacy_encoded.as_slice())
-<a href=#1042 id=1042 data-nosnippet>1042</a>			.expect(<span class="string">"Encoded legacy should decode to current type"</span>);
+<a href=#1017 id=1017 data-nosnippet>1017</a>		<span class="macro">assert_eq!</span>(
+<a href=#1018 id=1018 data-nosnippet>1018</a>			serialized,
+<a href=#1019 id=1019 data-nosnippet>1019</a>			<span class="macro">serde_json::json!</span>(
+<a href=#1020 id=1020 data-nosnippet>1020</a>				<span class="string">"0x616464725f7465737431777a35716337666b327061743030353877347a77766b77333579747074656a336e7563336a65326b6774616e356471337274347363"
+<a href=#1021 id=1021 data-nosnippet>1021</a>			</span>)
+<a href=#1022 id=1022 data-nosnippet>1022</a>		);
+<a href=#1023 id=1023 data-nosnippet>1023</a>		<span class="kw">let </span>deserialized = serde_json::from_value(serialized).unwrap();
+<a href=#1024 id=1024 data-nosnippet>1024</a>		<span class="macro">assert_eq!</span>(address, deserialized);
+<a href=#1025 id=1025 data-nosnippet>1025</a>	}
+<a href=#1026 id=1026 data-nosnippet>1026</a>
+<a href=#1027 id=1027 data-nosnippet>1027</a>	<span class="attr">#[test]
+<a href=#1028 id=1028 data-nosnippet>1028</a>	</span><span class="kw">fn </span>main_chain_address_string_from_str_to_string_round_trip() {
+<a href=#1029 id=1029 data-nosnippet>1029</a>		<span class="kw">let </span>address = MainchainAddress::from_str(
+<a href=#1030 id=1030 data-nosnippet>1030</a>			<span class="string">"addr_test1wz5qc7fk2pat0058w4zwvkw35ytptej3nuc3je2kgtan5dq3rt4sc"</span>,
+<a href=#1031 id=1031 data-nosnippet>1031</a>		)
+<a href=#1032 id=1032 data-nosnippet>1032</a>		.unwrap();
+<a href=#1033 id=1033 data-nosnippet>1033</a>		<span class="kw">let </span>str = address.to_string();
+<a href=#1034 id=1034 data-nosnippet>1034</a>		<span class="kw">let </span>from_str = MainchainAddress::from_str(<span class="kw-2">&amp;</span>str).unwrap();
+<a href=#1035 id=1035 data-nosnippet>1035</a>		<span class="macro">assert_eq!</span>(address, from_str);
+<a href=#1036 id=1036 data-nosnippet>1036</a>	}
+<a href=#1037 id=1037 data-nosnippet>1037</a>
+<a href=#1038 id=1038 data-nosnippet>1038</a>	<span class="attr">#[test]
+<a href=#1039 id=1039 data-nosnippet>1039</a>	</span><span class="kw">fn </span>main_chain_signature_should_be_backward_compatible_with_vec() {
+<a href=#1040 id=1040 data-nosnippet>1040</a>		<span class="attr">#[derive(Clone, Encode, Decode, DecodeWithMemTracking, TypeInfo, PartialEq, Eq, Hash)]
+<a href=#1041 id=1041 data-nosnippet>1041</a>		#[byte_string(debug, hex_serialize, decode_hex)]
+<a href=#1042 id=1042 data-nosnippet>1042</a>		</span><span class="kw">struct </span>LegacyMCSignature(<span class="kw">pub </span>Vec&lt;u8&gt;);
 <a href=#1043 id=1043 data-nosnippet>1043</a>
-<a href=#1044 id=1044 data-nosnippet>1044</a>		<span class="macro">assert_eq!</span>(legacy_decoded.<span class="number">0</span>, [<span class="number">10</span>; MAINCHAIN_SIGNATURE_LEN]);
+<a href=#1044 id=1044 data-nosnippet>1044</a>		<span class="kw">let </span>legacy_encoded = LegacyMCSignature(<span class="macro">vec!</span>[<span class="number">10</span>; <span class="number">64</span>]).encode();
 <a href=#1045 id=1045 data-nosnippet>1045</a>
-<a href=#1046 id=1046 data-nosnippet>1046</a>		<span class="kw">let </span>current_encoded = MainchainSignature([<span class="number">9</span>; MAINCHAIN_SIGNATURE_LEN]).encode();
-<a href=#1047 id=1047 data-nosnippet>1047</a>
-<a href=#1048 id=1048 data-nosnippet>1048</a>		<span class="kw">let </span>current_decoded = LegacyMCSignature::decode(<span class="kw-2">&amp;mut </span>current_encoded.as_slice())
-<a href=#1049 id=1049 data-nosnippet>1049</a>			.expect(<span class="string">"Encoded current should decode to legacy"</span>);
+<a href=#1046 id=1046 data-nosnippet>1046</a>		<span class="kw">let </span>legacy_decoded = MainchainSignature::decode(<span class="kw-2">&amp;mut </span>legacy_encoded.as_slice())
+<a href=#1047 id=1047 data-nosnippet>1047</a>			.expect(<span class="string">"Encoded legacy should decode to current type"</span>);
+<a href=#1048 id=1048 data-nosnippet>1048</a>
+<a href=#1049 id=1049 data-nosnippet>1049</a>		<span class="macro">assert_eq!</span>(legacy_decoded.<span class="number">0</span>, [<span class="number">10</span>; MAINCHAIN_SIGNATURE_LEN]);
 <a href=#1050 id=1050 data-nosnippet>1050</a>
-<a href=#1051 id=1051 data-nosnippet>1051</a>		<span class="macro">assert_eq!</span>(current_decoded.<span class="number">0</span>, <span class="macro">vec!</span>[<span class="number">9</span>; <span class="number">64</span>]);
-<a href=#1052 id=1052 data-nosnippet>1052</a>	}
-<a href=#1053 id=1053 data-nosnippet>1053</a>
-<a href=#1054 id=1054 data-nosnippet>1054</a>	<span class="attr">#[test]
-<a href=#1055 id=1055 data-nosnippet>1055</a>	</span><span class="kw">fn </span>cross_chain_signature_verify_works() {
-<a href=#1056 id=1056 data-nosnippet>1056</a>		<span class="kw">let </span>signature =	CrossChainSignature(
-<a href=#1057 id=1057 data-nosnippet>1057</a>			<span class="macro">hex!</span>(<span class="string">"d1e02e4a5484c3b7202ce6b844577048e7578dc62901cf8f51e6d74bbd3adb091688feacedd8343d0b04a0f5862b2e06148934a75e678e42051fde5431eca33d"</span>).to_vec()
-<a href=#1058 id=1058 data-nosnippet>1058</a>		);
-<a href=#1059 id=1059 data-nosnippet>1059</a>		<span class="kw">let </span>pubkey = CrossChainPublicKey(
-<a href=#1060 id=1060 data-nosnippet>1060</a>			<span class="macro">hex!</span>(<span class="string">"020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1"</span>).to_vec(),
-<a href=#1061 id=1061 data-nosnippet>1061</a>		);
-<a href=#1062 id=1062 data-nosnippet>1062</a>		<span class="kw">let </span>signed_data = <span class="macro">hex!</span>(<span class="string">"84020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a16c68747470733a2f2f636f6f6c2e73747566662f73706f2e6a736f6e000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"</span>);
-<a href=#1063 id=1063 data-nosnippet>1063</a>
-<a href=#1064 id=1064 data-nosnippet>1064</a>		<span class="macro">assert!</span>(signature.verify(<span class="kw-2">&amp;</span>pubkey, <span class="kw-2">&amp;</span>signed_data).is_ok())
-<a href=#1065 id=1065 data-nosnippet>1065</a>	}
-<a href=#1066 id=1066 data-nosnippet>1066</a>}
-<a href=#1067 id=1067 data-nosnippet>1067</a>
-<a href=#1068 id=1068 data-nosnippet>1068</a><span class="attr">#[derive(
-<a href=#1069 id=1069 data-nosnippet>1069</a>	Clone,
-<a href=#1070 id=1070 data-nosnippet>1070</a>	PartialEq,
-<a href=#1071 id=1071 data-nosnippet>1071</a>	Eq,
-<a href=#1072 id=1072 data-nosnippet>1072</a>	Ord,
-<a href=#1073 id=1073 data-nosnippet>1073</a>	PartialOrd,
-<a href=#1074 id=1074 data-nosnippet>1074</a>	TypeInfo,
-<a href=#1075 id=1075 data-nosnippet>1075</a>	MaxEncodedLen,
-<a href=#1076 id=1076 data-nosnippet>1076</a>	Encode,
-<a href=#1077 id=1077 data-nosnippet>1077</a>	Decode,
-<a href=#1078 id=1078 data-nosnippet>1078</a>	DecodeWithMemTracking,
-<a href=#1079 id=1079 data-nosnippet>1079</a>)]
-<a href=#1080 id=1080 data-nosnippet>1080</a></span><span class="kw">pub enum </span>DelegatorKey {
-<a href=#1081 id=1081 data-nosnippet>1081</a>	StakeKeyHash([u8; <span class="number">28</span>]),
-<a href=#1082 id=1082 data-nosnippet>1082</a>	ScriptKeyHash { hash_raw: [u8; <span class="number">28</span>], script_hash: [u8; <span class="number">28</span>] },
-<a href=#1083 id=1083 data-nosnippet>1083</a>}
-<a href=#1084 id=1084 data-nosnippet>1084</a>
-<a href=#1085 id=1085 data-nosnippet>1085</a><span class="kw">impl </span>alloc::fmt::Debug <span class="kw">for </span>DelegatorKey {
-<a href=#1086 id=1086 data-nosnippet>1086</a>	<span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; core::fmt::Result {
-<a href=#1087 id=1087 data-nosnippet>1087</a>		<span class="kw">let </span>s = <span class="kw">match </span><span class="self">self </span>{
-<a href=#1088 id=1088 data-nosnippet>1088</a>			<span class="self">Self</span>::ScriptKeyHash { hash_raw, script_hash } =&gt; <span class="macro">alloc::format!</span>(
-<a href=#1089 id=1089 data-nosnippet>1089</a>				<span class="string">"ScriptKeyHash{{ hash_raw: {}, script_hash: {} }}"</span>,
-<a href=#1090 id=1090 data-nosnippet>1090</a>				hex::encode(hash_raw),
-<a href=#1091 id=1091 data-nosnippet>1091</a>				hex::encode(script_hash)
-<a href=#1092 id=1092 data-nosnippet>1092</a>			),
-<a href=#1093 id=1093 data-nosnippet>1093</a>			<span class="self">Self</span>::StakeKeyHash(hash) =&gt; <span class="macro">alloc::format!</span>(<span class="string">"StakeKeyHash({})"</span>, hex::encode(hash)),
-<a href=#1094 id=1094 data-nosnippet>1094</a>		};
-<a href=#1095 id=1095 data-nosnippet>1095</a>
-<a href=#1096 id=1096 data-nosnippet>1096</a>		f.write_str(<span class="kw-2">&amp;</span>s)
-<a href=#1097 id=1097 data-nosnippet>1097</a>	}
-<a href=#1098 id=1098 data-nosnippet>1098</a>}
-<a href=#1099 id=1099 data-nosnippet>1099</a>
-<a href=#1100 id=1100 data-nosnippet>1100</a><span class="attr">#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
-<a href=#1101 id=1101 data-nosnippet>1101</a></span><span class="kw">pub struct </span>DelegatorStakeAmount(<span class="kw">pub </span>u64);
+<a href=#1051 id=1051 data-nosnippet>1051</a>		<span class="kw">let </span>current_encoded = MainchainSignature([<span class="number">9</span>; MAINCHAIN_SIGNATURE_LEN]).encode();
+<a href=#1052 id=1052 data-nosnippet>1052</a>
+<a href=#1053 id=1053 data-nosnippet>1053</a>		<span class="kw">let </span>current_decoded = LegacyMCSignature::decode(<span class="kw-2">&amp;mut </span>current_encoded.as_slice())
+<a href=#1054 id=1054 data-nosnippet>1054</a>			.expect(<span class="string">"Encoded current should decode to legacy"</span>);
+<a href=#1055 id=1055 data-nosnippet>1055</a>
+<a href=#1056 id=1056 data-nosnippet>1056</a>		<span class="macro">assert_eq!</span>(current_decoded.<span class="number">0</span>, <span class="macro">vec!</span>[<span class="number">9</span>; <span class="number">64</span>]);
+<a href=#1057 id=1057 data-nosnippet>1057</a>	}
+<a href=#1058 id=1058 data-nosnippet>1058</a>
+<a href=#1059 id=1059 data-nosnippet>1059</a>	<span class="attr">#[test]
+<a href=#1060 id=1060 data-nosnippet>1060</a>	</span><span class="kw">fn </span>cross_chain_signature_verify_works() {
+<a href=#1061 id=1061 data-nosnippet>1061</a>		<span class="kw">let </span>signature =	CrossChainSignature(
+<a href=#1062 id=1062 data-nosnippet>1062</a>			<span class="macro">hex!</span>(<span class="string">"d1e02e4a5484c3b7202ce6b844577048e7578dc62901cf8f51e6d74bbd3adb091688feacedd8343d0b04a0f5862b2e06148934a75e678e42051fde5431eca33d"</span>).to_vec()
+<a href=#1063 id=1063 data-nosnippet>1063</a>		);
+<a href=#1064 id=1064 data-nosnippet>1064</a>		<span class="kw">let </span>pubkey = CrossChainPublicKey(
+<a href=#1065 id=1065 data-nosnippet>1065</a>			<span class="macro">hex!</span>(<span class="string">"020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1"</span>).to_vec(),
+<a href=#1066 id=1066 data-nosnippet>1066</a>		);
+<a href=#1067 id=1067 data-nosnippet>1067</a>		<span class="kw">let </span>signed_data = <span class="macro">hex!</span>(
+<a href=#1068 id=1068 data-nosnippet>1068</a>			<span class="string">"84020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a16c68747470733a2f2f636f6f6c2e73747566662f73706f2e6a736f6e000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+<a href=#1069 id=1069 data-nosnippet>1069</a>		</span>);
+<a href=#1070 id=1070 data-nosnippet>1070</a>
+<a href=#1071 id=1071 data-nosnippet>1071</a>		<span class="macro">assert!</span>(signature.verify(<span class="kw-2">&amp;</span>pubkey, <span class="kw-2">&amp;</span>signed_data).is_ok())
+<a href=#1072 id=1072 data-nosnippet>1072</a>	}
+<a href=#1073 id=1073 data-nosnippet>1073</a>}
+<a href=#1074 id=1074 data-nosnippet>1074</a>
+<a href=#1075 id=1075 data-nosnippet>1075</a><span class="attr">#[derive(
+<a href=#1076 id=1076 data-nosnippet>1076</a>	Clone,
+<a href=#1077 id=1077 data-nosnippet>1077</a>	PartialEq,
+<a href=#1078 id=1078 data-nosnippet>1078</a>	Eq,
+<a href=#1079 id=1079 data-nosnippet>1079</a>	Ord,
+<a href=#1080 id=1080 data-nosnippet>1080</a>	PartialOrd,
+<a href=#1081 id=1081 data-nosnippet>1081</a>	TypeInfo,
+<a href=#1082 id=1082 data-nosnippet>1082</a>	MaxEncodedLen,
+<a href=#1083 id=1083 data-nosnippet>1083</a>	Encode,
+<a href=#1084 id=1084 data-nosnippet>1084</a>	Decode,
+<a href=#1085 id=1085 data-nosnippet>1085</a>	DecodeWithMemTracking,
+<a href=#1086 id=1086 data-nosnippet>1086</a>)]
+<a href=#1087 id=1087 data-nosnippet>1087</a></span><span class="kw">pub enum </span>DelegatorKey {
+<a href=#1088 id=1088 data-nosnippet>1088</a>	StakeKeyHash([u8; <span class="number">28</span>]),
+<a href=#1089 id=1089 data-nosnippet>1089</a>	ScriptKeyHash { hash_raw: [u8; <span class="number">28</span>], script_hash: [u8; <span class="number">28</span>] },
+<a href=#1090 id=1090 data-nosnippet>1090</a>}
+<a href=#1091 id=1091 data-nosnippet>1091</a>
+<a href=#1092 id=1092 data-nosnippet>1092</a><span class="kw">impl </span>alloc::fmt::Debug <span class="kw">for </span>DelegatorKey {
+<a href=#1093 id=1093 data-nosnippet>1093</a>	<span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; core::fmt::Result {
+<a href=#1094 id=1094 data-nosnippet>1094</a>		<span class="kw">let </span>s = <span class="kw">match </span><span class="self">self </span>{
+<a href=#1095 id=1095 data-nosnippet>1095</a>			<span class="self">Self</span>::ScriptKeyHash { hash_raw, script_hash } =&gt; <span class="macro">alloc::format!</span>(
+<a href=#1096 id=1096 data-nosnippet>1096</a>				<span class="string">"ScriptKeyHash{{ hash_raw: {}, script_hash: {} }}"</span>,
+<a href=#1097 id=1097 data-nosnippet>1097</a>				hex::encode(hash_raw),
+<a href=#1098 id=1098 data-nosnippet>1098</a>				hex::encode(script_hash)
+<a href=#1099 id=1099 data-nosnippet>1099</a>			),
+<a href=#1100 id=1100 data-nosnippet>1100</a>			<span class="self">Self</span>::StakeKeyHash(hash) =&gt; <span class="macro">alloc::format!</span>(<span class="string">"StakeKeyHash({})"</span>, hex::encode(hash)),
+<a href=#1101 id=1101 data-nosnippet>1101</a>		};
 <a href=#1102 id=1102 data-nosnippet>1102</a>
-<a href=#1103 id=1103 data-nosnippet>1103</a><span class="kw">impl</span>&lt;T: Into&lt;u64&gt;&gt; From&lt;T&gt; <span class="kw">for </span>DelegatorStakeAmount {
-<a href=#1104 id=1104 data-nosnippet>1104</a>	<span class="kw">fn </span>from(value: T) -&gt; <span class="self">Self </span>{
-<a href=#1105 id=1105 data-nosnippet>1105</a>		<span class="self">Self</span>(value.into())
-<a href=#1106 id=1106 data-nosnippet>1106</a>	}
-<a href=#1107 id=1107 data-nosnippet>1107</a>}
-<a href=#1108 id=1108 data-nosnippet>1108</a>
-<a href=#1109 id=1109 data-nosnippet>1109</a><span class="attr">#[derive(Debug, Clone, Default)]
-<a href=#1110 id=1110 data-nosnippet>1110</a></span><span class="kw">pub struct </span>StakeDistribution(<span class="kw">pub </span>BTreeMap&lt;MainchainKeyHash, PoolDelegation&gt;);
-<a href=#1111 id=1111 data-nosnippet>1111</a>
-<a href=#1112 id=1112 data-nosnippet>1112</a><span class="attr">#[derive(Debug, Clone, Default, PartialEq)]
-<a href=#1113 id=1113 data-nosnippet>1113</a></span><span class="kw">pub struct </span>PoolDelegation {
-<a href=#1114 id=1114 data-nosnippet>1114</a>	<span class="kw">pub </span>total_stake: StakeDelegation,
-<a href=#1115 id=1115 data-nosnippet>1115</a>	<span class="kw">pub </span>delegators: BTreeMap&lt;DelegatorKey, DelegatorStakeAmount&gt;,
-<a href=#1116 id=1116 data-nosnippet>1116</a>}</code></pre></div></section></main></body></html>
+<a href=#1103 id=1103 data-nosnippet>1103</a>		f.write_str(<span class="kw-2">&amp;</span>s)
+<a href=#1104 id=1104 data-nosnippet>1104</a>	}
+<a href=#1105 id=1105 data-nosnippet>1105</a>}
+<a href=#1106 id=1106 data-nosnippet>1106</a>
+<a href=#1107 id=1107 data-nosnippet>1107</a><span class="attr">#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+<a href=#1108 id=1108 data-nosnippet>1108</a></span><span class="kw">pub struct </span>DelegatorStakeAmount(<span class="kw">pub </span>u64);
+<a href=#1109 id=1109 data-nosnippet>1109</a>
+<a href=#1110 id=1110 data-nosnippet>1110</a><span class="kw">impl</span>&lt;T: Into&lt;u64&gt;&gt; From&lt;T&gt; <span class="kw">for </span>DelegatorStakeAmount {
+<a href=#1111 id=1111 data-nosnippet>1111</a>	<span class="kw">fn </span>from(value: T) -&gt; <span class="self">Self </span>{
+<a href=#1112 id=1112 data-nosnippet>1112</a>		<span class="self">Self</span>(value.into())
+<a href=#1113 id=1113 data-nosnippet>1113</a>	}
+<a href=#1114 id=1114 data-nosnippet>1114</a>}
+<a href=#1115 id=1115 data-nosnippet>1115</a>
+<a href=#1116 id=1116 data-nosnippet>1116</a><span class="attr">#[derive(Debug, Clone, Default)]
+<a href=#1117 id=1117 data-nosnippet>1117</a></span><span class="kw">pub struct </span>StakeDistribution(<span class="kw">pub </span>BTreeMap&lt;MainchainKeyHash, PoolDelegation&gt;);
+<a href=#1118 id=1118 data-nosnippet>1118</a>
+<a href=#1119 id=1119 data-nosnippet>1119</a><span class="attr">#[derive(Debug, Clone, Default, PartialEq)]
+<a href=#1120 id=1120 data-nosnippet>1120</a></span><span class="kw">pub struct </span>PoolDelegation {
+<a href=#1121 id=1121 data-nosnippet>1121</a>	<span class="kw">pub </span>total_stake: StakeDelegation,
+<a href=#1122 id=1122 data-nosnippet>1122</a>	<span class="kw">pub </span>delegators: BTreeMap&lt;DelegatorKey, DelegatorStakeAmount&gt;,
+<a href=#1123 id=1123 data-nosnippet>1123</a>}</code></pre></div></section></main></body></html>

@@ -80,12 +80,12 @@
 <a href=#80 id=80 data-nosnippet>80</a>			<span class="macro">compile_error!</span>(<span class="string">"ToDatum isn't yet implemented for Union types"</span>),
 <a href=#81 id=81 data-nosnippet>81</a>		},
 <a href=#82 id=82 data-nosnippet>82</a>	};
-<a href=#83 id=83 data-nosnippet>83</a>	<span class="kw">let </span>gen = <span class="macro">quote!</span> {
+<a href=#83 id=83 data-nosnippet>83</a>	<span class="kw">let </span>gen_token_stream = <span class="macro">quote!</span> {
 <a href=#84 id=84 data-nosnippet>84</a>		<span class="kw">impl </span>#bounded_generics plutus::ToDatum <span class="kw">for </span>#name #generics {
 <a href=#85 id=85 data-nosnippet>85</a>			<span class="kw">fn </span>to_datum(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; plutus::Datum {
 <a href=#86 id=86 data-nosnippet>86</a>				#body
 <a href=#87 id=87 data-nosnippet>87</a>			}
 <a href=#88 id=88 data-nosnippet>88</a>		}
 <a href=#89 id=89 data-nosnippet>89</a>	};
-<a href=#90 id=90 data-nosnippet>90</a>	gen.into()
+<a href=#90 id=90 data-nosnippet>90</a>	gen_token_stream.into()
 <a href=#91 id=91 data-nosnippet>91</a>}</code></pre></div></section></main></body></html>

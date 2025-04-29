@@ -1,7 +1,7 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `toolkit/partner-chains-cli/src/start_node/mod.rs`."><title>mod.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-20739d33.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="partner_chains_cli" data-themes="" data-resource-suffix="" data-rustdoc-version="1.88.0-nightly (25cdf1f67 2025-04-28)" data-channel="nightly" data-search-js="search-f7877310.js" data-settings-js="settings-5514c975.js" ><script src="../../../static.files/storage-4e99c027.js"></script><script defer src="../../../static.files/src-script-63605ae7.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-7ef8a74a.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">partner_chains_cli/start_node/</div>mod.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{
 <a href=#2 id=2 data-nosnippet>2</a>	NODE_P2P_PORT, POSTGRES_CONNECTION_STRING, SIDECHAIN_BLOCK_BENEFICIARY,
 <a href=#3 id=3 data-nosnippet>3</a>};
-<a href=#4 id=4 data-nosnippet>4</a><span class="kw">use </span><span class="kw">crate</span>::config::{CardanoParameters, CHAIN_CONFIG_FILE_PATH, CHAIN_SPEC_PATH};
+<a href=#4 id=4 data-nosnippet>4</a><span class="kw">use </span><span class="kw">crate</span>::config::{CHAIN_CONFIG_FILE_PATH, CHAIN_SPEC_PATH, CardanoParameters};
 <a href=#5 id=5 data-nosnippet>5</a><span class="kw">use </span><span class="kw">crate</span>::generate_keys::network_key_path;
 <a href=#6 id=6 data-nosnippet>6</a><span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
 <a href=#7 id=7 data-nosnippet>7</a><span class="kw">use </span><span class="kw">crate</span>::keystore::<span class="kw-2">*</span>;
@@ -10,9 +10,9 @@
 <a href=#10 id=10 data-nosnippet>10</a><span class="kw">use </span>secp256k1::PublicKey;
 <a href=#11 id=11 data-nosnippet>11</a><span class="kw">use </span>serde::Deserialize;
 <a href=#12 id=12 data-nosnippet>12</a><span class="kw">use </span>sp_core::crypto::AccountId32;
-<a href=#13 id=13 data-nosnippet>13</a><span class="kw">use </span>sp_runtime::app_crypto::ecdsa;
-<a href=#14 id=14 data-nosnippet>14</a><span class="kw">use </span>sp_runtime::traits::IdentifyAccount;
-<a href=#15 id=15 data-nosnippet>15</a><span class="kw">use </span>sp_runtime::MultiSigner;
+<a href=#13 id=13 data-nosnippet>13</a><span class="kw">use </span>sp_runtime::MultiSigner;
+<a href=#14 id=14 data-nosnippet>14</a><span class="kw">use </span>sp_runtime::app_crypto::ecdsa;
+<a href=#15 id=15 data-nosnippet>15</a><span class="kw">use </span>sp_runtime::traits::IdentifyAccount;
 <a href=#16 id=16 data-nosnippet>16</a><span class="kw">use </span>std::str::FromStr;
 <a href=#17 id=17 data-nosnippet>17</a>
 <a href=#18 id=18 data-nosnippet>18</a><span class="attr">#[cfg(test)]
@@ -127,101 +127,103 @@
 <a href=#127 id=127 data-nosnippet>127</a>		<span class="bool-val">true
 <a href=#128 id=128 data-nosnippet>128</a>	</span>} <span class="kw">else </span>{
 <a href=#129 id=129 data-nosnippet>129</a>		context.eprint(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"Chain spec file {} missing."</span>, CHAIN_SPEC_PATH));
-<a href=#130 id=130 data-nosnippet>130</a>		context.eprint(<span class="string">"Please run the create-chain-spec wizard first or you can get it from your chain governance."</span>);
-<a href=#131 id=131 data-nosnippet>131</a>		<span class="bool-val">false
-<a href=#132 id=132 data-nosnippet>132</a>	</span>}
-<a href=#133 id=133 data-nosnippet>133</a>}
-<a href=#134 id=134 data-nosnippet>134</a>
-<a href=#135 id=135 data-nosnippet>135</a><span class="kw">fn </span>check_keystore&lt;C: IOContext&gt;(config: <span class="kw-2">&amp;</span>StartNodeConfig, context: <span class="kw-2">&amp;</span>C) -&gt; anyhow::Result&lt;bool&gt; {
-<a href=#136 id=136 data-nosnippet>136</a>	<span class="kw">let </span>existing_keys = context.list_directory(<span class="kw-2">&amp;</span>config.keystore_path())<span class="question-mark">?</span>.unwrap_or_default();
-<a href=#137 id=137 data-nosnippet>137</a>	<span class="prelude-val">Ok</span>(key_present(<span class="kw-2">&amp;</span>AURA, <span class="kw-2">&amp;</span>existing_keys, context)
-<a href=#138 id=138 data-nosnippet>138</a>		&amp;&amp; key_present(<span class="kw-2">&amp;</span>GRANDPA, <span class="kw-2">&amp;</span>existing_keys, context)
-<a href=#139 id=139 data-nosnippet>139</a>		&amp;&amp; key_present(<span class="kw-2">&amp;</span>CROSS_CHAIN, <span class="kw-2">&amp;</span>existing_keys, context))
-<a href=#140 id=140 data-nosnippet>140</a>}
-<a href=#141 id=141 data-nosnippet>141</a>
-<a href=#142 id=142 data-nosnippet>142</a><span class="kw">fn </span>key_present&lt;C: IOContext&gt;(key: <span class="kw-2">&amp;</span>KeyDefinition, existing_keys: <span class="kw-2">&amp;</span>[String], context: <span class="kw-2">&amp;</span>C) -&gt; bool {
-<a href=#143 id=143 data-nosnippet>143</a>	<span class="kw">if </span>find_existing_key(existing_keys, key).is_none() {
-<a href=#144 id=144 data-nosnippet>144</a>		context.eprint(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
-<a href=#145 id=145 data-nosnippet>145</a>			<span class="string">"⚠️ {} key is missing from the keystore. Please run generate-keys wizard first."</span>,
-<a href=#146 id=146 data-nosnippet>146</a>			key.name
-<a href=#147 id=147 data-nosnippet>147</a>		));
-<a href=#148 id=148 data-nosnippet>148</a>		<span class="bool-val">false
-<a href=#149 id=149 data-nosnippet>149</a>	</span>} <span class="kw">else </span>{
-<a href=#150 id=150 data-nosnippet>150</a>		<span class="bool-val">true
-<a href=#151 id=151 data-nosnippet>151</a>	</span>}
-<a href=#152 id=152 data-nosnippet>152</a>}
-<a href=#153 id=153 data-nosnippet>153</a>
-<a href=#154 id=154 data-nosnippet>154</a><span class="kw">fn </span>block_beneficiary_from_cross_chain_key(
-<a href=#155 id=155 data-nosnippet>155</a>	config: <span class="kw-2">&amp;</span>StartNodeConfig,
-<a href=#156 id=156 data-nosnippet>156</a>	context: <span class="kw-2">&amp;</span><span class="kw">impl </span>IOContext,
-<a href=#157 id=157 data-nosnippet>157</a>) -&gt; anyhow::Result&lt;String&gt; {
-<a href=#158 id=158 data-nosnippet>158</a>	<span class="kw">let </span>existing_keys = context.list_directory(<span class="kw-2">&amp;</span>config.keystore_path())<span class="question-mark">?</span>.unwrap_or_default();
-<a href=#159 id=159 data-nosnippet>159</a>	<span class="kw">let </span>key = find_existing_key(<span class="kw-2">&amp;</span>existing_keys, <span class="kw-2">&amp;</span>CROSS_CHAIN).ok_or(<span class="macro">anyhow!</span>(
-<a href=#160 id=160 data-nosnippet>160</a>		<span class="string">"⚠️ {} key is missing from the keystore. Please run generate-keys wizard first."</span>,
-<a href=#161 id=161 data-nosnippet>161</a>		CROSS_CHAIN.name
-<a href=#162 id=162 data-nosnippet>162</a>	))<span class="question-mark">?</span>;
-<a href=#163 id=163 data-nosnippet>163</a>	account_id_hex_from_ecdsa_key(<span class="kw-2">&amp;</span>key)
-<a href=#164 id=164 data-nosnippet>164</a>}
-<a href=#165 id=165 data-nosnippet>165</a>
-<a href=#166 id=166 data-nosnippet>166</a><span class="kw">fn </span>account_id_hex_from_ecdsa_key(key: <span class="kw-2">&amp;</span>str) -&gt; anyhow::Result&lt;String&gt; {
-<a href=#167 id=167 data-nosnippet>167</a>	<span class="kw">let </span>trimmed = key.trim_start_matches(<span class="string">"0x"</span>);
-<a href=#168 id=168 data-nosnippet>168</a>	<span class="kw">let </span>pk = PublicKey::from_str(trimmed)<span class="question-mark">?</span>;
-<a href=#169 id=169 data-nosnippet>169</a>	<span class="kw">let </span>account_id: AccountId32 = MultiSigner::from(ecdsa::Public::from(pk)).into_account();
-<a href=#170 id=170 data-nosnippet>170</a>	<span class="prelude-val">Ok</span>(hex::encode(account_id))
-<a href=#171 id=171 data-nosnippet>171</a>}
-<a href=#172 id=172 data-nosnippet>172</a>
-<a href=#173 id=173 data-nosnippet>173</a><span class="kw">pub fn </span>start_node&lt;C: IOContext&gt;(
-<a href=#174 id=174 data-nosnippet>174</a>	StartNodeConfig { substrate_node_base_path }: StartNodeConfig,
-<a href=#175 id=175 data-nosnippet>175</a>	StartNodeChainConfig {
-<a href=#176 id=176 data-nosnippet>176</a>		cardano:
-<a href=#177 id=177 data-nosnippet>177</a>			CardanoParameters {
-<a href=#178 id=178 data-nosnippet>178</a>				security_parameter,
-<a href=#179 id=179 data-nosnippet>179</a>				active_slots_coeff,
-<a href=#180 id=180 data-nosnippet>180</a>				first_epoch_number,
-<a href=#181 id=181 data-nosnippet>181</a>				first_slot_number,
-<a href=#182 id=182 data-nosnippet>182</a>				epoch_duration_millis,
-<a href=#183 id=183 data-nosnippet>183</a>				first_epoch_timestamp_millis,
-<a href=#184 id=184 data-nosnippet>184</a>				slot_duration_millis,
-<a href=#185 id=185 data-nosnippet>185</a>			},
-<a href=#186 id=186 data-nosnippet>186</a>		bootnodes,
-<a href=#187 id=187 data-nosnippet>187</a>	}: StartNodeChainConfig,
-<a href=#188 id=188 data-nosnippet>188</a>	db_connection_string: <span class="kw-2">&amp;</span>str,
-<a href=#189 id=189 data-nosnippet>189</a>	beneficiary: String,
-<a href=#190 id=190 data-nosnippet>190</a>	context: <span class="kw-2">&amp;</span>C,
-<a href=#191 id=191 data-nosnippet>191</a>) -&gt; anyhow::Result&lt;()&gt; {
-<a href=#192 id=192 data-nosnippet>192</a>	<span class="kw">let </span>executable = context.current_executable()<span class="question-mark">?</span>;
-<a href=#193 id=193 data-nosnippet>193</a>	<span class="kw">let </span>environment_prefix = <span class="macro">format!</span>(
-<a href=#194 id=194 data-nosnippet>194</a>		<span class="string">"CARDANO_SECURITY_PARAMETER='{security_parameter}' \\
-<a href=#195 id=195 data-nosnippet>195</a>         CARDANO_ACTIVE_SLOTS_COEFF='{active_slots_coeff}' \\
-<a href=#196 id=196 data-nosnippet>196</a>         DB_SYNC_POSTGRES_CONNECTION_STRING='{db_connection_string}' \\
-<a href=#197 id=197 data-nosnippet>197</a>         MC__FIRST_EPOCH_TIMESTAMP_MILLIS='{first_epoch_timestamp_millis}' \\
-<a href=#198 id=198 data-nosnippet>198</a>         MC__EPOCH_DURATION_MILLIS='{epoch_duration_millis}' \\
-<a href=#199 id=199 data-nosnippet>199</a>         MC__SLOT_DURATION_MILLIS='{slot_duration_millis}' \\
-<a href=#200 id=200 data-nosnippet>200</a>         MC__FIRST_EPOCH_NUMBER='{first_epoch_number}' \\
-<a href=#201 id=201 data-nosnippet>201</a>         MC__FIRST_SLOT_NUMBER='{first_slot_number}' \\
-<a href=#202 id=202 data-nosnippet>202</a>         BLOCK_STABILITY_MARGIN='0' \\
-<a href=#203 id=203 data-nosnippet>203</a>		 SIDECHAIN_BLOCK_BENEFICIARY='{beneficiary}' \\
-<a href=#204 id=204 data-nosnippet>204</a>"
-<a href=#205 id=205 data-nosnippet>205</a>	</span>);
-<a href=#206 id=206 data-nosnippet>206</a>	<span class="kw">let </span>bootnodes = bootnodes
-<a href=#207 id=207 data-nosnippet>207</a>		.iter()
-<a href=#208 id=208 data-nosnippet>208</a>		.map(|bootnode| <span class="macro">format!</span>(<span class="string">"--bootnodes {}"</span>, bootnode))
-<a href=#209 id=209 data-nosnippet>209</a>		.collect::&lt;Vec&lt;String&gt;&gt;()
-<a href=#210 id=210 data-nosnippet>210</a>		.join(<span class="string">" "</span>);
-<a href=#211 id=211 data-nosnippet>211</a>
-<a href=#212 id=212 data-nosnippet>212</a>	<span class="kw">let </span>ws_port = NODE_P2P_PORT.save_if_empty(
-<a href=#213 id=213 data-nosnippet>213</a>		NODE_P2P_PORT
-<a href=#214 id=214 data-nosnippet>214</a>			.default
-<a href=#215 id=215 data-nosnippet>215</a>			.expect(<span class="string">"Default NODE_WS_PORT should always be set"</span>)
-<a href=#216 id=216 data-nosnippet>216</a>			.parse()
-<a href=#217 id=217 data-nosnippet>217</a>			.expect(<span class="string">"Default NODE_WS_PORT should be valid u16"</span>),
-<a href=#218 id=218 data-nosnippet>218</a>		context,
-<a href=#219 id=219 data-nosnippet>219</a>	);
-<a href=#220 id=220 data-nosnippet>220</a>	<span class="kw">let </span>keystore_path = keystore_path(<span class="kw-2">&amp;</span>substrate_node_base_path);
-<a href=#221 id=221 data-nosnippet>221</a>	<span class="kw">let </span>network_key_path = network_key_path(<span class="kw-2">&amp;</span>substrate_node_base_path);
-<a href=#222 id=222 data-nosnippet>222</a>	context.run_command(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
-<a href=#223 id=223 data-nosnippet>223</a>		<span class="string">"{environment_prefix} {executable} --validator --chain {CHAIN_SPEC_PATH} --base-path {substrate_node_base_path} --keystore-path {keystore_path} --node-key-file {network_key_path} --port {ws_port} {bootnodes}"</span>,
-<a href=#224 id=224 data-nosnippet>224</a>	))<span class="question-mark">?</span>;
-<a href=#225 id=225 data-nosnippet>225</a>
-<a href=#226 id=226 data-nosnippet>226</a>	<span class="prelude-val">Ok</span>(())
-<a href=#227 id=227 data-nosnippet>227</a>}</code></pre></div></section></main></body></html>
+<a href=#130 id=130 data-nosnippet>130</a>		context.eprint(
+<a href=#131 id=131 data-nosnippet>131</a>			<span class="string">"Please run the create-chain-spec wizard first or you can get it from your chain governance."</span>,
+<a href=#132 id=132 data-nosnippet>132</a>		);
+<a href=#133 id=133 data-nosnippet>133</a>		<span class="bool-val">false
+<a href=#134 id=134 data-nosnippet>134</a>	</span>}
+<a href=#135 id=135 data-nosnippet>135</a>}
+<a href=#136 id=136 data-nosnippet>136</a>
+<a href=#137 id=137 data-nosnippet>137</a><span class="kw">fn </span>check_keystore&lt;C: IOContext&gt;(config: <span class="kw-2">&amp;</span>StartNodeConfig, context: <span class="kw-2">&amp;</span>C) -&gt; anyhow::Result&lt;bool&gt; {
+<a href=#138 id=138 data-nosnippet>138</a>	<span class="kw">let </span>existing_keys = context.list_directory(<span class="kw-2">&amp;</span>config.keystore_path())<span class="question-mark">?</span>.unwrap_or_default();
+<a href=#139 id=139 data-nosnippet>139</a>	<span class="prelude-val">Ok</span>(key_present(<span class="kw-2">&amp;</span>AURA, <span class="kw-2">&amp;</span>existing_keys, context)
+<a href=#140 id=140 data-nosnippet>140</a>		&amp;&amp; key_present(<span class="kw-2">&amp;</span>GRANDPA, <span class="kw-2">&amp;</span>existing_keys, context)
+<a href=#141 id=141 data-nosnippet>141</a>		&amp;&amp; key_present(<span class="kw-2">&amp;</span>CROSS_CHAIN, <span class="kw-2">&amp;</span>existing_keys, context))
+<a href=#142 id=142 data-nosnippet>142</a>}
+<a href=#143 id=143 data-nosnippet>143</a>
+<a href=#144 id=144 data-nosnippet>144</a><span class="kw">fn </span>key_present&lt;C: IOContext&gt;(key: <span class="kw-2">&amp;</span>KeyDefinition, existing_keys: <span class="kw-2">&amp;</span>[String], context: <span class="kw-2">&amp;</span>C) -&gt; bool {
+<a href=#145 id=145 data-nosnippet>145</a>	<span class="kw">if </span>find_existing_key(existing_keys, key).is_none() {
+<a href=#146 id=146 data-nosnippet>146</a>		context.eprint(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
+<a href=#147 id=147 data-nosnippet>147</a>			<span class="string">"⚠️ {} key is missing from the keystore. Please run generate-keys wizard first."</span>,
+<a href=#148 id=148 data-nosnippet>148</a>			key.name
+<a href=#149 id=149 data-nosnippet>149</a>		));
+<a href=#150 id=150 data-nosnippet>150</a>		<span class="bool-val">false
+<a href=#151 id=151 data-nosnippet>151</a>	</span>} <span class="kw">else </span>{
+<a href=#152 id=152 data-nosnippet>152</a>		<span class="bool-val">true
+<a href=#153 id=153 data-nosnippet>153</a>	</span>}
+<a href=#154 id=154 data-nosnippet>154</a>}
+<a href=#155 id=155 data-nosnippet>155</a>
+<a href=#156 id=156 data-nosnippet>156</a><span class="kw">fn </span>block_beneficiary_from_cross_chain_key(
+<a href=#157 id=157 data-nosnippet>157</a>	config: <span class="kw-2">&amp;</span>StartNodeConfig,
+<a href=#158 id=158 data-nosnippet>158</a>	context: <span class="kw-2">&amp;</span><span class="kw">impl </span>IOContext,
+<a href=#159 id=159 data-nosnippet>159</a>) -&gt; anyhow::Result&lt;String&gt; {
+<a href=#160 id=160 data-nosnippet>160</a>	<span class="kw">let </span>existing_keys = context.list_directory(<span class="kw-2">&amp;</span>config.keystore_path())<span class="question-mark">?</span>.unwrap_or_default();
+<a href=#161 id=161 data-nosnippet>161</a>	<span class="kw">let </span>key = find_existing_key(<span class="kw-2">&amp;</span>existing_keys, <span class="kw-2">&amp;</span>CROSS_CHAIN).ok_or(<span class="macro">anyhow!</span>(
+<a href=#162 id=162 data-nosnippet>162</a>		<span class="string">"⚠️ {} key is missing from the keystore. Please run generate-keys wizard first."</span>,
+<a href=#163 id=163 data-nosnippet>163</a>		CROSS_CHAIN.name
+<a href=#164 id=164 data-nosnippet>164</a>	))<span class="question-mark">?</span>;
+<a href=#165 id=165 data-nosnippet>165</a>	account_id_hex_from_ecdsa_key(<span class="kw-2">&amp;</span>key)
+<a href=#166 id=166 data-nosnippet>166</a>}
+<a href=#167 id=167 data-nosnippet>167</a>
+<a href=#168 id=168 data-nosnippet>168</a><span class="kw">fn </span>account_id_hex_from_ecdsa_key(key: <span class="kw-2">&amp;</span>str) -&gt; anyhow::Result&lt;String&gt; {
+<a href=#169 id=169 data-nosnippet>169</a>	<span class="kw">let </span>trimmed = key.trim_start_matches(<span class="string">"0x"</span>);
+<a href=#170 id=170 data-nosnippet>170</a>	<span class="kw">let </span>pk = PublicKey::from_str(trimmed)<span class="question-mark">?</span>;
+<a href=#171 id=171 data-nosnippet>171</a>	<span class="kw">let </span>account_id: AccountId32 = MultiSigner::from(ecdsa::Public::from(pk)).into_account();
+<a href=#172 id=172 data-nosnippet>172</a>	<span class="prelude-val">Ok</span>(hex::encode(account_id))
+<a href=#173 id=173 data-nosnippet>173</a>}
+<a href=#174 id=174 data-nosnippet>174</a>
+<a href=#175 id=175 data-nosnippet>175</a><span class="kw">pub fn </span>start_node&lt;C: IOContext&gt;(
+<a href=#176 id=176 data-nosnippet>176</a>	StartNodeConfig { substrate_node_base_path }: StartNodeConfig,
+<a href=#177 id=177 data-nosnippet>177</a>	StartNodeChainConfig {
+<a href=#178 id=178 data-nosnippet>178</a>		cardano:
+<a href=#179 id=179 data-nosnippet>179</a>			CardanoParameters {
+<a href=#180 id=180 data-nosnippet>180</a>				security_parameter,
+<a href=#181 id=181 data-nosnippet>181</a>				active_slots_coeff,
+<a href=#182 id=182 data-nosnippet>182</a>				first_epoch_number,
+<a href=#183 id=183 data-nosnippet>183</a>				first_slot_number,
+<a href=#184 id=184 data-nosnippet>184</a>				epoch_duration_millis,
+<a href=#185 id=185 data-nosnippet>185</a>				first_epoch_timestamp_millis,
+<a href=#186 id=186 data-nosnippet>186</a>				slot_duration_millis,
+<a href=#187 id=187 data-nosnippet>187</a>			},
+<a href=#188 id=188 data-nosnippet>188</a>		bootnodes,
+<a href=#189 id=189 data-nosnippet>189</a>	}: StartNodeChainConfig,
+<a href=#190 id=190 data-nosnippet>190</a>	db_connection_string: <span class="kw-2">&amp;</span>str,
+<a href=#191 id=191 data-nosnippet>191</a>	beneficiary: String,
+<a href=#192 id=192 data-nosnippet>192</a>	context: <span class="kw-2">&amp;</span>C,
+<a href=#193 id=193 data-nosnippet>193</a>) -&gt; anyhow::Result&lt;()&gt; {
+<a href=#194 id=194 data-nosnippet>194</a>	<span class="kw">let </span>executable = context.current_executable()<span class="question-mark">?</span>;
+<a href=#195 id=195 data-nosnippet>195</a>	<span class="kw">let </span>environment_prefix = <span class="macro">format!</span>(
+<a href=#196 id=196 data-nosnippet>196</a>		<span class="string">"CARDANO_SECURITY_PARAMETER='{security_parameter}' \\
+<a href=#197 id=197 data-nosnippet>197</a>         CARDANO_ACTIVE_SLOTS_COEFF='{active_slots_coeff}' \\
+<a href=#198 id=198 data-nosnippet>198</a>         DB_SYNC_POSTGRES_CONNECTION_STRING='{db_connection_string}' \\
+<a href=#199 id=199 data-nosnippet>199</a>         MC__FIRST_EPOCH_TIMESTAMP_MILLIS='{first_epoch_timestamp_millis}' \\
+<a href=#200 id=200 data-nosnippet>200</a>         MC__EPOCH_DURATION_MILLIS='{epoch_duration_millis}' \\
+<a href=#201 id=201 data-nosnippet>201</a>         MC__SLOT_DURATION_MILLIS='{slot_duration_millis}' \\
+<a href=#202 id=202 data-nosnippet>202</a>         MC__FIRST_EPOCH_NUMBER='{first_epoch_number}' \\
+<a href=#203 id=203 data-nosnippet>203</a>         MC__FIRST_SLOT_NUMBER='{first_slot_number}' \\
+<a href=#204 id=204 data-nosnippet>204</a>         BLOCK_STABILITY_MARGIN='0' \\
+<a href=#205 id=205 data-nosnippet>205</a>		 SIDECHAIN_BLOCK_BENEFICIARY='{beneficiary}' \\
+<a href=#206 id=206 data-nosnippet>206</a>"
+<a href=#207 id=207 data-nosnippet>207</a>	</span>);
+<a href=#208 id=208 data-nosnippet>208</a>	<span class="kw">let </span>bootnodes = bootnodes
+<a href=#209 id=209 data-nosnippet>209</a>		.iter()
+<a href=#210 id=210 data-nosnippet>210</a>		.map(|bootnode| <span class="macro">format!</span>(<span class="string">"--bootnodes {}"</span>, bootnode))
+<a href=#211 id=211 data-nosnippet>211</a>		.collect::&lt;Vec&lt;String&gt;&gt;()
+<a href=#212 id=212 data-nosnippet>212</a>		.join(<span class="string">" "</span>);
+<a href=#213 id=213 data-nosnippet>213</a>
+<a href=#214 id=214 data-nosnippet>214</a>	<span class="kw">let </span>ws_port = NODE_P2P_PORT.save_if_empty(
+<a href=#215 id=215 data-nosnippet>215</a>		NODE_P2P_PORT
+<a href=#216 id=216 data-nosnippet>216</a>			.default
+<a href=#217 id=217 data-nosnippet>217</a>			.expect(<span class="string">"Default NODE_WS_PORT should always be set"</span>)
+<a href=#218 id=218 data-nosnippet>218</a>			.parse()
+<a href=#219 id=219 data-nosnippet>219</a>			.expect(<span class="string">"Default NODE_WS_PORT should be valid u16"</span>),
+<a href=#220 id=220 data-nosnippet>220</a>		context,
+<a href=#221 id=221 data-nosnippet>221</a>	);
+<a href=#222 id=222 data-nosnippet>222</a>	<span class="kw">let </span>keystore_path = keystore_path(<span class="kw-2">&amp;</span>substrate_node_base_path);
+<a href=#223 id=223 data-nosnippet>223</a>	<span class="kw">let </span>network_key_path = network_key_path(<span class="kw-2">&amp;</span>substrate_node_base_path);
+<a href=#224 id=224 data-nosnippet>224</a>	context.run_command(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
+<a href=#225 id=225 data-nosnippet>225</a>		<span class="string">"{environment_prefix} {executable} --validator --chain {CHAIN_SPEC_PATH} --base-path {substrate_node_base_path} --keystore-path {keystore_path} --node-key-file {network_key_path} --port {ws_port} {bootnodes}"</span>,
+<a href=#226 id=226 data-nosnippet>226</a>	))<span class="question-mark">?</span>;
+<a href=#227 id=227 data-nosnippet>227</a>
+<a href=#228 id=228 data-nosnippet>228</a>	<span class="prelude-val">Ok</span>(())
+<a href=#229 id=229 data-nosnippet>229</a>}</code></pre></div></section></main></body></html>

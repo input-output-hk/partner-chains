@@ -15,10 +15,10 @@
 <a href=#15 id=15 data-nosnippet>15</a><span class="kw">impl</span>&lt;M: Encode&gt; MetadataSignedMessage&lt;M&gt; {
 <a href=#16 id=16 data-nosnippet>16</a>	<span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
 <a href=#17 id=17 data-nosnippet>17</a>	</span><span class="kw">pub fn </span>sign_with_key(<span class="kw-2">&amp;</span><span class="self">self</span>, skey: <span class="kw-2">&amp;</span>k256::SecretKey) -&gt; CrossChainSignature {
-<a href=#18 id=18 data-nosnippet>18</a>		<span class="kw">use </span>k256::ecdsa::hazmat::DigestPrimitive;
-<a href=#19 id=19 data-nosnippet>19</a>		<span class="kw">use </span>k256::ecdsa::<span class="kw-2">*</span>;
-<a href=#20 id=20 data-nosnippet>20</a>		<span class="kw">use </span>k256::sha2::Digest;
-<a href=#21 id=21 data-nosnippet>21</a>		<span class="kw">use </span>k256::Secp256k1;
+<a href=#18 id=18 data-nosnippet>18</a>		<span class="kw">use </span>k256::Secp256k1;
+<a href=#19 id=19 data-nosnippet>19</a>		<span class="kw">use </span>k256::ecdsa::hazmat::DigestPrimitive;
+<a href=#20 id=20 data-nosnippet>20</a>		<span class="kw">use </span>k256::ecdsa::<span class="kw-2">*</span>;
+<a href=#21 id=21 data-nosnippet>21</a>		<span class="kw">use </span>k256::sha2::Digest;
 <a href=#22 id=22 data-nosnippet>22</a>		<span class="kw">let </span>data = <span class="self">self</span>.encode();
 <a href=#23 id=23 data-nosnippet>23</a>		<span class="kw">let </span>digest = &lt;Secp256k1 <span class="kw">as </span>DigestPrimitive&gt;::Digest::new_with_prefix(data);
 <a href=#24 id=24 data-nosnippet>24</a>

@@ -104,7 +104,7 @@
 <a href=#104 id=104 data-nosnippet>104</a>			<span class="kw">let </span>expected_transfer = <span class="kw">match </span><span class="self">Self</span>::get_transfered_tokens_from_inherent_data(data) {
 <a href=#105 id=105 data-nosnippet>105</a>				<span class="prelude-val">Some</span>(data) =&gt; data.token_amount,
 <a href=#106 id=106 data-nosnippet>106</a>				<span class="prelude-val">None </span>=&gt; {
-<a href=#107 id=107 data-nosnippet>107</a>					<span class="kw">return </span><span class="prelude-val">Err</span>(InherentError::UnexpectedTokenTransferInherent(actual_transfer))
+<a href=#107 id=107 data-nosnippet>107</a>					<span class="kw">return </span><span class="prelude-val">Err</span>(InherentError::UnexpectedTokenTransferInherent(actual_transfer));
 <a href=#108 id=108 data-nosnippet>108</a>				},
 <a href=#109 id=109 data-nosnippet>109</a>			};
 <a href=#110 id=110 data-nosnippet>110</a>

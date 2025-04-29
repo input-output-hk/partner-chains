@@ -3,9 +3,9 @@
 <a href=#3 id=3 data-nosnippet>3</a>	CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS, CARDANO_FIRST_SLOT_NUMBER, CARDANO_SECURITY_PARAMETER,
 <a href=#4 id=4 data-nosnippet>4</a>};
 <a href=#5 id=5 data-nosnippet>5</a><span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
-<a href=#6 id=6 data-nosnippet>6</a><span class="kw">use </span>clap::{arg, Parser};
+<a href=#6 id=6 data-nosnippet>6</a><span class="kw">use </span>clap::{Parser, arg};
 <a href=#7 id=7 data-nosnippet>7</a><span class="kw">use </span>config_fields::CARDANO_SLOT_DURATION_MILLIS;
-<a href=#8 id=8 data-nosnippet>8</a><span class="kw">use </span>serde::{de::DeserializeOwned, Deserialize, Serialize};
+<a href=#8 id=8 data-nosnippet>8</a><span class="kw">use </span>serde::{Deserialize, Serialize, de::DeserializeOwned};
 <a href=#9 id=9 data-nosnippet>9</a><span class="kw">use </span>sidechain_domain::{MainchainKeyHash, UtxoId};
 <a href=#10 id=10 data-nosnippet>10</a><span class="kw">use </span>sp_core::offchain::{Duration, Timestamp};
 <a href=#11 id=11 data-nosnippet>11</a><span class="kw">use </span>std::fmt::{Display, Formatter, Write};
@@ -378,261 +378,263 @@
 <a href=#378 id=378 data-nosnippet>378</a>		serde_json::from_str::&lt;ChainConfig&gt;(<span class="kw-2">&amp;</span>chain_config_file)
 <a href=#379 id=379 data-nosnippet>379</a>			.map_err(|err| <span class="macro">anyhow::anyhow!</span>(<span class="macro">format!</span>(<span class="string">"⚠️ Chain config file {CHAIN_CONFIG_FILE_PATH} is invalid: {err}. Run prepare-configuration wizard or fix errors manually."</span>)))
 <a href=#380 id=380 data-nosnippet>380</a>	} <span class="kw">else </span>{
-<a href=#381 id=381 data-nosnippet>381</a>		<span class="prelude-val">Err</span>(<span class="macro">anyhow::anyhow!</span>(<span class="macro">format!</span>(<span class="string">"⚠️ Chain config file {CHAIN_CONFIG_FILE_PATH} does not exists. Run prepare-configuration wizard first."</span>)))
-<a href=#382 id=382 data-nosnippet>382</a>	}
-<a href=#383 id=383 data-nosnippet>383</a>}
-<a href=#384 id=384 data-nosnippet>384</a>
-<a href=#385 id=385 data-nosnippet>385</a><span class="kw">pub mod </span>config_fields {
-<a href=#386 id=386 data-nosnippet>386</a>	<span class="kw">use super</span>::<span class="kw-2">*</span>;
-<a href=#387 id=387 data-nosnippet>387</a>	<span class="kw">use </span>sidechain_domain::UtxoId;
-<a href=#388 id=388 data-nosnippet>388</a>
-<a href=#389 id=389 data-nosnippet>389</a>	<span class="kw">pub const </span>NATIVE_TOKEN_POLICY: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, String&gt; = ConfigFieldDefinition {
-<a href=#390 id=390 data-nosnippet>390</a>		config_file: CHAIN_CONFIG_FILE_PATH,
-<a href=#391 id=391 data-nosnippet>391</a>		path: <span class="kw-2">&amp;</span>[<span class="string">"cardano_addresses"</span>, <span class="string">"native_token"</span>, <span class="string">"asset"</span>, <span class="string">"policy_id"</span>],
-<a href=#392 id=392 data-nosnippet>392</a>		name: <span class="string">"native token policy ID"</span>,
-<a href=#393 id=393 data-nosnippet>393</a>		default: <span class="prelude-val">None</span>,
-<a href=#394 id=394 data-nosnippet>394</a>		_marker: PhantomData,
-<a href=#395 id=395 data-nosnippet>395</a>	};
-<a href=#396 id=396 data-nosnippet>396</a>
-<a href=#397 id=397 data-nosnippet>397</a>	<span class="kw">pub const </span>NATIVE_TOKEN_ASSET_NAME: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, String&gt; =
-<a href=#398 id=398 data-nosnippet>398</a>		ConfigFieldDefinition {
-<a href=#399 id=399 data-nosnippet>399</a>			config_file: CHAIN_CONFIG_FILE_PATH,
-<a href=#400 id=400 data-nosnippet>400</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano_addresses"</span>, <span class="string">"native_token"</span>, <span class="string">"asset"</span>, <span class="string">"asset_name"</span>],
-<a href=#401 id=401 data-nosnippet>401</a>			name: <span class="string">"native token asset name in hex"</span>,
-<a href=#402 id=402 data-nosnippet>402</a>			default: <span class="prelude-val">None</span>,
-<a href=#403 id=403 data-nosnippet>403</a>			_marker: PhantomData,
-<a href=#404 id=404 data-nosnippet>404</a>		};
-<a href=#405 id=405 data-nosnippet>405</a>
-<a href=#406 id=406 data-nosnippet>406</a>	<span class="kw">pub const </span>ILLIQUID_SUPPLY_ADDRESS: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, String&gt; =
-<a href=#407 id=407 data-nosnippet>407</a>		ConfigFieldDefinition {
-<a href=#408 id=408 data-nosnippet>408</a>			config_file: CHAIN_CONFIG_FILE_PATH,
-<a href=#409 id=409 data-nosnippet>409</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano_addresses"</span>, <span class="string">"native_token"</span>, <span class="string">"illiquid_supply_address"</span>],
-<a href=#410 id=410 data-nosnippet>410</a>			name: <span class="string">"native token illiquid token supply address"</span>,
-<a href=#411 id=411 data-nosnippet>411</a>			default: <span class="prelude-val">None</span>,
-<a href=#412 id=412 data-nosnippet>412</a>			_marker: PhantomData,
-<a href=#413 id=413 data-nosnippet>413</a>		};
-<a href=#414 id=414 data-nosnippet>414</a>
-<a href=#415 id=415 data-nosnippet>415</a>	<span class="kw">pub const </span>SUBSTRATE_NODE_DATA_BASE_PATH: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, String&gt; =
-<a href=#416 id=416 data-nosnippet>416</a>		ConfigFieldDefinition {
-<a href=#417 id=417 data-nosnippet>417</a>			config_file: RESOURCES_CONFIG_FILE_PATH,
-<a href=#418 id=418 data-nosnippet>418</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"substrate_node_base_path"</span>],
-<a href=#419 id=419 data-nosnippet>419</a>			name: <span class="string">"node base path"</span>,
-<a href=#420 id=420 data-nosnippet>420</a>			default: <span class="prelude-val">Some</span>(<span class="string">"./data"</span>),
-<a href=#421 id=421 data-nosnippet>421</a>			_marker: PhantomData,
-<a href=#422 id=422 data-nosnippet>422</a>		};
-<a href=#423 id=423 data-nosnippet>423</a>
-<a href=#424 id=424 data-nosnippet>424</a>	<span class="kw">pub const </span>CARDANO_PAYMENT_VERIFICATION_KEY_FILE: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, String&gt; =
-<a href=#425 id=425 data-nosnippet>425</a>		ConfigFieldDefinition {
-<a href=#426 id=426 data-nosnippet>426</a>			config_file: RESOURCES_CONFIG_FILE_PATH,
-<a href=#427 id=427 data-nosnippet>427</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano_payment_verification_key_file"</span>],
-<a href=#428 id=428 data-nosnippet>428</a>			name: <span class="string">"path to the payment verification file"</span>,
-<a href=#429 id=429 data-nosnippet>429</a>			default: <span class="prelude-val">Some</span>(<span class="string">"payment.vkey"</span>),
-<a href=#430 id=430 data-nosnippet>430</a>			_marker: PhantomData,
-<a href=#431 id=431 data-nosnippet>431</a>		};
-<a href=#432 id=432 data-nosnippet>432</a>
-<a href=#433 id=433 data-nosnippet>433</a>	<span class="kw">pub const </span>CARDANO_PAYMENT_SIGNING_KEY_FILE: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, String&gt; =
-<a href=#434 id=434 data-nosnippet>434</a>		ConfigFieldDefinition {
-<a href=#435 id=435 data-nosnippet>435</a>			config_file: RESOURCES_CONFIG_FILE_PATH,
-<a href=#436 id=436 data-nosnippet>436</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano_payment_signing_key_file"</span>],
-<a href=#437 id=437 data-nosnippet>437</a>			name: <span class="string">"path to the payment signing key file"</span>,
-<a href=#438 id=438 data-nosnippet>438</a>			default: <span class="prelude-val">Some</span>(<span class="string">"payment.skey"</span>),
-<a href=#439 id=439 data-nosnippet>439</a>			_marker: PhantomData,
-<a href=#440 id=440 data-nosnippet>440</a>		};
-<a href=#441 id=441 data-nosnippet>441</a>
-<a href=#442 id=442 data-nosnippet>442</a>	<span class="kw">pub const </span>CARDANO_COLD_VERIFICATION_KEY_FILE: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, String&gt; =
-<a href=#443 id=443 data-nosnippet>443</a>		ConfigFieldDefinition {
-<a href=#444 id=444 data-nosnippet>444</a>			config_file: RESOURCES_CONFIG_FILE_PATH,
-<a href=#445 id=445 data-nosnippet>445</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano_cold_verification_key_file"</span>],
-<a href=#446 id=446 data-nosnippet>446</a>			name: <span class="string">"path to the cold verification key file"</span>,
-<a href=#447 id=447 data-nosnippet>447</a>			default: <span class="prelude-val">Some</span>(<span class="string">"cold.vkey"</span>),
-<a href=#448 id=448 data-nosnippet>448</a>			_marker: PhantomData,
-<a href=#449 id=449 data-nosnippet>449</a>		};
-<a href=#450 id=450 data-nosnippet>450</a>
-<a href=#451 id=451 data-nosnippet>451</a>	<span class="kw">pub const </span>GENESIS_UTXO: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, UtxoId&gt; = ConfigFieldDefinition {
-<a href=#452 id=452 data-nosnippet>452</a>		config_file: CHAIN_CONFIG_FILE_PATH,
-<a href=#453 id=453 data-nosnippet>453</a>		path: <span class="kw-2">&amp;</span>[<span class="string">"chain_parameters"</span>, <span class="string">"genesis_utxo"</span>],
-<a href=#454 id=454 data-nosnippet>454</a>		name: <span class="string">"genesis utxo"</span>,
-<a href=#455 id=455 data-nosnippet>455</a>		default: <span class="prelude-val">None</span>,
-<a href=#456 id=456 data-nosnippet>456</a>		_marker: PhantomData,
-<a href=#457 id=457 data-nosnippet>457</a>	};
-<a href=#458 id=458 data-nosnippet>458</a>
-<a href=#459 id=459 data-nosnippet>459</a>	<span class="kw">pub const </span>BOOTNODES: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, Vec&lt;String&gt;&gt; = ConfigFieldDefinition {
-<a href=#460 id=460 data-nosnippet>460</a>		config_file: CHAIN_CONFIG_FILE_PATH,
-<a href=#461 id=461 data-nosnippet>461</a>		path: <span class="kw-2">&amp;</span>[<span class="string">"bootnodes"</span>],
-<a href=#462 id=462 data-nosnippet>462</a>		name: <span class="string">"bootnodes"</span>,
-<a href=#463 id=463 data-nosnippet>463</a>		default: <span class="prelude-val">None</span>,
-<a href=#464 id=464 data-nosnippet>464</a>		_marker: PhantomData,
-<a href=#465 id=465 data-nosnippet>465</a>	};
-<a href=#466 id=466 data-nosnippet>466</a>
-<a href=#467 id=467 data-nosnippet>467</a>	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>INITIAL_PERMISSIONED_CANDIDATES: ConfigFieldDefinition&lt;
-<a href=#468 id=468 data-nosnippet>468</a>		<span class="lifetime">'static</span>,
-<a href=#469 id=469 data-nosnippet>469</a>		Vec&lt;<span class="kw">crate</span>::permissioned_candidates::PermissionedCandidateKeys&gt;,
-<a href=#470 id=470 data-nosnippet>470</a>	&gt; = ConfigFieldDefinition {
-<a href=#471 id=471 data-nosnippet>471</a>		config_file: CHAIN_CONFIG_FILE_PATH,
-<a href=#472 id=472 data-nosnippet>472</a>		path: <span class="kw-2">&amp;</span>[<span class="string">"initial_permissioned_candidates"</span>],
-<a href=#473 id=473 data-nosnippet>473</a>		name: <span class="string">"initial permissioned candidates"</span>,
-<a href=#474 id=474 data-nosnippet>474</a>		default: <span class="prelude-val">None</span>,
-<a href=#475 id=475 data-nosnippet>475</a>		_marker: PhantomData,
-<a href=#476 id=476 data-nosnippet>476</a>	};
-<a href=#477 id=477 data-nosnippet>477</a>
-<a href=#478 id=478 data-nosnippet>478</a>	<span class="kw">pub const </span>POSTGRES_CONNECTION_STRING: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, String&gt; =
-<a href=#479 id=479 data-nosnippet>479</a>		ConfigFieldDefinition {
-<a href=#480 id=480 data-nosnippet>480</a>			config_file: RESOURCES_CONFIG_FILE_PATH,
-<a href=#481 id=481 data-nosnippet>481</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"db_sync_postgres_connection_string"</span>],
-<a href=#482 id=482 data-nosnippet>482</a>			name: <span class="string">"DB-Sync Postgres connection string"</span>,
-<a href=#483 id=483 data-nosnippet>483</a>			default: <span class="prelude-val">Some</span>(<span class="string">"postgresql://postgres-user:postgres-password@localhost:5432/cexplorer"</span>),
-<a href=#484 id=484 data-nosnippet>484</a>			_marker: PhantomData,
-<a href=#485 id=485 data-nosnippet>485</a>		};
-<a href=#486 id=486 data-nosnippet>486</a>
-<a href=#487 id=487 data-nosnippet>487</a>	<span class="kw">pub const </span>OGMIOS_PROTOCOL: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, NetworkProtocol&gt; =
-<a href=#488 id=488 data-nosnippet>488</a>		ConfigFieldDefinition {
-<a href=#489 id=489 data-nosnippet>489</a>			config_file: RESOURCES_CONFIG_FILE_PATH,
-<a href=#490 id=490 data-nosnippet>490</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"ogmios"</span>, <span class="string">"protocol"</span>],
-<a href=#491 id=491 data-nosnippet>491</a>			name: <span class="string">"Ogmios protocol (http/https)"</span>,
-<a href=#492 id=492 data-nosnippet>492</a>			default: <span class="prelude-val">Some</span>(<span class="string">"http"</span>),
-<a href=#493 id=493 data-nosnippet>493</a>			_marker: PhantomData,
-<a href=#494 id=494 data-nosnippet>494</a>		};
-<a href=#495 id=495 data-nosnippet>495</a>
-<a href=#496 id=496 data-nosnippet>496</a>	<span class="kw">pub const </span>OGMIOS_HOSTNAME: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, String&gt; = ConfigFieldDefinition {
-<a href=#497 id=497 data-nosnippet>497</a>		config_file: RESOURCES_CONFIG_FILE_PATH,
-<a href=#498 id=498 data-nosnippet>498</a>		path: <span class="kw-2">&amp;</span>[<span class="string">"ogmios"</span>, <span class="string">"hostname"</span>],
-<a href=#499 id=499 data-nosnippet>499</a>		name: <span class="string">"Ogmios hostname"</span>,
-<a href=#500 id=500 data-nosnippet>500</a>		default: <span class="prelude-val">Some</span>(<span class="string">"localhost"</span>),
-<a href=#501 id=501 data-nosnippet>501</a>		_marker: PhantomData,
-<a href=#502 id=502 data-nosnippet>502</a>	};
-<a href=#503 id=503 data-nosnippet>503</a>
-<a href=#504 id=504 data-nosnippet>504</a>	<span class="kw">pub const </span>OGMIOS_PORT: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, u16&gt; = ConfigFieldDefinition {
-<a href=#505 id=505 data-nosnippet>505</a>		config_file: RESOURCES_CONFIG_FILE_PATH,
-<a href=#506 id=506 data-nosnippet>506</a>		path: <span class="kw-2">&amp;</span>[<span class="string">"ogmios"</span>, <span class="string">"port"</span>],
-<a href=#507 id=507 data-nosnippet>507</a>		name: <span class="string">"Ogmios port"</span>,
-<a href=#508 id=508 data-nosnippet>508</a>		default: <span class="prelude-val">Some</span>(<span class="string">"1337"</span>),
-<a href=#509 id=509 data-nosnippet>509</a>		_marker: PhantomData,
-<a href=#510 id=510 data-nosnippet>510</a>	};
-<a href=#511 id=511 data-nosnippet>511</a>
-<a href=#512 id=512 data-nosnippet>512</a>	<span class="kw">pub const </span>COMMITTEE_CANDIDATES_ADDRESS: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, String&gt; =
-<a href=#513 id=513 data-nosnippet>513</a>		ConfigFieldDefinition {
-<a href=#514 id=514 data-nosnippet>514</a>			config_file: CHAIN_CONFIG_FILE_PATH,
-<a href=#515 id=515 data-nosnippet>515</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano_addresses"</span>, <span class="string">"committee_candidates_address"</span>],
-<a href=#516 id=516 data-nosnippet>516</a>			name: <span class="string">"Committee candidates address"</span>,
-<a href=#517 id=517 data-nosnippet>517</a>			default: <span class="prelude-val">None</span>,
-<a href=#518 id=518 data-nosnippet>518</a>			_marker: PhantomData,
-<a href=#519 id=519 data-nosnippet>519</a>		};
-<a href=#520 id=520 data-nosnippet>520</a>
-<a href=#521 id=521 data-nosnippet>521</a>	<span class="kw">pub const </span>D_PARAMETER_POLICY_ID: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, String&gt; =
-<a href=#522 id=522 data-nosnippet>522</a>		ConfigFieldDefinition {
-<a href=#523 id=523 data-nosnippet>523</a>			config_file: CHAIN_CONFIG_FILE_PATH,
-<a href=#524 id=524 data-nosnippet>524</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano_addresses"</span>, <span class="string">"d_parameter_policy_id"</span>],
-<a href=#525 id=525 data-nosnippet>525</a>			name: <span class="string">"D parameter policy id"</span>,
-<a href=#526 id=526 data-nosnippet>526</a>			default: <span class="prelude-val">None</span>,
-<a href=#527 id=527 data-nosnippet>527</a>			_marker: PhantomData,
-<a href=#528 id=528 data-nosnippet>528</a>		};
-<a href=#529 id=529 data-nosnippet>529</a>
-<a href=#530 id=530 data-nosnippet>530</a>	<span class="kw">pub const </span>PERMISSIONED_CANDIDATES_POLICY_ID: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, String&gt; =
-<a href=#531 id=531 data-nosnippet>531</a>		ConfigFieldDefinition {
-<a href=#532 id=532 data-nosnippet>532</a>			config_file: CHAIN_CONFIG_FILE_PATH,
-<a href=#533 id=533 data-nosnippet>533</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano_addresses"</span>, <span class="string">"permissioned_candidates_policy_id"</span>],
-<a href=#534 id=534 data-nosnippet>534</a>			name: <span class="string">"permissioned candidates policy id"</span>,
-<a href=#535 id=535 data-nosnippet>535</a>			default: <span class="prelude-val">None</span>,
-<a href=#536 id=536 data-nosnippet>536</a>			_marker: PhantomData,
-<a href=#537 id=537 data-nosnippet>537</a>		};
-<a href=#538 id=538 data-nosnippet>538</a>
-<a href=#539 id=539 data-nosnippet>539</a>	<span class="kw">pub const </span>CARDANO_SECURITY_PARAMETER: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, u64&gt; =
-<a href=#540 id=540 data-nosnippet>540</a>		ConfigFieldDefinition {
-<a href=#541 id=541 data-nosnippet>541</a>			config_file: CHAIN_CONFIG_FILE_PATH,
-<a href=#542 id=542 data-nosnippet>542</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano"</span>, <span class="string">"security_parameter"</span>],
-<a href=#543 id=543 data-nosnippet>543</a>			name: <span class="string">"cardano security parameter"</span>,
-<a href=#544 id=544 data-nosnippet>544</a>			default: <span class="prelude-val">None</span>,
-<a href=#545 id=545 data-nosnippet>545</a>			_marker: PhantomData,
-<a href=#546 id=546 data-nosnippet>546</a>		};
-<a href=#547 id=547 data-nosnippet>547</a>
-<a href=#548 id=548 data-nosnippet>548</a>	<span class="kw">pub const </span>CARDANO_ACTIVE_SLOTS_COEFF: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, f64&gt; =
-<a href=#549 id=549 data-nosnippet>549</a>		ConfigFieldDefinition {
-<a href=#550 id=550 data-nosnippet>550</a>			config_file: CHAIN_CONFIG_FILE_PATH,
-<a href=#551 id=551 data-nosnippet>551</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano"</span>, <span class="string">"active_slots_coeff"</span>],
-<a href=#552 id=552 data-nosnippet>552</a>			name: <span class="string">"cardano active slot coefficient"</span>,
-<a href=#553 id=553 data-nosnippet>553</a>			default: <span class="prelude-val">None</span>,
-<a href=#554 id=554 data-nosnippet>554</a>			_marker: PhantomData,
-<a href=#555 id=555 data-nosnippet>555</a>		};
-<a href=#556 id=556 data-nosnippet>556</a>
-<a href=#557 id=557 data-nosnippet>557</a>	<span class="kw">pub const </span>CARDANO_FIRST_EPOCH_NUMBER: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, u32&gt; =
-<a href=#558 id=558 data-nosnippet>558</a>		ConfigFieldDefinition {
-<a href=#559 id=559 data-nosnippet>559</a>			config_file: CHAIN_CONFIG_FILE_PATH,
-<a href=#560 id=560 data-nosnippet>560</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano"</span>, <span class="string">"first_epoch_number"</span>],
-<a href=#561 id=561 data-nosnippet>561</a>			name: <span class="string">"cardano first epoch number in shelley era"</span>,
-<a href=#562 id=562 data-nosnippet>562</a>			default: <span class="prelude-val">None</span>,
-<a href=#563 id=563 data-nosnippet>563</a>			_marker: PhantomData,
-<a href=#564 id=564 data-nosnippet>564</a>		};
-<a href=#565 id=565 data-nosnippet>565</a>
-<a href=#566 id=566 data-nosnippet>566</a>	<span class="kw">pub const </span>CARDANO_FIRST_SLOT_NUMBER: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, u64&gt; =
-<a href=#567 id=567 data-nosnippet>567</a>		ConfigFieldDefinition {
-<a href=#568 id=568 data-nosnippet>568</a>			config_file: CHAIN_CONFIG_FILE_PATH,
-<a href=#569 id=569 data-nosnippet>569</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano"</span>, <span class="string">"first_slot_number"</span>],
-<a href=#570 id=570 data-nosnippet>570</a>			name: <span class="string">"cardano first slot number in shelley era"</span>,
-<a href=#571 id=571 data-nosnippet>571</a>			default: <span class="prelude-val">None</span>,
-<a href=#572 id=572 data-nosnippet>572</a>			_marker: PhantomData,
-<a href=#573 id=573 data-nosnippet>573</a>		};
-<a href=#574 id=574 data-nosnippet>574</a>
-<a href=#575 id=575 data-nosnippet>575</a>	<span class="kw">pub const </span>CARDANO_EPOCH_DURATION_MILLIS: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, u64&gt; =
-<a href=#576 id=576 data-nosnippet>576</a>		ConfigFieldDefinition {
-<a href=#577 id=577 data-nosnippet>577</a>			config_file: CHAIN_CONFIG_FILE_PATH,
-<a href=#578 id=578 data-nosnippet>578</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano"</span>, <span class="string">"epoch_duration_millis"</span>],
-<a href=#579 id=579 data-nosnippet>579</a>			name: <span class="string">"cardano epoch duration in millis"</span>,
-<a href=#580 id=580 data-nosnippet>580</a>			default: <span class="prelude-val">None</span>,
-<a href=#581 id=581 data-nosnippet>581</a>			_marker: PhantomData,
-<a href=#582 id=582 data-nosnippet>582</a>		};
-<a href=#583 id=583 data-nosnippet>583</a>
-<a href=#584 id=584 data-nosnippet>584</a>	<span class="kw">pub const </span>CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, u64&gt; =
-<a href=#585 id=585 data-nosnippet>585</a>		ConfigFieldDefinition {
-<a href=#586 id=586 data-nosnippet>586</a>			config_file: CHAIN_CONFIG_FILE_PATH,
-<a href=#587 id=587 data-nosnippet>587</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano"</span>, <span class="string">"first_epoch_timestamp_millis"</span>],
-<a href=#588 id=588 data-nosnippet>588</a>			name: <span class="string">"cardano first shelley epoch timestamp in millis"</span>,
-<a href=#589 id=589 data-nosnippet>589</a>			default: <span class="prelude-val">None</span>,
-<a href=#590 id=590 data-nosnippet>590</a>			_marker: PhantomData,
-<a href=#591 id=591 data-nosnippet>591</a>		};
-<a href=#592 id=592 data-nosnippet>592</a>
-<a href=#593 id=593 data-nosnippet>593</a>	<span class="kw">pub const </span>CARDANO_SLOT_DURATION_MILLIS: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, u64&gt; =
-<a href=#594 id=594 data-nosnippet>594</a>		ConfigFieldDefinition {
-<a href=#595 id=595 data-nosnippet>595</a>			config_file: CHAIN_CONFIG_FILE_PATH,
-<a href=#596 id=596 data-nosnippet>596</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano"</span>, <span class="string">"slot_duration_millis"</span>],
-<a href=#597 id=597 data-nosnippet>597</a>			name: <span class="string">"cardano slot duration in millis"</span>,
-<a href=#598 id=598 data-nosnippet>598</a>			default: <span class="prelude-val">Some</span>(<span class="string">"1000"</span>),
-<a href=#599 id=599 data-nosnippet>599</a>			_marker: PhantomData,
-<a href=#600 id=600 data-nosnippet>600</a>		};
-<a href=#601 id=601 data-nosnippet>601</a>
-<a href=#602 id=602 data-nosnippet>602</a>	<span class="kw">pub const </span>NODE_P2P_PORT: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, u16&gt; = ConfigFieldDefinition {
-<a href=#603 id=603 data-nosnippet>603</a>		config_file: RESOURCES_CONFIG_FILE_PATH,
-<a href=#604 id=604 data-nosnippet>604</a>		path: <span class="kw-2">&amp;</span>[<span class="string">"node_p2p_port"</span>],
-<a href=#605 id=605 data-nosnippet>605</a>		name: <span class="string">"substrate-node p2p protocol TCP port"</span>,
-<a href=#606 id=606 data-nosnippet>606</a>		default: <span class="prelude-val">Some</span>(<span class="string">"30333"</span>),
-<a href=#607 id=607 data-nosnippet>607</a>		_marker: PhantomData,
-<a href=#608 id=608 data-nosnippet>608</a>	};
-<a href=#609 id=609 data-nosnippet>609</a>
-<a href=#610 id=610 data-nosnippet>610</a>	<span class="kw">pub const </span>SIDECHAIN_BLOCK_BENEFICIARY: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, String&gt; =
-<a href=#611 id=611 data-nosnippet>611</a>		ConfigFieldDefinition {
-<a href=#612 id=612 data-nosnippet>612</a>			config_file: RESOURCES_CONFIG_FILE_PATH,
-<a href=#613 id=613 data-nosnippet>613</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"sidechain_block_beneficiary"</span>],
-<a href=#614 id=614 data-nosnippet>614</a>			name: <span class="string">"beneficiary for blocks created by the given node"</span>,
-<a href=#615 id=615 data-nosnippet>615</a>			default: <span class="prelude-val">None</span>,
-<a href=#616 id=616 data-nosnippet>616</a>			_marker: PhantomData,
-<a href=#617 id=617 data-nosnippet>617</a>		};
-<a href=#618 id=618 data-nosnippet>618</a>
-<a href=#619 id=619 data-nosnippet>619</a>	<span class="kw">pub const </span>INITIAL_GOVERNANCE_AUTHORITIES: ConfigFieldDefinition&lt;
-<a href=#620 id=620 data-nosnippet>620</a>		<span class="lifetime">'static</span>,
-<a href=#621 id=621 data-nosnippet>621</a>		GovernanceAuthoritiesKeyHashes,
-<a href=#622 id=622 data-nosnippet>622</a>	&gt; = ConfigFieldDefinition {
-<a href=#623 id=623 data-nosnippet>623</a>		config_file: CHAIN_CONFIG_FILE_PATH,
-<a href=#624 id=624 data-nosnippet>624</a>		path: <span class="kw-2">&amp;</span>[<span class="string">"initial_governance"</span>, <span class="string">"authorities"</span>],
-<a href=#625 id=625 data-nosnippet>625</a>		name: <span class="string">"Space separated keys hashes of the initial Multisig Governance Authorities"</span>,
-<a href=#626 id=626 data-nosnippet>626</a>		default: <span class="prelude-val">Some</span>(<span class="string">"[]"</span>),
-<a href=#627 id=627 data-nosnippet>627</a>		_marker: PhantomData,
-<a href=#628 id=628 data-nosnippet>628</a>	};
-<a href=#629 id=629 data-nosnippet>629</a>
-<a href=#630 id=630 data-nosnippet>630</a>	<span class="kw">pub const </span>INITIAL_GOVERNANCE_THRESHOLD: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, u8&gt; =
-<a href=#631 id=631 data-nosnippet>631</a>		ConfigFieldDefinition {
-<a href=#632 id=632 data-nosnippet>632</a>			config_file: CHAIN_CONFIG_FILE_PATH,
-<a href=#633 id=633 data-nosnippet>633</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"initial_governance"</span>, <span class="string">"threshold"</span>],
-<a href=#634 id=634 data-nosnippet>634</a>			name: <span class="string">"Initial Multisig Governance Threshold"</span>,
-<a href=#635 id=635 data-nosnippet>635</a>			default: <span class="prelude-val">Some</span>(<span class="string">"0"</span>),
-<a href=#636 id=636 data-nosnippet>636</a>			_marker: PhantomData,
-<a href=#637 id=637 data-nosnippet>637</a>		};
-<a href=#638 id=638 data-nosnippet>638</a>}</code></pre></div></section></main></body></html>
+<a href=#381 id=381 data-nosnippet>381</a>		<span class="prelude-val">Err</span>(<span class="macro">anyhow::anyhow!</span>(<span class="macro">format!</span>(
+<a href=#382 id=382 data-nosnippet>382</a>			<span class="string">"⚠️ Chain config file {CHAIN_CONFIG_FILE_PATH} does not exists. Run prepare-configuration wizard first."
+<a href=#383 id=383 data-nosnippet>383</a>		</span>)))
+<a href=#384 id=384 data-nosnippet>384</a>	}
+<a href=#385 id=385 data-nosnippet>385</a>}
+<a href=#386 id=386 data-nosnippet>386</a>
+<a href=#387 id=387 data-nosnippet>387</a><span class="kw">pub mod </span>config_fields {
+<a href=#388 id=388 data-nosnippet>388</a>	<span class="kw">use super</span>::<span class="kw-2">*</span>;
+<a href=#389 id=389 data-nosnippet>389</a>	<span class="kw">use </span>sidechain_domain::UtxoId;
+<a href=#390 id=390 data-nosnippet>390</a>
+<a href=#391 id=391 data-nosnippet>391</a>	<span class="kw">pub const </span>NATIVE_TOKEN_POLICY: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, String&gt; = ConfigFieldDefinition {
+<a href=#392 id=392 data-nosnippet>392</a>		config_file: CHAIN_CONFIG_FILE_PATH,
+<a href=#393 id=393 data-nosnippet>393</a>		path: <span class="kw-2">&amp;</span>[<span class="string">"cardano_addresses"</span>, <span class="string">"native_token"</span>, <span class="string">"asset"</span>, <span class="string">"policy_id"</span>],
+<a href=#394 id=394 data-nosnippet>394</a>		name: <span class="string">"native token policy ID"</span>,
+<a href=#395 id=395 data-nosnippet>395</a>		default: <span class="prelude-val">None</span>,
+<a href=#396 id=396 data-nosnippet>396</a>		_marker: PhantomData,
+<a href=#397 id=397 data-nosnippet>397</a>	};
+<a href=#398 id=398 data-nosnippet>398</a>
+<a href=#399 id=399 data-nosnippet>399</a>	<span class="kw">pub const </span>NATIVE_TOKEN_ASSET_NAME: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, String&gt; =
+<a href=#400 id=400 data-nosnippet>400</a>		ConfigFieldDefinition {
+<a href=#401 id=401 data-nosnippet>401</a>			config_file: CHAIN_CONFIG_FILE_PATH,
+<a href=#402 id=402 data-nosnippet>402</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano_addresses"</span>, <span class="string">"native_token"</span>, <span class="string">"asset"</span>, <span class="string">"asset_name"</span>],
+<a href=#403 id=403 data-nosnippet>403</a>			name: <span class="string">"native token asset name in hex"</span>,
+<a href=#404 id=404 data-nosnippet>404</a>			default: <span class="prelude-val">None</span>,
+<a href=#405 id=405 data-nosnippet>405</a>			_marker: PhantomData,
+<a href=#406 id=406 data-nosnippet>406</a>		};
+<a href=#407 id=407 data-nosnippet>407</a>
+<a href=#408 id=408 data-nosnippet>408</a>	<span class="kw">pub const </span>ILLIQUID_SUPPLY_ADDRESS: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, String&gt; =
+<a href=#409 id=409 data-nosnippet>409</a>		ConfigFieldDefinition {
+<a href=#410 id=410 data-nosnippet>410</a>			config_file: CHAIN_CONFIG_FILE_PATH,
+<a href=#411 id=411 data-nosnippet>411</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano_addresses"</span>, <span class="string">"native_token"</span>, <span class="string">"illiquid_supply_address"</span>],
+<a href=#412 id=412 data-nosnippet>412</a>			name: <span class="string">"native token illiquid token supply address"</span>,
+<a href=#413 id=413 data-nosnippet>413</a>			default: <span class="prelude-val">None</span>,
+<a href=#414 id=414 data-nosnippet>414</a>			_marker: PhantomData,
+<a href=#415 id=415 data-nosnippet>415</a>		};
+<a href=#416 id=416 data-nosnippet>416</a>
+<a href=#417 id=417 data-nosnippet>417</a>	<span class="kw">pub const </span>SUBSTRATE_NODE_DATA_BASE_PATH: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, String&gt; =
+<a href=#418 id=418 data-nosnippet>418</a>		ConfigFieldDefinition {
+<a href=#419 id=419 data-nosnippet>419</a>			config_file: RESOURCES_CONFIG_FILE_PATH,
+<a href=#420 id=420 data-nosnippet>420</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"substrate_node_base_path"</span>],
+<a href=#421 id=421 data-nosnippet>421</a>			name: <span class="string">"node base path"</span>,
+<a href=#422 id=422 data-nosnippet>422</a>			default: <span class="prelude-val">Some</span>(<span class="string">"./data"</span>),
+<a href=#423 id=423 data-nosnippet>423</a>			_marker: PhantomData,
+<a href=#424 id=424 data-nosnippet>424</a>		};
+<a href=#425 id=425 data-nosnippet>425</a>
+<a href=#426 id=426 data-nosnippet>426</a>	<span class="kw">pub const </span>CARDANO_PAYMENT_VERIFICATION_KEY_FILE: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, String&gt; =
+<a href=#427 id=427 data-nosnippet>427</a>		ConfigFieldDefinition {
+<a href=#428 id=428 data-nosnippet>428</a>			config_file: RESOURCES_CONFIG_FILE_PATH,
+<a href=#429 id=429 data-nosnippet>429</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano_payment_verification_key_file"</span>],
+<a href=#430 id=430 data-nosnippet>430</a>			name: <span class="string">"path to the payment verification file"</span>,
+<a href=#431 id=431 data-nosnippet>431</a>			default: <span class="prelude-val">Some</span>(<span class="string">"payment.vkey"</span>),
+<a href=#432 id=432 data-nosnippet>432</a>			_marker: PhantomData,
+<a href=#433 id=433 data-nosnippet>433</a>		};
+<a href=#434 id=434 data-nosnippet>434</a>
+<a href=#435 id=435 data-nosnippet>435</a>	<span class="kw">pub const </span>CARDANO_PAYMENT_SIGNING_KEY_FILE: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, String&gt; =
+<a href=#436 id=436 data-nosnippet>436</a>		ConfigFieldDefinition {
+<a href=#437 id=437 data-nosnippet>437</a>			config_file: RESOURCES_CONFIG_FILE_PATH,
+<a href=#438 id=438 data-nosnippet>438</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano_payment_signing_key_file"</span>],
+<a href=#439 id=439 data-nosnippet>439</a>			name: <span class="string">"path to the payment signing key file"</span>,
+<a href=#440 id=440 data-nosnippet>440</a>			default: <span class="prelude-val">Some</span>(<span class="string">"payment.skey"</span>),
+<a href=#441 id=441 data-nosnippet>441</a>			_marker: PhantomData,
+<a href=#442 id=442 data-nosnippet>442</a>		};
+<a href=#443 id=443 data-nosnippet>443</a>
+<a href=#444 id=444 data-nosnippet>444</a>	<span class="kw">pub const </span>CARDANO_COLD_VERIFICATION_KEY_FILE: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, String&gt; =
+<a href=#445 id=445 data-nosnippet>445</a>		ConfigFieldDefinition {
+<a href=#446 id=446 data-nosnippet>446</a>			config_file: RESOURCES_CONFIG_FILE_PATH,
+<a href=#447 id=447 data-nosnippet>447</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano_cold_verification_key_file"</span>],
+<a href=#448 id=448 data-nosnippet>448</a>			name: <span class="string">"path to the cold verification key file"</span>,
+<a href=#449 id=449 data-nosnippet>449</a>			default: <span class="prelude-val">Some</span>(<span class="string">"cold.vkey"</span>),
+<a href=#450 id=450 data-nosnippet>450</a>			_marker: PhantomData,
+<a href=#451 id=451 data-nosnippet>451</a>		};
+<a href=#452 id=452 data-nosnippet>452</a>
+<a href=#453 id=453 data-nosnippet>453</a>	<span class="kw">pub const </span>GENESIS_UTXO: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, UtxoId&gt; = ConfigFieldDefinition {
+<a href=#454 id=454 data-nosnippet>454</a>		config_file: CHAIN_CONFIG_FILE_PATH,
+<a href=#455 id=455 data-nosnippet>455</a>		path: <span class="kw-2">&amp;</span>[<span class="string">"chain_parameters"</span>, <span class="string">"genesis_utxo"</span>],
+<a href=#456 id=456 data-nosnippet>456</a>		name: <span class="string">"genesis utxo"</span>,
+<a href=#457 id=457 data-nosnippet>457</a>		default: <span class="prelude-val">None</span>,
+<a href=#458 id=458 data-nosnippet>458</a>		_marker: PhantomData,
+<a href=#459 id=459 data-nosnippet>459</a>	};
+<a href=#460 id=460 data-nosnippet>460</a>
+<a href=#461 id=461 data-nosnippet>461</a>	<span class="kw">pub const </span>BOOTNODES: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, Vec&lt;String&gt;&gt; = ConfigFieldDefinition {
+<a href=#462 id=462 data-nosnippet>462</a>		config_file: CHAIN_CONFIG_FILE_PATH,
+<a href=#463 id=463 data-nosnippet>463</a>		path: <span class="kw-2">&amp;</span>[<span class="string">"bootnodes"</span>],
+<a href=#464 id=464 data-nosnippet>464</a>		name: <span class="string">"bootnodes"</span>,
+<a href=#465 id=465 data-nosnippet>465</a>		default: <span class="prelude-val">None</span>,
+<a href=#466 id=466 data-nosnippet>466</a>		_marker: PhantomData,
+<a href=#467 id=467 data-nosnippet>467</a>	};
+<a href=#468 id=468 data-nosnippet>468</a>
+<a href=#469 id=469 data-nosnippet>469</a>	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>INITIAL_PERMISSIONED_CANDIDATES: ConfigFieldDefinition&lt;
+<a href=#470 id=470 data-nosnippet>470</a>		<span class="lifetime">'static</span>,
+<a href=#471 id=471 data-nosnippet>471</a>		Vec&lt;<span class="kw">crate</span>::permissioned_candidates::PermissionedCandidateKeys&gt;,
+<a href=#472 id=472 data-nosnippet>472</a>	&gt; = ConfigFieldDefinition {
+<a href=#473 id=473 data-nosnippet>473</a>		config_file: CHAIN_CONFIG_FILE_PATH,
+<a href=#474 id=474 data-nosnippet>474</a>		path: <span class="kw-2">&amp;</span>[<span class="string">"initial_permissioned_candidates"</span>],
+<a href=#475 id=475 data-nosnippet>475</a>		name: <span class="string">"initial permissioned candidates"</span>,
+<a href=#476 id=476 data-nosnippet>476</a>		default: <span class="prelude-val">None</span>,
+<a href=#477 id=477 data-nosnippet>477</a>		_marker: PhantomData,
+<a href=#478 id=478 data-nosnippet>478</a>	};
+<a href=#479 id=479 data-nosnippet>479</a>
+<a href=#480 id=480 data-nosnippet>480</a>	<span class="kw">pub const </span>POSTGRES_CONNECTION_STRING: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, String&gt; =
+<a href=#481 id=481 data-nosnippet>481</a>		ConfigFieldDefinition {
+<a href=#482 id=482 data-nosnippet>482</a>			config_file: RESOURCES_CONFIG_FILE_PATH,
+<a href=#483 id=483 data-nosnippet>483</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"db_sync_postgres_connection_string"</span>],
+<a href=#484 id=484 data-nosnippet>484</a>			name: <span class="string">"DB-Sync Postgres connection string"</span>,
+<a href=#485 id=485 data-nosnippet>485</a>			default: <span class="prelude-val">Some</span>(<span class="string">"postgresql://postgres-user:postgres-password@localhost:5432/cexplorer"</span>),
+<a href=#486 id=486 data-nosnippet>486</a>			_marker: PhantomData,
+<a href=#487 id=487 data-nosnippet>487</a>		};
+<a href=#488 id=488 data-nosnippet>488</a>
+<a href=#489 id=489 data-nosnippet>489</a>	<span class="kw">pub const </span>OGMIOS_PROTOCOL: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, NetworkProtocol&gt; =
+<a href=#490 id=490 data-nosnippet>490</a>		ConfigFieldDefinition {
+<a href=#491 id=491 data-nosnippet>491</a>			config_file: RESOURCES_CONFIG_FILE_PATH,
+<a href=#492 id=492 data-nosnippet>492</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"ogmios"</span>, <span class="string">"protocol"</span>],
+<a href=#493 id=493 data-nosnippet>493</a>			name: <span class="string">"Ogmios protocol (http/https)"</span>,
+<a href=#494 id=494 data-nosnippet>494</a>			default: <span class="prelude-val">Some</span>(<span class="string">"http"</span>),
+<a href=#495 id=495 data-nosnippet>495</a>			_marker: PhantomData,
+<a href=#496 id=496 data-nosnippet>496</a>		};
+<a href=#497 id=497 data-nosnippet>497</a>
+<a href=#498 id=498 data-nosnippet>498</a>	<span class="kw">pub const </span>OGMIOS_HOSTNAME: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, String&gt; = ConfigFieldDefinition {
+<a href=#499 id=499 data-nosnippet>499</a>		config_file: RESOURCES_CONFIG_FILE_PATH,
+<a href=#500 id=500 data-nosnippet>500</a>		path: <span class="kw-2">&amp;</span>[<span class="string">"ogmios"</span>, <span class="string">"hostname"</span>],
+<a href=#501 id=501 data-nosnippet>501</a>		name: <span class="string">"Ogmios hostname"</span>,
+<a href=#502 id=502 data-nosnippet>502</a>		default: <span class="prelude-val">Some</span>(<span class="string">"localhost"</span>),
+<a href=#503 id=503 data-nosnippet>503</a>		_marker: PhantomData,
+<a href=#504 id=504 data-nosnippet>504</a>	};
+<a href=#505 id=505 data-nosnippet>505</a>
+<a href=#506 id=506 data-nosnippet>506</a>	<span class="kw">pub const </span>OGMIOS_PORT: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, u16&gt; = ConfigFieldDefinition {
+<a href=#507 id=507 data-nosnippet>507</a>		config_file: RESOURCES_CONFIG_FILE_PATH,
+<a href=#508 id=508 data-nosnippet>508</a>		path: <span class="kw-2">&amp;</span>[<span class="string">"ogmios"</span>, <span class="string">"port"</span>],
+<a href=#509 id=509 data-nosnippet>509</a>		name: <span class="string">"Ogmios port"</span>,
+<a href=#510 id=510 data-nosnippet>510</a>		default: <span class="prelude-val">Some</span>(<span class="string">"1337"</span>),
+<a href=#511 id=511 data-nosnippet>511</a>		_marker: PhantomData,
+<a href=#512 id=512 data-nosnippet>512</a>	};
+<a href=#513 id=513 data-nosnippet>513</a>
+<a href=#514 id=514 data-nosnippet>514</a>	<span class="kw">pub const </span>COMMITTEE_CANDIDATES_ADDRESS: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, String&gt; =
+<a href=#515 id=515 data-nosnippet>515</a>		ConfigFieldDefinition {
+<a href=#516 id=516 data-nosnippet>516</a>			config_file: CHAIN_CONFIG_FILE_PATH,
+<a href=#517 id=517 data-nosnippet>517</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano_addresses"</span>, <span class="string">"committee_candidates_address"</span>],
+<a href=#518 id=518 data-nosnippet>518</a>			name: <span class="string">"Committee candidates address"</span>,
+<a href=#519 id=519 data-nosnippet>519</a>			default: <span class="prelude-val">None</span>,
+<a href=#520 id=520 data-nosnippet>520</a>			_marker: PhantomData,
+<a href=#521 id=521 data-nosnippet>521</a>		};
+<a href=#522 id=522 data-nosnippet>522</a>
+<a href=#523 id=523 data-nosnippet>523</a>	<span class="kw">pub const </span>D_PARAMETER_POLICY_ID: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, String&gt; =
+<a href=#524 id=524 data-nosnippet>524</a>		ConfigFieldDefinition {
+<a href=#525 id=525 data-nosnippet>525</a>			config_file: CHAIN_CONFIG_FILE_PATH,
+<a href=#526 id=526 data-nosnippet>526</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano_addresses"</span>, <span class="string">"d_parameter_policy_id"</span>],
+<a href=#527 id=527 data-nosnippet>527</a>			name: <span class="string">"D parameter policy id"</span>,
+<a href=#528 id=528 data-nosnippet>528</a>			default: <span class="prelude-val">None</span>,
+<a href=#529 id=529 data-nosnippet>529</a>			_marker: PhantomData,
+<a href=#530 id=530 data-nosnippet>530</a>		};
+<a href=#531 id=531 data-nosnippet>531</a>
+<a href=#532 id=532 data-nosnippet>532</a>	<span class="kw">pub const </span>PERMISSIONED_CANDIDATES_POLICY_ID: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, String&gt; =
+<a href=#533 id=533 data-nosnippet>533</a>		ConfigFieldDefinition {
+<a href=#534 id=534 data-nosnippet>534</a>			config_file: CHAIN_CONFIG_FILE_PATH,
+<a href=#535 id=535 data-nosnippet>535</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano_addresses"</span>, <span class="string">"permissioned_candidates_policy_id"</span>],
+<a href=#536 id=536 data-nosnippet>536</a>			name: <span class="string">"permissioned candidates policy id"</span>,
+<a href=#537 id=537 data-nosnippet>537</a>			default: <span class="prelude-val">None</span>,
+<a href=#538 id=538 data-nosnippet>538</a>			_marker: PhantomData,
+<a href=#539 id=539 data-nosnippet>539</a>		};
+<a href=#540 id=540 data-nosnippet>540</a>
+<a href=#541 id=541 data-nosnippet>541</a>	<span class="kw">pub const </span>CARDANO_SECURITY_PARAMETER: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, u64&gt; =
+<a href=#542 id=542 data-nosnippet>542</a>		ConfigFieldDefinition {
+<a href=#543 id=543 data-nosnippet>543</a>			config_file: CHAIN_CONFIG_FILE_PATH,
+<a href=#544 id=544 data-nosnippet>544</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano"</span>, <span class="string">"security_parameter"</span>],
+<a href=#545 id=545 data-nosnippet>545</a>			name: <span class="string">"cardano security parameter"</span>,
+<a href=#546 id=546 data-nosnippet>546</a>			default: <span class="prelude-val">None</span>,
+<a href=#547 id=547 data-nosnippet>547</a>			_marker: PhantomData,
+<a href=#548 id=548 data-nosnippet>548</a>		};
+<a href=#549 id=549 data-nosnippet>549</a>
+<a href=#550 id=550 data-nosnippet>550</a>	<span class="kw">pub const </span>CARDANO_ACTIVE_SLOTS_COEFF: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, f64&gt; =
+<a href=#551 id=551 data-nosnippet>551</a>		ConfigFieldDefinition {
+<a href=#552 id=552 data-nosnippet>552</a>			config_file: CHAIN_CONFIG_FILE_PATH,
+<a href=#553 id=553 data-nosnippet>553</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano"</span>, <span class="string">"active_slots_coeff"</span>],
+<a href=#554 id=554 data-nosnippet>554</a>			name: <span class="string">"cardano active slot coefficient"</span>,
+<a href=#555 id=555 data-nosnippet>555</a>			default: <span class="prelude-val">None</span>,
+<a href=#556 id=556 data-nosnippet>556</a>			_marker: PhantomData,
+<a href=#557 id=557 data-nosnippet>557</a>		};
+<a href=#558 id=558 data-nosnippet>558</a>
+<a href=#559 id=559 data-nosnippet>559</a>	<span class="kw">pub const </span>CARDANO_FIRST_EPOCH_NUMBER: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, u32&gt; =
+<a href=#560 id=560 data-nosnippet>560</a>		ConfigFieldDefinition {
+<a href=#561 id=561 data-nosnippet>561</a>			config_file: CHAIN_CONFIG_FILE_PATH,
+<a href=#562 id=562 data-nosnippet>562</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano"</span>, <span class="string">"first_epoch_number"</span>],
+<a href=#563 id=563 data-nosnippet>563</a>			name: <span class="string">"cardano first epoch number in shelley era"</span>,
+<a href=#564 id=564 data-nosnippet>564</a>			default: <span class="prelude-val">None</span>,
+<a href=#565 id=565 data-nosnippet>565</a>			_marker: PhantomData,
+<a href=#566 id=566 data-nosnippet>566</a>		};
+<a href=#567 id=567 data-nosnippet>567</a>
+<a href=#568 id=568 data-nosnippet>568</a>	<span class="kw">pub const </span>CARDANO_FIRST_SLOT_NUMBER: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, u64&gt; =
+<a href=#569 id=569 data-nosnippet>569</a>		ConfigFieldDefinition {
+<a href=#570 id=570 data-nosnippet>570</a>			config_file: CHAIN_CONFIG_FILE_PATH,
+<a href=#571 id=571 data-nosnippet>571</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano"</span>, <span class="string">"first_slot_number"</span>],
+<a href=#572 id=572 data-nosnippet>572</a>			name: <span class="string">"cardano first slot number in shelley era"</span>,
+<a href=#573 id=573 data-nosnippet>573</a>			default: <span class="prelude-val">None</span>,
+<a href=#574 id=574 data-nosnippet>574</a>			_marker: PhantomData,
+<a href=#575 id=575 data-nosnippet>575</a>		};
+<a href=#576 id=576 data-nosnippet>576</a>
+<a href=#577 id=577 data-nosnippet>577</a>	<span class="kw">pub const </span>CARDANO_EPOCH_DURATION_MILLIS: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, u64&gt; =
+<a href=#578 id=578 data-nosnippet>578</a>		ConfigFieldDefinition {
+<a href=#579 id=579 data-nosnippet>579</a>			config_file: CHAIN_CONFIG_FILE_PATH,
+<a href=#580 id=580 data-nosnippet>580</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano"</span>, <span class="string">"epoch_duration_millis"</span>],
+<a href=#581 id=581 data-nosnippet>581</a>			name: <span class="string">"cardano epoch duration in millis"</span>,
+<a href=#582 id=582 data-nosnippet>582</a>			default: <span class="prelude-val">None</span>,
+<a href=#583 id=583 data-nosnippet>583</a>			_marker: PhantomData,
+<a href=#584 id=584 data-nosnippet>584</a>		};
+<a href=#585 id=585 data-nosnippet>585</a>
+<a href=#586 id=586 data-nosnippet>586</a>	<span class="kw">pub const </span>CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, u64&gt; =
+<a href=#587 id=587 data-nosnippet>587</a>		ConfigFieldDefinition {
+<a href=#588 id=588 data-nosnippet>588</a>			config_file: CHAIN_CONFIG_FILE_PATH,
+<a href=#589 id=589 data-nosnippet>589</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano"</span>, <span class="string">"first_epoch_timestamp_millis"</span>],
+<a href=#590 id=590 data-nosnippet>590</a>			name: <span class="string">"cardano first shelley epoch timestamp in millis"</span>,
+<a href=#591 id=591 data-nosnippet>591</a>			default: <span class="prelude-val">None</span>,
+<a href=#592 id=592 data-nosnippet>592</a>			_marker: PhantomData,
+<a href=#593 id=593 data-nosnippet>593</a>		};
+<a href=#594 id=594 data-nosnippet>594</a>
+<a href=#595 id=595 data-nosnippet>595</a>	<span class="kw">pub const </span>CARDANO_SLOT_DURATION_MILLIS: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, u64&gt; =
+<a href=#596 id=596 data-nosnippet>596</a>		ConfigFieldDefinition {
+<a href=#597 id=597 data-nosnippet>597</a>			config_file: CHAIN_CONFIG_FILE_PATH,
+<a href=#598 id=598 data-nosnippet>598</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano"</span>, <span class="string">"slot_duration_millis"</span>],
+<a href=#599 id=599 data-nosnippet>599</a>			name: <span class="string">"cardano slot duration in millis"</span>,
+<a href=#600 id=600 data-nosnippet>600</a>			default: <span class="prelude-val">Some</span>(<span class="string">"1000"</span>),
+<a href=#601 id=601 data-nosnippet>601</a>			_marker: PhantomData,
+<a href=#602 id=602 data-nosnippet>602</a>		};
+<a href=#603 id=603 data-nosnippet>603</a>
+<a href=#604 id=604 data-nosnippet>604</a>	<span class="kw">pub const </span>NODE_P2P_PORT: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, u16&gt; = ConfigFieldDefinition {
+<a href=#605 id=605 data-nosnippet>605</a>		config_file: RESOURCES_CONFIG_FILE_PATH,
+<a href=#606 id=606 data-nosnippet>606</a>		path: <span class="kw-2">&amp;</span>[<span class="string">"node_p2p_port"</span>],
+<a href=#607 id=607 data-nosnippet>607</a>		name: <span class="string">"substrate-node p2p protocol TCP port"</span>,
+<a href=#608 id=608 data-nosnippet>608</a>		default: <span class="prelude-val">Some</span>(<span class="string">"30333"</span>),
+<a href=#609 id=609 data-nosnippet>609</a>		_marker: PhantomData,
+<a href=#610 id=610 data-nosnippet>610</a>	};
+<a href=#611 id=611 data-nosnippet>611</a>
+<a href=#612 id=612 data-nosnippet>612</a>	<span class="kw">pub const </span>SIDECHAIN_BLOCK_BENEFICIARY: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, String&gt; =
+<a href=#613 id=613 data-nosnippet>613</a>		ConfigFieldDefinition {
+<a href=#614 id=614 data-nosnippet>614</a>			config_file: RESOURCES_CONFIG_FILE_PATH,
+<a href=#615 id=615 data-nosnippet>615</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"sidechain_block_beneficiary"</span>],
+<a href=#616 id=616 data-nosnippet>616</a>			name: <span class="string">"beneficiary for blocks created by the given node"</span>,
+<a href=#617 id=617 data-nosnippet>617</a>			default: <span class="prelude-val">None</span>,
+<a href=#618 id=618 data-nosnippet>618</a>			_marker: PhantomData,
+<a href=#619 id=619 data-nosnippet>619</a>		};
+<a href=#620 id=620 data-nosnippet>620</a>
+<a href=#621 id=621 data-nosnippet>621</a>	<span class="kw">pub const </span>INITIAL_GOVERNANCE_AUTHORITIES: ConfigFieldDefinition&lt;
+<a href=#622 id=622 data-nosnippet>622</a>		<span class="lifetime">'static</span>,
+<a href=#623 id=623 data-nosnippet>623</a>		GovernanceAuthoritiesKeyHashes,
+<a href=#624 id=624 data-nosnippet>624</a>	&gt; = ConfigFieldDefinition {
+<a href=#625 id=625 data-nosnippet>625</a>		config_file: CHAIN_CONFIG_FILE_PATH,
+<a href=#626 id=626 data-nosnippet>626</a>		path: <span class="kw-2">&amp;</span>[<span class="string">"initial_governance"</span>, <span class="string">"authorities"</span>],
+<a href=#627 id=627 data-nosnippet>627</a>		name: <span class="string">"Space separated keys hashes of the initial Multisig Governance Authorities"</span>,
+<a href=#628 id=628 data-nosnippet>628</a>		default: <span class="prelude-val">Some</span>(<span class="string">"[]"</span>),
+<a href=#629 id=629 data-nosnippet>629</a>		_marker: PhantomData,
+<a href=#630 id=630 data-nosnippet>630</a>	};
+<a href=#631 id=631 data-nosnippet>631</a>
+<a href=#632 id=632 data-nosnippet>632</a>	<span class="kw">pub const </span>INITIAL_GOVERNANCE_THRESHOLD: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, u8&gt; =
+<a href=#633 id=633 data-nosnippet>633</a>		ConfigFieldDefinition {
+<a href=#634 id=634 data-nosnippet>634</a>			config_file: CHAIN_CONFIG_FILE_PATH,
+<a href=#635 id=635 data-nosnippet>635</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"initial_governance"</span>, <span class="string">"threshold"</span>],
+<a href=#636 id=636 data-nosnippet>636</a>			name: <span class="string">"Initial Multisig Governance Threshold"</span>,
+<a href=#637 id=637 data-nosnippet>637</a>			default: <span class="prelude-val">Some</span>(<span class="string">"0"</span>),
+<a href=#638 id=638 data-nosnippet>638</a>			_marker: PhantomData,
+<a href=#639 id=639 data-nosnippet>639</a>		};
+<a href=#640 id=640 data-nosnippet>640</a>}</code></pre></div></section></main></body></html>
