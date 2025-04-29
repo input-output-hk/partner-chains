@@ -2,9 +2,9 @@
 <a href=#2 id=2 data-nosnippet>2</a><span class="kw">use </span>pallet_sidechain_rpc::SidechainRpcDataSource;
 <a href=#3 id=3 data-nosnippet>3</a><span class="kw">use </span>partner_chains_db_sync_data_sources::{
 <a href=#4 id=4 data-nosnippet>4</a>	block::BlockDataSourceImpl, candidates::CandidatesDataSourceImpl,
-<a href=#5 id=5 data-nosnippet>5</a>	mc_hash::McHashDataSourceImpl, metrics::McFollowerMetrics,
-<a href=#6 id=6 data-nosnippet>6</a>	native_token::NativeTokenManagementDataSourceImpl, sidechain_rpc::SidechainRpcDataSourceImpl,
-<a href=#7 id=7 data-nosnippet>7</a>	stake_distribution::StakeDistributionDataSourceImpl,
+<a href=#5 id=5 data-nosnippet>5</a>	governed_map::GovernedMapDataSourceImpl, mc_hash::McHashDataSourceImpl,
+<a href=#6 id=6 data-nosnippet>6</a>	metrics::McFollowerMetrics, native_token::NativeTokenManagementDataSourceImpl,
+<a href=#7 id=7 data-nosnippet>7</a>	sidechain_rpc::SidechainRpcDataSourceImpl, stake_distribution::StakeDistributionDataSourceImpl,
 <a href=#8 id=8 data-nosnippet>8</a>};
 <a href=#9 id=9 data-nosnippet>9</a><span class="kw">use </span>partner_chains_mock_data_sources::{
 <a href=#10 id=10 data-nosnippet>10</a>	block::BlockDataSourceMock, candidate::AuthoritySelectionDataSourceMock,
@@ -92,13 +92,10 @@
 <a href=#92 id=92 data-nosnippet>92</a>			metrics_opt.clone(),
 <a href=#93 id=93 data-nosnippet>93</a>		)<span class="question-mark">?</span>),
 <a href=#94 id=94 data-nosnippet>94</a>		block_participation: Arc::new(StakeDistributionDataSourceImpl::new(
-<a href=#95 id=95 data-nosnippet>95</a>			pool,
-<a href=#96 id=96 data-nosnippet>96</a>			metrics_opt,
+<a href=#95 id=95 data-nosnippet>95</a>			pool.clone(),
+<a href=#96 id=96 data-nosnippet>96</a>			metrics_opt.clone(),
 <a href=#97 id=97 data-nosnippet>97</a>			STAKE_CACHE_SIZE,
 <a href=#98 id=98 data-nosnippet>98</a>		)),
-<a href=#99 id=99 data-nosnippet>99</a>		governed_map: Arc::new(GovernedMapDataSourceMock::new(<span class="macro">vec!</span>[(
-<a href=#100 id=100 data-nosnippet>100</a>			<span class="string">"key1"</span>.into(),
-<a href=#101 id=101 data-nosnippet>101</a>			<span class="prelude-val">Some</span>(<span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>].into()),
-<a href=#102 id=102 data-nosnippet>102</a>		)])),
-<a href=#103 id=103 data-nosnippet>103</a>	})
-<a href=#104 id=104 data-nosnippet>104</a>}</code></pre></div></section></main></body></html>
+<a href=#99 id=99 data-nosnippet>99</a>		governed_map: Arc::new(GovernedMapDataSourceImpl::new(pool, metrics_opt)),
+<a href=#100 id=100 data-nosnippet>100</a>	})
+<a href=#101 id=101 data-nosnippet>101</a>}</code></pre></div></section></main></body></html>
