@@ -76,6 +76,13 @@ impl<const N: usize> Default for SizedByteString<N> {
 #[derive_where(Clone, PartialEq, Eq, Default, PartialOrd, Ord)]
 pub struct BoundedString<T: Get<u32>>(pub BoundedVec<u8, T>);
 
+#[macro_export]
+macro_rules! bounded_str {
+    ($($arg:expr)+) => {
+		sidechain_domain::byte_string::BoundedString::try_from(format!($($arg)+).as_str()).unwrap()
+    };
+}
+
 impl<T: Get<u32>> TryFrom<Vec<u8>> for BoundedString<T> {
 	type Error = <BoundedVec<u8, T> as TryFrom<Vec<u8>>>::Error;
 

@@ -1,9 +1,51 @@
 //! Benchmarking setup for pallet-governed-map
+//!
+//! # Running your own benchmarks
+//!
+//! To run your own benchmarks, you need to implement the [BenchmarkHelper] trait to supply
+//! realistic keys and values, eg:
+//! ```rust
+//! # use frame_support::testing_prelude::bounded_vec;
+//! # use sidechain_domain::bounded_str;
+//! # use sidechain_domain::byte_string::BoundedString;
+//! struct BenchmarkHelper;
+//!
+//! impl<T: pallet_governed_map::Config> pallet_governed_map::benchmarking::BenchmarkHelper<T> for BenchmarkHelper {
+//! 	fn key(index: u32) -> pallet_governed_map::MapKey<T> {
+//! 		bounded_str!("mock key {index}")
+//! 	}
+//!
+//! 	fn value(index: u32) -> Option<pallet_governed_map::MapValue<T>> {
+//! 		Some(bounded_vec![index as u8; 128])
+//! 	}
+//! }
+//! ```
+//!
+//! Once implemented, wire it in your pallet's configuration;
+//! ```rust,ignore
+//! impl pallet_governed_map::Config for Runtime {
+//!     /* ... */
+//!     #[cfg(feature = "runtime-benchmarks")]
+//!     type BenchmarkHelper = BenchmarkHelper;
+//! }
+//! ```
+//! and include the pallet in your runtime's benchmark list:
+//! ```rust, ignore
+//! define_benchmarks!(
+//!     ...,
+//!        [pallet_governed_map, GovernedMap]
+//! )
+//! ```
+//!
+//! After this is done, the pallet can be benchmarked using
+//! [omini-bencher](https://github.com/paritytech/polkadot-sdk/tree/master/substrate/utils/frame/omni-bencher)
+//! from Polkadot SDK.
 
 use super::*;
 use alloc::format;
 use frame_benchmarking::v2::*;
 use frame_system::RawOrigin;
+use sidechain_domain::bounded_str;
 
 /// Trait for injecting chain-specific test values for benchmarking.
 pub trait BenchmarkHelper<T: crate::Config> {
@@ -32,7 +74,7 @@ pub trait BenchmarkHelper<T: crate::Config> {
 
 impl<T: crate::Config> BenchmarkHelper<T> for () {
 	fn key(index: u32) -> crate::MapKey<T> {
-		BoundedString::try_from(format!("key{index}").as_str()).unwrap()
+		bounded_str!("key{index}")
 	}
 
 	fn value(index: u32) -> Option<crate::MapValue<T>> {
