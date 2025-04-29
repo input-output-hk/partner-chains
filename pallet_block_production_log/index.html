@@ -41,7 +41,7 @@ author type could be:</p>
 <p>Keep in mind that other Partner Chains SDK components put their own constraints on the block author type
 that need to be adhered to for a Partner Chain to integrated them.</p>
 <h5 id="support-for-adding-to-a-running-chain"><a class="doc-anchor" href="#support-for-adding-to-a-running-chain">§</a>Support for adding to a running chain</h5>
-<p>The pallet and its inherent data provider defined in <a href="../sp_block_production_log/index.html" title="mod sp_block_production_log">sp_block_production_log</a> are written in a way that allows for
+<p>The pallet and its inherent data provider defined in [sp_block_production_log] are written in a way that allows for
 adding it to an already live chain. The pallet allows for an initial period where inherent data is unavailable
 and considers its inherent extrinsic required only after the first block where inherent data is provided.
 Conversely, the inherent data provider is active only when the pallet and its runtime API is present for it to call.</p>

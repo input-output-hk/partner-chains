@@ -1,9 +1,9 @@
 (function() {
-    var implementors = Object.fromEntries([["partner_chains_demo_runtime",[["impl Config for <a class=\"struct\" href=\"partner_chains_demo_runtime/struct.Runtime.html\" title=\"struct partner_chains_demo_runtime::Runtime\">Runtime</a><div class=\"where\">where\n    <a class=\"struct\" href=\"partner_chains_demo_runtime/struct.Runtime.html\" title=\"struct partner_chains_demo_runtime::Runtime\">Runtime</a>: <a class=\"trait\" href=\"pallet_partner_chains_session/pallet/trait.Config.html\" title=\"trait pallet_partner_chains_session::pallet::Config\">Config</a>,</div>"]]],["partner_chains_demo_runtime",[["impl Config for <a class=\"struct\" href=\"partner_chains_demo_runtime/struct.Runtime.html\" title=\"struct partner_chains_demo_runtime::Runtime\">Runtime</a><div class=\"where\">where\n    <a class=\"struct\" href=\"partner_chains_demo_runtime/struct.Runtime.html\" title=\"struct partner_chains_demo_runtime::Runtime\">Runtime</a>: Config,</div>"]]]]);
+    var implementors = Object.fromEntries([["partner_chains_demo_runtime",[["impl Config for <a class=\"struct\" href=\"partner_chains_demo_runtime/struct.Runtime.html\" title=\"struct partner_chains_demo_runtime::Runtime\">Runtime</a><div class=\"where\">where\n    <a class=\"struct\" href=\"partner_chains_demo_runtime/struct.Runtime.html\" title=\"struct partner_chains_demo_runtime::Runtime\">Runtime</a>: <a class=\"trait\" href=\"pallet_partner_chains_session/pallet/trait.Config.html\" title=\"trait pallet_partner_chains_session::pallet::Config\">Config</a>,</div>"]]]]);
     if (window.register_implementors) {
         window.register_implementors(implementors);
     } else {
         window.pending_implementors = implementors;
     }
 })()
-//{"start":57,"fragment_lengths":[534,386]}
+//{"start":57,"fragment_lengths":[534]}
