@@ -1,9 +1,5 @@
 name: "Deploy Rust Docs"
 description: "Installs necessary tooling, generates Rust documentation, and deploys it to GitHub Pages."
-inputs:
-  ssh_key:
-    description: "SSH key to read Substrate Repo"
-    required: true
 
 runs:
   using: "composite"
