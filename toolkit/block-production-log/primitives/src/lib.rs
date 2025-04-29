@@ -71,13 +71,13 @@ pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"blprdlog";
 #[cfg_attr(not(feature = "std"), derive(Debug))]
 #[cfg_attr(feature = "std", derive(Decode, thiserror::Error, sp_runtime::RuntimeDebug))]
 pub enum InherentError {
-	/// Inherent was not producer when expected
+	/// Inherent was not produced when expected
 	#[cfg_attr(
 		feature = "std",
 		error("Block Author inherent must be provided every block after initialization")
 	)]
 	InherentRequired,
-	/// The inherent was produced with incorrect production data
+	/// Block Author inherent data is not correctly encoded
 	#[cfg_attr(feature = "std", error("Block Author inherent data is not correctly encoded"))]
 	InvalidInherentData,
 }
