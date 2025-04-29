@@ -14,9 +14,9 @@ runs:
     - name: Install Nix
       uses: DeterminateSystems/nix-installer-action@main
 
-    - name: Build Rustdocs 
+    - name: Build Rustdocs
       run: |
-        nix develop .#nightly -c gen-cargo-docs
+        nix develop -c gen-cargo-docs
       shell: bash
 
     - name: Deploy documentation
