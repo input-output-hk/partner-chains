@@ -11,13 +11,14 @@ runs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Install Nix
-      uses: DeterminateSystems/nix-installer-action@main
+    - name: Install Rust toolchain (nightly)
+      uses: dtolnay/rust-toolchain@nightly
+      with:
+        components: rust-docs
 
-    - name: Build Rustdocs
+    - name: generate rust docs
       run: |
-        nix develop -c gen-cargo-docs
-      shell: bash
+        RUSTDOCFLAGS="--enable-index-page -Zunstable-options" SKIP_WASM_BUILD=1 cargo doc --no-deps
 
     - name: Deploy documentation
       if: ${{ github.ref_name == 'master' }}
