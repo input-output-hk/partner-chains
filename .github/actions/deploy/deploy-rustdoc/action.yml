@@ -13,16 +13,16 @@ runs:
 
     - name: Install Rust toolchain (nightly)
       uses: dtolnay/rust-toolchain@nightly
-      with:
-        components: rust-docs
 
     - name: install protoc
       run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
       shell: bash
 
-    - name: generate rust docs
-      run: |
-        RUSTDOCFLAGS="--enable-index-page -Zunstable-options" SKIP_WASM_BUILD=1 cargo doc --no-deps
+    - name: Generate documentation
+      env:
+        RUSTDOCFLAGS: "--enable-index-page -Zunstable-options"
+        SKIP_WASM_BUILD: "1"
+      run: cargo doc --no-deps
       shell: bash
 
     - name: Deploy documentation
