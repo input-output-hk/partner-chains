@@ -71,6 +71,9 @@ to have a working docker setup to execute the tests_.
 Please refer to our [Introduction](./docs/intro.md) to learn in more detail about what the Partner
 Chain Toolkit offers and how to use it for different use-cases.
 
+Rust Docs for all crates provided by the toolkit are available to browse online [here](https://input-output-hk.github.io/partner-chains/)
+
+
 ### 📃 License
 
 This project is primarly distributed under the Apache License 2.0. You can review the full license
