@@ -47,6 +47,7 @@
 //!
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![deny(missing_docs)]
 
 extern crate alloc;
 
@@ -62,6 +63,7 @@ use {
 	sp_inherents::InherentData,
 };
 
+/// Inherent identifier used by the Block Production Log pallet
 pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"blprdlog";
 
 /// Error type used for failing calls of the block production log feature's inherent.
@@ -69,13 +71,15 @@ pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"blprdlog";
 #[cfg_attr(not(feature = "std"), derive(Debug))]
 #[cfg_attr(feature = "std", derive(Decode, thiserror::Error, sp_runtime::RuntimeDebug))]
 pub enum InherentError {
+	/// Inherent was not produced when expected
 	#[cfg_attr(
 		feature = "std",
 		error("Block Author inherent must be provided every block after initialization")
 	)]
 	InherentRequired,
+	/// Block Author inherent data is not correctly encoded
 	#[cfg_attr(feature = "std", error("Block Author inherent data is not correctly encoded"))]
-	InvalidData,
+	InvalidInherentData,
 }
 impl IsFatalError for InherentError {
 	fn is_fatal_error(&self) -> bool {
@@ -84,12 +88,12 @@ impl IsFatalError for InherentError {
 }
 
 /// Inherent data provider providing the block author of the current block
-/// Parameters:
+/// Type parameters:
 /// - `Author`: Type representing a block author.
-/// - `author`: Optional value of the current block author. Inherent data is not provided if [None].
 #[cfg(feature = "std")]
 #[derive(Debug)]
 pub struct BlockAuthorInherentProvider<Author> {
+	/// Optional value of the current block author. Inherent data is not provided if [None].
 	pub author: Option<Author>,
 }
 
