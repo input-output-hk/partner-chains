@@ -1,6 +1,6 @@
 use log::warn;
 use substrate_prometheus_endpoint::{
-	register, CounterVec, HistogramOpts, HistogramVec, Opts, PrometheusError, Registry, U64,
+	CounterVec, HistogramOpts, HistogramVec, Opts, PrometheusError, Registry, U64, register,
 };
 
 #[derive(Clone)]
@@ -108,7 +108,7 @@ pub mod mock {
 
 #[cfg(test)]
 mod tests {
-	use crate::metrics::{mock::test_metrics, McFollowerMetrics};
+	use crate::metrics::{McFollowerMetrics, mock::test_metrics};
 	use async_trait::async_trait;
 	use std::convert::Infallible;
 	use substrate_prometheus_endpoint::prometheus::core::Metric;

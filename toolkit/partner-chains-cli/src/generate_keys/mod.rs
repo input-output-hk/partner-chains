@@ -3,9 +3,9 @@ use crate::io::IOContext;
 use crate::keystore::*;
 use crate::permissioned_candidates::PermissionedCandidateKeys;
 use crate::{config::config_fields, *};
-use anyhow::{anyhow, Context};
+use anyhow::{Context, anyhow};
 use serde::Deserialize;
-use sp_core::{ed25519, Pair};
+use sp_core::{Pair, ed25519};
 
 #[cfg(test)]
 mod tests;
@@ -45,7 +45,7 @@ pub fn network_key_path(substrate_node_base_path: &str) -> String {
 impl CmdRun for GenerateKeysCmd {
 	fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
 		context.eprint(
-			"This 🧙 wizard will generate the following keys and save them to your node's keystore:"
+			"This 🧙 wizard will generate the following keys and save them to your node's keystore:",
 		);
 		context.eprint("→  an ECDSA Cross-chain key");
 		context.eprint("→  an ED25519 Grandpa key");
@@ -210,7 +210,9 @@ pub fn store_keys<C: IOContext>(
 	let KeyDefinition { scheme, key_type, name } = key_def;
 	context.eprint(&format!("💾 Inserting {name} ({scheme}) key"));
 	let keystore_path = keystore_path(base_path);
-	let cmd = format!("{node_executable} key insert --keystore-path {keystore_path} --scheme {scheme} --key-type {key_type} --suri '{secret_phrase}'");
+	let cmd = format!(
+		"{node_executable} key insert --keystore-path {keystore_path} --scheme {scheme} --key-type {key_type} --suri '{secret_phrase}'"
+	);
 	let _ = context.run_command(&cmd)?;
 	let store_path = format!("{}/{}{public_key}", keystore_path, key_def.key_type_hex(),);
 	context.eprint(&format!("💾 {name} key stored at {store_path}",));

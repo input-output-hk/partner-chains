@@ -9,21 +9,20 @@ extern crate frame_benchmarking;
 extern crate alloc;
 
 use alloc::string::String;
+use authority_selection_inherents::CommitteeMember;
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 use authority_selection_inherents::filter_invalid_candidates::{
-	validate_permissioned_candidate_data, PermissionedCandidateDataError, RegistrationDataError,
-	StakeError,
+	PermissionedCandidateDataError, RegistrationDataError, StakeError,
+	validate_permissioned_candidate_data,
 };
 use authority_selection_inherents::select_authorities::select_authorities;
-use authority_selection_inherents::CommitteeMember;
 use frame_support::genesis_builder_helper::{build_state, get_preset};
 use frame_support::inherent::ProvideInherent;
 use frame_support::weights::constants::RocksDbWeight as RuntimeDbWeight;
 use frame_support::{
-	construct_runtime, parameter_types,
-	traits::{ConstBool, ConstU128, ConstU32, ConstU64, ConstU8},
-	weights::{constants::WEIGHT_REF_TIME_PER_SECOND, IdentityFee},
-	BoundedVec,
+	BoundedVec, construct_runtime, parameter_types,
+	traits::{ConstBool, ConstU8, ConstU32, ConstU64, ConstU128},
+	weights::{IdentityFee, constants::WEIGHT_REF_TIME_PER_SECOND},
 };
 use opaque::SessionKeys;
 use pallet_block_producer_metadata;
@@ -44,17 +43,16 @@ use sp_block_participation::AsCardanoSPO;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 #[cfg(feature = "runtime-benchmarks")]
 use sp_core::ByteArray;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
+use sp_core::{OpaqueMetadata, crypto::KeyTypeId};
 use sp_governed_map::MainChainScriptsV1;
 use sp_inherents::InherentIdentifier;
 use sp_runtime::{
-	generic, impl_opaque_keys,
+	ApplyExtrinsicResult, MultiSignature, Perbill, generic, impl_opaque_keys,
 	traits::{
 		AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, NumberFor, One, OpaqueKeys,
 		Verify,
 	},
 	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult, MultiSignature, Perbill,
 };
 use sp_sidechain::SidechainStatus;
 use sp_std::prelude::*;
@@ -119,9 +117,9 @@ pub mod opaque {
 		use parity_scale_codec::MaxEncodedLen;
 		use sidechain_domain::SidechainPublicKey;
 		use sp_core::crypto::AccountId32;
+		use sp_runtime::MultiSigner;
 		use sp_runtime::app_crypto::{app_crypto, ecdsa};
 		use sp_runtime::traits::IdentifyAccount;
-		use sp_runtime::MultiSigner;
 		use sp_std::vec::Vec;
 
 		app_crypto!(ecdsa, CROSS_CHAIN);
@@ -1058,7 +1056,7 @@ mod tests {
 		inherent::ProvideInherent,
 		traits::{UnfilteredDispatchable, WhitelistedStorageKeys},
 	};
-	use sp_core::{hexdisplay::HexDisplay, Pair};
+	use sp_core::{Pair, hexdisplay::HexDisplay};
 	use sp_inherents::InherentData;
 	use std::collections::HashSet;
 

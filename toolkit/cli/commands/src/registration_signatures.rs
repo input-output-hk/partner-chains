@@ -5,8 +5,8 @@ use secp256k1::SecretKey;
 use serde::Serialize;
 use serde_json;
 use sidechain_domain::{
-	crypto::*, MainchainSignature, SidechainPublicKey, SidechainSignature, StakePoolPublicKey,
-	UtxoId,
+	MainchainSignature, SidechainPublicKey, SidechainSignature, StakePoolPublicKey, UtxoId,
+	crypto::*,
 };
 use std::fmt::{Display, Formatter};
 
@@ -119,6 +119,9 @@ mod tests {
 				.unwrap();
 		let message =
 			RegisterValidatorMessage::new(genesis_utxo, sidechain_pub_key, registration_utxo);
-		assert_eq!(hex::encode(to_datum_cbor_bytes(message)), "d8799fd8799fd8799f5820e41c9b57841e582c207bb68d5e9736fb48c7af5f1ec29ade00692fa5e0e47efaff04ff582102dbfc8b66c22f931a6647fd86db2fc073dd564b99837226a1bdfe7a99578854ecd8799fd8799f58208ea10040249ad3033ae7c4d4b69e0b2e2b50a90741b783491cb5ddf8ced0d861ff04ffff")
+		assert_eq!(
+			hex::encode(to_datum_cbor_bytes(message)),
+			"d8799fd8799fd8799f5820e41c9b57841e582c207bb68d5e9736fb48c7af5f1ec29ade00692fa5e0e47efaff04ff582102dbfc8b66c22f931a6647fd86db2fc073dd564b99837226a1bdfe7a99578854ecd8799fd8799f58208ea10040249ad3033ae7c4d4b69e0b2e2b50a90741b783491cb5ddf8ced0d861ff04ffff"
+		)
 	}
 }

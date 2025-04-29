@@ -26,7 +26,7 @@ use num_derive::*;
 use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen, WrapperTypeEncode};
 use plutus_datum_derive::*;
 use scale_info::TypeInfo;
-use sp_core::{bounded::BoundedVec, ecdsa, ed25519, sr25519, ConstU32};
+use sp_core::{ConstU32, bounded::BoundedVec, ecdsa, ed25519, sr25519};
 #[cfg(feature = "serde")]
 use {
 	derive_more::FromStr,
@@ -1014,7 +1014,12 @@ mod tests {
 		)
 		.unwrap();
 		let serialized = serde_json::to_value(&address).unwrap();
-		assert_eq!(serialized, serde_json::json!("0x616464725f7465737431777a35716337666b327061743030353877347a77766b77333579747074656a336e7563336a65326b6774616e356471337274347363"));
+		assert_eq!(
+			serialized,
+			serde_json::json!(
+				"0x616464725f7465737431777a35716337666b327061743030353877347a77766b77333579747074656a336e7563336a65326b6774616e356471337274347363"
+			)
+		);
 		let deserialized = serde_json::from_value(serialized).unwrap();
 		assert_eq!(address, deserialized);
 	}
@@ -1059,7 +1064,9 @@ mod tests {
 		let pubkey = CrossChainPublicKey(
 			hex!("020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1").to_vec(),
 		);
-		let signed_data = hex!("84020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a16c68747470733a2f2f636f6f6c2e73747566662f73706f2e6a736f6e000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
+		let signed_data = hex!(
+			"84020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a16c68747470733a2f2f636f6f6c2e73747566662f73706f2e6a736f6e000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+		);
 
 		assert!(signature.verify(&pubkey, &signed_data).is_ok())
 	}

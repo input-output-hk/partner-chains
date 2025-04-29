@@ -11,7 +11,7 @@ use sp_core::{
 	crypto::{AccountId32, Ss58Codec},
 	ecdsa,
 };
-use sp_runtime::{traits::IdentifyAccount, MultiSigner};
+use sp_runtime::{MultiSigner, traits::IdentifyAccount};
 use std::{collections::HashMap, fmt::Debug};
 
 #[derive(Debug, PartialEq, Eq, Clone, Decode, thiserror::Error, Serialize, Deserialize)]

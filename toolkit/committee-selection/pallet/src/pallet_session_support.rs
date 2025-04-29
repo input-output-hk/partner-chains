@@ -69,7 +69,9 @@ where
 				debug!("PalletSessionSupport: should_end_session({n:?}) = true");
 				true
 			} else {
-				warn!("PalletSessionSupport: should_end_session({n:?}) 'current epoch' > 'committee epoch' but the next committee is not defined");
+				warn!(
+					"PalletSessionSupport: should_end_session({n:?}) 'current epoch' > 'committee epoch' but the next committee is not defined"
+				);
 				false
 			}
 		} else {
@@ -83,7 +85,7 @@ where
 mod tests {
 	use super::*;
 	use crate::{
-		mock::mock_pallet::CurrentEpoch, mock::*, CommitteeInfo, CurrentCommittee, NextCommittee,
+		CommitteeInfo, CurrentCommittee, NextCommittee, mock::mock_pallet::CurrentEpoch, mock::*,
 	};
 	use pallet_session::ShouldEndSession;
 	pub const IRRELEVANT: u64 = 2;

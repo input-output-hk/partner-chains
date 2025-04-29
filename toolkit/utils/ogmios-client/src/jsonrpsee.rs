@@ -1,9 +1,9 @@
 //! OgmiosClient implementation with jsonrpsee.
 //! Major drawback is that it swallows the error response from the server in case of 400 Bad Request.
 
-use crate::{query_ledger_state::QueryLedgerState, OgmiosClient, OgmiosClientError, OgmiosParams};
+use crate::{OgmiosClient, OgmiosClientError, OgmiosParams, query_ledger_state::QueryLedgerState};
 use jsonrpsee::{
-	core::{client::ClientT, traits::ToRpcParams, ClientError},
+	core::{ClientError, client::ClientT, traits::ToRpcParams},
 	http_client::{HttpClient, HttpClientBuilder},
 	ws_client::{WsClient, WsClientBuilder},
 };

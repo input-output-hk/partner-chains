@@ -1,10 +1,10 @@
+use crate::CmdRun;
 use crate::config::config_fields::{BOOTNODES, SUBSTRATE_NODE_DATA_BASE_PATH};
 use crate::generate_keys::network_key_path;
 use crate::io::IOContext;
+use crate::prepare_configuration::PrepareConfigurationError::NetworkKeyNotFoundError;
 use crate::prepare_configuration::prepare_main_chain_config::prepare_main_chain_config;
 use crate::prepare_configuration::select_genesis_utxo::select_genesis_utxo;
-use crate::prepare_configuration::PrepareConfigurationError::NetworkKeyNotFoundError;
-use crate::CmdRun;
 use anyhow::Context;
 use libp2p_identity::Keypair;
 use std::net::Ipv4Addr;
@@ -166,7 +166,10 @@ impl FromStr for Protocol {
 const INTRO: &str = "This 🧙 wizard will generate chain config file";
 
 fn outro() -> String {
-	format!("Bootnode saved successfully. Keep in mind that you can manually modify {}, to edit bootnodes.", BOOTNODES.config_file)
+	format!(
+		"Bootnode saved successfully. Keep in mind that you can manually modify {}, to edit bootnodes.",
+		BOOTNODES.config_file
+	)
 }
 
 const CHOOSE_PROTOCOL_PROMPT: &str = "Your bootnode should be accessible via:";
@@ -202,12 +205,12 @@ pub mod tests {
 	use super::*;
 	use crate::config::config_fields::{BOOTNODES, SUBSTRATE_NODE_DATA_BASE_PATH};
 	use crate::config::{
-		ConfigFieldDefinition, SelectOptions, CHAIN_CONFIG_FILE_PATH, RESOURCES_CONFIG_FILE_PATH,
+		CHAIN_CONFIG_FILE_PATH, ConfigFieldDefinition, RESOURCES_CONFIG_FILE_PATH, SelectOptions,
 	};
 	use crate::prepare_configuration::PrepareConfigurationError::NetworkKeyNotFoundError;
 	use crate::prepare_configuration::Protocol::{Dns, Ipv4};
 	use crate::tests::{MockIO, MockIOContext};
-	use crate::{verify_json, CommonArguments};
+	use crate::{CommonArguments, verify_json};
 
 	const KEY: &str = "962515971a22aa95706c2109ba6e9502c7f39b33bdf63024f46f77894424f1fe";
 	pub const DATA_PATH: &str = "/path/to/data";

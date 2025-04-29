@@ -1,5 +1,5 @@
 use super::{get_current_value, get_utxos_for_key, insert_key_value_tx, remove_key_value_tx};
-use crate::csl::{empty_asset_name, TransactionContext};
+use crate::csl::{TransactionContext, empty_asset_name};
 use crate::governance::GovernanceData;
 use crate::test_values::*;
 use cardano_serialization_lib::{
@@ -8,7 +8,7 @@ use cardano_serialization_lib::{
 use hex_literal::hex;
 use ogmios_client::types::{Asset as OgmiosAsset, Datum, OgmiosTx, OgmiosUtxo, OgmiosValue};
 use partner_chains_plutus_data::governed_map::{
-	governed_map_datum_to_plutus_data, GovernedMapDatum,
+	GovernedMapDatum, governed_map_datum_to_plutus_data,
 };
 use sidechain_domain::byte_string::ByteString;
 

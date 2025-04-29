@@ -1,9 +1,9 @@
 use cardano_serialization_lib::{
-	encode_json_value_to_plutus_datum, PlutusData, PlutusDatumSchema::DetailedSchema,
+	PlutusData, PlutusDatumSchema::DetailedSchema, encode_json_value_to_plutus_datum,
 };
 use sqlx::database::HasValueRef;
 use sqlx::error::BoxDynError;
-use sqlx::postgres::{types::Oid, PgTypeInfo};
+use sqlx::postgres::{PgTypeInfo, types::Oid};
 use sqlx::types::JsonValue;
 use sqlx::{Decode, Postgres};
 

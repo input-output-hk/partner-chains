@@ -1,13 +1,13 @@
 use crate::config::config_fields::{CARDANO_PAYMENT_SIGNING_KEY_FILE, POSTGRES_CONNECTION_STRING};
 use crate::config::{
-	config_fields, ChainConfig, ConfigFieldDefinition, ServiceConfig, CHAIN_CONFIG_FILE_PATH,
+	CHAIN_CONFIG_FILE_PATH, ChainConfig, ConfigFieldDefinition, ServiceConfig, config_fields,
 };
 use crate::io::IOContext;
 use crate::ogmios::config::prompt_ogmios_configuration;
 use crate::permissioned_candidates::{ParsedPermissionedCandidatesKeys, PermissionedCandidateKeys};
-use crate::{cardano_key, CmdRun};
-use anyhow::anyhow;
+use crate::{CmdRun, cardano_key};
 use anyhow::Context;
+use anyhow::anyhow;
 use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
 use partner_chains_cardano_offchain::d_param::UpsertDParam;
 use partner_chains_cardano_offchain::multisig::{
@@ -269,9 +269,19 @@ fn set_candidates_on_main_chain<C: IOContext>(
 			))
 			.context("Permissioned candidates update failed")?;
 		match result {
-			None => context.print("Permissioned candidates on the Cardano are already equal to value from the config file."),
-			Some(MultiSigSmartContractResult::TransactionSubmitted(_)) => context.print("Permissioned candidates updated. The change will be effective in two main chain epochs."),
-			Some(MultiSigSmartContractResult::TransactionToSign(tx_data)) => print_tx_to_sign_and_instruction(context, "update permissioned candidates", &tx_data)?,
+			None => context.print(
+				"Permissioned candidates on the Cardano are already equal to value from the config file.",
+			),
+			Some(MultiSigSmartContractResult::TransactionSubmitted(_)) => context.print(
+				"Permissioned candidates updated. The change will be effective in two main chain epochs.",
+			),
+			Some(MultiSigSmartContractResult::TransactionToSign(tx_data)) => {
+				print_tx_to_sign_and_instruction(
+					context,
+					"update permissioned candidates",
+					&tx_data,
+				)?
+			},
 		}
 		Ok(Some(ogmios_config))
 	} else {
@@ -319,8 +329,13 @@ fn set_d_parameter_on_main_chain<C: IOContext>(
 		))?;
 		match result {
 			None => context.print(&format!("D-parameter is set to ({}, {}) already.", p, r)),
-			Some(MultiSigSmartContractResult::TransactionSubmitted(_)) => context.print(&format!("D-parameter updated to ({}, {}). The change will be effective in two main chain epochs.", p, r)),
-			Some(MultiSigSmartContractResult::TransactionToSign(tx_data)) => print_tx_to_sign_and_instruction(context, "update D-parameter", &tx_data)?,
+			Some(MultiSigSmartContractResult::TransactionSubmitted(_)) => context.print(&format!(
+				"D-parameter updated to ({}, {}). The change will be effective in two main chain epochs.",
+				p, r
+			)),
+			Some(MultiSigSmartContractResult::TransactionToSign(tx_data)) => {
+				print_tx_to_sign_and_instruction(context, "update D-parameter", &tx_data)?
+			},
 		}
 	}
 	Ok(())

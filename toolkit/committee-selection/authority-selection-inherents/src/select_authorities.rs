@@ -2,12 +2,12 @@
 
 use crate::authority_selection_inputs::AuthoritySelectionInputs;
 use crate::filter_invalid_candidates::{
-	filter_invalid_permissioned_candidates, filter_trustless_candidates_registrations, Candidate,
+	Candidate, filter_invalid_permissioned_candidates, filter_trustless_candidates_registrations,
 };
 use log::{info, warn};
 use plutus::*;
 use sidechain_domain::{EpochNonce, ScEpochNumber, UtxoId};
-use sp_core::{ecdsa, ed25519, sr25519, U256};
+use sp_core::{U256, ecdsa, ed25519, sr25519};
 
 /// Selects authorities using the Ariadne selection algorithm and data sourced from Partner Chains smart contracts on Cardano.
 /// Seed is constructed from the MC epoch nonce and the sidechain epoch.
@@ -37,7 +37,11 @@ pub fn select_authorities<
 		valid_permissioned_candidates,
 		random_seed,
 	) {
-		info!("💼 Selected committee of {} seats for epoch {} from {valid_permissioned_count} permissioned and {valid_registered_count} registered candidates", validators.len(), sidechain_epoch);
+		info!(
+			"💼 Selected committee of {} seats for epoch {} from {valid_permissioned_count} permissioned and {valid_registered_count} registered candidates",
+			validators.len(),
+			sidechain_epoch
+		);
 		Some(validators)
 	} else {
 		warn!("🚫 Failed to select validators for epoch {}", sidechain_epoch);

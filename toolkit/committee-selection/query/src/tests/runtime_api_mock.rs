@@ -1,8 +1,8 @@
 use super::*;
 use crate::tests::query_mock::TestRuntimeApi;
 use authority_selection_inherents::filter_invalid_candidates::{
-	validate_permissioned_candidate_data, validate_registration_data,
 	PermissionedCandidateDataError, RegistrationDataError, StakeError,
+	validate_permissioned_candidate_data, validate_registration_data,
 };
 use mock::*;
 use sidechain_domain::*;

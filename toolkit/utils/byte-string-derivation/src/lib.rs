@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
-use quote::quote;
 use quote::ToTokens;
+use quote::quote;
 use syn::Generics;
 
 extern crate alloc;
@@ -50,7 +50,7 @@ fn impl_byte_string_derive(attr: TokenStream, ast: &syn::DeriveInput) -> TokenSt
 		},
 		_ => {
 			return quote! { compile_error!("byte_string needs to wrap an array or (bounded) vec") }
-				.into()
+				.into();
 		},
 	};
 

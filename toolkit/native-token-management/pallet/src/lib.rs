@@ -104,7 +104,7 @@ pub mod pallet {
 			let expected_transfer = match Self::get_transfered_tokens_from_inherent_data(data) {
 				Some(data) => data.token_amount,
 				None => {
-					return Err(InherentError::UnexpectedTokenTransferInherent(actual_transfer))
+					return Err(InherentError::UnexpectedTokenTransferInherent(actual_transfer));
 				},
 			};
 

@@ -57,10 +57,7 @@ pub mod pallet {
 		/// If your runtime does not need to react to any changes, a no-op implementation for [()] can be used.
 		/// Otherwise, it is advised to benchmark the runtime and use your own weights to include weight consumed
 		/// by the handler.
-		type OnGovernedMappingChange: OnGovernedMappingChange<
-			Self::MaxKeyLength,
-			Self::MaxValueLength,
-		>;
+		type OnGovernedMappingChange: OnGovernedMappingChange<Self::MaxKeyLength, Self::MaxValueLength>;
 
 		/// Weight functions for the pallet's extrinsics
 		type WeightInfo: weights::WeightInfo;

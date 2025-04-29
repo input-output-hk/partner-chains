@@ -1,5 +1,5 @@
-use crate::config::config_fields::*;
 use crate::config::ServiceConfig;
+use crate::config::config_fields::*;
 use crate::io::IOContext;
 
 pub(crate) const OGMIOS_REQUIRED: &str =
@@ -31,7 +31,7 @@ pub(crate) mod tests {
 		prompt_multi_option_with_default, prompt_with_default,
 	};
 	use crate::tests::MockIO;
-	use serde_json::{json, Value};
+	use serde_json::{Value, json};
 	use std::str::FromStr;
 
 	pub(crate) fn default_ogmios_service_config() -> ServiceConfig {

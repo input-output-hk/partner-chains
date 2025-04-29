@@ -1,7 +1,7 @@
 use crate::config::ServiceConfig;
-use crate::ogmios::{ogmios_request, OgmiosRequest, OgmiosResponse};
-use anyhow::{anyhow, Context};
-use ogmios_client::jsonrpsee::{client_for_url, OgmiosClients};
+use crate::ogmios::{OgmiosRequest, OgmiosResponse, ogmios_request};
+use anyhow::{Context, anyhow};
+use ogmios_client::jsonrpsee::{OgmiosClients, client_for_url};
 use partner_chains_cardano_offchain::d_param::UpsertDParam;
 use partner_chains_cardano_offchain::init_governance::InitGovernance;
 use partner_chains_cardano_offchain::permissioned_candidates::UpsertPermissionedCandidates;
@@ -173,7 +173,9 @@ impl IOContext for DefaultCmdRunContext {
 	}
 
 	fn set_env_var(&self, key: &str, value: &str) {
-		unsafe {std::env::set_var(key, value);}
+		unsafe {
+			std::env::set_var(key, value);
+		}
 	}
 
 	fn current_timestamp(&self) -> Timestamp {

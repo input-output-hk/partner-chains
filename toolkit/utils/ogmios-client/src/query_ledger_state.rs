@@ -1,8 +1,8 @@
 //! Queries that start with `queryLedgerState/`.
 
 use crate::{
-	types::{OgmiosBytesSize, OgmiosUtxo, OgmiosValue, SlotLength, TimeSeconds},
 	ByNameParamsBuilder, OgmiosClient, OgmiosClientError, OgmiosParams,
+	types::{OgmiosBytesSize, OgmiosUtxo, OgmiosValue, SlotLength, TimeSeconds},
 };
 use serde::Deserialize;
 
@@ -17,7 +17,7 @@ pub trait QueryLedgerState {
 	/// Parameters:
 	/// - `addresses`: bech32 address to query
 	async fn query_utxos(&self, addresses: &[String])
-		-> Result<Vec<OgmiosUtxo>, OgmiosClientError>;
+	-> Result<Vec<OgmiosUtxo>, OgmiosClientError>;
 
 	#[allow(async_fn_in_trait)]
 	async fn query_protocol_parameters(

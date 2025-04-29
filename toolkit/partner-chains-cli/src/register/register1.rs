@@ -1,7 +1,7 @@
 use super::RegisterValidatorMessage;
 use crate::config::KEYS_FILE_PATH;
 use crate::io::IOContext;
-use crate::keystore::{keystore_path, CROSS_CHAIN};
+use crate::keystore::{CROSS_CHAIN, keystore_path};
 use crate::{config::config_fields, *};
 use anyhow::anyhow;
 use ogmios::config::prompt_ogmios_configuration;
@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use sidechain_domain::crypto::sc_public_key_and_signature_for_datum;
 use sidechain_domain::{NetworkType, SidechainPublicKey, UtxoId};
 use sp_core::bytes::from_hex;
-use sp_core::{ecdsa, Pair};
+use sp_core::{Pair, ecdsa};
 
 #[derive(Clone, Debug, clap::Parser)]
 pub struct Register1Cmd {}
@@ -53,7 +53,9 @@ impl CmdRun for Register1Cmd {
 		let registration_utxo: UtxoId =
 			select_from_utxos(context, "Select UTXO to use for registration", utxo_query_result)?;
 
-		context.print("Please do not spend this UTXO, it needs to be consumed by the registration transaction.");
+		context.print(
+			"Please do not spend this UTXO, it needs to be consumed by the registration transaction.",
+		);
 		context.print("");
 
 		let sidechain_pub_key_typed: SidechainPublicKey =
@@ -163,12 +165,12 @@ mod tests {
 	use crate::tests::{MockIO, MockIOContext};
 	use config::{CHAIN_CONFIG_FILE_PATH, RESOURCES_CONFIG_FILE_PATH};
 	use ogmios::{
+		OgmiosRequest,
 		config::tests::{
 			default_ogmios_config_json, default_ogmios_service_config,
 			prompt_ogmios_configuration_io,
 		},
 		test_values::preview_shelley_config,
-		OgmiosRequest,
 	};
 	use select_utxo::tests::{mock_7_valid_utxos_rows, mock_result_7_valid};
 	use serde_json::json;
@@ -282,10 +284,12 @@ mod tests {
 
 		let result = Register1Cmd {}.run(&mock_context);
 		assert!(result.is_err());
-		assert!(result
-			.unwrap_err()
-			.to_string()
-			.contains("Failed to parse Cardano key file payment.vkey"));
+		assert!(
+			result
+				.unwrap_err()
+				.to_string()
+				.contains("Failed to parse Cardano key file payment.vkey")
+		);
 	}
 
 	#[test]
@@ -354,9 +358,9 @@ mod tests {
 					derive_address_io(),
 					query_utxos_io(),
 					select_utxo_io(),
-					vec![
-						MockIO::eprint("⚠️ Failed to read sidechain key from the keystore: seed phrase file not found"),
-					],
+					vec![MockIO::eprint(
+						"⚠️ Failed to read sidechain key from the keystore: seed phrase file not found",
+					)],
 				]
 				.into_iter()
 				.flatten()
@@ -436,7 +440,9 @@ mod tests {
 	}
 
 	fn address_and_utxo_msg_io() -> MockIO {
-		MockIO::print("This wizard will query your UTXOs using address derived from the payment verification key and Ogmios service")
+		MockIO::print(
+			"This wizard will query your UTXOs using address derived from the payment verification key and Ogmios service",
+		)
 	}
 
 	fn ogmios_network_request_io() -> MockIO {
@@ -477,24 +483,35 @@ mod tests {
 
 	fn select_utxo_io() -> Vec<MockIO> {
 		vec![
-		MockIO::prompt_multi_option("Select UTXO to use for registration", mock_7_valid_utxos_rows(), "4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 (1100000 lovelace)"),
-
-		MockIO::print("Please do not spend this UTXO, it needs to be consumed by the registration transaction."),
-		MockIO::print(""),
+			MockIO::prompt_multi_option(
+				"Select UTXO to use for registration",
+				mock_7_valid_utxos_rows(),
+				"4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 (1100000 lovelace)",
+			),
+			MockIO::print(
+				"Please do not spend this UTXO, it needs to be consumed by the registration transaction.",
+			),
+			MockIO::print(""),
 		]
 	}
 
 	fn output_io() -> Vec<MockIO> {
 		vec![
-		MockIO::print("Run the following command to generate signatures on the next step. It has to be executed on the machine with your SPO cold signing key."),
-		MockIO::print(""),
-		MockIO::print("<mock executable> wizards register2 \\\n --genesis-utxo 0000000000000000000000000000000000000000000000000000000000000001#0 \\\n --registration-utxo 4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 \\\n --aura-pub-key 0xdf883ee0648f33b6103017b61be702017742d501b8fe73b1d69ca0157460b777 \\\n --grandpa-pub-key 0x5a091a06abd64f245db11d2987b03218c6bd83d64c262fe10e3a2a1230e90327 \\\n --sidechain-pub-key 0x031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6 \\\n --sidechain-signature 6e295e36a6b11d8b1c5ec01ac8a639b466fbfbdda94b39ea82b0992e303d58543341345fc705e09c7838786ba0bc746d9038036f66a36d1127d924c4a0228bec")
+			MockIO::print(
+				"Run the following command to generate signatures on the next step. It has to be executed on the machine with your SPO cold signing key.",
+			),
+			MockIO::print(""),
+			MockIO::print(
+				"<mock executable> wizards register2 \\\n --genesis-utxo 0000000000000000000000000000000000000000000000000000000000000001#0 \\\n --registration-utxo 4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 \\\n --aura-pub-key 0xdf883ee0648f33b6103017b61be702017742d501b8fe73b1d69ca0157460b777 \\\n --grandpa-pub-key 0x5a091a06abd64f245db11d2987b03218c6bd83d64c262fe10e3a2a1230e90327 \\\n --sidechain-pub-key 0x031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6 \\\n --sidechain-signature 6e295e36a6b11d8b1c5ec01ac8a639b466fbfbdda94b39ea82b0992e303d58543341345fc705e09c7838786ba0bc746d9038036f66a36d1127d924c4a0228bec",
+			),
 		]
 	}
 
 	const ECDSA_KEY_PATH: &str = "/path/to/data/keystore/63726368031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6";
 
 	fn invalid_chain_config_io() -> Vec<MockIO> {
-		vec![MockIO::eprint("⚠️ The chain configuration file `pc-chain-config.json` is missing or invalid.\n If you are the governance authority, please make sure you have run the `prepare-configuration` command to generate the chain configuration file.\n If you are a validator, you can obtain the chain configuration file from the governance authority.")]
+		vec![MockIO::eprint(
+			"⚠️ The chain configuration file `pc-chain-config.json` is missing or invalid.\n If you are the governance authority, please make sure you have run the `prepare-configuration` command to generate the chain configuration file.\n If you are a validator, you can obtain the chain configuration file from the governance authority.",
+		)]
 	}
 }

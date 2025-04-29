@@ -97,8 +97,8 @@ use sidechain_domain::{byte_string::*, *};
 #[cfg(feature = "std")]
 use sp_api::*;
 use sp_inherents::*;
-use sp_runtime::traits::Get;
 use sp_runtime::BoundedVec;
+use sp_runtime::traits::Get;
 
 #[cfg(any(test, feature = "mock"))]
 mod mock;

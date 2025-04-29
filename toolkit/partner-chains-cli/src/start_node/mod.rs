@@ -1,7 +1,7 @@
 use crate::config::config_fields::{
 	NODE_P2P_PORT, POSTGRES_CONNECTION_STRING, SIDECHAIN_BLOCK_BENEFICIARY,
 };
-use crate::config::{CardanoParameters, CHAIN_CONFIG_FILE_PATH, CHAIN_SPEC_PATH};
+use crate::config::{CHAIN_CONFIG_FILE_PATH, CHAIN_SPEC_PATH, CardanoParameters};
 use crate::generate_keys::network_key_path;
 use crate::io::IOContext;
 use crate::keystore::*;
@@ -10,9 +10,9 @@ use anyhow::anyhow;
 use secp256k1::PublicKey;
 use serde::Deserialize;
 use sp_core::crypto::AccountId32;
+use sp_runtime::MultiSigner;
 use sp_runtime::app_crypto::ecdsa;
 use sp_runtime::traits::IdentifyAccount;
-use sp_runtime::MultiSigner;
 use std::str::FromStr;
 
 #[cfg(test)]
@@ -127,7 +127,9 @@ fn check_chain_spec<C: IOContext>(context: &C) -> bool {
 		true
 	} else {
 		context.eprint(&format!("Chain spec file {} missing.", CHAIN_SPEC_PATH));
-		context.eprint("Please run the create-chain-spec wizard first or you can get it from your chain governance.");
+		context.eprint(
+			"Please run the create-chain-spec wizard first or you can get it from your chain governance.",
+		);
 		false
 	}
 }

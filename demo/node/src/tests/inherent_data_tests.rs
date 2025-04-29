@@ -1,7 +1,7 @@
 use crate::inherent_data::{ProposalCIDP, VerifierCIDP};
 use crate::tests::mock::{test_client, test_create_inherent_data_config};
 use crate::tests::runtime_api_mock;
-use crate::tests::runtime_api_mock::{mock_header, TestApi};
+use crate::tests::runtime_api_mock::{TestApi, mock_header};
 use authority_selection_inherents::{
 	authority_selection_inputs::AuthoritySelectionInputs, mock::MockAuthoritySelectionDataSource,
 };
@@ -26,10 +26,12 @@ use std::sync::Arc;
 
 #[tokio::test]
 async fn block_proposal_cidp_should_be_created_correctly() {
-	unsafe {env::set_var(
-		"SIDECHAIN_BLOCK_BENEFICIARY",
-		"0x0000000000000000000000000000000000000000000000000000000000000001",
-	);}
+	unsafe {
+		env::set_var(
+			"SIDECHAIN_BLOCK_BENEFICIARY",
+			"0x0000000000000000000000000000000000000000000000000000000000000001",
+		);
+	}
 
 	let native_token_data_source = MockNativeTokenDataSource::new(
 		[((Some(McBlockHash([0; 32])), McBlockHash([1; 32])), NativeTokenAmount(1000))].into(),
@@ -87,14 +89,20 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 			.unwrap(),
 		Some(McBlockHash([1; 32]))
 	);
-	assert!(inherent_data
-		.get_data::<AuthoritySelectionInputs>(&sp_session_validator_management::INHERENT_IDENTIFIER)
-		.unwrap()
-		.is_some());
-	assert!(inherent_data
-		.get_data::<NativeTokenAmount>(&sp_native_token_management::INHERENT_IDENTIFIER)
-		.unwrap()
-		.is_some());
+	assert!(
+		inherent_data
+			.get_data::<AuthoritySelectionInputs>(
+				&sp_session_validator_management::INHERENT_IDENTIFIER
+			)
+			.unwrap()
+			.is_some()
+	);
+	assert!(
+		inherent_data
+			.get_data::<NativeTokenAmount>(&sp_native_token_management::INHERENT_IDENTIFIER)
+			.unwrap()
+			.is_some()
+	);
 	assert_eq!(
 		inherent_data
 			.get_data::<BlockAuthor>(&sp_block_production_log::INHERENT_IDENTIFIER)
@@ -166,14 +174,20 @@ async fn block_verification_cidp_should_be_created_correctly() {
 		inherent_data.get_data::<Timestamp>(&sp_timestamp::INHERENT_IDENTIFIER).unwrap(),
 		Some(Timestamp::new(create_inherent_data_config.time_source.get_current_time_millis()))
 	);
-	assert!(inherent_data
-		.get_data::<AuthoritySelectionInputs>(&sp_session_validator_management::INHERENT_IDENTIFIER)
-		.unwrap()
-		.is_some());
-	assert!(inherent_data
-		.get_data::<NativeTokenAmount>(&sp_native_token_management::INHERENT_IDENTIFIER)
-		.unwrap()
-		.is_some());
+	assert!(
+		inherent_data
+			.get_data::<AuthoritySelectionInputs>(
+				&sp_session_validator_management::INHERENT_IDENTIFIER
+			)
+			.unwrap()
+			.is_some()
+	);
+	assert!(
+		inherent_data
+			.get_data::<NativeTokenAmount>(&sp_native_token_management::INHERENT_IDENTIFIER)
+			.unwrap()
+			.is_some()
+	);
 	assert_eq!(
 		inherent_data
 			.get_data::<BlockAuthor>(&sp_block_production_log::INHERENT_IDENTIFIER)
