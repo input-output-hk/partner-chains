@@ -204,7 +204,7 @@ pub mod pallet {
 		fn check_inherent(call: &Self::Call, data: &InherentData) -> Result<(), Self::Error> {
 			let (validators_param, for_epoch_number_param, call_selection_inputs_hash) = match call
 			{
-				Call::set { ref validators, ref for_epoch_number, ref selection_inputs_hash } => {
+				Call::set { validators, for_epoch_number, selection_inputs_hash } => {
 					(validators, for_epoch_number, selection_inputs_hash)
 				},
 				_ => return Ok(()),

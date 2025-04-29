@@ -173,7 +173,7 @@ impl IOContext for DefaultCmdRunContext {
 	}
 
 	fn set_env_var(&self, key: &str, value: &str) {
-		std::env::set_var(key, value);
+		unsafe {std::env::set_var(key, value);}
 	}
 
 	fn current_timestamp(&self) -> Timestamp {

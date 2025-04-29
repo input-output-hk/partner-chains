@@ -80,7 +80,7 @@ mod tests {
 			postgres.get_host_port_ipv4(5432)
 		);
 		// Needed for sqlx::test macro annotation
-		std::env::set_var("DATABASE_URL", database_url);
+		unsafe{std::env::set_var("DATABASE_URL", database_url);}
 	}
 
 	#[dtor]

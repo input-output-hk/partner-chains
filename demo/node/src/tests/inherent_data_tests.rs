@@ -26,10 +26,10 @@ use std::sync::Arc;
 
 #[tokio::test]
 async fn block_proposal_cidp_should_be_created_correctly() {
-	env::set_var(
+	unsafe {env::set_var(
 		"SIDECHAIN_BLOCK_BENEFICIARY",
 		"0x0000000000000000000000000000000000000000000000000000000000000001",
-	);
+	);}
 
 	let native_token_data_source = MockNativeTokenDataSource::new(
 		[((Some(McBlockHash([0; 32])), McBlockHash([1; 32])), NativeTokenAmount(1000))].into(),
