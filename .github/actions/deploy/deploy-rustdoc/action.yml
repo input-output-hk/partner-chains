@@ -19,6 +19,7 @@ runs:
     - name: generate rust docs
       run: |
         RUSTDOCFLAGS="--enable-index-page -Zunstable-options" SKIP_WASM_BUILD=1 cargo doc --no-deps
+      shell: bash
 
     - name: Deploy documentation
       if: ${{ github.ref_name == 'master' }}
