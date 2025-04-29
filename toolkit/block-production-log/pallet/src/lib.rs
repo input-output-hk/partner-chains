@@ -193,7 +193,9 @@ pub mod pallet {
 				log::info!("👷 Block {block:?} producer is {block_producer_id:?}");
 				Log::<T>::append((T::current_slot(), block_producer_id));
 			} else {
-				log::warn!("👷 Block {block:?} producer not set. This should occur only at the beginning of the production log pallet's lifetime.")
+				log::warn!(
+					"👷 Block {block:?} producer not set. This should occur only at the beginning of the production log pallet's lifetime."
+				)
 			}
 		}
 	}

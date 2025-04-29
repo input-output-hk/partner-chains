@@ -8,11 +8,11 @@
 
 use crate::await_tx::{AwaitTx, FixedDelayRetries};
 use crate::csl::{
-	empty_asset_name, get_builder_config, CostStore, Costs, InputsBuilderExt,
-	TransactionBuilderExt, TransactionContext, TransactionExt,
+	CostStore, Costs, InputsBuilderExt, TransactionBuilderExt, TransactionContext, TransactionExt,
+	empty_asset_name, get_builder_config,
 };
 use crate::governance::GovernanceData;
-use crate::multisig::{submit_or_create_tx_to_sign, MultiSigSmartContractResult};
+use crate::multisig::{MultiSigSmartContractResult, submit_or_create_tx_to_sign};
 use crate::plutus_script::PlutusScript;
 use crate::{cardano_keys::CardanoPaymentSigningKey, scripts_data};
 use anyhow::anyhow;
@@ -24,7 +24,7 @@ use ogmios_client::query_network::QueryNetwork;
 use ogmios_client::transactions::Transactions;
 use ogmios_client::types::OgmiosUtxo;
 use partner_chains_plutus_data::permissioned_candidates::{
-	permissioned_candidates_to_plutus_data, PermissionedCandidateDatums,
+	PermissionedCandidateDatums, permissioned_candidates_to_plutus_data,
 };
 use sidechain_domain::{PermissionedCandidateData, UtxoId};
 
@@ -133,12 +133,18 @@ fn get_current_permissioned_candidates(
 			anyhow!("Invalid state: an UTXO at the validator script address does not have a datum")
 		})?;
 		let datum_plutus_data = PlutusData::from_bytes(datum.bytes).map_err(|e| {
-			anyhow!("Internal error: could not decode datum of permissioned candidates validator script: {}", e)
+			anyhow!(
+				"Internal error: could not decode datum of permissioned candidates validator script: {}",
+				e
+			)
 		})?;
 		let mut permissioned_candidates: Vec<PermissionedCandidateData> =
 			PermissionedCandidateDatums::try_from(datum_plutus_data)
 				.map_err(|e| {
-					anyhow!("Internal error: could not decode datum of permissioned candidates validator script: {}", e)
+					anyhow!(
+						"Internal error: could not decode datum of permissioned candidates validator script: {}",
+						e
+					)
 				})?
 				.into();
 		permissioned_candidates.sort();
@@ -297,7 +303,7 @@ fn permissioned_candidates_policy_redeemer_data() -> PlutusData {
 mod tests {
 	use super::{mint_permissioned_candidates_token_tx, update_permissioned_candidates_tx};
 	use crate::{
-		csl::{empty_asset_name, Costs, TransactionContext},
+		csl::{Costs, TransactionContext, empty_asset_name},
 		governance::GovernanceData,
 		test_values::*,
 	};

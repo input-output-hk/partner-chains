@@ -284,7 +284,9 @@ impl Costs {
 					mints.insert(
 						tx.body()
 							.mint()
-							.expect("tx.body.mint() should not be empty if we received a 'mint' response from Ogmios")
+							.expect(
+								"tx.body.mint() should not be empty if we received a 'mint' response from Ogmios",
+							)
 							.keys()
 							.get(er.validator.index as usize),
 						ex_units_from_response(er),
@@ -855,7 +857,7 @@ impl AssetIdExt for AssetId {
 pub(crate) trait MultiAssetExt: Sized {
 	fn from_ogmios_utxo(utxo: &OgmiosUtxo) -> Result<Self, JsError>;
 	fn with_asset_amount(self, asset: &AssetId, amount: impl Into<BigNum>)
-		-> Result<Self, JsError>;
+	-> Result<Self, JsError>;
 }
 
 impl MultiAssetExt for MultiAsset {
@@ -1127,8 +1129,8 @@ mod tests {
 #[cfg(test)]
 mod prop_tests {
 	use super::{
-		empty_asset_name, get_builder_config, unit_plutus_data, zero_ex_units, OgmiosUtxoExt,
-		TransactionBuilderExt, TransactionContext,
+		OgmiosUtxoExt, TransactionBuilderExt, TransactionContext, empty_asset_name,
+		get_builder_config, unit_plutus_data, zero_ex_units,
 	};
 	use crate::test_values::*;
 	use cardano_serialization_lib::{

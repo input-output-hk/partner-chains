@@ -1,8 +1,8 @@
 use crate::Weight;
 use alloc::vec::Vec;
 use core::iter::repeat_n;
-use rand::seq::SliceRandom;
 use rand::SeedableRng;
+use rand::seq::SliceRandom;
 use rand_chacha::ChaCha20Rng;
 
 /// Selects committee according to D-parameter and candidates lists.
@@ -53,11 +53,7 @@ where
 		weighted_with_guaranteed_assignment(&registered_candidates, seats_total, &mut rng)
 	};
 	selected.shuffle(&mut rng);
-	if selected.is_empty() && seats_total > 0 {
-		None
-	} else {
-		Some(selected)
-	}
+	if selected.is_empty() && seats_total > 0 { None } else { Some(selected) }
 }
 
 struct SelectGuaranteedResult<T> {

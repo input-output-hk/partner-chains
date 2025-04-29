@@ -1,6 +1,6 @@
 use crate::{
-	option_to_json, parse_partnerchain_public_keys, transaction_submitted_json, GenesisUtxo,
-	PaymentFilePath,
+	GenesisUtxo, PaymentFilePath, option_to_json, parse_partnerchain_public_keys,
+	transaction_submitted_json,
 };
 use partner_chains_cardano_offchain::register::{run_deregister, run_register};
 use sidechain_domain::{

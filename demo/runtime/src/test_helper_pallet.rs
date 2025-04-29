@@ -54,11 +54,7 @@ pub mod pallet {
 		pub fn should_release_participation_data(
 			slot: sidechain_slots::Slot,
 		) -> Option<sidechain_slots::Slot> {
-			if *slot % ParticipationDataReleasePeriod::<T>::get() == 0 {
-				Some(slot)
-			} else {
-				None
-			}
+			if *slot % ParticipationDataReleasePeriod::<T>::get() == 0 { Some(slot) } else { None }
 		}
 	}
 

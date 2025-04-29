@@ -1,11 +1,11 @@
 use crate::{
+	DataSourceError::*,
 	data_sources::read_mc_epoch_config,
 	db_model::{self, Block, BlockNumber, SlotNumber},
-	DataSourceError::*,
 };
 use chrono::{DateTime, NaiveDateTime, TimeDelta};
 use derive_new::new;
-use figment::{providers::Env, Figment};
+use figment::{Figment, providers::Env};
 use log::{debug, info};
 use serde::Deserialize;
 use sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};

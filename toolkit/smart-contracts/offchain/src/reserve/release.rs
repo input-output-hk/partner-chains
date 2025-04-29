@@ -21,7 +21,7 @@
 //!       including the ones released in this transaction*. Ie. if N tokens were already released
 //!       and M tokens are being released, the transaction should mint N+M V-Function tokens.
 //!       These tokens are worthless and don't serve any purpose after the transaction is done.
-use super::{reserve_utxo_input_with_validator_script_reference, ReserveData};
+use super::{ReserveData, reserve_utxo_input_with_validator_script_reference};
 use crate::{
 	await_tx::AwaitTx, cardano_keys::CardanoPaymentSigningKey, csl::*, plutus_script::PlutusScript,
 	reserve::ReserveUtxo,
@@ -185,11 +185,11 @@ fn v_function_from_utxo(utxo: &OgmiosUtxo) -> anyhow::Result<PlutusScript> {
 
 #[cfg(test)]
 mod tests {
-	use super::{empty_asset_name, reserve_release_tx, AssetNameExt, Costs, TransactionContext};
+	use super::{AssetNameExt, Costs, TransactionContext, empty_asset_name, reserve_release_tx};
 	use crate::{
 		cardano_keys::CardanoPaymentSigningKey,
 		plutus_script::PlutusScript,
-		reserve::{release::OgmiosUtxoExt, ReserveData, ReserveUtxo},
+		reserve::{ReserveData, ReserveUtxo, release::OgmiosUtxoExt},
 		scripts_data::ReserveScripts,
 		test_values::{payment_addr, protocol_parameters},
 	};
@@ -406,11 +406,13 @@ mod tests {
 		assert!(ref_inputs.contains(&reference_utxo().to_csl_tx_input()));
 		assert!(ref_inputs.contains(&reserve_data().auth_policy_version_utxo.to_csl_tx_input()));
 		assert!(ref_inputs.contains(&reserve_data().validator_version_utxo.to_csl_tx_input()));
-		assert!(ref_inputs.contains(
-			&reserve_data()
-				.illiquid_circulation_supply_validator_version_utxo
-				.to_csl_tx_input()
-		));
+		assert!(
+			ref_inputs.contains(
+				&reserve_data()
+					.illiquid_circulation_supply_validator_version_utxo
+					.to_csl_tx_input()
+			)
+		);
 		assert_eq!(ref_inputs.len(), 4)
 	}
 

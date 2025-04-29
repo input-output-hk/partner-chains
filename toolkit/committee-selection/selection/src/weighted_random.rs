@@ -3,7 +3,7 @@ extern crate alloc;
 use crate::*;
 use alloc::vec::Vec;
 use rand::Rng;
-use rand_chacha::{rand_core::SeedableRng, ChaCha20Rng};
+use rand_chacha::{ChaCha20Rng, rand_core::SeedableRng};
 
 /// Simple random weighted selection
 ///
@@ -27,11 +27,7 @@ pub fn select_authorities<T: Clone>(
 		committee.push(selected);
 	}
 
-	if size <= committee.len() {
-		Some(committee)
-	} else {
-		None
-	}
+	if size <= committee.len() { Some(committee) } else { None }
 }
 
 fn select_with_weight<T>(

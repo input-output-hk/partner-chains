@@ -29,7 +29,7 @@ pub struct SidechainPublicKeyParam(pub SidechainPublicKey);
 
 impl Display for SidechainPublicKeyParam {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		write!(f, "0x{}", hex::encode(&self.0 .0))
+		write!(f, "0x{}", hex::encode(&self.0.0))
 	}
 }
 

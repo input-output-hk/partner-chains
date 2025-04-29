@@ -1,12 +1,12 @@
 use crate::cardano_keys::CardanoPaymentSigningKey;
 use crate::csl::TransactionOutputAmountBuilderExt;
 use crate::csl::{
-	unit_plutus_data, CostStore, Costs, InputsBuilderExt, TransactionBuilderExt, TransactionContext,
+	CostStore, Costs, InputsBuilderExt, TransactionBuilderExt, TransactionContext, unit_plutus_data,
 };
 use crate::{
+	OffchainError,
 	await_tx::{AwaitTx, FixedDelayRetries},
 	plutus_script::PlutusScript,
-	OffchainError,
 };
 use anyhow::anyhow;
 use cardano_serialization_lib::{
@@ -19,7 +19,7 @@ use ogmios_client::{
 	types::OgmiosUtxo,
 };
 use partner_chains_plutus_data::registered_candidates::{
-	candidate_registration_to_plutus_data, RegisterValidatorDatum,
+	RegisterValidatorDatum, candidate_registration_to_plutus_data,
 };
 use sidechain_domain::*;
 
@@ -487,9 +487,11 @@ mod tests {
 
 	fn spends_own_registration_utxos(tx: &Transaction, own_registration_utxos: &[OgmiosUtxo]) {
 		let inputs = tx.body().inputs();
-		assert!(own_registration_utxos
-			.iter()
-			.all(|p| inputs.into_iter().any(|i| *i == p.to_csl_tx_input())));
+		assert!(
+			own_registration_utxos
+				.iter()
+				.all(|p| inputs.into_iter().any(|i| *i == p.to_csl_tx_input()))
+		);
 	}
 
 	proptest! {

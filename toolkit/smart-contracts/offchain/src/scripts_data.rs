@@ -1,4 +1,4 @@
-use crate::{csl::NetworkTypeExt, plutus_script::PlutusScript, OffchainError};
+use crate::{OffchainError, csl::NetworkTypeExt, plutus_script::PlutusScript};
 use cardano_serialization_lib::{Language, NetworkIdKind};
 use ogmios_client::query_network::QueryNetwork;
 use serde::Serialize;

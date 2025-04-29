@@ -1,4 +1,4 @@
-use ogmios_client::jsonrpsee::{client_for_url, OgmiosClients};
+use ogmios_client::jsonrpsee::{OgmiosClients, client_for_url};
 use partner_chains_cardano_offchain::{
 	await_tx::FixedDelayRetries,
 	cardano_keys::{CardanoKeyFileContent, CardanoPaymentSigningKey},

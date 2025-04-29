@@ -1,6 +1,6 @@
 use crate::cardano_key;
-use crate::config::config_fields::{self, GENESIS_UTXO};
 use crate::config::ServiceConfig;
+use crate::config::config_fields::{self, GENESIS_UTXO};
 use crate::io::IOContext;
 use crate::ogmios::config::prompt_ogmios_configuration;
 use crate::ogmios::get_shelley_config;
@@ -62,7 +62,7 @@ mod tests {
 	};
 	use crate::ogmios::test_values::preview_shelley_config;
 	use crate::ogmios::{OgmiosRequest, OgmiosResponse};
-	use crate::prepare_configuration::select_genesis_utxo::{select_genesis_utxo, INTRO};
+	use crate::prepare_configuration::select_genesis_utxo::{INTRO, select_genesis_utxo};
 	use crate::select_utxo::tests::{mock_7_valid_utxos_rows, mock_result_7_valid, query_utxos_io};
 	use crate::tests::{MockIO, MockIOContext};
 	use crate::verify_json;
@@ -92,8 +92,8 @@ mod tests {
 				),
 				MockIO::prompt_multi_option(
 					"Select an UTXO to use as the genesis UTXO",
-				 	mock_7_valid_utxos_rows(),
-					 "4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 (1100000 lovelace)"
+					mock_7_valid_utxos_rows(),
+					"4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 (1100000 lovelace)",
 				),
 			]);
 

@@ -10,8 +10,8 @@ use sidechain_domain::*;
 use sp_core::H256;
 use sp_runtime::codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use sp_runtime::{
-	traits::{BlakeTwo256, IdentityLookup},
 	AccountId32, BoundedVec, BuildStorage,
+	traits::{BlakeTwo256, IdentityLookup},
 };
 
 pub type Block = frame_system::mocking::MockBlock<Test>;

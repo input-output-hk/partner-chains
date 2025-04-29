@@ -1,6 +1,6 @@
 use super::mock::mock_genesis_utxo;
-use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 use authority_selection_inherents::CommitteeMember;
+use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 use hex_literal::hex;
 use partner_chains_demo_runtime::opaque::SessionKeys;
 use partner_chains_demo_runtime::{BlockAuthor, CrossChainPublic};
@@ -12,8 +12,8 @@ use sp_blockchain::HeaderBackend;
 use sp_core::{ecdsa, ed25519, sr25519};
 use sp_governed_map::MainChainScriptsV1;
 use sp_inherents::InherentIdentifier;
-use sp_runtime::traits::{Block as BlockT, Header as HeaderT, NumberFor, Zero};
 use sp_runtime::Digest;
+use sp_runtime::traits::{Block as BlockT, Header as HeaderT, NumberFor, Zero};
 use sp_sidechain::GetGenesisUtxo;
 use std::collections::HashMap;
 

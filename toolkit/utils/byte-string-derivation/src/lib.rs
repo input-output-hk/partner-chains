@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
-use quote::quote;
 use quote::ToTokens;
+use quote::quote;
 use syn::Generics;
 
 extern crate alloc;
@@ -50,11 +50,11 @@ fn impl_byte_string_derive(attr: TokenStream, ast: &syn::DeriveInput) -> TokenSt
 		},
 		_ => {
 			return quote! { compile_error!("byte_string needs to wrap an array or (bounded) vec") }
-				.into()
+				.into();
 		},
 	};
 
-	let mut gen = quote! {
+	let mut gen_token_stream = quote! {
 		#ast
 	};
 
@@ -72,10 +72,10 @@ fn impl_byte_string_derive(attr: TokenStream, ast: &syn::DeriveInput) -> TokenSt
 			_other => return quote! { compile_error!("Incorrect byte_string option") }.into(),
 		};
 
-		chunk.to_tokens(&mut gen)
+		chunk.to_tokens(&mut gen_token_stream)
 	}
 
-	gen.into()
+	gen_token_stream.into()
 }
 
 fn gen_debug(name: &syn::Ident, generics: &Generics) -> impl ToTokens {

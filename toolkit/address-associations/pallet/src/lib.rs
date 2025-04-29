@@ -185,8 +185,8 @@ pub mod pallet {
 		}
 
 		/// Retrieves all main chain - partner chain address associations from the runtime storage.
-		pub fn get_all_address_associations(
-		) -> impl Iterator<Item = (MainchainKeyHash, T::PartnerChainAddress)> {
+		pub fn get_all_address_associations()
+		-> impl Iterator<Item = (MainchainKeyHash, T::PartnerChainAddress)> {
 			AddressAssociations::<T>::iter()
 		}
 
