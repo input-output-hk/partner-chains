@@ -7,8 +7,8 @@ use frame_system::mocking::MockBlock;
 use sp_consensus_slots::Slot;
 use sp_io::TestExternalities;
 use sp_runtime::{
-	traits::{BlakeTwo256, IdentityLookup},
 	AccountId32, BuildStorage,
+	traits::{BlakeTwo256, IdentityLookup},
 };
 
 #[frame_support::pallet]
@@ -71,7 +71,7 @@ impl frame_system::Config for Test {
 impl crate::pallet::Config for Test {
 	type WeightInfo = ();
 
-	// Stores the current and one historical, so up to two values
+	// Stores the current and one historical value, two in total
 	type HistoricalChangesPerProducer = ConstU16<1>;
 
 	fn current_slot() -> Slot {

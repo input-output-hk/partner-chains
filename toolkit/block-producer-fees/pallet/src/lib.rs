@@ -1,4 +1,4 @@
-//! Pallet to store Block Producer Fees settings that are important in context of rewards payments.
+//! Pallet to store Block Producer Fees settings that are relevant to rewards payments.
 //!
 //! Margin fee is percent of block rewards that will be paid to the block producer before
 //! distributing the rest of rewards to his stakers. Precision of the margin fee setting is bounded
@@ -79,7 +79,6 @@ pub mod pallet {
 					let _ = fees_log.pop_back();
 				}
 				fees_log.push_front((T::current_slot(), fee_numerator));
-				fees_log.clone()
 			});
 			Ok(())
 		}
