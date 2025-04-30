@@ -63,7 +63,7 @@ pub fn create_mock_data_sources()
 		authority_selection: Arc::new(AuthoritySelectionDataSourceMock::new_from_env()?),
 		native_token: Arc::new(NativeTokenDataSourceMock::new()),
 		block_participation: Arc::new(StakeDistributionDataSourceMock::new()),
-		governed_map: Arc::new(GovernedMapDataSourceMock::new([].into())),
+		governed_map: Arc::new(GovernedMapDataSourceMock::default()),
 	})
 }
 

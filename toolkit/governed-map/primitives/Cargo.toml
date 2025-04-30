@@ -28,6 +28,7 @@ thiserror = { workspace = true, optional = true }
 
 [dev-dependencies]
 tokio = { workspace = true }
+pretty_assertions = { workspace = true }
 
 [features]
 default = ["std"]

@@ -1,7 +1,7 @@
 use crate::mock::*;
 use crate::*;
+use frame_support::testing_prelude::bounded_btree_map;
 use frame_support::traits::UnfilteredDispatchable;
-use sp_core::bounded_vec;
 
 fn bstring<T: Get<u32>>(s: &str) -> BoundedString<T> {
 	BoundedString::try_from(s).unwrap()
@@ -11,12 +11,12 @@ fn bvec<T: Get<u32>>(bytes: &[u8]) -> BoundedVec<u8, T> {
 	BoundedVec::truncate_from(bytes.to_vec())
 }
 
-fn upsert(key: &str, value: &[u8]) -> GovernedMapChangeV1 {
-	GovernedMapChangeV1 { key: key.into(), new_value: Some(value.to_vec().into()) }
+fn upsert(key: &str, value: &[u8]) -> (String, Option<ByteString>) {
+	(key.into(), Some(value.to_vec().into()))
 }
 
-fn delete(key: &str) -> GovernedMapChangeV1 {
-	GovernedMapChangeV1 { key: key.into(), new_value: None }
+fn delete(key: &str) -> (String, Option<ByteString>) {
+	(key.into(), None)
 }
 
 mod inherent {
@@ -26,13 +26,14 @@ mod inherent {
 	#[test]
 	fn inserts_entries() {
 		new_test_ext().execute_with(|| {
+			Initialized::<Test>::set(true);
 			Mapping::<Test>::set(bstring("key0"), Some(bvec(&[0])));
 
 			Call::<Test>::register_changes {
-				changes: bounded_vec![
-					(bstring("key1"), Some(bvec(&[2; 23]))),
-					(bstring("key2"), Some(bvec(&[1]))),
-					(bstring("key3"), Some(bvec(&[8; 8]))),
+				changes: bounded_btree_map![
+					bstring("key1") => Some(bvec(&[2; 23])),
+					bstring("key2") => Some(bvec(&[1])),
+					bstring("key3") => Some(bvec(&[8; 8])),
 				],
 			}
 			.dispatch_bypass_filter(RuntimeOrigin::none())
@@ -56,14 +57,15 @@ mod inherent {
 	#[test]
 	fn updates_entries() {
 		new_test_ext().execute_with(|| {
+			Initialized::<Test>::set(true);
 			Mapping::<Test>::set(bstring("key1"), Some(bvec(&[1])));
 			Mapping::<Test>::set(bstring("key2"), Some(bvec(&[1, 2])));
 			Mapping::<Test>::set(bstring("key3"), Some(bvec(&[1, 2, 3])));
 
 			Call::<Test>::register_changes {
-				changes: bounded_vec![
-					(bstring("key1"), Some(bvec(&[1, 1, 1]))),
-					(bstring("key2"), Some(bvec(&[2]))),
+				changes: bounded_btree_map![
+					bstring("key1") => Some(bvec(&[1, 1, 1])),
+					bstring("key2") => Some(bvec(&[2])),
 				],
 			}
 			.dispatch_bypass_filter(RuntimeOrigin::none())
@@ -86,12 +88,13 @@ mod inherent {
 	#[test]
 	fn deletes_entries() {
 		new_test_ext().execute_with(|| {
+			Initialized::<Test>::set(true);
 			Mapping::<Test>::set(bstring("key1"), Some(bvec(&[1])));
 			Mapping::<Test>::set(bstring("key2"), Some(bvec(&[1, 2])));
 			Mapping::<Test>::set(bstring("key3"), Some(bvec(&[1, 2, 3])));
 
 			Call::<Test>::register_changes {
-				changes: bounded_vec![(bstring("key1"), None), (bstring("key3"), None)],
+				changes: bounded_btree_map![bstring("key1") => None, bstring("key3") => None],
 			}
 			.dispatch_bypass_filter(RuntimeOrigin::none())
 			.expect("Should succeed");
@@ -105,14 +108,15 @@ mod inherent {
 	#[test]
 	fn calls_the_on_change_hook() {
 		new_test_ext().execute_with(|| {
+			Initialized::<Test>::set(true);
 			Mapping::<Test>::set(bstring("key1"), Some(bvec(&[1])));
 			Mapping::<Test>::set(bstring("key2"), Some(bvec(&[1, 2])));
 
 			Call::<Test>::register_changes {
-				changes: bounded_vec![
-					(bstring("key1"), Some(bvec(&[1, 1, 1]))),
-					(bstring("key2"), None),
-					(bstring("key3"), Some(bvec(&[2]))),
+				changes: bounded_btree_map![
+					bstring("key1") => Some(bvec(&[1, 1, 1])),
+					bstring("key2") => None,
+					bstring("key3") => Some(bvec(&[2])),
 				],
 			}
 			.dispatch_bypass_filter(RuntimeOrigin::none())
@@ -134,6 +138,32 @@ mod inherent {
 		use pretty_assertions::assert_eq;
 
 		#[test]
+		fn does_not_require_an_inherent_when_data_not_present() {
+			let inherent_data = InherentData::new();
+			assert!(
+				GovernedMap::is_inherent_required(&inherent_data)
+					.expect("Should not fail")
+					.is_none()
+			)
+		}
+
+		#[test]
+		fn does_not_require_an_inherent_when_data_is_empty_and_pallet_is_initialized() {
+			new_test_ext().execute_with(|| {
+				Initialized::<Test>::put(true);
+				let mut inherent_data = InherentData::new();
+				inherent_data
+					.put_data(INHERENT_IDENTIFIER, &GovernedMapInherentDataV1::new())
+					.unwrap();
+				assert!(
+					GovernedMap::is_inherent_required(&inherent_data)
+						.expect("Should not fail")
+						.is_none()
+				)
+			})
+		}
+
+		#[test]
 		fn creates_inherent() {
 			let mut inherent_data = InherentData::new();
 
@@ -147,10 +177,10 @@ mod inherent {
 			assert_eq!(
 				inherent,
 				Call::<Test>::register_changes {
-					changes: bounded_vec![
-						(bstring("key1"), Some(bvec(&[1]))),
-						(bstring("key2"), Some(bvec(&[2]))),
-						(bstring("key3"), None)
+					changes: bounded_btree_map![
+						bstring("key1") => Some(bvec(&[1])),
+						bstring("key2") => Some(bvec(&[2])),
+						bstring("key3") => None
 					],
 				}
 			);
@@ -170,21 +200,11 @@ mod inherent {
 		}
 
 		#[test]
-		fn does_not_require_an_inherent_when_data_not_present() {
-			let inherent_data = InherentData::new();
-			assert!(
-				GovernedMap::is_inherent_required(&inherent_data)
-					.expect("Should not fail")
-					.is_none()
-			)
-		}
-
-		#[test]
 		fn rejects_inherent_when_data_missing() {
 			let inherent_data = InherentData::new();
 
 			let inherent = Call::<Test>::register_changes {
-				changes: bounded_vec![(bstring("key2"), Some(bvec(&[1, 2, 3])))],
+				changes: bounded_btree_map![bstring("key2") => Some(bvec(&[1, 2, 3]))],
 			};
 
 			let err = GovernedMap::check_inherent(&inherent, &inherent_data)
@@ -201,7 +221,7 @@ mod inherent {
 			inherent_data.put_data(INHERENT_IDENTIFIER, &data_changes).unwrap();
 
 			let inherent = Call::<Test>::register_changes {
-				changes: bounded_vec![(bstring("key2"), Some(bvec(&[1, 2, 3])))],
+				changes: bounded_btree_map![bstring("key2") => Some(bvec(&[1, 2, 3]))],
 			};
 
 			let err = GovernedMap::check_inherent(&inherent, &inherent_data)
@@ -213,7 +233,7 @@ mod inherent {
 		#[test]
 		#[should_panic(expected = "TooManyChanges")]
 		fn fails_when_change_number_exceeds_limit() {
-			let data_changes: Vec<_> =
+			let data_changes: GovernedMapInherentDataV1 =
 				(0..=TEST_MAX_CHANGES).map(|i| upsert(&format!("key{i}"), &[1])).collect();
 
 			let mut inherent_data = InherentData::new();
