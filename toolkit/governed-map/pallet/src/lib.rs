@@ -1,11 +1,91 @@
-//! Pallet exposing the key-value pairs sourced from the Cardano ledger as part of the Governed Map feature.
+//! Pallet exposing key-value pairs sourced from the Cardano ledger as part of the Governed Map feature.
 //!
 //! # Purpose of this pallet
 //!
 //! This pallet stores the most recent state of the key-value pairs in the Governed Map on Cardano for use
 //! by other runtime components. It also exposes hooks for other components to be notified when particular
 //! key-value pair is inserted, updated or deleted.
+//!
+//! # Usage
+//!
+//! ## Adding to runtime
+//!
+//! ### Defining size limits
+//!
+//! Before adding the pallet to your runtime, first decide on the limits for the data that it will process:
+//! - `MaxChanges`: the maximum number of changes that will be processed in one inherent invocation.
+//!                 This number should be high enough to guarantee the inherent will always have the
+//!                 capacity required to process incoming changes. Setting this limit above the expected
+//!                 number of keys in use is a safe option.
+//! - `MaxKeyLength`: maximum length of keys used. Be warned that if a key is set in the Governed Map
+//!                   that exceeds this lenght limit, this pallet's inherent will fail and stall block
+//!                   production, with the only recovery path being removal of this key so it is no longer
+//!                   in the change set.
+//! - `MaxValueLength`: maximum length of the value under a key. Same considerations as for `MaxKeyLength`
+//!                     apply.
+//! Once the limit values are decided, define them in your runtime, like so:
+//! ```rust
+//! frame_support::parameter_types! {
+//!        pub const MaxChanges: u32 = 16;
+//!        pub const MaxKeyLength: u32 = 64;
+//!        pub const MaxValueLength: u32 = 512;
+//! }
+//! ```
+//!
+//! ### Implementing on-change handler
+//!
+//! The pallet allows the runtime implementer to define a handler that will be called for all key-value
+//! changes registered by the pallet. If your runtime needs to react to changes, crate a type implementing
+//! the [OnGovernedMappingChange] trait, eg:
+//! ```rust
+//! # use frame_support::BoundedVec;
+//! # use sidechain_domain::byte_string::BoundedString;
+//! # use sp_core::Get;
+//! struct ChangeHandler;
+//!
+//! impl<MaxKeyLength, MaxValueLength> sp_governed_map::OnGovernedMappingChange<MaxKeyLength, MaxValueLength> for ChangeHandler
+//! where
+//!    MaxKeyLength: Get<u32>,
+//!    MaxValueLength: Get<u32>,
+//! {
+//!    fn on_governed_mapping_change(
+//!        key: BoundedString<MaxKeyLength>,
+//!        new_value: Option<BoundedVec<u8, MaxValueLength>>,
+//!        old_value: Option<BoundedVec<u8, MaxValueLength>>,
+//!    ) {
+//!        log::info!("Governed Map change for key {key}: old value: {old_value:?}, new value: {new_value:?}");
+//!    }
+//! }
+//! ```
+//! If any handling is not needed, a no-op implementation for [()] can be used instead.
+//!
+//! ### Weights and Benchmarking
+//!
+//! The pallet comes with pre-defined weights for its extrinsics that can be used during initial development
+//! through the [pallet_governed_map::weights::SubstrateWeight] type.
+//!
+//! However, since data size limits and the on-change logic both can affect the weights, it is advisable to run
+//! your own benchmark to account for their impact. See the documentation on `[crate::benchmarking]` for details.
+//!
+//! ### Configuring the pallet
+//!
+//! Once the above are defined, the pallet can finally be added to the runtime and configured like this:
+//!
+//! ```rust,ignore
+//! impl pallet_governed_map::Config for Runtime {
+//!     type MaxChanges = MaxChanges;
+//!     type MaxKeyLength = MaxKeyLength;
+//!     type MaxValueLength = MaxValueLength;
+//!     type WeightInfo = pallet_governed_map::weights::SubstrateWeight<Runtime>;
+//!
+//!     type OnGovernedMappingChange = ChangeHandler;
+//!
+//!     #[cfg(feature = "runtime-benchmarks")]
+//!     type BenchmarkHelper = ();
+//! }
+//! ```
 #![cfg_attr(not(feature = "std"), no_std)]
+#![deny(missing_docs)]
 
 extern crate alloc;
 
@@ -27,7 +107,7 @@ mod tests;
 mod mock;
 
 #[cfg(feature = "runtime-benchmarks")]
-mod benchmarking;
+pub mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -36,6 +116,7 @@ pub mod pallet {
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
 
+	/// Current pallet version
 	pub const PALLET_VERSION: u32 = 1;
 
 	#[pallet::config]
@@ -70,8 +151,11 @@ pub mod pallet {
 		type BenchmarkHelper: crate::benchmarking::BenchmarkHelper<Self>;
 	}
 
+	/// Governed Map key type
 	pub type MapKey<T> = BoundedString<<T as Config>::MaxKeyLength>;
+	/// Governed Map value type
 	pub type MapValue<T> = BoundedVec<u8, <T as Config>::MaxValueLength>;
+	/// Governed Map change list
 	pub type Changes<T> = BoundedVec<(MapKey<T>, Option<MapValue<T>>), <T as Config>::MaxChanges>;
 
 	/// Stores the latest state of the Governed Map that was observed on Cardano.
@@ -91,6 +175,7 @@ pub mod pallet {
 		///
 		/// If it is left empty, the Governance Map pallet will be inactive until the address is set via extrinsic.
 		pub main_chain_script: Option<MainChainScriptsV1>,
+		/// Phantom data marker
 		pub _marker: PhantomData<T>,
 	}
 
