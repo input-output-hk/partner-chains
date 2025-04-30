@@ -1,3 +1,5 @@
+//! RPC interface for session validator management
+#![deny(missing_docs)]
 use derive_new::new;
 use jsonrpsee::{
 	core::RpcResult,
@@ -36,6 +38,7 @@ pub trait SessionValidatorManagementRpcApi {
 }
 
 #[derive(new)]
+/// Type wrapping RPC API
 pub struct SessionValidatorManagementRpc<T> {
 	query_api: Arc<T>,
 }

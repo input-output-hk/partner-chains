@@ -1,3 +1,4 @@
+//! Types used by committee selection queries
 mod ariadne;
 mod registrations;
 
@@ -23,12 +24,16 @@ use sp_session_validator_management::CommitteeMember as CommitteeMemberT;
 	Deserialize,
 )]
 #[serde(rename_all = "camelCase")]
+/// Response type for "get committee" query
 pub struct GetCommitteeResponse {
+	/// The sidechain epoch
 	pub sidechain_epoch: u64,
+	/// List of committee members
 	pub committee: Vec<CommitteeMember>,
 }
 
 impl GetCommitteeResponse {
+	/// Constructor for [GetCommitteeResponse]
 	pub fn new<Member: CommitteeMemberT>(
 		sidechain_epoch: sidechain_domain::ScEpochNumber,
 		committee: Vec<Member>,
@@ -43,6 +48,7 @@ impl GetCommitteeResponse {
 		GetCommitteeResponse { sidechain_epoch: sidechain_epoch.0, committee }
 	}
 
+	/// Legacy constructor
 	pub fn new_legacy<AuthorityId>(
 		sidechain_epoch: sidechain_domain::ScEpochNumber,
 		committee: Vec<AuthorityId>,
@@ -69,11 +75,13 @@ impl GetCommitteeResponse {
 	Deserialize,
 )]
 #[serde(rename_all = "camelCase")]
+/// Committee member represented by their sidechain pub key
 pub struct CommitteeMember {
 	sidechain_pub_key: String,
 }
 
 impl CommitteeMember {
+	/// Constructor for [CommitteeMember]
 	pub fn new<T: AsRef<[u8]>>(bytes: T) -> Self {
 		Self { sidechain_pub_key: to_hex(bytes.as_ref(), false) }
 	}
