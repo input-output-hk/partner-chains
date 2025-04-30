@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["PALLET_VERSION"],"enum":["Call"],"mod":["dispatchables","storage_types"],"struct":["Pallet"],"trait":["Config"],"type":["FeesChanges","Module"]};
