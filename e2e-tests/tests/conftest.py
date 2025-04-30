@@ -470,6 +470,21 @@ def get_wallet(api: BlockchainApi) -> Wallet:
 
 
 @fixture(scope="session")
+def get_scripts(api: BlockchainApi):
+    return api.partner_chains_node.smart_contracts.get_scripts().json
+
+
+@fixture(scope="session")
+def addresses(get_scripts):
+    return get_scripts["addresses"]
+
+
+@fixture(scope="session")
+def policy_ids(get_scripts):
+    return get_scripts["policyIds"]
+
+
+@fixture(scope="session")
 def full_mc_epoch_has_passed_since_deployment(config: ApiConfig, current_mc_epoch):
     logging.info("Checking if full MC epoch has elapsed since deployment")
     if current_mc_epoch < config.deployment_mc_epoch + 2:

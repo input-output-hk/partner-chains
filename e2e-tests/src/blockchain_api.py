@@ -510,12 +510,14 @@ class BlockchainApi(ABC):
         pass
 
     @abstractmethod
-    def set_new_governed_map_address(self, new_address: str) -> bool:
+    def set_new_governed_map_address(self, new_address: str, policy_id: str, wallet: Wallet) -> bool:
         """
         Sets a new address to store governed map.
 
         Arguments:
             new_address {str} -- New address to be set
+            policy_id {str} -- Policy ID
+            wallet {Wallet} -- Wallet used to sign the transaction
 
         Returns:
             bool -- True if successful, False otherwise

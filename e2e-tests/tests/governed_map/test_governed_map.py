@@ -1,6 +1,8 @@
 from pytest import fixture, mark
 from src.blockchain_api import BlockchainApi
+from src.cardano_cli import cbor_to_bech32
 from config.api_config import ApiConfig
+import logging
 import random
 import string
 
@@ -26,12 +28,16 @@ def payment_key(config: ApiConfig):
 
 @fixture(scope="class")
 def random_key():
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+    key = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+    logging.info(f"Generated random key for Governed Map: {key}")
+    return key
 
 
 @fixture(scope="class")
 def random_value():
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=30))
+    value = ''.join(random.choices(string.ascii_letters + string.digits, k=30))
+    logging.info(f"Generated random value for Governed Map: {value}")
+    return value
 
 
 @fixture(scope="class")
@@ -153,7 +159,8 @@ class TestDeleteGovernedMap:
 
 
 class TestSetStoreAddress:
-    def test_set_store_address(self, api: BlockchainApi, payment_key):
+    def test_set_store_address(self, api: BlockchainApi, policy_ids, get_wallet):
         _, vkey = api.cardano_cli.generate_payment_keys()
-        address = api.cardano_cli.build_address(vkey)
-        api.set_new_governed_map_address(address)
+        bech32_vkey = cbor_to_bech32(vkey["cborHex"], "addr_vk")
+        new_address = api.cardano_cli.build_address(bech32_vkey)
+        api.set_new_governed_map_address(new_address, policy_ids["GenericContainer"], get_wallet)

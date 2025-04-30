@@ -703,17 +703,13 @@ class SubstrateApi(BlockchainApi):
         initial_epoch = epoch_result.value - session_index_result.value
         return initial_epoch
 
-    @long_running_function
-    def set_new_governed_map_address(self, signature, wallet):
+    # @long_running_function
+    def set_new_governed_map_address(self, new_address, policy_id, wallet):
         tx = Transaction()
         tx._unsigned = self.substrate.compose_call(
-            call_module="AddressAssociations",
-            call_function="associate_address",
-            call_params={
-                "partnerchain_address": signature.partner_chain_address,
-                "signature": signature.signature,
-                "stake_public_key": signature.stake_public_key,
-            },
+            call_module="GovernedMap",
+            call_function="set_main_chain_scripts",
+            call_params={"new_main_chain_script": {"validator_address": new_address, "asset_policy_id": policy_id}},
         )
         logger.debug(f"Transaction built {tx._unsigned}")
 
