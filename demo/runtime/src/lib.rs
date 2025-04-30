@@ -21,7 +21,7 @@ use frame_support::inherent::ProvideInherent;
 use frame_support::weights::constants::RocksDbWeight as RuntimeDbWeight;
 use frame_support::{
 	BoundedVec, construct_runtime, parameter_types,
-	traits::{ConstBool, ConstU8, ConstU32, ConstU64, ConstU128},
+	traits::{ConstBool, ConstU8, ConstU16, ConstU32, ConstU64, ConstU128},
 	weights::{IdentityFee, constants::WEIGHT_REF_TIME_PER_SECOND},
 };
 use opaque::SessionKeys;
@@ -553,6 +553,17 @@ impl pallet_address_associations::Config for Runtime {
 	type OnNewAssociation = TestHelperPallet;
 }
 
+impl pallet_block_producer_fees::Config for Runtime {
+	type WeightInfo = ();
+
+	type HistoricalChangesPerProducer = ConstU16<5>;
+
+	fn current_slot() -> sp_consensus_slots::Slot {
+		let slot: u64 = pallet_aura::CurrentSlot::<Runtime>::get().into();
+		sp_consensus_slots::Slot::from(slot)
+	}
+}
+
 impl pallet_block_producer_metadata::Config for Runtime {
 	type WeightInfo = pallet_block_producer_metadata::weights::SubstrateWeight<Runtime>;
 
@@ -621,6 +632,7 @@ construct_runtime!(
 		Sidechain: pallet_sidechain,
 		SessionCommitteeManagement: pallet_session_validator_management,
 		AddressAssociations: pallet_address_associations,
+		BlockProducerFees: pallet_block_producer_fees,
 		BlockProducerMetadata: pallet_block_producer_metadata,
 		BlockProductionLog: pallet_block_production_log,
 		BlockParticipation: pallet_block_participation,

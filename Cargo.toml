@@ -47,6 +47,7 @@ members = [
 	"toolkit/address-associations/pallet",
 	"toolkit/block-participation/pallet",
 	"toolkit/block-participation/primitives",
+	"toolkit/block-producer-fees/pallet",
 	"toolkit/block-producer-metadata/pallet",
 	"toolkit/block-producer-metadata/primitives",
 	"toolkit/block-producer-metadata/rpc",
@@ -219,6 +220,7 @@ sc-transaction-pool = { default-features = false, git = "https://github.com/pari
 sc-transaction-pool-api = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2503" }
 sc-offchain = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2503" }
 sp-api = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2503" }
+sp-arithmetic = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2503" }
 sp-application-crypto = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2503" }
 sp-block-builder = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2503" }
 sp-blockchain = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2503" }
@@ -304,6 +306,9 @@ pallet-block-production-log = { path = "toolkit/block-production-log/pallet", de
 sp-block-production-log = { path = "toolkit/block-production-log/primitives", default-features = false }
 pallet-block-participation = { path = "toolkit/block-participation/pallet", default-features = false }
 sp-block-participation = { path = "toolkit/block-participation/primitives", default-features = false }
+
+# block producer fees
+pallet-block-producer-fees = { path = "toolkit/block-producer-fees/pallet", default-features = false }
 
 # block producer metadata
 pallet-block-producer-metadata = { path = "toolkit/block-producer-metadata/pallet", default-features = false }

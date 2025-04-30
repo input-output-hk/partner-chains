@@ -87,6 +87,7 @@ pallet-block-participation = { workspace = true }
 sp-block-participation = { workspace = true }
 pallet-governed-map = { workspace = true }
 sp-governed-map = { workspace = true }
+pallet-block-producer-fees = { workspace = true }
 
 [dev-dependencies]
 sp-io = { workspace = true }
