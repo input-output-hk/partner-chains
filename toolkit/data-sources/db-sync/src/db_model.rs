@@ -379,12 +379,12 @@ pub(crate) async fn get_token_utxo_for_epoch(
 pub(crate) async fn get_changes(
 	pool: &Pool<Postgres>,
 	address: &Address,
-	last_block: Option<BlockNumber>,
-	new_block: BlockNumber,
+	after_block: Option<BlockNumber>,
+	to_block: BlockNumber,
 	asset: Asset,
 ) -> Result<Vec<DatumChangeOutput>, SqlxError> {
 	let query = "
-		(SELECT
+		((SELECT
 			datum.value as datum, origin_block.block_no as block_no, origin_tx.block_index as block_index, 'upsert' as action
 		FROM tx_out
 		INNER JOIN tx origin_tx			ON tx_out.tx_id = origin_tx.id
@@ -410,12 +410,12 @@ pub(crate) async fn get_changes(
 			tx_out.address = $1
 			AND (consuming_tx_in.id IS NOT NULL AND ($2 IS NULL OR consuming_block.block_no > $2) AND consuming_block.block_no <= $3)
 			AND multi_asset.policy = $4
-			AND multi_asset.name = $5)
-		ORDER BY block_no ASC";
+			AND multi_asset.name = $5))
+		ORDER BY block_no, block_index ASC";
 	Ok(sqlx::query_as::<_, DatumChangeOutput>(query)
 		.bind(&address.0)
-		.bind(last_block)
-		.bind(new_block)
+		.bind(after_block)
+		.bind(to_block)
 		.bind(&asset.policy_id.0)
 		.bind(&asset.asset_name.0)
 		.fetch_all(pool)
