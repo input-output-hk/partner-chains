@@ -3,6 +3,7 @@ use frame_support::{
 	construct_runtime,
 	traits::{ConstU16, ConstU64},
 };
+use frame_system::EnsureRoot;
 use sidechain_domain::byte_string::BoundedString;
 use sp_core::H256;
 use sp_governed_map::OnGovernedMappingChange;
@@ -105,6 +106,8 @@ impl crate::pallet::Config for Test {
 	type MaxValueLength = MaxValueLength;
 
 	type OnGovernedMappingChange = Mock;
+
+	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
 
 	type WeightInfo = ();
 

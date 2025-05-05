@@ -3,6 +3,7 @@ use frame_support::{
 	parameter_types,
 	traits::{ConstBool, ConstU64},
 };
+use frame_system::EnsureRoot;
 use pallet_session_validator_management::pallet;
 use serde::{Deserialize, Serialize};
 use sidechain_domain::ScEpochNumber;
@@ -108,6 +109,7 @@ impl pallet::Config for Test {
 	type AuthoritySelectionInputs = ();
 	type ScEpochNumber = ScEpochNumber;
 	type CommitteeMember = (Self::AuthorityId, Self::AuthorityKeys);
+	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
 
 	fn select_authorities(
 		_: Self::AuthoritySelectionInputs,

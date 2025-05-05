@@ -9,6 +9,7 @@ use frame_support::{
 	parameter_types,
 	traits::{ConstBool, ConstU64},
 };
+use frame_system::EnsureRoot;
 use hex_literal::hex;
 use plutus::ToDatum;
 use sidechain_domain::*;
@@ -149,6 +150,7 @@ impl pallet_session_validator_management::Config for Test {
 	type AuthoritySelectionInputs = AuthoritySelectionInputs;
 	type ScEpochNumber = ScEpochNumber;
 	type CommitteeMember = (Self::AuthorityId, Self::AuthorityKeys);
+	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
 
 	/// Mock simply selects all valid registered candidates as validators.
 	fn select_authorities(
