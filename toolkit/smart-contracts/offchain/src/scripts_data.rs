@@ -35,7 +35,7 @@ pub struct PolicyIds {
 	pub permissioned_candidates: PolicyId,
 	pub reserve_auth: PolicyId,
 	pub version_oracle: PolicyId,
-	pub generic_container: PolicyId,
+	pub governed_map: PolicyId,
 }
 
 pub trait GetScriptsData {
@@ -78,7 +78,7 @@ pub fn get_scripts_data(
 	let (permissioned_candidates_validator, permissioned_candidates_policy) =
 		permissioned_candidates_scripts(genesis_utxo, network)?;
 	let reserve = reserve_scripts(genesis_utxo, network)?;
-	let (governed_map_validator, generic_container_policy) =
+	let (governed_map_validator, governed_map_policy) =
 		governed_map_scripts(genesis_utxo, network)?;
 	Ok(ScriptsData {
 		addresses: Addresses {
@@ -97,7 +97,7 @@ pub fn get_scripts_data(
 			permissioned_candidates: permissioned_candidates_policy.policy_id(),
 			reserve_auth: reserve.auth_policy.policy_id(),
 			version_oracle: version_oracle_data.policy_id(),
-			generic_container: generic_container_policy.policy_id(),
+			governed_map: governed_map_policy.policy_id(),
 		},
 	})
 }
@@ -308,7 +308,7 @@ mod tests {
 				version_oracle: PolicyId(hex!(
 					"aa7f601aa9f441a26823d872f052d52767229f3301567c86475dfcfb"
 				)),
-				generic_container: PolicyId(hex!(
+				governed_map: PolicyId(hex!(
 					"9eb40bc81d93331ec485cc0a7a0eea8d06ff42cd776db8808b2f8980"
 				)),
 			},
