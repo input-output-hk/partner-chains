@@ -68,6 +68,16 @@ impl frame_system::Config for Test {
 	type PostTransactions = ();
 }
 
+#[cfg(feature = "runtime-benchmarks")]
+pub struct PalletBlockProducerFeesBenchmarkHelper;
+
+#[cfg(feature = "runtime-benchmarks")]
+impl crate::benchmarking::BenchmarkHelper<AccountId32> for PalletBlockProducerFeesBenchmarkHelper {
+	fn account_id(i: u8) -> AccountId32 {
+		sp_core::sr25519::Public::from_raw([i; 32]).into()
+	}
+}
+
 impl crate::pallet::Config for Test {
 	type WeightInfo = ();
 
@@ -77,6 +87,9 @@ impl crate::pallet::Config for Test {
 	fn current_slot() -> Slot {
 		mock_pallet::CurrentSlot::<Test>::get()
 	}
+
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = PalletBlockProducerFeesBenchmarkHelper;
 }
 
 pub fn new_test_ext() -> TestExternalities {
