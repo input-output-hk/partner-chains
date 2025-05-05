@@ -156,7 +156,6 @@ async fn make_cached_source(pool: PgPool) -> GovernedMapDataSourceCachedImpl {
 }
 
 fn mainchain_epoch_config() -> MainchainEpochConfig {
-	// Matches data of block 0 from 5_insert_blocks.sql
 	MainchainEpochConfig {
 		first_epoch_timestamp_millis: Timestamp::from_unix_millis(1650558070000),
 		epoch_duration_millis: Duration::from_millis(1000 * 1000),

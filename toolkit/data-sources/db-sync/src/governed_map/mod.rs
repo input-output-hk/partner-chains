@@ -155,9 +155,7 @@ observed_async_trait!(
 				cache.update(changes.clone());
 			}
 
-			let filtered = filter_changes_in_range(changes, since_block_number, up_to_block_number);
-			println!("filtered: {:?}", filtered);
-			Ok(filtered)
+			Ok(filter_changes_in_range(changes, since_block_number, up_to_block_number))
 		}
 	}
 );
