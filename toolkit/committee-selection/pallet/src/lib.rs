@@ -13,7 +13,7 @@ pub mod session_manager;
 
 pub use pallet::*;
 
-#[cfg(any(test, feature = "mock"))]
+#[cfg(test)]
 mod mock;
 
 #[cfg(test)]
