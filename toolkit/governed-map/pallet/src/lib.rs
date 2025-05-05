@@ -140,6 +140,9 @@ pub mod pallet {
 		/// by the handler.
 		type OnGovernedMappingChange: OnGovernedMappingChange<Self::MaxKeyLength, Self::MaxValueLength>;
 
+		/// Origin for governance calls
+		type MainChainScriptsOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+
 		/// Weight functions for the pallet's extrinsics
 		type WeightInfo: weights::WeightInfo;
 
@@ -287,7 +290,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			new_main_chain_script: MainChainScriptsV1,
 		) -> DispatchResult {
-			ensure_root(origin)?;
+			T::MainChainScriptsOrigin::ensure_origin(origin)?;
 			MainChainScripts::<T>::put(new_main_chain_script.clone());
 			log::info!("🗂️ Governed Map main chain scripts updated to {new_main_chain_script:?}");
 			Ok(())

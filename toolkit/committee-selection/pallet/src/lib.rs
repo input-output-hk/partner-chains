@@ -74,6 +74,9 @@ pub mod pallet {
 			+ MaxEncodedLen
 			+ CommitteeMember<AuthorityId = Self::AuthorityId, AuthorityKeys = Self::AuthorityKeys>;
 
+		/// Origin for governance calls
+		type MainChainScriptsOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+
 		fn select_authorities(
 			input: Self::AuthoritySelectionInputs,
 			sidechain_epoch: Self::ScEpochNumber,
@@ -298,7 +301,7 @@ pub mod pallet {
 			d_parameter_policy_id: PolicyId,
 			permissioned_candidates_policy_id: PolicyId,
 		) -> DispatchResult {
-			ensure_root(origin)?;
+			T::MainChainScriptsOrigin::ensure_origin(origin)?;
 			let new_scripts = MainChainScripts {
 				committee_candidate_address,
 				d_parameter_policy_id,
