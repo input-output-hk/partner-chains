@@ -1,3 +1,5 @@
+//! Implements [pallet_partner_chains_session::SessionManager] and[pallet_partner_chains_session::ShouldEndSession],
+//! Partner Chain's version of Substrate's [pallet_session].
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use crate::CommitteeMember;
@@ -9,11 +11,11 @@ use pallet_partner_chains_session::SessionIndex;
 use sp_std::vec::Vec;
 
 #[derive(new)]
+/// Session manager which takes committee from pallet_session_validator_management.
 pub struct ValidatorManagementSessionManager<T> {
 	_phantom: PhantomData<T>,
 }
 
-/// SessionManager, which takes committee from pallet_session_validator_management.
 impl<T: crate::Config + pallet_session::Config>
 	pallet_partner_chains_session::SessionManager<T::AccountId, T::AuthorityKeys>
 	for ValidatorManagementSessionManager<T>

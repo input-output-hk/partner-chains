@@ -1,3 +1,4 @@
+//! Implements storage migration of the `session-validator-management` pallet from v0 to v1.
 #[cfg(feature = "try-runtime")]
 extern crate alloc;
 use frame_support::traits::UncheckedOnRuntimeUpgrade;
@@ -8,6 +9,16 @@ use {
 
 use super::v0;
 
+/// [VersionedMigration] parametrized for v0 to v1 migration.
+pub type LegacyToV1Migration<T> = frame_support::migrations::VersionedMigration<
+	0, // The migration will only execute when the on-chain storage version is 0
+	1, // The on-chain storage version will be set to 1 after the migration is complete
+	InnerMigrateV0ToV1<T>,
+	crate::pallet::Pallet<T>,
+	<T as frame_system::Config>::DbWeight,
+>;
+
+/// Helper type used for migration.
 pub struct InnerMigrateV0ToV1<T: crate::Config>(core::marker::PhantomData<T>);
 
 impl<T: crate::pallet::Config> UncheckedOnRuntimeUpgrade for InnerMigrateV0ToV1<T>
@@ -124,11 +135,3 @@ where
 		Ok(())
 	}
 }
-
-pub type LegacyToV1Migration<T> = frame_support::migrations::VersionedMigration<
-	0, // The migration will only execute when the on-chain storage version is 0
-	1, // The on-chain storage version will be set to 1 after the migration is complete
-	InnerMigrateV0ToV1<T>,
-	crate::pallet::Pallet<T>,
-	<T as frame_system::Config>::DbWeight,
->;

@@ -1,3 +1,6 @@
+//! Implements Substrate's [pallet_session].
+//!
+//! This implementation has lag of one additional PC epoch when applying committees to sessions.
 use crate::CommitteeMember;
 use core::marker::PhantomData;
 use derive_new::new;
