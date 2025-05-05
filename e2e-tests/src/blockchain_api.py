@@ -405,10 +405,10 @@ class BlockchainApi(ABC):
         self, metadata: dict, cross_chain_signing_key: str
     ) -> BlockProducerMetadataSignature:
         """
-        Creates a signature for block procuder metadata.
+        Creates a signature for block producer metadata.
 
         Arguments:
-            metadata {dict} -- block procuder metadata
+            metadata {dict} -- block producer metadata
             cross_chain_signing_key {str} -- Cross Chain Signing key in hex format
 
         Returns:
@@ -510,7 +510,7 @@ class BlockchainApi(ABC):
         pass
 
     @abstractmethod
-    def set_new_governed_map_address(self, new_address: str, policy_id: str, wallet: Wallet) -> bool:
+    def set_new_governed_map_address(self, new_address: str, policy_id: str, wallet: Wallet) -> Transaction:
         """
         Sets a new address to store governed map.
 
@@ -520,6 +520,6 @@ class BlockchainApi(ABC):
             wallet {Wallet} -- Wallet used to sign the transaction
 
         Returns:
-            bool -- True if successful, False otherwise
+            tx {Transaction} -- Transaction object
         """
         pass

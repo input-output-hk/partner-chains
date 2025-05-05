@@ -706,11 +706,12 @@ class SubstrateApi(BlockchainApi):
     # @long_running_function
     def set_new_governed_map_address(self, new_address, policy_id, wallet):
         tx = Transaction()
-        tx._unsigned = self.substrate.compose_call(
+        call = self.substrate.compose_call(
             call_module="GovernedMap",
             call_function="set_main_chain_scripts",
             call_params={"new_main_chain_script": {"validator_address": new_address, "asset_policy_id": policy_id}},
         )
+        tx._unsigned = self.substrate.compose_call(call_module="Sudo", call_function="sudo", call_params={"call": call})
         logger.debug(f"Transaction built {tx._unsigned}")
 
         if wallet.crypto_type and wallet.crypto_type == KeypairType.ECDSA:

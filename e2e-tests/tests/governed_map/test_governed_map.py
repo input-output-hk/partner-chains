@@ -159,8 +159,16 @@ class TestDeleteGovernedMap:
 
 
 class TestSetStoreAddress:
+    @fixture(scope="class")
+    def sudo(self, api: BlockchainApi, secrets):
+        sudo_config = secrets["sudo"]
+        api.get_wallet(address=sudo_config["address"], public_key=)
+
     def test_set_store_address(self, api: BlockchainApi, policy_ids, get_wallet):
         _, vkey = api.cardano_cli.generate_payment_keys()
+        logging.info(f"Generated new payment key: {vkey}")
         bech32_vkey = cbor_to_bech32(vkey["cborHex"], "addr_vk")
         new_address = api.cardano_cli.build_address(bech32_vkey)
-        api.set_new_governed_map_address(new_address, policy_ids["GenericContainer"], get_wallet)
+        logging.info(f"Generated new address: {new_address}")
+        tx = api.set_new_governed_map_address(new_address, policy_ids["GenericContainer"], get_wallet)
+        assert tx._receipt.is_success, f"Failed to set new governed map address: {tx._receipt.error_message}"
