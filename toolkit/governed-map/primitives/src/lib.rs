@@ -123,7 +123,7 @@ pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"govrnmap";
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct MainChainScriptsV1 {
-	/// Cardano address of the Governed Map validator, at which UTXOs containig key-value pairs are located
+	/// Cardano address of the Governed Map validator, at which UTXOs containing key-value pairs are located
 	pub validator_address: MainchainAddress,
 	/// Policy of the asset used to mark the UTXOs containing the Governed Map's key-value pairs
 	pub asset_policy_id: PolicyId,
