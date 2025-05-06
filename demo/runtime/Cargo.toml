@@ -29,7 +29,9 @@ pallet-aura = { workspace = true }
 pallet-balances = { workspace = true }
 frame-support = { workspace = true }
 pallet-grandpa = { workspace = true }
-pallet-partner-chains-session = { workspace = true, features = ["pallet-session-compat"] }
+pallet-partner-chains-session = { workspace = true, features = [
+	"pallet-session-compat",
+] }
 pallet-session = { workspace = true }
 pallet-sudo = { workspace = true }
 frame-system = { workspace = true }
@@ -73,7 +75,9 @@ sp-block-production-log = { workspace = true }
 pallet-block-production-log = { workspace = true }
 sp-sidechain = { workspace = true }
 pallet-sidechain = { workspace = true }
-pallet-session-validator-management = { workspace = true, features = ["pallet-session-compat"] }
+pallet-session-validator-management = { workspace = true, features = [
+	"pallet-session-compat",
+] }
 sp-session-validator-management = { workspace = true, features = ["serde"] }
 pallet-session-validator-management-benchmarking = { workspace = true, optional = true }
 sidechain-domain = { workspace = true, features = ["serde"] }
@@ -180,6 +184,7 @@ runtime-benchmarks = [
 	"pallet-block-production-log/runtime-benchmarks",
 	"pallet-native-token-management/runtime-benchmarks",
 	"pallet-address-associations/runtime-benchmarks",
+	"pallet-block-producer-fees/runtime-benchmarks",
 	"pallet-block-producer-metadata/runtime-benchmarks",
 	"pallet-block-participation/runtime-benchmarks",
 	"pallet-governed-map/runtime-benchmarks",
