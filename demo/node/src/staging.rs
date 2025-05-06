@@ -154,7 +154,7 @@ pub fn staging_genesis(
 			..Default::default()
 		},
 		governed_map: GovernedMapConfig {
-			main_chain_script: Some(Default::default()),
+			main_chain_scripts: Some(Default::default()),
 			..Default::default()
 		},
 		test_helper_pallet: TestHelperPalletConfig {

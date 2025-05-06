@@ -13,16 +13,23 @@
 //! ### Defining size limits
 //!
 //! Before adding the pallet to your runtime, first decide on the limits for the data that it will process:
-//! - `MaxChanges`: the maximum number of changes that will be processed in one inherent invocation.
-//!                 This number should be high enough to guarantee the inherent will always have the
-//!                 capacity required to process incoming changes. Setting this limit above the expected
-//!                 number of keys in use is a safe option.
-//! - `MaxKeyLength`: maximum length of keys used. Be warned that if a key is set in the Governed Map
-//!                   that exceeds this lenght limit, this pallet's inherent will fail and stall block
-//!                   production, with the only recovery path being removal of this key so it is no longer
-//!                   in the change set.
-//! - `MaxValueLength`: maximum length of the value under a key. Same considerations as for `MaxKeyLength`
-//!                     apply.
+//! - `MaxChanges`: the maximum number of changes that will be processed in one inherent invocation. Changes
+//!                 are understood as the diff between previously stored mappings and the currently observed
+//!                 ones, as opposed to raw on-chain events altering those mappings.
+//!                 **Important**: This number must be high enough to guarantee the inherent will always have
+//!                 the capacity required to process incoming changes. If the number of changes exceeds this
+//!                 limit, [InherentError::TooManyChanges] error will be raised stalling block production.
+//!                 If this error occurs on a live chain, then the only way of fixing it is to change the
+//!                 mappings on Cardano close enough to the last state registered in the pallet to bring the
+//!                 change count below the limit.
+//!                 Setting this limit above the expected number of keys in use is a safe option.
+//! - `MaxKeyLength`: maximum length of keys that can be used.
+//!                   **Important**: If a key is set in the Governed Map that exceeds this lenght limit, the
+//!                   [InherentError::KeyExceedsBounds] error will be raised stalling block production, with
+//!                   the only recovery path being removal of this key so it is no longer in the change set.
+//! - `MaxValueLength`: maximum length of the value under a key.
+//!                     Same considerations as for `MaxKeyLength` apply.
+//!
 //! Once the limit values are decided, define them in your runtime, like so:
 //! ```rust
 //! frame_support::parameter_types! {
@@ -31,6 +38,10 @@
 //!        pub const MaxValueLength: u32 = 512;
 //! }
 //! ```
+//!
+//! If at any point a need arised to either support higher volume of parameter changes or increase the maximum
+//! length of keys and values in the mappings, it can be achieved through a runtime upgrade that modifies the
+//! pallet's configuration.
 //!
 //! ### Implementing on-change handler
 //!
@@ -84,12 +95,54 @@
 //!     type BenchmarkHelper = ();
 //! }
 //! ```
+//!
+//! ### Setting the main chain scripts
+//!
+//! For the data sources to be able to observe the Governed Map state on Cardano, the pallet stores and exposes
+//! relevant addresses and script hashes which are necessary to query main chain state. Their values need to be
+//! set before the feature can be fully functional. How this is done depends on whether the pallet is present from
+//! the genesis block or added later to a live chain.
+//!
+//! #### Configuring the addresses at genesis
+//!
+//! If the pallet is included in the runtime from genesis block, the scripts can be configured in the genesis config
+//! of your runtime:
+//! ```rust
+//! # use sidechain_domain::*;
+//! # use std::str::FromStr;
+//! # fn build_genesis<T: pallet_governed_map::Config>() -> pallet_governed_map::GenesisConfig<T> {
+//! pallet_governed_map::GenesisConfig {
+//!     main_chain_scripts: Some(pallet_governed_map::MainChainScriptsV1 {
+//!         asset_policy_id: PolicyId::from_hex_unsafe("00000000000000000000000000000000000000000000000000000001"),
+//!         validator_address: MainchainAddress::from_str("test_addr1").unwrap(),
+//!     }),
+//!     ..Default::default()
+//! }
+//! # }
+//! ```
+//! At the same time `main_chain_scripts` field is optional and can be set to [None] if you wish to postpone setting
+//! the scripts for whatever reason.
+//!
+//! #### Setting the addresses via extrinsic
+//!
+//! If the pallet is added to a running chain, it will initailly have no main chain scripts set and remain inactive
+//! until they are set. See section "Updating main chain scripts" for more information.
+//!
+//! ## Updating main chain scripts
+//!
+//! To allow the Partner Chain's governance to set and update main chain script values, the pallet provides a
+//! `set_main_chain_scripts` extrinsic which updates the script values in its storage. This extrinsic is required
+//! to be run with root access either via the `sudo` pallet or other governance mechanism.
+//!
+//! Every time `set_main_chain_scripts` is successfuly invoked, the pallet will update its tracked Governed Map
+//! state to be congruent with the mappings pointed to by the updates scripts on the next Partner Chain block.
 #![cfg_attr(not(feature = "std"), no_std)]
 #![deny(missing_docs)]
 
 extern crate alloc;
 
 pub use pallet::*;
+pub use sp_governed_map::MainChainScriptsV1;
 
 use crate::alloc::string::{String, ToString};
 use crate::weights::WeightInfo;
@@ -123,14 +176,18 @@ pub mod pallet {
 	pub trait Config: frame_system::Config {
 		/// Maximum number of changes that can be registered in a single inherent.
 		///
-		/// This value should be high enough for all changes to be registered in one block.
+		/// This value *must* be high enough for all changes to be registered in one block.
 		/// Setting this to a value higher than the total number of parameters in the Governed Map guarantees that.
 		type MaxChanges: Get<u32>;
 
 		/// Maximum length of the key in the Governed Map in bytes.
+		///
+		/// This value *must* be high enough not to be exceeded by any key stored on Cardano.
 		type MaxKeyLength: Get<u32>;
 
 		/// Maximum length of data stored under a single key in the Governed Map
+		///
+		/// This value *must* be high enough not to be exceeded by any value stored on Cardano.
 		type MaxValueLength: Get<u32>;
 
 		/// Handler called for each change in the governed mappings.
@@ -177,7 +234,7 @@ pub mod pallet {
 		/// Initial address of the Governed Map validator.
 		///
 		/// If it is left empty, the Governance Map pallet will be inactive until the address is set via extrinsic.
-		pub main_chain_script: Option<MainChainScriptsV1>,
+		pub main_chain_scripts: Option<MainChainScriptsV1>,
 		/// Phantom data marker
 		pub _marker: PhantomData<T>,
 	}
@@ -185,7 +242,7 @@ pub mod pallet {
 	#[pallet::genesis_build]
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
-			MainChainScripts::<T>::set(self.main_chain_script.clone());
+			MainChainScripts::<T>::set(self.main_chain_scripts.clone());
 		}
 	}
 

@@ -167,10 +167,6 @@ pub enum InherentError {
 	/// This should not normally occur if the pallet is configured to accept at least as many changes
 	/// as the planned number of keys in use, or if the number of keys exceeds this limit but the number
 	/// of changes is low enough not to overwhelm a non-stalled chain.
-	///
-	/// As this error prevents the production of a block, if this error occurs on a live chain, then the
-	/// only way of fixing it is to change the mappings on Cardano close enough to the last state
-	/// registered in the pallet to bring the change count below the limit.
 	#[cfg_attr(feature = "std", error("Number of changes to the Governed Map exceeds the limit"))]
 	TooManyChanges,
 }
