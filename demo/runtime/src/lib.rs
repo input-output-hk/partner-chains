@@ -556,6 +556,18 @@ impl pallet_address_associations::Config for Runtime {
 	type OnNewAssociation = TestHelperPallet;
 }
 
+#[cfg(feature = "runtime-benchmarks")]
+pub struct PalletBlockProducerFeesBenchmarkHelper;
+
+#[cfg(feature = "runtime-benchmarks")]
+impl pallet_block_producer_fees::benchmarking::BenchmarkHelper<AccountId>
+	for PalletBlockProducerFeesBenchmarkHelper
+{
+	fn account_id(i: u8) -> AccountId {
+		sp_core::sr25519::Public::from_raw([i; 32]).into()
+	}
+}
+
 impl pallet_block_producer_fees::Config for Runtime {
 	type WeightInfo = ();
 
@@ -565,6 +577,9 @@ impl pallet_block_producer_fees::Config for Runtime {
 		let slot: u64 = pallet_aura::CurrentSlot::<Runtime>::get().into();
 		sp_consensus_slots::Slot::from(slot)
 	}
+
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = PalletBlockProducerFeesBenchmarkHelper;
 }
 
 impl pallet_block_producer_metadata::Config for Runtime {
@@ -708,6 +723,7 @@ mod benches {
 		[pallet_native_token_management, NativeTokenManagement]
 		[pallet_block_production_log, BlockProductionLog]
 		[pallet_address_associations, AddressAssociations]
+		[pallet_block_producer_fees, BlockProducerFees]
 		[pallet_block_producer_metadata, BlockProducerMetadata]
 		[pallet_block_participation, BlockParticipation]
 		[pallet_governed_map, GovernedMap]

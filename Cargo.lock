@@ -6379,6 +6379,7 @@ dependencies = [
 name = "pallet-block-producer-fees"
 version = "1.6.0"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "parity-scale-codec",
