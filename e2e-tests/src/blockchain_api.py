@@ -510,16 +510,53 @@ class BlockchainApi(ABC):
         pass
 
     @abstractmethod
-    def set_new_governed_map_address(self, new_address: str, policy_id: str, wallet: Wallet) -> Transaction:
+    def set_governed_map_address(self, address: str, policy_id: str, wallet: Wallet) -> Transaction:
         """
-        Sets a new address to store governed map.
+        Sets an address of governed map stored on the main chain.
 
         Arguments:
-            new_address {str} -- New address to be set
+            address {str} -- An address to be set
             policy_id {str} -- Policy ID
             wallet {Wallet} -- Wallet used to sign the transaction
 
         Returns:
             tx {Transaction} -- Transaction object
+        """
+        pass
+
+    @abstractmethod
+    def get_governed_map(self) -> dict:
+        """
+        Retrieves the governed map from the main chain.
+
+        Returns:
+            dict -- Governed map
+        """
+        pass
+
+    @abstractmethod
+    def get_governed_map_key(self, key: str) -> str:
+        """
+        Retrieves a specific key from the governed map.
+
+        Arguments:
+            key {str} -- Key to retrieve
+
+        Returns:
+            str -- Value associated with the key
+        """
+        pass
+
+    @abstractmethod
+    def subscribe_governed_map_change(self, key: str, value: str = None) -> list:
+        """
+        Subscribes to changes in the governed map. Timeouts after main chain security parameter.
+
+        Arguments:
+            key {str} -- Key to subscribe to
+            value {str} -- Value to subscribe to (optional)
+
+        Returns:
+            list -- List of changes
         """
         pass

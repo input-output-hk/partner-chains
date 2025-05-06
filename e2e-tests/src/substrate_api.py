@@ -16,6 +16,7 @@ from .partner_chains_node.node import PartnerChainsNode
 from .partner_chain_rpc import PartnerChainRpc, PartnerChainRpcResponse, DParam
 import time
 from scalecodec.base import ScaleBytes
+from scalecodec.types import OptionBytes
 
 
 def _keypair_name_to_type(type_name):
@@ -200,15 +201,7 @@ class SubstrateApi(BlockchainApi):
         logger.debug(f"New wallet created {wallet.address}")
         return wallet
 
-    def get_wallet(self, address=None, public_key=None, secret=None, scheme=None):
-        if not address:
-            address = self.secrets["wallets"]["faucet-0"]["address"]
-        if not public_key:
-            public_key = self.secrets["wallets"]["faucet-0"]["public_key"]
-        if not secret:
-            secret = self.secrets["wallets"]["faucet-0"]["secret_seed"]
-        if not scheme:
-            scheme = self.secrets["wallets"]["faucet-0"]["scheme"]
+    def get_wallet(self, address, public_key, secret, scheme):
         scheme_type = _keypair_name_to_type(scheme)
 
         if secret.startswith("//"):
@@ -703,13 +696,14 @@ class SubstrateApi(BlockchainApi):
         initial_epoch = epoch_result.value - session_index_result.value
         return initial_epoch
 
-    # @long_running_function
-    def set_new_governed_map_address(self, new_address, policy_id, wallet):
+    @long_running_function
+    def set_governed_map_address(self, address, policy_id, wallet):
+        logger.info(f"Setting governed map address {address} with policy id {policy_id}")
         tx = Transaction()
         call = self.substrate.compose_call(
             call_module="GovernedMap",
             call_function="set_main_chain_scripts",
-            call_params={"new_main_chain_script": {"validator_address": new_address, "asset_policy_id": policy_id}},
+            call_params={"new_main_chain_script": {"validator_address": address, "asset_policy_id": policy_id}},
         )
         tx._unsigned = self.substrate.compose_call(call_module="Sudo", call_function="sudo", call_params={"call": call})
         logger.debug(f"Transaction built {tx._unsigned}")
@@ -725,3 +719,55 @@ class SubstrateApi(BlockchainApi):
         tx.hash = tx._receipt.extrinsic_hash
         tx.total_fee_amount = tx._receipt.total_fee_amount
         return tx
+
+    def get_governed_map(self):
+        result = self.substrate.query_map("GovernedMap", "Mapping")
+        governed_map = {}
+        for key, value in result:
+            governed_map[key.value] = value.value
+            logger.debug(f"Key: {key.value}, Value: {value.value}")
+        logger.debug(f"Governed map: {governed_map}")
+        return governed_map
+
+    def get_governed_map_key(self, key):
+        result = self.substrate.query("GovernedMap", "Mapping", [key])
+        logger.debug(f"Governed map for key {key}: {result}")
+        return result.value
+
+    def subscribe_governed_map_change(self, key, value=None):
+        current_main_chain_block = self.get_mc_block()
+        max_main_chain_block = current_main_chain_block + self.config.main_chain.security_param
+
+        def subscription_handler(obj, update_nr, subscription_id):
+            block_no = obj["header"]["number"]
+            logger.debug(f"New block #{block_no}")
+            block = self.substrate.get_block(block_number=block_no)
+
+            subscribed_change = None
+            for idx, extrinsic in enumerate(block["extrinsics"]):
+                logger.debug(f"# {idx}: {extrinsic.value}")
+                if (
+                    extrinsic.value["call"]["call_module"] == "GovernedMap"
+                    and extrinsic.value["call"]["call_function"] == "register_changes"
+                ):
+                    registered_changes = extrinsic.value["call"]["call_args"][0]["value"]
+                    if value:
+                        subscribed_change = next(
+                            (change for change in registered_changes if change[0] == key and change[1] == value), None
+                        )
+                    else:
+                        subscribed_change = next((change for change in registered_changes if change[0] == key), None)
+                    break
+            if subscribed_change:
+                return subscribed_change
+            if self.get_mc_block() > max_main_chain_block:
+                logger.warning("Max main chain block reached. Stopping subscription.")
+                self.substrate.rpc_request("chain_unsubscribeNewHeads", [subscription_id])
+                return False
+
+        logger.info(
+            f"Subscribing to changes registered in Governed Map for key {key}... "
+            f"Max main chain block: {max_main_chain_block} ({self.config.main_chain.security_param} blocks ahead)"
+        )
+        result = self.substrate.subscribe_block_headers(subscription_handler)
+        return result
