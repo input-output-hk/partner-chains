@@ -135,8 +135,8 @@ features.
 - **native token management**: Provides governance controlled tokens and token reserve management.
 - **address association**: Provides a mechanism for users to establish a mapping between their identities on Cardano and the Partner Chain
 - **committee selection**: Provides a Cardano-based committee selection using the Ariadne algorithm.
-- **cardano based block production rewards**: Calculation of rewards for delegation and block
-production on cardano.
+- **Cardano-based block production rewards**: Calculation of rewards for Partner Chain block producers
+and their Cardano delegators.
 
 More detailed documentation for the different features is provided in the sections below.
 
