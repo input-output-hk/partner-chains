@@ -133,7 +133,7 @@ features.
 - **core**: Establishes a chain as a Partner Chain by tying its identity to a `genesis utxo` on Cardano. Provides the mechanism for the Partner Chain's blocks to reference stable Cardano blocks.
 - **governed map**: Governance controlled key-value store on the Cardano main chain.
 - **native token management**: Provides governance controlled tokens and token reserve management.
-- **address association**: Provides registrations and mappings between cardano delegation keys and PC addresses
+- **address association**: Provides a mechanism for users to establish a mapping between their identities on Cardano and the Partner Chain
 - **committee selection**: Provides the cardano-based committee selection using the ariadne algorithm.
 - **cardano based block production rewards**: Calculation of rewards for delegation and block
 production on cardano.
