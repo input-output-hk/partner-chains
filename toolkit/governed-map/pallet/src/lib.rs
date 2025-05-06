@@ -13,22 +13,32 @@
 //! ### Defining size limits
 //!
 //! Before adding the pallet to your runtime, first decide on the limits for the data that it will process:
-//! - `MaxChanges`: the maximum number of changes that will be processed in one inherent invocation. Changes
-//!                 are understood as the diff between previously stored mappings and the currently observed
-//!                 ones, as opposed to raw on-chain events altering those mappings.
-//!                 **Important**: This number must be high enough to guarantee the inherent will always have
-//!                 the capacity required to process incoming changes. If the number of changes exceeds this
-//!                 limit, [InherentError::TooManyChanges] error will be raised stalling block production.
-//!                 If this error occurs on a live chain, then the only way of fixing it is to change the
-//!                 mappings on Cardano close enough to the last state registered in the pallet to bring the
-//!                 change count below the limit.
-//!                 Setting this limit above the expected number of keys in use is a safe option.
-//! - `MaxKeyLength`: maximum length of keys that can be used.
-//!                   **Important**: If a key is set in the Governed Map that exceeds this lenght limit, the
-//!                   [InherentError::KeyExceedsBounds] error will be raised stalling block production, with
-//!                   the only recovery path being removal of this key so it is no longer in the change set.
-//! - `MaxValueLength`: maximum length of the value under a key.
-//!                     Same considerations as for `MaxKeyLength` apply.
+//!
+//! #### `MaxChanges`
+//! The maximum number of changes that will be processed in one inherent invocation. Changes
+//! are understood as the diff between previously stored mappings and the currently observed
+//! ones, as opposed to raw on-chain events altering those mappings.
+//!
+//! **Important**: This number must be high enough to guarantee the inherent will always have
+//! the capacity required to process incoming changes. If the number of changes exceeds this
+//! limit, [TooManyChanges][InherentError::TooManyChanges] error will be raised stalling block production.
+//!
+//! If this error occurs on a live chain, then the only way of fixing it is to change the
+//! mappings on Cardano close enough to the last state registered in the pallet to bring the
+//! change count below the limit.
+//! Setting this limit above the expected number of keys in use is a safe option.
+//!
+//! #### `MaxKeyLength`
+//! maximum length of keys that can be used.
+//!
+//! Important: If a key is set in the Governed Map that exceeds this lenght limit, the
+//! [KeyExceedsBounds][InherentError::KeyExceedsBounds] error will be raised stalling block production, with
+//! the only recovery path being removal of this key so it is no longer in the change set.
+//!
+//! #### `MaxValueLength`
+//! Maximum length of the value under a key. Same considerations as for `MaxKeyLength` apply.
+//!
+//! #### Defining the values in the code
 //!
 //! Once the limit values are decided, define them in your runtime, like so:
 //! ```rust
@@ -39,7 +49,7 @@
 //! }
 //! ```
 //!
-//! If at any point a need arised to either support higher volume of parameter changes or increase the maximum
+//! If at any point a need arises to either support higher volume of parameter changes or increase the maximum
 //! length of keys and values in the mappings, it can be achieved through a runtime upgrade that modifies the
 //! pallet's configuration.
 //!
@@ -73,10 +83,10 @@
 //! ### Weights and Benchmarking
 //!
 //! The pallet comes with pre-defined weights for its extrinsics that can be used during initial development
-//! through the [pallet_governed_map::weights::SubstrateWeight] type.
+//! through the [SubstrateWeight][crate::weights::SubstrateWeight] type.
 //!
 //! However, since data size limits and the on-change logic both can affect the weights, it is advisable to run
-//! your own benchmark to account for their impact. See the documentation on `[crate::benchmarking]` for details.
+//! your own benchmark to account for their impact. See the documentation on [crate::benchmarking] for details.
 //!
 //! ### Configuring the pallet
 //!
@@ -130,12 +140,13 @@
 //!
 //! ## Updating main chain scripts
 //!
-//! To allow the Partner Chain's governance to set and update main chain script values, the pallet provides a
-//! `set_main_chain_scripts` extrinsic which updates the script values in its storage. This extrinsic is required
-//! to be run with root access either via the `sudo` pallet or other governance mechanism.
+//! To allow the Partner Chain's governance to set and update main chain script values, the pallet provides the
+//! [set_main_chain_scripts][Call::set_main_chain_scripts] extrinsic which updates the script values in its storage.
+//! This extrinsic is required to be run with root access either via the `sudo` pallet or other governance mechanism.
 //!
-//! Every time `set_main_chain_scripts` is successfuly invoked, the pallet will update its tracked Governed Map
-//! state to be congruent with the mappings pointed to by the updates scripts on the next Partner Chain block.
+//! Every time [set_main_chain_scripts][Call::set_main_chain_scripts] is successfuly invoked, the pallet will update
+//! its tracked Governed Map state to be congruent with the mappings pointed to by the updates scripts on the next
+//! Partner Chain block.
 #![cfg_attr(not(feature = "std"), no_std)]
 #![deny(missing_docs)]
 
