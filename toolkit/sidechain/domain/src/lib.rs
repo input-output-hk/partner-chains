@@ -1,6 +1,9 @@
-//! Types/Structs/Functions meant to be used by other modules / our Business Logic (i.e the Sidechain's node / runtime in our case)
+//! # Partner Chains domain types
+//!
+//! This crate defines common domain and utility types used in the Partner Chain Toolkit.
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![deny(missing_docs)]
 
 pub mod byte_string;
 pub mod crypto;
@@ -37,11 +40,11 @@ use {
 /// This offset is necessary to ensure that data is present and stable.
 const DATA_MC_EPOCH_OFFSET: u32 = 2;
 
+/// Shifts given epoch back by [DATA_MC_EPOCH_OFFSET] accounting for underflow.
 pub fn offset_data_epoch(epoch: &McEpochNumber) -> Result<McEpochNumber, u32> {
 	Ok(McEpochNumber(epoch.0.checked_sub(DATA_MC_EPOCH_OFFSET).ok_or(DATA_MC_EPOCH_OFFSET)?))
 }
 
-/// A main chain epoch number. In range [0, 2^31-1].
 #[derive(
 	Default,
 	Debug,
@@ -58,9 +61,11 @@ pub fn offset_data_epoch(epoch: &McEpochNumber) -> Result<McEpochNumber, u32> {
 	PartialOrd,
 )]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize, FromStr))]
+/// Cardano epoch number. In range [0, 2^31-1].
 pub struct McEpochNumber(pub u32);
 
 impl McEpochNumber {
+	/// Returns next Cardano epoch number
 	pub fn next(&self) -> Self {
 		Self(&self.0 + 1)
 	}
@@ -71,7 +76,6 @@ impl Display for McEpochNumber {
 		u32::fmt(&self.0, f)
 	}
 }
-/// Amount of Lovelace (which is a fraction of 1 ADA) staked/locked on Cardano
 #[derive(
 	Default,
 	Clone,
@@ -87,9 +91,11 @@ impl Display for McEpochNumber {
 	Ord,
 )]
 #[cfg_attr(feature = "serde", derive(Serialize))]
+/// Amount of Lovelace (which is a fraction of 1 ADA) staked/locked on Cardano
 pub struct StakeDelegation(pub u64);
 
 impl StakeDelegation {
+	/// Checks if stake delegation is zero
 	pub fn is_zero(&self) -> bool {
 		self.0 == 0
 	}
@@ -110,6 +116,7 @@ impl StakeDelegation {
 	MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde", derive(Serialize))]
+/// The amount of a Cardano native token
 pub struct NativeTokenAmount(pub u128);
 
 impl Display for NativeTokenAmount {
@@ -118,7 +125,6 @@ impl Display for NativeTokenAmount {
 	}
 }
 
-/// A main chain block number. In range [0, 2^31-1].
 #[derive(
 	Default,
 	Clone,
@@ -134,6 +140,7 @@ impl Display for NativeTokenAmount {
 	scale_info::TypeInfo,
 )]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize, FromStr))]
+/// Cardano block number. In range [0, 2^31-1].
 pub struct McBlockNumber(pub u32);
 
 impl Display for McBlockNumber {
@@ -157,6 +164,7 @@ impl Display for McBlockNumber {
 	Hash,
 )]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize, FromStr))]
+/// Cardano slot number. In range [0, 2^63-1].
 pub struct McSlotNumber(pub u64);
 
 impl Display for McSlotNumber {
@@ -180,19 +188,25 @@ impl Display for McSlotNumber {
 	MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize, FromStr))]
+/// Partner Chain slot number
 pub struct ScSlotNumber(pub u64);
 
+/// Data describing a Cardano block
 #[derive(Debug, Clone, PartialEq, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct MainchainBlock {
+	/// Block number
 	pub number: McBlockNumber,
+	/// Block hash
 	pub hash: McBlockHash,
+	/// Block's epoch number
 	pub epoch: McEpochNumber,
+	/// Block's slot number
 	pub slot: McSlotNumber,
+	/// Block timestamp
 	pub timestamp: u64, // seconds since UNIX_EPOCH
 }
 
-/// An index of transaction in a block. In range [0, 2^31-1].
 #[derive(
 	Default,
 	Debug,
@@ -209,6 +223,7 @@ pub struct MainchainBlock {
 	MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+/// An index of transaction in a block. In range [0, 2^31-1].
 pub struct McTxIndexInBlock(pub u32);
 
 #[cfg(feature = "serde")]
@@ -221,6 +236,7 @@ impl FromStr for McTxIndexInBlock {
 	}
 }
 
+/// Maximum length of a Cardano address in UTF-8 bytes
 const MAX_MAINCHAIN_ADDRESS_BYTES: u32 = 120;
 
 /// Wraps UTF-8 bytes of Mainchain Address in bech32 format.
@@ -234,6 +250,7 @@ const MAX_MAINCHAIN_ADDRESS_BYTES: u32 = 120;
 pub struct MainchainAddress(BoundedVec<u8, ConstU32<MAX_MAINCHAIN_ADDRESS_BYTES>>);
 
 impl MainchainAddress {
+	/// Returns raw bytes of this Cardano address
 	pub fn bytes(&self) -> Vec<u8> {
 		self.0.to_vec()
 	}
@@ -260,7 +277,6 @@ impl Display for MainchainAddress {
 
 /// Cardano Policy Id is a 224 bits blake2b hash.
 const POLICY_ID_LEN: usize = 28;
-/// Cardano Policy Id
 #[derive(
 	Clone,
 	Default,
@@ -276,12 +292,16 @@ const POLICY_ID_LEN: usize = 28;
 )]
 #[byte_string(debug, decode_hex, hex_serialize, hex_deserialize)]
 #[cfg_attr(feature = "std", byte_string(to_hex_string))]
+/// Cardano Policy Id
 pub struct PolicyId(pub [u8; POLICY_ID_LEN]);
 
+/// Cardano script hash
 pub type ScriptHash = PolicyId;
 
+/// Maximum length of a Cardano native asset's name in UTF-8 bytes
 pub const MAX_ASSET_NAME_LEN: u32 = 32;
 
+/// Cardano native asset name
 #[derive(
 	Clone, Default, PartialEq, Eq, Encode, Decode, DecodeWithMemTracking, TypeInfo, MaxEncodedLen,
 )]
@@ -289,6 +309,7 @@ pub const MAX_ASSET_NAME_LEN: u32 = 32;
 pub struct AssetName(pub BoundedVec<u8, ConstU32<MAX_ASSET_NAME_LEN>>);
 
 impl AssetName {
+	/// Constructs an empty [AssetName]
 	pub fn empty() -> Self {
 		Self(BoundedVec::new())
 	}
@@ -307,8 +328,11 @@ impl AssetName {
 	Default,
 )]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+/// Full data identifying a Cardano native asset
 pub struct AssetId {
+	/// Policy ID
 	pub policy_id: PolicyId,
+	/// Asset name
 	pub asset_name: AssetName,
 }
 
@@ -333,6 +357,7 @@ impl FromStr for AssetId {
 	}
 }
 
+/// Length of Cardano stake pool key
 const STAKE_POOL_PUBLIC_KEY_LEN: usize = 32;
 
 #[derive(
@@ -350,9 +375,11 @@ const STAKE_POOL_PUBLIC_KEY_LEN: usize = 32;
 )]
 #[cfg_attr(feature = "std", byte_string(to_hex_string))]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
+/// Cardano stake pool public key (ed25519)
 pub struct StakePoolPublicKey(pub [u8; STAKE_POOL_PUBLIC_KEY_LEN]);
 
 impl StakePoolPublicKey {
+	/// Computes the blake2b_224 hash of this Cardano stake pool public key
 	pub fn hash(&self) -> MainchainKeyHash {
 		MainchainKeyHash::from_vkey(&self.0)
 	}
@@ -368,8 +395,10 @@ impl TryFrom<Vec<u8>> for StakePoolPublicKey {
 	}
 }
 
+/// Length of Cardano staking public key
 const STAKE_PUBLIC_KEY_LEN: usize = 32;
 
+/// Cardano staking public key (ed25519)
 #[derive(
 	Clone, PartialEq, Eq, Encode, Decode, DecodeWithMemTracking, TypeInfo, MaxEncodedLen, Hash,
 )]
@@ -378,15 +407,15 @@ const STAKE_PUBLIC_KEY_LEN: usize = 32;
 pub struct StakePublicKey(pub [u8; STAKE_PUBLIC_KEY_LEN]);
 
 impl StakePublicKey {
+	/// Computes the blake2b_224 hash of this Cardano staking public key
 	pub fn hash(&self) -> MainchainKeyHash {
 		MainchainKeyHash(blake2b(&self.0))
 	}
 }
 
+/// Length of Cardano key hash
 const MAINCHAIN_KEY_HASH_LEN: usize = 28;
 
-/// blake2b_224 hash of a Cardano Verification (Public) Key.
-/// It can be a hash of Payment Verification, Payment Extended Verification, Stake Pool Verification Key or Staking Verification Key.
 #[derive(
 	Clone,
 	Copy,
@@ -405,6 +434,8 @@ const MAINCHAIN_KEY_HASH_LEN: usize = 28;
 #[byte_string(debug)]
 #[cfg_attr(feature = "std", byte_string(to_hex_string, decode_hex))]
 #[cfg_attr(feature = "serde", byte_string(hex_serialize, hex_deserialize))]
+/// blake2b_224 hash of a Cardano Verification (Public) Key.
+/// It can be a hash of Payment Verification, Payment Extended Verification, Stake Pool Verification Key or Staking Verification Key.
 pub struct MainchainKeyHash(pub [u8; MAINCHAIN_KEY_HASH_LEN]);
 
 impl Display for MainchainKeyHash {
@@ -415,20 +446,21 @@ impl Display for MainchainKeyHash {
 }
 
 impl MainchainKeyHash {
+	/// Computes the blake2b_224 hash of the given ed25519 public key bytes
 	pub fn from_vkey(vkey: &[u8; 32]) -> Self {
 		Self(blake2b(vkey))
 	}
 }
 
-/// EDDSA signature, 64 bytes.
+/// Length of Cardano signature (EDDSA)
 pub const MAINCHAIN_SIGNATURE_LEN: usize = 64;
 
 #[derive(Clone, DecodeWithMemTracking, TypeInfo, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "std", byte_string(to_hex_string))]
 #[byte_string(debug, hex_serialize, decode_hex)]
-/// EDDSA signature
+/// Cardano signature type (EDDSA)
 ///
-/// WARNING: This type needs to be backwards compatibile with a legacy schema wrapping `Vec<u8>`.
+/// WARNING: This type needs to be backwards compatible with a legacy schema wrapping `Vec<u8>`.
 ///          Because of this, it is not handled correctly by PolkadotJS. If you need to accept
 ///          this type as extrinsic argument, use raw `[u8; MAINCHAIN_SIGNATURE_LEN]` instead.
 pub struct MainchainSignature(pub [u8; MAINCHAIN_SIGNATURE_LEN]);
@@ -458,6 +490,7 @@ impl Decode for MainchainSignature {
 }
 
 impl MainchainSignature {
+	/// Verifies whether `self` is a valid signature of `signed_message` for `public_key`
 	pub fn verify(&self, public_key: &StakePoolPublicKey, signed_message: &[u8]) -> bool {
 		let mainchain_signature = ed25519::Signature::from(self.0);
 
@@ -469,12 +502,12 @@ impl MainchainSignature {
 	}
 }
 
-/// EDDSA signature, 64 bytes.
+/// Length of Cardano staking key signature (EDDSA)
 pub const STAKE_KEY_SIGNATURE_LEN: usize = 64;
 
 #[derive(Clone, Encode, Decode, DecodeWithMemTracking, PartialEq, Eq, Hash, TypeInfo)]
 #[byte_string(debug, hex_serialize, decode_hex)]
-/// EDDSA signature made with Stake Signing Key
+/// Cardano staking key signature type (EDDSA)
 pub struct StakeKeySignature(pub [u8; STAKE_KEY_SIGNATURE_LEN]);
 
 impl From<[u8; STAKE_KEY_SIGNATURE_LEN]> for StakeKeySignature {
@@ -484,6 +517,7 @@ impl From<[u8; STAKE_KEY_SIGNATURE_LEN]> for StakeKeySignature {
 }
 
 impl StakeKeySignature {
+	/// Verifies whether `self` is a valid signature of `message` for `public_key`
 	pub fn verify(&self, public_key: &StakePublicKey, message: &[u8]) -> bool {
 		let signature = ed25519::Signature::from(self.0);
 		sp_io::crypto::ed25519_verify(&signature, message, &ed25519::Public::from(public_key.0))
@@ -513,6 +547,7 @@ impl StakeKeySignature {
 	Into,
 )]
 #[cfg_attr(feature = "serde", derive(Serialize))]
+/// Partner Chain epoch number
 pub struct ScEpochNumber(pub u64);
 
 impl Display for ScEpochNumber {
@@ -522,9 +557,11 @@ impl Display for ScEpochNumber {
 }
 
 impl ScEpochNumber {
+	/// Returns next epoch number
 	pub fn next(&self) -> Self {
 		Self(self.0 + 1)
 	}
+	/// Returns previous epoch number accounting for underflow
 	pub fn prev(&self) -> Option<Self> {
 		self.0.checked_sub(1).map(Self)
 	}
@@ -544,6 +581,11 @@ impl ScEpochNumber {
 	Hash,
 )]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex, as_ref)]
+/// Partner Chain public key
+///
+/// This public key is used as the identity of a Partner Chain network participant on a specific Partner Chain,
+/// ie. a network participant can use different [SidechainPublicKey] for each Partner Chain they are active on
+/// as opposed to [CrossChainPublicKey].
 pub struct SidechainPublicKey(pub Vec<u8>);
 
 impl From<ecdsa::Public> for SidechainPublicKey {
@@ -562,15 +604,20 @@ pub struct TransactionCbor(pub Vec<u8>);
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 pub struct VKeyWitnessCbor(pub Vec<u8>);
 
+/// Cross-chain signature type (ECDSA) created using [SidechainPublicKey]
 #[derive(Clone, Encode, Decode, DecodeWithMemTracking, TypeInfo, PartialEq, Eq, Hash)]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 pub struct SidechainSignature(pub Vec<u8>);
 
+/// Cross-chain public key (ECDSA)
+///
+/// This public key is used as the universal identity of Partner Chain network participants across all Partner Chains.
 #[derive(Clone, Encode, Decode, DecodeWithMemTracking, PartialEq, Eq, TypeInfo)]
 #[byte_string(debug, hex_serialize, hex_deserialize)]
 pub struct CrossChainPublicKey(pub Vec<u8>);
 
 impl CrossChainPublicKey {
+	/// Computes the blake2b_224 hash of this cross-chain public key
 	pub fn hash(&self) -> CrossChainKeyHash {
 		CrossChainKeyHash(blake2b(&self.0))
 	}
@@ -589,6 +636,7 @@ impl From<CrossChainPublicKey> for k256::PublicKey {
 	}
 }
 
+/// Length of the cross-chain public key hash
 const CROSS_CHAIN_KEY_HASH_LEN: usize = 28;
 
 #[derive(
@@ -609,6 +657,7 @@ const CROSS_CHAIN_KEY_HASH_LEN: usize = 28;
 #[byte_string(debug, to_hex_string)]
 #[cfg_attr(feature = "std", byte_string(decode_hex))]
 #[cfg_attr(feature = "serde", byte_string(hex_serialize, hex_deserialize))]
+/// blake2b_224 hash of a cross-chain public key
 pub struct CrossChainKeyHash(pub [u8; CROSS_CHAIN_KEY_HASH_LEN]);
 
 impl Display for CrossChainKeyHash {
@@ -617,11 +666,13 @@ impl Display for CrossChainKeyHash {
 	}
 }
 
+/// Cross-chain signature created using [CrossChainPublicKey]
 #[derive(Clone, Encode, Decode, DecodeWithMemTracking, PartialEq, Eq, TypeInfo)]
 #[byte_string(debug, hex_serialize)]
 pub struct CrossChainSignature(pub Vec<u8>);
 
 impl CrossChainSignature {
+	/// Verifies that `self` is a valid signature of `data` for `cross_chain_pubkey`
 	pub fn verify(
 		&self,
 		cross_chain_pubkey: &CrossChainPublicKey,
@@ -635,11 +686,16 @@ impl CrossChainSignature {
 	}
 }
 
+/// Cardano epoch nonce
+///
+/// This value is a 32-byte hash generated at the start of each epoch on Cardano using
+/// a verifiable random function as part of normal chain operation by Cardano block producers.
+/// Because it is subject to Cardano's consensus mechanism and has strong cryptographic guarantees,
+/// this value can be used as a tamper-proof shared randomness seed by Partner Chain Toolkit components.
 #[derive(Default, Clone, Encode, Decode, DecodeWithMemTracking, PartialEq, Eq, TypeInfo)]
 #[byte_string(debug, hex_serialize)]
 pub struct EpochNonce(pub Vec<u8>);
 
-/// Identifies UTxO by transaction hash, and the index of output.
 #[derive(
 	Default,
 	Debug,
@@ -655,12 +711,22 @@ pub struct EpochNonce(pub Vec<u8>);
 	MaxEncodedLen,
 	Hash,
 )]
+/// Identifies a Cardano UTxO (unspent transaction output)
+///
+/// A UTxO is uniquely identified by the hash of the transaction that produced it and its (zero-based)
+/// index in the transaction's output.
+///
+/// Standard semi-human-readable encoding of a UTxO id uses a hash sign to divide the two components:
+/// `0000000000000000000000000000000000000000000000000000000000000000#1`
 pub struct UtxoId {
+	/// Transaction hash
 	pub tx_hash: McTxHash,
+	/// Output index
 	pub index: UtxoIndex,
 }
 
 impl UtxoId {
+	/// Creates new [UtxoId] from primitive type arguments
 	pub const fn new(hash: [u8; TX_HASH_SIZE], index: u16) -> UtxoId {
 		UtxoId { tx_hash: McTxHash(hash), index: UtxoIndex(index) }
 	}
@@ -714,7 +780,6 @@ impl Display for UtxoId {
 	}
 }
 
-/// An index of output of a transaction. In range [0, 2^15-1].
 #[derive(
 	Default,
 	Debug,
@@ -733,6 +798,7 @@ impl Display for UtxoId {
 	Hash,
 )]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+/// An index of output of a transaction. In range [0, 2^15-1].
 pub struct UtxoIndex(pub u16);
 
 #[cfg(feature = "serde")]
@@ -745,6 +811,7 @@ impl FromStr for UtxoIndex {
 	}
 }
 
+/// Size of a Cardano transaction hash
 pub const TX_HASH_SIZE: usize = 32;
 
 #[derive(
@@ -763,6 +830,9 @@ pub const TX_HASH_SIZE: usize = 32;
 )]
 #[byte_string(debug, from_bytes, decode_hex, hex_serialize, hex_deserialize)]
 #[constructor_datum]
+/// Cardano transaction hash
+///
+/// This hash uniquely identifies a transaction in the Cardano ledger.
 pub struct McTxHash(pub [u8; TX_HASH_SIZE]);
 
 impl TryFrom<Vec<u8>> for McTxHash {
@@ -788,6 +858,9 @@ impl TryFrom<Vec<u8>> for McTxHash {
 	Hash,
 )]
 #[byte_string(debug, decode_hex, hex_serialize, hex_deserialize)]
+/// Cardano block hash
+///
+/// This hash uniquely identifies a Cardano block
 pub struct McBlockHash(pub [u8; 32]);
 
 impl Display for McBlockHash {
@@ -797,27 +870,41 @@ impl Display for McBlockHash {
 	}
 }
 
+/// Extended information about a UTxO in Cardano ledger
 #[derive(
 	Default, Debug, Copy, Clone, PartialEq, Eq, Encode, Decode, DecodeWithMemTracking, TypeInfo,
 )]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct UtxoInfo {
+	/// Output ID
 	pub utxo_id: UtxoId,
+	/// Epoch number in which the output was produced
 	pub epoch_number: McEpochNumber,
+	/// Block number in which the output was produced
 	pub block_number: McBlockNumber,
+	/// Slot number in which the output was produced
 	pub slot_number: McSlotNumber,
+	/// Index in block of the transaction that produced the output
 	pub tx_index_within_block: McTxIndexInBlock,
 }
 
+/// Key type used for ordering transaction outputs
+///
+/// This ordering key is used in contexts where a common ordering of the data must be used
+/// by all nodes participating in a Partner Chain due to it being subject to consensus.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct UtxoInfoOrderingKey {
+	/// Block number on which the output was created
 	pub block_number: McBlockNumber,
+	/// Index within the block of the transaction that created the output
 	pub tx_index_within_block: McTxIndexInBlock,
+	/// Index of the output in the transaction outputs
 	pub utxo_id_index: UtxoIndex,
 }
 
 impl UtxoInfo {
+	/// Returns the ordering key for this UTxO
 	pub fn ordering_key(&self) -> UtxoInfoOrderingKey {
 		UtxoInfoOrderingKey {
 			block_number: self.block_number,
@@ -827,11 +914,19 @@ impl UtxoInfo {
 	}
 }
 
+/// Type of Cardano network
+///
+/// Cardano defines two network types:
+/// - mainnet: the unique, production Cardano network
+/// - testnet: various public and private testnets. These testnets are further differentiated
+///            by their respective "testnet magic" numbers.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "lowercase"))]
 pub enum NetworkType {
+	/// The Cardano mainnet (unique network)
 	Mainnet,
+	/// A Cardano testnet
 	#[default]
 	Testnet,
 }
@@ -847,23 +942,36 @@ impl std::fmt::Display for NetworkType {
 	}
 }
 
-/// UTxO Output of a Registration Transaction on Cardano
+/// Cardano SPO registration data
 ///
-/// Note: A Registration Transaction is called by a user on Cardano to register themselves as a Sidechain Authority Candidate
+/// This data describes a single registration done by a Cardano SPO for the sake of being considered
+/// for selection to the block producing committee on a given Partner Chain.
+///
+/// This registration is represented as a UTxO in the Cardano ledger containing a Plutus datum with
+/// public keys that are being registered, together with signatures that prove the registrant's
+/// control of these keys.
 #[derive(Debug, Clone, Encode, Decode, DecodeWithMemTracking, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct RegistrationData {
 	/// UTXO that is an input parameter to the registration transaction
 	pub registration_utxo: UtxoId,
+	/// Signature confirming the registrant's ownership of `sidechain_pub_key`
 	pub sidechain_signature: SidechainSignature,
-	/// Stake Pool key signature
+	/// Signature confirming the registrant's ownership of the main chain public key used in the registration
 	pub mainchain_signature: MainchainSignature,
+	/// Signature confirming the registrant's ownership of `cross_chain_pub_key`
 	pub cross_chain_signature: CrossChainSignature,
+	/// Registering SPO's sidechain public key
 	pub sidechain_pub_key: SidechainPublicKey,
+	/// Registering SPO's cross-chain public key
 	pub cross_chain_pub_key: CrossChainPublicKey,
+	/// Information about the UTxO containing the registration data
 	pub utxo_info: UtxoInfo,
+	/// List of inputs to the registration transaction
 	pub tx_inputs: Vec<UtxoId>,
+	/// Registering SPO's Aura public key
 	pub aura_pub_key: AuraPublicKey,
+	/// Registering SPO's Grandpa public key
 	pub grandpa_pub_key: GrandpaPublicKey,
 }
 
@@ -871,13 +979,16 @@ pub struct RegistrationData {
 #[derive(Debug, Clone, Encode, Decode, DecodeWithMemTracking, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct CandidateRegistrations {
+	/// Stake pool public key of the registering Cardano SPO
 	pub stake_pool_public_key: StakePoolPublicKey,
-	/// **List of Registrations** done by the **Authority Candidate**
+	/// List of registrations done by the registering Cardano SPO
 	pub registrations: Vec<RegistrationData>,
+	/// Stake delegation of the registering Cardano SPO
 	pub stake_delegation: Option<StakeDelegation>,
 }
 
 impl CandidateRegistrations {
+	/// Creates a new [CandidateRegistrations] from its members
 	pub fn new(
 		stake_pool_public_key: StakePoolPublicKey,
 		stake_delegation: Option<StakeDelegation>,
@@ -886,21 +997,25 @@ impl CandidateRegistrations {
 		Self { stake_pool_public_key, registrations, stake_delegation }
 	}
 
+	/// Return the stake pool public key of the registering SPO
 	pub fn mainchain_pub_key(&self) -> &StakePoolPublicKey {
 		&self.stake_pool_public_key
 	}
 
+	/// Return the list of registrations of the SPO
 	pub fn registrations(&self) -> &[RegistrationData] {
 		&self.registrations
 	}
 }
 
+/// Sr25519 public key used by Aura consensus algorithm. Not validated
 #[derive(
 	Clone, PartialEq, Eq, Encode, Decode, DecodeWithMemTracking, TypeInfo, PartialOrd, Ord, Hash,
 )]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 pub struct AuraPublicKey(pub Vec<u8>);
 impl AuraPublicKey {
+	/// Attempts to cast this public key to a valid [sr25519::Public]
 	pub fn try_into_sr25519(&self) -> Option<sr25519::Public> {
 		Some(sr25519::Public::from_raw(self.0.clone().try_into().ok()?))
 	}
@@ -912,12 +1027,14 @@ impl From<sr25519::Public> for AuraPublicKey {
 	}
 }
 
+/// Ed25519 public key used by the Grandpa finality gadget. Not validated
 #[derive(
 	Clone, PartialEq, Eq, Encode, Decode, DecodeWithMemTracking, TypeInfo, PartialOrd, Ord, Hash,
 )]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 pub struct GrandpaPublicKey(pub Vec<u8>);
 impl GrandpaPublicKey {
+	/// Attempts to cast this public key to a valid [ed25519::Public]
 	pub fn try_into_ed25519(&self) -> Option<ed25519::Public> {
 		Some(ed25519::Public::from_raw(self.0.clone().try_into().ok()?))
 	}
@@ -942,12 +1059,22 @@ impl From<ed25519::Public> for GrandpaPublicKey {
 	Hash,
 )]
 #[cfg_attr(feature = "serde", derive(Serialize))]
+/// Parameter controlling the number and proportion of registered and permissioned candidates
+/// selected into a Partner Chain committee, used by the Ariadne family of selection algorithms.
+///
+/// The core idea behind the D-Param is to enable a Partner Chain to bootstrap its operation by
+/// relying on a hand-picked set of trusted block producers for security, and to later incrementally
+/// shift block production onto trustless network participants as the chain grows and it becomes
+/// harder for malicious actors to manipulate the chain.
 pub struct DParameter {
+	/// Expected number of permissioned candidates selected to a committee
 	pub num_permissioned_candidates: u16,
+	/// Expected number of registered candidates selected to a committee
 	pub num_registered_candidates: u16,
 }
 
 impl DParameter {
+	/// Creates a new [DParameter] from member values
 	pub fn new(num_permissioned_candidates: u16, num_registered_candidates: u16) -> Self {
 		Self { num_permissioned_candidates, num_registered_candidates }
 	}
@@ -966,24 +1093,41 @@ impl DParameter {
 	Ord,
 	Hash,
 )]
+/// Information about a permissioned committee member candidate
+///
+/// Permissioned candidates are nominated by the Partner Chain's governance authority to be
+/// eligible for participation in block producer committee without controlling any ADA stake
+/// on Cardano and registering as SPOs.
 pub struct PermissionedCandidateData {
+	/// Sidechain public key of the trustless candidate
 	pub sidechain_public_key: SidechainPublicKey,
+	/// Aura public key of the trustless candidate
 	pub aura_public_key: AuraPublicKey,
+	/// Grandpa public key of the trustless candidate
 	pub grandpa_public_key: GrandpaPublicKey,
 }
 
+/// Cardano SPO registration. This is a stripped-down version of [RegistrationData].
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct CandidateRegistration {
+	/// Information on ADA stake pool ownership
 	pub stake_ownership: AdaBasedStaking,
+	/// Registering SPO's sidechain public key
 	pub partner_chain_pub_key: SidechainPublicKey,
+	/// Signature confirming registering SPO's ownership of `partner_chain_pub_key`
 	pub partner_chain_signature: SidechainSignature,
+	/// Hash of the registering SPO's Cardano public key
 	pub own_pkh: MainchainKeyHash,
+	/// UTxO containing the registration data
 	pub registration_utxo: UtxoId,
+	/// Registering SPO's Aura public key
 	pub aura_pub_key: AuraPublicKey,
+	/// Registering SPO's Grandpa public key
 	pub grandpa_pub_key: GrandpaPublicKey,
 }
 
 impl CandidateRegistration {
+	/// Checks whether `self` and `other` contain the same keys
 	pub fn matches_keys(&self, other: &Self) -> bool {
 		self.stake_ownership == other.stake_ownership
 			&& self.partner_chain_pub_key == other.partner_chain_pub_key
@@ -993,11 +1137,14 @@ impl CandidateRegistration {
 	}
 }
 
-/// AdaBasedStaking is a variant of Plutus type StakeOwnership.
-/// The other variant, TokenBasedStaking, is not supported
+/// Information on ADA stake pool ownership
+///
+/// AdaBasedStaking is a variant of Plutus type StakeOwnership. The other variant, TokenBasedStaking, is not supported.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct AdaBasedStaking {
+	/// Public key of the stake pool operator
 	pub pub_key: StakePoolPublicKey,
+	/// Signature confirming ownership of `pub_key`
 	pub signature: MainchainSignature,
 }
 
@@ -1084,9 +1231,17 @@ mod tests {
 	Decode,
 	DecodeWithMemTracking,
 )]
+/// Represents a Cardano ADA delegator
 pub enum DelegatorKey {
+	/// Represents a staking address that is controlled by a user delegator
 	StakeKeyHash([u8; 28]),
-	ScriptKeyHash { hash_raw: [u8; 28], script_hash: [u8; 28] },
+	/// Represents a staking address that is locked by a Plutus script
+	ScriptKeyHash {
+		/// Raw stake address hash
+		hash_raw: [u8; 28],
+		/// Hash of the Plutus script controlling the staking address
+		script_hash: [u8; 28],
+	},
 }
 
 impl alloc::fmt::Debug for DelegatorKey {
@@ -1104,6 +1259,7 @@ impl alloc::fmt::Debug for DelegatorKey {
 	}
 }
 
+/// Amount of Lovelace staked by a Cardano delegator to a single stake pool
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct DelegatorStakeAmount(pub u64);
 
@@ -1113,11 +1269,18 @@ impl<T: Into<u64>> From<T> for DelegatorStakeAmount {
 	}
 }
 
+/// A mapping between Cardano SPOs and the information about ADA delegation of their stake pools
+///
+/// This mapping can be used to calculate relative share of the total delegation for the
+/// purpose of weighing during block producer selection.
 #[derive(Debug, Clone, Default)]
 pub struct StakeDistribution(pub BTreeMap<MainchainKeyHash, PoolDelegation>);
 
+/// ADA delegation data for a single Cardano SPO
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct PoolDelegation {
+	/// Total amount delegated to the stake pool
 	pub total_stake: StakeDelegation,
+	/// Delegated amount for each delegator of the stake pool
 	pub delegators: BTreeMap<DelegatorKey, DelegatorStakeAmount>,
 }

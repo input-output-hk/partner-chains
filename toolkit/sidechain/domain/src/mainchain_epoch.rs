@@ -1,60 +1,104 @@
+//! Module providing types and function for calculations on Cardano epoch and slot numbers
+
 use crate::{McEpochNumber, McSlotNumber};
 #[cfg(feature = "std")]
 use parity_scale_codec::Decode;
 use parity_scale_codec::Encode;
 pub use sp_core::offchain::{Duration, Timestamp};
 
+/// Parameters describing epoch configuration of a Cardano chain
+///
+/// A Partner Chain must be aware of slot and epoch configuration of its Cardano main chain to
+/// be able to correctly observe its state.
+///
+/// Additionally, the Partner Chains Toolkit:
+/// - can only observe Cardano state produced during Cardano Eras no older than Shelley
+/// - expects the Cardano main chain's epoch and slot duration to remain constant throughout the
+///   lifetime of a particular Partner Chain
+///
+/// Because of those constraints, the configuration includes a reference point in time from
+/// which it is safe for a Partner Chain to observe its main chain's history. This reference point
+/// should be the beginning of some Cardano epoch. For most Partner Chains a good default value
+/// is the beginning of the Shelley era on their main chain. If the main chain's slot or epoch
+/// duration was changed after it entered Shelley era, the reference point should be one after
+/// this happened, eg. the beginning of the first epoch in which all slots are of the new duration.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "std", derive(serde::Deserialize))]
 pub struct MainchainEpochConfig {
-	/// First epoch of the Cardano Era that the Sidechain bases itself from. Notice that there is a `first_epoch_number` field below - it represents the "first epoch number" for the Sidechain, but not for the Cardano network.
-	pub first_epoch_timestamp_millis: Timestamp,
+	/// Duration of a single epoch on the Cardano main chain
+	///
+	/// This value must remain constant after `first_epoch_timestamp_millis`.
 	pub epoch_duration_millis: Duration,
-	/// Number of the Cardano Epoch started at `first_epoch_timestamp_millis`
-	pub first_epoch_number: u32,
-	pub first_slot_number: u64,
+	/// Slot duration of the Cardano main chain
+	///
+	/// This value must remain constant after `first_epoch_timestamp_millis`.
 	#[cfg_attr(feature = "std", serde(default = "default_slot_duration"))]
 	pub slot_duration_millis: Duration,
+	/// Reference point in time from which the Cardano main chain's state is safe for a
+	/// Partner Chain to be observed.
+	///
+	/// This timestamp should be the starting timestamp of the Cardano epoch and slot
+	/// indicated by `first_epoch_number` and `first_slot_number`.
+	pub first_epoch_timestamp_millis: Timestamp,
+	/// Number of the Cardano Epoch starting at `first_epoch_timestamp_millis`
+	pub first_epoch_number: u32,
+	/// Number of the Cardano slot starting at `first_epoch_timestamp_millis`
+	pub first_slot_number: u64,
 }
 
+/// Default slot duration for Cardano chain.
+///
+/// One second slots are used both by Cardano mainnet and the official testnets.
 #[cfg(feature = "std")]
 fn default_slot_duration() -> Duration {
 	Duration::from_millis(1000)
 }
 
+/// Error type returned by calculations related to Cardano epochs and slots
 #[derive(Encode, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Decode, thiserror::Error, sp_core::RuntimeDebug))]
 pub enum EpochDerivationError {
+	/// Signals that a function was passed a timestamp before the first Shelley era
 	#[cfg_attr(feature = "std", error("Timestamp before first Mainchain Epoch"))]
 	TimestampTooSmall,
+	/// Signals that a function was passed a Cardano epoch number exceeding the limits for Cardano
 	#[cfg_attr(feature = "std", error("Epoch number exceeds maximal allowed value"))]
 	EpochTooBig,
+	/// Signals that a function was passed a Cardano epoch number before the first Shelley era
 	#[cfg_attr(feature = "std", error("Epoch number is below the allowed value"))]
 	EpochTooSmall,
+	/// Signals that a function was passed a Cardano slot number before the first Shelley era
 	#[cfg_attr(feature = "std", error("Slot number is below the allowed value"))]
 	SlotTooSmall,
 }
 
+///	Functions for performing calculations on Cardano epoch and slot numbers
 pub trait MainchainEpochDerivation {
+	/// Calculates the number of Cardano epochs passed since the first Shelley epoch up to `timestamp`
 	fn epochs_passed(&self, timestamp: Timestamp) -> Result<u32, EpochDerivationError>;
 
+	/// Calculates the number of the Cardano epoch containing `timestamp`
 	fn timestamp_to_mainchain_epoch(
 		&self,
 		timestamp: Timestamp,
 	) -> Result<McEpochNumber, EpochDerivationError>;
 
+	/// Calculates the number of the Cardano slot containing `timestamp`
 	fn timestamp_to_mainchain_slot_number(
 		&self,
 		timestamp: Timestamp,
 	) -> Result<u64, EpochDerivationError>;
 
+	/// Calculates the starting time of the Cardano `epoch`
 	fn mainchain_epoch_to_timestamp(&self, epoch: McEpochNumber) -> Timestamp;
 
+	/// Calculates the slot number of the first Cardano slot of given `epoch`
 	fn first_slot_of_epoch(
 		&self,
 		epoch: McEpochNumber,
 	) -> Result<McSlotNumber, EpochDerivationError>;
 
+	/// Calculates the number of the Cardano epoch containing `slot`
 	fn epoch_for_slot(&self, slot: McSlotNumber) -> Result<McEpochNumber, EpochDerivationError>;
 }
 
@@ -63,6 +107,12 @@ impl MainchainEpochConfig {
 		self.epoch_duration_millis.millis() / 1000
 	}
 
+	/// Reads [MainchainEpochConfig] from environment variables:
+	/// - `MC__EPOCH_DURATION_MILLIS`
+	/// - `MC__SLOT_DURATION_MILLIS`
+	/// - `MC__FIRST_EPOCH_TIMESTAMP_MILLIS`
+	/// - `MC__FIRST_EPOCH_NUMBER`
+	/// - `MC__FIRST_SLOT_NUMBER`
 	#[cfg(feature = "std")]
 	pub fn read_from_env() -> figment::error::Result<Self> {
 		figment::Figment::new()

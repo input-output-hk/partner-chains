@@ -517,7 +517,7 @@ impl pallet_block_producer_metadata::benchmarking::BenchmarkHelper<BlockProducer
 {
 	fn metadata() -> BlockProducerMetadataType {
 		BlockProducerMetadataType {
-			url: "https://cool.stuff/spo.json".as_bytes().to_vec().try_into().unwrap(),
+			url: "https://cool.stuff/spo.json".try_into().unwrap(),
 			hash: SizedByteString::from([0; 32]),
 		}
 	}
