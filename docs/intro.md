@@ -15,6 +15,7 @@
     * [ogmios](#ogmios)
     * [cardano node](#cardano-node)
   * [Features](#features)
+    * [Features Overview](#feature-overview)
     * [Block Participation Rewards](#block-participation-rewards)
     * [Partner Chains Governance](#partner-chains-governance)
     * [Native Token Reserve Management](#native-token-reserve-management)
@@ -79,10 +80,9 @@ A permissioned validator is a trusted node whitelisted by the governance authori
 ### System Overview
 The diagram below provides an simple overview of the pc toolkit setup:
 
-<figure align="center">
+<p align="center">
   <img src="./diagrams/pc-overview.drawio.svg" alt="" />
-  <figcaption><em>Figure 1:</em> System Overview</figcaption>
-</figure>
+</p>
 
 The toolkit covers components across three different categories which have been color-coded in the
 diagram above:
@@ -119,6 +119,27 @@ will only ever observe the ledger state, not change it.
 
 ### Features
 
+#### Features Overview
+
+The diagram below gives an hierarchical overview of the different features provided by this toolkit and their
+respective dependencies (where `a -> b`means that `b` depends on functionality provided by `a`):
+
+<p align="center">
+  <img src="./diagrams/features.svg" alt="" />
+</p>
+
+- **primitives and utils**: Utility libraries and custom Substrate primitives used by all other
+features.
+- **core**: Establishes a chain as a Partner Chain by tying its identity to a `genesis utxo` on Cardano. Provides the mechanism for the Partner Chain's blocks to reference stable Cardano blocks.
+- **governed map**: Governance controlled key-value store on the Cardano main chain.
+- **native token management**: Provides governance controlled tokens and token reserve management.
+- **address association**: Provides a mechanism for users to establish a mapping between their identities on Cardano and the Partner Chain
+- **committee selection**: Provides a Cardano-based committee selection using the Ariadne algorithm.
+- **Cardano-based block production rewards**: Calculation of rewards for Partner Chain block producers
+and their Cardano delegators.
+
+More detailed documentation for the different features is provided in the sections below.
+
 #### Block Participation Rewards
 Please refer to [block-participation-rewards.md](./developer-guides/block-participation-rewards.md)
 to learn about mechanisms to build and configure rewards for block producers and their delegators.
@@ -131,7 +152,7 @@ mechanism.
 #### Native Token Reserve Management
 Please refer to
 [native-token-reserve-management.md](./developer-guides/native-token-reserve-management.md) for
-details o how to setting up and maintaining a native token reserve on Cardano to  be used with a
+details on how to setting up and maintaining a native token reserve on Cardano to  be used with a
 partner chain.
 
 ### Rust Docs
