@@ -14,6 +14,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![deny(missing_docs)]
 
+pub mod benchmarking;
+
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
@@ -47,6 +49,10 @@ pub mod pallet {
 
 		/// The slot number of the current block.
 		fn current_slot() -> Slot;
+
+		#[cfg(feature = "runtime-benchmarks")]
+		/// Benchmark helper type used for running benchmarks
+		type BenchmarkHelper: benchmarking::BenchmarkHelper<Self::AccountId>;
 	}
 
 	// Margin Fee precision is 0.01 of a percent, so use 1/10000 as unit.
@@ -54,7 +60,7 @@ pub mod pallet {
 
 	type FeeChange = (Slot, PerTenThousands);
 
-	/// Stores bounded amount of fee changes per
+	/// Stores bounded amount of fee changes per account
 	#[pallet::storage]
 	#[pallet::unbounded]
 	pub type FeesChanges<T: Config> = StorageMap<
