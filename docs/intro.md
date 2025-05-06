@@ -15,6 +15,7 @@
     * [ogmios](#ogmios)
     * [cardano node](#cardano-node)
   * [Features](#features)
+    * [Features Overview](#feature-overview)
     * [Block Participation Rewards](#block-participation-rewards)
     * [Partner Chains Governance](#partner-chains-governance)
     * [Native Token Reserve Management](#native-token-reserve-management)
@@ -119,6 +120,29 @@ will only ever observe the ledger state, not change it.
 
 ### Features
 
+#### Features Overview
+
+The diagram below gives an hierarchical overview of the different features provided by this toolkit and their
+respective dependencies (where `a -> b`means that `b` depends on functionality provided by `a`):
+
+<figure align="center">
+  <img src="./diagrams/features.svg" alt="" />
+  <figcaption><em>Figure 2: </em>Features Overview</figcaption>
+</figure>
+
+
+- **primitives and utils**: Utility libraries and custom Substrate primitives used by all other
+features.
+- **core**: Provides the genesis utxo and the main chain hash reference.
+- **governed maps**: Governance controlled key-value stores on the main-chain.
+- **native token management**: Provides governance controlled tokens and token reserve management.
+- **address association**: Provides registrations and mappings between cardano delegation keys and PC addresses
+- **committee selection**: Provides the cardano-based committee selection using the ariadne algorithm.
+- **cardano based block production rewards**: Calculation of rewards for delegation and block
+production on cardano.
+
+More detailed documentation for the different features is provided in the sections below.
+
 #### Block Participation Rewards
 Please refer to [block-participation-rewards.md](./developer-guides/block-participation-rewards.md)
 to learn about mechanisms to build and configure rewards for block producers and their delegators.
@@ -131,7 +155,7 @@ mechanism.
 #### Native Token Reserve Management
 Please refer to
 [native-token-reserve-management.md](./developer-guides/native-token-reserve-management.md) for
-details o how to setting up and maintaining a native token reserve on Cardano to  be used with a
+details on how to setting up and maintaining a native token reserve on Cardano to  be used with a
 partner chain.
 
 ### Rust Docs
