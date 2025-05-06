@@ -53,6 +53,9 @@ pub mod pallet {
 	pub trait Config: frame_system::Config {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
+		/// Origin for governance calls
+		type MainChainScriptsOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+
 		type TokenTransferHandler: TokenTransferHandler;
 		type WeightInfo: WeightInfo;
 	}
@@ -171,7 +174,7 @@ pub mod pallet {
 			native_token_asset_name: AssetName,
 			illiquid_supply_validator_address: MainchainAddress,
 		) -> DispatchResult {
-			ensure_root(origin)?;
+			T::MainChainScriptsOrigin::ensure_origin(origin)?;
 			let new_scripts = sp_native_token_management::MainChainScripts {
 				native_token_policy_id,
 				native_token_asset_name,

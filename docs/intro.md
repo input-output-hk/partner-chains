@@ -2,6 +2,7 @@
 
 ## Table Of Contents
 
+* [Table Of Contents](#table-of-contents)
   * [Basics](#basics)
     * [What is a Partner Chain](#what-is-a-partner-chain)
     * [Shared security with Cardano](#shared-security-with-cardano)
@@ -9,15 +10,19 @@
     * [Registered and Permissioned Validators](#registered-and-permissioned-validators)
       * [Registered Validator](#registered-validator)
       * [Permissioned Validator](#permissioned-validator)
+  * [System Overview](#system-overview)
+    * [db\-sync](#db-sync)
+    * [ogmios](#ogmios)
+    * [cardano node](#cardano-node)
   * [Features](#features)
     * [Block Participation Rewards](#block-participation-rewards)
     * [Partner Chains Governance](#partner-chains-governance)
     * [Native Token Reserve Management](#native-token-reserve-management)
+  * [Rust Docs](#rust-docs)
   * [Upgrade &amp; Migration Guides](#upgrade--migration-guides)
       * [1\.3\.0 to 1\.3\.1](#130-to-131)
       * [1\.3\.1 to 1\.4\.0](#131-to-140)
       * [1\.3\.1 to 1\.4\.0](#131-to-140-1)
-  * [Rust Docs](#rust-docs)
 
 ### Basics
 
@@ -70,6 +75,47 @@ A registered validator is a Cardano SPO who has chosen to become a partner chain
 
 ##### Permissioned Validator
 A permissioned validator is a trusted node whitelisted by the governance authority to produce blocks on the partner chain. The whitelist of permissioned nodes is created by the chain builder acting as the governance authority. This node must run a partner chain node with Cardano node and DB Sync. It may be a Cardano SPO but that is not required.
+
+### System Overview
+The diagram below provides an simple overview of the pc toolkit setup:
+
+<figure align="center">
+  <img src="./diagrams/pc-overview.drawio.svg" alt="" />
+  <figcaption><em>Figure 1:</em> System Overview</figcaption>
+</figure>
+
+The toolkit covers components across three different categories which have been color-coded in the
+diagram above:
+
+1. <span style="background-color: #B9E0A5;">Substrate Node</span>: This includes runtime modules
+   and the Ariadne consensus
+1. <span style="background-color: #A9C4EB;">offchain/cli</span>: The offchain components of the partner
+   chains toolkit deploy  and call smart contracts.
+1. <span style="background-color: #FFE599;">smart contracts</span>: The smart contracts that are
+   deployed and called by the offchain components.
+
+**_Note_**: _It is worth mentioning that the diagram above outlines the full setup which a chain builder
+would need to run in order to operate a chain. Validators won't need to use offchain components and
+thus won't have to run ogmios_.
+
+
+#### db-sync
+[db-sync](https://github.com/IntersectMBO/cardano-db-sync) is a chain-indexer which follows the
+cardano chain and stores ledger state changes to a connected PostgreSQL database. In order to
+observe and respond to events on the main-chain the substrate node components query the persisted
+ledger state in the database to look up specific blocks, transactions or addresses.
+
+#### ogmios
+The offchain code connects to an [ogmios](https://github.com/CardanoSolutions/ogmios) instance,
+which is a lightweight bridge-interface providing a http/websocket api for communicating with the local cardano
+node. This bridge is used by the offchain components of the toolkit to install and interact with the
+necessary smart contracts.
+
+#### cardano node
+The [cardano-node](https://github.com/IntersectMBO/cardano-node) instance is shown on the right with several deployed smart contracts. The offchain
+components of the partner chains toolkit deploy  and call smart contracts but otherwise the toolkit
+will only ever observe the ledger state, not change it.
+
 
 ### Features
 

@@ -24,6 +24,7 @@ use frame_support::{
 	traits::{ConstBool, ConstU8, ConstU16, ConstU32, ConstU64, ConstU128},
 	weights::{IdentityFee, constants::WEIGHT_REF_TIME_PER_SECOND},
 };
+use frame_system::EnsureRoot;
 use opaque::SessionKeys;
 use pallet_block_producer_metadata;
 use pallet_grandpa::AuthorityId as GrandpaId;
@@ -295,6 +296,7 @@ impl frame_system::Config for Runtime {
 impl pallet_native_token_management::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type TokenTransferHandler = TestHelperPallet;
+	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
 	type WeightInfo = pallet_native_token_management::weights::SubstrateWeight<Runtime>;
 }
 
@@ -393,6 +395,7 @@ impl pallet_session_validator_management::Config for Runtime {
 	type ScEpochNumber = ScEpochNumber;
 	type WeightInfo = pallet_session_validator_management::weights::SubstrateWeight<Runtime>;
 	type CommitteeMember = CommitteeMember<CrossChainPublic, SessionKeys>;
+	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
 
 	fn select_authorities(
 		input: AuthoritySelectionInputs,
@@ -625,6 +628,7 @@ impl pallet_governed_map::Config for Runtime {
 	type WeightInfo = pallet_governed_map::weights::SubstrateWeight<Runtime>;
 
 	type OnGovernedMappingChange = TestHelperPallet;
+	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
 
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = ();
