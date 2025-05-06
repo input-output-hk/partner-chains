@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["GovernedMapDataSourceImpl"]};
+window.SIDEBAR_ITEMS = {"struct":["GovernedMapDataSourceCachedImpl","GovernedMapDataSourceImpl"]};

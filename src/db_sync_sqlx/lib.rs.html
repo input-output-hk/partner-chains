@@ -61,7 +61,7 @@
 <a href=#61 id=61 data-nosnippet>61</a>	};
 <a href=#62 id=62 data-nosnippet>62</a>}
 <a href=#63 id=63 data-nosnippet>63</a>
-<a href=#64 id=64 data-nosnippet>64</a><span class="attr">#[derive(Debug, Copy, Clone, PartialEq)]
+<a href=#64 id=64 data-nosnippet>64</a><span class="attr">#[derive(Debug, Copy, Ord, PartialOrd, Clone, PartialEq, Eq)]
 <a href=#65 id=65 data-nosnippet>65</a></span><span class="kw">pub struct </span>BlockNumber(<span class="kw">pub </span>u32);
 <a href=#66 id=66 data-nosnippet>66</a><span class="macro">sqlx_implementations_for_wrapper!</span>(i32, <span class="string">"INT4"</span>, BlockNumber, McBlockNumber);
 <a href=#67 id=67 data-nosnippet>67</a>
@@ -78,7 +78,7 @@
 <a href=#78 id=78 data-nosnippet>78</a></span><span class="kw">pub struct </span>TxIndex(<span class="kw">pub </span>u16);
 <a href=#79 id=79 data-nosnippet>79</a><span class="macro">sqlx_implementations_for_wrapper!</span>(i16, <span class="string">"INT2"</span>, TxIndex, UtxoIndex);
 <a href=#80 id=80 data-nosnippet>80</a>
-<a href=#81 id=81 data-nosnippet>81</a><span class="attr">#[derive(Debug, Clone, PartialEq)]
+<a href=#81 id=81 data-nosnippet>81</a><span class="attr">#[derive(Debug, Clone, Copy, PartialOrd, Ord, PartialEq, Eq)]
 <a href=#82 id=82 data-nosnippet>82</a></span><span class="kw">pub struct </span>TxIndexInBlock(<span class="kw">pub </span>u32);
 <a href=#83 id=83 data-nosnippet>83</a><span class="macro">sqlx_implementations_for_wrapper!</span>(i32, <span class="string">"INT4"</span>, TxIndexInBlock, McTxIndexInBlock);
 <a href=#84 id=84 data-nosnippet>84</a>

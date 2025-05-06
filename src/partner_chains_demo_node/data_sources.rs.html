@@ -2,7 +2,7 @@
 <a href=#2 id=2 data-nosnippet>2</a><span class="kw">use </span>pallet_sidechain_rpc::SidechainRpcDataSource;
 <a href=#3 id=3 data-nosnippet>3</a><span class="kw">use </span>partner_chains_db_sync_data_sources::{
 <a href=#4 id=4 data-nosnippet>4</a>	block::BlockDataSourceImpl, candidates::CandidatesDataSourceImpl,
-<a href=#5 id=5 data-nosnippet>5</a>	governed_map::GovernedMapDataSourceImpl, mc_hash::McHashDataSourceImpl,
+<a href=#5 id=5 data-nosnippet>5</a>	governed_map::GovernedMapDataSourceCachedImpl, mc_hash::McHashDataSourceImpl,
 <a href=#6 id=6 data-nosnippet>6</a>	metrics::McFollowerMetrics, native_token::NativeTokenManagementDataSourceImpl,
 <a href=#7 id=7 data-nosnippet>7</a>	sidechain_rpc::SidechainRpcDataSourceImpl, stake_distribution::StakeDistributionDataSourceImpl,
 <a href=#8 id=8 data-nosnippet>8</a>};
@@ -69,7 +69,7 @@
 <a href=#69 id=69 data-nosnippet>69</a>
 <a href=#70 id=70 data-nosnippet>70</a><span class="kw">pub const </span>CANDIDATES_FOR_EPOCH_CACHE_SIZE: usize = <span class="number">64</span>;
 <a href=#71 id=71 data-nosnippet>71</a><span class="kw">pub const </span>STAKE_CACHE_SIZE: usize = <span class="number">100</span>;
-<a href=#72 id=72 data-nosnippet>72</a>
+<a href=#72 id=72 data-nosnippet>72</a><span class="kw">pub const </span>GOVERNED_MAP_CACHE_SIZE: u16 = <span class="number">100</span>;
 <a href=#73 id=73 data-nosnippet>73</a><span class="kw">pub async fn </span>create_cached_db_sync_data_sources(
 <a href=#74 id=74 data-nosnippet>74</a>	metrics_opt: <span class="prelude-ty">Option</span>&lt;McFollowerMetrics&gt;,
 <a href=#75 id=75 data-nosnippet>75</a>) -&gt; <span class="prelude-ty">Result</span>&lt;DataSources, Box&lt;<span class="kw">dyn </span>Error + Send + Sync + <span class="lifetime">'static</span>&gt;&gt; {
@@ -81,7 +81,7 @@
 <a href=#81 id=81 data-nosnippet>81</a>			block.clone(),
 <a href=#82 id=82 data-nosnippet>82</a>			metrics_opt.clone(),
 <a href=#83 id=83 data-nosnippet>83</a>		)),
-<a href=#84 id=84 data-nosnippet>84</a>		mc_hash: Arc::new(McHashDataSourceImpl::new(block, metrics_opt.clone())),
+<a href=#84 id=84 data-nosnippet>84</a>		mc_hash: Arc::new(McHashDataSourceImpl::new(block.clone(), metrics_opt.clone())),
 <a href=#85 id=85 data-nosnippet>85</a>		authority_selection: Arc::new(
 <a href=#86 id=86 data-nosnippet>86</a>			CandidatesDataSourceImpl::new(pool.clone(), metrics_opt.clone())
 <a href=#87 id=87 data-nosnippet>87</a>				.<span class="kw">await</span><span class="question-mark">?
@@ -96,6 +96,11 @@
 <a href=#96 id=96 data-nosnippet>96</a>			metrics_opt.clone(),
 <a href=#97 id=97 data-nosnippet>97</a>			STAKE_CACHE_SIZE,
 <a href=#98 id=98 data-nosnippet>98</a>		)),
-<a href=#99 id=99 data-nosnippet>99</a>		governed_map: Arc::new(GovernedMapDataSourceImpl::new(pool, metrics_opt)),
-<a href=#100 id=100 data-nosnippet>100</a>	})
-<a href=#101 id=101 data-nosnippet>101</a>}</code></pre></div></section></main></body></html>
+<a href=#99 id=99 data-nosnippet>99</a>		governed_map: Arc::new(GovernedMapDataSourceCachedImpl::new(
+<a href=#100 id=100 data-nosnippet>100</a>			pool,
+<a href=#101 id=101 data-nosnippet>101</a>			metrics_opt.clone(),
+<a href=#102 id=102 data-nosnippet>102</a>			GOVERNED_MAP_CACHE_SIZE,
+<a href=#103 id=103 data-nosnippet>103</a>			block,
+<a href=#104 id=104 data-nosnippet>104</a>		)),
+<a href=#105 id=105 data-nosnippet>105</a>	})
+<a href=#106 id=106 data-nosnippet>106</a>}</code></pre></div></section></main></body></html>
