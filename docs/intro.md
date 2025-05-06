@@ -134,7 +134,7 @@ features.
 - **governed map**: Governance controlled key-value store on the Cardano main chain.
 - **native token management**: Provides governance controlled tokens and token reserve management.
 - **address association**: Provides a mechanism for users to establish a mapping between their identities on Cardano and the Partner Chain
-- **committee selection**: Provides the cardano-based committee selection using the ariadne algorithm.
+- **committee selection**: Provides a Cardano-based committee selection using the Ariadne algorithm.
 - **cardano based block production rewards**: Calculation of rewards for delegation and block
 production on cardano.
 
