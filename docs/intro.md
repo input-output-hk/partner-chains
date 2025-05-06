@@ -80,10 +80,9 @@ A permissioned validator is a trusted node whitelisted by the governance authori
 ### System Overview
 The diagram below provides an simple overview of the pc toolkit setup:
 
-<figure align="center">
+<p align="center">
   <img src="./diagrams/pc-overview.drawio.svg" alt="" />
-  <figcaption><em>Figure 1:</em> System Overview</figcaption>
-</figure>
+</p>
 
 The toolkit covers components across three different categories which have been color-coded in the
 diagram above:
@@ -125,11 +124,9 @@ will only ever observe the ledger state, not change it.
 The diagram below gives an hierarchical overview of the different features provided by this toolkit and their
 respective dependencies (where `a -> b`means that `b` depends on functionality provided by `a`):
 
-<figure align="center">
+<p align="center">
   <img src="./diagrams/features.svg" alt="" />
-  <figcaption><em>Figure 2: </em>Features Overview</figcaption>
-</figure>
-
+</p>
 
 - **primitives and utils**: Utility libraries and custom Substrate primitives used by all other
 features.
