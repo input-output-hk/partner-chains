@@ -81,16 +81,6 @@ impl BlockDataSourceImpl {
 		};
 		Ok(block_opt.map(From::from))
 	}
-
-	pub async fn get_last_stable_block(
-		&self,
-	) -> Result<Option<MainchainBlock>, Box<dyn std::error::Error + Send + Sync>> {
-		if let Ok(cache) = self.stable_blocks_cache.lock() {
-			Ok(cache.from_last_by_hash.first().map(|x| From::from(x.clone())))
-		} else {
-			Ok(None)
-		}
-	}
 }
 
 #[derive(Debug, Clone, Deserialize)]
