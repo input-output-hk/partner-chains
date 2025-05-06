@@ -116,6 +116,7 @@ impl<Author> BlockAuthorInherentProvider<Author> {
 	{
 		let api = client.runtime_api();
 		if !api.has_api::<dyn BlockProductionLogApi<Block, Member>>(parent_hash)? {
+			log::warn!("has_api is false");
 			return Ok(Self { author: None });
 		}
 		let author = client.runtime_api().get_author(parent_hash, slot)?.map(Author::from);

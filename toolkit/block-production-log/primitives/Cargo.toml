@@ -19,6 +19,7 @@ sp-inherents = { workspace = true }
 sp-runtime = { workspace = true }
 thiserror = { workspace = true }
 sidechain-slots = { workspace = true }
+log = { workspace = true }
 
 [dev-dependencies]
 hex = { workspace = true }
@@ -34,5 +35,5 @@ std = [
 	"sp-inherents/std",
 	"sp-runtime/std",
 	"sp-api/std",
-	"sidechain-slots/std"
+	"sidechain-slots/std",
 ]

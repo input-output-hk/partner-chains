@@ -330,9 +330,10 @@ pub mod pallet {
 		pub fn get_current_authority_round_robin(index: usize) -> Option<T::CommitteeMember> {
 			let committee = CurrentCommittee::<T>::get().committee;
 			if committee.is_empty() {
+				log::warn!("committee.is_empty()");
 				return None;
 			}
-
+			log::warn!("committee.len()={}, index={}", committee.len(), index);
 			committee.get(index % committee.len() as usize).cloned()
 		}
 

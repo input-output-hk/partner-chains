@@ -1054,7 +1054,11 @@ impl_runtime_apis! {
 
 	impl sp_block_production_log::BlockProductionLogApi<Block, CommitteeMember<CrossChainPublic, SessionKeys>>  for Runtime {
 		fn get_author(slot: Slot) -> Option<CommitteeMember<CrossChainPublic, SessionKeys>> {
-			 SessionCommitteeManagement::get_current_authority_round_robin(*slot as usize)
+			let a = SessionCommitteeManagement::get_current_authority_round_robin(*slot as usize);
+			if a.is_none() {
+				log::warn!("get author is none");
+			}
+			a
 		}
 	}
 
