@@ -131,7 +131,7 @@ respective dependencies (where `a -> b`means that `b` depends on functionality p
 - **primitives and utils**: Utility libraries and custom Substrate primitives used by all other
 features.
 - **core**: Establishes a chain as a Partner Chain by tying its identity to a `genesis utxo` on Cardano. Provides the mechanism for the Partner Chain's blocks to reference stable Cardano blocks.
-- **governed maps**: Governance controlled key-value stores on the main-chain.
+- **governed map**: Governance controlled key-value store on the Cardano main chain.
 - **native token management**: Provides governance controlled tokens and token reserve management.
 - **address association**: Provides registrations and mappings between cardano delegation keys and PC addresses
 - **committee selection**: Provides the cardano-based committee selection using the ariadne algorithm.
