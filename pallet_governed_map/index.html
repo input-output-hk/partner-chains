@@ -27,7 +27,7 @@ Once the limit values are decided, define them in your runtime, like so:</li>
 <h4 id="implementing-on-change-handler"><a class="doc-anchor" href="#implementing-on-change-handler">§</a>Implementing on-change handler</h4>
 <p>The pallet allows the runtime implementer to define a handler that will be called for all key-value
 changes registered by the pallet. If your runtime needs to react to changes, crate a type implementing
-the [OnGovernedMappingChange] trait, eg:</p>
+the <a href="../sp_governed_map/trait.OnGovernedMappingChange.html" title="trait sp_governed_map::OnGovernedMappingChange">OnGovernedMappingChange</a> trait, eg:</p>
 
 <div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">struct </span>ChangeHandler;
 
