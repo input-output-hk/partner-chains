@@ -189,16 +189,19 @@ pub mod pallet {
 		///
 		/// This value *must* be high enough for all changes to be registered in one block.
 		/// Setting this to a value higher than the total number of parameters in the Governed Map guarantees that.
+		#[pallet::constant]
 		type MaxChanges: Get<u32>;
 
 		/// Maximum length of the key in the Governed Map in bytes.
 		///
 		/// This value *must* be high enough not to be exceeded by any key stored on Cardano.
+		#[pallet::constant]
 		type MaxKeyLength: Get<u32>;
 
 		/// Maximum length of data stored under a single key in the Governed Map
 		///
 		/// This value *must* be high enough not to be exceeded by any value stored on Cardano.
+		#[pallet::constant]
 		type MaxValueLength: Get<u32>;
 
 		/// Handler called for each change in the governed mappings.
@@ -227,7 +230,15 @@ pub mod pallet {
 	/// Governed Map value type
 	pub type MapValue<T> = BoundedVec<u8, <T as Config>::MaxValueLength>;
 	/// Governed Map change list
-	pub type Changes<T> = BoundedVec<(MapKey<T>, Option<MapValue<T>>), <T as Config>::MaxChanges>;
+	pub type Changes<T> =
+		BoundedBTreeMap<MapKey<T>, Option<MapValue<T>>, <T as Config>::MaxChanges>;
+
+	/// Stores the initialization state of the pallet
+	///
+	/// The pallet is considered uninitialized if no inherent was executed since the genesis block or
+	/// since the last change of the main chain scripts.
+	#[pallet::storage]
+	pub type Initialized<T: Config> = StorageValue<_, bool, ValueQuery>;
 
 	/// Stores the latest state of the Governed Map that was observed on Cardano.
 	#[pallet::storage]
@@ -286,16 +297,15 @@ pub mod pallet {
 		fn is_inherent_required(data: &InherentData) -> Result<Option<Self::Error>, Self::Error> {
 			match Self::decode_inherent_data(data) {
 				None => Ok(None),
+				Some(changes) if changes.is_empty() && Initialized::<T>::get() => Ok(None),
 				Some(_) => Ok(Some(Self::Error::InherentMissing)),
 			}
 		}
 	}
 
 	impl<T: Config> Pallet<T> {
-		fn decode_inherent_data(
-			data: &InherentData,
-		) -> Option<alloc::vec::Vec<GovernedMapChangeV1>> {
-			data.get_data::<alloc::vec::Vec<GovernedMapChangeV1>>(&INHERENT_IDENTIFIER)
+		fn decode_inherent_data(data: &InherentData) -> Option<GovernedMapInherentDataV1> {
+			data.get_data::<GovernedMapInherentDataV1>(&INHERENT_IDENTIFIER)
 				.expect("Governed Map inherent data is not encoded correctly")
 		}
 
@@ -304,18 +314,22 @@ pub mod pallet {
 
 			let Some(raw_changes) = Self::decode_inherent_data(data) else { return Ok(None) };
 
+			if raw_changes.is_empty() && Initialized::<T>::get() {
+				return Ok(None);
+			}
+
 			if raw_changes.len() > T::MaxChanges::get() as usize {
 				return Err(TooManyChanges);
 			}
 
 			let mut changes = Changes::<T>::new();
-			for GovernedMapChangeV1 { key, new_value } in raw_changes {
+			for (key, new_value) in raw_changes {
 				let new_value = match new_value {
 					Some(new_value) => Some(Self::bound_value(&key, new_value)?),
 					None => None,
 				};
 				let key = Self::bound_key(&key)?;
-				changes.try_push((key, new_value)).expect("Number of changes is below maximum");
+				changes.try_insert(key, new_value).expect("Number of changes is below maximum");
 			}
 			Ok(Some(Call::register_changes { changes }))
 		}
@@ -338,7 +352,15 @@ pub mod pallet {
 		pub fn register_changes(origin: OriginFor<T>, changes: Changes<T>) -> DispatchResult {
 			ensure_none(origin)?;
 
-			log::info!("💾 Registering {} Governed Map changes", changes.len(),);
+			if Initialized::<T>::get() {
+				log::info!("💾 Registering {} Governed Map changes", changes.len(),);
+			} else {
+				log::info!(
+					"💾 Reinitializing the Governed Map pallet with {} changes",
+					changes.len(),
+				);
+				Initialized::<T>::set(true);
+			}
 
 			for (key, value) in changes {
 				let old_value = Mapping::<T>::get(&key);
@@ -360,6 +382,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			T::MainChainScriptsOrigin::ensure_origin(origin)?;
 			MainChainScripts::<T>::put(new_main_chain_script.clone());
+			Initialized::<T>::set(false);
 			log::info!("🗂️ Governed Map main chain scripts updated to {new_main_chain_script:?}");
 			Ok(())
 		}
@@ -380,6 +403,11 @@ pub mod pallet {
 		pub fn get_all_key_value_pairs_unbounded() -> impl Iterator<Item = (String, ByteString)> {
 			Self::get_all_key_value_pairs()
 				.map(|(key, value)| (key.to_string(), value.to_vec().into()))
+		}
+
+		/// Returns initialization status of the pallet
+		pub fn is_initialized() -> bool {
+			Initialized::<T>::get()
 		}
 
 		/// Returns current pallet version.

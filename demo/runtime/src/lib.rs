@@ -8,6 +8,7 @@ extern crate frame_benchmarking;
 
 extern crate alloc;
 
+use alloc::collections::BTreeMap;
 use alloc::string::String;
 use authority_selection_inherents::CommitteeMember;
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
@@ -33,7 +34,7 @@ use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier
 use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
-use sidechain_domain::byte_string::{BoundedString, SizedByteString};
+use sidechain_domain::byte_string::{BoundedString, ByteString, SizedByteString};
 use sidechain_domain::{
 	CrossChainPublicKey, DelegatorKey, MainchainKeyHash, PermissionedCandidateData,
 	RegistrationData, ScEpochNumber, ScSlotNumber, StakeDelegation, StakePoolPublicKey, UtxoId,
@@ -1071,6 +1072,12 @@ impl_runtime_apis! {
 	}
 
 	impl sp_governed_map::GovernedMapIDPApi<Block> for Runtime {
+		fn is_initialized() -> bool {
+			GovernedMap::is_initialized()
+		}
+		fn get_current_state() -> BTreeMap<String, ByteString> {
+			GovernedMap::get_all_key_value_pairs_unbounded().collect()
+		}
 		fn get_main_chain_scripts() -> Option<MainChainScriptsV1> {
 			GovernedMap::get_main_chain_scripts()
 		}

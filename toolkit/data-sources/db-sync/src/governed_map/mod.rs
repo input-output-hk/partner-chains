@@ -13,7 +13,6 @@ use sidechain_domain::*;
 use sp_governed_map::{GovernedMapDataSource, MainChainScriptsV1};
 use sqlx::PgPool;
 use std::cmp::{max, min};
-use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 #[cfg(test)]
@@ -27,6 +26,15 @@ pub struct GovernedMapDataSourceImpl {
 
 observed_async_trait!(
 impl GovernedMapDataSource for GovernedMapDataSourceImpl {
+	async fn get_state_at_block(
+		&self,
+		mc_block: McBlockHash,
+		scripts: MainChainScriptsV1,
+	) -> std::result::Result<BTreeMap<String, ByteString>, Box<dyn std::error::Error + Send + Sync>>
+	{
+		Ok(get_mappings_entries(&self.pool, mc_block, scripts).await?.into())
+	}
+
 	async fn get_mapping_changes(
 		&self,
 		since_mc_block: Option<McBlockHash>,
@@ -36,15 +44,13 @@ impl GovernedMapDataSource for GovernedMapDataSourceImpl {
 		Vec<(String, Option<ByteString>)>,
 		Box<dyn std::error::Error + Send + Sync>,
 	> {
-		let current_mappings =
-			self.get_current_mapping_entries(up_to_mc_block, scripts.clone()).await?;
+		let current_mappings = self.get_state_at_block(up_to_mc_block, scripts.clone()).await?;
 		let Some(since_mc_block) = since_mc_block else {
 			let changes =
 				current_mappings.into_iter().map(|(key, value)| (key, Some(value))).collect();
 			return Ok(changes);
 		};
-		let previous_mappings =
-			self.get_current_mapping_entries(since_mc_block, scripts.clone()).await?;
+		let previous_mappings = self.get_state_at_block(since_mc_block, scripts.clone()).await?;
 		let mut changes = vec![];
 		for (key, value) in current_mappings.iter() {
 			if previous_mappings.get(key) != Some(value) {
@@ -62,36 +68,33 @@ impl GovernedMapDataSource for GovernedMapDataSourceImpl {
 }
 );
 
-impl GovernedMapDataSourceImpl {
-	async fn get_current_mapping_entries(
-		&self,
-		hash: McBlockHash,
-		scripts: MainChainScriptsV1,
-	) -> Result<HashMap<String, ByteString>> {
-		let Some(block) = crate::db_model::get_block_by_hash(&self.pool, hash.clone()).await?
-		else {
-			return Err(ExpectedDataNotFound(format!("Block hash: {hash}")));
-		};
-		let entries = crate::db_model::get_datums_at_address_with_token(
-			&self.pool,
-			&scripts.validator_address.into(),
-			block.block_no,
-			Asset::new(scripts.asset_policy_id),
-		)
-		.await?;
+async fn get_mappings_entries(
+	pool: &PgPool,
+	hash: McBlockHash,
+	scripts: MainChainScriptsV1,
+) -> Result<BTreeMap<String, ByteString>> {
+	let Some(block) = crate::db_model::get_block_by_hash(pool, hash.clone()).await? else {
+		return Err(ExpectedDataNotFound(format!("Block hash: {hash}")));
+	};
+	let entries = crate::db_model::get_datums_at_address_with_token(
+		pool,
+		&scripts.validator_address.into(),
+		block.block_no,
+		Asset::new(scripts.asset_policy_id),
+	)
+	.await?;
 
-		let mut mappings = HashMap::new();
-		for entry in entries {
-			match GovernedMapDatum::try_from(entry.datum.0) {
-				Ok(GovernedMapDatum { key, value }) => {
-					mappings.insert(key, value);
-				},
-				Err(err) => warn!("Failed decoding map entry: {err}"),
-			}
+	let mut mappings = BTreeMap::new();
+	for entry in entries {
+		match GovernedMapDatum::try_from(entry.datum.0) {
+			Ok(GovernedMapDatum { key, value }) => {
+				mappings.insert(key, value);
+			},
+			Err(err) => warn!("Failed decoding map entry: {err}"),
 		}
-
-		Ok(mappings)
 	}
+
+	Ok(mappings)
 }
 
 #[derive(new)]
@@ -106,6 +109,15 @@ pub struct GovernedMapDataSourceCachedImpl {
 
 observed_async_trait!(
 impl GovernedMapDataSource for GovernedMapDataSourceCachedImpl {
+	async fn get_state_at_block(
+		&self,
+		mc_block: McBlockHash,
+		scripts: MainChainScriptsV1,
+	) -> std::result::Result<BTreeMap<String, ByteString>, Box<dyn std::error::Error + Send + Sync>>
+	{
+		Ok(get_mappings_entries(&self.pool, mc_block, scripts).await?.into())
+	}
+
 	async fn get_mapping_changes(
 		&self,
 		since_mc_block: Option<McBlockHash>,

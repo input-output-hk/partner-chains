@@ -10694,6 +10694,7 @@ dependencies = [
  "async-trait",
  "log",
  "parity-scale-codec",
+ "pretty_assertions",
  "scale-info",
  "serde",
  "sidechain-domain",
