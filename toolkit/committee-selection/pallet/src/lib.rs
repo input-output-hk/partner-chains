@@ -85,13 +85,14 @@ pub mod pallet {
 		/// Origin for governance calls
 		type MainChainScriptsOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
-		/// Selects a committee for `sidechain_epoch` based on selection inputs `input`.
+		/// Should select a committee for `sidechain_epoch` based on selection inputs `input`.
+		/// Should return [None] if selection was impossible for the given input.
 		fn select_authorities(
 			input: Self::AuthoritySelectionInputs,
 			sidechain_epoch: Self::ScEpochNumber,
 		) -> Option<BoundedVec<Self::CommitteeMember, Self::MaxValidators>>;
 
-		/// Returns current epoch number.
+		/// Should return the current partner chain epoch.
 		fn current_epoch_number() -> Self::ScEpochNumber;
 
 		/// Weight functions needed for pallet_session_validator_management.
@@ -398,7 +399,8 @@ pub mod pallet {
 			T::select_authorities(authority_selection_inputs, sidechain_epoch).map(|c| c.to_vec())
 		}
 
-		/// Rotates committee to next epoch.
+		/// If [NextCommittee] is defined, it moves its value to [CurrentCommittee] storage.
+		/// Returns the value taken from [NextCommittee].
 		pub fn rotate_committee_to_next_epoch() -> Option<Vec<T::CommitteeMember>> {
 			let next_committee = NextCommittee::<T>::take()?;
 

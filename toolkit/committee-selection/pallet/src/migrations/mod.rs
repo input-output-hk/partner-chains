@@ -1,4 +1,4 @@
-//! Implements storage migrations of `session-validator-management` pallet.
+//! Implements storage migrations of `pallet-session-validator-management`.
 //!
 //! **Important:** It is crucial to run the migrations when upgrading runtime
 //! to a version containing this pallet's storage version. Failing to do so
