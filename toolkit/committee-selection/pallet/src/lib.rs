@@ -102,6 +102,14 @@ pub mod pallet {
 		pub committee: BoundedVec<CommitteeMember, MaxValidators>,
 	}
 
+	impl<ScEpochNumber: Clone, CommitteeMember: Clone, MaxValidators>
+		CommitteeInfo<ScEpochNumber, CommitteeMember, MaxValidators>
+	{
+		pub fn as_pair(self) -> (ScEpochNumber, Vec<CommitteeMember>) {
+			(self.epoch, self.committee.to_vec())
+		}
+	}
+
 	impl<ScEpochNumber, CommitteeMember, MaxValidators> Default
 		for CommitteeInfo<ScEpochNumber, CommitteeMember, MaxValidators>
 	where
@@ -388,16 +396,6 @@ pub mod pallet {
 				next_committee.epoch
 			);
 			Some(validators)
-		}
-
-		pub fn get_current_committee() -> (T::ScEpochNumber, Vec<T::CommitteeMember>) {
-			let committee_info = CurrentCommittee::<T>::get();
-			(committee_info.epoch, committee_info.committee.to_vec())
-		}
-
-		pub fn get_next_committee() -> Option<(T::ScEpochNumber, Vec<T::CommitteeMember>)> {
-			let committee_info = NextCommittee::<T>::get()?;
-			Some((committee_info.epoch, committee_info.committee.to_vec()))
 		}
 
 		pub fn get_main_chain_scripts() -> MainChainScripts {
