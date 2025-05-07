@@ -518,8 +518,7 @@ class SubstrateApi(BlockchainApi):
         return self.substrate.get_block_header(block_number=block_no)["header"]
 
     def get_block(self, block_no=None):
-        block_hash = self.substrate.get_block_hash(block_no)
-        return self.substrate.get_block(block_hash)
+        return self.substrate.get_block(block_number=block_no)
 
     def get_validator_set(self, block):
         return self.substrate.query("Session", "ValidatorsAndKeys", block_hash=block["header"]["parentHash"])
