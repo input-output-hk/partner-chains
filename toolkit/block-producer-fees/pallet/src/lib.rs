@@ -41,13 +41,14 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
-		/// Maximum number of past changes per one block producer kept in the storage.
+		/// The maximum number of past changes per one block producer kept in the storage.
+		#[pallet::constant]
 		type HistoricalChangesPerProducer: Get<u16>;
 
 		/// Weight information on extrinsic in the pallet. For convenience weights in [weights] module can be used.
 		type WeightInfo: WeightInfo;
 
-		/// The slot number of the current block.
+		/// Should provide the slot number of the current block.
 		fn current_slot() -> Slot;
 
 		#[cfg(feature = "runtime-benchmarks")]
@@ -55,7 +56,7 @@ pub mod pallet {
 		type BenchmarkHelper: benchmarking::BenchmarkHelper<Self::AccountId>;
 	}
 
-	// Margin Fee precision is 0.01 of a percent, so use 1/10000 as unit.
+	// Margin Fee precision is 0.01 of a percent, so 1/10000 is used as a unit.
 	type PerTenThousands = u16;
 
 	type FeeChange = (Slot, PerTenThousands);
@@ -96,7 +97,7 @@ pub mod pallet {
 			PALLET_VERSION
 		}
 
-		/// Retrieves all stored block producer fees settings.
+		/// Retrieves all stored block producer fees settings. The most recent fees are in front of vecdeque.
 		pub fn get_all() -> impl Iterator<Item = (T::AccountId, VecDeque<FeeChange>)> {
 			FeesChanges::<T>::iter()
 		}
@@ -108,7 +109,8 @@ pub mod pallet {
 			})
 		}
 
-		/// Retrieves block producers fees settings.
+		/// Retrieves fees settings for the given account id.
+		/// Empty collection is returned if there are no settings stored for given id.
 		pub fn get(id: T::AccountId) -> VecDeque<FeeChange> {
 			FeesChanges::<T>::get(id)
 		}
