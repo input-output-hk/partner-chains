@@ -29,28 +29,29 @@ pub enum RegistrationError {
 #[serde(rename_all = "camelCase")]
 /// Candidate Registration Entry
 pub struct CandidateRegistrationEntry {
-	/// Sidechain pub key of the candidate
+	/// Sidechain public key of the candidate. See [sidechain_domain::SidechainPublicKey] for more details.
 	pub sidechain_pub_key: String,
 	/// SS58 address derived from public key. ss58(blake2b32(sidechainPubKey))
 	pub sidechain_account_id: String,
 	/// Stake Pool public key
 	pub mainchain_pub_key: String,
-	/// Cross chain pub key of the candidate
+	/// Cross chain public key of the candidate. See [sidechain_domain::CrossChainPublicKey] for more details.
 	pub cross_chain_pub_key: String,
-	/// Aura pub key of the candidate
+	/// Aura public key of the candidate
 	pub aura_pub_key: String,
-	/// Grandpa pub key of the candidate
+	/// Grandpa public key of the candidate
 	pub grandpa_pub_key: String,
-	/// Sidechain signature of the candidate
+	/// Sidechain key signature of the registration message
 	pub sidechain_signature: String,
 	/// Signature made with Stake Pool key
 	pub mainchain_signature: String,
-	/// Cross chain signature of the candidate
+	/// Cross chain key signature of the registration message
 	pub cross_chain_signature: String,
 	/// Data of Utxo that contained this registration"
 	pub utxo: UtxoInfo,
 	#[serde(skip_serializing_if = "Option::is_none")]
-	/// Optional stake delegation amount
+	/// Total stake delegated to the pool identified by `mainchain_pub_key`.
+	/// [None] if registration is not stable yet.
 	pub stake_delegation: Option<u64>,
 	/// Is the registration valid
 	pub is_valid: bool,

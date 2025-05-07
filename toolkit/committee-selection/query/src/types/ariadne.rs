@@ -8,7 +8,7 @@ use sidechain_domain::{AuraPublicKey, GrandpaPublicKey, SidechainPublicKey};
 #[serde(rename_all = "camelCase")]
 /// Parameters for Ariadne committee selection
 pub struct AriadneParameters {
-	/// The d-parameter
+	/// The D-parameter
 	pub d_parameter: DParameter,
 	/// List of permissioned candidates. [None] signifies a list was not set on mainchain.
 	pub permissioned_candidates: Option<Vec<PermissionedCandidateData>>,
@@ -18,7 +18,7 @@ pub struct AriadneParameters {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-/// The d-parameter describing the ratio of permissioned and registered candidates.
+/// The D-parameter describing the ratio of permissioned and registered candidates.
 pub struct DParameter {
 	/// The number of permissioned candidates
 	pub num_permissioned_candidates: u16,

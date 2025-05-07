@@ -2,7 +2,7 @@
 use crate::SessionValidatorManagementQueryApi;
 use sidechain_domain::{McEpochNumber, StakePoolPublicKey};
 
-/// Returns Ariadne parameters in JSON format
+/// Returns Ariadne parameters in JSON format that are effective for the given epoch
 /// Arguments:
 ///  - query: query api implementing [SessionValidatorManagementQueryApi] trait
 ///  - mc_epoch_number: mainchain epoch for which to get Ariadne parameters

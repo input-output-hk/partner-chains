@@ -48,7 +48,7 @@ impl GetCommitteeResponse {
 		GetCommitteeResponse { sidechain_epoch: sidechain_epoch.0, committee }
 	}
 
-	/// Legacy constructor
+	/// Legacy constructor, used for input coming from old versions of the pallet runtime
 	pub fn new_legacy<AuthorityId>(
 		sidechain_epoch: sidechain_domain::ScEpochNumber,
 		committee: Vec<AuthorityId>,
