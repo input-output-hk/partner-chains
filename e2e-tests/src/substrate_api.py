@@ -733,16 +733,13 @@ class SubstrateApi(BlockchainApi):
         logger.debug(f"Governed map for key {key}: {result}")
         return result.value
 
-    def subscribe_governed_map_change(self, key=None, value=None, observe_empty=False):
-        if value and not key:
-            raise ValueError("Key must be provided if value is specified.")
-
+    def subscribe_governed_map_change(self, key=None, key_value=None):
         current_main_chain_block = self.get_mc_block()
         max_main_chain_block = current_main_chain_block + self.config.main_chain.security_param
 
         def subscribed_change_handler(registered_changes):
-            if value or observe_empty:
-                return next((change for change in registered_changes if change[0] == key and change[1] == value), None)
+            if key_value:
+                return next((change for change in registered_changes if key_value in registered_changes), None)
             elif key:
                 return next((change for change in registered_changes if change[0] == key), None)
             else:
@@ -774,8 +771,15 @@ class SubstrateApi(BlockchainApi):
                 self.substrate.rpc_request("chain_unsubscribeNewHeads", [subscription_id])
                 return False
 
+        if key_value:
+            change_to_observe_msg = f"Observing specific change: {key_value}"
+        elif key:
+            change_to_observe_msg = f"Observing changes for key: {key}"
+        else:
+            change_to_observe_msg = "Observing any changes"
+
         logger.info(
-            f"Subscribing to changes registered in Governed Map for key {key}... "
+            f"Subscribing to Governed Map changes. {change_to_observe_msg}. "
             f"Max main chain block: {max_main_chain_block} ({self.config.main_chain.security_param} blocks ahead)"
         )
         result = self.substrate.subscribe_block_headers(subscription_handler)
