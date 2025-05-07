@@ -548,15 +548,20 @@ class BlockchainApi(ABC):
         pass
 
     @abstractmethod
-    def subscribe_governed_map_change(self, key: str, value: str = None) -> list:
+    def subscribe_governed_map_change(
+        self, key: str = None, value: str = None, observe_empty: bool = False
+    ) -> list | tuple | bool:
         """
         Subscribes to changes in the governed map. Timeouts after main chain security parameter.
 
         Arguments:
-            key {str} -- Key to subscribe to
+            key {str} -- Key to subscribe to (optional)
             value {str} -- Value to subscribe to (optional)
+            observe_empty {bool} -- If True, observes empty map changes (optional), useful for observing removed key
 
         Returns:
-            list -- List of changes
+            list | tuple | bool -- List of tuples or a single tuple with key and value of registered change
+                                    True - if the governed map was reinitialized with 0 changes
+                                    False - if no changes were observed during the timeout
         """
         pass

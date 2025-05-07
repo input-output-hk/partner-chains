@@ -16,7 +16,6 @@ from .partner_chains_node.node import PartnerChainsNode
 from .partner_chain_rpc import PartnerChainRpc, PartnerChainRpcResponse, DParam
 import time
 from scalecodec.base import ScaleBytes
-from scalecodec.types import OptionBytes
 
 
 def _keypair_name_to_type(type_name):
@@ -734,9 +733,23 @@ class SubstrateApi(BlockchainApi):
         logger.debug(f"Governed map for key {key}: {result}")
         return result.value
 
-    def subscribe_governed_map_change(self, key, value=None):
+    def subscribe_governed_map_change(self, key=None, value=None, observe_empty=False):
+        if value and not key:
+            raise ValueError("Key must be provided if value is specified.")
+
         current_main_chain_block = self.get_mc_block()
         max_main_chain_block = current_main_chain_block + self.config.main_chain.security_param
+
+        def subscribed_change_handler(registered_changes):
+            if value or observe_empty:
+                return next((change for change in registered_changes if change[0] == key and change[1] == value), None)
+            elif key:
+                return next((change for change in registered_changes if change[0] == key), None)
+            else:
+                if registered_changes:
+                    return registered_changes
+                else:
+                    return True  # e.g. governed map reinitialization with 0 changes
 
         def subscription_handler(obj, update_nr, subscription_id):
             block_no = obj["header"]["number"]
@@ -751,14 +764,10 @@ class SubstrateApi(BlockchainApi):
                     and extrinsic.value["call"]["call_function"] == "register_changes"
                 ):
                     registered_changes = extrinsic.value["call"]["call_args"][0]["value"]
-                    if value:
-                        subscribed_change = next(
-                            (change for change in registered_changes if change[0] == key and change[1] == value), None
-                        )
-                    else:
-                        subscribed_change = next((change for change in registered_changes if change[0] == key), None)
+                    subscribed_change = subscribed_change_handler(registered_changes)
                     break
             if subscribed_change:
+                self.substrate.rpc_request("chain_unsubscribeNewHeads", [subscription_id])
                 return subscribed_change
             if self.get_mc_block() > max_main_chain_block:
                 logger.warning("Max main chain block reached. Stopping subscription.")

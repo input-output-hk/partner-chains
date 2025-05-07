@@ -5,34 +5,45 @@ from conftest import string_to_hex_bytes
 import logging
 
 
-class TestObserveMap:
-    @fixture(scope="session")
-    def sudo(self, api: BlockchainApi, secrets):
-        sudo_config = secrets["wallets"]["sudo"]
-        sudo = api.get_wallet(
-            address=sudo_config["address"],
-            public_key=sudo_config["public_key"],
-            secret=sudo_config["secret_seed"],
-            scheme=sudo_config["scheme"],
-        )
-        return sudo
+@fixture(scope="session")
+def sudo(api: BlockchainApi, secrets):
+    sudo_config = secrets["wallets"]["sudo"]
+    sudo = api.get_wallet(
+        address=sudo_config["address"],
+        public_key=sudo_config["public_key"],
+        secret=sudo_config["secret_seed"],
+        scheme=sudo_config["scheme"],
+    )
+    return sudo
 
-    @fixture(scope="class")
-    def set_validator_address(self, api: BlockchainApi, addresses, policy_ids, sudo):
-        tx = api.set_governed_map_address(addresses["GovernedMapValidator"], policy_ids["GovernedMap"], sudo)
-        return tx
 
+@fixture(scope="session", autouse=True)
+def set_validator_address(api: BlockchainApi, addresses, policy_ids, sudo):
+    tx = api.set_governed_map_address(addresses["GovernedMapValidator"], policy_ids["GovernedMap"], sudo)
+    return tx
+
+
+@fixture(scope="session", autouse=True)
+def observe_governed_map_initialization(api: BlockchainApi, set_validator_address):
+    result = api.subscribe_governed_map_change()
+    return result
+
+
+class TestInitializeMap:
     def test_set_main_chain_scripts(self, set_validator_address):
         tx = set_validator_address
         assert tx._receipt.is_success, f"Failed to set new governed map address: {tx._receipt.error_message}"
 
-    def test_observed_map_is_equal_to_main_chain_data(self, api: BlockchainApi, random_key):
+    def test_observed_map_is_equal_to_main_chain_data(self, api: BlockchainApi, observe_governed_map_initialization):
+        logging.info(f"Observed map initialization: {observe_governed_map_initialization}")
         result = api.partner_chains_node.smart_contracts.governed_map.list()
         expected_map = result.json
         actual_map = api.get_governed_map()
         actual_map = {key: string_to_hex_bytes(value) for key, value in actual_map.items()}
         assert expected_map == actual_map
 
+
+class TestObserveMapChanges:
     def test_new_data_is_observed(self, insert_data, api: BlockchainApi, random_key, random_value):
         registered_change = api.subscribe_governed_map_change(key=random_key)
         logging.info(f"Registered change: {registered_change}")
@@ -48,6 +59,15 @@ class TestObserveMap:
         actual_value = api.get_governed_map_key(random_key)
         assert new_value == actual_value
 
+    def test_removed_data_is_observed(self, insert_data, api: BlockchainApi, random_key, payment_key):
+        api.partner_chains_node.smart_contracts.governed_map.remove(random_key, payment_key)
+        registered_change = api.subscribe_governed_map_change(key=random_key, value=None, observe_empty=True)
+        logging.info(f"Registered change: {registered_change}")
+        actual_value = api.get_governed_map_key(random_key)
+        assert actual_value is None, f"Expected empty value for key {random_key}, got {actual_value}"
+
+
+class TestReinitializeMapToEmptyAddress:
     def test_set_new_governed_map_address(self, api: BlockchainApi, policy_ids, sudo):
         _, vkey = api.cardano_cli.generate_payment_keys()
         logging.info(f"Generated new payment key: {vkey}")
