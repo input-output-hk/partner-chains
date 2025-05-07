@@ -18,7 +18,7 @@ pub type LegacyToV1Migration<T> = frame_support::migrations::VersionedMigration<
 	<T as frame_system::Config>::DbWeight,
 >;
 
-/// Helper type used for migration.
+/// Helper type used internally for migration. Use [LegacyToV1Migration] in your runtime instead.
 pub struct InnerMigrateV0ToV1<T: crate::Config>(core::marker::PhantomData<T>);
 
 impl<T: crate::pallet::Config> UncheckedOnRuntimeUpgrade for InnerMigrateV0ToV1<T>

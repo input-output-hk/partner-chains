@@ -154,7 +154,7 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T> {
-		/// `Pallet::set` has been called with epoch number that is not current epoch + 1
+		/// [Pallet::set] has been called with epoch number that is not current epoch + 1
 		InvalidEpoch,
 	}
 
@@ -204,7 +204,7 @@ pub mod pallet {
 		type Error = InherentError;
 		const INHERENT_IDENTIFIER: InherentIdentifier = INHERENT_IDENTIFIER;
 
-		/// Responsible for calling `Call:set()` on each block by the block author, if the validator list changed
+		/// Responsible for calling [Call:set] on each block by the block author, if the validator list changed
 		fn create_inherent(data: &InherentData) -> Option<Self::Call> {
 			if NextCommittee::<T>::exists() {
 				None
@@ -336,16 +336,14 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
-		/// Returns next unset epoch number.
+		/// Returns epoch number for which next committee hasn't been set yet.
 		pub fn get_next_unset_epoch_number() -> T::ScEpochNumber {
 			NextCommittee::<T>::get()
 				.map(|next_committee| next_committee.epoch + One::one())
 				.unwrap_or(CurrentCommittee::<T>::get().epoch + One::one())
 		}
 
-		/// Returns current committee member for an index.
-		///
-		/// Committee members repeat in a round robin fashion.
+		/// Returns current committee member for an index, repeating them in a round-robin fashion if needed.
 		pub fn get_current_authority_round_robin(index: usize) -> Option<T::CommitteeMember> {
 			let committee = CurrentCommittee::<T>::get().committee;
 			if committee.is_empty() {
@@ -355,14 +353,12 @@ pub mod pallet {
 			committee.get(index % committee.len() as usize).cloned()
 		}
 
-		// TODO check if calls to this can be replaced with `get_current_committee`
 		/// Returns current committee from storage.
 		pub fn current_committee_storage()
 		-> CommitteeInfo<T::ScEpochNumber, T::CommitteeMember, T::MaxValidators> {
 			CurrentCommittee::<T>::get()
 		}
 
-		// TODO check if calls to this can be replaced with `get_next_committee`
 		/// Returns next committee from storage.
 		pub fn next_committee_storage()
 		-> Option<CommitteeInfo<T::ScEpochNumber, T::CommitteeMember, T::MaxValidators>> {

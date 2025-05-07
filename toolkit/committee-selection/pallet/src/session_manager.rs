@@ -1,5 +1,45 @@
-//! Implements [pallet_partner_chains_session::SessionManager] and[pallet_partner_chains_session::ShouldEndSession],
+//! Implements [pallet_partner_chains_session::SessionManager] and [pallet_partner_chains_session::ShouldEndSession],
 //! Partner Chain's version of Substrate's [pallet_session].
+//!
+//! To wire the [pallet_partner_chains_session] pallet, a stub version of [pallet_session] has to be wired first.
+//! The config for this should be generated with [a macro](pallet_partner_chains_session::impl_pallet_session_config) provided by this crate:
+//! ```rust, ignore
+//! pallet_partner_chains_session::impl_pallet_session_config!(Runtime);
+//! ```
+//! which expands to:
+//! ```rust, ignore
+//! impl pallet_session::Config for Runtime where Runtime: pallet_partner_chains_session::Config { /* ... */ }
+//! ```
+//!
+//! The partner chains session pallet has to be configured, for example:
+//! ```rust, ignore
+//! impl pallet_partner_chains_session::Config for Runtime {
+//! 	type RuntimeEvent = RuntimeEvent;
+//! 	type ValidatorId = <Self as frame_system::Config>::AccountId;
+//! 	type ShouldEndSession = ValidatorManagementSessionManager<Runtime>;
+//! 	type NextSessionRotation = ();
+//! 	type SessionManager = ValidatorManagementSessionManager<Runtime>;
+//! 	type SessionHandler = <opaque::SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
+//! 	type Keys = opaque::SessionKeys;
+//! }
+//! ```
+//!
+//! The order matters when wiring the pallets into the runtime!
+//! Partner Chains session_manager [ValidatorManagementSessionManager] writes to [pallet_session::pallet::CurrentIndex].
+//! [pallet_partner_chains_session] needs to come last for correct initialization order.
+//! [ValidatorManagementSessionManager] is wired in by [pallet_partner_chains_session].
+//!
+//! ```rust, ignore
+//! construct_runtime!(
+//! 	pub struct Runtime {
+//! 		// ...
+//! 		SubstrateSession: pallet_session,
+//! 		PcSession: pallet_partner_chains_session,
+//! 		// ...
+//! 	}
+//! );
+//! ```
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use crate::CommitteeMember;
