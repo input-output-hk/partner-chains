@@ -109,6 +109,16 @@ pub mod pallet {
 		const TARGET_INHERENT_ID: InherentIdentifier;
 	}
 
+	#[pallet::error]
+	pub enum Error<T> {
+		/// Indicates an attempt to process block participation data for already processed slot
+		UpToSlotNotIncreased,
+	}
+
+	/// Stores the slot number up to which block participation has already been processed
+	#[pallet::storage]
+	pub type ProcessedUpToSlot<T: Config> = StorageValue<_, Slot, ValueQuery>;
+
 	#[pallet::inherent]
 	impl<T: Config> ProvideInherent for Pallet<T> {
 		type Call = Call<T>;
@@ -158,13 +168,26 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Registers the fact that block participation data has been released and removes the handled data from block production log.
+		/// Registers the fact that block participation data has been released for processing
+		/// and removes the handled data from block production log.
+		///
+		/// This inherent does not by itself process any data and only serves an operational function
+		/// by cleaning up data that has been already processed by other components.
+		///
+		/// # Arguments
+		/// - `up_to_slot`: inclusive upper bound for processed data to be cleaned. This inherent saves
+		///                 the value of `up_to_slot` in the pallet's storage and expects it to increase
+		///                 on each invocation.
 		#[pallet::call_index(0)]
 		#[pallet::weight((0, DispatchClass::Mandatory))]
 		pub fn note_processing(origin: OriginFor<T>, up_to_slot: Slot) -> DispatchResult {
 			ensure_none(origin)?;
+			if up_to_slot <= ProcessedUpToSlot::<T>::get() {
+				return Err(Error::<T>::UpToSlotNotIncreased.into());
+			}
 			log::info!("🧾 Processing block participation data up to slot {}.", *up_to_slot);
 			T::discard_blocks_produced_up_to_slot(up_to_slot);
+			ProcessedUpToSlot::<T>::put(up_to_slot);
 			Ok(())
 		}
 	}

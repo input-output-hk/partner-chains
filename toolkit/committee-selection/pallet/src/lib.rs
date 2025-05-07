@@ -158,6 +158,8 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// [Pallet::set] has been called with epoch number that is not current epoch + 1
 		InvalidEpoch,
+		/// [Pallet::set] has been called a second time for the same next epoch
+		NextCommitteeAlreadySet,
 	}
 
 	#[pallet::genesis_config]
@@ -303,6 +305,7 @@ pub mod pallet {
 			ensure_none(origin)?;
 			let expected_epoch_number = CurrentCommittee::<T>::get().epoch + One::one();
 			ensure!(for_epoch_number == expected_epoch_number, Error::<T>::InvalidEpoch);
+			ensure!(!NextCommittee::<T>::exists(), Error::<T>::NextCommitteeAlreadySet);
 			let len = validators.len();
 			info!(
 				"💼 Storing committee of size {len} for epoch {for_epoch_number}, input data hash: {}",

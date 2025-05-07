@@ -1,4 +1,5 @@
 use crate::mock::*;
+use crate::*;
 use frame_support::assert_ok;
 use frame_support::inherent::{InherentData, ProvideInherent};
 use frame_system::Origin;
@@ -14,11 +15,23 @@ fn inherent_clears_production_log_prefix() {
 		let expected_log: Vec<_> = (11..=20).map(|i| (Slot::from(i), i + 100)).collect();
 		mock_pallet::BlockProductionLog::<Test>::put(BoundedVec::truncate_from(initial_log));
 
+		assert_eq!(ProcessedUpToSlot::<Test>::get(), Slot::default());
 		Payouts::note_processing(Origin::<Test>::None.into(), Slot::from(10))
 			.expect("Should succeed");
 
 		let log = mock_pallet::BlockProductionLog::<Test>::get().unwrap().to_vec();
 		assert_eq!(log, expected_log);
+		assert_eq!(ProcessedUpToSlot::<Test>::get(), Slot::from(10));
+	})
+}
+
+#[test]
+fn inherent_cant_be_run_twice_in_one_block() {
+	new_test_ext().execute_with(|| {
+		Payouts::note_processing(Origin::<Test>::None.into(), Slot::from(10))
+			.expect("First call should succeed");
+		Payouts::note_processing(Origin::<Test>::None.into(), Slot::from(10))
+			.expect_err("Second call should fail");
 	})
 }
 

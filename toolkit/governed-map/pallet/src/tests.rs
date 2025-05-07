@@ -133,6 +133,19 @@ mod inherent {
 		})
 	}
 
+	#[test]
+	fn cannot_be_called_more_than_once_per_block() {
+		new_test_ext().execute_with(|| {
+			let changes = bounded_btree_map![
+				bstring("key1") => Some(bvec(&[1])),
+			];
+			GovernedMap::register_changes(RuntimeOrigin::none(), changes.clone())
+				.expect("First call should succeed");
+			GovernedMap::register_changes(RuntimeOrigin::none(), changes)
+				.expect_err("Second call should fail");
+		})
+	}
+
 	mod provide_inherent {
 		use super::*;
 		use pretty_assertions::assert_eq;
