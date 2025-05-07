@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["MainChainScripts","Mapping"]};
+window.SIDEBAR_ITEMS = {"struct":["Initialized","MainChainScripts","Mapping"]};
