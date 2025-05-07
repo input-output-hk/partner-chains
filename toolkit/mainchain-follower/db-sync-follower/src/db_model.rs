@@ -557,6 +557,15 @@ pub(crate) async fn create_idx_ma_tx_out_ident(pool: &Pool<Postgres>) -> Result<
 	Ok(())
 }
 
+#[cfg(feature = "candidate-source")]
+pub(crate) async fn create_idx_tx_out_ident(pool: &Pool<Postgres>) -> Result<(), SqlxError> {
+    let sql = "CREATE INDEX IF NOT EXISTS idx_tx_out_address ON tx_out USING hash (address)";
+    info!("Executing '{}', this might take a while", sql);
+    sqlx::query(sql).execute(pool).await?;
+    info!("Index 'idx_tx_out_address' is created");
+    Ok(())
+}
+
 #[cfg(test)]
 /// Check if the index exists.
 pub(crate) async fn index_exists(pool: &Pool<Postgres>, index_name: &str) -> bool {
