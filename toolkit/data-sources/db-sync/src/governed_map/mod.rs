@@ -1,6 +1,7 @@
 use crate::DataSourceError::ExpectedDataNotFound;
 use crate::Result;
 use crate::block::BlockDataSourceImpl;
+use crate::db_model::GovernedMapAction;
 use crate::{metrics::McFollowerMetrics, observed_async_trait};
 use db_sync_sqlx::Asset;
 use db_sync_sqlx::BlockNumber;
@@ -207,14 +208,19 @@ impl GovernedMapDataSourceCachedImpl {
 		let mut result = Vec::new();
 
 		for change in changes {
-			match GovernedMapDatum::try_from(change.datum.0) {
-				Ok(GovernedMapDatum { key, value }) => match change.action.as_str() {
-					"remove" => result.push(Change::new(change.block_no, key, None)),
-					"upsert" => result.push(Change::new(change.block_no, key, Some(value))),
-					_ => warn!("Unknown action: {}", change.action),
+			let GovernedMapDatum { key, value } = match GovernedMapDatum::try_from(change.datum.0) {
+				Ok(datum) => datum,
+				Err(err) => {
+					warn!("Failed decoding map entry: {err}");
+					continue;
 				},
-				Err(err) => warn!("Failed decoding map entry: {err}"),
-			}
+			};
+			match change.action {
+				GovernedMapAction::Spend => result.push(Change::new(change.block_no, key, None)),
+				GovernedMapAction::Create => {
+					result.push(Change::new(change.block_no, key, Some(value)))
+				},
+			};
 		}
 		Ok(result)
 	}
