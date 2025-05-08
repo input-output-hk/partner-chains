@@ -65,4 +65,6 @@ def insert_data(api: BlockchainApi, random_key, random_value, payment_key):
     logging.info(f"Inserting data into Governed Map with key: {random_key} and value: {random_value}")
     hex_data = string_to_hex_bytes(random_value)
     result = api.partner_chains_node.smart_contracts.governed_map.insert(random_key, hex_data, payment_key)
-    return result
+    yield result
+    api.partner_chains_node.smart_contracts.governed_map.remove(random_key, payment_key)
+    logging.info(f"Cleaned up test data from Governed Map with key: {random_key}")
