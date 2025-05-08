@@ -181,7 +181,8 @@ mod committee_rotation_tests {
 		new_test_ext().execute_with(|| {
 			initialize_first_committee();
 			set_validators_through_inherents(&[ALICE]);
-			let (current_committee_epoch, _) = SessionCommitteeManagement::get_current_committee();
+			let current_committee_epoch =
+				SessionCommitteeManagement::current_committee_storage().epoch;
 			assert_eq!(current_committee_epoch, current_epoch_number());
 		});
 	}
