@@ -12,9 +12,9 @@
 <a href=#12 id=12 data-nosnippet>12</a>//!
 <a href=#13 id=13 data-nosnippet>13</a>//! ## Outline of operation
 <a href=#14 id=14 data-nosnippet>14</a>//!
-<a href=#15 id=15 data-nosnippet>15</a>//! 1. The inhrent data provider calls runtime API to check whether it should release block participation inherent
+<a href=#15 id=15 data-nosnippet>15</a>//! 1. The inherent data provider calls runtime API to check whether it should release block participation inherent
 <a href=#16 id=16 data-nosnippet>16</a>//!    data (all points below assume this check is positive) and gets the upper slot limit.
-<a href=#17 id=17 data-nosnippet>17</a>//! 2. The inhrent data provider retrieves data on block production up to the slot limit using runtime API and Cardano
+<a href=#17 id=17 data-nosnippet>17</a>//! 2. The inherent data provider retrieves data on block production up to the slot limit using runtime API and Cardano
 <a href=#18 id=18 data-nosnippet>18</a>//!    delegation data using observability data source. The IDP joins and aggregates this data together producing
 <a href=#19 id=19 data-nosnippet>19</a>//!    block participation data.
 <a href=#20 id=20 data-nosnippet>20</a>//! 3. The IDP puts the block participation data into the inherent data of the current block, under the inherent
@@ -100,7 +100,7 @@
 <a href=#100 id=100 data-nosnippet>100</a></span><span class="kw">pub struct </span>BlockProducerParticipationData&lt;BlockProducerId, DelegatorId&gt; {
 <a href=#101 id=101 data-nosnippet>101</a>	<span class="doccomment">/// Block producer ID
 <a href=#102 id=102 data-nosnippet>102</a>	</span><span class="kw">pub </span>block_producer: BlockProducerId,
-<a href=#103 id=103 data-nosnippet>103</a>	<span class="doccomment">/// Number of block prodcued in the aggregation period represented by the current [BlockProducerParticipationData]
+<a href=#103 id=103 data-nosnippet>103</a>	<span class="doccomment">/// Number of block produced in the aggregation period represented by the current [BlockProducerParticipationData]
 <a href=#104 id=104 data-nosnippet>104</a>	</span><span class="kw">pub </span>block_count: u32,
 <a href=#105 id=105 data-nosnippet>105</a>	<span class="doccomment">/// Total sum of shares of delegators in `delegators` field
 <a href=#106 id=106 data-nosnippet>106</a>	</span><span class="kw">pub </span>delegator_total_shares: u64,
@@ -162,16 +162,16 @@
 <a href=#162 id=162 data-nosnippet>162</a>	derive(Decode, DecodeWithMemTracking, thiserror::Error, sp_runtime::RuntimeDebug)
 <a href=#163 id=163 data-nosnippet>163</a>)]
 <a href=#164 id=164 data-nosnippet>164</a></span><span class="kw">pub enum </span>InherentError {
-<a href=#165 id=165 data-nosnippet>165</a>	<span class="doccomment">/// Indicates that inherent was not producer when expected
+<a href=#165 id=165 data-nosnippet>165</a>	<span class="doccomment">/// Indicates that inherent was not produced when expected
 <a href=#166 id=166 data-nosnippet>166</a>	</span><span class="attr">#[cfg_attr(feature = <span class="string">"std"</span>, error(<span class="string">"Block participation inherent not produced when expected"</span>))]
 <a href=#167 id=167 data-nosnippet>167</a>	</span>InherentRequired,
-<a href=#168 id=168 data-nosnippet>168</a>	<span class="doccomment">/// Indicates that inherent was producer when not expected
+<a href=#168 id=168 data-nosnippet>168</a>	<span class="doccomment">/// Indicates that inherent was produced when not expected
 <a href=#169 id=169 data-nosnippet>169</a>	</span><span class="attr">#[cfg_attr(feature = <span class="string">"std"</span>, error(<span class="string">"Block participation inherent produced when not expected"</span>))]
 <a href=#170 id=170 data-nosnippet>170</a>	</span>UnexpectedInherent,
 <a href=#171 id=171 data-nosnippet>171</a>	<span class="doccomment">/// Indicates that the inherent was produced with incorrect slot boundary
 <a href=#172 id=172 data-nosnippet>172</a>	</span><span class="attr">#[cfg_attr(feature = <span class="string">"std"</span>, error(<span class="string">"Block participation up_to_slot incorrect"</span>))]
 <a href=#173 id=173 data-nosnippet>173</a>	</span>IncorrectSlotBoundary,
-<a href=#174 id=174 data-nosnippet>174</a>	<span class="doccomment">/// Indicates that the inherent was producer with incorrect participatition data
+<a href=#174 id=174 data-nosnippet>174</a>	<span class="doccomment">/// Indicates that the inherent was produced with incorrect participation data
 <a href=#175 id=175 data-nosnippet>175</a>	</span><span class="attr">#[cfg_attr(feature = <span class="string">"std"</span>, error(<span class="string">"Inherent data provided by the node is invalid"</span>))]
 <a href=#176 id=176 data-nosnippet>176</a>	</span>InvalidInherentData,
 <a href=#177 id=177 data-nosnippet>177</a>}
@@ -232,7 +232,7 @@
 <a href=#232 id=232 data-nosnippet>232</a>	<span class="kw">use </span>std::collections::HashMap;
 <a href=#233 id=233 data-nosnippet>233</a>	<span class="kw">use </span>std::hash::Hash;
 <a href=#234 id=234 data-nosnippet>234</a>
-<a href=#235 id=235 data-nosnippet>235</a>	<span class="doccomment">/// Cardano observability data source providing queries requird by [BlockParticipationInherentDataProvider].
+<a href=#235 id=235 data-nosnippet>235</a>	<span class="doccomment">/// Cardano observability data source providing queries required by [BlockParticipationInherentDataProvider].
 <a href=#236 id=236 data-nosnippet>236</a>	</span><span class="attr">#[async_trait::async_trait]
 <a href=#237 id=237 data-nosnippet>237</a>	</span><span class="kw">pub trait </span>BlockParticipationDataSource {
 <a href=#238 id=238 data-nosnippet>238</a>		<span class="doccomment">/// Retrieves stake pool delegation distribution for provided epoch and pools

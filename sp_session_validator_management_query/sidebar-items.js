@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["err_debug"],"mod":["commands","get_registrations","types"],"struct":["SessionValidatorManagementQuery"],"trait":["SessionValidatorManagementQueryApi"],"type":["QueryResult"]};
+window.SIDEBAR_ITEMS = {"mod":["commands","get_registrations","types"],"struct":["SessionValidatorManagementQuery"],"trait":["SessionValidatorManagementQueryApi"],"type":["QueryResult"]};

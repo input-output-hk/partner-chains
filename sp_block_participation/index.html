@@ -9,9 +9,9 @@ production reward, however both ledger structure and reward calculation rules ar
 their Partner Chain.</p>
 <h3 id="outline-of-operation"><a class="doc-anchor" href="#outline-of-operation">§</a>Outline of operation</h3>
 <ol>
-<li>The inhrent data provider calls runtime API to check whether it should release block participation inherent
+<li>The inherent data provider calls runtime API to check whether it should release block participation inherent
 data (all points below assume this check is positive) and gets the upper slot limit.</li>
-<li>The inhrent data provider retrieves data on block production up to the slot limit using runtime API and Cardano
+<li>The inherent data provider retrieves data on block production up to the slot limit using runtime API and Cardano
 delegation data using observability data source. The IDP joins and aggregates this data together producing
 block participation data.</li>
 <li>The IDP puts the block participation data into the inherent data of the current block, under the inherent
