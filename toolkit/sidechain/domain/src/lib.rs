@@ -1067,9 +1067,9 @@ impl From<ed25519::Public> for GrandpaPublicKey {
 /// shift block production onto trustless network participants as the chain grows and it becomes
 /// harder for malicious actors to manipulate the chain.
 pub struct DParameter {
-	/// Expected number of permissioned candidates selected to a committee
+	/// Expected number of permissioned candidates selected for a committee
 	pub num_permissioned_candidates: u16,
-	/// Expected number of registered candidates selected to a committee
+	/// Expected number of registered candidates selected for a committee
 	pub num_registered_candidates: u16,
 }
 
