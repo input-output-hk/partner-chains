@@ -717,7 +717,7 @@ pub struct EpochNonce(pub Vec<u8>);
 /// index in the transaction's output.
 ///
 /// Standard semi-human-readable encoding of a UTxO id uses a hash sign to divide the two components:
-/// `0000000000000000000000000000000000000000000000000000000000000000#1`
+/// `0000000000000000000000000000000000000000000000000000000000000000#0`
 pub struct UtxoId {
 	/// Transaction hash
 	pub tx_hash: McTxHash,
