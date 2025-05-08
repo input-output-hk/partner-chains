@@ -119,6 +119,7 @@ pub mod pallet {
 	impl<ScEpochNumber: Clone, CommitteeMember: Clone, MaxValidators>
 		CommitteeInfo<ScEpochNumber, CommitteeMember, MaxValidators>
 	{
+		/// Returns committee info as a pair of epoch number and list of committee members
 		pub fn as_pair(self) -> (ScEpochNumber, Vec<CommitteeMember>) {
 			(self.epoch, self.committee.to_vec())
 		}
