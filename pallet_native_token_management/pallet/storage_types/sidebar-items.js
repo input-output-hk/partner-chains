@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["Initialized","MainChainScriptsConfiguration"]};
+window.SIDEBAR_ITEMS = {"struct":["Initialized","MainChainScriptsConfiguration","TransferedThisBlock"]};
