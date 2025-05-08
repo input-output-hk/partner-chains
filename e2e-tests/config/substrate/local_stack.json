@@ -10,8 +10,8 @@
                 "shell": "docker exec cardano-node-1 bash -c"
             },
             "partner_chains_node": {
-                "cli": "/usr/local/bin/partner-chains-node",
-                "shell": "docker exec partner-chains-wizard-1 bash -c"
+                "cli": "partner-chains-node",
+                "shell": "docker exec partner-chains-setup bash -c"
             },
             "bech32": {
                 "cli": "bech32"
