@@ -87,20 +87,23 @@ pub async fn create_cached_db_sync_data_sources(
 				.await?
 				.cached(CANDIDATES_FOR_EPOCH_CACHE_SIZE)?,
 		),
-		native_token: Arc::new(NativeTokenManagementDataSourceImpl::new_from_env(
-			pool.clone(),
-			metrics_opt.clone(),
-		)?),
+		native_token: Arc::new(
+			NativeTokenManagementDataSourceImpl::new_from_env(pool.clone(), metrics_opt.clone())
+				.await?,
+		),
 		block_participation: Arc::new(StakeDistributionDataSourceImpl::new(
 			pool.clone(),
 			metrics_opt.clone(),
 			STAKE_CACHE_SIZE,
 		)),
-		governed_map: Arc::new(GovernedMapDataSourceCachedImpl::new(
-			pool,
-			metrics_opt.clone(),
-			GOVERNED_MAP_CACHE_SIZE,
-			block,
-		)),
+		governed_map: Arc::new(
+			GovernedMapDataSourceCachedImpl::new(
+				pool,
+				metrics_opt.clone(),
+				GOVERNED_MAP_CACHE_SIZE,
+				block,
+			)
+			.await?,
+		),
 	})
 }

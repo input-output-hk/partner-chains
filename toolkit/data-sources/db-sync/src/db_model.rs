@@ -518,22 +518,46 @@ pub(crate) async fn get_utxos_for_address(
 /// Used by `get_token_utxo_for_epoch` (CandidatesDataSourceImpl),
 #[cfg(feature = "candidate-source")]
 pub(crate) async fn create_idx_ma_tx_out_ident(pool: &Pool<Postgres>) -> Result<(), SqlxError> {
-	let sql = "CREATE INDEX IF NOT EXISTS idx_ma_tx_out_ident ON ma_tx_out(ident)";
-	info!("Executing '{}', this might take a while", sql);
-	sqlx::query(sql).execute(pool).await?;
-	info!("Index 'idx_ma_tx_out_ident' is created");
+	let exists = index_exists(pool, "idx_ma_tx_out_ident").await?;
+	if exists {
+		info!("Index 'idx_ma_tx_out_ident' already exists");
+	} else {
+		let sql = "CREATE INDEX IF NOT EXISTS idx_ma_tx_out_ident ON ma_tx_out(ident)";
+		info!("Executing '{}', this might take a while", sql);
+		sqlx::query(sql).execute(pool).await?;
+		info!("Index 'idx_ma_tx_out_ident' is created");
+	}
 	Ok(())
 }
 
-#[cfg(test)]
+/// Used by multiple queries across functionalities.
+#[cfg(any(feature = "candidate-source", feature = "native-token", feature = "governed-map"))]
+pub(crate) async fn create_idx_tx_out_address(pool: &Pool<Postgres>) -> Result<(), SqlxError> {
+	let exists = index_exists(pool, "idx_tx_out_address").await?;
+	if exists {
+		info!("Index 'idx_tx_out_address' already exists");
+	} else {
+		let sql = "CREATE INDEX IF NOT EXISTS idx_tx_out_address ON tx_out USING hash (address)";
+		info!("Executing '{}', this might take a long time", sql);
+		sqlx::query(sql).execute(pool).await?;
+		info!("Index 'idx_tx_out_address' is created");
+	}
+	Ok(())
+}
+
 /// Check if the index exists.
-pub(crate) async fn index_exists(pool: &Pool<Postgres>, index_name: &str) -> bool {
+async fn index_exists(pool: &Pool<Postgres>, index_name: &str) -> Result<bool, sqlx::Error> {
 	sqlx::query("select * from pg_indexes where indexname = $1")
 		.bind(index_name)
 		.fetch_all(pool)
 		.await
 		.map(|rows| rows.len() == 1)
-		.unwrap()
+}
+
+#[cfg(test)]
+/// Check if the index exists. Panics on errors.
+pub(crate) async fn index_exists_unsafe(pool: &Pool<Postgres>, index_name: &str) -> bool {
+	index_exists(pool, index_name).await.unwrap()
 }
 
 /// Sums all transfers between genesis and the first block that is produced with the feature on.

@@ -2,9 +2,7 @@ use crate::DataSourceError::ExpectedDataNotFound;
 use crate::Result;
 use crate::block::BlockDataSourceImpl;
 use crate::{metrics::McFollowerMetrics, observed_async_trait};
-use db_sync_sqlx::Asset;
-use db_sync_sqlx::BlockNumber;
-use derive_new::new;
+use db_sync_sqlx::{Asset, BlockNumber};
 use itertools::Itertools;
 use log::warn;
 use partner_chains_plutus_data::governed_map::GovernedMapDatum;
@@ -18,10 +16,19 @@ use std::sync::{Arc, Mutex};
 #[cfg(test)]
 pub mod tests;
 
-#[derive(new)]
 pub struct GovernedMapDataSourceImpl {
 	pub pool: PgPool,
 	pub metrics_opt: Option<McFollowerMetrics>,
+}
+
+impl GovernedMapDataSourceImpl {
+	pub async fn new(
+		pool: PgPool,
+		metrics_opt: Option<McFollowerMetrics>,
+	) -> std::result::Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+		crate::db_model::create_idx_tx_out_address(&pool).await?;
+		Ok(Self { pool, metrics_opt })
+	}
 }
 
 observed_async_trait!(
@@ -97,14 +104,25 @@ async fn get_mappings_entries(
 	Ok(mappings)
 }
 
-#[derive(new)]
 pub struct GovernedMapDataSourceCachedImpl {
 	pub pool: PgPool,
 	pub metrics_opt: Option<McFollowerMetrics>,
 	cache_size: u16,
-	#[new(default)]
 	cache: Arc<Mutex<Cache>>,
 	blocks: Arc<BlockDataSourceImpl>,
+}
+
+impl GovernedMapDataSourceCachedImpl {
+	pub async fn new(
+		pool: PgPool,
+		metrics_opt: Option<McFollowerMetrics>,
+		cache_size: u16,
+		blocks: Arc<BlockDataSourceImpl>,
+	) -> std::result::Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+		crate::db_model::create_idx_tx_out_address(&pool).await?;
+		let cache = Default::default();
+		Ok(Self { pool, metrics_opt, cache_size, cache, blocks })
+	}
 }
 
 observed_async_trait!(
