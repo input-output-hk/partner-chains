@@ -465,8 +465,28 @@ def new_wallet(api: BlockchainApi) -> Wallet:
 
 
 @fixture(scope="session")
-def get_wallet(api: BlockchainApi) -> Wallet:
-    return api.get_wallet()
+def get_wallet(api: BlockchainApi, secrets) -> Wallet:
+    faucet = secrets["wallets"]["faucet-0"]
+    address = faucet["address"]
+    public_key = faucet["public_key"]
+    secret = faucet["secret_seed"]
+    scheme = faucet["scheme"]
+    return api.get_wallet(address=address, public_key=public_key, secret=secret, scheme=scheme)
+
+
+@fixture(scope="session")
+def get_scripts(api: BlockchainApi):
+    return api.partner_chains_node.smart_contracts.get_scripts().json
+
+
+@fixture(scope="session")
+def addresses(get_scripts):
+    return get_scripts["addresses"]
+
+
+@fixture(scope="session")
+def policy_ids(get_scripts):
+    return get_scripts["policyIds"]
 
 
 @fixture(scope="session")
