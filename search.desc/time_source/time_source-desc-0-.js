@@ -1,1 +1,1 @@
-searchState.loadedDescShard("time_source", 0, "Returns the argument unchanged.\nCalls <code>U::from(self)</code>.")
+searchState.loadedDescShard("time_source", 0, "Time source abstraction for obtaining the current time in …\nA system clock based time source\nA trait representing a source of time that can provide the …\nReturns the argument unchanged.\nReturns the current time in milliseconds since Unix epoch.\nCalls <code>U::from(self)</code>.")
