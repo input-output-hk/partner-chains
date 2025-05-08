@@ -26,6 +26,7 @@ if any. It can be accessed through `previous_mc_hash` function.
 block hash on construction instead of retrieving it by itself. Use `McHashInherentDataProvider::previous_mc_hash`
 to provide it in your IDP stack.
 * Introduced customization of root origin for few pallets via `MainChainScriptsOrigin` trait
+* Made `mock` module of `pallet-session-validator-management` private
 
 ## Removed
 
