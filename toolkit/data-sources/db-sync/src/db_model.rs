@@ -387,7 +387,7 @@ pub(crate) async fn get_changes(
 ) -> Result<Vec<DatumChangeOutput>, SqlxError> {
 	let query = "
 		((SELECT
-			datum.value as datum, origin_block.block_no as block_no, origin_tx.block_index as block_index, 'upsert' as action
+			datum.value as datum, origin_block.block_no as block_no, origin_tx.block_index as block_index, 'upsert' as action, 1 as action_order
 		FROM tx_out
 		INNER JOIN tx origin_tx			ON tx_out.tx_id = origin_tx.id
 		INNER JOIN block origin_block	ON origin_tx.block_id = origin_block.id
@@ -400,7 +400,7 @@ pub(crate) async fn get_changes(
 			AND multi_asset.name = $5)
 		UNION
 		(SELECT
-			datum.value as datum, consuming_block.block_no as block_no, consuming_tx.block_index as block_index, 'remove' as action
+			datum.value as datum, consuming_block.block_no as block_no, consuming_tx.block_index as block_index, 'remove' as action, -1 as action_order
 		FROM tx_out
 		LEFT JOIN tx_in consuming_tx_in	ON tx_out.tx_id = consuming_tx_in.tx_out_id AND tx_out.index = consuming_tx_in.tx_out_index
 		LEFT JOIN tx consuming_tx		ON consuming_tx_in.tx_in_id = consuming_tx.id
@@ -413,7 +413,7 @@ pub(crate) async fn get_changes(
 			AND (consuming_tx_in.id IS NOT NULL AND ($2 IS NULL OR consuming_block.block_no > $2) AND consuming_block.block_no <= $3)
 			AND multi_asset.policy = $4
 			AND multi_asset.name = $5))
-		ORDER BY block_no, block_index ASC";
+		ORDER BY block_no, block_index, action_order ASC";
 	Ok(sqlx::query_as::<_, DatumChangeOutput>(query)
 		.bind(&address.0)
 		.bind(after_block)
