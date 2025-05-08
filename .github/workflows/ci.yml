@@ -37,9 +37,9 @@ jobs:
       - name: Run direct kubectl exec tests against ci-preview
         uses: ./.github/actions/tests/k8s-direct-tests
         with:
-          namespace: ci-preview
-          pod: ci-preview-validator-1
-          env: ci-preview
+          namespace: staging-preview
+          pod: staging-preview-validator-1
+          env: staging-preview
         env:
           AWS_REGION: "eu-central-1"
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
@@ -75,7 +75,7 @@ jobs:
       - name: Test against ci-preview
         uses: ./.github/actions/tests/run-e2e-tests
         with:
-          env: ci
+          env: staging
           decrypt: true
           blockchain: substrate
 
