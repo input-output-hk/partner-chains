@@ -332,8 +332,10 @@ pub(crate) async fn get_stake_distribution(
 	pool: &Pool<Postgres>,
 	epoch: EpochNumber,
 ) -> Result<Vec<StakePoolEntry>, SqlxError> {
-	let sql = "SELECT ph.hash_raw as pool_hash, SUM(es.amount) as stake FROM epoch_stake es
-       	INNER JOIN pool_hash ph ON es.pool_id = ph.id
+	let sql = "
+        SELECT ph.hash_raw as pool_hash, SUM(es.amount) as stake
+        FROM epoch_stake es
+        INNER JOIN pool_hash ph ON es.pool_id = ph.id
         WHERE es.epoch_no = $1
         GROUP BY ph.hash_raw";
 	Ok(sqlx::query_as::<_, StakePoolEntry>(sql).bind(epoch).fetch_all(pool).await?)

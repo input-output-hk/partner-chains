@@ -15,41 +15,56 @@ use sp_runtime::{MultiSigner, traits::IdentifyAccount};
 use std::{collections::HashMap, fmt::Debug};
 
 #[derive(Debug, PartialEq, Eq, Clone, Decode, thiserror::Error, Serialize, Deserialize)]
+/// Registration error type
 pub enum RegistrationError {
 	#[error("{0}")]
+	/// A wrapped [StakeError]
 	StakeError(#[from] StakeError),
 	#[error("{0}")]
+	/// A wrapped [RegistrationDataError]
 	InvalidRegistrationData(#[from] RegistrationDataError),
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+/// Candidate Registration Entry
 pub struct CandidateRegistrationEntry {
+	/// Sidechain public key of the candidate. See [sidechain_domain::SidechainPublicKey] for more details.
 	pub sidechain_pub_key: String,
 	/// SS58 address derived from public key. ss58(blake2b32(sidechainPubKey))
 	pub sidechain_account_id: String,
 	/// Stake Pool public key
 	pub mainchain_pub_key: String,
+	/// Cross chain public key of the candidate. See [sidechain_domain::CrossChainPublicKey] for more details.
 	pub cross_chain_pub_key: String,
+	/// Aura public key of the candidate
 	pub aura_pub_key: String,
+	/// Grandpa public key of the candidate
 	pub grandpa_pub_key: String,
+	/// Sidechain key signature of the registration message
 	pub sidechain_signature: String,
 	/// Signature made with Stake Pool key
 	pub mainchain_signature: String,
+	/// Cross chain key signature of the registration message
 	pub cross_chain_signature: String,
 	/// Data of Utxo that contained this registration"
 	pub utxo: UtxoInfo,
 	#[serde(skip_serializing_if = "Option::is_none")]
+	/// Total stake delegated to the pool identified by `mainchain_pub_key`.
+	/// [None] if registration is not stable yet.
 	pub stake_delegation: Option<u64>,
+	/// Is the registration valid
 	pub is_valid: bool,
 	/// Human readable reasons of registration being invalid. Present only for invalid entries.
 	#[serde(skip_serializing_if = "Option::is_none")]
 	pub invalid_reasons: Option<RegistrationError>,
 }
 
+/// Type mapping the candidate's mainchain pub key in hex string format to its registration entry
 pub type GetRegistrationsResponseMap = HashMap<String, Vec<CandidateRegistrationEntry>>;
 
 impl CandidateRegistrationEntry {
+	/// Constructor for [CandidateRegistrationEntry]
 	pub fn new(
 		registration_data: RegistrationData,
 		stake_pool_public_key: StakePoolPublicKey,
