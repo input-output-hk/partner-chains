@@ -219,6 +219,7 @@ fn gen_from_hex(name: &syn::Ident, ty: &SupportedType, generics: &Generics) -> i
 	};
 
 	quote! {
+		#[allow(missing_docs)]
 		impl #impl_generics #name #ty_generics #where_clause {
 			#decode_hex
 
@@ -241,6 +242,7 @@ fn gen_to_hex(name: &syn::Ident, generics: &Generics) -> impl ToTokens {
 	let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
 	quote! {
+		#[allow(missing_docs)]
 		impl #impl_generics #name #ty_generics #where_clause {
 			pub fn to_hex_string(&self) -> alloc::string::String {
 				sp_core::bytes::to_hex(&self.0, false)
