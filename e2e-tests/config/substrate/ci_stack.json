@@ -5,18 +5,22 @@
         "ogmios_port": 1337,
         "validator_name": "ci-preview-validator-1",
         "namespace": "ci-preview",
+        "kubectl": {
+            "pod": "${stack_config[validator_name]}",
+            "namespace": "${stack_config[namespace]}"
+        },
         "tools": {
             "cardano_cli": {
                 "cli": "cardano-cli",
-                "shell": "kubectl exec ${stack_config[validator_name]} -c cardano-node -n ${stack_config[namespace]} --"
+                "shell": ""
             },
             "partner_chains_node": {
                 "cli": "/usr/local/bin/partner-chains-node",
-                "shell": "kubectl exec ${stack_config[validator_name]} -c substrate-node -n ${stack_config[namespace]} --"
+                "shell": ""
             },
             "bech32": {
                 "cli": "/tools/bech32",
-                "shell": "kubectl exec binary-host -c binary-host -n sc --"
+                "shell": ""
             }
         }
     }

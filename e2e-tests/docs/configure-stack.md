@@ -15,18 +15,18 @@ Partner chains tests require the following binaries to be available on the test 
 1. Set up the stack on your test runner machine
 2. Set stack_config.validator_name to the name of the validator pod to use
 3. Set stack_config.namespace to the Kubernetes namespace where your pods are running
-4. Set stack_config.tools.cardano_cli.shell to the command to execute cardano-cli (e.g., "kubectl exec -it ${stack_config[validator_name]} -c cardano-node -n ${stack_config[namespace]} --")
-5. Set stack_config.tools.partner_chains_node.shell to the command to execute partner-chains-node (e.g., "kubectl exec -it ${stack_config[validator_name]} -c substrate-node -n ${stack_config[namespace]} --")
-6. Set stack_config.tools.bech32.shell to the command to execute bech32 (e.g., "kubectl exec -it ${stack_config[validator_name]} -c substrate-node -n ${stack_config[namespace]} --")
+4. Set stack_config.kubectl.pod to the name of the pod to use (defaults to validator_name)
+5. Set stack_config.kubectl.namespace to the namespace where your pods are running (defaults to namespace)
+6. Set stack_config.kubectl.container to the container name if different from the default
 
 ### Kubernetes Setup
 
 1. Set up the stack in your Kubernetes cluster
 2. Set stack_config.validator_name to the name of the validator pod to use
 3. Set stack_config.namespace to the Kubernetes namespace where your pods are running
-4. Set stack_config.tools.cardano_cli.shell to the command to execute cardano-cli (e.g., "kubectl exec -it ${stack_config[validator_name]} -c cardano-node -n ${stack_config[namespace]} --")
-5. Set stack_config.tools.partner_chains_node.shell to the command to execute partner-chains-node (e.g., "kubectl exec -it ${stack_config[validator_name]} -c substrate-node -n ${stack_config[namespace]} --")
-6. Set stack_config.tools.bech32.shell to the command to execute bech32 (e.g., "kubectl exec -it ${stack_config[validator_name]} -c substrate-node -n ${stack_config[namespace]} --")
+4. Set stack_config.kubectl.pod to the name of the pod to use (defaults to validator_name)
+5. Set stack_config.kubectl.namespace to the namespace where your pods are running (defaults to namespace)
+6. Set stack_config.kubectl.container to the container name if different from the default
 
 ## Secret Key Handling
 
@@ -50,26 +50,30 @@ Here's a template for the `<env>_stack.json` file:
         "ogmios_port": 1337,
         "validator_name": "<validator_pod_name>",
         "namespace": "<namespace>",
+        "kubectl": {
+            "pod": "${stack_config[validator_name]}",
+            "namespace": "${stack_config[namespace]}",
+            "container": "<container_name>"  // optional
+        },
         "tools": {
             "cardano_cli": {
                 "cli": "cardano-cli",
-                "shell": "kubectl exec -it ${stack_config[validator_name]} -c cardano-node -n ${stack_config[namespace]} --"
+                "shell": ""
             },
             "partner_chains_node": {
                 "cli": "/usr/local/bin/partner-chains-node",
-                "shell": "kubectl exec -it ${stack_config[validator_name]} -c substrate-node -n ${stack_config[namespace]} --"
+                "shell": ""
             },
             "bech32": {
                 "cli": "/tools/bech32",
-                "shell": "kubectl exec -it binary-host -c binary-host -n sc --"
-                #"shell": "kubectl exec -it ${stack_config[validator_name]} -c substrate-node -n ${stack_config[namespace]} --"
+                "shell": ""
             }
         }
     }
 }
 ```
 
-Replace `<ogmios_host>`, `<validator_pod_name>`, and `<namespace>` with your actual values.
+Replace `<ogmios_host>`, `<validator_pod_name>`, `<namespace>`, and optionally `<container_name>` with your actual values.
 
 ## What is stack?
 
@@ -92,8 +96,9 @@ To configure the stack in Kubernetes, you will need to do the following:
 1. Run cardano-node in a Kubernetes pod, expose the node socket file and make cardano-cli executable
 2. Deploy the required binaries (cardano-cli, partner-chains-node, bech32) to the appropriate Kubernetes pods
 3. Update `<env>-stack.json` file in the `config/<blockchain>/<env>` folder
-   1. Set `stack_config.tools` to use kubectl exec to access the binaries in the pods
+   1. Set `stack_config.kubectl` to configure the pod and namespace
    2. Set `stack_config.validator_name` to the name of the validator pod to use
+   3. Set `stack_config.namespace` to the namespace where your pods are running
 
 ### `<env>_stack.json` template:
 
@@ -104,19 +109,23 @@ To configure the stack in Kubernetes, you will need to do the following:
         "ogmios_port": 1337,
         "validator_name": <STRING>,
         "namespace": <STRING>,
+        "kubectl": {
+            "pod": "${stack_config[validator_name]}",
+            "namespace": "${stack_config[namespace]}",
+            "container": "<container_name>"  // optional
+        },
         "tools": {
             "cardano_cli": {
                 "cli": "cardano-cli",
-                "shell": "kubectl exec -it ${stack_config[validator_name]} -c cardano-node -n ${stack_config[namespace]} --"
+                "shell": ""
             },
             "partner_chains_node": {
                 "cli": "/usr/local/bin/partner-chains-node",
-                "shell": "kubectl exec -it ${stack_config[validator_name]} -c substrate-node -n ${stack_config[namespace]} --"
+                "shell": ""
             },
             "bech32": {
                 "cli": "/tools/bech32",
-                "shell": "kubectl exec -it binary-host -c binary-host -n sc --"
-                #"shell": "kubectl exec -it ${stack_config[validator_name]} -c substrate-node -n ${stack_config[namespace]} --"
+                "shell": ""
             }
         }
     }

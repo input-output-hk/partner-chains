@@ -48,75 +48,36 @@ class PartnerChainRpc:
 
     def __exec_rpc(self, method: str, params: Optional[list] = None) -> Dict[str, Any]:
         """
-        Execute an RPC call to the partner chain node.
-
-        :param method: The RPC method to call
-        :param params: Optional parameters for the RPC call
-        :return: The JSON response from the RPC call
+        Execute an RPC request to the partner chain node via HTTP or kubectl exec.
         """
         if params is None:
             params = []
 
-        data = {
-            "jsonrpc": "2.0",
-            "method": method,
-            "params": params,
-            "id": 1,
-        }
-
+        body = self.__get_body(method=method, params=params)
         try:
-            logger.info(f"Making RPC call to {self.url}")
-            logger.info(f"Method: {method}")
-            logger.info(f"Parameters: {params}")
-            logger.debug(f"Full request data: {json.dumps(data, indent=2)}")
-            
-            result = subprocess.run(
-                [
-                    "curl",
-                    "-s",
-                    "-H",
-                    "Content-Type: application/json",
-                    "-d",
-                    json.dumps(data),
+            if os.environ.get("USE_KUBECTL_RPC") != "true":
+                # standard HTTP call
+                response = requests.post(
                     self.url,
-                ],
-                capture_output=True,
-                text=True,
-                check=True,
-            )
-            
-            logger.debug(f"Raw curl output - stdout: {result.stdout}")
-            if result.stderr:
-                logger.warning(f"curl stderr output: {result.stderr}")
-            
-            try:
-                response = json.loads(result.stdout)
-                logger.debug(f"Parsed JSON response: {json.dumps(response, indent=2)}")
-                
-                if "error" in response:
-                    logger.error(f"RPC call returned error response: {json.dumps(response['error'], indent=2)}")
-                    return response
-                    
-                if "result" in response:
-                    logger.info(f"RPC call successful with result type: {type(response['result'])}")
-                    logger.debug(f"RPC result: {json.dumps(response['result'], indent=2)}")
-                else:
-                    logger.warning("RPC response missing 'result' field")
-                    
-                return response
-                
-            except json.JSONDecodeError as e:
-                logger.error(f"Failed to parse JSON response: {e}")
-                logger.error(f"Raw response that failed parsing: {result.stdout}")
-                logger.error(f"JSON parse error details - line: {e.lineno}, column: {e.colno}, message: {e.msg}")
-                raise PartnerChainRpcException(f"Failed to parse JSON response: {e}")
-
-        except subprocess.CalledProcessError as e:
-            logger.error(f"RPC call failed with return code: {e.returncode}")
-            logger.error(f"Command that failed: {' '.join(e.cmd)}")
-            logger.error(f"stdout: {e.stdout}")
-            logger.error(f"stderr: {e.stderr}")
-            raise PartnerChainRpcException(f"RPC call failed: {e}")
+                    headers=self.headers,
+                    json=body
+                )
+                return response.json()
+            else:
+                # kubectl exec
+                pod = os.environ["KUBECTL_EXEC_POD"]
+                namespace = os.environ.get("K8S_NAMESPACE", "default")
+                payload = json.dumps(body)
+                cmd = [
+                    "kubectl", "exec", pod, "-n", namespace, "--",
+                    "curl", "-s", "-H", "Content-Type: application/json",
+                    "-d", payload, "http://localhost:9933"
+                ]
+                result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+                return json.loads(result.stdout)
+        except Exception as e:
+            logger.error(f"RPC execution error: {e}")
+            raise PartnerChainRpcException(str(e))
 
     def partner_chain_get_epoch_committee(self, epoch) -> PartnerChainRpcResponse:
         json_data = self.__exec_rpc("sidechain_getEpochCommittee", [epoch])

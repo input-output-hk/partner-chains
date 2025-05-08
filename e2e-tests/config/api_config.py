@@ -109,6 +109,7 @@ class StackApiConfig:
     tools_shell: Optional[str] = None
     validator_name: str = "validator-1"
     namespace: str = "default"
+    kubectl: Optional[dict] = None
 
 
 @dataclass
