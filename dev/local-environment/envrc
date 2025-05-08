@@ -25,7 +25,7 @@ else
     export MC__SLOT_DURATION_MILLIS=$(jq '.slotLength * 1000' $SHELLEY_GENESIS_FILE)
     export MC__EPOCH_DURATION_MILLIS=$(jq '.epochLength * 1000' $SHELLEY_GENESIS_FILE)
     export CARDANO_SECURITY_PARAMETER=$(jq '.securityParam' $SHELLEY_GENESIS_FILE)
-    export CARDANO_ACTIVE_SLOTS_COEFF=$(jq '.activeSlotCoeff' $SHELLEY_GENESIS_FILE)
+    export CARDANO_ACTIVE_SLOTS_COEFF=$(jq '.activeSlotsCoeff' $SHELLEY_GENESIS_FILE)
 
     if [ -f "$PC_GENESIS_UTXO_FILE" ]; then
         export GENESIS_UTXO=$(cat $PC_GENESIS_UTXO_FILE)
