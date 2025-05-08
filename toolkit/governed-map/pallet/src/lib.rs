@@ -230,6 +230,8 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// Signals that the inherent has been called again in the same block
 		InherentCalledTwice,
+		/// MainChainScript is not set, registration of changes is not allowed
+		MainChainScriptNotSet,
 	}
 
 	/// Governed Map key type
@@ -369,6 +371,8 @@ pub mod pallet {
 			);
 			LastUpdateBlock::<T>::put(current_block);
 
+			// ensure!(MainChainScripts::<T>::exists(), Error::<T>::MainChainScriptNotSet);
+
 			if Initialized::<T>::get() {
 				log::info!("💾 Registering {} Governed Map changes", changes.len(),);
 			} else {
@@ -407,7 +411,7 @@ pub mod pallet {
 
 	impl<T: Config> Pallet<T> {
 		/// Returns the value under `key` or [None] otherwise.
-		pub fn get_key_value(key: MapKey<T>) -> Option<BoundedVec<u8, T::MaxValueLength>> {
+		pub fn get_key_value(key: &MapKey<T>) -> Option<BoundedVec<u8, T::MaxValueLength>> {
 			Mapping::<T>::get(key)
 		}
 
