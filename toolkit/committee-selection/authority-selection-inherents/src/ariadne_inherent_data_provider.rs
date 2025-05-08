@@ -1,3 +1,4 @@
+//! Inherent data provider providing [AuthoritySelectionInputs] used by [SessionValidatorManagementApi]
 #[cfg(feature = "std")]
 use crate::authority_selection_inputs::AuthoritySelectionDataSource;
 use crate::authority_selection_inputs::AuthoritySelectionInputs;
@@ -22,32 +23,31 @@ use {
 pub type InherentType = AuthoritySelectionInputs;
 
 #[derive(Clone, Debug, Encode, Decode)]
+/// Inherent data provider providing inputs for authority selection.
 pub struct AriadneInherentDataProvider {
+	/// Authority selection inputs.
 	pub data: Option<AuthoritySelectionInputs>,
 }
 
 #[cfg(feature = "std")]
 impl AriadneInherentDataProvider {
-	pub async fn from_mc_data(
-		candidate_data_source: &(dyn AuthoritySelectionDataSource + Send + Sync),
-		for_epoch: McEpochNumber,
-		scripts: MainChainScripts,
-	) -> Result<Self, InherentProviderCreationError> {
-		Ok(Self {
-			data: Some(
-				AuthoritySelectionInputs::from_mc_data(candidate_data_source, for_epoch, scripts)
-					.await?,
-			),
-		})
-	}
-
+	/// Creates a new [AriadneInherentDataProvider] for [sp_inherents::CreateInherentDataProviders].
+	///
+	/// Parameters:
+	/// - `client`: runtime client capable of providing [SessionValidatorManagementApi] runtime API
+	/// - `sc_slot_config`: partner chain slot configuration
+	/// - `mc_epoch_config`: main chain epoch configuration
+	/// - `parent_hash`:
+	/// - `slot`:
+	/// - `data_source`: data source implementing [AuthoritySelectionDataSource]
+	/// - `mc_reference_epoch`: latest stable mainchain epoch
 	pub async fn new<Block, CommitteeMember, T>(
 		client: &T,
 		sc_slot_config: &ScSlotConfig,
 		mc_epoch_config: &MainchainEpochConfig,
 		parent_hash: <Block as BlockT>::Hash,
 		slot: Slot,
-		candidate_data_source: &(dyn AuthoritySelectionDataSource + Send + Sync),
+		data_source: &(dyn AuthoritySelectionDataSource + Send + Sync),
 		mc_reference_epoch: McEpochNumber,
 	) -> Result<Self, InherentProviderCreationError>
 	where
@@ -71,34 +71,49 @@ impl AriadneInherentDataProvider {
 			slot,
 		)?;
 
-		let data_epoch = candidate_data_source.data_epoch(for_mc_epoch).await?;
+		let data_epoch = data_source.data_epoch(for_mc_epoch).await?;
 		// We could accept mc_reference at last slot of data_epoch, but calculations are much easier like that.
 		// Additionally, in current implementation, the inequality below is always true, thus there is no need to make it more accurate.
 		let scripts = client.runtime_api().get_main_chain_scripts(parent_hash)?;
 		if data_epoch < mc_reference_epoch {
-			Ok(AriadneInherentDataProvider::from_mc_data(
-				candidate_data_source,
-				for_mc_epoch,
-				scripts,
-			)
-			.await?)
+			Ok(AriadneInherentDataProvider::from_mc_data(data_source, for_mc_epoch, scripts)
+				.await?)
 		} else {
 			Ok(AriadneInherentDataProvider { data: None })
 		}
+	}
+
+	async fn from_mc_data(
+		candidate_data_source: &(dyn AuthoritySelectionDataSource + Send + Sync),
+		for_epoch: McEpochNumber,
+		scripts: MainChainScripts,
+	) -> Result<Self, InherentProviderCreationError> {
+		Ok(Self {
+			data: Some(
+				AuthoritySelectionInputs::from_mc_data(candidate_data_source, for_epoch, scripts)
+					.await?,
+			),
+		})
 	}
 }
 
 #[cfg(feature = "std")]
 #[derive(Debug, thiserror::Error)]
+/// Error type returned when creation of [AriadneInherentDataProvider] fails.
 pub enum InherentProviderCreationError {
+	/// Slot represents a timestamp bigger than of u64::MAX.
 	#[error("Slot represents a timestamp bigger than of u64::MAX")]
 	SlotTooBig,
+	/// Couldn't convert timestamp to main chain epoch.
 	#[error("Couldn't convert timestamp to main chain epoch: {0}")]
 	McEpochDerivationError(#[from] sidechain_domain::mainchain_epoch::EpochDerivationError),
+	/// Runtime API call failed.
 	#[error("Runtime API call failed: {0}")]
 	ApiError(#[from] sp_api::ApiError),
+	/// Failed to create authority selection inputs.
 	#[error("Failed to create authority selection inputs: {0}")]
 	InputsCreationError(#[from] AuthoritySelectionInputsCreationError),
+	/// Data source call failed.
 	#[error("Data source call failed: {0}")]
 	DataSourceError(#[from] Box<dyn std::error::Error + Send + Sync>),
 }
@@ -173,7 +188,7 @@ impl sp_inherents::InherentDataProvider for AriadneInherentDataProvider {
 		identifier: &InherentIdentifier,
 		error: &[u8],
 	) -> Option<Result<(), sp_inherents::Error>> {
-		// Dont' process modules from other inherents
+		// Don't process modules from other inherents
 		if *identifier != INHERENT_IDENTIFIER {
 			return None;
 		}
@@ -183,12 +198,6 @@ impl sp_inherents::InherentDataProvider for AriadneInherentDataProvider {
 			<InherentError as parity_scale_codec::Decode>::decode(&mut error).ok()?,
 		))))
 	}
-}
-
-#[derive(Clone, Debug, Encode, Decode)]
-pub struct CommitteeConfig {
-	pub min_size: u16,
-	pub max_size: u16,
 }
 
 #[cfg(test)]

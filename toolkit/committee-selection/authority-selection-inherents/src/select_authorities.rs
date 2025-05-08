@@ -49,7 +49,7 @@ pub fn select_authorities<
 	}
 }
 
-pub fn seed_from_nonce_and_sc_epoch(
+fn seed_from_nonce_and_sc_epoch(
 	epoch_nonce: &EpochNonce,
 	sidechain_epoch_number: &ScEpochNumber,
 ) -> [u8; 32] {
