@@ -120,67 +120,25 @@ def v_function_factory(
     config: ApiConfig,
 ):
     def _v_function_factory(v_function_path):
-        try:
-            logging.info(f"Creating V-function from {v_function_path}...")
-            v_function_script = read_v_function_script_file(v_function_path)
-            v_function_cbor = v_function_script["cborHex"]
-            script_path = write_file(api.cardano_cli.run_command, v_function_script)
-            script_hash = api.cardano_cli.get_policy_id(script_path)
-            
-            logging.info(f"Attaching V-function to UTXO at address {v_function_address}...")
-            attach_v_function_to_utxo(v_function_address, script_path)
-            
-            # Add a small delay to allow the transaction to be processed
-            time.sleep(5)
-            
-            logging.info("Waiting for reference UTXO to be available...")
-            try:
-                # First check if we can see any UTXOs at the address
-                current_utxos = api.cardano_cli.get_utxos(v_function_address)
-                logging.info(f"Current UTXOs at address before wait: {current_utxos}")
-                
-                # Try to find the reference UTXO
-                utxo = wait_until(
-                    reference_utxo, 
-                    v_function_address, 
-                    v_function_cbor, 
-                    timeout=config.timeouts.main_chain_tx
-                )
-                logging.info(f"Reference UTXO found: {utxo}")
-            except TimeoutError as e:
-                logging.error(f"Failed to find reference UTXO after {config.timeouts.main_chain_tx}s")
-                logging.error(f"V-function address: {v_function_address}")
-                logging.error(f"Script hash: {script_hash}")
-                # Get current UTXOs at the address for debugging
-                try:
-                    current_utxos = api.cardano_cli.get_utxos(v_function_address)
-                    logging.error(f"Current UTXOs at address: {current_utxos}")
-                except Exception as utxo_err:
-                    logging.error(f"Failed to get current UTXOs: {utxo_err}")
-                
-                # Check if the transaction was submitted successfully
-                try:
-                    tx_status = api.cardano_cli.get_transaction_status(script_hash)
-                    logging.error(f"Transaction status: {tx_status}")
-                except Exception as tx_err:
-                    logging.error(f"Failed to get transaction status: {tx_err}")
-                
-                raise TimeoutError(f"V-function reference UTXO not found after {config.timeouts.main_chain_tx}s. Check logs for details.") from e
-            
-            v_function = VFunction(
-                cbor=v_function_cbor,
-                script_path=script_path,
-                script_hash=script_hash,
-                address=v_function_address,
-                reference_utxo=utxo,
-            )
-            logging.info(f"V-function successfully created: {v_function}")
-            return v_function
-        except Exception as e:
-            logging.error(f"Failed to create V-function: {str(e)}")
-            logging.error(f"V-function path: {v_function_path}")
-            logging.error(f"V-function address: {v_function_address}")
-            raise
+        v_function_script = read_v_function_script_file(v_function_path)
+        v_function_cbor = v_function_script["cborHex"]
+        script_path = write_file(api.cardano_cli.run_command, v_function_script)
+        script_hash = api.cardano_cli.get_policy_id(script_path)
+        attach_v_function_to_utxo(v_function_address, script_path)
+        utxo = wait_until(
+            reference_utxo,
+            v_function_address,
+            v_function_cbor,
+            timeout=config.timeouts.main_chain_tx
+        )
+        v_function = VFunction(
+            cbor=v_function_cbor,
+            script_path=script_path,
+            script_hash=script_hash,
+            address=v_function_address,
+            reference_utxo=utxo,
+        )
+        return v_function
 
     return _v_function_factory
 
