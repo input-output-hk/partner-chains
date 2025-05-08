@@ -3,6 +3,35 @@ from src.blockchain_api import BlockchainApi
 from conftest import string_to_hex_bytes, hex_bytes_to_string
 
 
+class TestGet:
+    def test_insert_returncode(self, insert_data):
+        assert 0 == insert_data.returncode
+
+    @mark.usefixtures("insert_data")
+    def test_get_returncode(self, api: BlockchainApi, random_key):
+        result = api.partner_chains_node.smart_contracts.governed_map.get(random_key)
+        assert 0 == result.returncode
+
+    @mark.usefixtures("insert_data")
+    def test_get_value(self, api: BlockchainApi, random_key, random_value):
+        result = api.partner_chains_node.smart_contracts.governed_map.get(random_key)
+        value = hex_bytes_to_string(result.json)
+        assert random_value == value, "Data mismatch in governed map retrieval"
+
+    def test_get_non_existent_key(self, api: BlockchainApi):
+        result = api.partner_chains_node.smart_contracts.governed_map.get("non_existent_key")
+        assert {} == result.json
+        assert 0 == result.returncode
+
+    @mark.usefixtures("insert_data")
+    def test_list_whole_map(self, api: BlockchainApi, random_key, random_value):
+        result = api.partner_chains_node.smart_contracts.governed_map.list()
+        expected_value = string_to_hex_bytes(random_value)
+        assert 0 == result.returncode
+        assert random_key in result.json
+        assert expected_value == result.json[random_key], f"Value mismatch for key {random_key} in governed map list"
+
+
 class TestInsertTwice:
     @fixture(scope="class")
     def insert_twice_with_the_same_value(self, api: BlockchainApi, insert_data, random_key, random_value, payment_key):
@@ -42,35 +71,6 @@ class TestInsertTwice:
         value = hex_bytes_to_string(get_result.json)
         assert 0 == get_result.returncode
         assert random_value == value
-
-
-class TestGet:
-    def test_insert_returncode(self, insert_data):
-        assert 0 == insert_data.returncode
-
-    @mark.usefixtures("insert_data")
-    def test_get_returncode(self, api: BlockchainApi, random_key):
-        result = api.partner_chains_node.smart_contracts.governed_map.get(random_key)
-        assert 0 == result.returncode
-
-    @mark.usefixtures("insert_data")
-    def test_get_value(self, api: BlockchainApi, random_key, random_value):
-        result = api.partner_chains_node.smart_contracts.governed_map.get(random_key)
-        value = hex_bytes_to_string(result.json)
-        assert random_value == value, "Data mismatch in governed map retrieval"
-
-    def test_get_non_existent_key(self, api: BlockchainApi):
-        result = api.partner_chains_node.smart_contracts.governed_map.get("non_existent_key")
-        assert {} == result.json
-        assert 0 == result.returncode
-
-    @mark.usefixtures("insert_data")
-    def test_list_whole_map(self, api: BlockchainApi, random_key, random_value):
-        result = api.partner_chains_node.smart_contracts.governed_map.list()
-        expected_value = string_to_hex_bytes(random_value)
-        assert 0 == result.returncode
-        assert random_key in result.json
-        assert expected_value == result.json[random_key], f"Value mismatch for key {random_key} in governed map list"
 
 
 class TestRemove:
