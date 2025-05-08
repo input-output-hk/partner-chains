@@ -22,7 +22,7 @@
 //! It is enough to not provide a custom configuration.
 //!
 //! ## Custom Indexes
-//! Cardano DB Sync creates a number of index for its own purpose.
+//! Cardano DB Sync creates a number of indexes for its own purpose.
 //! Queries used in this module depend on some of them to be executed efficiently.
 //! What is more, additional indexes are required:
 //! * `idx_ma_tx_out_ident ON ma_tx_out(ident)`

@@ -6,7 +6,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Changed
 
-* Automatically create required index on `tx_out` table `address` column. Constructor signatures has changed - this change is not source compatible.
+* Automatically create required index on `tx_out` table `address` column. Constructor signatures have changed - this change is not source compatible.
 * BREAKING: Wizards are not generating keys nor looking for them in `<base_path>/chains/partner_chains_template` but use `<base_path>` instead.
 This change requires users that generated keystores and network key using previous versions of the wizards to move their keys two directories above.
 * Wizards are adjusted to use multiple governance authorities from the chain governance initialization through setting up Ariadne parameters

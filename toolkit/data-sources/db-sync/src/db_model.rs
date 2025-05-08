@@ -525,7 +525,7 @@ pub(crate) async fn create_idx_ma_tx_out_ident(pool: &Pool<Postgres>) -> Result<
 		let sql = "CREATE INDEX IF NOT EXISTS idx_ma_tx_out_ident ON ma_tx_out(ident)";
 		info!("Executing '{}', this might take a while", sql);
 		sqlx::query(sql).execute(pool).await?;
-		info!("Index 'idx_ma_tx_out_ident' is created");
+		info!("Index 'idx_ma_tx_out_ident' has been created");
 	}
 	Ok(())
 }
@@ -540,7 +540,7 @@ pub(crate) async fn create_idx_tx_out_address(pool: &Pool<Postgres>) -> Result<(
 		let sql = "CREATE INDEX IF NOT EXISTS idx_tx_out_address ON tx_out USING hash (address)";
 		info!("Executing '{}', this might take a long time", sql);
 		sqlx::query(sql).execute(pool).await?;
-		info!("Index 'idx_tx_out_address' is created");
+		info!("Index 'idx_tx_out_address' has been created");
 	}
 	Ok(())
 }
