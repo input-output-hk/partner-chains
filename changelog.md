@@ -25,6 +25,7 @@ if any. It can be accessed through `previous_mc_hash` function.
 * `NativeTokenManagementInherentDataProvider` now expects to be passed the previous main chain reference
 block hash on construction instead of retrieving it by itself. Use `McHashInherentDataProvider::previous_mc_hash`
 to provide it in your IDP stack.
+* Introduced customization of root origin for few pallets via `MainChainScriptsOrigin` trait
 
 ## Removed
 
@@ -44,6 +45,7 @@ the feature `pallet-session-compat`.
 * `governance init` when genesis utxo had a script attached, then transaction fee was sometimes calculated incorrectly
 
 ## Added
+* `pallet-block-producer-fees` - with settings for the rewards payout logic
 * `governed-map remove` command, that removes a key-value pair from the governed map
 * `governed-map insert` command, that inserts a key-value pair into the governed map
 * `ariadne_v2` selection algorithm that selects committee respecting D-parameter and candidates

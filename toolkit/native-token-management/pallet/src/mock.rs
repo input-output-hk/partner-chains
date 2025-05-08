@@ -6,6 +6,7 @@ use frame_support::sp_runtime::{
 };
 use frame_support::traits::{ConstU16, ConstU32, ConstU64};
 use frame_support::*;
+use frame_system::EnsureRoot;
 use sidechain_domain::*;
 
 use self::mock_pallet::LastTokenTransfer;
@@ -79,6 +80,7 @@ impl frame_system::Config for Test {
 impl crate::pallet::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type TokenTransferHandler = Mock;
+	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
 	type WeightInfo = ();
 }
 

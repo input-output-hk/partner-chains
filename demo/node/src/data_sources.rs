@@ -2,7 +2,7 @@ use authority_selection_inherents::authority_selection_inputs::AuthoritySelectio
 use pallet_sidechain_rpc::SidechainRpcDataSource;
 use partner_chains_db_sync_data_sources::{
 	block::BlockDataSourceImpl, candidates::CandidatesDataSourceImpl,
-	governed_map::GovernedMapDataSourceImpl, mc_hash::McHashDataSourceImpl,
+	governed_map::GovernedMapDataSourceCachedImpl, mc_hash::McHashDataSourceImpl,
 	metrics::McFollowerMetrics, native_token::NativeTokenManagementDataSourceImpl,
 	sidechain_rpc::SidechainRpcDataSourceImpl, stake_distribution::StakeDistributionDataSourceImpl,
 };
@@ -63,13 +63,13 @@ pub fn create_mock_data_sources()
 		authority_selection: Arc::new(AuthoritySelectionDataSourceMock::new_from_env()?),
 		native_token: Arc::new(NativeTokenDataSourceMock::new()),
 		block_participation: Arc::new(StakeDistributionDataSourceMock::new()),
-		governed_map: Arc::new(GovernedMapDataSourceMock::new([].into())),
+		governed_map: Arc::new(GovernedMapDataSourceMock::default()),
 	})
 }
 
 pub const CANDIDATES_FOR_EPOCH_CACHE_SIZE: usize = 64;
 pub const STAKE_CACHE_SIZE: usize = 100;
-
+pub const GOVERNED_MAP_CACHE_SIZE: u16 = 100;
 pub async fn create_cached_db_sync_data_sources(
 	metrics_opt: Option<McFollowerMetrics>,
 ) -> Result<DataSources, Box<dyn Error + Send + Sync + 'static>> {
@@ -81,7 +81,7 @@ pub async fn create_cached_db_sync_data_sources(
 			block.clone(),
 			metrics_opt.clone(),
 		)),
-		mc_hash: Arc::new(McHashDataSourceImpl::new(block, metrics_opt.clone())),
+		mc_hash: Arc::new(McHashDataSourceImpl::new(block.clone(), metrics_opt.clone())),
 		authority_selection: Arc::new(
 			CandidatesDataSourceImpl::new(pool.clone(), metrics_opt.clone())
 				.await?
@@ -96,6 +96,11 @@ pub async fn create_cached_db_sync_data_sources(
 			metrics_opt.clone(),
 			STAKE_CACHE_SIZE,
 		)),
-		governed_map: Arc::new(GovernedMapDataSourceImpl::new(pool, metrics_opt)),
+		governed_map: Arc::new(GovernedMapDataSourceCachedImpl::new(
+			pool,
+			metrics_opt.clone(),
+			GOVERNED_MAP_CACHE_SIZE,
+			block,
+		)),
 	})
 }

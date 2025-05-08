@@ -6376,6 +6376,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-block-producer-fees"
+version = "1.6.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-consensus-slots",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-block-producer-metadata"
 version = "1.6.0"
 dependencies = [
@@ -7049,6 +7065,7 @@ dependencies = [
  "pallet-aura",
  "pallet-balances",
  "pallet-block-participation",
+ "pallet-block-producer-fees",
  "pallet-block-producer-metadata",
  "pallet-block-production-log",
  "pallet-governed-map",
@@ -10677,6 +10694,7 @@ dependencies = [
  "async-trait",
  "log",
  "parity-scale-codec",
+ "pretty_assertions",
  "scale-info",
  "serde",
  "sidechain-domain",

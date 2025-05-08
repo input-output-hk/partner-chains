@@ -8,6 +8,7 @@ extern crate frame_benchmarking;
 
 extern crate alloc;
 
+use alloc::collections::BTreeMap;
 use alloc::string::String;
 use authority_selection_inherents::CommitteeMember;
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
@@ -21,9 +22,10 @@ use frame_support::inherent::ProvideInherent;
 use frame_support::weights::constants::RocksDbWeight as RuntimeDbWeight;
 use frame_support::{
 	BoundedVec, construct_runtime, parameter_types,
-	traits::{ConstBool, ConstU8, ConstU32, ConstU64, ConstU128},
+	traits::{ConstBool, ConstU8, ConstU16, ConstU32, ConstU64, ConstU128},
 	weights::{IdentityFee, constants::WEIGHT_REF_TIME_PER_SECOND},
 };
+use frame_system::EnsureRoot;
 use opaque::SessionKeys;
 use pallet_block_producer_metadata;
 use pallet_grandpa::AuthorityId as GrandpaId;
@@ -32,7 +34,7 @@ use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier
 use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
-use sidechain_domain::byte_string::{BoundedString, SizedByteString};
+use sidechain_domain::byte_string::{BoundedString, ByteString, SizedByteString};
 use sidechain_domain::{
 	CrossChainPublicKey, DelegatorKey, MainchainKeyHash, PermissionedCandidateData,
 	RegistrationData, ScEpochNumber, ScSlotNumber, StakeDelegation, StakePoolPublicKey, UtxoId,
@@ -295,6 +297,7 @@ impl frame_system::Config for Runtime {
 impl pallet_native_token_management::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type TokenTransferHandler = TestHelperPallet;
+	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
 	type WeightInfo = pallet_native_token_management::weights::SubstrateWeight<Runtime>;
 }
 
@@ -393,6 +396,7 @@ impl pallet_session_validator_management::Config for Runtime {
 	type ScEpochNumber = ScEpochNumber;
 	type WeightInfo = pallet_session_validator_management::weights::SubstrateWeight<Runtime>;
 	type CommitteeMember = CommitteeMember<CrossChainPublic, SessionKeys>;
+	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
 
 	fn select_authorities(
 		input: AuthoritySelectionInputs,
@@ -553,6 +557,32 @@ impl pallet_address_associations::Config for Runtime {
 	type OnNewAssociation = TestHelperPallet;
 }
 
+#[cfg(feature = "runtime-benchmarks")]
+pub struct PalletBlockProducerFeesBenchmarkHelper;
+
+#[cfg(feature = "runtime-benchmarks")]
+impl pallet_block_producer_fees::benchmarking::BenchmarkHelper<AccountId>
+	for PalletBlockProducerFeesBenchmarkHelper
+{
+	fn account_id(i: u8) -> AccountId {
+		sp_core::sr25519::Public::from_raw([i; 32]).into()
+	}
+}
+
+impl pallet_block_producer_fees::Config for Runtime {
+	type WeightInfo = ();
+
+	type HistoricalChangesPerProducer = ConstU16<5>;
+
+	fn current_slot() -> sp_consensus_slots::Slot {
+		let slot: u64 = pallet_aura::CurrentSlot::<Runtime>::get().into();
+		sp_consensus_slots::Slot::from(slot)
+	}
+
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = PalletBlockProducerFeesBenchmarkHelper;
+}
+
 impl pallet_block_producer_metadata::Config for Runtime {
 	type WeightInfo = pallet_block_producer_metadata::weights::SubstrateWeight<Runtime>;
 
@@ -599,6 +629,7 @@ impl pallet_governed_map::Config for Runtime {
 	type WeightInfo = pallet_governed_map::weights::SubstrateWeight<Runtime>;
 
 	type OnGovernedMappingChange = TestHelperPallet;
+	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
 
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = ();
@@ -621,6 +652,7 @@ construct_runtime!(
 		Sidechain: pallet_sidechain,
 		SessionCommitteeManagement: pallet_session_validator_management,
 		AddressAssociations: pallet_address_associations,
+		BlockProducerFees: pallet_block_producer_fees,
 		BlockProducerMetadata: pallet_block_producer_metadata,
 		BlockProductionLog: pallet_block_production_log,
 		BlockParticipation: pallet_block_participation,
@@ -685,6 +717,7 @@ mod benches {
 		[pallet_native_token_management, NativeTokenManagement]
 		[pallet_block_production_log, BlockProductionLog]
 		[pallet_address_associations, AddressAssociations]
+		[pallet_block_producer_fees, BlockProducerFees]
 		[pallet_block_producer_metadata, BlockProducerMetadata]
 		[pallet_block_participation, BlockParticipation]
 		[pallet_governed_map, GovernedMap]
@@ -983,10 +1016,10 @@ impl_runtime_apis! {
 		sidechain_domain::ScEpochNumber
 	> for Runtime {
 		fn get_current_committee() -> (ScEpochNumber, Vec<CommitteeMember<CrossChainPublic, SessionKeys>>) {
-			SessionCommitteeManagement::get_current_committee()
+			SessionCommitteeManagement::current_committee_storage().as_pair()
 		}
 		fn get_next_committee() -> Option<(ScEpochNumber, Vec<CommitteeMember<CrossChainPublic, SessionKeys>>)> {
-			SessionCommitteeManagement::get_next_committee()
+			Some(SessionCommitteeManagement::next_committee_storage()?.as_pair())
 		}
 		fn get_next_unset_epoch_number() -> sidechain_domain::ScEpochNumber {
 			SessionCommitteeManagement::get_next_unset_epoch_number()
@@ -1039,6 +1072,12 @@ impl_runtime_apis! {
 	}
 
 	impl sp_governed_map::GovernedMapIDPApi<Block> for Runtime {
+		fn is_initialized() -> bool {
+			GovernedMap::is_initialized()
+		}
+		fn get_current_state() -> BTreeMap<String, ByteString> {
+			GovernedMap::get_all_key_value_pairs_unbounded().collect()
+		}
 		fn get_main_chain_scripts() -> Option<MainChainScriptsV1> {
 			GovernedMap::get_main_chain_scripts()
 		}

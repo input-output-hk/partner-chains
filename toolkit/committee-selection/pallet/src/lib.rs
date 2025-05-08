@@ -74,6 +74,9 @@ pub mod pallet {
 			+ MaxEncodedLen
 			+ CommitteeMember<AuthorityId = Self::AuthorityId, AuthorityKeys = Self::AuthorityKeys>;
 
+		/// Origin for governance calls
+		type MainChainScriptsOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+
 		fn select_authorities(
 			input: Self::AuthoritySelectionInputs,
 			sidechain_epoch: Self::ScEpochNumber,
@@ -97,6 +100,14 @@ pub mod pallet {
 	pub struct CommitteeInfo<ScEpochNumber: Clone, CommitteeMember: Clone, MaxValidators> {
 		pub epoch: ScEpochNumber,
 		pub committee: BoundedVec<CommitteeMember, MaxValidators>,
+	}
+
+	impl<ScEpochNumber: Clone, CommitteeMember: Clone, MaxValidators>
+		CommitteeInfo<ScEpochNumber, CommitteeMember, MaxValidators>
+	{
+		pub fn as_pair(self) -> (ScEpochNumber, Vec<CommitteeMember>) {
+			(self.epoch, self.committee.to_vec())
+		}
 	}
 
 	impl<ScEpochNumber, CommitteeMember, MaxValidators> Default
@@ -298,7 +309,7 @@ pub mod pallet {
 			d_parameter_policy_id: PolicyId,
 			permissioned_candidates_policy_id: PolicyId,
 		) -> DispatchResult {
-			ensure_root(origin)?;
+			T::MainChainScriptsOrigin::ensure_origin(origin)?;
 			let new_scripts = MainChainScripts {
 				committee_candidate_address,
 				d_parameter_policy_id,
@@ -385,16 +396,6 @@ pub mod pallet {
 				next_committee.epoch
 			);
 			Some(validators)
-		}
-
-		pub fn get_current_committee() -> (T::ScEpochNumber, Vec<T::CommitteeMember>) {
-			let committee_info = CurrentCommittee::<T>::get();
-			(committee_info.epoch, committee_info.committee.to_vec())
-		}
-
-		pub fn get_next_committee() -> Option<(T::ScEpochNumber, Vec<T::CommitteeMember>)> {
-			let committee_info = NextCommittee::<T>::get()?;
-			Some((committee_info.epoch, committee_info.committee.to_vec()))
 		}
 
 		pub fn get_main_chain_scripts() -> MainChainScripts {

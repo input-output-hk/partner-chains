@@ -61,7 +61,7 @@ macro_rules! sqlx_implementations_for_wrapper {
 	};
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Ord, PartialOrd, Clone, PartialEq, Eq)]
 pub struct BlockNumber(pub u32);
 sqlx_implementations_for_wrapper!(i32, "INT4", BlockNumber, McBlockNumber);
 
@@ -78,7 +78,7 @@ sqlx_implementations_for_wrapper!(i64, "INT8", SlotNumber, McSlotNumber);
 pub struct TxIndex(pub u16);
 sqlx_implementations_for_wrapper!(i16, "INT2", TxIndex, UtxoIndex);
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialOrd, Ord, PartialEq, Eq)]
 pub struct TxIndexInBlock(pub u32);
 sqlx_implementations_for_wrapper!(i32, "INT4", TxIndexInBlock, McTxIndexInBlock);
 

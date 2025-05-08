@@ -1,5 +1,30 @@
 # Partner Chains Toolkit Documentation
 
+## Table Of Contents
+
+* [Table Of Contents](#table-of-contents)
+  * [Basics](#basics)
+    * [What is a Partner Chain](#what-is-a-partner-chain)
+    * [Shared security with Cardano](#shared-security-with-cardano)
+    * [Mixed validator committee](#mixed-validator-committee)
+    * [Registered and Permissioned Validators](#registered-and-permissioned-validators)
+      * [Registered Validator](#registered-validator)
+      * [Permissioned Validator](#permissioned-validator)
+  * [System Overview](#system-overview)
+    * [db\-sync](#db-sync)
+    * [ogmios](#ogmios)
+    * [cardano node](#cardano-node)
+  * [Features](#features)
+    * [Features Overview](#feature-overview)
+    * [Block Participation Rewards](#block-participation-rewards)
+    * [Partner Chains Governance](#partner-chains-governance)
+    * [Native Token Reserve Management](#native-token-reserve-management)
+  * [Rust Docs](#rust-docs)
+  * [Upgrade &amp; Migration Guides](#upgrade--migration-guides)
+      * [1\.3\.0 to 1\.3\.1](#130-to-131)
+      * [1\.3\.1 to 1\.4\.0](#131-to-140)
+      * [1\.3\.1 to 1\.4\.0](#131-to-140-1)
+
 ### Basics
 
 The Partner Chain Toolkit provides tools and features to build and maintain partner chains that are
@@ -14,7 +39,7 @@ and functionality.
 #### Shared security with Cardano
 Cardano has a robust set of Stake Pool Operators (SPOs) with a proven history of providing security to the Cardano network. The Partner Chains Toolkit allows those SPOs to bring that same security to new partner chains, right out of the box.
 
-The partner chain maintains awareness of Cardano's state through a chain indexer, which constantly updates the partner chain with relevant information from Cardano. 
+The partner chain maintains awareness of Cardano's state through a chain indexer, which constantly updates the partner chain with relevant information from Cardano.
 
 Network parameters stored securely on Cardano can be viewed from the partner chain, helping the partner chain defend against possible parameter attacks. Cardano also provides a native token reserve management system that the partner chain can use to store treasury tokens.
 
@@ -52,7 +77,68 @@ A registered validator is a Cardano SPO who has chosen to become a partner chain
 ##### Permissioned Validator
 A permissioned validator is a trusted node whitelisted by the governance authority to produce blocks on the partner chain. The whitelist of permissioned nodes is created by the chain builder acting as the governance authority. This node must run a partner chain node with Cardano node and DB Sync. It may be a Cardano SPO but that is not required.
 
+### System Overview
+The diagram below provides an simple overview of the pc toolkit setup:
+
+<p align="center">
+  <img src="./diagrams/pc-overview.drawio.svg" alt="" />
+</p>
+
+The toolkit covers components across three different categories which have been color-coded in the
+diagram above:
+
+1. <span style="background-color: #B9E0A5;">Substrate Node</span>: This includes runtime modules
+   and the Ariadne consensus
+1. <span style="background-color: #A9C4EB;">offchain/cli</span>: The offchain components of the partner
+   chains toolkit deploy  and call smart contracts.
+1. <span style="background-color: #FFE599;">smart contracts</span>: The smart contracts that are
+   deployed and called by the offchain components.
+
+**_Note_**: _It is worth mentioning that the diagram above outlines the full setup which a chain builder
+would need to run in order to operate a chain. Validators won't need to use offchain components and
+thus won't have to run ogmios_.
+
+
+#### db-sync
+[db-sync](https://github.com/IntersectMBO/cardano-db-sync) is a chain-indexer which follows the
+cardano chain and stores ledger state changes to a connected PostgreSQL database. In order to
+observe and respond to events on the main-chain the substrate node components query the persisted
+ledger state in the database to look up specific blocks, transactions or addresses.
+
+#### ogmios
+The offchain code connects to an [ogmios](https://github.com/CardanoSolutions/ogmios) instance,
+which is a lightweight bridge-interface providing a http/websocket api for communicating with the local cardano
+node. This bridge is used by the offchain components of the toolkit to install and interact with the
+necessary smart contracts.
+
+#### cardano node
+The [cardano-node](https://github.com/IntersectMBO/cardano-node) instance is shown on the right with several deployed smart contracts. The offchain
+components of the partner chains toolkit deploy  and call smart contracts but otherwise the toolkit
+will only ever observe the ledger state, not change it.
+
+
 ### Features
+
+#### Features Overview
+
+The diagram below gives an hierarchical overview of the different features provided by this toolkit and their
+respective dependencies (where `a -> b`means that `b` depends on functionality provided by `a`):
+
+<p align="center">
+  <img src="./diagrams/features.svg" alt="" />
+</p>
+
+- **primitives and utils**: Utility libraries and custom Substrate primitives used by all other
+features.
+- **core**: Establishes a chain as a Partner Chain by tying its identity to a `genesis utxo` on Cardano. Provides the mechanism for the Partner Chain's blocks to reference stable Cardano blocks.
+- **governed map**: Governance controlled key-value store on the Cardano main chain.
+- **native token management**: Provides governance controlled tokens and token reserve management.
+- **address association**: Provides a mechanism for users to establish a mapping between their identities on Cardano and the Partner Chain
+- **committee selection**: Provides a Cardano-based committee selection using the Ariadne algorithm.
+- **Cardano-based block production rewards**: Calculation of rewards for Partner Chain block producers
+and their Cardano delegators.
+
+More detailed documentation for the different features is provided in the sections below.
 
 #### Block Participation Rewards
 Please refer to [block-participation-rewards.md](./developer-guides/block-participation-rewards.md)
@@ -66,9 +152,13 @@ mechanism.
 #### Native Token Reserve Management
 Please refer to
 [native-token-reserve-management.md](./developer-guides/native-token-reserve-management.md) for
-details o how to setting up and maintaining a native token reserve on Cardano to  be used with a
+details on how to setting up and maintaining a native token reserve on Cardano to  be used with a
 partner chain.
 
+### Rust Docs
+
+Rust Docs for all crates provided by the toolkit are available to browse online:
+[https://input-output-hk.github.io/partner-chains/](https://input-output-hk.github.io/partner-chains/)
 
 ### Upgrade & Migration Guides
 The following migration guides outline how to upgrade a running partner chain from one version to

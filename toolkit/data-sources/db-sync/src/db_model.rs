@@ -114,6 +114,14 @@ pub(crate) struct DatumOutput {
 	pub datum: DbDatum,
 }
 
+#[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
+pub(crate) struct DatumChangeOutput {
+	pub datum: DbDatum,
+	pub block_no: BlockNumber,
+	pub block_index: TxIndexInBlock,
+	pub action: String,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct NativeTokenAmount(pub u128);
 impl From<NativeTokenAmount> for sidechain_domain::NativeTokenAmount {
@@ -364,6 +372,53 @@ pub(crate) async fn get_token_utxo_for_epoch(
 		.bind(&asset.asset_name.0)
 		.bind(epoch)
 		.fetch_optional(pool)
+		.await?)
+}
+
+#[cfg(feature = "governed-map")]
+pub(crate) async fn get_changes(
+	pool: &Pool<Postgres>,
+	address: &Address,
+	after_block: Option<BlockNumber>,
+	to_block: BlockNumber,
+	asset: Asset,
+) -> Result<Vec<DatumChangeOutput>, SqlxError> {
+	let query = "
+		((SELECT
+			datum.value as datum, origin_block.block_no as block_no, origin_tx.block_index as block_index, 'upsert' as action
+		FROM tx_out
+		INNER JOIN tx origin_tx			ON tx_out.tx_id = origin_tx.id
+		INNER JOIN block origin_block	ON origin_tx.block_id = origin_block.id
+		INNER JOIN datum				ON tx_out.data_hash = datum.hash
+		INNER JOIN ma_tx_out			ON tx_out.id = ma_tx_out.tx_out_id
+		INNER JOIN multi_asset			ON multi_asset.id = ma_tx_out.ident
+		WHERE
+			tx_out.address = $1 AND ($2 IS NULL OR origin_block.block_no > $2) AND origin_block.block_no <= $3
+			AND multi_asset.policy = $4
+			AND multi_asset.name = $5)
+		UNION
+		(SELECT
+			datum.value as datum, consuming_block.block_no as block_no, consuming_tx.block_index as block_index, 'remove' as action
+		FROM tx_out
+		LEFT JOIN tx_in consuming_tx_in	ON tx_out.tx_id = consuming_tx_in.tx_out_id AND tx_out.index = consuming_tx_in.tx_out_index
+		LEFT JOIN tx consuming_tx		ON consuming_tx_in.tx_in_id = consuming_tx.id
+		LEFT JOIN block consuming_block	ON consuming_tx.block_id = consuming_block.id
+		INNER JOIN datum				ON tx_out.data_hash = datum.hash
+		INNER JOIN ma_tx_out			ON tx_out.id = ma_tx_out.tx_out_id
+		INNER JOIN multi_asset			ON multi_asset.id = ma_tx_out.ident
+		WHERE
+			tx_out.address = $1
+			AND (consuming_tx_in.id IS NOT NULL AND ($2 IS NULL OR consuming_block.block_no > $2) AND consuming_block.block_no <= $3)
+			AND multi_asset.policy = $4
+			AND multi_asset.name = $5))
+		ORDER BY block_no, block_index ASC";
+	Ok(sqlx::query_as::<_, DatumChangeOutput>(query)
+		.bind(&address.0)
+		.bind(after_block)
+		.bind(to_block)
+		.bind(&asset.policy_id.0)
+		.bind(&asset.asset_name.0)
+		.fetch_all(pool)
 		.await?)
 }
 

@@ -11,7 +11,7 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
-clap = { workspace = true }
+clap = { workspace = true, features = [ "derive", "env" ] }
 sidechain-domain = { workspace = true }
 partner-chains-cardano-offchain = { workspace = true }
 hex = { workspace = true }

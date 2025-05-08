@@ -23,15 +23,18 @@ The binary values stored are not interpreted in any way by the mechanism
 ## Architecture and operation
 
 The feature is implemented by 3 main components:
-1. Plutus scripts governing the creation, modification and deletion of entries in the Governed Map, along with
+1. **Plutus scripts** governing the creation, modification and deletion of entries in the Governed Map, along with
    the offchain commands necessary to create and submit transactions. These scripts determine a single
    Cardano address where the UTXOs containing the key-value entries are stored.
-2. Inherent data provider, along with its Cardano observability data source, that monitors the key-value
-   store's Cardano address for changes, and emits inherent data with the summary of these changes (inserts,
-   updates, deletions).
-3. A pallet, which stores the current values of all the mappings and updates them via an inherent whenever
-   a diff inherent data is produced. This pallet also exposes hooks for downstream pallets to register to be
-   notified about changes in the mapped values.
+   
+   A user-facing **offchain commands** to interact with the scripts is also provided by the
+   `partner_chains_smart_contracts_commands` crate.
+2. **Node components**: Inherent data provider, along with its Cardano observability data source, that monitors the
+   key-value store's Cardano address for changes, and emits inherent data with the summary of these changes
+   (inserts, updates, deletions), implemented by the `sp_governed_map` crate.
+3. **The pallet** (`pallet_governed_map`), which stores the current values of all the mappings and updates them via
+   an inherent whenever a diff inherent data is produced. This pallet also exposes hooks for downstream pallets to
+   register to be notified about changes in the mapped values.
 
 The general flow of data can be seen in the following diagram:
 

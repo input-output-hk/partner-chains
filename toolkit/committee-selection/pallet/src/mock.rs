@@ -5,6 +5,7 @@ use frame_support::{
 	parameter_types,
 	traits::{ConstU64, UnfilteredDispatchable},
 };
+use frame_system::EnsureRoot;
 use sidechain_domain::byte_string::SizedByteString;
 use sp_core::{H256, blake2_256};
 use sp_runtime::{
@@ -92,6 +93,7 @@ impl pallet::Config for Test {
 		BoundedVec<(Self::AuthorityId, Self::AuthorityKeys), Self::MaxValidators>;
 	type ScEpochNumber = ScEpochNumber;
 	type CommitteeMember = (Self::AuthorityId, Self::AuthorityKeys);
+	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
 
 	fn select_authorities(
 		input: Self::AuthoritySelectionInputs,

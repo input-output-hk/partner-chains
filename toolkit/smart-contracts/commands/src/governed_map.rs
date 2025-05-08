@@ -64,8 +64,8 @@ impl InsertCmd {
 			&client,
 			&self.common_arguments.retries(),
 		)
-		.await?;
-		Ok(serde_json::json!(result))
+		.await;
+		print_result_json(result)
 	}
 }
 
@@ -103,8 +103,8 @@ impl UpdateCmd {
 			&client,
 			&self.common_arguments.retries(),
 		)
-		.await?;
-		Ok(serde_json::json!(result))
+		.await;
+		print_result_json(result)
 	}
 }
 
@@ -133,8 +133,8 @@ impl RemoveCmd {
 			&client,
 			&self.common_arguments.retries(),
 		)
-		.await?;
-		Ok(serde_json::json!(result))
+		.await;
+		print_result_json(result)
 	}
 }
 
@@ -177,5 +177,15 @@ impl GetCmd {
 		};
 
 		Ok(json!(value.to_hex_string()).into())
+	}
+}
+
+fn print_result_json(
+	result: anyhow::Result<Option<crate::MultiSigSmartContractResult>>,
+) -> crate::SubCmdResult {
+	match result {
+		Err(err) => Err(err)?,
+		Ok(Some(res)) => Ok(json!(res)),
+		Ok(None) => Ok(json!({})),
 	}
 }
