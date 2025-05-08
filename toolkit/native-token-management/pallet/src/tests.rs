@@ -138,6 +138,27 @@ mod inherent {
 			assert_eq!(mock_pallet::LastTokenTransfer::<Test>::get(), None)
 		})
 	}
+
+	#[test]
+	fn cannot_be_called_twice_in_block() {
+		new_test_ext().execute_with(|| {
+			NativeTokenManagement::transfer_tokens(RuntimeOrigin::none(), 1000.into())
+				.expect("First call should succeed.");
+			NativeTokenManagement::transfer_tokens(RuntimeOrigin::none(), 1000.into())
+				.expect_err("Second call should fail.");
+		})
+	}
+
+	#[test]
+	fn can_be_called_again_in_future_block() {
+		new_test_ext().execute_with(|| {
+			NativeTokenManagement::transfer_tokens(RuntimeOrigin::none(), 1000.into())
+				.expect("First call should succeed.");
+			NativeTokenManagement::on_finalize(BlockNumberFor::<Test>::default());
+			NativeTokenManagement::transfer_tokens(RuntimeOrigin::none(), 1000.into())
+				.expect("Second call should succeed.");
+		})
+	}
 }
 
 fn test_inherent_data(token_amount: u128) -> InherentData {
