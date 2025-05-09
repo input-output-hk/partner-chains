@@ -45,7 +45,10 @@ class TestInitializeMap:
         current_mc_block = api.get_mc_block()
         result = api.partner_chains_node.smart_contracts.governed_map.list()
         # wait for any changes in the map to become observable, i.e. teardown phase from smart-contracts tests
-        wait_until(lambda: api.get_mc_block() > current_mc_block + config.main_chain.security_param)
+        wait_until(
+            lambda: api.get_mc_block() > current_mc_block + config.main_chain.security_param,
+            timeout=config.timeouts.main_chain_tx * config.main_chain.security_param,
+        )
         expected_map = result.json
         actual_map = api.get_governed_map()
         actual_map = {key: string_to_hex_bytes(value) for key, value in actual_map.items()}
