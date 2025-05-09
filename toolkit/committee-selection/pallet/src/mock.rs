@@ -99,7 +99,7 @@ impl pallet::Config for Test {
 		input: Self::AuthoritySelectionInputs,
 		_sidechain_epoch: Self::ScEpochNumber,
 	) -> Option<BoundedVec<(Self::AuthorityId, Self::AuthorityKeys), Self::MaxValidators>> {
-		// This is a good approximation of the real selection algorithm, that returs None iff there are no valid candidates to select from.
+		// This is a good approximation of the real selection algorithm, that returns None iff there are no valid candidates to select from.
 		if input.is_empty() { None } else { Some(input) }
 	}
 
@@ -110,12 +110,12 @@ impl pallet::Config for Test {
 	type WeightInfo = ();
 }
 
-// Build genesis storage according to the mock runtime.
+/// Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	new_test_ext_with_genesis_initial_authorities(&[ALICE, BOB])
 }
 
-// Build genesis storage according to the mock runtime.
+/// Build genesis storage according to the mock runtime.
 pub fn new_test_ext_with_genesis_initial_authorities(
 	validators: &[MockValidator],
 ) -> sp_io::TestExternalities {

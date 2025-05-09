@@ -1,3 +1,5 @@
+//! Legacy storage types used by version 0 of the pallet.
+#![allow(missing_docs)]
 use frame_support::pallet_prelude::{OptionQuery, ValueQuery, Zero};
 use frame_support::{BoundedVec, CloneNoBound, storage_alias};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};

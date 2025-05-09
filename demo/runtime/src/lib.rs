@@ -517,7 +517,7 @@ impl pallet_block_producer_metadata::benchmarking::BenchmarkHelper<BlockProducer
 {
 	fn metadata() -> BlockProducerMetadataType {
 		BlockProducerMetadataType {
-			url: "https://cool.stuff/spo.json".as_bytes().to_vec().try_into().unwrap(),
+			url: "https://cool.stuff/spo.json".try_into().unwrap(),
 			hash: SizedByteString::from([0; 32]),
 		}
 	}
@@ -1016,10 +1016,10 @@ impl_runtime_apis! {
 		sidechain_domain::ScEpochNumber
 	> for Runtime {
 		fn get_current_committee() -> (ScEpochNumber, Vec<CommitteeMember<CrossChainPublic, SessionKeys>>) {
-			SessionCommitteeManagement::get_current_committee()
+			SessionCommitteeManagement::current_committee_storage().as_pair()
 		}
 		fn get_next_committee() -> Option<(ScEpochNumber, Vec<CommitteeMember<CrossChainPublic, SessionKeys>>)> {
-			SessionCommitteeManagement::get_next_committee()
+			Some(SessionCommitteeManagement::next_committee_storage()?.as_pair())
 		}
 		fn get_next_unset_epoch_number() -> sidechain_domain::ScEpochNumber {
 			SessionCommitteeManagement::get_next_unset_epoch_number()

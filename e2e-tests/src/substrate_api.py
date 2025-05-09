@@ -200,15 +200,7 @@ class SubstrateApi(BlockchainApi):
         logger.debug(f"New wallet created {wallet.address}")
         return wallet
 
-    def get_wallet(self, address=None, public_key=None, secret=None, scheme=None):
-        if not address:
-            address = self.secrets["wallets"]["faucet-0"]["address"]
-        if not public_key:
-            public_key = self.secrets["wallets"]["faucet-0"]["public_key"]
-        if not secret:
-            secret = self.secrets["wallets"]["faucet-0"]["secret_seed"]
-        if not scheme:
-            scheme = self.secrets["wallets"]["faucet-0"]["scheme"]
+    def get_wallet(self, address, public_key, secret, scheme):
         scheme_type = _keypair_name_to_type(scheme)
 
         if secret.startswith("//"):
@@ -518,8 +510,7 @@ class SubstrateApi(BlockchainApi):
         return self.substrate.get_block_header(block_number=block_no)["header"]
 
     def get_block(self, block_no=None):
-        block_hash = self.substrate.get_block_hash(block_no)
-        return self.substrate.get_block(block_hash)
+        return self.substrate.get_block(block_number=block_no)
 
     def get_validator_set(self, block):
         return self.substrate.query("Session", "ValidatorsAndKeys", block_hash=block["header"]["parentHash"])
@@ -679,7 +670,9 @@ class SubstrateApi(BlockchainApi):
         return result.value
 
     def get_block_producer_metadata(self, cross_chain_public_key_hash: str):
-        result = self.substrate.query("BlockProducerMetadata", "BlockProducerMetadataStorage", [f"0x{cross_chain_public_key_hash}"])
+        result = self.substrate.query(
+            "BlockProducerMetadata", "BlockProducerMetadataStorage", [f"0x{cross_chain_public_key_hash}"]
+        )
         logger.debug(f"Block producer metadata for {cross_chain_public_key_hash}: {result}")
         return result.value
 

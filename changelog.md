@@ -27,6 +27,7 @@ if any. It can be accessed through `previous_mc_hash` function.
 block hash on construction instead of retrieving it by itself. Use `McHashInherentDataProvider::previous_mc_hash`
 to provide it in your IDP stack.
 * Introduced customization of root origin for few pallets via `MainChainScriptsOrigin` trait
+* Made `mock` module of `pallet-session-validator-management` private
 
 ## Removed
 
@@ -44,6 +45,11 @@ the feature `pallet-session-compat`.
 * `prepare-configuration` wizard now updates existing `chain_parameters.genesis_utxo` field in `pc-chain-config.json`
 * MC Hash inherent data provider will not propose older MC state than one already present in the ledger
 * `governance init` when genesis utxo had a script attached, then transaction fee was sometimes calculated incorrectly
+* [SECURITY FIX] Vulnerability of multiple crates, where a malicious block producing node could put multiple copies
+of the inherent in the block. This was because Substrate only checks whether an inherent is valid and doesn't ensure
+its uniqueness. This issue was fixed by including checks within the inherents themselves. Affected pallets that were
+patched are: `session-validator-management`, `block-participation`, `native-token-management`.
+**Partner Chain builders should update their pallet versions and run a runtime upgrade as soon as possible.**
 
 ## Added
 * `pallet-block-producer-fees` - with settings for the rewards payout logic

@@ -1,9 +1,10 @@
-use core::fmt::{Debug, Display};
-use core::ops::Deref;
+//! Module providing various byte sequence wrapper types for use by the Partner Chains Toolkit crates
 
 use alloc::string::ToString;
 use alloc::vec::Vec;
 use byte_string_derive::byte_string;
+use core::fmt::{Debug, Display};
+use core::ops::Deref;
 use derive_where::derive_where;
 use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
@@ -14,8 +15,7 @@ use sp_core::Get;
 use sp_core::bounded::BoundedVec;
 
 /// Wrapper for bytes that is serialized as hex string
-/// To be used for binary data that we want to display nicely but
-/// don't have a specific type for
+/// To be used for binary data that we want to display nicely but don't have a specific type for
 #[derive(Eq, Clone, PartialEq, TypeInfo, Default, Encode, Decode, PartialOrd, Ord)]
 #[byte_string(debug)]
 #[cfg_attr(feature = "std", byte_string(to_hex_string, decode_hex))]
@@ -42,7 +42,7 @@ impl Deref for ByteString {
 	}
 }
 
-// Constant size variant of `ByteString` that's usable as a runtime type
+/// Constant size variant of `ByteString` that's usable in a FRAME runtime
 #[derive(Eq, Clone, PartialEq, TypeInfo, MaxEncodedLen, Encode, Decode, DecodeWithMemTracking)]
 #[byte_string(debug)]
 #[byte_string(to_hex_string)]
@@ -70,25 +70,18 @@ impl<const N: usize> Default for SizedByteString<N> {
 	}
 }
 
-/// Byte-encoded text string with bounded length
+/// Bounded-length bytes representing a UTF-8 text string
 #[derive(TypeInfo, Encode, Decode, DecodeWithMemTracking, MaxEncodedLen)]
 #[scale_info(skip_type_params(T))]
 #[derive_where(Clone, PartialEq, Eq, Default, PartialOrd, Ord)]
-pub struct BoundedString<T: Get<u32>>(pub BoundedVec<u8, T>);
+pub struct BoundedString<T: Get<u32>>(BoundedVec<u8, T>);
 
+/// Macro that creates a [BoundedString], supporting string interpolation like [alloc::format].
 #[macro_export]
 macro_rules! bounded_str {
     ($($arg:expr)+) => {
 		sidechain_domain::byte_string::BoundedString::try_from(format!($($arg)+).as_str()).unwrap()
     };
-}
-
-impl<T: Get<u32>> TryFrom<Vec<u8>> for BoundedString<T> {
-	type Error = <BoundedVec<u8, T> as TryFrom<Vec<u8>>>::Error;
-
-	fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
-		Ok(Self(value.try_into()?))
-	}
 }
 
 impl<'a, T: Get<u32>> Deserialize<'a> for BoundedString<T> {

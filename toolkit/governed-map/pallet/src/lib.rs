@@ -225,6 +225,13 @@ pub mod pallet {
 		type BenchmarkHelper: crate::benchmarking::BenchmarkHelper<Self>;
 	}
 
+	/// Error type used  by this pallet's extrinsics
+	#[pallet::error]
+	pub enum Error<T> {
+		/// Signals that the inherent has been called again in the same block
+		InherentCalledTwice,
+	}
+
 	/// Governed Map key type
 	pub type MapKey<T> = BoundedString<<T as Config>::MaxKeyLength>;
 	/// Governed Map value type
@@ -239,6 +246,10 @@ pub mod pallet {
 	/// since the last change of the main chain scripts.
 	#[pallet::storage]
 	pub type Initialized<T: Config> = StorageValue<_, bool, ValueQuery>;
+
+	/// Stores the block number of the last time mapping changes were registered
+	#[pallet::storage]
+	pub type LastUpdateBlock<T: Config> = StorageValue<_, BlockNumberFor<T>, OptionQuery>;
 
 	/// Stores the latest state of the Governed Map that was observed on Cardano.
 	#[pallet::storage]
@@ -351,6 +362,12 @@ pub mod pallet {
 		#[pallet::weight((T::WeightInfo::register_changes(changes.len() as u32), DispatchClass::Mandatory))]
 		pub fn register_changes(origin: OriginFor<T>, changes: Changes<T>) -> DispatchResult {
 			ensure_none(origin)?;
+			let current_block = frame_system::Pallet::<T>::block_number();
+			ensure!(
+				LastUpdateBlock::<T>::get().map_or(true, |last_block| last_block < current_block),
+				Error::<T>::InherentCalledTwice
+			);
+			LastUpdateBlock::<T>::put(current_block);
 
 			if Initialized::<T>::get() {
 				log::info!("💾 Registering {} Governed Map changes", changes.len(),);
