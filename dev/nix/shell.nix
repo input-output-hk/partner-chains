@@ -70,7 +70,7 @@
           OPENSSL_LIB_DIR = "${pkgs.openssl.out}/lib";
 
           # Force skip support check of c++17 in CC crate
-          CRATE_CC_NO_DEFAULTS = "1";
+#          CRATE_CC_NO_DEFAULTS = "1";
 
           packages =
             with pkgs;
