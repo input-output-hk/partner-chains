@@ -510,9 +510,19 @@ class BlockchainApi(ABC):
         pass
 
     @abstractmethod
-    def set_governed_map_address(self, address: str, policy_id: str, wallet: Wallet) -> Transaction:
+    def get_governed_map_main_chain_scripts(self) -> dict:
         """
-        Sets an address of governed map stored on the main chain.
+        Retrieves the governed map address and policy ID that the partner chain is observing.
+
+        Returns:
+            dict -- Governed map
+        """
+        pass
+
+    @abstractmethod
+    def set_governed_map_main_chain_scripts(self, address: str, policy_id: str, wallet: Wallet) -> Transaction:
+        """
+        Sets the governed map address and policy ID to observe.
 
         Arguments:
             address {str} -- An address to be set

@@ -695,8 +695,13 @@ class SubstrateApi(BlockchainApi):
         initial_epoch = epoch_result.value - session_index_result.value
         return initial_epoch
 
+    def get_governed_map_main_chain_scripts(self):
+        result = self.substrate.query("GovernedMap", "MainChainScripts")
+        logger.debug(f"Governed map main chain scripts: {result}")
+        return result.value
+
     @long_running_function
-    def set_governed_map_address(self, address, policy_id, wallet):
+    def set_governed_map_main_chain_scripts(self, address, policy_id, wallet):
         logger.info(f"Setting governed map address {address} with policy id {policy_id}")
         tx = Transaction()
         call = self.substrate.compose_call(

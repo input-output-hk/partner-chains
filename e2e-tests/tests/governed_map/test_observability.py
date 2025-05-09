@@ -1,8 +1,10 @@
-from pytest import fixture
+from pytest import fixture, mark, skip
 from src.blockchain_api import BlockchainApi
 from src.cardano_cli import cbor_to_bech32
 from conftest import string_to_hex_bytes
 import logging
+
+pytestmark = [mark.xdist_group(name="governance_action")]
 
 
 @fixture(scope="session")
@@ -18,19 +20,36 @@ def sudo(api: BlockchainApi, secrets):
 
 
 @fixture(scope="session", autouse=True)
-def set_validator_address(api: BlockchainApi, addresses, policy_ids, sudo):
-    tx = api.set_governed_map_address(addresses["GovernedMapValidator"], policy_ids["GovernedMap"], sudo)
+def get_governed_map_main_chain_scripts(api: BlockchainApi):
+    result = api.get_governed_map_main_chain_scripts()
+    logging.info(f"Current governed map main chain scripts: {result}")
+    return result
+
+
+GOVERNED_MAP_MAIN_CHAIN_SCRIPTS_ALREADY_SET = 1
+
+
+@fixture(scope="session", autouse=True)
+def set_validator_address(api: BlockchainApi, addresses, policy_ids, sudo, get_governed_map_main_chain_scripts):
+    validator_address = get_governed_map_main_chain_scripts["validator_address"]
+    asset_policy_id = get_governed_map_main_chain_scripts["asset_policy_id"]
+    if validator_address == addresses["GovernedMapValidator"] and asset_policy_id == policy_ids["GovernedMap"]:
+        return GOVERNED_MAP_MAIN_CHAIN_SCRIPTS_ALREADY_SET
+    tx = api.set_governed_map_main_chain_scripts(addresses["GovernedMapValidator"], policy_ids["GovernedMap"], sudo)
     return tx
 
 
 @fixture(scope="session", autouse=True)
 def observe_governed_map_initialization(api: BlockchainApi, set_validator_address):
-    result = api.subscribe_governed_map_change()
-    return result
+    if set_validator_address != GOVERNED_MAP_MAIN_CHAIN_SCRIPTS_ALREADY_SET:
+        result = api.subscribe_governed_map_change()
+        return result
 
 
 class TestInitializeMap:
-    def test_set_main_chain_scripts(self, set_validator_address):
+    def test_set_main_chain_scripts(self, request, set_validator_address):
+        if set_validator_address == GOVERNED_MAP_MAIN_CHAIN_SCRIPTS_ALREADY_SET:
+            skip(f"Governed map main chain scripts are already set correctly. Skipping test {request.node.nodeid}.")
         tx = set_validator_address
         assert tx._receipt.is_success, f"Failed to set new governed map address: {tx._receipt.error_message}"
 
@@ -75,7 +94,7 @@ class TestReinitializeMapToEmptyAddress:
         bech32_vkey = cbor_to_bech32(vkey["cborHex"], "addr_vk")
         new_address = api.cardano_cli.build_address(bech32_vkey)
         logging.info(f"Generated new address: {new_address}")
-        tx = api.set_governed_map_address(new_address, policy_ids["GovernedMap"], sudo)
+        tx = api.set_governed_map_main_chain_scripts(new_address, policy_ids["GovernedMap"], sudo)
         return tx
 
     @fixture(scope="class", autouse=True)
