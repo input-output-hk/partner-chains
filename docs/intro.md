@@ -124,22 +124,41 @@ will only ever observe the ledger state, not change it.
   <img src="./diagrams/feature-design.svg" alt="" />
 </p>
 
-The diagram above illustrates the main components of different features provided by this toolkit, and how they are connected.
+The diagram above illustrates a typical structure of a feature provided by this toolkit.
 
-**Inside the Node**, the core logic of any feature resides in _Substrate Pallets_. Often the feature
-will provide an RPC endpoint which exposes some functionality of the pallet. In these cases the
-Pallet exposes a _Runtime API_ which can be used by the RPC endpoint to query the runtime. Pallets
-make use of foundational types, traits and utilities found in _Substrate Primitives_. These can be
-used in- and outside of the runtime.
+**Inside the Runtime**, the ledger rules of any feature are implemented by a _FRAME Pallet_. This pallet
+defines what data is stored on-chain and what transactions (*extrinsics* in Substrate terminology) are
+available for the Partner Chain's users to submit. Most pallets also define their own internal transactions
+– called *inherent extrinsics* in Substrate – that are run by the system itself for operational reasons.
+These inherents are often run to handle some data observed on the Cardano main chain in the Partner
+Chain's ledger. The pallet is also responsible for storing the feature's configuration to make it subject
+to the consensus mechanism.
 
-**Inherent Data Providers** are generally responsible for supplying trusted, system-level like data
-like timestamps or slot numbers to the runtime during block production. Different features will
-require different external depenencies which are retrieved from these Inherent Data Providers.
+**The Node components** of a feature are mostly responsible for mediating between the runtime pallet and
+the outside world. These include the _inherent data providers_ that make data from the outside world
+available to the runtime for processing, and _RPC endpoints_ that runtime data to the users over Json RPC.
+For querying runtime data from the pallets, they use Substrate's _Runtime APIs_ exposed by the runtime.
 
-One type of external data that is especially important in the context of the Partner Chain Toolkit
-is data that has been observed from the **main chain**. The **mc follower** exposes Data Sources
-that feed into the Data Source API of Inherent Data Providers... blergh...
+**Inherent Data Providers** are a particularly important type of node components, as they are responsible
+for supplying trusted, system-level data during block production. Different features require different
+external data to operate. The category of inherent data characteristic of Partner Chains Toolkit is
+_Cardano observability data_ used by features that provide the ability to source security and operational
+data from the Cardano main chain. For the sake of modularity and indexer-independence, each feature separately
+defines its data needs in the form of a _Data Source API_. This APIs serve as contracts for various concrete
+_Data Source Implementations_, which need to be aware of low-level concerns like concrete indexer APIs and
+physical layout of on-chain Plutus data.
 
+Both runtime and node components make use of foundational types, traits and utilities that are necessary for
+various parts of a feature to interoperate. These are implemented in the feature's _Primitives_ crate which
+is depended on by all other crates that implement that feature.
+
+For features that require observable data on the Cardano main chain, an important component are their
+_Plutus Scripts_ which are Plutus smart contract code that is deployed to Cardano, along with their
+_Offchain_ code, which provides logic for building and executing Cardano transactions. 
+
+Finally, many features expose _Cli Commands_ that support their operation. These include commands to interact
+with the Cardano main chain using the offchain code, create various signatures, and query the Partner Chain's
+state and configuraiont.
 
 ### Features
 
