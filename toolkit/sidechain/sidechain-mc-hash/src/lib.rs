@@ -114,7 +114,7 @@ impl McHashInherentDataProvider {
 	/// Creates a new [McHashInherentDataProvider] for proposing a new Partner Chain block by querying the
 	/// current state of Cardano and returning an instance referencing the latest stable block there.
 	///
-	/// # Argumens
+	/// # Arguments
 	/// - `parent_header`: header of the parent of the block being produced
 	/// - `data_source`: data source implementing [McHashDataSource]
 	/// - `slot`: current Partner Chain slot
@@ -163,7 +163,7 @@ impl McHashInherentDataProvider {
 
 	/// Verifies a Cardano reference hash and creates a new [McHashInherentDataProvider] for an imported Partner Chain block.
 	///
-	/// # Argumens
+	/// # Arguments
 	/// - `parent_header`: header of the parent of the block being produced or validated
 	/// - `parent_slot`: slot of the parent block. [None] for genesis
 	/// - `verified_block_slot`: Partner Chain slot of the block being verified

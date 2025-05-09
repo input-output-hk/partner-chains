@@ -328,6 +328,7 @@ impl GovernedMapInherentDataProvider {
 	/// - `client`: runtime client capable of providing [GovernedMapIDPApi] runtime API
 	/// - `parent_hash`: parent hash of the current block
 	/// - `mc_hash`: Cardano block hash referenced by the current block
+	/// - `parent_mc_hash`: Cardano block hash referenced by the parent of the current block
 	/// - `data_source`: data source implementing [GovernedMapDataSource]
 	pub async fn new<T, Block>(
 		client: &T,
