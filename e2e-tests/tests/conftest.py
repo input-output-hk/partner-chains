@@ -106,6 +106,9 @@ def pytest_configure(config: Config):
         config.getoption("--init-timestamp"),
     )
 
+    # Set main chain security param to be able to skip tests that would run for too long
+    config.security_param = _config.main_chain.security_param
+
     global partner_chain_rpc_api, partner_chain_epoch_calc
     partner_chain_rpc_api = PartnerChainRpc(_config.nodes_config.node.rpc_url)
     partner_chain_epoch_calc = PartnerChainEpochCalculator(_config)

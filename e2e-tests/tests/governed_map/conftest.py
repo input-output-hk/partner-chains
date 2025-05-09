@@ -13,8 +13,8 @@ def pytest_collection_modifyitems(items):
         if "observability" in item.nodeid:
             item.add_marker(
                 mark.skipif(
-                    item.config.getoption("--env") != "local",
-                    reason="Governed Map is not observable in reasonable time on environment other than local",
+                    item.config.security_param > 20,
+                    reason="Observability tests would take too long to run with a high main chain security parameter",
                 )
             )
 
