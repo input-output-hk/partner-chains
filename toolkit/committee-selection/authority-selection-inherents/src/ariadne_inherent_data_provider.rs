@@ -1,4 +1,4 @@
-//! Inherent data provider providing [AuthoritySelectionInputs] used by [SessionValidatorManagementApi]
+//! Logic to provide committee selection inputs compatible with the Ariadne algorithm, based on Cardano observation.
 #[cfg(feature = "std")]
 use crate::authority_selection_inputs::AuthoritySelectionDataSource;
 use crate::authority_selection_inputs::AuthoritySelectionInputs;
@@ -19,7 +19,7 @@ use {
 	},
 };
 
-/// The type of the inherent.
+/// Inherent data type provided by [AriadneInherentDataProvider].
 pub type InherentType = AuthoritySelectionInputs;
 
 #[derive(Clone, Debug, Encode, Decode)]
@@ -31,14 +31,14 @@ pub struct AriadneInherentDataProvider {
 
 #[cfg(feature = "std")]
 impl AriadneInherentDataProvider {
-	/// Creates a new [AriadneInherentDataProvider] for [sp_inherents::CreateInherentDataProviders].
+	/// Creates a new [AriadneInherentDataProvider] for use in [sp_inherents::CreateInherentDataProviders].
 	///
 	/// Parameters:
 	/// - `client`: runtime client capable of providing [SessionValidatorManagementApi] runtime API
 	/// - `sc_slot_config`: partner chain slot configuration
 	/// - `mc_epoch_config`: main chain epoch configuration
-	/// - `parent_hash`:
-	/// - `slot`:
+	/// - `parent_hash`: parent hash of the current block
+	/// - `slot`: slot of the current block
 	/// - `data_source`: data source implementing [AuthoritySelectionDataSource]
 	/// - `mc_reference_epoch`: latest stable mainchain epoch
 	pub async fn new<Block, CommitteeMember, T>(
@@ -101,7 +101,7 @@ impl AriadneInherentDataProvider {
 #[derive(Debug, thiserror::Error)]
 /// Error type returned when creation of [AriadneInherentDataProvider] fails.
 pub enum InherentProviderCreationError {
-	/// Slot represents a timestamp bigger than of u64::MAX.
+	/// Slot represents a timestamp bigger than of [u64::MAX].
 	#[error("Slot represents a timestamp bigger than of u64::MAX")]
 	SlotTooBig,
 	/// Couldn't convert timestamp to main chain epoch.
@@ -188,7 +188,7 @@ impl sp_inherents::InherentDataProvider for AriadneInherentDataProvider {
 		identifier: &InherentIdentifier,
 		error: &[u8],
 	) -> Option<Result<(), sp_inherents::Error>> {
-		// Don't process modules from other inherents
+		// Don't process inherents from other modules
 		if *identifier != INHERENT_IDENTIFIER {
 			return None;
 		}

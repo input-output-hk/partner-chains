@@ -686,6 +686,9 @@ impl CrossChainSignature {
 	}
 }
 
+/// Length of Cardano epoch nonce
+const EPOCH_NONCE_LEN: usize = 32;
+
 /// Cardano epoch nonce
 ///
 /// This value is a 32-byte hash generated at the start of each epoch on Cardano using
@@ -695,6 +698,15 @@ impl CrossChainSignature {
 #[derive(Default, Clone, Encode, Decode, DecodeWithMemTracking, PartialEq, Eq, TypeInfo)]
 #[byte_string(debug, hex_serialize)]
 pub struct EpochNonce(pub Vec<u8>);
+
+impl EpochNonce {
+	/// Returns epoch nonce as byte array.
+	pub fn as_array(&self) -> [u8; EPOCH_NONCE_LEN] {
+		let mut epoch_nonce = self.0.clone();
+		epoch_nonce.resize_with(32, || 0);
+		epoch_nonce.try_into().expect("Should never fail after being resized")
+	}
+}
 
 #[derive(
 	Default,
