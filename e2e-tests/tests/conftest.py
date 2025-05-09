@@ -215,6 +215,14 @@ def pytest_collection_modifyitems(items):
             item.user_properties.append(("test_key", test_key))
 
 
+def pytest_runtest_logstart(nodeid, location):
+    logging.info(f"Starting test: {nodeid}")
+
+
+def pytest_runtest_logfinish(nodeid, location):
+    logging.info(f"Finished test: {nodeid}")
+
+
 def pytest_runtest_makereport(item, call):
     if call.when == 'call' and item.obj.__doc__:
         item.user_properties.append(('test_summary', item.name))
@@ -398,13 +406,6 @@ def api(blockchain, config, secrets, db_sync) -> Generator[BlockchainApi, None, 
     api: BlockchainApi = class_name(config, secrets, db_sync)
     yield api
     api.close()
-
-
-@fixture(scope="function", autouse=True)
-def log_test_name(request):
-    logging.info(f"Running test: {request.node.nodeid}")
-    yield
-    logging.info(f"Finished test: {request.node.nodeid}")
 
 
 @fixture(scope="function", autouse=True)
