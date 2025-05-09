@@ -13,23 +13,31 @@ runs:
   steps:
     - name: Install kubectl, kubernetes-helm, and awscli
       run: |
-        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        # Install kubectl
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" > /dev/null 2>&1 || { echo "❌ Failed to download kubectl"; exit 1; }
         chmod +x ./kubectl
         sudo mv ./kubectl /usr/local/bin/kubectl
-        curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
-        sudo apt-get install apt-transport-https --yes
+
+        # Install Helm
+        curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null || { echo "❌ Failed to setup Helm GPG"; exit 1; }
+        sudo apt-get install apt-transport-https --yes || { echo "❌ Failed to install apt-transport-https"; exit 1; }
         echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
-        sudo apt-get update
-        sudo apt-get install helm
+        sudo apt-get update || { echo "❌ Failed to update apt"; exit 1; }
+        sudo apt-get install helm || { echo "❌ Failed to install Helm"; exit 1; }
+
+        # Install or update AWS CLI v2
+        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" > /dev/null 2>&1 || { echo "❌ Failed to download AWS CLI"; exit 1; }
+        unzip -o awscliv2.zip > /dev/null 2>&1 || { echo "❌ Failed to unzip AWS CLI"; exit 1; }
+        sudo ./aws/install --update > /dev/null 2>&1 || { echo "❌ Failed to install AWS CLI"; exit 1; }
       shell: bash
 
     - name: Configure kubectl
       run: |
-        echo "${{ env.kubeconfig_base64 }}" | base64 --decode > ${{ runner.temp }}/kubeconfig.yaml
-        kubectl config set-cluster my-cluster --server=${{ env.K8S_SERVER }} --insecure-skip-tls-verify=true
-        kubectl config set-credentials github-actions --token=${{ env.K8S_SA_TOKEN }}
-        kubectl config set-context my-context --cluster=my-cluster --user=github-actions --namespace=default
-        kubectl config use-context my-context
+        echo "${KUBECONFIG_BASE64}" | base64 --decode > ${{ runner.temp }}/kubeconfig.yaml || { echo "❌ Failed to decode kubeconfig"; exit 1; }
+        kubectl config set-cluster my-cluster --server=${K8S_SERVER} --insecure-skip-tls-verify=true > /dev/null 2>&1 || { echo "❌ Failed to set cluster"; exit 1; }
+        kubectl config set-credentials github-actions --token=${K8S_SA_TOKEN} > /dev/null 2>&1 || { echo "❌ Failed to set credentials"; exit 1; }
+        kubectl config set-context my-context --cluster=my-cluster --user=github-actions --namespace=default > /dev/null 2>&1 || { echo "❌ Failed to set context"; exit 1; }
+        kubectl config use-context my-context > /dev/null 2>&1 || { echo "❌ Failed to use context"; exit 1; }
       shell: bash
 
     - name: Download chain‑spec artifacts
