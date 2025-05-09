@@ -153,10 +153,10 @@ various parts of a feature to interoperate. These are implemented in the feature
 is depended on by all other crates that implement that feature.
 
 For features that require observable data on the Cardano main chain, an important component are their
-_Plutus Scripts_ which are Plutus smart contract code that is deployed to Cardano, along with their
-_Offchain_ code, which provides logic for building and executing Cardano transactions. 
+**Plutus Scripts** which are Plutus **smart contract** code that is deployed to Cardano, along with their
+_Offchain_ code, which provides logic for building and executing Cardano transactions.
 
-Finally, many features expose _Cli Commands_ that support their operation. These include commands to interact
+Finally, many features expose **Cli Commands** that support their operation. These include commands to interact
 with the Cardano main chain using the offchain code, create various signatures, and query the Partner Chain's
 state and configuraiont.
 
