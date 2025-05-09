@@ -45,6 +45,7 @@ use super::*;
 use alloc::collections::BTreeMap;
 use alloc::format;
 use frame_benchmarking::v2::*;
+use frame_support::assert_ok;
 use frame_system::RawOrigin;
 use sidechain_domain::bounded_str;
 
@@ -93,6 +94,11 @@ mod benchmarks {
 
 	#[benchmark]
 	fn register_changes(l: Linear<1, { T::MaxChanges::get() }>) {
+		assert_ok!(Pallet::<T>::set_main_chain_scripts(
+			RawOrigin::Root.into(),
+			T::BenchmarkHelper::main_chain_scripts(),
+		));
+
 		let changes = T::BenchmarkHelper::changes(l);
 
 		#[extrinsic_call]

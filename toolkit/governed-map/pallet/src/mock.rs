@@ -4,11 +4,13 @@ use frame_support::{
 	traits::{ConstU16, ConstU64},
 };
 use frame_system::EnsureRoot;
+use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
+use scale_info::TypeInfo;
 use sidechain_domain::byte_string::BoundedString;
 use sp_core::H256;
 use sp_governed_map::OnGovernedMappingChange;
 use sp_runtime::{
-	AccountId32, BuildStorage,
+	AccountId32, BoundedVec, BuildStorage,
 	traits::{BlakeTwo256, IdentityLookup},
 };
 
@@ -19,6 +21,23 @@ pub(crate) const TEST_MAX_CHANGES: u32 = 8;
 pub(crate) type MaxChanges = ConstU32<TEST_MAX_CHANGES>;
 pub(crate) type MaxKeyLength = ConstU32<64>;
 pub(crate) type MaxValueLength = ConstU32<512>;
+
+#[derive(Debug, Decode, Encode, DecodeWithMemTracking, MaxEncodedLen, TypeInfo, PartialEq, Eq)]
+pub enum MappingChange {
+	Created {
+		key: BoundedString<MaxKeyLength>,
+		value: BoundedVec<u8, MaxValueLength>,
+	},
+	Updated {
+		key: BoundedString<MaxKeyLength>,
+		old_value: BoundedVec<u8, MaxValueLength>,
+		new_value: BoundedVec<u8, MaxValueLength>,
+	},
+	Deleted {
+		key: BoundedString<MaxKeyLength>,
+		old_value: BoundedVec<u8, MaxValueLength>,
+	},
+}
 
 #[frame_support::pallet]
 pub mod mock_pallet {
@@ -34,15 +53,7 @@ pub mod mock_pallet {
 
 	#[pallet::storage]
 	#[pallet::unbounded]
-	pub type HookCalls<T: Config> = StorageValue<
-		_,
-		Vec<(
-			BoundedString<MaxKeyLength>,
-			Option<BoundedVec<u8, MaxValueLength>>,
-			Option<BoundedVec<u8, MaxValueLength>>,
-		)>,
-		ValueQuery,
-	>;
+	pub type HookCalls<T: Config> = StorageValue<_, Vec<MappingChange>, ValueQuery>;
 
 	impl<T: Config> OnGovernedMappingChange<MaxKeyLength, MaxValueLength> for Pallet<T> {
 		fn on_governed_mapping_change(
@@ -50,7 +61,16 @@ pub mod mock_pallet {
 			new_value: Option<BoundedVec<u8, MaxValueLength>>,
 			old_value: Option<BoundedVec<u8, MaxValueLength>>,
 		) {
-			HookCalls::<T>::append((key, new_value, old_value))
+			let change = match (old_value, new_value) {
+				(None, Some(value)) => MappingChange::Created { key, value },
+				(Some(old_value), Some(new_value)) => {
+					MappingChange::Updated { key, old_value, new_value }
+				},
+				(Some(old_value), None) => MappingChange::Deleted { key, old_value },
+				_ => unreachable!(),
+			};
+
+			HookCalls::<T>::append(change);
 		}
 	}
 }
@@ -117,4 +137,11 @@ impl crate::pallet::Config for Test {
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	frame_system::GenesisConfig::<Test>::default().build_storage().unwrap().into()
+}
+
+/// Current mapping state ordered by key
+pub fn mappings_in_storage() -> Vec<(BoundedString<MaxKeyLength>, BoundedVec<u8, MaxValueLength>)> {
+	let mut storage_state = GovernedMap::get_all_key_value_pairs().collect::<Vec<_>>();
+	storage_state.sort_by_key(|m| m.0.to_string());
+	storage_state
 }
