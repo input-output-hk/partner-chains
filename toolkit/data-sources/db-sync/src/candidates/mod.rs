@@ -126,6 +126,7 @@ impl CandidatesDataSourceImpl {
 		metrics_opt: Option<McFollowerMetrics>,
 	) -> Result<CandidatesDataSourceImpl, Box<dyn std::error::Error + Send + Sync>> {
 		db_model::create_idx_ma_tx_out_ident(&pool).await?;
+		db_model::create_idx_tx_out_address(&pool).await?;
 		Ok(Self { pool, metrics_opt })
 	}
 

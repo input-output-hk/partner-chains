@@ -42,13 +42,13 @@ fn block_hash(i: u32) -> McBlockHash {
 	.unwrap()
 }
 
-fn make_source(pool: PgPool) -> NativeTokenManagementDataSourceImpl {
-	NativeTokenManagementDataSourceImpl::new(pool, None, 1u32, 10u16)
+async fn make_source(pool: PgPool) -> NativeTokenManagementDataSourceImpl {
+	NativeTokenManagementDataSourceImpl::new(pool, None, 1u32, 10u16).await.unwrap()
 }
 
 #[sqlx::test(migrations = "./testdata/native-token/migrations")]
 async fn defaults_to_zero_when_there_are_no_transfers(pool: PgPool) {
-	let source = make_source(pool);
+	let source = make_source(pool).await;
 	let genesis_block = 0;
 	let result = run(&source, None, genesis_block).await;
 
@@ -57,7 +57,7 @@ async fn defaults_to_zero_when_there_are_no_transfers(pool: PgPool) {
 
 #[sqlx::test(migrations = "./testdata/native-token/migrations")]
 async fn gets_sum_of_all_transfers_when_queried_up_to_latest_block(pool: PgPool) {
-	let source = make_source(pool);
+	let source = make_source(pool).await;
 	let result = run(&source, None, 5).await;
 
 	assert_eq!(result, 11 + 12 + 13 + 14)
@@ -65,7 +65,7 @@ async fn gets_sum_of_all_transfers_when_queried_up_to_latest_block(pool: PgPool)
 
 #[sqlx::test(migrations = "./testdata/native-token/migrations")]
 async fn gets_sum_of_transfers_in_range(pool: PgPool) {
-	let source = make_source(pool);
+	let source = make_source(pool).await;
 	let result = run(&source, Some(1), 5).await;
 
 	assert_eq!(result, 12 + 13 + 14)
@@ -73,7 +73,7 @@ async fn gets_sum_of_transfers_in_range(pool: PgPool) {
 
 #[sqlx::test(migrations = "./testdata/native-token/migrations")]
 async fn query_for_each_blocks_pair(pool: PgPool) {
-	let source = make_source(pool.clone());
+	let source = make_source(pool.clone()).await;
 	// after is None, don't use nor fill cache
 	let r1 = run(&source, None, 1).await;
 	// this call will fill the cache
@@ -89,7 +89,7 @@ async fn query_for_each_blocks_pair(pool: PgPool) {
 
 #[sqlx::test(migrations = "./testdata/native-token/migrations")]
 async fn change_of_scripts_invalidates_cache(pool: PgPool) {
-	let source = make_source(pool.clone());
+	let source = make_source(pool.clone()).await;
 	let scripts1_transfers = run_for_scripts(&source, Some(1), 3, scripts()).await;
 	assert_eq!(scripts1_transfers, 12);
 	let scripts2_transfers = run_for_scripts(&source, Some(4), 6, scripts2()).await;
