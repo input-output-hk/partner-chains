@@ -9,8 +9,14 @@ import string
 def pytest_collection_modifyitems(items):
     for item in items:
         if "tests/governed_map" in item.nodeid:
-            item.add_marker(mark.xdist_group(name="governance_action"))
             item.add_marker(mark.governed_map)
+        if "observability" in item.nodeid:
+            item.add_marker(
+                mark.skipif(
+                    item.config.getoption("--env") != "local",
+                    reason="Governed Map is not observable in reasonable time on environment other than local",
+                )
+            )
 
 
 def string_to_hex_bytes(value):
