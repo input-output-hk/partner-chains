@@ -10,7 +10,13 @@ def pytest_collection_modifyitems(items):
     for item in items:
         if "tests/governed_map" in item.nodeid:
             item.add_marker(mark.governed_map)
-            item.add_marker(mark.xdist_group(name="governance_action"))
+        if "observability" in item.nodeid:
+            item.add_marker(
+                mark.skipif(
+                    item.config.security_param > 20,
+                    reason="Observability tests would take too long to run with a high main chain security parameter",
+                )
+            )
 
 
 def string_to_hex_bytes(value):
