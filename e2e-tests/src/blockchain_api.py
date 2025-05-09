@@ -510,12 +510,12 @@ class BlockchainApi(ABC):
         pass
 
     @abstractmethod
-    def get_governed_map_main_chain_scripts(self) -> dict:
+    def get_governed_map_initialization_state(self) -> bool:
         """
-        Retrieves the governed map address and policy ID that the partner chain is observing.
+        Retrieves the initialization state of the governed map.
 
         Returns:
-            dict -- Governed map
+            bool -- True if the governed map is initialized, False otherwise
         """
         pass
 
@@ -554,6 +554,16 @@ class BlockchainApi(ABC):
 
         Returns:
             str -- Value associated with the key
+        """
+        pass
+
+    @abstractmethod
+    def subscribe_governed_map_initialization(self) -> list:
+        """
+        Subscribes to the initialization of the governed map. Timeouts after main chain security parameter.
+
+        Returns:
+            list -- A diff between current governed map storage and new main chain state.
         """
         pass
 

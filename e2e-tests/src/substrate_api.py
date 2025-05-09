@@ -695,9 +695,9 @@ class SubstrateApi(BlockchainApi):
         initial_epoch = epoch_result.value - session_index_result.value
         return initial_epoch
 
-    def get_governed_map_main_chain_scripts(self):
-        result = self.substrate.query("GovernedMap", "MainChainScripts")
-        logger.debug(f"Governed map main chain scripts: {result}")
+    def get_governed_map_initialization_state(self):
+        result = self.substrate.query("GovernedMap", "Initialized")
+        logger.debug(f"Governed map initialization state: {result}")
         return result.value
 
     @long_running_function
@@ -737,6 +737,27 @@ class SubstrateApi(BlockchainApi):
         result = self.substrate.query("GovernedMap", "Mapping", [key])
         logger.debug(f"Governed map for key {key}: {result}")
         return result.value
+
+    def subscribe_governed_map_initialization(self):
+        current_main_chain_block = self.get_mc_block()
+        max_main_chain_block = current_main_chain_block + self.config.main_chain.security_param
+
+        def subscription_handler(obj, update_nr, subscription_id):
+            if update_nr == 0:
+                logger.debug(f"Current initialization state: {obj}")
+            if update_nr > 0 and obj:
+                return True
+            if self.get_mc_block() > max_main_chain_block:
+                logger.warning("Max main chain block reached. Stopping subscription.")
+                self.substrate.rpc_request("chain_unsubscribeNewHeads", [subscription_id])
+                return False
+
+        logger.info(
+            f"Subscribing to Governed Map initialization. "
+            f"Max main chain block: {max_main_chain_block} ({self.config.main_chain.security_param} blocks ahead)"
+        )
+        result = self.substrate.query("GovernedMap", "Initialized", subscription_handler=subscription_handler)
+        return result
 
     def subscribe_governed_map_change(self, key=None, key_value=None):
         current_main_chain_block = self.get_mc_block()
