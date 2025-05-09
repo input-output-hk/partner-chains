@@ -11,6 +11,7 @@
       * [Registered Validator](#registered-validator)
       * [Permissioned Validator](#permissioned-validator)
   * [System Overview](#system-overview)
+    * [General Overview](#general-overview)
     * [db\-sync](#db-sync)
     * [ogmios](#ogmios)
     * [cardano node](#cardano-node)
@@ -78,6 +79,7 @@ A registered validator is a Cardano SPO who has chosen to become a partner chain
 A permissioned validator is a trusted node whitelisted by the governance authority to produce blocks on the partner chain. The whitelist of permissioned nodes is created by the chain builder acting as the governance authority. This node must run a partner chain node with Cardano node and DB Sync. It may be a Cardano SPO but that is not required.
 
 ### System Overview
+#### General Overview
 The diagram below provides an simple overview of the pc toolkit setup:
 
 <p align="center">
@@ -115,6 +117,28 @@ necessary smart contracts.
 The [cardano-node](https://github.com/IntersectMBO/cardano-node) instance is shown on the right with several deployed smart contracts. The offchain
 components of the partner chains toolkit deploy  and call smart contracts but otherwise the toolkit
 will only ever observe the ledger state, not change it.
+
+#### System Design
+
+<p align="center">
+  <img src="./diagrams/feature-design.svg" alt="" />
+</p>
+
+The diagram above illustrates the main components of different features provided by this toolkit, and how they are connected.
+
+**Inside the Node**, the core logic of any feature resides in _Substrate Pallets_. Often the feature
+will provide an RPC endpoint which exposes some functionality of the pallet. In these cases the
+Pallet exposes a _Runtime API_ which can be used by the RPC endpoint to query the runtime. Pallets
+make use of foundational types, traits and utilities found in _Substrate Primitives_. These can be
+used in- and outside of the runtime.
+
+**Inherent Data Providers** are generally responsible for supplying trusted, system-level like data
+like timestamps or slot numbers to the runtime during block production. Different features will
+require different external depenencies which are retrieved from these Inherent Data Providers.
+
+One type of external data that is especially important in the context of the Partner Chain Toolkit
+is data that has been observed from the **main chain**. The **mc follower** exposes Data Sources
+that feed into the Data Source API of Inherent Data Providers... blergh...
 
 
 ### Features
