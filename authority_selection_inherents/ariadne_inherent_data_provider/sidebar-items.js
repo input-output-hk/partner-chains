@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["InherentProviderCreationError"],"struct":["AriadneInherentDataProvider","CommitteeConfig"],"type":["InherentType"]};
+window.SIDEBAR_ITEMS = {"enum":["InherentProviderCreationError"],"struct":["AriadneInherentDataProvider"],"type":["InherentType"]};

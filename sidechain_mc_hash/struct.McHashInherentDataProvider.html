@@ -10,7 +10,7 @@ block of the current one, for use by other inherent data providers.</p>
 ) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;Self, <a class="enum" href="enum.McHashInherentError.html" title="enum sidechain_mc_hash::McHashInherentError">McHashInherentError</a>&gt;<div class="where">where
     Header: HeaderT,</div></h4></section></summary><div class="docblock"><p>Creates a new <a href="struct.McHashInherentDataProvider.html" title="struct sidechain_mc_hash::McHashInherentDataProvider">McHashInherentDataProvider</a> for proposing a new Partner Chain block by querying the
 current state of Cardano and returning an instance referencing the latest stable block there.</p>
-<h5 id="argumens"><a class="doc-anchor" href="#argumens">§</a>Argumens</h5>
+<h5 id="arguments"><a class="doc-anchor" href="#arguments">§</a>Arguments</h5>
 <ul>
 <li><code>parent_header</code>: header of the parent of the block being produced</li>
 <li><code>data_source</code>: data source implementing <a href="trait.McHashDataSource.html" title="trait sidechain_mc_hash::McHashDataSource">McHashDataSource</a></li>
@@ -28,7 +28,7 @@ and within a bounded time distance from <code>slot</code>.</p>
     block_source: &amp;(dyn <a class="trait" href="trait.McHashDataSource.html" title="trait sidechain_mc_hash::McHashDataSource">McHashDataSource</a> + <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a> + <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Sync.html" title="trait core::marker::Sync">Sync</a>),
 ) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;Self, <a class="enum" href="enum.McHashInherentError.html" title="enum sidechain_mc_hash::McHashInherentError">McHashInherentError</a>&gt;<div class="where">where
     Header: HeaderT,</div></h4></section></summary><div class="docblock"><p>Verifies a Cardano reference hash and creates a new <a href="struct.McHashInherentDataProvider.html" title="struct sidechain_mc_hash::McHashInherentDataProvider">McHashInherentDataProvider</a> for an imported Partner Chain block.</p>
-<h5 id="argumens-1"><a class="doc-anchor" href="#argumens-1">§</a>Argumens</h5>
+<h5 id="arguments-1"><a class="doc-anchor" href="#arguments-1">§</a>Arguments</h5>
 <ul>
 <li><code>parent_header</code>: header of the parent of the block being produced or validated</li>
 <li><code>parent_slot</code>: slot of the parent block. <a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None" title="variant core::option::Option::None">None</a> for genesis</li>
