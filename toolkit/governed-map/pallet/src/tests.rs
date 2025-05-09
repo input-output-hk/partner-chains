@@ -27,6 +27,11 @@ mod register_changes {
 	#[test]
 	fn inserts_entries() {
 		new_test_ext().execute_with(|| {
+			assert_ok!(GovernedMap::set_main_chain_scripts(
+				RuntimeOrigin::root(),
+				MainChainScriptsV1::default()
+			));
+
 			assert_ok!(GovernedMap::register_changes(
 				RuntimeOrigin::none(),
 				bounded_btree_map![
@@ -59,6 +64,11 @@ mod register_changes {
 	#[test]
 	fn updates_entries() {
 		new_test_ext().execute_with(|| {
+			assert_ok!(GovernedMap::set_main_chain_scripts(
+				RuntimeOrigin::root(),
+				MainChainScriptsV1::default()
+			));
+
 			assert_ok!(GovernedMap::register_changes(
 				RuntimeOrigin::none(),
 				bounded_btree_map![
@@ -117,6 +127,11 @@ mod register_changes {
 	#[test]
 	fn updates_entries_to_new_values_and_back_to_original() {
 		new_test_ext().execute_with(|| {
+			assert_ok!(GovernedMap::set_main_chain_scripts(
+				RuntimeOrigin::root(),
+				MainChainScriptsV1::default()
+			));
+
 			// Insert initial state
 			{
 				assert_ok!(GovernedMap::register_changes(
@@ -243,6 +258,11 @@ mod register_changes {
 	#[test]
 	fn deletes_entries() {
 		new_test_ext().execute_with(|| {
+			assert_ok!(GovernedMap::set_main_chain_scripts(
+				RuntimeOrigin::root(),
+				MainChainScriptsV1::default()
+			));
+
 			assert_ok!(GovernedMap::register_changes(
 				RuntimeOrigin::none(),
 				bounded_btree_map![
@@ -278,6 +298,11 @@ mod register_changes {
 	#[test]
 	fn reinitialize_the_governed_map_with_new_changes() {
 		new_test_ext().execute_with(|| {
+			assert_ok!(GovernedMap::set_main_chain_scripts(
+				RuntimeOrigin::root(),
+				MainChainScriptsV1::default()
+			));
+
 			assert_ok!(GovernedMap::register_changes(
 				RuntimeOrigin::none(),
 				bounded_btree_map![
@@ -330,20 +355,10 @@ mod register_changes {
 		new_test_ext().execute_with(|| {
 			assert_eq!(GovernedMap::get_main_chain_scripts(), None);
 
-			// let mut inherent_data = InherentData::new();
-			// assert_ok!(
-			// 	inherent_data.put_data(INHERENT_IDENTIFIER, &GovernedMapInherentDataV1::default()),
-			// );
-
-			// assert_eq!(
-			// 	GovernedMap::create_inherent(&inherent_data),
-			// 	Some(Call::<Test>::register_changes { changes: bounded_btree_map![] })
-			// );
-
-			// assert_err!(
-			// 	GovernedMap::register_changes(RuntimeOrigin::none(), bounded_btree_map![]),
-			// 	Error::<Test>::MainChainScriptNotSet
-			// );
+			assert_err!(
+				GovernedMap::register_changes(RuntimeOrigin::none(), bounded_btree_map![]),
+				Error::<Test>::MainChainScriptNotSet
+			);
 		});
 	}
 
@@ -354,6 +369,11 @@ mod register_changes {
 		#[test]
 		fn get_key_value() {
 			new_test_ext().execute_with(|| {
+				assert_ok!(GovernedMap::set_main_chain_scripts(
+					RuntimeOrigin::root(),
+					MainChainScriptsV1::default()
+				));
+
 				assert_ok!(GovernedMap::register_changes(
 					RuntimeOrigin::none(),
 					bounded_btree_map![
@@ -374,6 +394,11 @@ mod register_changes {
 		#[test]
 		fn get_all_key_value_pairs() {
 			new_test_ext().execute_with(|| {
+				assert_ok!(GovernedMap::set_main_chain_scripts(
+					RuntimeOrigin::root(),
+					MainChainScriptsV1::default()
+				));
+
 				assert_eq!(GovernedMap::get_all_key_value_pairs().next(), None);
 
 				assert_ok!(GovernedMap::register_changes(
@@ -393,6 +418,11 @@ mod register_changes {
 		#[test]
 		fn get_all_key_value_pairs_unbounded() {
 			new_test_ext().execute_with(|| {
+				assert_ok!(GovernedMap::set_main_chain_scripts(
+					RuntimeOrigin::root(),
+					MainChainScriptsV1::default()
+				));
+
 				assert_eq!(GovernedMap::get_all_key_value_pairs().next(), None);
 
 				assert_ok!(GovernedMap::register_changes(
@@ -460,6 +490,11 @@ mod register_changes {
 	#[test]
 	fn cannot_be_called_more_than_once_per_block() {
 		new_test_ext().execute_with(|| {
+			assert_ok!(GovernedMap::set_main_chain_scripts(
+				RuntimeOrigin::root(),
+				MainChainScriptsV1::default()
+			));
+
 			let changes = bounded_btree_map![
 				bstring("key1") => Some(bvec(&[1])),
 			];
@@ -536,6 +571,11 @@ mod register_changes {
 		#[test]
 		fn if_pallet_is_initialized_and_data_is_empty_then_we_skip_inherent() {
 			new_test_ext().execute_with(|| {
+				assert_ok!(GovernedMap::set_main_chain_scripts(
+					RuntimeOrigin::root(),
+					MainChainScriptsV1::default()
+				));
+
 				// Initialize pallet with some data
 				assert_ok!(GovernedMap::register_changes(
 					RuntimeOrigin::none(),
@@ -561,6 +601,11 @@ mod register_changes {
 		 {
 			new_test_ext().execute_with(|| {
 				assert!(!GovernedMap::is_initialized());
+
+				assert_ok!(GovernedMap::set_main_chain_scripts(
+					RuntimeOrigin::root(),
+					MainChainScriptsV1::default()
+				));
 
 				// Initialize pallet with some data
 				assert_ok!(GovernedMap::register_changes(

@@ -371,7 +371,7 @@ pub mod pallet {
 			);
 			LastUpdateBlock::<T>::put(current_block);
 
-			// ensure!(MainChainScripts::<T>::exists(), Error::<T>::MainChainScriptNotSet);
+			ensure!(MainChainScripts::<T>::exists(), Error::<T>::MainChainScriptNotSet);
 
 			if Initialized::<T>::get() {
 				log::info!("💾 Registering {} Governed Map changes", changes.len(),);
