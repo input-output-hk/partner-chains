@@ -695,11 +695,6 @@ class SubstrateApi(BlockchainApi):
         initial_epoch = epoch_result.value - session_index_result.value
         return initial_epoch
 
-    def get_governed_map_initialization_state(self):
-        result = self.substrate.query("GovernedMap", "Initialized")
-        logger.debug(f"Governed map initialization state: {result}")
-        return result.value
-
     @long_running_function
     def set_governed_map_main_chain_scripts(self, address, policy_id, wallet):
         logger.info(f"Setting governed map address {address} with policy id {policy_id}")

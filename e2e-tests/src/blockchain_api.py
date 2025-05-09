@@ -510,16 +510,6 @@ class BlockchainApi(ABC):
         pass
 
     @abstractmethod
-    def get_governed_map_initialization_state(self) -> bool:
-        """
-        Retrieves the initialization state of the governed map.
-
-        Returns:
-            bool -- True if the governed map is initialized, False otherwise
-        """
-        pass
-
-    @abstractmethod
     def set_governed_map_main_chain_scripts(self, address: str, policy_id: str, wallet: Wallet) -> Transaction:
         """
         Sets the governed map address and policy ID to observe.
@@ -560,7 +550,7 @@ class BlockchainApi(ABC):
     @abstractmethod
     def subscribe_governed_map_initialization(self) -> list:
         """
-        Subscribes to the initialization of the governed map. Timeouts after main chain security parameter.
+        Subscribes to the initialization of the governed map. Timeouts after <main_chain.security_param> blocks.
 
         Returns:
             list -- A diff between current governed map storage and new main chain state.
@@ -570,7 +560,7 @@ class BlockchainApi(ABC):
     @abstractmethod
     def subscribe_governed_map_change(self, key: str = None, key_value: tuple = None) -> list | tuple | bool:
         """
-        Subscribes to changes in the governed map. Timeouts after main chain security parameter.
+        Subscribes to changes in the governed map. Timeouts after <main_chain.security_param> blocks.
 
         Arguments:
             key {str} -- Key to observe (default: {None})
