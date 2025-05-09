@@ -765,14 +765,13 @@ class SubstrateApi(BlockchainApi):
 
         def subscribed_change_handler(registered_changes):
             if key_value:
-                return next((change for change in registered_changes if key_value in registered_changes), None)
+                return key_value if key_value in registered_changes else None
             elif key:
                 return next((change for change in registered_changes if change[0] == key), None)
+            elif registered_changes:
+                return registered_changes
             else:
-                if registered_changes:
-                    return registered_changes
-                else:
-                    return True  # e.g. governed map reinitialization with 0 changes
+                return True  # e.g. governed map reinitialization with 0 changes
 
         def subscription_handler(obj, update_nr, subscription_id):
             block_no = obj["header"]["number"]
