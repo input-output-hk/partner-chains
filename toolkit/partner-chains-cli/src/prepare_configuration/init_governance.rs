@@ -19,7 +19,7 @@ pub(crate) fn run_init_governance<C: IOContext>(
 	ogmios_config: &ServiceConfig,
 	context: &C,
 ) -> anyhow::Result<Option<McTxHash>> {
-	let multisig_parameters = prompt_initial_governance(context)?;
+	let multisig_parameters = prompt_initial_governance(payment_key, context)?;
 	let should_continue = context.prompt_yes_no(
 		&format!(
 			"Governance will be initialized with:\n{}\nDo you want to continue?",
@@ -46,10 +46,14 @@ pub(crate) fn run_init_governance<C: IOContext>(
 }
 
 fn prompt_initial_governance<C: IOContext>(
+	payment_key: &CardanoPaymentSigningKey,
 	context: &C,
 ) -> Result<MultiSigParameters, anyhow::Error> {
-	context.eprint("Please provide the initial chain governance data:");
-	INITIAL_GOVERNANCE_AUTHORITIES.save_if_empty(GovernanceAuthoritiesKeyHashes(vec![]), context);
+	context.eprint("Please provide the initial chain governance key hashes:");
+	INITIAL_GOVERNANCE_AUTHORITIES.save_if_empty(
+		GovernanceAuthoritiesKeyHashes(vec![payment_key.to_pub_key_hash()]),
+		context,
+	);
 	let authorities = INITIAL_GOVERNANCE_AUTHORITIES
 		.prompt_with_default_from_file_parse_and_save(context)
 		.map_err(|e| anyhow!("Failed to parse governance authorities: {}", e))?;
@@ -108,10 +112,10 @@ mod tests {
 			.with_json_file(OGMIOS_PROTOCOL.config_file, serde_json::json!({}))
 			.with_offchain_mocks(preprod_offchain_mocks())
 			.with_expected_io(vec![
-				MockIO::eprint("Please provide the initial chain governance data:"),
+				MockIO::eprint("Please provide the initial chain governance key hashes:"),
 				MockIO::prompt(
 					"Space separated keys hashes of the initial Multisig Governance Authorities",
-					Some(""),
+					Some(test_private_key_hash()),
 					"00000000000000000000000000000000000000000000000000000000  \n\t0x01010101010101010101010101010101010101010101010101010101",
 				),
 				MockIO::prompt(
@@ -154,6 +158,10 @@ mod tests {
 			"d0a6c5c921266d15dc8d1ce1e51a01e929a686ed3ec1a9be1145727c224bf386"
 		))
 		.unwrap()
+	}
+
+	fn test_private_key_hash() -> &'static str {
+		"0xe8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"
 	}
 
 	fn preprod_offchain_mocks() -> OffchainMocks {
