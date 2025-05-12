@@ -1,3 +1,4 @@
+//! Plutus data types for D-param.
 use crate::{
 	DataDecodingError, DecodingResult, PlutusDataExtensions, VersionedDatum,
 	VersionedDatumWithLegacy, VersionedGenericDatum,
@@ -5,9 +6,15 @@ use crate::{
 use cardano_serialization_lib::{PlutusData, PlutusList};
 
 #[derive(Clone, Debug, PartialEq)]
+/// Datum representing D-param.
 pub enum DParamDatum {
 	/// Initial/legacy datum schema. If a datum doesn't contain a version, it is assumed to be V0
-	V0 { num_permissioned_candidates: u16, num_registered_candidates: u16 },
+	V0 {
+		/// Number of permissioned candidates in committee.
+		num_permissioned_candidates: u16,
+		/// Number of registered candidates in committee.
+		num_registered_candidates: u16,
+	},
 }
 
 impl TryFrom<PlutusData> for DParamDatum {
@@ -27,6 +34,16 @@ impl From<DParamDatum> for sidechain_domain::DParameter {
 	}
 }
 
+/// Convert [DParameter] to [PlutusData].
+///
+/// Encoding:
+///   VersionedGenericDatum:
+///   - datum: ()
+///   - appendix:
+///     [ d_param.num_permissioned_candidates
+///     , d_param.num_registered_candidates
+///     ]
+///   - version: 0
 pub fn d_parameter_to_plutus_data(d_param: &sidechain_domain::DParameter) -> PlutusData {
 	let mut list = PlutusList::new();
 	list.add(&PlutusData::new_integer(&d_param.num_permissioned_candidates.into()));

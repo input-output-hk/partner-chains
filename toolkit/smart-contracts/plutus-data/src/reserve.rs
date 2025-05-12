@@ -1,39 +1,58 @@
+//! Plutus data types for reserve functionality.
 use crate::{
 	DataDecodingError, DecodingResult, VersionedDatum, VersionedGenericDatum,
 	decoding_error_and_log, plutus_data_version_and_payload,
 };
 use cardano_serialization_lib::{BigInt, BigNum, ConstrPlutusData, PlutusData, PlutusList};
-use sidechain_domain::{AssetId, AssetName, PolicyId};
+use sidechain_domain::{AssetId, AssetName, PolicyId, ScriptHash};
 
 #[derive(Debug, Clone)]
+/// Redeemer for reserve
 pub enum ReserveRedeemer {
+	/// Deposit tokens to the reserve
 	DepositToReserve = 0,
+	/// Releases funds from the reserve to the illiquid supply
 	ReleaseFromReserve = 1,
+	/// Update mutable reserve management system settings
 	UpdateReserve = 2,
+	/// Releases all the remaining funds from the reserve to the illiquid supply
 	Handover = 3,
 }
 
 #[derive(Debug, Clone, PartialEq)]
+/// Datum of the reserve storing settings and stats
 pub struct ReserveDatum {
+	/// Reserve settings that *are not* changeable after creation
 	pub immutable_settings: ReserveImmutableSettings,
+	/// Reserve settings that *are* changeable after creation
 	pub mutable_settings: ReserveMutableSettings,
+	/// Reserve stats
 	pub stats: ReserveStats,
 }
 
 #[derive(Debug, Clone, PartialEq)]
+/// Type representing reserve settings that *are not* changeable after creation
 pub struct ReserveImmutableSettings {
+	/// Unused, set to 0
 	pub t0: u64,
+	/// Reserve token asset Id
 	pub token: AssetId,
 }
 
 #[derive(Debug, Clone, PartialEq)]
+/// Type representing reserve settings that *are* changeable after creation
 pub struct ReserveMutableSettings {
-	pub total_accrued_function_script_hash: PolicyId,
+	/// Script hash of the 'total accrued function', also called V-function,
+	/// that computes how many tokens could be released from the reserve at given moment.
+	pub total_accrued_function_script_hash: ScriptHash,
+	/// Initial amount of tokens to deposit. They must be present in the payment wallet.
 	pub initial_incentive: u64,
 }
 
 #[derive(Debug, Clone, PartialEq)]
+/// Type representing continuously changing information about the reserve
 pub struct ReserveStats {
+	/// Total amount of tokens released from reserve
 	pub token_total_amount_transferred: u64,
 }
 
@@ -112,6 +131,7 @@ impl VersionedDatum for ReserveDatum {
 }
 
 impl ReserveDatum {
+	/// Calculates new reserve after withdrawal by adding `amount` to `token_total_amount_transferred`.
 	pub fn after_withdrawal(self, amount: u64) -> Self {
 		Self {
 			stats: ReserveStats {

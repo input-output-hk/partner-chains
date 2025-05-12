@@ -1,3 +1,4 @@
+//! Plutus data types for registered candidates.
 use crate::{
 	PlutusDataExtensions, VersionedDatum, VersionedDatumWithLegacy, VersionedGenericDatum,
 };
@@ -38,13 +39,21 @@ use crate::{DataDecodingError, DecodingResult};
 pub enum RegisterValidatorDatum {
 	/// Initial/legacy datum schema. If a datum doesn't contain a version, it is assumed to be V0
 	V0 {
+		/// Stake ownership information of registered candidate.
 		stake_ownership: AdaBasedStaking,
+		/// Sidechain public key of the candidate. See [SidechainPublicKey] for more details.
 		sidechain_pub_key: SidechainPublicKey,
+		/// Sidechain key signature of the registration message.
 		sidechain_signature: SidechainSignature,
+		/// UTxO that is an input parameter to the registration transaction.
+		/// It is spent during the registration process. Prevents replay attacks.
 		registration_utxo: UtxoId,
-		//own_pkh is used by offchain code to find the registration UTXO when re-registering or deregistering
+		/// Hash of the registering SPO's Cardano public key.
+		/// Used by offchain code to find the registration UTXO when re-registering or de-registering.
 		own_pkh: MainchainKeyHash,
+		/// Registering SPO's Aura public key
 		aura_pub_key: AuraPublicKey,
+		/// Registering SPO's GRANDPA public key
 		grandpa_pub_key: GrandpaPublicKey,
 	},
 }
@@ -77,8 +86,9 @@ impl VersionedDatumWithLegacy for RegisterValidatorDatum {
 	}
 }
 
+/// Converts [CandidateRegistration] domain type to [RegisterValidatorDatum::V0] encoded as [PlutusData].
 pub fn candidate_registration_to_plutus_data(
-	candidate_registration: &sidechain_domain::CandidateRegistration,
+	candidate_registration: &CandidateRegistration,
 ) -> PlutusData {
 	RegisterValidatorDatum::V0 {
 		stake_ownership: candidate_registration.stake_ownership.clone(),
