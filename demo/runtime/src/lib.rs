@@ -1008,6 +1008,13 @@ impl_runtime_apis! {
 		}
 	}
 
+	impl sp_block_producer_fees::BlockProducerFeesApi<Block, AccountId> for Runtime
+	{
+		fn get_all_fees() -> Vec<(AccountId, sp_block_producer_fees::PerTenThousands)> {
+			BlockProducerFees::get_all_latest().map(|(account_id, (_slot, fee))| (account_id, fee)).collect()
+		}
+	}
+
 	#[api_version(2)]
 	impl sp_session_validator_management::SessionValidatorManagementApi<
 		Block,
