@@ -2,7 +2,7 @@ from pytest import fixture, mark
 from config.api_config import ApiConfig
 from src.blockchain_api import BlockchainApi
 from src.cardano_cli import cbor_to_bech32
-from conftest import string_to_hex_bytes
+from tests.governed_map.conftest import string_to_hex_bytes
 import logging
 
 pytestmark = [mark.xdist_group(name="governance_action")]
