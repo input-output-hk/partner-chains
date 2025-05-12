@@ -5,6 +5,7 @@
 use super::*;
 use crate::Pallet as BlockProductionLog;
 use frame_benchmarking::v2::*;
+use frame_support::traits::Hooks;
 use frame_system::RawOrigin;
 use sp_consensus_slots::Slot;
 use sp_std::vec::Vec;
@@ -35,6 +36,19 @@ mod benchmarks {
 		#[block]
 		{
 			BlockProductionLog::<T>::append(RawOrigin::None.into(), id)?;
+		}
+		Ok(())
+	}
+
+	#[benchmark]
+	fn on_finalize() -> Result<(), BenchmarkError> {
+		setup_storage::<T>(59);
+		let id = T::BenchmarkHelper::producer_id();
+		BlockProductionLog::<T>::append(RawOrigin::None.into(), id)?;
+
+		#[block]
+		{
+			BlockProductionLog::<T>::on_finalize(frame_system::Pallet::<T>::block_number());
 		}
 		Ok(())
 	}
