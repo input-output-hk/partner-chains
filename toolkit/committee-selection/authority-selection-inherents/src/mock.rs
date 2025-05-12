@@ -1,13 +1,18 @@
+//! Mocks for authority selection inherents
 use crate::authority_selection_inputs::*;
 use sidechain_domain::*;
 
 #[derive(Clone)]
+/// Mock implementing [AuthoritySelectionDataSource]
 pub struct MockAuthoritySelectionDataSource {
-	/// Each entry in each field is returned when queried for epoch equal to its index.
+	/// Registered candidates that are returned when queried for an epoch equal to its index.
 	/// For example `candidates[0]` is the list of candidates that will be returned for epoch 0.
-	/// `candidates[1]` is the list of candidates that will be returned for epoch 1 and so on.
 	pub candidates: Vec<Vec<CandidateRegistrations>>,
+	/// Permissioned candidates that are returned when queried for an epoch equal to its index.
+	/// For example `permissioned_candidates[0]` is the list of permissioned_candidates that will be returned for epoch 0.
+	/// If an index is set to `None` it means that a permissioned candidates list is not set in that epoch.
 	pub permissioned_candidates: Vec<Option<Vec<RawPermissionedCandidateData>>>,
+	/// Number of permissioned candidates.
 	pub num_permissioned_candidates: u16,
 }
 
@@ -22,10 +27,12 @@ impl Default for MockAuthoritySelectionDataSource {
 }
 
 impl MockAuthoritySelectionDataSource {
+	/// Sets registered candidates per epoch for [MockAuthoritySelectionDataSource].
 	pub fn with_candidates_per_epoch(self, candidates: Vec<Vec<CandidateRegistrations>>) -> Self {
 		Self { candidates, ..self }
 	}
 
+	/// Sets permissioned candidates per epoch for [MockAuthoritySelectionDataSource].
 	pub fn with_permissioned_candidates(
 		self,
 		permissioned_candidates: Vec<Option<Vec<RawPermissionedCandidateData>>>,
@@ -33,6 +40,7 @@ impl MockAuthoritySelectionDataSource {
 		Self { permissioned_candidates, ..self }
 	}
 
+	/// Sets number of permissioned candidates
 	pub fn with_num_permissioned_candidates(self, num_permissioned_candidates: u16) -> Self {
 		Self { num_permissioned_candidates, ..self }
 	}

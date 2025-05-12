@@ -1,3 +1,4 @@
+//! Types for authority selection
 use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode};
 use plutus::*;
 use scale_info::TypeInfo;
@@ -7,14 +8,19 @@ use sidechain_domain::*;
 /// It is unfiltered, so the selection algorithm should filter out invalid candidates.
 #[derive(Clone, Debug, Encode, Decode, DecodeWithMemTracking, TypeInfo, PartialEq, Eq)]
 pub struct AuthoritySelectionInputs {
+	/// D-parameter for Ariadne committee selection. See [DParameter] for details.
 	pub d_parameter: DParameter,
+	/// List of permissioned candidates for committee selection.
 	pub permissioned_candidates: Vec<PermissionedCandidateData>,
+	/// List of registered candidates for committee selection
 	pub registered_candidates: Vec<CandidateRegistrations>,
+	/// Nonce for queried epoch.
 	pub epoch_nonce: EpochNonce,
 }
 
 #[cfg(feature = "std")]
 #[derive(Debug, thiserror::Error)]
+/// Error type for creation of [AuthoritySelectionInputs]
 pub enum AuthoritySelectionInputsCreationError {
 	#[cfg_attr(
 		feature = "std",
@@ -22,6 +28,7 @@ pub enum AuthoritySelectionInputsCreationError {
 			"Failed to get Ariadne parameters for epoch: {0}, D-parameter: {1:?}, permissioned candidates: {2:?}: {3}"
 		)
 	)]
+	/// Failed to get Ariadne parameters for epoch
 	AriadneParametersQuery(
 		McEpochNumber,
 		PolicyId,
@@ -34,21 +41,31 @@ pub enum AuthoritySelectionInputsCreationError {
 			"Failed to get registered candidates for epoch: {0}, committee candidate address: {1}: {2}."
 		)
 	)]
+	/// Failed to get registered candidates for epoch
 	GetCandidatesQuery(McEpochNumber, String, Box<dyn std::error::Error + Send + Sync>),
 	#[cfg_attr(feature = "std", error("Failed to get epoch nonce for epoch: {0}: {1}."))]
+	/// Failed to get epoch nonce for epoch
 	GetEpochNonceQuery(McEpochNumber, Box<dyn std::error::Error + Send + Sync>),
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize)]
+/// Permissioned candidate data from Cardano main chain
 pub struct RawPermissionedCandidateData {
+	/// Unvalidated Partner Chain public key of permissioned candidate
 	pub sidechain_public_key: SidechainPublicKey,
+	/// Unvalidated Aura public key of permissioned candidate
 	pub aura_public_key: AuraPublicKey,
+	/// Unvalidated Grandpa public key of permissioned candidate
 	pub grandpa_public_key: GrandpaPublicKey,
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize)]
+/// Ariadne selection algorithm parameters owned by the Partner Chain Governance Authority.
 pub struct AriadneParameters {
+	/// D-parameter for Ariadne committee selection. See [DParameter] for details.
 	pub d_parameter: DParameter,
+	/// List of permissioned candidates for committee selection.
+	/// [None] means that a list of permissioned candidates has not been set on the mainchain.
 	pub permissioned_candidates: Option<Vec<RawPermissionedCandidateData>>,
 }
 
@@ -96,7 +113,7 @@ pub trait AuthoritySelectionDataSource {
 
 impl AuthoritySelectionInputs {
 	#[cfg(feature = "std")]
-	pub async fn from_mc_data(
+	pub(crate) async fn from_mc_data(
 		candidate_data_source: &(dyn AuthoritySelectionDataSource + Send + Sync),
 		for_epoch: McEpochNumber,
 		scripts: sp_session_validator_management::MainChainScripts,

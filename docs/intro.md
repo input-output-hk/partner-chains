@@ -11,6 +11,7 @@
       * [Registered Validator](#registered-validator)
       * [Permissioned Validator](#permissioned-validator)
   * [System Overview](#system-overview)
+    * [General Overview](#general-overview)
     * [db\-sync](#db-sync)
     * [ogmios](#ogmios)
     * [cardano node](#cardano-node)
@@ -78,6 +79,7 @@ A registered validator is a Cardano SPO who has chosen to become a partner chain
 A permissioned validator is a trusted node whitelisted by the governance authority to produce blocks on the partner chain. The whitelist of permissioned nodes is created by the chain builder acting as the governance authority. This node must run a partner chain node with Cardano node and DB Sync. It may be a Cardano SPO but that is not required.
 
 ### System Overview
+#### General Overview
 The diagram below provides an simple overview of the pc toolkit setup:
 
 <p align="center">
@@ -116,6 +118,47 @@ The [cardano-node](https://github.com/IntersectMBO/cardano-node) instance is sho
 components of the partner chains toolkit deploy  and call smart contracts but otherwise the toolkit
 will only ever observe the ledger state, not change it.
 
+#### System Design
+
+<p align="center">
+  <img src="./diagrams/feature-design.svg" alt="" />
+</p>
+
+The diagram above illustrates a typical structure of a feature provided by this toolkit.
+
+**Inside the Runtime**, the ledger rules of any feature are implemented by a _FRAME Pallet_. This pallet
+defines what data is stored on-chain and what transactions (*extrinsics* in Substrate terminology) are
+available for the Partner Chain's users to submit. Most pallets also define their own internal transactions
+– called *inherent extrinsics* in Substrate – that are run by the system itself for operational reasons.
+These inherents are often run to handle some data observed on the Cardano main chain in the Partner
+Chain's ledger. The pallet is also responsible for storing the feature's configuration to make it subject
+to the consensus mechanism.
+
+**The Node components** of a feature are mostly responsible for mediating between the runtime pallet and
+the outside world. These include the _inherent data providers_ that make data from the outside world
+available to the runtime for processing, and _RPC endpoints_ that runtime data to the users over Json RPC.
+For querying runtime data from the pallets, they use Substrate's _Runtime APIs_ exposed by the runtime.
+
+**Inherent Data Providers** are a particularly important type of node components, as they are responsible
+for supplying trusted, system-level data during block production. Different features require different
+external data to operate. The category of inherent data characteristic of Partner Chains Toolkit is
+_Cardano observability data_ used by features that provide the ability to source security and operational
+data from the Cardano main chain. For the sake of modularity and indexer-independence, each feature separately
+defines its data needs in the form of a _Data Source API_. This APIs serve as contracts for various concrete
+_Data Source Implementations_, which need to be aware of low-level concerns like concrete indexer APIs and
+physical layout of on-chain Plutus data.
+
+Both runtime and node components make use of foundational types, traits and utilities that are necessary for
+various parts of a feature to interoperate. These are implemented in the feature's _Primitives_ crate which
+is depended on by all other crates that implement that feature.
+
+For features that require observable data on the Cardano main chain, an important component are their
+**Plutus Scripts** which are Plutus **smart contract** code that is deployed to Cardano, along with their
+_Offchain_ code, which provides logic for building and executing Cardano transactions.
+
+Finally, many features expose **Cli Commands** that support their operation. These include commands to interact
+with the Cardano main chain using the offchain code, create various signatures, and query the Partner Chain's
+state and configuraiont.
 
 ### Features
 

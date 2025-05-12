@@ -1,6 +1,8 @@
-from pytest import fixture
+from pytest import fixture, mark
 from src.blockchain_api import BlockchainApi
-from conftest import string_to_hex_bytes
+from tests.governed_map.conftest import string_to_hex_bytes
+
+pytestmark = [mark.xdist_group(name="governance_action")]
 
 
 class TestUpdate:

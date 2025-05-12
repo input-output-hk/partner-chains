@@ -508,3 +508,67 @@ class BlockchainApi(ABC):
             int -- initial PC epoch
         """
         pass
+
+    @abstractmethod
+    def set_governed_map_main_chain_scripts(self, address: str, policy_id: str, wallet: Wallet) -> Transaction:
+        """
+        Sets the governed map address and policy ID to observe.
+
+        Arguments:
+            address {str} -- An address to be set
+            policy_id {str} -- Policy ID
+            wallet {Wallet} -- Wallet used to sign the transaction
+
+        Returns:
+            tx {Transaction} -- Transaction object
+        """
+        pass
+
+    @abstractmethod
+    def get_governed_map(self) -> dict:
+        """
+        Retrieves the governed map from the main chain.
+
+        Returns:
+            dict -- Governed map
+        """
+        pass
+
+    @abstractmethod
+    def get_governed_map_key(self, key: str) -> str:
+        """
+        Retrieves a specific key from the governed map.
+
+        Arguments:
+            key {str} -- Key to retrieve
+
+        Returns:
+            str -- Value associated with the key
+        """
+        pass
+
+    @abstractmethod
+    def subscribe_governed_map_initialization(self) -> list:
+        """
+        Subscribes to the initialization of the governed map. Timeouts after <main_chain.security_param> blocks.
+
+        Returns:
+            list -- A diff between current governed map storage and new main chain state.
+        """
+        pass
+
+    @abstractmethod
+    def subscribe_governed_map_change(self, key: str = None, key_value: tuple = None) -> list | tuple | bool:
+        """
+        Subscribes to changes in the governed map. Timeouts after <main_chain.security_param> blocks.
+
+        Arguments:
+            key {str} -- Key to observe (default: {None})
+            key_value {tuple} -- Tuple of key and value to observe (default: {None})
+
+        Returns:
+            list | tuple | bool -- List of tuples or a single tuple with key and value of registered change
+                                    True - if the governed map was reinitialized with 0 changes
+                                    False - if no changes were observed during the timeout
+        """
+        pass
