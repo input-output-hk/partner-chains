@@ -1,0 +1,17 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Container(partner_chains_compatible_node, "User BlockChain Node & Runtime", "Polkadot node")
+Container(smart_contracts, "Smart Contracts CLI", "CLI application", "CLI commands to plug into user executable")
+Container_Ext(ogmios, "Ogmios", "Service", "Gateway between JsonRPC and Cardano protocols")
+Container_Ext(postgres, "Postgres Database")
+Container_Ext(cardano_db_sync, "Cardano DB Sync")
+Container_Ext(cardano_node, "Cardano Node")
+
+Rel(cardano_db_sync, postgres, "Updates")
+Rel(cardano_db_sync, cardano_node, "Follows")
+Rel(ogmios, cardano_node, "Forwards translated requests")
+Rel(smart_contracts, ogmios, "Queries & Submits transactions")
+Rel(partner_chains_compatible_node, postgres, "SQL requests")
+
+@enduml
