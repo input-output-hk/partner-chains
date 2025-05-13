@@ -71,11 +71,9 @@ pub async fn upsert_permissioned_candidates<
 	await_tx: &A,
 ) -> anyhow::Result<Option<MultiSigSmartContractResult>> {
 	let ctx = TransactionContext::for_payment_key(payment_signing_key, ogmios_client).await?;
-	let (validator, policy) =
-		scripts_data::permissioned_candidates_scripts(genesis_utxo, ctx.network)?;
+	let script_data = scripts_data::permissioned_candidates_scripts(genesis_utxo, ctx.network)?;
 	let governance_data = GovernanceData::get(genesis_utxo, ogmios_client).await?;
-	let validator_address = validator.address_bech32(ctx.network)?;
-	let validator_utxos = ogmios_client.query_utxos(&[validator_address]).await?;
+	let validator_utxos = ogmios_client.query_utxos(&[script_data.validator_address]).await?;
 	let mut candidates = candidates.to_owned();
 	candidates.sort();
 
@@ -92,8 +90,8 @@ pub async fn upsert_permissioned_candidates<
 			);
 			Some(
 				update_permissioned_candidates(
-					&validator,
-					&policy,
+					&script_data.validator,
+					&script_data.policy,
 					&candidates,
 					&current_utxo,
 					&governance_data,
@@ -110,8 +108,8 @@ pub async fn upsert_permissioned_candidates<
 			);
 			Some(
 				insert_permissioned_candidates(
-					&validator,
-					&policy,
+					&script_data.validator,
+					&script_data.policy,
 					&candidates,
 					&governance_data,
 					ctx,

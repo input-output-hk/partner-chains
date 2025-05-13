@@ -63,9 +63,9 @@ pub async fn upsert_d_param<
 	await_tx: &A,
 ) -> anyhow::Result<Option<MultiSigSmartContractResult>> {
 	let ctx = TransactionContext::for_payment_key(payment_signing_key, ogmios_client).await?;
-	let (validator, policy) = crate::scripts_data::d_parameter_scripts(genesis_utxo, ctx.network)?;
-	let validator_address = validator.address_bech32(ctx.network)?;
-	let validator_utxos = ogmios_client.query_utxos(&[validator_address]).await?;
+	let script_data = crate::scripts_data::d_parameter_scripts(genesis_utxo, ctx.network)?;
+	let validator_utxos =
+		ogmios_client.query_utxos(&[script_data.validator_address.clone()]).await?;
 
 	let tx_hash_opt = match get_current_d_parameter(validator_utxos)? {
 		Some((_, current_d_param)) if current_d_param == *d_parameter => {
@@ -76,8 +76,8 @@ pub async fn upsert_d_param<
 			log::info!("Current D-parameter is different to the one to be set. Updating.");
 			Some(
 				update_d_param(
-					&validator,
-					&policy,
+					&script_data.validator,
+					&script_data.policy,
 					d_parameter,
 					&current_utxo,
 					ctx,
@@ -92,8 +92,8 @@ pub async fn upsert_d_param<
 			log::info!("There is no D-parameter set. Inserting new one.");
 			Some(
 				insert_d_param(
-					&validator,
-					&policy,
+					&script_data.validator,
+					&script_data.policy,
 					d_parameter,
 					ctx,
 					genesis_utxo,

@@ -193,7 +193,7 @@ mod tests {
 		scripts_data::ReserveScripts,
 		test_values::{payment_addr, protocol_parameters},
 	};
-	use cardano_serialization_lib::{Int, Language, NetworkIdKind, PolicyID, Transaction};
+	use cardano_serialization_lib::{Int, NetworkIdKind, PolicyID, Transaction};
 	use hex_literal::hex;
 	use ogmios_client::types::{Asset, OgmiosTx, OgmiosUtxo, OgmiosValue};
 	use partner_chains_plutus_data::reserve::{
@@ -245,33 +245,24 @@ mod tests {
 	}
 
 	fn reserve_validator_script() -> PlutusScript {
-		PlutusScript::from_wrapped_cbor(raw_scripts::RESERVE_VALIDATOR, Language::new_plutus_v2())
-			.unwrap()
+		PlutusScript::from_raw(raw_scripts::RESERVE_VALIDATOR).unwrap()
 	}
 
 	fn auth_policy_script() -> PlutusScript {
-		PlutusScript::from_wrapped_cbor(raw_scripts::RESERVE_AUTH_POLICY, Language::new_plutus_v2())
-			.unwrap()
+		PlutusScript::from_raw(raw_scripts::RESERVE_AUTH_POLICY).unwrap()
 	}
 
 	fn illiquid_supply_validator_script() -> PlutusScript {
-		PlutusScript::from_wrapped_cbor(
-			raw_scripts::ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR,
-			Language::new_plutus_v2(),
-		)
-		.unwrap()
+		PlutusScript::from_raw(raw_scripts::ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR).unwrap()
 	}
 
 	const UNIX_T0: u64 = 1736504093000u64;
 
 	fn applied_v_function() -> PlutusScript {
-		PlutusScript::from_wrapped_cbor(
-			raw_scripts::EXAMPLE_V_FUNCTION_POLICY,
-			Language::new_plutus_v2(),
-		)
-		.unwrap()
-		.apply_data(UNIX_T0)
-		.unwrap()
+		PlutusScript::from_raw(raw_scripts::EXAMPLE_V_FUNCTION_POLICY)
+			.unwrap()
+			.apply_data(UNIX_T0)
+			.unwrap()
 	}
 
 	fn version_oracle_address() -> String {

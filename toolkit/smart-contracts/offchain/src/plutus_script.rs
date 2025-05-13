@@ -3,7 +3,6 @@ use anyhow::{Context, Error, anyhow};
 use cardano_serialization_lib::{
 	Address, JsError, Language, LanguageKind, NetworkIdKind, PlutusData, ScriptHash,
 };
-use ogmios_client::types::OgmiosScript;
 use plutus::ToDatum;
 use sidechain_domain::{AssetId, AssetName, PolicyId};
 use uplc::{
@@ -11,10 +10,12 @@ use uplc::{
 	plutus_data,
 };
 
-/// Wraps a Plutus script cbor
+/// Wraps a Plutus script CBOR
 #[derive(Clone, PartialEq, Eq)]
 pub struct PlutusScript {
+	/// CBOR bytes of the encoded Plutus script
 	pub bytes: Vec<u8>,
+	/// The language of the encoded Plutus script
 	pub language: Language,
 }
 
@@ -28,27 +29,22 @@ impl std::fmt::Debug for PlutusScript {
 }
 
 impl PlutusScript {
+	/// Constructs a [PlutusScript].
 	pub fn from_cbor(cbor: &[u8], language: Language) -> Self {
 		Self { bytes: cbor.into(), language }
-	}
-
-	pub fn from_ogmios(ogmios_script: OgmiosScript) -> anyhow::Result<Self> {
-		ogmios_script.try_into()
 	}
 
 	/// This function is needed to create [PlutusScript] from scripts in [raw_scripts],
 	/// which are encoded as a cbor byte string containing the cbor of the script
 	/// itself. This function removes this layer of wrapping.
-	pub fn from_wrapped_cbor(
-		plutus_script_raw_cbor: &[u8],
-		language: Language,
-	) -> anyhow::Result<Self> {
+	/// Language for all scrips in [raw_scripts] is [LanguageKind::PlutusV2].
+	pub fn from_raw(plutus_script_raw_cbor: &[u8]) -> anyhow::Result<Self> {
 		let plutus_script_bytes: uplc::PlutusData = minicbor::decode(plutus_script_raw_cbor)?;
 		let plutus_script_bytes = match plutus_script_bytes {
 			uplc::PlutusData::BoundedBytes(bb) => Ok(bb),
 			_ => Err(anyhow!("expected validator raw to be BoundedBytes")),
 		}?;
-		Ok(Self::from_cbor(&plutus_script_bytes, language))
+		Ok(Self::from_cbor(&plutus_script_bytes, Language::new_plutus_v2()))
 	}
 
 	pub fn apply_data(self, data: impl ToDatum) -> Result<Self, anyhow::Error> {
@@ -199,21 +195,19 @@ pub(crate) mod tests {
 
 	#[test]
 	fn apply_parameters_to_deregister() {
-		let applied =
-			PlutusScript::from_wrapped_cbor(&CANDIDATES_SCRIPT_RAW, Language::new_plutus_v2())
-				.unwrap()
-				.apply_data(TEST_GENESIS_UTXO)
-				.unwrap();
+		let applied = PlutusScript::from_raw(&CANDIDATES_SCRIPT_RAW)
+			.unwrap()
+			.apply_data(TEST_GENESIS_UTXO)
+			.unwrap();
 		assert_eq!(hex::encode(applied.bytes), hex::encode(CANDIDATES_SCRIPT_WITH_APPLIED_PARAMS));
 	}
 
 	#[test]
 	fn unapply_term_csl() {
-		let applied =
-			PlutusScript::from_wrapped_cbor(&CANDIDATES_SCRIPT_RAW, Language::new_plutus_v2())
-				.unwrap()
-				.apply_data(TEST_GENESIS_UTXO)
-				.unwrap();
+		let applied = PlutusScript::from_raw(&CANDIDATES_SCRIPT_RAW)
+			.unwrap()
+			.apply_data(TEST_GENESIS_UTXO)
+			.unwrap();
 		let data: PlutusData = applied.unapply_data_csl().unwrap();
 		assert_eq!(
 			data,
@@ -224,11 +218,10 @@ pub(crate) mod tests {
 
 	#[test]
 	fn unapply_term_uplc() {
-		let applied =
-			PlutusScript::from_wrapped_cbor(&CANDIDATES_SCRIPT_RAW, Language::new_plutus_v2())
-				.unwrap()
-				.apply_data(TEST_GENESIS_UTXO)
-				.unwrap();
+		let applied = PlutusScript::from_raw(&CANDIDATES_SCRIPT_RAW)
+			.unwrap()
+			.apply_data(TEST_GENESIS_UTXO)
+			.unwrap();
 		let data: uplc::PlutusData = applied.unapply_data_uplc().unwrap();
 		assert_eq!(
 			data,

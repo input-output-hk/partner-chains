@@ -314,10 +314,9 @@ fn test_costs() -> Costs {
 }
 
 fn version_oracle_policy() -> crate::plutus_script::PlutusScript {
-	let (_, version_oracle_policy, _) =
-		scripts_data::version_scripts_and_address(genesis_utxo().utxo_id(), tx_context().network)
-			.unwrap();
-	version_oracle_policy
+	scripts_data::version_oracle(genesis_utxo().utxo_id(), tx_context().network)
+		.unwrap()
+		.policy
 }
 
 fn governance_authority() -> MainchainKeyHash {

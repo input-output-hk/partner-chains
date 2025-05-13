@@ -19,7 +19,7 @@ pub fn legacy_governance_init_transaction(
 				.to_public()
 				.hash()
 				.to_bytes();
-		PCPlutusScript::from_wrapped_cbor(raw_scripts::MULTI_SIG_POLICY, Language::new_plutus_v2())
+		PCPlutusScript::from_raw(raw_scripts::MULTI_SIG_POLICY)
 			.unwrap()
 			.apply_uplc_data(uplc::PlutusData::Array(MaybeIndefArray::Indef(vec![
 				uplc::PlutusData::Array(MaybeIndefArray::Indef(vec![
