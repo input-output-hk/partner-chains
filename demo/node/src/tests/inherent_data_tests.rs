@@ -61,7 +61,7 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 		Arc::new(mc_hash_data_source),
 		Arc::new(MockAuthoritySelectionDataSource::default()),
 		Arc::new(native_token_data_source),
-		Arc::new(StakeDistributionDataSourceMock::new()),
+		Arc::new(StakeDistributionDataSourceMock::default()),
 		Arc::new(GovernedMapDataSourceMock::default()),
 	)
 	.create_inherent_data_providers(mock_header().hash(), ())
@@ -159,7 +159,7 @@ async fn block_verification_cidp_should_be_created_correctly() {
 		Arc::new(mc_hash_data_source),
 		Arc::new(MockAuthoritySelectionDataSource::default()),
 		Arc::new(native_token_data_source),
-		Arc::new(StakeDistributionDataSourceMock::new()),
+		Arc::new(StakeDistributionDataSourceMock::default()),
 		Arc::new(GovernedMapDataSourceMock::default()),
 	);
 

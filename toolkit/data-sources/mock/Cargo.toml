@@ -31,13 +31,22 @@ pallet-sidechain-rpc = { workspace = true, optional = true }
 authority-selection-inherents = { workspace = true, optional = true }
 
 [features]
-default = ["std", "block-source", "candidate-source", "governed-map", "native-token"]
+default = [
+	"std",
+	"block-participation",
+	"block-source",
+	"candidate-source",
+	"governed-map",
+	"mc-hash",
+	"native-token",
+	"sidechain-rpc",
+]
 std = [
 	"serde_json/std",
 	"sidechain-domain/std",
 	"rand/std",
 	"sp-native-token-management?/std",
-	"sp-block-participation?/std"
+	"sp-block-participation?/std",
 ]
 block-source = []
 candidate-source = ["authority-selection-inherents"]

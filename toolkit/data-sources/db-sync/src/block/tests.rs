@@ -1,8 +1,10 @@
 use crate::block::{BlockDataSourceImpl, BlocksCache, MainchainBlock};
 use chrono::{NaiveDateTime, TimeDelta};
 use hex_literal::hex;
+use pallet_sidechain_rpc::SidechainRpcDataSource;
 use sidechain_domain::mainchain_epoch::{Duration, MainchainEpochConfig, Timestamp};
 use sidechain_domain::{McBlockHash, McBlockNumber, McEpochNumber, McSlotNumber};
+use sidechain_mc_hash::McHashDataSource;
 use sqlx::PgPool;
 use std::str::FromStr;
 

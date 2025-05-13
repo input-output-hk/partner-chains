@@ -1,5 +1,7 @@
 use crate::Result;
+use pallet_sidechain_rpc::SidechainRpcDataSource;
 use sidechain_domain::*;
+use sidechain_mc_hash::McHashDataSource;
 use sp_timestamp::Timestamp;
 
 pub struct BlockDataSourceMock {
@@ -7,16 +9,20 @@ pub struct BlockDataSourceMock {
 	mc_epoch_duration_millis: u32,
 }
 
-impl BlockDataSourceMock {
-	pub async fn get_latest_block_info(&self) -> Result<MainchainBlock> {
+#[async_trait::async_trait]
+impl SidechainRpcDataSource for BlockDataSourceMock {
+	async fn get_latest_block_info(&self) -> Result<MainchainBlock> {
 		Ok(self
 			.get_latest_stable_block_for(Timestamp::new(BlockDataSourceMock::millis_now()))
 			.await
 			.unwrap()
 			.unwrap())
 	}
+}
 
-	pub async fn get_latest_stable_block_for(
+#[async_trait::async_trait]
+impl McHashDataSource for BlockDataSourceMock {
+	async fn get_latest_stable_block_for(
 		&self,
 		reference_timestamp: Timestamp,
 	) -> Result<Option<MainchainBlock>> {
@@ -33,7 +39,7 @@ impl BlockDataSourceMock {
 		}))
 	}
 
-	pub async fn get_stable_block_for(
+	async fn get_stable_block_for(
 		&self,
 		_hash: McBlockHash,
 		reference_timestamp: Timestamp,
@@ -41,7 +47,7 @@ impl BlockDataSourceMock {
 		self.get_latest_stable_block_for(reference_timestamp).await
 	}
 
-	pub async fn get_block_by_hash(&self, hash: McBlockHash) -> Result<Option<MainchainBlock>> {
+	async fn get_block_by_hash(&self, hash: McBlockHash) -> Result<Option<MainchainBlock>> {
 		// reverse of computation in `get_latest_stable_block_for`
 		let block_number = u32::from_be_bytes(hash.0[..4].try_into().unwrap());
 		let timestamp = block_number * 20000;

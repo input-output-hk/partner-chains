@@ -1,9 +1,9 @@
 use crate::{block::BlockDataSourceImpl, metrics::McFollowerMetrics, observed_async_trait};
 use sidechain_domain::{MainchainBlock, McBlockHash};
-use sidechain_mc_hash::McHashDataSource;
 use sp_timestamp::Timestamp;
 use std::sync::Arc;
 
+pub use sidechain_mc_hash::McHashDataSource;
 pub struct McHashDataSourceImpl {
 	inner: Arc<BlockDataSourceImpl>,
 	metrics_opt: Option<McFollowerMetrics>,

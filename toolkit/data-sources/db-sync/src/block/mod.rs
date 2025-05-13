@@ -3,13 +3,16 @@ use crate::{
 	data_sources::read_mc_epoch_config,
 	db_model::{self, Block, BlockNumber, SlotNumber},
 };
+use async_trait::async_trait;
 use chrono::{DateTime, NaiveDateTime, TimeDelta};
 use derive_new::new;
 use figment::{Figment, providers::Env};
 use log::{debug, info};
+use pallet_sidechain_rpc::SidechainRpcDataSource;
 use serde::Deserialize;
 use sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
 use sidechain_domain::*;
+use sidechain_mc_hash::McHashDataSource;
 use sp_timestamp::Timestamp;
 use sqlx::PgPool;
 use std::{
@@ -35,8 +38,9 @@ pub struct BlockDataSourceImpl {
 	stable_blocks_cache: Arc<Mutex<BlocksCache>>,
 }
 
-impl BlockDataSourceImpl {
-	pub async fn get_latest_block_info(
+#[async_trait::async_trait]
+impl SidechainRpcDataSource for BlockDataSourceImpl {
+	async fn get_latest_block_info(
 		&self,
 	) -> Result<MainchainBlock, Box<dyn std::error::Error + Send + Sync>> {
 		db_model::get_latest_block_info(&self.pool)
@@ -44,8 +48,11 @@ impl BlockDataSourceImpl {
 			.map(From::from)
 			.ok_or(ExpectedDataNotFound("No latest block on chain.".to_string()).into())
 	}
+}
 
-	pub async fn get_latest_stable_block_for(
+#[async_trait]
+impl McHashDataSource for BlockDataSourceImpl {
+	async fn get_latest_stable_block_for(
 		&self,
 		reference_timestamp: Timestamp,
 	) -> Result<Option<MainchainBlock>, Box<dyn std::error::Error + Send + Sync>> {
@@ -57,7 +64,7 @@ impl BlockDataSourceImpl {
 		Ok(block.map(From::from))
 	}
 
-	pub async fn get_stable_block_for(
+	async fn get_stable_block_for(
 		&self,
 		hash: McBlockHash,
 		reference_timestamp: Timestamp,
@@ -66,7 +73,7 @@ impl BlockDataSourceImpl {
 		self.get_stable_block_by_hash(hash, reference_timestamp).await
 	}
 
-	pub async fn get_block_by_hash(
+	async fn get_block_by_hash(
 		&self,
 		hash: McBlockHash,
 	) -> Result<Option<MainchainBlock>, Box<dyn std::error::Error + Send + Sync>> {

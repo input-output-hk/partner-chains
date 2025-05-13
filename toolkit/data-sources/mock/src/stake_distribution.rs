@@ -1,13 +1,8 @@
 use sidechain_domain::*;
 use sp_block_participation::inherent_data::BlockParticipationDataSource;
 
+#[derive(Default)]
 pub struct StakeDistributionDataSourceMock;
-
-impl StakeDistributionDataSourceMock {
-	pub fn new() -> Self {
-		Self
-	}
-}
 
 #[async_trait::async_trait]
 impl BlockParticipationDataSource for StakeDistributionDataSourceMock {

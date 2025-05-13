@@ -61,8 +61,8 @@ pub fn create_mock_data_sources()
 		sidechain_rpc: Arc::new(SidechainRpcDataSourceMock::new(block.clone())),
 		mc_hash: Arc::new(McHashDataSourceMock::new(block)),
 		authority_selection: Arc::new(AuthoritySelectionDataSourceMock::new_from_env()?),
-		native_token: Arc::new(NativeTokenDataSourceMock::new()),
-		block_participation: Arc::new(StakeDistributionDataSourceMock::new()),
+		native_token: Arc::new(NativeTokenDataSourceMock::default()),
+		block_participation: Arc::new(StakeDistributionDataSourceMock::default()),
 		governed_map: Arc::new(GovernedMapDataSourceMock::default()),
 	})
 }

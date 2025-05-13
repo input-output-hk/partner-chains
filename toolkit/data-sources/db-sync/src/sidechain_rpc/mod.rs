@@ -1,7 +1,8 @@
 use crate::{block::BlockDataSourceImpl, metrics::McFollowerMetrics, observed_async_trait};
-use pallet_sidechain_rpc::SidechainRpcDataSource;
 use sidechain_domain::MainchainBlock;
 use std::sync::Arc;
+
+pub use pallet_sidechain_rpc::SidechainRpcDataSource;
 
 pub struct SidechainRpcDataSourceImpl {
 	inner: Arc<BlockDataSourceImpl>,
