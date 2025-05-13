@@ -44,6 +44,29 @@ mod benchmarks {
 		Ok(())
 	}
 
+	// Benchmark `on_finalize` extrinsic with the worst possible conditions:
+	#[benchmark]
+	fn on_finalize() -> Result<(), BenchmarkError> {
+		NativeTokenManagement::<T>::set_main_chain_scripts(
+			RawOrigin::Root.into(),
+			PolicyId::default(),
+			AssetName::default(),
+			MainchainAddress::default(),
+		)?;
+
+		NativeTokenManagement::<T>::transfer_tokens(
+			RawOrigin::None.into(),
+			NativeTokenAmount::default(),
+		)?;
+
+		#[block]
+		{
+			NativeTokenManagement::<T>::on_finalize(frame_system::Pallet::<T>::block_number());
+		}
+
+		Ok(())
+	}
+
 	impl_benchmark_test_suite!(
 		NativeTokenManagement,
 		crate::mock::new_test_ext(),
