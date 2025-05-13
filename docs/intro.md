@@ -21,6 +21,10 @@
     * [Running db-sync](#running-db-sync)
     * [Running PostgreSQL](#running-postgresql)
     * [Running ogmios](#running-ogmios)
+  * [Configuration](#configuration)
+    * [`chain-spec.json`](#chain-spec.json)
+    * [Environment Variables](#environment-variables)
+    * [Keys](#keys)
   * [Features](#features)
     * [Features Overview](#feature-overview)
     * [Block Participation Rewards](#block-participation-rewards)
@@ -227,6 +231,107 @@ Please refer to the [project
 documentation](https://ogmios.dev/getting-started/building/#-documentation) for details on how to
 run and configure ogmios.
 
+### Configuration
+Partner chains are configured through a combination of configuration files and environment
+variables. On top of the files outlined below, the command line wizard provides a convenient layer
+for initializing configurations.
+
+#### `chain-spec.json`
+The `chain-spec.json` file combines generic Substrate configuration values with partner chain
+specific settings. All partner chain specific settings are stored below
+`.genesis.runtimeGenesis.config`:
+
+##### `aura`
+##### `aura.authorities`
+##### `grandpa`
+##### `grandpa.authorities`
+##### `balances`
+##### `balances.balances`
+##### `balances.devAccounts`
+##### `governedMap`
+##### `governedMap.mainChainScripts`
+##### `governedMap.mainChainScripts.asset_policy_id`
+##### `governedMap.mainChainScripts.validator_address`
+##### `governedMap.marker`
+##### `nativeTokenManagement`
+##### `nativeTokenManagement.mainChainScripts`
+##### `nativeTokenManagement.mainChainScripts.illiquid_supply_validator_address`
+##### `nativeTokenManagement.mainChainScripts.native_token_asset_name`
+##### `nativeTokenManagement.mainChainScripts.native_policy_id`
+##### `nativeTokenManagement.marker`
+##### `palletSession`
+##### `palletSession.keys`
+##### `palletSession.nonAuthorityKeys`
+##### `session`
+##### `session.initialValidators`
+##### `sessionCommitteeManagement`
+##### `sessionCommitteeManagement.initialAuthorities`
+##### `sessionCommitteeManagement.mainChainScripts`
+##### `sessionCommitteeManagement.mainChainScripts.committee_candidate_address`
+##### `sessionCommitteeManagement.mainChainScripts.d_parameter_policy_id`
+##### `sessionCommitteeManagement.mainChainScripts.permissioned_candidates_policy_id`
+##### `sidechain`
+##### `sidechain.genesisUtxo`
+##### `sidechain.slotsPerEpoch`
+##### `sudo`
+##### `sudo.key`
+##### `testHelperPallet`
+##### `testHelperPallet.participationDataReleasePeriod`
+##### `testHelperPallet.phantom`
+##### `transactionPayment`
+##### `transactionPayment.multiplier`
+
+
+
+#### Environment Variables
+The following environment values will be read by the partner chain node process.
+##### `GENESIS_UTXO`
+TODO
+##### `SIDECHAIN_BLOCK_BENEFICIARY`
+TODO
+##### `COMMITTEE_CANDIDATE_ADDRESS`
+TODO
+##### `D_PARAMETER_POLICY_ID`
+TODO
+##### `PERMISSIONED_CANDIDATES_POLICY_ID`
+TODO
+##### `NATIVE_TOKEN_POLICY_ID`
+TODO
+##### `NATIVE_TOKEN_ASSET_NAME`
+TODO
+##### `ILLIQUID_SUPPLY_VALIDATOR_ADDRESS`
+TODO
+##### `CARDANO_SECURITY_PARAMETER`
+TODO
+##### `CARDANO_ACTIVE_SLOTS_COEFF`
+TODO
+##### `DB_SYNC_POSTGRES_CONNECTION_STRING`
+TODO
+##### `BLOCK_STABILITY_MARGIN`
+TODO
+##### `MC__FIRST_EPOCH_TIMESTAMP_MILLIS`
+TODO
+##### `MC__SLOT_DURATION_MILLIS`
+TODO
+##### `MC__FIRST_EPOCH_NUMBER`
+TODO
+##### `MC__EPOCH_DURATION_MILLIS`
+TODO
+##### `MC__FIRST_SLOT_NUMBER`
+TODO
+##### `USE_MAIN_CHAIN_FOLLOWER_MOCK`
+TODO
+##### `MAIN_CHAIN_FOLLOWER_MOCK_REGISTRATIONS_FILE`
+TODO
+
+#### Keys
+The partner chain node needs three different keys to be present in a Substrate key store accessible
+by the partner chain node.
+1. `sidechain_pub_key`: The sidechain public key (ECDSA)
+1. `aura_pub_key`: The aura public key (sr25519)
+1. `grandpa_pub_key`: The grandpa public key (Ed25519)
+
+By default the partner chain node process will look for key stores in the base path directory.
 ### Features
 
 #### Features Overview
