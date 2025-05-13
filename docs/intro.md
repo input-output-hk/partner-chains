@@ -174,7 +174,7 @@ using these services in the context of a partner chain setup.
 
 #### Running cardano-node
 [cardano-node](https://github.com/IntersectMBO/cardano-node) is the core service for connecting to
-the Cardano blockchain and is mandatory for running a Partner Chain. Please refer to the [project
+the Cardano blockchain and is mandatory for running a partner chain. Please refer to the [project
 website](https://github.com/IntersectMBO/cardano-node) for detailed instructions on configuring and
 running cardano-node.
 
