@@ -195,7 +195,7 @@ configuration is sufficient. Make sure to refer to the project
 [documentation](https://github.com/IntersectMBO/cardano-db-sync/blob/master/doc/Readme.md) for
 further details.
 
-:warning: Please note that db-sync needs to be **fully synchronized**. Attempting to run a Partner Chain node
+:warning: Please note that db-sync needs to be **fully synchronized**. Attempting to run a partner chain node
 with a db-sync instance that lags behind will result in consensus errors. The synchronization time
 depends on the network conditions and hardware characteristics but below are some approximations:
 
