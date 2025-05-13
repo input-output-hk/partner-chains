@@ -4,7 +4,7 @@ use crate::{
 	decoding_error_and_log, plutus_data_version_and_payload,
 };
 use cardano_serialization_lib::{BigInt, BigNum, ConstrPlutusData, PlutusData, PlutusList};
-use sidechain_domain::{AssetId, AssetName, PolicyId, ScriptHash};
+use sidechain_domain::{AssetId, AssetName, PolicyId};
 
 #[derive(Debug, Clone)]
 /// Redeemer for reserve
@@ -42,9 +42,11 @@ pub struct ReserveImmutableSettings {
 #[derive(Debug, Clone, PartialEq)]
 /// Type representing reserve settings that *are* changeable after creation
 pub struct ReserveMutableSettings {
-	/// Script hash of the 'total accrued function', also called V-function,
-	/// that computes how many tokens could be released from the reserve at given moment.
-	pub total_accrued_function_script_hash: ScriptHash,
+	/// Asset name of the 'total accrued function' minting policy, also called V-function,
+	/// that determines the maximum amount of tokens that can be released from the reserve at any given moment.
+	/// This is accomplished by minting v-function tokens with the policy, and comparing the released amount
+	/// to the token amount in the reserver validator script.
+	pub total_accrued_function_asset_name: PolicyId,
 	/// Initial amount of tokens to deposit. They must be present in the payment wallet.
 	pub initial_incentive: u64,
 }
@@ -86,7 +88,7 @@ impl From<ReserveDatum> for PlutusData {
 
 				let mut v_function_hash_and_initial_incentive = PlutusList::new();
 				v_function_hash_and_initial_incentive.add(&PlutusData::new_bytes(
-					value.mutable_settings.total_accrued_function_script_hash.0.to_vec(),
+					value.mutable_settings.total_accrued_function_asset_name.0.to_vec(),
 				));
 				v_function_hash_and_initial_incentive.add(&PlutusData::new_integer(&BigInt::from(
 					value.mutable_settings.initial_incentive,
@@ -164,7 +166,7 @@ fn decode_v0_reserve_datum(datum: &PlutusData) -> Option<ReserveDatum> {
 	Some(ReserveDatum {
 		immutable_settings: ReserveImmutableSettings { t0, token },
 		mutable_settings: ReserveMutableSettings {
-			total_accrued_function_script_hash,
+			total_accrued_function_asset_name: total_accrued_function_script_hash,
 			initial_incentive,
 		},
 		stats,
@@ -205,7 +207,7 @@ mod tests {
 				},
 			},
 			mutable_settings: ReserveMutableSettings {
-				total_accrued_function_script_hash: PolicyId([2; 28]),
+				total_accrued_function_asset_name: PolicyId([2; 28]),
 				initial_incentive: 0,
 			},
 			stats: ReserveStats { token_total_amount_transferred: 1000 },

@@ -45,7 +45,7 @@ pub enum RegisterValidatorDatum {
 		sidechain_pub_key: SidechainPublicKey,
 		/// Sidechain key signature of the registration message.
 		sidechain_signature: SidechainSignature,
-		/// UTxO that is an input parameter to the registration transaction.
+		/// UTxO id that is a part of the signed registration message.
 		/// It is spent during the registration process. Prevents replay attacks.
 		registration_utxo: UtxoId,
 		/// Hash of the registering SPO's Cardano public key.
