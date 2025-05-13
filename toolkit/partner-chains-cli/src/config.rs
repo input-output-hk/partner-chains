@@ -353,9 +353,14 @@ impl FromStr for GovernanceAuthoritiesKeyHashes {
 
 impl Display for GovernanceAuthoritiesKeyHashes {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		for key_hash in self.0.iter() {
+		let mut it = self.0.iter();
+		// Intersperse with a single space
+		if let Some(key_hash) = it.next() {
 			f.write_str(&key_hash.to_hex_string())?;
-			f.write_char(' ')?;
+			for key_hash in it {
+				f.write_char(' ')?;
+				f.write_str(&key_hash.to_hex_string())?;
+			}
 		}
 		Ok(())
 	}
