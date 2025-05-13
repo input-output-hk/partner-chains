@@ -7173,6 +7173,7 @@ dependencies = [
  "hex-literal",
  "log",
  "pretty_assertions",
+ "raw-scripts",
  "serde_json",
  "sidechain-domain",
  "thiserror 2.0.12",

@@ -1,3 +1,5 @@
+//! This crate contains datum types used by Plutus smart contracts from [raw_scripts::SCRIPTS].
+#![deny(missing_docs)]
 use cardano_serialization_lib::{PlutusData, PlutusList};
 
 pub mod d_param;
@@ -9,6 +11,7 @@ pub mod version_oracle;
 
 #[derive(Debug, PartialEq, thiserror::Error)]
 #[error("Could not decode {datum:?} to {to}: {msg}")]
+/// Error type for decoding failures of [PlutusData].
 pub struct DataDecodingError {
 	datum: PlutusData,
 	to: String,
@@ -17,13 +20,17 @@ pub struct DataDecodingError {
 
 type DecodingResult<T> = std::result::Result<T, DataDecodingError>;
 
+/// Extension trait for [PlutusData].
 pub trait PlutusDataExtensions {
+	/// Tries to interpret a [PlutusData] as [u64].
 	fn as_u64(&self) -> Option<u64>;
+	/// Tries to interpret a [PlutusData] as [u32].
 	fn as_u32(&self) -> Option<u32>;
+	/// Tries to interpret a [PlutusData] as [u16].
 	fn as_u16(&self) -> Option<u16>;
 }
 
-impl PlutusDataExtensions for cardano_serialization_lib::PlutusData {
+impl PlutusDataExtensions for PlutusData {
 	fn as_u64(&self) -> Option<u64> {
 		self.as_integer()?.as_u64().map(u64::from)
 	}
@@ -56,7 +63,7 @@ pub(crate) trait VersionedDatum: Sized {
 	fn decode(data: &PlutusData) -> DecodingResult<Self>;
 }
 
-/// Trait that provides decoding of verioned generic plutus data with a legacy schema support.
+/// Trait that provides decoding of versioned generic plutus data with a legacy schema support.
 ///
 /// It is assumed that versions 0 and legacy are equivalent.
 pub(crate) trait VersionedDatumWithLegacy: Sized {
@@ -128,6 +135,7 @@ impl From<VersionedGenericDatum> for PlutusData {
 
 #[cfg(test)]
 pub(crate) mod test_helpers {
+	use cardano_serialization_lib::PlutusData;
 	macro_rules! test_plutus_data {
 		($json:tt) => {
 			cardano_serialization_lib::encode_json_value_to_plutus_datum(
@@ -139,9 +147,7 @@ pub(crate) mod test_helpers {
 	}
 	pub(crate) use test_plutus_data;
 
-	pub(crate) fn json_to_plutus_data(
-		json: serde_json::Value,
-	) -> cardano_serialization_lib::PlutusData {
+	pub(crate) fn json_to_plutus_data(json: serde_json::Value) -> PlutusData {
 		cardano_serialization_lib::encode_json_value_to_plutus_datum(
 			json,
 			cardano_serialization_lib::PlutusDatumSchema::DetailedSchema,
@@ -149,9 +155,7 @@ pub(crate) mod test_helpers {
 		.expect("test data is valid")
 	}
 
-	pub(crate) fn plutus_data_to_json(
-		data: cardano_serialization_lib::PlutusData,
-	) -> serde_json::Value {
+	pub(crate) fn plutus_data_to_json(data: PlutusData) -> serde_json::Value {
 		cardano_serialization_lib::decode_plutus_datum_to_json_value(
 			&data,
 			cardano_serialization_lib::PlutusDatumSchema::DetailedSchema,

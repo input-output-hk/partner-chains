@@ -1,4 +1,5 @@
-use crate::{DataDecodingError, DecodingResult, PlutusDataExtensions};
+//! Plutus types for the script versioning/script caching system.
+use crate::{DataDecodingError, DecodingResult, PlutusDataExtensions, decoding_error_and_log};
 use cardano_serialization_lib::{BigInt, PlutusData, PlutusList};
 
 /// Datum attached to 'VersionOraclePolicy' tokens stored on the 'VersionOracleValidator' script.
@@ -14,11 +15,13 @@ use cardano_serialization_lib::{BigInt, PlutusData, PlutusList};
 /// }
 ///
 /// See https://preview.cexplorer.io/tx/70923772056f153d646488c56ac04d1bc2f1326f074773e4f262c63e03b72a3d/contract#data
-/// for an example of transaction outputing this datum.
+/// for an example of transaction outputting this datum.
 /// ```
 #[derive(Clone, Debug, PartialEq)]
 pub struct VersionOracleDatum {
+	/// Id of the script in the script cache/versioning system. See [raw_scripts::ScriptId].
 	pub version_oracle: u32,
+	/// Script hash of the oracle policy where cached/versioned scripts are stored.
 	pub currency_symbol: [u8; 28],
 }
 
@@ -34,10 +37,8 @@ impl TryFrom<PlutusData> for VersionOracleDatum {
 					currency_symbol: items.get(1).as_bytes()?.try_into().ok()?,
 				})
 			})
-			.ok_or_else(|| DataDecodingError {
-				datum: datum.clone(),
-				to: "VersionOracleDatum".into(),
-				msg: "Expected [u32, [u8;32]]".into(),
+			.ok_or_else(|| {
+				decoding_error_and_log(&datum, "VersionOracleDatum", "Expected [u32, [u8;32]]")
 			})
 	}
 }

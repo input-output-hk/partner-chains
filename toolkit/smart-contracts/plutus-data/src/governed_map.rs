@@ -1,14 +1,19 @@
-use crate::{DataDecodingError, DecodingResult};
+//! Plutus data types for governed map.
+use crate::{DataDecodingError, DecodingResult, decoding_error_and_log};
 use cardano_serialization_lib::{PlutusData, PlutusList};
 use sidechain_domain::byte_string::ByteString;
 
 #[derive(Clone, Debug, PartialEq)]
+/// Datum for governed map entries
 pub struct GovernedMapDatum {
+	/// Governed map entry key.
 	pub key: String,
+	/// Governed map entry value.
 	pub value: ByteString,
 }
 
 impl GovernedMapDatum {
+	/// Constructor for [GovernedMapDatum]
 	pub fn new(key: String, value: ByteString) -> Self {
 		Self { key, value }
 	}
@@ -17,10 +22,8 @@ impl GovernedMapDatum {
 impl TryFrom<PlutusData> for GovernedMapDatum {
 	type Error = DataDecodingError;
 	fn try_from(datum: PlutusData) -> DecodingResult<Self> {
-		let error = || DataDecodingError {
-			datum: datum.clone(),
-			to: "GovernedMapDatum".into(),
-			msg: "Expected List([UTF8String, Bytes])".into(),
+		let error = || {
+			decoding_error_and_log(&datum, "GovernedMapDatum", "Expected List([UTF8String, Bytes])")
 		};
 
 		datum
@@ -36,6 +39,7 @@ impl TryFrom<PlutusData> for GovernedMapDatum {
 	}
 }
 
+/// Converts [GovernedMapDatum] to [PlutusData].
 pub fn governed_map_datum_to_plutus_data(governed_map_datum: &GovernedMapDatum) -> PlutusData {
 	let mut list = PlutusList::new();
 	list.add(&PlutusData::new_bytes(governed_map_datum.key.as_bytes().to_vec()));

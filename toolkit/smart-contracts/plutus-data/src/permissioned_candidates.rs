@@ -1,3 +1,4 @@
+//! Plutus data types for permissioned candidates.
 use cardano_serialization_lib::{BigNum, PlutusData, PlutusList};
 use sidechain_domain::*;
 
@@ -7,15 +8,20 @@ use crate::{
 };
 
 #[derive(Clone, Debug, PartialEq)]
+/// Datum representing a list of permissioned candidates.
 pub enum PermissionedCandidateDatums {
 	/// Initial/legacy datum schema. If a datum doesn't contain a version, it is assumed to be V0
 	V0(Vec<PermissionedCandidateDatumV0>),
 }
 
 #[derive(Clone, Debug, PartialEq)]
+/// Datum representing a permissioned candidate.
 pub struct PermissionedCandidateDatumV0 {
+	/// Sidechain public key of the trustless candidate
 	pub sidechain_public_key: SidechainPublicKey,
+	/// Aura public key of the trustless candidate
 	pub aura_public_key: AuraPublicKey,
+	/// GRANDPA public key of the trustless candidate
 	pub grandpa_public_key: GrandpaPublicKey,
 }
 
@@ -44,6 +50,25 @@ impl From<PermissionedCandidateDatums> for Vec<PermissionedCandidateData> {
 	}
 }
 
+/// Converts a list of [PermissionedCandidateData] values to [VersionedGenericDatum] encoded as [PlutusData].
+///
+/// Encoding:
+///   VersionedGenericDatum:
+///   - datum: ()
+///   - appendix:
+///     [
+///       [ candidates[0].sidechain_public_key
+///       , candidates[0].aura_public_key
+///       , candidates[0].grandpa_public_key
+///       ]
+///     ,
+///       [ candidates[1].sidechain_public_key
+///       , candidates[1].aura_public_key
+///       , candidates[1].grandpa_public_key
+///       ]
+///       // etc.
+///     ]
+///   - version: 0
 pub fn permissioned_candidates_to_plutus_data(
 	candidates: &[PermissionedCandidateData],
 ) -> PlutusData {

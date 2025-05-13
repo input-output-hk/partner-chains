@@ -52,7 +52,7 @@ pub async fn update_reserve_settings<
 		reserve.get_reserve_utxo(&ctx, client).await?;
 
 	if total_accrued_function_script_hash
-		== reserve_datum.mutable_settings.total_accrued_function_script_hash
+		== reserve_datum.mutable_settings.total_accrued_function_asset_name
 	{
 		log::info!(
 			"Reserve V function hash is already set to {:?}. Nothing to update.",
@@ -60,7 +60,7 @@ pub async fn update_reserve_settings<
 		);
 		return Ok(None);
 	}
-	reserve_datum.mutable_settings.total_accrued_function_script_hash =
+	reserve_datum.mutable_settings.total_accrued_function_asset_name =
 		total_accrued_function_script_hash.clone();
 
 	Ok(Some(

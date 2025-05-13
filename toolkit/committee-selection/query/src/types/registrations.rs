@@ -47,7 +47,7 @@ pub struct CandidateRegistrationEntry {
 	pub mainchain_signature: String,
 	/// Cross chain key signature of the registration message
 	pub cross_chain_signature: String,
-	/// Data of Utxo that contained this registration"
+	/// Data of UTxO that contained this registration
 	pub utxo: UtxoInfo,
 	#[serde(skip_serializing_if = "Option::is_none")]
 	/// Total stake delegated to the pool identified by `mainchain_pub_key`.
