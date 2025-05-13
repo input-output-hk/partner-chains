@@ -106,9 +106,9 @@ Owner of `key1` wants to set D-parameter to (7, 5).
 ```
 The user gets the transaction data. It already contains the `key1` signature. Transaction requires signature of `key2` owner, before it can be submitted.
 
-`key2` owner has to get this transaction data, perhaps from `key1` owner, *inspect the transaction* and the sign `cborHex` value from the previous output:
+`key2` owner has to get this transaction data, perhaps from `key1` owner, *inspect the transaction* and then sign `cborHex` value from the previous output:
 ```
-./partner-chains-node smart-contracts sign-tx -k key2.skey --transaction 84aa00..transaction bytes redacted..f6
+./partner-chains-node smart-contracts sign-tx -k key2.skey --transaction 84aa00..<transaction-bytes-redacted>..f6
 ...
 {"cborHex":"82008258202bebcb7fbc74a6e0fd6e00a311698b047b7b659f0e047ff5349dbd984aefc52c58409dfff5d837ec7b864502c7acac5ad5885f74d94cb68458413ee4565ff52f6dcb1ff3df272566662b4f00766fc9586a12532bfce68e56280f93dd57d6e22b9705","description":"","type":"TxWitness ConwayEra"}
 ```
