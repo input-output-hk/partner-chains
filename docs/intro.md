@@ -220,8 +220,8 @@ will execute your Partner Chain node executable.
 #### Running ogmios
 [ogmios](https://github.com/CardanoSolutions/ogmios) is a lightweight bridge-interface providing a
 http/websocket interface for communicating with a local cardano node. Unlike _db-sync_, which is
-always mandatory, ogmios is **only required by the chain builder** when interacting with the Partner
-Chain smart contracts for administrative purposes.
+always mandatory, ogmios is only required when interacting with the smart contracts as chain
+builder, or when registering as SPO.
 
 Please refer to the [project
 documentation](https://ogmios.dev/getting-started/building/#-documentation) for details on how to
