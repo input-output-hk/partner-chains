@@ -1,4 +1,4 @@
-# Partner Chains governance on Cardano
+# Partner Chains Governance on Cardano
 
 This document explains how to initialize and use the Governance System of Partner Chains Cardano Smart Contracts.
 
@@ -7,20 +7,17 @@ This document explains how to initialize and use the Governance System of Partne
 Each Partner Chain is identified by a unique identifier called *genesis UTXO*.
 For the same version of Smart Contracts, using a different *genesis UTXO* will result in different Cardano addresses and policy ids of these contracts.
 
-## Governance system capabilities
+## Governance System Capabilities
 
-The Governance System sets and updates the key required to sign the following transactions:
+The Governance System sets and updates the key(s) required to sign the following transactions:
 
 * management of *D-Parameter*
 * management of *Permissioned Candidates List*
 * management of *Rewards Reserve Mechanism* lifecycle: initialization, creation, and handover
 * update of the Governance System itself
+* management of *Governed Map*
 
 The Governance System has to be initialized before performing any of these operations.
-
-In the current shape of the Governance System, it allows to set or update a single authorization key.
-In other words, there is one key that is required sign all of the transactions above, but it can be changed to another key.
-See [Technical details](#technical-details) for more information regarding this limitation.
 
 ## Governance System Initialization
 
@@ -55,7 +52,7 @@ In version v1.5 and v1.6 only single governance key is supported.
 
 In version v1.4 this functionality is available in the smart contracts CLI application `pc-contracts-cli init-goverance`.
 
-## Governance System update
+## Governance System Update
 
 Enables update of the keys required to sign operations on smart contracts that use the Governance System.
 Following its execution, the new key is required to sign operations, the old keys are no longer valid for this purpose.
@@ -80,9 +77,9 @@ In version v1.5 command to initialize governance is available in the Partner Cha
 
 In version v1.4 this functionality is available in the smart contracts CLI application `pc-contracts-cli update-governance`.
 
-## MultiSig governance usage example
+## Multi Signature Governance
 
-All the `smart-contracts` sub-commands that require Governance: `governance update`, `upsert-d-parameter`, `upsert-permissioned-candidates`, `reserve init`, `reserve create`, `reserve deposit`, and `reserve handover` will now submit the transaction only if the governance is "1 of 1". Otherwise these commands return a transaction CBOR that can be submitted with the new command `assemble-and-submit-tx`. Signatures can be obtained using `sign-tx`. Example of executed commands, invoked by owners of `key1` and `key2` are:
+All the `smart-contracts` sub-commands that require Governance: `governance update`, `upsert-d-parameter`, `upsert-permissioned-candidates`, `reserve init|create|deposit|handover|update-settings`, and `governed-map insert|update|remove` will now submit the transaction only if the governance is "1 of 1". Otherwise these commands return a transaction CBOR that can be submitted with the new command `assemble-and-submit-tx`. Signatures can be obtained using `sign-tx`. Example of executed commands, invoked by owners of `key1` and `key2` are:
 
 Owner of `key1` initialized Governance with two key hashes `e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b` and `7fa48bb8fb5d6804fad26237738ce490d849e4567161e38ab8415ff3`(that are hashes of `key1` and `key2`), and sets requried number of signatures to `2`.
 ```
@@ -135,19 +132,20 @@ Procedure of creating transaction to sign is as follows:
 * transaction and temporary wallet data are printed to stdout.
 
 ## Technical details
-
-The Governance System was designed to be quite flexible. To achive this it keeps a single UTXO at the address of Governance Validator.
+The Governance System was designed to be quite flexible. To achieve this it keeps a single UTXO at the address of Governance Validator.
 This UTXO has a complete script attached (*authorization script*).
 The Governance system passes transactions through the *authorization script*, to check if the transaction meets conditions set by this *authorization script*.
 
-Therefore, the current limitation of a single governance authority key is not an inherent limitation of the smart contract logic of the Governance System,
-but merely stems from the lack of user interface and transaction building logic that would allow the handling of multiple keys.
+CLI implemented by Partner Chains uses "M of N" MultiSig script. Such a script requires that transaction has valid signatures of at least M out of N keys. M parameter (threshold) and a list of N public keys are applied, in Plutus meaning, to the base script and then stored at the Governance System validator address.
 
-This means that some other UI and transaction building logic (so-called offchain code) could be implemented,
-to build transactions that have properties required by the used *authorization script*.
+CLIs distinguish two situations:
+* when MultiSig requires only a single signature and the payment key is one of the governance keys, then it submits transactions to Cardano
+* when MultiSig requires more signatures, then it instead print out transaction CBOR that has to be signed by more keys, and submitted later - see [Multi Signature Governance]
 
-### Links
+## Links
 
 [Rewards reserve mechanism management](./../../developer-guides/native-token-reserve-management.md)
 
 [Chain builder (initial chain governance)](./../chain-builder.md)
+
+[Governed Map](../../../toolkit/governed-map/README.md)

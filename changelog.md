@@ -54,8 +54,7 @@ patched are: `session-validator-management`, `block-participation`, `native-toke
 
 ## Added
 * `pallet-block-producer-fees` - with settings for the rewards payout logic
-* `governed-map remove` command, that removes a key-value pair from the governed map
-* `governed-map insert` command, that inserts a key-value pair into the governed map
+* `governed-map` new feature that allows setting any arbitrary data to be managed via existing governance mechanism
 * `ariadne_v2` selection algorithm that selects committee respecting D-parameter and candidates
 weights, but has much less variance, thanks to assigning guaranteed seats to candidates with
 expected number of seats greater or equal 1.
