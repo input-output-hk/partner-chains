@@ -361,6 +361,6 @@ fn print_tx_to_sign_and_instruction<C: IOContext>(
 		"The Partner chain is governed by MultiSig. Sign and submit the {tx_name} transaction:"
 	));
 	context.print(&json);
-	context.print("Please find the instructions at: https://github.com/input-output-hk/partner-chains/blob/master/docs/user-guides/governance/governance.md#multisig-governance-usage-example");
+	context.print("Please find the instructions at: https://github.com/input-output-hk/partner-chains/blob/master/docs/user-guides/governance/governance.md#multi-signature-governance");
 	Ok(())
 }
