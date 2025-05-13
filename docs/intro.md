@@ -214,7 +214,7 @@ indexer persists ledger state and events in the database. The partner chain node
 access the database directly.
 
 :warning: Make sure to create a database called `cexplorer` and make it accessible to the user which
-will execute your Partner Chain node executable.
+will execute your partner chain node executable.
 
 
 #### Running ogmios
