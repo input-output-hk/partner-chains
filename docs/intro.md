@@ -167,7 +167,7 @@ with the Cardano main chain using the offchain code, create various signatures, 
 state and configuraiont.
 
 ### Running Partner Chain Dependencies
-In order to run a Partner Chain, several services must be running on the same network as the node
+In order to run a partner chain, several services must be running on the same network as the node
 instance. All of these services are external projects and provide their own documentation. This
 documentaion will mostly refer to existing documentation but point out any specifics relating to
 using these services in the context of a Partner Chain setup.
