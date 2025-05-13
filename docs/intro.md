@@ -170,7 +170,7 @@ state and configuraiont.
 In order to run a partner chain, several services must be running on the same network as the node
 instance. All of these services are external projects and provide their own documentation. This
 documentaion will mostly refer to existing documentation but point out any specifics relating to
-using these services in the context of a Partner Chain setup.
+using these services in the context of a partner chain setup.
 
 #### Running cardano-node
 [cardano-node](https://github.com/IntersectMBO/cardano-node) is the core service for connecting to
