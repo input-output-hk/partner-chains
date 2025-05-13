@@ -189,7 +189,7 @@ hardware characteristics but below are some approximations:
 | mainnet       | ~2 days|
 
 #### Running db-sync
-In order to observe the state of the Cardano ledger, the Partner Chain relies on
+In order to observe the state of the Cardano ledger, the partner chain relies on
 [db-sync](https://github.com/IntersectMBO/cardano-db-sync) as chain-indexer. The default
 configuration is sufficient. Make sure to refer to the project
 [documentation](https://github.com/IntersectMBO/cardano-db-sync/blob/master/doc/Readme.md) for
