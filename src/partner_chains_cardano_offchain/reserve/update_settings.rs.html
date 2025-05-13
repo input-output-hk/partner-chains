@@ -52,7 +52,7 @@
 <a href=#52 id=52 data-nosnippet>52</a>		reserve.get_reserve_utxo(<span class="kw-2">&amp;</span>ctx, client).<span class="kw">await</span><span class="question-mark">?</span>;
 <a href=#53 id=53 data-nosnippet>53</a>
 <a href=#54 id=54 data-nosnippet>54</a>	<span class="kw">if </span>total_accrued_function_script_hash
-<a href=#55 id=55 data-nosnippet>55</a>		== reserve_datum.mutable_settings.total_accrued_function_script_hash
+<a href=#55 id=55 data-nosnippet>55</a>		== reserve_datum.mutable_settings.total_accrued_function_asset_name
 <a href=#56 id=56 data-nosnippet>56</a>	{
 <a href=#57 id=57 data-nosnippet>57</a>		<span class="macro">log::info!</span>(
 <a href=#58 id=58 data-nosnippet>58</a>			<span class="string">"Reserve V function hash is already set to {:?}. Nothing to update."</span>,
@@ -60,7 +60,7 @@
 <a href=#60 id=60 data-nosnippet>60</a>		);
 <a href=#61 id=61 data-nosnippet>61</a>		<span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
 <a href=#62 id=62 data-nosnippet>62</a>	}
-<a href=#63 id=63 data-nosnippet>63</a>	reserve_datum.mutable_settings.total_accrued_function_script_hash =
+<a href=#63 id=63 data-nosnippet>63</a>	reserve_datum.mutable_settings.total_accrued_function_asset_name =
 <a href=#64 id=64 data-nosnippet>64</a>		total_accrued_function_script_hash.clone();
 <a href=#65 id=65 data-nosnippet>65</a>
 <a href=#66 id=66 data-nosnippet>66</a>	<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(
