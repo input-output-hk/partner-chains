@@ -192,6 +192,12 @@ pub mod pallet {
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		/// A dummy `on_initialize` to return the amount of weight that `on_finalize` requires to
+		/// execute.
+		fn on_initialize(_n: BlockNumberFor<T>) -> Weight {
+			T::WeightInfo::on_finalize()
+		}
+
 		fn on_finalize(block: BlockNumberFor<T>) {
 			if let Some(block_producer_id) = CurrentProducer::<T>::take() {
 				log::info!("👷 Block {block:?} producer is {block_producer_id:?}");
