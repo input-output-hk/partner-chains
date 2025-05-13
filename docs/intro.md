@@ -210,7 +210,7 @@ depends on the network conditions and hardware characteristics but below are som
 #### Running PostgreSQL
 
 A [PostgreSQL](https://www.postgresql.org/) database is a runtime requirement via db-sync as the
-indexer persists ledger state and events in the database. The Partner Chain node also needs to
+indexer persists ledger state and events in the database. The partner chain node also needs to
 access the database directly.
 
 :warning: Make sure to create a database called `cexplorer` and make it accessible to the user which
