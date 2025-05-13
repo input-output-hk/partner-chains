@@ -179,7 +179,7 @@ website](https://github.com/IntersectMBO/cardano-node) for detailed instructions
 running cardano-node.
 
 :warning: Please note that your cardano-node instance needs to be fully synchronized before you can
-start to crate a Partner Chain setup. The synchronization time depends on the network conditions and
+start to create a partner chain setup. The synchronization time depends on the network conditions and
 hardware characteristics but below are some approximations:
 
 | network  | approximated sync time |
