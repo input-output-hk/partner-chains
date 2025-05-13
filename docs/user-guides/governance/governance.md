@@ -131,6 +131,17 @@ Procedure of creating transaction to sign is as follows:
 * a transaction paid from this temporary wallet is created
 * transaction and temporary wallet data are printed to stdout.
 
+## Technical details
+The Governance System was designed to be quite flexible. To achieve this it keeps a single UTXO at the address of Governance Validator.
+This UTXO has a complete script attached (*authorization script*).
+The Governance system passes transactions through the *authorization script*, to check if the transaction meets conditions set by this *authorization script*.
+
+CLI implemented by Partner Chains uses "M of N" MultiSig script. Such a script requires that transaction has valid signatures of at least M out of N keys. M parameter (threshold) and a list of N public keys are applied, in Plutus meaning, to the base script and then stored at the Governance System validator address.
+
+CLIs distinguish two situations:
+* when MultiSig requires only a single signature and the payment key is one of the governance keys, then it submits transactions to Cardano
+* when MultiSig requires more signatures, then it instead print out transaction CBOR that has to be signed by more keys, and submitted later - see [Multi Signature Governance]
+
 ## Links
 
 [Rewards reserve mechanism management](./../../developer-guides/native-token-reserve-management.md)
