@@ -3,7 +3,6 @@ use sp_api::{ApiRef, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_consensus_slots::SlotDuration;
 use sp_runtime::traits::{Block as BlockT, NumberFor, Zero};
-use sp_sidechain::SidechainStatus;
 
 #[derive(Default)]
 pub struct TestApi {
@@ -12,18 +11,13 @@ pub struct TestApi {
 
 #[derive(Clone)]
 pub struct TestRuntimeApi {
-	pub sidechain_status: Vec<(<Block as BlockT>::Hash, SidechainStatus)>,
 	pub slot_duration: SlotDuration,
 	pub slots_per_epoch: u64,
 }
 
 impl Default for TestRuntimeApi {
 	fn default() -> Self {
-		Self {
-			slot_duration: SlotDuration::from_millis(6000),
-			slots_per_epoch: 10,
-			sidechain_status: Default::default(),
-		}
+		Self { slot_duration: SlotDuration::from_millis(6000), slots_per_epoch: 10 }
 	}
 }
 

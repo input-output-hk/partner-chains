@@ -1477,8 +1477,12 @@ dependencies = [
  "serde",
  "serde_json",
  "sidechain-domain",
+ "sp-api",
  "sp-block-producer-metadata",
+ "sp-blockchain",
  "sp-io",
+ "sp-runtime",
+ "sp-sidechain",
  "thiserror 2.0.12",
 ]
 
@@ -10979,10 +10983,8 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
- "serde_json",
  "sidechain-domain",
  "sp-api",
- "sp-blockchain",
  "sp-runtime",
 ]
 

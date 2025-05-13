@@ -41,6 +41,8 @@ to provide it in your IDP stack.
 * Made `mock` module of `pallet-session-validator-management` private
 * Updated dependecies
 * Updated polkadot-sdk to polkadot-stable2503-2
+* Deprecated the `GetSidechainStatus` runtime API in `sp-sidechain` crate. Code
+that needs data that it served should define its own runtime API instead.
 
 ## Removed
 
@@ -52,6 +54,8 @@ Its functionality was merged into `pallet-partner-chains-session` under the feat
 the feature `pallet-session-compat`.
 * `TryFrom<&serde_json::Value> for Datum` and `From<&Datum> for serde_json::Value` instances from `plutus`.
 * `ATMSPlainAggregatePubKey`, `ValidatorHash` and `SidechainPublicKeysSorted` types from `domain`.
+* `SidechainApi` trait from `sp-sidechain` and its return type `SidechainStatus`. Code that uses it should directly use
+the APIs that were grouped into this trait or ideally define its own runtime API instead (see deprecation of `GetSidechainStatus`).
 
 ## Fixed
 
