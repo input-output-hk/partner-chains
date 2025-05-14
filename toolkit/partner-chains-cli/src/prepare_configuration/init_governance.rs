@@ -120,7 +120,7 @@ mod tests {
 				),
 				MockIO::prompt(
 					"Initial Multisig Governance Threshold",
-					Some("0"),
+					Some("1"),
 					"2",
 				),
 				MockIO::prompt_yes_no(
