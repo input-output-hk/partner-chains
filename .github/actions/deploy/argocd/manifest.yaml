@@ -51,8 +51,6 @@ spec:
               value: "d7f493bbff9f17eefa50a3358d4609c71fc481de109eea52ee9c8a7e"
             - name: PERMISSIONED_CANDIDATES_POLICY_ID
               value: "393c202bf632a8914e5cca1ccb172f0564105f5b31ef05585d785e02"
-            - name: SIDECHAIN_BLOCK_BENEFICIARY
-              value: "0x0000000000000000000000000000000000000000000000000000000000000001"
             - name: BLOCK_STABILITY_MARGIN
               value: "0"
             - name: NATIVE_TOKEN_POLICY_ID

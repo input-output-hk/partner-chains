@@ -21,18 +21,10 @@ use sp_inherents::CreateInherentDataProviders;
 use sp_inherents::{InherentData, InherentDataProvider};
 use sp_native_token_management::mock::MockNativeTokenDataSource;
 use sp_timestamp::Timestamp;
-use std::env;
 use std::sync::Arc;
 
 #[tokio::test]
 async fn block_proposal_cidp_should_be_created_correctly() {
-	unsafe {
-		env::set_var(
-			"SIDECHAIN_BLOCK_BENEFICIARY",
-			"0x0000000000000000000000000000000000000000000000000000000000000001",
-		);
-	}
-
 	let native_token_data_source = MockNativeTokenDataSource::new(
 		[((Some(McBlockHash([0; 32])), McBlockHash([1; 32])), NativeTokenAmount(1000))].into(),
 	);

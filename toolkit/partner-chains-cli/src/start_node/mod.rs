@@ -1,19 +1,10 @@
-use crate::config::config_fields::{
-	NODE_P2P_PORT, POSTGRES_CONNECTION_STRING, SIDECHAIN_BLOCK_BENEFICIARY,
-};
+use crate::config::config_fields::{NODE_P2P_PORT, POSTGRES_CONNECTION_STRING};
 use crate::config::{CHAIN_CONFIG_FILE_PATH, CHAIN_SPEC_PATH, CardanoParameters};
 use crate::generate_keys::network_key_path;
 use crate::io::IOContext;
 use crate::keystore::*;
 use crate::{config::config_fields, *};
-use anyhow::anyhow;
-use secp256k1::PublicKey;
 use serde::Deserialize;
-use sp_core::crypto::AccountId32;
-use sp_runtime::MultiSigner;
-use sp_runtime::app_crypto::ecdsa;
-use sp_runtime::traits::IdentifyAccount;
-use std::str::FromStr;
 
 #[cfg(test)]
 mod tests;
@@ -58,21 +49,14 @@ impl CmdRun for StartNodeCmd {
 
 		let Some(chain_config) = load_chain_config(context)? else { return Ok(()) };
 
-		let beneficiary = SIDECHAIN_BLOCK_BENEFICIARY
-			.save_if_empty(block_beneficiary_from_cross_chain_key(&config, context)?, context);
 		if !self.silent
-			&& !prompt_values_fine(
-				&config,
-				&chain_config,
-				&db_connection_string,
-				&beneficiary,
-				context,
-			) {
+			&& !prompt_values_fine(&config, &chain_config, &db_connection_string, context)
+		{
 			context.eprint("Aborting. Edit configuration files and rerun the command.");
 			return Ok(());
 		}
 
-		start_node(config, chain_config, &db_connection_string, beneficiary, context)?;
+		start_node(config, chain_config, &db_connection_string, context)?;
 
 		Ok(())
 	}
@@ -101,7 +85,6 @@ fn prompt_values_fine<C: IOContext>(
 		bootnodes,
 	}: &StartNodeChainConfig,
 	db_connection_string: &str,
-	beneficiary: &str,
 	context: &C,
 ) -> bool
 {
@@ -118,7 +101,6 @@ fn prompt_values_fine<C: IOContext>(
 	context.eprint(&format!("        FIRST_EPOCH_NUMBER                 = {}", cardano.first_epoch_number));
 	context.eprint(&format!("        FIRST_SLOT_NUMBER                  = {}", cardano.first_slot_number));
 	context.eprint(&format!("        DB_SYNC_POSTGRES_CONNECTION_STRING = {}", db_connection_string));
-	context.eprint(&format!("        SIDECHAIN_BLOCK_BENEFICIARY        = {}", beneficiary));
 	context.prompt_yes_no("Proceed?", true)
 }
 
@@ -153,25 +135,6 @@ fn key_present<C: IOContext>(key: &KeyDefinition, existing_keys: &[String], cont
 	}
 }
 
-fn block_beneficiary_from_cross_chain_key(
-	config: &StartNodeConfig,
-	context: &impl IOContext,
-) -> anyhow::Result<String> {
-	let existing_keys = context.list_directory(&config.keystore_path())?.unwrap_or_default();
-	let key = find_existing_key(&existing_keys, &CROSS_CHAIN).ok_or(anyhow!(
-		"⚠️ {} key is missing from the keystore. Please run generate-keys wizard first.",
-		CROSS_CHAIN.name
-	))?;
-	account_id_hex_from_ecdsa_key(&key)
-}
-
-fn account_id_hex_from_ecdsa_key(key: &str) -> anyhow::Result<String> {
-	let trimmed = key.trim_start_matches("0x");
-	let pk = PublicKey::from_str(trimmed)?;
-	let account_id: AccountId32 = MultiSigner::from(ecdsa::Public::from(pk)).into_account();
-	Ok(hex::encode(account_id))
-}
-
 pub fn start_node<C: IOContext>(
 	StartNodeConfig { substrate_node_base_path }: StartNodeConfig,
 	StartNodeChainConfig {
@@ -188,7 +151,6 @@ pub fn start_node<C: IOContext>(
 		bootnodes,
 	}: StartNodeChainConfig,
 	db_connection_string: &str,
-	beneficiary: String,
 	context: &C,
 ) -> anyhow::Result<()> {
 	let executable = context.current_executable()?;
@@ -202,7 +164,6 @@ pub fn start_node<C: IOContext>(
          MC__FIRST_EPOCH_NUMBER='{first_epoch_number}' \\
          MC__FIRST_SLOT_NUMBER='{first_slot_number}' \\
          BLOCK_STABILITY_MARGIN='0' \\
-		 SIDECHAIN_BLOCK_BENEFICIARY='{beneficiary}' \\
 "
 	);
 	let bootnodes = bootnodes
