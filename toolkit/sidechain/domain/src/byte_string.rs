@@ -71,7 +71,7 @@ impl<const N: usize> Default for SizedByteString<N> {
 }
 
 /// Bounded-length bytes representing a UTF-8 text string
-#[derive(TypeInfo, Encode, Decode, DecodeWithMemTracking, MaxEncodedLen)]
+#[derive(TypeInfo, Encode, DecodeWithMemTracking, MaxEncodedLen)]
 #[scale_info(skip_type_params(T))]
 #[derive_where(Clone, PartialEq, Eq, Default, PartialOrd, Ord)]
 pub struct BoundedString<T: Get<u32>>(BoundedVec<u8, T>);
@@ -82,6 +82,20 @@ macro_rules! bounded_str {
     ($($arg:expr)+) => {
 		sidechain_domain::byte_string::BoundedString::try_from(format!($($arg)+).as_str()).unwrap()
     };
+}
+
+impl<T: Get<u32>> Decode for BoundedString<T> {
+	fn decode<I: parity_scale_codec::Input>(
+		input: &mut I,
+	) -> Result<Self, parity_scale_codec::Error> {
+		let bounded_vec: BoundedVec<u8, T> = Decode::decode(input)?;
+
+		// Check if bytes are valid UTF-8 characters
+		core::str::from_utf8(bounded_vec.as_slice())
+			.map_err(|_err| parity_scale_codec::Error::from("UTF-8 decode failed"))?;
+
+		Ok(Self(bounded_vec))
+	}
 }
 
 impl<'a, T: Get<u32>> Deserialize<'a> for BoundedString<T> {
@@ -128,5 +142,35 @@ impl<T: Get<u32>> TryFrom<&str> for BoundedString<T> {
 
 	fn try_from(value: &str) -> Result<Self, Self::Error> {
 		Ok(Self(BoundedVec::try_from(value.as_bytes().to_vec()).map_err(|_| value.to_string())?))
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn decode_valid_utf8_string() {
+		let original = "hello world".encode();
+
+		let decoded = BoundedString::<sp_core::ConstU32<32>>::decode(&mut &*original).unwrap();
+		assert_eq!(original, decoded.encode());
+	}
+
+	#[test]
+	fn fail_to_decode_invalid_utf8_string() {
+		let original = vec![0xC0, 0x80, 0xE0, 0xFF].encode(); // some invalid utf8 characters
+		assert_eq!(
+			BoundedString::<sp_core::ConstU32<32>>::decode(&mut &*original),
+			Err(parity_scale_codec::Error::from("UTF-8 decode failed"))
+		);
+
+		use parity_scale_codec::DecodeWithMemLimit;
+
+		// Safety check, due we leave derived DecodeWithMemTracking, so we want to ensure that it is also using Decode trait impl
+		assert_eq!(
+			BoundedString::<sp_core::ConstU32<32>>::decode_with_mem_limit(&mut &*original, 100),
+			Err(parity_scale_codec::Error::from("UTF-8 decode failed"))
+		);
 	}
 }
