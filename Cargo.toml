@@ -111,6 +111,7 @@ async-trait = "0.1"
 assert_cmd = "2.0.14"
 cardano-serialization-lib = { default-features = false, version = "14.1.1" }
 cbor_event = { version = "2.4.0" }
+colored = { version = "3.0.0" }
 clap = { version = "4.5.10", features = ["derive"] }
 ed25519-zebra = { version = "4.0.3" }
 ed25519 = { version = "2.2.2" }
