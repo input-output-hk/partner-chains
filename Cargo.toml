@@ -142,7 +142,7 @@ quote = "1.0"
 rand_chacha = { version = "0.9.0", default-features = false }
 rand = { version = "0.9.1", default-features = false }
 tokio-retry = { version = "0.3" }
-secp256k1 = { version = "0.28.2", default-features = false }
+secp256k1 = { version = "0.30.0", default-features = false }
 k256 = { version = "0.13.4", default-features = false }
 serde = { version = "1.0.209", default-features = false, features = [
 	"derive",
