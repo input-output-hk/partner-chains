@@ -10,6 +10,6 @@ jobs:
     runs-on: nixos
     steps:
       - name: Checkout repository
-        uses: actions/checkout@4
+        uses: actions/checkout@v4
       - name: build
         run: nix develop -c bash -c "cargo build && cargo test && cargo clippy"
