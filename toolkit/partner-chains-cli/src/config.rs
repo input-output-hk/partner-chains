@@ -614,15 +614,6 @@ pub mod config_fields {
 		_marker: PhantomData,
 	};
 
-	pub const SIDECHAIN_BLOCK_BENEFICIARY: ConfigFieldDefinition<'static, String> =
-		ConfigFieldDefinition {
-			config_file: RESOURCES_CONFIG_FILE_PATH,
-			path: &["sidechain_block_beneficiary"],
-			name: "beneficiary for blocks created by the given node",
-			default: None,
-			_marker: PhantomData,
-		};
-
 	pub const INITIAL_GOVERNANCE_AUTHORITIES: ConfigFieldDefinition<
 		'static,
 		GovernanceAuthoritiesKeyHashes,
