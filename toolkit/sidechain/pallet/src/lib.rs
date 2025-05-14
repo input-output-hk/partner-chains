@@ -4,7 +4,7 @@
 //!
 //! This pallet serves as the starting point for building a Partner Chain runtime.
 //! It stores its genesis UTXO which serves as its global identifier and divides
-//! Partner Chain slots into epoch.
+//! Partner Chain slots into Partner Chain epochs.
 //!
 //! ## Genesis UTXO
 //!
@@ -41,7 +41,7 @@
 //!
 //! ### Optional - defining a new epoch hook
 //!
-//! A Partner Chain may have a need to perform custom logic when a new epoch starts, eg. pay
+//! A Partner Chain may need to perform custom logic when a new epoch starts, eg. pay
 //! out block production rewards, update chain participant standings etc. For this purpose,
 //! the pallet can be configured with a handler that will be triggered during initialization
 //! of each first block of a new epoch.
@@ -139,7 +139,7 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
-		/// Should return the current slot number
+		/// Should return the slot number of the current block
 		fn current_slot_number() -> ScSlotNumber;
 
 		/// Handler that is called at initialization of the first block of a new Partner Chain epoch
@@ -176,7 +176,7 @@ pub mod pallet {
 			slots_per_epoch.epoch_number_from_sc_slot(current_slot)
 		}
 
-		/// Returns the configured number of slots per Partner Chakn epoch
+		/// Returns the configured number of slots per Partner Chain epoch
 		pub fn slots_per_epoch() -> sidechain_slots::SlotsPerEpoch {
 			SlotsPerEpoch::<T>::get()
 		}
@@ -185,9 +185,9 @@ pub mod pallet {
 	#[pallet::genesis_config]
 	#[derive(frame_support::DefaultNoBound)]
 	pub struct GenesisConfig<T: Config> {
-		/// Genesis UTXO of the Partner Chain. This value is immutable after genesis.
+		/// Genesis UTXO of the Partner Chain. This value is immutable.
 		pub genesis_utxo: UtxoId,
-		/// Number of slots ber Partner Chain epoch. This value is immutable after genesis.
+		/// Number of slots ber Partner Chain epoch. This value is immutable.
 		pub slots_per_epoch: sidechain_slots::SlotsPerEpoch,
 		#[serde(skip)]
 		#[allow(missing_docs)]
