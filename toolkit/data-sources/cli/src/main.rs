@@ -1,11 +1,11 @@
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
 use clap::Parser;
 use partner_chains_db_sync_data_sources::{
-	block::{BlockDataSourceImpl, DbSyncBlockDataSourceConfig},
+	block::{
+		BlockDataSourceImpl, DbSyncBlockDataSourceConfig, McHashDataSource, SidechainRpcDataSource,
+	},
 	candidates::CandidatesDataSourceImpl,
 	data_sources::{PgPool, read_mc_epoch_config},
-	mc_hash::McHashDataSource,
-	sidechain_rpc::SidechainRpcDataSource,
 };
 use sidechain_domain::*;
 use sp_timestamp::Timestamp;

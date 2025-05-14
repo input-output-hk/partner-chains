@@ -2,9 +2,9 @@ use authority_selection_inherents::authority_selection_inputs::AuthoritySelectio
 use pallet_sidechain_rpc::SidechainRpcDataSource;
 use partner_chains_db_sync_data_sources::{
 	block::BlockDataSourceImpl, candidates::CandidatesDataSourceImpl,
-	governed_map::GovernedMapDataSourceCachedImpl, mc_hash::McHashDataSourceImpl,
-	metrics::McFollowerMetrics, native_token::NativeTokenManagementDataSourceImpl,
-	sidechain_rpc::SidechainRpcDataSourceImpl, stake_distribution::StakeDistributionDataSourceImpl,
+	governed_map::GovernedMapDataSourceCachedImpl, metrics::McFollowerMetrics,
+	native_token::NativeTokenManagementDataSourceImpl,
+	stake_distribution::StakeDistributionDataSourceImpl,
 };
 use partner_chains_mock_data_sources::{
 	block::BlockDataSourceMock, candidate::AuthoritySelectionDataSourceMock,
@@ -74,14 +74,10 @@ pub async fn create_cached_db_sync_data_sources(
 	metrics_opt: Option<McFollowerMetrics>,
 ) -> Result<DataSources, Box<dyn Error + Send + Sync + 'static>> {
 	let pool = partner_chains_db_sync_data_sources::data_sources::get_connection_from_env().await?;
-	// block data source is reused between mc_hash and sidechain_rpc to share cache
 	let block = Arc::new(BlockDataSourceImpl::new_from_env(pool.clone()).await?);
 	Ok(DataSources {
-		sidechain_rpc: Arc::new(SidechainRpcDataSourceImpl::new(
-			block.clone(),
-			metrics_opt.clone(),
-		)),
-		mc_hash: Arc::new(McHashDataSourceImpl::new(block.clone(), metrics_opt.clone())),
+		sidechain_rpc: block.clone(),
+		mc_hash: block.clone(),
 		authority_selection: Arc::new(
 			CandidatesDataSourceImpl::new(pool.clone(), metrics_opt.clone())
 				.await?

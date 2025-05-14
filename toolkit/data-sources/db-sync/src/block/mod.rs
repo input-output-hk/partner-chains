@@ -8,17 +8,18 @@ use chrono::{DateTime, NaiveDateTime, TimeDelta};
 use derive_new::new;
 use figment::{Figment, providers::Env};
 use log::{debug, info};
-use pallet_sidechain_rpc::SidechainRpcDataSource;
 use serde::Deserialize;
 use sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
 use sidechain_domain::*;
-use sidechain_mc_hash::McHashDataSource;
 use sp_timestamp::Timestamp;
 use sqlx::PgPool;
 use std::{
 	error::Error,
 	sync::{Arc, Mutex},
 };
+
+pub use pallet_sidechain_rpc::SidechainRpcDataSource;
+pub use sidechain_mc_hash::McHashDataSource;
 
 #[cfg(test)]
 mod tests;

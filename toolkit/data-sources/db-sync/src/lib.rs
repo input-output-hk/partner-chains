@@ -35,18 +35,14 @@ mod db_datum;
 mod db_model;
 pub mod metrics;
 
-#[cfg(feature = "block-source")]
+#[cfg(any(feature = "block-source", feature = "mc-hash", feature = "sidechain-rpc"))]
 pub mod block;
 #[cfg(feature = "candidate-source")]
 pub mod candidates;
 #[cfg(feature = "governed-map")]
 pub mod governed_map;
-#[cfg(feature = "mc-hash")]
-pub mod mc_hash;
 #[cfg(feature = "native-token")]
 pub mod native_token;
-#[cfg(feature = "sidechain-rpc")]
-pub mod sidechain_rpc;
 #[cfg(feature = "block-participation")]
 pub mod stake_distribution;
 
