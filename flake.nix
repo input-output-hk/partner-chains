@@ -62,6 +62,7 @@
               libiconv
               nixfmt-rfc-style
               openssl
+              patchelf
               pkg-config
               protobuf
               python312
