@@ -1,6 +1,6 @@
 [package]
 name = "pallet-sidechain"
-version.workspace = true
+version = "1.7.0"
 license = "Apache-2.0"
 authors.workspace = true
 edition.workspace = true
@@ -20,9 +20,9 @@ frame-system = { workspace = true }
 sp-std = { workspace = true }
 sp-core = { workspace = true }
 sp-runtime = { workspace = true }
-sp-sidechain = { workspace = true }
-sidechain-domain = { workspace = true }
-sidechain-slots = { workspace = true, features = ["serde"]}
+sp-sidechain = { workspace = true , version = "1.7.0" }
+sidechain-domain = { workspace = true , version = "1.7.0" }
+sidechain-slots = { workspace = true, features = ["serde"], version = "1.7.0" }
 log = { workspace = true }
 
 [dev-dependencies]

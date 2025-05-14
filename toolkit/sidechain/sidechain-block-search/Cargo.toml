@@ -1,6 +1,6 @@
 [package]
 name = "sidechain-block-search"
-version.workspace = true
+version = "1.7.0"
 license = "Apache-2.0"
 authors.workspace = true
 edition.workspace = true
@@ -22,8 +22,8 @@ sp-runtime = { workspace = true, features = ['std'] }
 sp-api = { workspace = true, features = ['std'] }
 sp-blockchain = { workspace = true }
 
-sp-sidechain = { workspace = true, features = ['std'] }
-sidechain-domain = { workspace = true, features = ['std'] }
+sp-sidechain = { workspace = true, features = ['std'] , version = "1.7.0" }
+sidechain-domain = { workspace = true, features = ['std'] , version = "1.7.0" }
 hex = { workspace = true, features = ['std'] }
 
 [dev-dependencies]

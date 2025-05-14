@@ -1,6 +1,6 @@
 [package]
 name = "sp-block-participation"
-version.workspace = true
+version = "1.7.0"
 license = "Apache-2.0"
 authors.workspace = true
 edition.workspace = true
@@ -18,7 +18,7 @@ async-trait = { workspace = true }
 parity-scale-codec = { workspace = true }
 sp-inherents = { workspace = true }
 sp-runtime = { workspace = true }
-sidechain-domain = { workspace = true }
+sidechain-domain = { workspace = true , version = "1.7.0" }
 sp-api = { workspace = true }
 log = { workspace = true }
 sp-consensus-slots = { workspace = true }

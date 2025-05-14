@@ -1,6 +1,6 @@
 [package]
 name = "partner-chains-node-commands"
-version.workspace = true
+version = "1.7.0"
 license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
 authors.workspace = true
 edition.workspace = true
@@ -11,26 +11,26 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
-authority-selection-inherents = { workspace = true }
+authority-selection-inherents = { workspace = true , version = "1.7.0" }
 clap = { workspace = true }
-cli-commands = { workspace = true }
+cli-commands = { workspace = true , version = "1.7.0" }
 frame-support = { workspace = true }
 log = { workspace = true }
 log4rs = { workspace = true }
 parity-scale-codec = { workspace = true }
-partner-chains-cli = { workspace = true }
-partner-chains-smart-contracts-commands = { workspace = true }
-plutus = { workspace = true }
-sidechain-domain = { workspace = true, features = ["std"] }
+partner-chains-cli = { workspace = true , version = "1.7.0" }
+partner-chains-smart-contracts-commands = { workspace = true , version = "1.7.0" }
+plutus = { workspace = true , version = "1.7.0" }
+sidechain-domain = { workspace = true, features = ["std"] , version = "1.7.0" }
 sc-cli = { workspace = true }
 sc-service = { workspace = true }
 sp-api = { workspace = true, features = ["std"] }
 sp-core = { workspace = true, features = ["std"] }
 sp-blockchain = { workspace = true }
 sp-runtime = { workspace = true, features = ["std"] }
-sp-sidechain = { workspace = true, features = ["std"] }
-sp-session-validator-management = { workspace = true }
-sp-session-validator-management-query = { workspace = true }
+sp-sidechain = { workspace = true, features = ["std"] , version = "1.7.0" }
+sp-session-validator-management = { workspace = true , version = "1.7.0" }
+sp-session-validator-management-query = { workspace = true , version = "1.7.0" }
 
 [dev-dependencies]
 tokio = { workspace = true }

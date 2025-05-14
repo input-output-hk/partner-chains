@@ -1,6 +1,6 @@
 [package]
 name = "partner-chains-cardano-offchain"
-version.workspace = true
+version = "1.7.0"
 license = "Apache-2.0"
 description = "Partner Chains Smart Contracts Offchain code"
 authors.workspace = true
@@ -18,20 +18,20 @@ workspace = true
 anyhow = { workspace = true }
 cardano-serialization-lib = { workspace = true }
 cbor_event = { workspace = true }
-partner-chains-plutus-data = { workspace = true }
+partner-chains-plutus-data = { workspace = true , version = "1.7.0" }
 fraction = { workspace = true }
 hex = { workspace = true }
 hex-literal = { workspace = true }
 log = { workspace = true }
 minicbor = { workspace = true }
-ogmios-client = { workspace = true, features = ["jsonrpsee-client"] }
+ogmios-client = { workspace = true, features = ["jsonrpsee-client"] , version = "1.7.0" }
 pallas-primitives = { workspace = true }
-plutus = { workspace = true }
+plutus = { workspace = true , version = "1.7.0" }
 raw-scripts = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true, features = ["std"] }
 secp256k1 = { workspace = true, features = ["std"] }
-sidechain-domain = { workspace = true, features = ["std"] }
+sidechain-domain = { workspace = true, features = ["std"] , version = "1.7.0" }
 uplc = { workspace = true }
 tokio = { workspace = true }
 tokio-retry = { workspace = true }

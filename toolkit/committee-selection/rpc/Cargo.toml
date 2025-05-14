@@ -1,6 +1,6 @@
 [package]
 name = "pallet-session-validator-management-rpc"
-version.workspace = true
+version = "1.7.0"
 license = "Apache-2.0"
 authors.workspace = true
 edition.workspace = true
@@ -13,5 +13,5 @@ workspace = true
 [dependencies]
 derive-new = { workspace = true }
 jsonrpsee = { workspace = true }
-sidechain-domain = { workspace = true, features = ["std"] }
-sp-session-validator-management-query = { workspace = true }
+sidechain-domain = { workspace = true, features = ["std"] , version = "1.7.0" }
+sp-session-validator-management-query = { workspace = true , version = "1.7.0" }

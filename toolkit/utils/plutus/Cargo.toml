@@ -1,6 +1,6 @@
 [package]
 name = "plutus"
-version.workspace = true
+version = "1.7.0"
 publish = false
 license = "Apache-2.0"
 authors.workspace = true

@@ -1,6 +1,6 @@
 [package]
 name = "partner-chains-demo-node"
-version.workspace = true
+version = "1.7.0"
 description = "A reference implementation of a partner chain node"
 authors.workspace = true
 edition.workspace = true
@@ -33,9 +33,9 @@ sc-telemetry = { workspace = true }
 sc-transaction-pool = { workspace = true }
 sc-transaction-pool-api = { workspace = true }
 sc-consensus-aura = { workspace = true }
-sc-partner-chains-consensus-aura = { workspace = true }
+sc-partner-chains-consensus-aura = { workspace = true , version = "1.7.0" }
 sp-consensus-aura = { workspace = true }
-sp-partner-chains-consensus-aura = { workspace = true }
+sp-partner-chains-consensus-aura = { workspace = true , version = "1.7.0" }
 sp-consensus = { workspace = true }
 sc-consensus = { workspace = true }
 sc-consensus-grandpa = { workspace = true }
@@ -49,26 +49,26 @@ sp-io = { workspace = true }
 sp-timestamp = { workspace = true }
 sp-inherents = { workspace = true }
 sp-keyring = { workspace = true }
-authority-selection-inherents = { workspace = true }
+authority-selection-inherents = { workspace = true , version = "1.7.0" }
 frame-system = { workspace = true }
 pallet-transaction-payment = { workspace = true }
-sp-block-production-log = { workspace = true }
-sidechain-domain = { workspace = true }
-sidechain-slots = { workspace = true }
-sp-sidechain = { workspace = true }
-pallet-sidechain-rpc = { workspace = true }
-pallet-session-validator-management = { workspace = true }
-sp-session-validator-management = { workspace = true }
-sp-session-validator-management-query = { workspace = true }
-pallet-session-validator-management-rpc = { workspace = true }
-pallet-partner-chains-session = { workspace = true }
+sp-block-production-log = { workspace = true , version = "1.7.0" }
+sidechain-domain = { workspace = true , version = "1.7.0" }
+sidechain-slots = { workspace = true , version = "1.7.0" }
+sp-sidechain = { workspace = true , version = "1.7.0" }
+pallet-sidechain-rpc = { workspace = true , version = "1.7.0" }
+pallet-session-validator-management = { workspace = true , version = "1.7.0" }
+sp-session-validator-management = { workspace = true , version = "1.7.0" }
+sp-session-validator-management-query = { workspace = true , version = "1.7.0" }
+pallet-session-validator-management-rpc = { workspace = true , version = "1.7.0" }
+pallet-partner-chains-session = { workspace = true , version = "1.7.0" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 substrate-prometheus-endpoint = { workspace = true }
 thiserror = { workspace = true }
-time-source = { workspace = true }
+time-source = { workspace = true , version = "1.7.0" }
 derive-new = { workspace = true }
-partner-chains-node-commands = { workspace = true }
+partner-chains-node-commands = { workspace = true , version = "1.7.0" }
 envy = { workspace = true }
 
 # These dependencies are used for the node template's RPCs
@@ -86,9 +86,9 @@ pallet-transaction-payment-rpc = { workspace = true }
 frame-benchmarking = { workspace = true }
 
 # Local Dependencies
-partner-chains-demo-runtime = { workspace = true }
-sidechain-mc-hash = { workspace = true, features = ["mock"] }
-sp-native-token-management = { workspace = true }
+partner-chains-demo-runtime = { workspace = true , version = "1.7.0" }
+sidechain-mc-hash = { workspace = true, features = ["mock"] , version = "1.7.0" }
+sp-native-token-management = { workspace = true , version = "1.7.0" }
 partner-chains-db-sync-data-sources = { workspace = true, features = [
     "block-source",
     "candidate-source",
@@ -97,7 +97,7 @@ partner-chains-db-sync-data-sources = { workspace = true, features = [
     "mc-hash",
     "sidechain-rpc",
     "block-participation",
-] }
+] , version = "1.7.0" }
 partner-chains-mock-data-sources = { workspace = true, features = [
     "block-source",
     "candidate-source",
@@ -106,23 +106,23 @@ partner-chains-mock-data-sources = { workspace = true, features = [
     "mc-hash",
     "sidechain-rpc",
     "block-participation",
-] }
+] , version = "1.7.0" }
 tokio = { workspace = true }
-sp-block-participation = { workspace = true, features = ["std"] }
-sp-block-producer-metadata = { workspace = true, features = ["std"] }
-pallet-block-producer-metadata-rpc = { workspace = true }
-sp-governed-map = { workspace = true, features = ["std"] }
+sp-block-participation = { workspace = true, features = ["std"] , version = "1.7.0" }
+sp-block-producer-metadata = { workspace = true, features = ["std"] , version = "1.7.0" }
+pallet-block-producer-metadata-rpc = { workspace = true , version = "1.7.0" }
+sp-governed-map = { workspace = true, features = ["std"] , version = "1.7.0" }
 
 [build-dependencies]
 substrate-build-script-utils = { workspace = true }
 
 [dev-dependencies]
 hex-literal = { workspace = true }
-time-source = { workspace = true, features = ["mock"] }
+time-source = { workspace = true, features = ["mock"] , version = "1.7.0" }
 assert_cmd = { workspace = true }
-sp-native-token-management = { workspace = true, features = ["mock"] }
-pallet-sidechain-rpc = { workspace = true, features = ["mock"] }
-authority-selection-inherents = { workspace = true, features = ["mock"] }
+sp-native-token-management = { workspace = true, features = ["mock"] , version = "1.7.0" }
+pallet-sidechain-rpc = { workspace = true, features = ["mock"] , version = "1.7.0" }
+authority-selection-inherents = { workspace = true, features = ["mock"] , version = "1.7.0" }
 
 [features]
 default = ["sidechain-domain/std"]

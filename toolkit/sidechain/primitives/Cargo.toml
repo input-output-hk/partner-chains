@@ -1,6 +1,6 @@
 [package]
 name = "sp-sidechain"
-version.workspace = true
+version = "1.7.0"
 license = "Apache-2.0"
 authors.workspace = true
 edition.workspace = true
@@ -15,7 +15,7 @@ workspace = true
 [dependencies]
 envy = { workspace = true, optional = true}
 frame-support = { workspace = true }
-sidechain-domain = { workspace = true }
+sidechain-domain = { workspace = true , version = "1.7.0" }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 sp-api = { workspace = true }

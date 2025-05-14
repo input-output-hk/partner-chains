@@ -1,6 +1,6 @@
 [package]
 name = "ogmios-client"
-version.workspace = true
+version = "1.7.0"
 license = "Apache-2.0"
 authors.workspace = true
 edition.workspace = true
@@ -21,7 +21,7 @@ serde = { workspace = true }
 serde_json = { workspace = true, features = ["raw_value", "arbitrary_precision"] }
 thiserror = { workspace = true }
 time = { workspace = true, features = ["std", "serde", "parsing"] }
-sidechain-domain = { workspace = true, features = ["std"] }
+sidechain-domain = { workspace = true, features = ["std"] , version = "1.7.0" }
 log = { workspace = true, optional = true }
 anyhow = { workspace = true }
 

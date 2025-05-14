@@ -1,6 +1,6 @@
 [package]
 name = "partner-chains-mock-data-sources"
-version.workspace = true
+version = "1.7.0"
 publish = false
 license = "Apache-2.0"
 authors.workspace = true
@@ -21,14 +21,14 @@ log = { workspace = true }
 rand = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-sidechain-domain = { workspace = true }
+sidechain-domain = { workspace = true , version = "1.7.0" }
 sp-timestamp = { workspace = true }
-sp-native-token-management = { workspace = true, optional = true }
-sp-governed-map = { workspace = true, optional = true }
-sidechain-mc-hash = { workspace = true, optional = true }
-sp-block-participation = { workspace = true, optional = true }
-pallet-sidechain-rpc = { workspace = true, optional = true }
-authority-selection-inherents = { workspace = true, optional = true }
+sp-native-token-management = { workspace = true, optional = true , version = "1.7.0" }
+sp-governed-map = { workspace = true, optional = true , version = "1.7.0" }
+sidechain-mc-hash = { workspace = true, optional = true , version = "1.7.0" }
+sp-block-participation = { workspace = true, optional = true , version = "1.7.0" }
+pallet-sidechain-rpc = { workspace = true, optional = true , version = "1.7.0" }
+authority-selection-inherents = { workspace = true, optional = true , version = "1.7.0" }
 
 [features]
 default = ["std", "block-source", "candidate-source", "governed-map", "native-token"]

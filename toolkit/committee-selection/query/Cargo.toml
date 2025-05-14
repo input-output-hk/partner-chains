@@ -1,6 +1,6 @@
 [package]
 name = "sp-session-validator-management-query"
-version.workspace = true
+version = "1.7.0"
 license = "Apache-2.0"
 authors.workspace = true
 edition.workspace = true
@@ -21,18 +21,18 @@ sp-core = { workspace = true }
 sp-runtime = { workspace = true }
 sp-api = { workspace = true }
 sp-blockchain = { workspace = true }
-sp-session-validator-management = { workspace = true, features = ["std"] }
-sp-sidechain = { workspace = true, features = ["std"] }
-sidechain-domain = { workspace = true, features = ["std"] }
-sidechain-block-search = { workspace = true }
-authority-selection-inherents = { workspace = true, features = ["std"] }
+sp-session-validator-management = { workspace = true, features = ["std"] , version = "1.7.0" }
+sp-sidechain = { workspace = true, features = ["std"] , version = "1.7.0" }
+sidechain-domain = { workspace = true, features = ["std"] , version = "1.7.0" }
+sidechain-block-search = { workspace = true , version = "1.7.0" }
+authority-selection-inherents = { workspace = true, features = ["std"] , version = "1.7.0" }
 thiserror = { workspace = true }
-plutus = { workspace = true }
+plutus = { workspace = true , version = "1.7.0" }
 
 [dev-dependencies]
 sp-std = { workspace = true }
 hex-literal = { workspace = true }
 minicbor = { workspace = true }
-plutus-datum-derive = { workspace = true }
+plutus-datum-derive = { workspace = true , version = "1.7.0" }
 tokio = { workspace = true }
-authority-selection-inherents = { workspace = true, features = ["mock"] }
+authority-selection-inherents = { workspace = true, features = ["mock"] , version = "1.7.0" }

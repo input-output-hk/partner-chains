@@ -1,6 +1,6 @@
 [package]
 name = "sc-partner-chains-consensus-aura"
-version.workspace = true
+version = "1.7.0"
 description = "Partner Chains modification to the Substrate Aura consensus engine"
 authors.workspace = true
 homepage.workspace = true
@@ -36,7 +36,7 @@ sp-core = { workspace = true, default-features = true }
 sp-inherents = { workspace = true, default-features = true }
 sp-keystore = { workspace = true, default-features = true }
 sp-runtime = { workspace = true, default-features = true }
-sp-partner-chains-consensus-aura = { workspace = true, default-features = true }
+sp-partner-chains-consensus-aura = { workspace = true, default-features = true , version = "1.7.0" }
 thiserror = { workspace = true }
 
 [dev-dependencies]

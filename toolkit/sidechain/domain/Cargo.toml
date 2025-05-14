@@ -1,6 +1,6 @@
 [package]
 name = "sidechain-domain"
-version.workspace = true
+version = "1.7.0"
 license = "Apache-2.0"
 authors.workspace = true
 edition.workspace = true
@@ -16,10 +16,10 @@ sp-crypto-hashing = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 num-bigint = { workspace = true }
-plutus = { workspace = true }
-plutus-datum-derive = { workspace = true }
+plutus = { workspace = true , version = "1.7.0" }
+plutus-datum-derive = { workspace = true , version = "1.7.0" }
 serde = { workspace = true, optional = true }
-byte-string-derive = { workspace = true }
+byte-string-derive = { workspace = true , version = "1.7.0" }
 hex = { workspace = true }
 derive_more = { workspace = true }
 num-traits = { workspace = true }

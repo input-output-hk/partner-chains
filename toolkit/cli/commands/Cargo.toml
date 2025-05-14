@@ -1,6 +1,6 @@
 [package]
 name = "cli-commands"
-version.workspace = true
+version = "1.7.0"
 license = "Apache-2.0"
 authors.workspace = true
 edition.workspace = true
@@ -18,18 +18,18 @@ clap = { workspace = true }
 ed25519-zebra = { workspace = true }
 hex = { workspace = true }
 hex-literal = { workspace = true }
-plutus = { workspace = true }
-plutus-datum-derive = { workspace = true }
+plutus = { workspace = true , version = "1.7.0" }
+plutus-datum-derive = { workspace = true , version = "1.7.0" }
 secp256k1 = { workspace = true, features = ["std", "global-context"] }
 k256 = { workspace = true, features = ["serde"] }
-sidechain-domain = { workspace = true, features = ["std"] }
+sidechain-domain = { workspace = true, features = ["std"] , version = "1.7.0" }
 sp-io = { workspace = true, features = ["std"] }
 thiserror = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-pallet-address-associations = { workspace = true, features = ["std"] }
+pallet-address-associations = { workspace = true, features = ["std"] , version = "1.7.0" }
 parity-scale-codec = { workspace = true }
-sp-block-producer-metadata = { workspace = true, features = ["std"] }
+sp-block-producer-metadata = { workspace = true, features = ["std"] , version = "1.7.0" }
 
 [dev-dependencies]
 assert_cmd = { workspace = true }

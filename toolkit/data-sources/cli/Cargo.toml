@@ -1,6 +1,6 @@
 [package]
 name = "partner-chains-data-sources-cli"
-version.workspace = true
+version = "1.7.0"
 license = "Apache-2.0"
 authors.workspace = true
 edition.workspace = true
@@ -17,10 +17,10 @@ workspace = true
 clap = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-partner-chains-db-sync-data-sources = { workspace = true, features = ["block-source", "candidate-source"] }
+partner-chains-db-sync-data-sources = { workspace = true, features = ["block-source", "candidate-source"] , version = "1.7.0" }
 tokio = { workspace = true }
 env_logger = { workspace = true }
 log = { workspace = true }
-sidechain-domain = { workspace = true }
-authority-selection-inherents = { workspace = true }
+sidechain-domain = { workspace = true , version = "1.7.0" }
+authority-selection-inherents = { workspace = true , version = "1.7.0" }
 sp-timestamp = { workspace = true }

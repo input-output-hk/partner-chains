@@ -1,6 +1,6 @@
 [package]
 name = "pallet-block-participation"
-version.workspace = true
+version = "1.7.0"
 license = "Apache-2.0"
 readme = "README.md"
 authors.workspace = true
@@ -18,7 +18,7 @@ log = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 sp-std = { workspace = true }
-sp-block-participation = { workspace = true }
+sp-block-participation = { workspace = true , version = "1.7.0" }
 frame-benchmarking = { workspace = true, optional = true }
 
 [dev-dependencies]

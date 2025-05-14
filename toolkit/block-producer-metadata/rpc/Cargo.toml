@@ -1,6 +1,6 @@
 [package]
 name = "pallet-block-producer-metadata-rpc"
-version.workspace = true
+version = "1.7.0"
 license = "Apache-2.0"
 authors.workspace = true
 edition.workspace = true
@@ -19,8 +19,8 @@ sp-core = { workspace = true, features = ['std'] }
 sp-runtime = { workspace = true, features = ['std'] }
 sp-api = { workspace = true, features = ['std'] }
 sp-blockchain = { workspace = true }
-sp-block-producer-metadata = { workspace = true, features = ['std'] }
-sidechain-domain = { workspace = true, features = ['std'] }
+sp-block-producer-metadata = { workspace = true, features = ['std'] , version = "1.7.0" }
+sidechain-domain = { workspace = true, features = ['std'] , version = "1.7.0" }
 serde_json = { workspace = true, features = ['std'] }
 derive-new = { workspace = true }
 

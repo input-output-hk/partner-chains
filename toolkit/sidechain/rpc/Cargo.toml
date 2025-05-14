@@ -1,6 +1,6 @@
 [package]
 name = "pallet-sidechain-rpc"
-version.workspace = true
+version = "1.7.0"
 license = "Apache-2.0"
 authors.workspace = true
 edition.workspace = true
@@ -21,20 +21,20 @@ sp-core = { workspace = true, features = ['std'] }
 sp-runtime = { workspace = true, features = ['std'] }
 sp-api = { workspace = true, features = ['std'] }
 sp-blockchain = { workspace = true }
-sp-sidechain = { workspace = true, features = ['std'] }
-sidechain-domain = { workspace = true, features = ['std'] }
-sidechain-slots = { workspace = true, features = ['std', 'serde'] }
+sp-sidechain = { workspace = true, features = ['std'] , version = "1.7.0" }
+sidechain-domain = { workspace = true, features = ['std'] , version = "1.7.0" }
+sidechain-slots = { workspace = true, features = ['std', 'serde'] , version = "1.7.0" }
 serde_json = { workspace = true, features = ['std'] }
 sp-timestamp = { workspace = true, features = ['std'] }
 hex = { workspace = true, features = ['std'] }
 tokio = { workspace = true, features = ["macros", "time", "parking_lot"] }
-time-source = { workspace = true }
+time-source = { workspace = true , version = "1.7.0" }
 derive-new = { workspace = true }
 
 [dev-dependencies]
 serde_json = { workspace = true }
 pretty_assertions = { workspace = true }
-time-source = { workspace = true, features = ['mock'] }
+time-source = { workspace = true, features = ['mock'] , version = "1.7.0" }
 sp-consensus-slots = { workspace = true, features = ["std"] }
 
 [features]

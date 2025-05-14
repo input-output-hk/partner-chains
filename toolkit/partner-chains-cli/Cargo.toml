@@ -1,6 +1,6 @@
 [package]
 name = "partner-chains-cli"
-version.workspace = true
+version = "1.7.0"
 license = "Apache-2.0"
 description = "Wizard style CLI for getting started as partner chains participant"
 authors.workspace = true
@@ -16,7 +16,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 workspace = true
 
 [dependencies]
-sidechain-domain = { workspace = true, features = ["std"] }
+sidechain-domain = { workspace = true, features = ["std"] , version = "1.7.0" }
 anyhow = { workspace = true }
 clap = { workspace = true }
 hex = { workspace = true }
@@ -30,16 +30,16 @@ thiserror = { workspace = true }
 tempfile = { workspace = true }
 secp256k1 = { workspace = true, features = ["std"] }
 colored = { version = "2.1.0" }
-ogmios-client = { workspace = true, features = ["jsonrpsee-client"] }
+ogmios-client = { workspace = true, features = ["jsonrpsee-client"] , version = "1.7.0" }
 tokio = { workspace = true }
 cardano-serialization-lib = { workspace = true }
-partner-chains-cardano-offchain = { workspace = true }
+partner-chains-cardano-offchain = { workspace = true , version = "1.7.0" }
 log = { workspace = true }
-plutus = { workspace = true }
-plutus-datum-derive = { workspace = true }
+plutus = { workspace = true , version = "1.7.0" }
+plutus-datum-derive = { workspace = true , version = "1.7.0" }
 ed25519-zebra = { workspace = true }
-sp-session-validator-management = { workspace = true, features = ["std"] }
-pallet-session-validator-management = { workspace = true, features = ["std"] }
+sp-session-validator-management = { workspace = true, features = ["std"] , version = "1.7.0" }
+pallet-session-validator-management = { workspace = true, features = ["std"] , version = "1.7.0" }
 
 [dev-dependencies]
 pretty_assertions = { workspace = true }

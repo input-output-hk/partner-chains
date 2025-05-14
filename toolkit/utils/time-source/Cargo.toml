@@ -1,6 +1,6 @@
 [package]
 name = "time-source"
-version.workspace = true
+version = "1.7.0"
 license = "Apache-2.0"
 authors.workspace = true
 edition.workspace = true

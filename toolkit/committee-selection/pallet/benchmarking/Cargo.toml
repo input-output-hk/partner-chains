@@ -1,6 +1,6 @@
 [package]
 name = "pallet-session-validator-management-benchmarking"
-version.workspace = true
+version = "1.7.0"
 license = "Apache-2.0"
 authors.workspace = true
 edition.workspace = true
@@ -23,15 +23,15 @@ sp-runtime = { workspace = true }
 sp-core = { workspace = true }
 sp-consensus-slots = { workspace = true }
 sp-consensus-aura = { workspace = true }
-sidechain-domain = { workspace = true }
-sidechain-slots = { workspace = true }
+sidechain-domain = { workspace = true , version = "1.7.0" }
+sidechain-slots = { workspace = true , version = "1.7.0" }
 frame-benchmarking = { workspace = true }
 
 pallet-aura = { workspace = true }
 pallet-timestamp = { workspace = true }
-pallet-sidechain = { workspace = true }
-sp-session-validator-management = { workspace = true, features = ["serde"] }
-pallet-session-validator-management = { workspace = true }
+pallet-sidechain = { workspace = true , version = "1.7.0" }
+sp-session-validator-management = { workspace = true, features = ["serde"] , version = "1.7.0" }
+pallet-session-validator-management = { workspace = true , version = "1.7.0" }
 
 [dev-dependencies]
 sp-io = { workspace = true }

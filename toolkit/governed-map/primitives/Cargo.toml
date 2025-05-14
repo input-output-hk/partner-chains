@@ -4,7 +4,7 @@ authors.workspace = true
 edition.workspace = true
 homepage.workspace = true
 repository.workspace = true
-version.workspace = true
+version = "1.7.0"
 license = "Apache-2.0"
 description = "Primitives for tracking the governed key-value store on main chain"
 
@@ -20,7 +20,7 @@ log = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 serde = { workspace = true, optional = true }
-sidechain-domain = { workspace = true }
+sidechain-domain = { workspace = true , version = "1.7.0" }
 sp-api = { workspace = true }
 sp-inherents = { workspace = true }
 sp-runtime = { workspace = true }

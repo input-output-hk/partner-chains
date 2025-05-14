@@ -1,6 +1,6 @@
 [package]
 name = "partner-chains-demo-runtime"
-version.workspace = true
+version = "1.7.0"
 description = "A reference implementation of a partner chain runtime"
 authors.workspace = true
 edition.workspace = true
@@ -31,7 +31,7 @@ frame-support = { workspace = true }
 pallet-grandpa = { workspace = true }
 pallet-partner-chains-session = { workspace = true, features = [
 	"pallet-session-compat",
-] }
+] , version = "1.7.0" }
 pallet-session = { workspace = true }
 pallet-sudo = { workspace = true }
 frame-system = { workspace = true }
@@ -58,7 +58,7 @@ sp-transaction-pool = { workspace = true }
 sp-version = { workspace = true }
 sp-storage = { workspace = true }
 sp-weights = { workspace = true }
-authority-selection-inherents = { workspace = true }
+authority-selection-inherents = { workspace = true , version = "1.7.0" }
 
 hex-literal = { workspace = true }
 
@@ -71,27 +71,27 @@ frame-benchmarking = { workspace = true, optional = true }
 frame-system-benchmarking = { workspace = true, optional = true }
 
 # Local Dependencies
-sp-block-production-log = { workspace = true }
-pallet-block-production-log = { workspace = true }
-sp-sidechain = { workspace = true }
-pallet-sidechain = { workspace = true }
+sp-block-production-log = { workspace = true , version = "1.7.0" }
+pallet-block-production-log = { workspace = true , version = "1.7.0" }
+sp-sidechain = { workspace = true , version = "1.7.0" }
+pallet-sidechain = { workspace = true , version = "1.7.0" }
 pallet-session-validator-management = { workspace = true, features = [
 	"pallet-session-compat",
-] }
-sp-session-validator-management = { workspace = true, features = ["serde"] }
-pallet-session-validator-management-benchmarking = { workspace = true, optional = true }
-sidechain-domain = { workspace = true, features = ["serde"] }
-sidechain-slots = { workspace = true }
-pallet-native-token-management = { workspace = true }
-sp-native-token-management = { workspace = true, features = ["serde"] }
-pallet-address-associations = { workspace = true }
-pallet-block-producer-metadata = { workspace = true }
-sp-block-producer-metadata = { workspace = true }
-pallet-block-participation = { workspace = true }
-sp-block-participation = { workspace = true }
-pallet-governed-map = { workspace = true }
-sp-governed-map = { workspace = true }
-pallet-block-producer-fees = { workspace = true }
+] , version = "1.7.0" }
+sp-session-validator-management = { workspace = true, features = ["serde"] , version = "1.7.0" }
+pallet-session-validator-management-benchmarking = { workspace = true, optional = true , version = "1.7.0" }
+sidechain-domain = { workspace = true, features = ["serde"] , version = "1.7.0" }
+sidechain-slots = { workspace = true , version = "1.7.0" }
+pallet-native-token-management = { workspace = true , version = "1.7.0" }
+sp-native-token-management = { workspace = true, features = ["serde"] , version = "1.7.0" }
+pallet-address-associations = { workspace = true , version = "1.7.0" }
+pallet-block-producer-metadata = { workspace = true , version = "1.7.0" }
+sp-block-producer-metadata = { workspace = true , version = "1.7.0" }
+pallet-block-participation = { workspace = true , version = "1.7.0" }
+sp-block-participation = { workspace = true , version = "1.7.0" }
+pallet-governed-map = { workspace = true , version = "1.7.0" }
+sp-governed-map = { workspace = true , version = "1.7.0" }
+pallet-block-producer-fees = { workspace = true , version = "1.7.0" }
 
 [dev-dependencies]
 sp-io = { workspace = true }
@@ -100,7 +100,7 @@ sp-keyring = { workspace = true }
 hex = { workspace = true }
 sp-consensus-slots = { workspace = true }
 minicbor = { workspace = true }
-plutus = { workspace = true }
+plutus = { workspace = true , version = "1.7.0" }
 pretty_assertions = { workspace = true }
 serde_json = { workspace = true }
 

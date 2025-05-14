@@ -1,6 +1,6 @@
 [package]
 name = "sidechain-mc-hash"
-version.workspace = true
+version = "1.7.0"
 description = "Logic for putting a main chain block reference in digest and inherent data"
 license = "Apache-2.0"
 authors.workspace = true
@@ -14,8 +14,8 @@ workspace = true
 [dependencies]
 async-trait = { workspace = true }
 sp-consensus-slots = { workspace = true }
-sp-partner-chains-consensus-aura = { workspace = true, features = ["std"] }
-sidechain-domain = { workspace = true, features = ["std"] }
+sp-partner-chains-consensus-aura = { workspace = true, features = ["std"] , version = "1.7.0" }
+sidechain-domain = { workspace = true, features = ["std"] , version = "1.7.0" }
 sp-consensus = { workspace = true }
 sp-blockchain = { workspace = true }
 sp-inherents = { workspace = true, features = ["std"] }

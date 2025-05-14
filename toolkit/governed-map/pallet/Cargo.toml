@@ -4,7 +4,7 @@ authors.workspace = true
 edition.workspace = true
 homepage.workspace = true
 repository.workspace = true
-version.workspace = true
+version = "1.7.0"
 license = "Apache-2.0"
 description = "Pallet for tracking the governed key-value store on main chain"
 
@@ -21,8 +21,8 @@ frame-system = { workspace = true }
 log = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
-sidechain-domain = { workspace = true }
-sp-governed-map = { workspace = true, features = ["serde"] }
+sidechain-domain = { workspace = true , version = "1.7.0" }
+sp-governed-map = { workspace = true, features = ["serde"] , version = "1.7.0" }
 
 [dev-dependencies]
 pretty_assertions = { workspace = true }

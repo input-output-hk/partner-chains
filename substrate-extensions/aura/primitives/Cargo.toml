@@ -1,6 +1,6 @@
 [package]
 name = "sp-partner-chains-consensus-aura"
-version.workspace = true
+version = "1.7.0"
 description = "Primitives required by Partner Chains customized Aura consensus"
 authors.workspace = true
 homepage.workspace = true

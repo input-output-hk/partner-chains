@@ -1,6 +1,6 @@
 [package]
 name = "sidechain-slots"
-version.workspace = true
+version = "1.7.0"
 license = "Apache-2.0"
 description = "Sidechain slots and epoch calcuations"
 authors.workspace = true
@@ -15,7 +15,7 @@ workspace = true
 [dependencies]
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
-sidechain-domain = { workspace = true }
+sidechain-domain = { workspace = true , version = "1.7.0" }
 sp-api = { workspace = true }
 sp-blockchain = { workspace = true, optional = true }
 sp-runtime = { workspace = true }

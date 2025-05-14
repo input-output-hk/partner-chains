@@ -1,6 +1,6 @@
 [package]
 name = "sp-block-producer-metadata"
-version.workspace = true
+version = "1.7.0"
 license = "Apache-2.0"
 description = "Primitives for the block producer on-chain metadata feature"
 readme = "README.md"
@@ -13,7 +13,7 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
-sidechain-domain = { workspace = true }
+sidechain-domain = { workspace = true , version = "1.7.0" }
 sp-api = { workspace = true }
 parity-scale-codec = { workspace = true }
 k256 = { workspace = true,features = ["sha256"] }

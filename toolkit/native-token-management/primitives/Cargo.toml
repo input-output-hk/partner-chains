@@ -1,6 +1,6 @@
 [package]
 name = "sp-native-token-management"
-version.workspace = true
+version = "1.7.0"
 license = "Apache-2.0"
 authors.workspace = true
 edition.workspace = true
@@ -19,7 +19,7 @@ async-trait = { workspace = true, optional = true }
 envy = { workspace = true, optional = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
-sidechain-domain = { workspace = true }
+sidechain-domain = { workspace = true , version = "1.7.0" }
 sp-api = { workspace = true }
 sp-inherents = { workspace = true }
 sp-runtime = { workspace = true }
