@@ -30,6 +30,7 @@ to provide it in your IDP stack.
 * Introduced customization of root origin for few pallets via `MainChainScriptsOrigin` trait
 * Made `mock` module of `pallet-session-validator-management` private
 * Updated associated crates versions
+* Updated polkadot-sdk to polkadot-stable2503-2
 
 ## Removed
 
