@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `toolkit/partner-chains-cli/src/config.rs`."><title>config.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-0ce1a80b.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="partner_chains_cli" data-themes="" data-resource-suffix="" data-rustdoc-version="1.89.0-nightly (8405332bd 2025-05-12)" data-channel="nightly" data-search-js="search-f7877310.js" data-settings-js="settings-5514c975.js" ><script src="../../static.files/storage-4e99c027.js"></script><script defer src="../../static.files/src-script-63605ae7.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-7ef8a74a.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">partner_chains_cli/</div>config.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `toolkit/partner-chains-cli/src/config.rs`."><title>config.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-0ce1a80b.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="partner_chains_cli" data-themes="" data-resource-suffix="" data-rustdoc-version="1.89.0-nightly (414482f6a 2025-05-13)" data-channel="nightly" data-search-js="search-f7877310.js" data-settings-js="settings-5514c975.js" ><script src="../../static.files/storage-4e99c027.js"></script><script defer src="../../static.files/src-script-63605ae7.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-7ef8a74a.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">partner_chains_cli/</div>config.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{
 <a href=#2 id=2 data-nosnippet>2</a>	CARDANO_ACTIVE_SLOTS_COEFF, CARDANO_EPOCH_DURATION_MILLIS, CARDANO_FIRST_EPOCH_NUMBER,
 <a href=#3 id=3 data-nosnippet>3</a>	CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS, CARDANO_FIRST_SLOT_NUMBER, CARDANO_SECURITY_PARAMETER,
 <a href=#4 id=4 data-nosnippet>4</a>};
@@ -614,32 +614,23 @@
 <a href=#614 id=614 data-nosnippet>614</a>		_marker: PhantomData,
 <a href=#615 id=615 data-nosnippet>615</a>	};
 <a href=#616 id=616 data-nosnippet>616</a>
-<a href=#617 id=617 data-nosnippet>617</a>	<span class="kw">pub const </span>SIDECHAIN_BLOCK_BENEFICIARY: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, String&gt; =
-<a href=#618 id=618 data-nosnippet>618</a>		ConfigFieldDefinition {
-<a href=#619 id=619 data-nosnippet>619</a>			config_file: RESOURCES_CONFIG_FILE_PATH,
-<a href=#620 id=620 data-nosnippet>620</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"sidechain_block_beneficiary"</span>],
-<a href=#621 id=621 data-nosnippet>621</a>			name: <span class="string">"beneficiary for blocks created by the given node"</span>,
-<a href=#622 id=622 data-nosnippet>622</a>			default: <span class="prelude-val">None</span>,
-<a href=#623 id=623 data-nosnippet>623</a>			_marker: PhantomData,
-<a href=#624 id=624 data-nosnippet>624</a>		};
-<a href=#625 id=625 data-nosnippet>625</a>
-<a href=#626 id=626 data-nosnippet>626</a>	<span class="kw">pub const </span>INITIAL_GOVERNANCE_AUTHORITIES: ConfigFieldDefinition&lt;
-<a href=#627 id=627 data-nosnippet>627</a>		<span class="lifetime">'static</span>,
-<a href=#628 id=628 data-nosnippet>628</a>		GovernanceAuthoritiesKeyHashes,
-<a href=#629 id=629 data-nosnippet>629</a>	&gt; = ConfigFieldDefinition {
-<a href=#630 id=630 data-nosnippet>630</a>		config_file: CHAIN_CONFIG_FILE_PATH,
-<a href=#631 id=631 data-nosnippet>631</a>		path: <span class="kw-2">&amp;</span>[<span class="string">"initial_governance"</span>, <span class="string">"authorities"</span>],
-<a href=#632 id=632 data-nosnippet>632</a>		name: <span class="string">"Space separated keys hashes of the initial Multisig Governance Authorities"</span>,
-<a href=#633 id=633 data-nosnippet>633</a>		default: <span class="prelude-val">Some</span>(<span class="string">"[]"</span>),
-<a href=#634 id=634 data-nosnippet>634</a>		_marker: PhantomData,
-<a href=#635 id=635 data-nosnippet>635</a>	};
-<a href=#636 id=636 data-nosnippet>636</a>
-<a href=#637 id=637 data-nosnippet>637</a>	<span class="kw">pub const </span>INITIAL_GOVERNANCE_THRESHOLD: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, u8&gt; =
-<a href=#638 id=638 data-nosnippet>638</a>		ConfigFieldDefinition {
-<a href=#639 id=639 data-nosnippet>639</a>			config_file: CHAIN_CONFIG_FILE_PATH,
-<a href=#640 id=640 data-nosnippet>640</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"initial_governance"</span>, <span class="string">"threshold"</span>],
-<a href=#641 id=641 data-nosnippet>641</a>			name: <span class="string">"Initial Multisig Governance Threshold"</span>,
-<a href=#642 id=642 data-nosnippet>642</a>			default: <span class="prelude-val">Some</span>(<span class="string">"0"</span>),
-<a href=#643 id=643 data-nosnippet>643</a>			_marker: PhantomData,
-<a href=#644 id=644 data-nosnippet>644</a>		};
-<a href=#645 id=645 data-nosnippet>645</a>}</code></pre></div></section></main></body></html>
+<a href=#617 id=617 data-nosnippet>617</a>	<span class="kw">pub const </span>INITIAL_GOVERNANCE_AUTHORITIES: ConfigFieldDefinition&lt;
+<a href=#618 id=618 data-nosnippet>618</a>		<span class="lifetime">'static</span>,
+<a href=#619 id=619 data-nosnippet>619</a>		GovernanceAuthoritiesKeyHashes,
+<a href=#620 id=620 data-nosnippet>620</a>	&gt; = ConfigFieldDefinition {
+<a href=#621 id=621 data-nosnippet>621</a>		config_file: CHAIN_CONFIG_FILE_PATH,
+<a href=#622 id=622 data-nosnippet>622</a>		path: <span class="kw-2">&amp;</span>[<span class="string">"initial_governance"</span>, <span class="string">"authorities"</span>],
+<a href=#623 id=623 data-nosnippet>623</a>		name: <span class="string">"Space separated keys hashes of the initial Multisig Governance Authorities"</span>,
+<a href=#624 id=624 data-nosnippet>624</a>		default: <span class="prelude-val">Some</span>(<span class="string">"[]"</span>),
+<a href=#625 id=625 data-nosnippet>625</a>		_marker: PhantomData,
+<a href=#626 id=626 data-nosnippet>626</a>	};
+<a href=#627 id=627 data-nosnippet>627</a>
+<a href=#628 id=628 data-nosnippet>628</a>	<span class="kw">pub const </span>INITIAL_GOVERNANCE_THRESHOLD: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, u8&gt; =
+<a href=#629 id=629 data-nosnippet>629</a>		ConfigFieldDefinition {
+<a href=#630 id=630 data-nosnippet>630</a>			config_file: CHAIN_CONFIG_FILE_PATH,
+<a href=#631 id=631 data-nosnippet>631</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"initial_governance"</span>, <span class="string">"threshold"</span>],
+<a href=#632 id=632 data-nosnippet>632</a>			name: <span class="string">"Initial Multisig Governance Threshold"</span>,
+<a href=#633 id=633 data-nosnippet>633</a>			default: <span class="prelude-val">Some</span>(<span class="string">"0"</span>),
+<a href=#634 id=634 data-nosnippet>634</a>			_marker: PhantomData,
+<a href=#635 id=635 data-nosnippet>635</a>		};
+<a href=#636 id=636 data-nosnippet>636</a>}</code></pre></div></section></main></body></html>
