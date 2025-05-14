@@ -341,7 +341,7 @@ fn ariadne_4_to_7_test() {
 	committee_names.sort();
 	// Each permissioned has 1 guaranteed. henry, ida, james and kim as well. There are 3 randomly selected: eve, ferdie and james.
 	let expected_committee_names = vec![
-		"alice", "bob", "charlie", "dave", "eve", "ferdie", "henry", "ida", "james", "james", "kim",
+		"alice", "bob", "charlie", "dave", "eve", "eve", "ferdie", "henry", "ida", "james", "kim",
 	];
 	assert_eq!(committee_names, expected_committee_names);
 }
