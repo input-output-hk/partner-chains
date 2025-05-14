@@ -747,7 +747,7 @@ dependencies = [
  "async-trait",
  "frame-support",
  "hex",
- "hex-literal",
+ "hex-literal 1.0.0",
  "log",
  "minicbor",
  "num-bigint",
@@ -839,6 +839,12 @@ name = "bech32"
 version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d86b93f97252c47b41663388e6d155714a9d0c398b99f1005cbc5f978b29f445"
+
+[[package]]
+name = "bech32"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d965446196e3b7decd44aa7ee49e31d630118f90ef12f97900f262eb915c951d"
 
 [[package]]
 name = "bigdecimal"
@@ -1455,7 +1461,7 @@ dependencies = [
  "clap",
  "ed25519-zebra",
  "hex",
- "hex-literal",
+ "hex-literal 1.0.0",
  "k256",
  "pallet-address-associations",
  "parity-scale-codec",
@@ -3596,6 +3602,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6fe2267d4ed49bc07b63801559be28c718ea06c4738b7a03c94df7386d2cde46"
 
 [[package]]
+name = "hex-literal"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bcaaec4551594c969335c98c903c1397853d4198408ea609190f420500f6be71"
+
+[[package]]
 name = "hickory-proto"
 version = "0.24.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4705,7 +4717,7 @@ dependencies = [
  "libp2p-core",
  "libp2p-identity",
  "libp2p-swarm",
- "lru",
+ "lru 0.12.5",
  "quick-protobuf",
  "quick-protobuf-codec",
  "smallvec",
@@ -4901,7 +4913,7 @@ dependencies = [
  "libp2p-core",
  "libp2p-identity",
  "libp2p-swarm-derive",
- "lru",
+ "lru 0.12.5",
  "multistream-select",
  "once_cell",
  "rand 0.8.5",
@@ -5282,6 +5294,15 @@ name = "lru"
 version = "0.12.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "234cf4f4a04dc1f57e24b96cc0cd600cf2af460d4161ac5ecdd0af8e1f3b2a38"
+dependencies = [
+ "hashbrown 0.15.3",
+]
+
+[[package]]
+name = "lru"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9f8cc7106155f10bdf99a6f379688f543ad6596a415375b36a59a054ceda1198"
 dependencies = [
  "hashbrown 0.15.3",
 ]
@@ -6049,7 +6070,7 @@ dependencies = [
  "anyhow",
  "fraction",
  "hex",
- "hex-literal",
+ "hex-literal 1.0.0",
  "jsonrpsee",
  "log",
  "serde",
@@ -6207,7 +6228,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "hex-literal",
+ "hex-literal 1.0.0",
  "log",
  "parity-scale-codec",
  "scale-info",
@@ -6327,7 +6348,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "hex-literal",
+ "hex-literal 1.0.0",
  "k256",
  "log",
  "parity-scale-codec",
@@ -6785,8 +6806,8 @@ dependencies = [
  "cbor_event",
  "fraction",
  "hex",
- "hex-literal",
- "itertools 0.13.0",
+ "hex-literal 1.0.0",
+ "itertools 0.14.0",
  "log",
  "minicbor",
  "ogmios-client",
@@ -6817,7 +6838,7 @@ dependencies = [
  "colored",
  "ed25519-zebra",
  "hex",
- "hex-literal",
+ "hex-literal 1.0.0",
  "inquire",
  "libp2p-identity",
  "log",
@@ -6871,10 +6892,10 @@ dependencies = [
  "figment",
  "futures",
  "hex",
- "hex-literal",
- "itertools 0.13.0",
+ "hex-literal 1.0.0",
+ "itertools 0.14.0",
  "log",
- "lru",
+ "lru 0.14.0",
  "num-bigint",
  "pallet-sidechain-rpc",
  "partner-chains-plutus-data",
@@ -6908,7 +6929,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-system",
  "futures",
- "hex-literal",
+ "hex-literal 1.0.0",
  "jsonrpsee",
  "log",
  "pallet-block-producer-metadata-rpc",
@@ -6987,7 +7008,7 @@ dependencies = [
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
  "hex",
- "hex-literal",
+ "hex-literal 1.0.0",
  "log",
  "minicbor",
  "pallet-address-associations",
@@ -7053,10 +7074,10 @@ dependencies = [
  "async-trait",
  "authority-selection-inherents",
  "hex",
- "hex-literal",
+ "hex-literal 1.0.0",
  "log",
  "pallet-sidechain-rpc",
- "rand 0.8.5",
+ "rand 0.9.1",
  "serde",
  "serde_json",
  "sidechain-domain",
@@ -7099,7 +7120,7 @@ name = "partner-chains-plutus-data"
 version = "1.6.0"
 dependencies = [
  "cardano-serialization-lib",
- "hex-literal",
+ "hex-literal 1.0.0",
  "log",
  "pretty_assertions",
  "raw-scripts",
@@ -7115,7 +7136,7 @@ dependencies = [
  "anyhow",
  "clap",
  "hex",
- "hex-literal",
+ "hex-literal 1.0.0",
  "ogmios-client",
  "partner-chains-cardano-offchain",
  "serde",
@@ -8041,7 +8062,7 @@ name = "raw-scripts"
 version = "7.1.1"
 source = "git+https://github.com/input-output-hk/partner-chains-smart-contracts.git?tag=v7.1.1#1861a496b3216b64d3fafd8d7910fb5d94077bb8"
 dependencies = [
- "hex-literal",
+ "hex-literal 0.4.1",
 ]
 
 [[package]]
@@ -9815,8 +9836,8 @@ version = "1.6.0"
 dependencies = [
  "quickcheck",
  "quickcheck_macros",
- "rand 0.8.5",
- "rand_chacha 0.3.1",
+ "rand 0.9.1",
+ "rand_chacha 0.9.0",
 ]
 
 [[package]]
@@ -10044,7 +10065,7 @@ name = "sidechain-block-search"
 version = "1.6.0"
 dependencies = [
  "hex",
- "hex-literal",
+ "hex-literal 1.0.0",
  "parity-scale-codec",
  "proptest",
  "scale-info",
@@ -10063,7 +10084,7 @@ dependencies = [
 name = "sidechain-domain"
 version = "1.6.0"
 dependencies = [
- "bech32 0.9.1",
+ "bech32 0.11.0",
  "blake2b_simd",
  "byte-string-derive",
  "derive-where",
@@ -10071,7 +10092,7 @@ dependencies = [
  "ed25519-zebra",
  "figment",
  "hex",
- "hex-literal",
+ "hex-literal 1.0.0",
  "k256",
  "num-bigint",
  "num-derive",
@@ -10364,7 +10385,7 @@ dependencies = [
 name = "sp-block-producer-metadata"
 version = "1.6.0"
 dependencies = [
- "hex-literal",
+ "hex-literal 1.0.0",
  "k256",
  "parity-scale-codec",
  "sidechain-domain",
@@ -10860,7 +10881,7 @@ dependencies = [
  "async-trait",
  "authority-selection-inherents",
  "derive-new",
- "hex-literal",
+ "hex-literal 1.0.0",
  "minicbor",
  "parity-scale-codec",
  "plutus",
