@@ -71,7 +71,7 @@
 <a href=#71 id=71 data-nosnippet>71</a>}
 <a href=#72 id=72 data-nosnippet>72</a>
 <a href=#73 id=73 data-nosnippet>73</a><span class="doccomment">/// Bounded-length bytes representing a UTF-8 text string
-<a href=#74 id=74 data-nosnippet>74</a></span><span class="attr">#[derive(TypeInfo, Encode, Decode, DecodeWithMemTracking, MaxEncodedLen)]
+<a href=#74 id=74 data-nosnippet>74</a></span><span class="attr">#[derive(TypeInfo, Encode, DecodeWithMemTracking, MaxEncodedLen)]
 <a href=#75 id=75 data-nosnippet>75</a>#[scale_info(skip_type_params(T))]
 <a href=#76 id=76 data-nosnippet>76</a>#[derive_where(Clone, PartialEq, Eq, Default, PartialOrd, Ord)]
 <a href=#77 id=77 data-nosnippet>77</a></span><span class="kw">pub struct </span>BoundedString&lt;T: Get&lt;u32&gt;&gt;(BoundedVec&lt;u8, T&gt;);
@@ -84,49 +84,93 @@
 <a href=#84 id=84 data-nosnippet>84</a>    };
 <a href=#85 id=85 data-nosnippet>85</a>}
 <a href=#86 id=86 data-nosnippet>86</a>
-<a href=#87 id=87 data-nosnippet>87</a><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T: Get&lt;u32&gt;&gt; Deserialize&lt;<span class="lifetime">'a</span>&gt; <span class="kw">for </span>BoundedString&lt;T&gt; {
-<a href=#88 id=88 data-nosnippet>88</a>	<span class="kw">fn </span>deserialize&lt;D&gt;(deserializer: D) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, D::Error&gt;
-<a href=#89 id=89 data-nosnippet>89</a>	<span class="kw">where
-<a href=#90 id=90 data-nosnippet>90</a>		</span>D: serde::Deserializer&lt;<span class="lifetime">'a</span>&gt;,
-<a href=#91 id=91 data-nosnippet>91</a>	{
-<a href=#92 id=92 data-nosnippet>92</a>		<span class="prelude-val">Ok</span>(<span class="self">Self</span>(
-<a href=#93 id=93 data-nosnippet>93</a>			BoundedVec::try_from(
-<a href=#94 id=94 data-nosnippet>94</a>				alloc::string::String::deserialize(deserializer)<span class="question-mark">?</span>.as_bytes().to_vec(),
-<a href=#95 id=95 data-nosnippet>95</a>			)
-<a href=#96 id=96 data-nosnippet>96</a>			.map_err(|<span class="kw">_</span>| D::Error::custom(<span class="string">"Size limit exceeded"</span>))<span class="question-mark">?</span>,
-<a href=#97 id=97 data-nosnippet>97</a>		))
+<a href=#87 id=87 data-nosnippet>87</a><span class="kw">impl</span>&lt;T: Get&lt;u32&gt;&gt; Decode <span class="kw">for </span>BoundedString&lt;T&gt; {
+<a href=#88 id=88 data-nosnippet>88</a>	<span class="kw">fn </span>decode&lt;I: parity_scale_codec::Input&gt;(
+<a href=#89 id=89 data-nosnippet>89</a>		input: <span class="kw-2">&amp;mut </span>I,
+<a href=#90 id=90 data-nosnippet>90</a>	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, parity_scale_codec::Error&gt; {
+<a href=#91 id=91 data-nosnippet>91</a>		<span class="kw">let </span>bounded_vec: BoundedVec&lt;u8, T&gt; = Decode::decode(input)<span class="question-mark">?</span>;
+<a href=#92 id=92 data-nosnippet>92</a>
+<a href=#93 id=93 data-nosnippet>93</a>		<span class="comment">// Check if bytes are valid UTF-8 characters
+<a href=#94 id=94 data-nosnippet>94</a>		</span>core::str::from_utf8(bounded_vec.as_slice())
+<a href=#95 id=95 data-nosnippet>95</a>			.map_err(|_err| parity_scale_codec::Error::from(<span class="string">"UTF-8 decode failed"</span>))<span class="question-mark">?</span>;
+<a href=#96 id=96 data-nosnippet>96</a>
+<a href=#97 id=97 data-nosnippet>97</a>		<span class="prelude-val">Ok</span>(<span class="self">Self</span>(bounded_vec))
 <a href=#98 id=98 data-nosnippet>98</a>	}
 <a href=#99 id=99 data-nosnippet>99</a>}
 <a href=#100 id=100 data-nosnippet>100</a>
-<a href=#101 id=101 data-nosnippet>101</a><span class="kw">impl</span>&lt;T: Get&lt;u32&gt;&gt; Serialize <span class="kw">for </span>BoundedString&lt;T&gt; {
-<a href=#102 id=102 data-nosnippet>102</a>	<span class="kw">fn </span>serialize&lt;S&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, serializer: S) -&gt; <span class="prelude-ty">Result</span>&lt;S::Ok, S::Error&gt;
+<a href=#101 id=101 data-nosnippet>101</a><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T: Get&lt;u32&gt;&gt; Deserialize&lt;<span class="lifetime">'a</span>&gt; <span class="kw">for </span>BoundedString&lt;T&gt; {
+<a href=#102 id=102 data-nosnippet>102</a>	<span class="kw">fn </span>deserialize&lt;D&gt;(deserializer: D) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, D::Error&gt;
 <a href=#103 id=103 data-nosnippet>103</a>	<span class="kw">where
-<a href=#104 id=104 data-nosnippet>104</a>		</span>S: serde::Serializer,
+<a href=#104 id=104 data-nosnippet>104</a>		</span>D: serde::Deserializer&lt;<span class="lifetime">'a</span>&gt;,
 <a href=#105 id=105 data-nosnippet>105</a>	{
-<a href=#106 id=106 data-nosnippet>106</a>		<span class="kw">let </span>str = alloc::string::String::from_utf8(<span class="self">self</span>.<span class="number">0</span>.to_vec())
-<a href=#107 id=107 data-nosnippet>107</a>			.map_err(|<span class="kw">_</span>| S::Error::custom(<span class="string">"String is not valid UTF-8"</span>))<span class="question-mark">?</span>;
-<a href=#108 id=108 data-nosnippet>108</a>		serializer.serialize_str(<span class="kw-2">&amp;</span>str)
-<a href=#109 id=109 data-nosnippet>109</a>	}
-<a href=#110 id=110 data-nosnippet>110</a>}
-<a href=#111 id=111 data-nosnippet>111</a>
-<a href=#112 id=112 data-nosnippet>112</a><span class="kw">impl</span>&lt;T: Get&lt;u32&gt;&gt; Display <span class="kw">for </span>BoundedString&lt;T&gt; {
-<a href=#113 id=113 data-nosnippet>113</a>	<span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>core::fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; core::fmt::Result {
-<a href=#114 id=114 data-nosnippet>114</a>		f.write_str(
-<a href=#115 id=115 data-nosnippet>115</a>			<span class="kw-2">&amp;</span>alloc::string::String::from_utf8(<span class="self">self</span>.<span class="number">0</span>.to_vec()).map_err(|<span class="kw">_</span>| core::fmt::Error)<span class="question-mark">?</span>,
-<a href=#116 id=116 data-nosnippet>116</a>		)
-<a href=#117 id=117 data-nosnippet>117</a>	}
-<a href=#118 id=118 data-nosnippet>118</a>}
-<a href=#119 id=119 data-nosnippet>119</a>
-<a href=#120 id=120 data-nosnippet>120</a><span class="kw">impl</span>&lt;T: Get&lt;u32&gt;&gt; Debug <span class="kw">for </span>BoundedString&lt;T&gt; {
-<a href=#121 id=121 data-nosnippet>121</a>	<span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>core::fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; core::fmt::Result {
-<a href=#122 id=122 data-nosnippet>122</a>		f.write_str(<span class="kw-2">&amp;</span><span class="macro">alloc::format!</span>(<span class="string">"BoundedString&lt;{}&gt;({})"</span>, T::get(), <span class="self">self</span>))
+<a href=#106 id=106 data-nosnippet>106</a>		<span class="prelude-val">Ok</span>(<span class="self">Self</span>(
+<a href=#107 id=107 data-nosnippet>107</a>			BoundedVec::try_from(
+<a href=#108 id=108 data-nosnippet>108</a>				alloc::string::String::deserialize(deserializer)<span class="question-mark">?</span>.as_bytes().to_vec(),
+<a href=#109 id=109 data-nosnippet>109</a>			)
+<a href=#110 id=110 data-nosnippet>110</a>			.map_err(|<span class="kw">_</span>| D::Error::custom(<span class="string">"Size limit exceeded"</span>))<span class="question-mark">?</span>,
+<a href=#111 id=111 data-nosnippet>111</a>		))
+<a href=#112 id=112 data-nosnippet>112</a>	}
+<a href=#113 id=113 data-nosnippet>113</a>}
+<a href=#114 id=114 data-nosnippet>114</a>
+<a href=#115 id=115 data-nosnippet>115</a><span class="kw">impl</span>&lt;T: Get&lt;u32&gt;&gt; Serialize <span class="kw">for </span>BoundedString&lt;T&gt; {
+<a href=#116 id=116 data-nosnippet>116</a>	<span class="kw">fn </span>serialize&lt;S&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, serializer: S) -&gt; <span class="prelude-ty">Result</span>&lt;S::Ok, S::Error&gt;
+<a href=#117 id=117 data-nosnippet>117</a>	<span class="kw">where
+<a href=#118 id=118 data-nosnippet>118</a>		</span>S: serde::Serializer,
+<a href=#119 id=119 data-nosnippet>119</a>	{
+<a href=#120 id=120 data-nosnippet>120</a>		<span class="kw">let </span>str = alloc::string::String::from_utf8(<span class="self">self</span>.<span class="number">0</span>.to_vec())
+<a href=#121 id=121 data-nosnippet>121</a>			.map_err(|<span class="kw">_</span>| S::Error::custom(<span class="string">"String is not valid UTF-8"</span>))<span class="question-mark">?</span>;
+<a href=#122 id=122 data-nosnippet>122</a>		serializer.serialize_str(<span class="kw-2">&amp;</span>str)
 <a href=#123 id=123 data-nosnippet>123</a>	}
 <a href=#124 id=124 data-nosnippet>124</a>}
 <a href=#125 id=125 data-nosnippet>125</a>
-<a href=#126 id=126 data-nosnippet>126</a><span class="kw">impl</span>&lt;T: Get&lt;u32&gt;&gt; TryFrom&lt;<span class="kw-2">&amp;</span>str&gt; <span class="kw">for </span>BoundedString&lt;T&gt; {
-<a href=#127 id=127 data-nosnippet>127</a>	<span class="kw">type </span>Error = alloc::string::String;
-<a href=#128 id=128 data-nosnippet>128</a>
-<a href=#129 id=129 data-nosnippet>129</a>	<span class="kw">fn </span>try_from(value: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="self">Self</span>::Error&gt; {
-<a href=#130 id=130 data-nosnippet>130</a>		<span class="prelude-val">Ok</span>(<span class="self">Self</span>(BoundedVec::try_from(value.as_bytes().to_vec()).map_err(|<span class="kw">_</span>| value.to_string())<span class="question-mark">?</span>))
+<a href=#126 id=126 data-nosnippet>126</a><span class="kw">impl</span>&lt;T: Get&lt;u32&gt;&gt; Display <span class="kw">for </span>BoundedString&lt;T&gt; {
+<a href=#127 id=127 data-nosnippet>127</a>	<span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>core::fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; core::fmt::Result {
+<a href=#128 id=128 data-nosnippet>128</a>		f.write_str(
+<a href=#129 id=129 data-nosnippet>129</a>			<span class="kw-2">&amp;</span>alloc::string::String::from_utf8(<span class="self">self</span>.<span class="number">0</span>.to_vec()).map_err(|<span class="kw">_</span>| core::fmt::Error)<span class="question-mark">?</span>,
+<a href=#130 id=130 data-nosnippet>130</a>		)
 <a href=#131 id=131 data-nosnippet>131</a>	}
-<a href=#132 id=132 data-nosnippet>132</a>}</code></pre></div></section></main></body></html>
+<a href=#132 id=132 data-nosnippet>132</a>}
+<a href=#133 id=133 data-nosnippet>133</a>
+<a href=#134 id=134 data-nosnippet>134</a><span class="kw">impl</span>&lt;T: Get&lt;u32&gt;&gt; Debug <span class="kw">for </span>BoundedString&lt;T&gt; {
+<a href=#135 id=135 data-nosnippet>135</a>	<span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>core::fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; core::fmt::Result {
+<a href=#136 id=136 data-nosnippet>136</a>		f.write_str(<span class="kw-2">&amp;</span><span class="macro">alloc::format!</span>(<span class="string">"BoundedString&lt;{}&gt;({})"</span>, T::get(), <span class="self">self</span>))
+<a href=#137 id=137 data-nosnippet>137</a>	}
+<a href=#138 id=138 data-nosnippet>138</a>}
+<a href=#139 id=139 data-nosnippet>139</a>
+<a href=#140 id=140 data-nosnippet>140</a><span class="kw">impl</span>&lt;T: Get&lt;u32&gt;&gt; TryFrom&lt;<span class="kw-2">&amp;</span>str&gt; <span class="kw">for </span>BoundedString&lt;T&gt; {
+<a href=#141 id=141 data-nosnippet>141</a>	<span class="kw">type </span>Error = alloc::string::String;
+<a href=#142 id=142 data-nosnippet>142</a>
+<a href=#143 id=143 data-nosnippet>143</a>	<span class="kw">fn </span>try_from(value: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="self">Self</span>::Error&gt; {
+<a href=#144 id=144 data-nosnippet>144</a>		<span class="prelude-val">Ok</span>(<span class="self">Self</span>(BoundedVec::try_from(value.as_bytes().to_vec()).map_err(|<span class="kw">_</span>| value.to_string())<span class="question-mark">?</span>))
+<a href=#145 id=145 data-nosnippet>145</a>	}
+<a href=#146 id=146 data-nosnippet>146</a>}
+<a href=#147 id=147 data-nosnippet>147</a>
+<a href=#148 id=148 data-nosnippet>148</a><span class="attr">#[cfg(test)]
+<a href=#149 id=149 data-nosnippet>149</a></span><span class="kw">mod </span>tests {
+<a href=#150 id=150 data-nosnippet>150</a>	<span class="kw">use super</span>::<span class="kw-2">*</span>;
+<a href=#151 id=151 data-nosnippet>151</a>
+<a href=#152 id=152 data-nosnippet>152</a>	<span class="attr">#[test]
+<a href=#153 id=153 data-nosnippet>153</a>	</span><span class="kw">fn </span>decode_valid_utf8_string() {
+<a href=#154 id=154 data-nosnippet>154</a>		<span class="kw">let </span>original = <span class="string">"hello world"</span>.encode();
+<a href=#155 id=155 data-nosnippet>155</a>
+<a href=#156 id=156 data-nosnippet>156</a>		<span class="kw">let </span>decoded = BoundedString::&lt;sp_core::ConstU32&lt;<span class="number">32</span>&gt;&gt;::decode(<span class="kw-2">&amp;mut &amp;*</span>original).unwrap();
+<a href=#157 id=157 data-nosnippet>157</a>		<span class="macro">assert_eq!</span>(original, decoded.encode());
+<a href=#158 id=158 data-nosnippet>158</a>	}
+<a href=#159 id=159 data-nosnippet>159</a>
+<a href=#160 id=160 data-nosnippet>160</a>	<span class="attr">#[test]
+<a href=#161 id=161 data-nosnippet>161</a>	</span><span class="kw">fn </span>fail_to_decode_invalid_utf8_string() {
+<a href=#162 id=162 data-nosnippet>162</a>		<span class="kw">let </span>original = <span class="macro">vec!</span>[<span class="number">0xC0</span>, <span class="number">0x80</span>, <span class="number">0xE0</span>, <span class="number">0xFF</span>].encode(); <span class="comment">// some invalid utf8 characters
+<a href=#163 id=163 data-nosnippet>163</a>		</span><span class="macro">assert_eq!</span>(
+<a href=#164 id=164 data-nosnippet>164</a>			BoundedString::&lt;sp_core::ConstU32&lt;<span class="number">32</span>&gt;&gt;::decode(<span class="kw-2">&amp;mut &amp;*</span>original),
+<a href=#165 id=165 data-nosnippet>165</a>			<span class="prelude-val">Err</span>(parity_scale_codec::Error::from(<span class="string">"UTF-8 decode failed"</span>))
+<a href=#166 id=166 data-nosnippet>166</a>		);
+<a href=#167 id=167 data-nosnippet>167</a>
+<a href=#168 id=168 data-nosnippet>168</a>		<span class="kw">use </span>parity_scale_codec::DecodeWithMemLimit;
+<a href=#169 id=169 data-nosnippet>169</a>
+<a href=#170 id=170 data-nosnippet>170</a>		<span class="comment">// Safety check, due we leave derived DecodeWithMemTracking, so we want to ensure that it is also using Decode trait impl
+<a href=#171 id=171 data-nosnippet>171</a>		</span><span class="macro">assert_eq!</span>(
+<a href=#172 id=172 data-nosnippet>172</a>			BoundedString::&lt;sp_core::ConstU32&lt;<span class="number">32</span>&gt;&gt;::decode_with_mem_limit(<span class="kw-2">&amp;mut &amp;*</span>original, <span class="number">100</span>),
+<a href=#173 id=173 data-nosnippet>173</a>			<span class="prelude-val">Err</span>(parity_scale_codec::Error::from(<span class="string">"UTF-8 decode failed"</span>))
+<a href=#174 id=174 data-nosnippet>174</a>		);
+<a href=#175 id=175 data-nosnippet>175</a>	}
+<a href=#176 id=176 data-nosnippet>176</a>}</code></pre></div></section></main></body></html>
