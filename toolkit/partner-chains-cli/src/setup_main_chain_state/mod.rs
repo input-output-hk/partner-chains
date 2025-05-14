@@ -91,9 +91,6 @@ impl CmdRun for SetupMainChainStateCmd {
 		let config_initial_authorities =
 			initial_permissioned_candidates_from_chain_config(context)?;
 		if let Some(ariadne_parameters) = get_ariadne_parameters(context, &chain_config)? {
-			if ariadne_parameters.permissioned_candidates == config_initial_authorities {
-				context.print(&format!("Permissioned candidates in the {} file match the most recent on-chain initial permissioned candidates.", CHAIN_CONFIG_FILE_PATH));
-			} else {
 				print_on_chain_and_config_permissioned_candidates(
 					context,
 					&ariadne_parameters.permissioned_candidates,
@@ -104,7 +101,7 @@ impl CmdRun for SetupMainChainStateCmd {
 					config_initial_authorities,
 					chain_config.chain_parameters.genesis_utxo,
 				)?;
-			}
+			
 			context.print(&format!(
 				"D-Parameter on the main chain is: (P={}, R={})",
 				ariadne_parameters.d_parameter.num_permissioned_candidates,
