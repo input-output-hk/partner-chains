@@ -94,17 +94,16 @@ pub type Result<T> = std::result::Result<T, DataSourceError>;
 
 #[cfg(test)]
 mod tests {
-	use ctor::{ctor, dtor};
+	use ctor::ctor;
 	use std::sync::OnceLock;
+	use testcontainers_modules::postgres::Postgres as PostgresImg;
 	use testcontainers_modules::testcontainers::Container;
-	use testcontainers_modules::{postgres::Postgres as PostgresImg, testcontainers::clients::Cli};
+	use testcontainers_modules::testcontainers::runners::SyncRunner;
 
 	static POSTGRES: OnceLock<Container<PostgresImg>> = OnceLock::new();
-	static CLI: OnceLock<Cli> = OnceLock::new();
 
-	fn init_postgres() -> Container<'static, PostgresImg> {
-		let docker = CLI.get_or_init(Cli::default);
-		docker.run(PostgresImg::default())
+	fn init_postgres() -> Container<PostgresImg> {
+		PostgresImg::default().start().unwrap()
 	}
 
 	#[ctor]
@@ -112,16 +111,11 @@ mod tests {
 		let postgres = POSTGRES.get_or_init(init_postgres);
 		let database_url = &format!(
 			"postgres://postgres:postgres@127.0.0.1:{}/postgres",
-			postgres.get_host_port_ipv4(5432)
+			postgres.get_host_port_ipv4(5432).unwrap()
 		);
 		// Needed for sqlx::test macro annotation
 		unsafe {
 			std::env::set_var("DATABASE_URL", database_url);
 		}
-	}
-
-	#[dtor]
-	fn on_shutdown() {
-		POSTGRES.get().iter().for_each(|postgres| postgres.rm());
 	}
 }

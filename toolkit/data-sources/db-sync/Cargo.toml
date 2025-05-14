@@ -52,7 +52,10 @@ sp-block-participation = { workspace = true, features = [
 [dev-dependencies]
 tokio-test = "0.4.3"
 ctor = "0.4.1"
-testcontainers-modules = { version = "0.12", features = ["postgres"] }
+testcontainers-modules = { version = "0.12", features = [
+    "blocking",
+    "postgres",
+] }
 pretty_assertions = { workspace = true }
 
 [features]
