@@ -3,7 +3,7 @@ authors = ["IOG"]
 edition = "2024"
 homepage = "https://iohk.io/"
 repository = "https://github.com/input-output-hk/partner-chains.git"
-version = "1.6.0"
+version = "1.7.0"
 
 [workspace]
 members = [
