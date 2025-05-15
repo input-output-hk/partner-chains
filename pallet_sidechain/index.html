@@ -1,2 +1,83 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="API documentation for the Rust `pallet_sidechain` crate."><title>pallet_sidechain - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-0ce1a80b.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="pallet_sidechain" data-themes="" data-resource-suffix="" data-rustdoc-version="1.89.0-nightly (414482f6a 2025-05-13)" data-channel="nightly" data-search-js="search-f7877310.js" data-settings-js="settings-5514c975.js" ><script src="../static.files/storage-4e99c027.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-7ef8a74a.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../pallet_sidechain/index.html">pallet_<wbr>sidechain</a><span class="version">1.6.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#modules">Crate Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>pallet_sidechain</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/pallet_sidechain/lib.rs.html#1-91">Source</a> </span></div><h2 id="reexports" class="section-header">Re-exports<a href="#reexports" class="anchor">§</a></h2><dl class="item-table reexports"><dt><code>pub use <a class="mod" href="pallet/index.html" title="mod pallet_sidechain::pallet">pallet</a>::*;</code></dt></dl><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="pallet/index.html" title="mod pallet_sidechain::pallet">pallet</a></dt><dd>The <code>pallet</code> module in each FRAME pallet hosts the most important items needed
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Pallet that establishes a Partner Chain as a Cardano sidechain"><title>pallet_sidechain - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-0ce1a80b.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="pallet_sidechain" data-themes="" data-resource-suffix="" data-rustdoc-version="1.89.0-nightly (414482f6a 2025-05-13)" data-channel="nightly" data-search-js="search-f7877310.js" data-settings-js="settings-5514c975.js" ><script src="../static.files/storage-4e99c027.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-7ef8a74a.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../pallet_sidechain/index.html">pallet_<wbr>sidechain</a><span class="version">1.6.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#purpose-of-this-pallet" title="Purpose of this pallet">Purpose of this pallet</a><ul><li><a href="#genesis-utxo" title="Genesis UTXO">Genesis UTXO</a></li><li><a href="#partner-chain-epochs" title="Partner Chain Epochs">Partner Chain Epochs</a></li></ul></li><li><a href="#usage" title="Usage">Usage</a><ul><li><a href="#prerequisites" title="Prerequisites">Prerequisites</a></li><li><a href="#adding-to-runtime" title="Adding to runtime">Adding to runtime</a></li><li><a href="#genesis-configuration" title="Genesis configuration">Genesis configuration</a></li></ul></li></ul><h3><a href="#modules">Crate Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>pallet_sidechain</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/pallet_sidechain/lib.rs.html#1-226">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Pallet that establishes a Partner Chain as a Cardano sidechain</p>
+<h2 id="purpose-of-this-pallet"><a class="doc-anchor" href="#purpose-of-this-pallet">§</a>Purpose of this pallet</h2>
+<p>This pallet serves as the starting point for building a Partner Chain runtime.
+It stores its genesis UTXO which serves as its global identifier and divides
+Partner Chain slots into Partner Chain epochs.</p>
+<h3 id="genesis-utxo"><a class="doc-anchor" href="#genesis-utxo">§</a>Genesis UTXO</h3>
+<p>When a Partner Chain governance is initialized on Cardano, the transaction spends
+a special <em>genesis UTXO</em>. This UTXO serves multiple crucial roles:</p>
+<ul>
+<li>it serves as the unique identifier of the Partner Chain</li>
+<li>it affects the addresses of all Partner Chain Toolkit’s Plutus smart contracts
+to allow multiple Partner Chains to exist</li>
+<li>it is included in messages signed by various participants of the Partner Chain
+when submitting transactions (on both Cardano and the Partner Chain) to prevent
+replay attacks</li>
+</ul>
+<p>The genesis UTXO is immutable throughout the lifetime of a Partner Chain in order
+to preserve its identity.</p>
+<h3 id="partner-chain-epochs"><a class="doc-anchor" href="#partner-chain-epochs">§</a>Partner Chain Epochs</h3>
+<p>When producing blocks, Partner Chains divide time into slots in which a single block
+can be produced. These slots are in turn grouped into epochs which other Partner
+Chains features use as boundaries for some of their state transitions (eg. a Partner
+Chain block producing committees change at epoch boundaries). Both slot and epoch
+durations are constant and immutable throughout a Partner Chain’s lifetime.</p>
+<h2 id="usage"><a class="doc-anchor" href="#usage">§</a>Usage</h2><h3 id="prerequisites"><a class="doc-anchor" href="#prerequisites">§</a>Prerequisites</h3>
+<p>Before a Partner Chain can be started, its Cardano governance must be established by
+running the <em>init</em> transaction, which also determines the <em>genesis UTXO</em> of the
+Partner Chain. Consult <code>docs/user-guides/governance/governance.md</code> for instructions.</p>
+<p>As Partner Chains operate on the basis of slots and epochs, your Substrate node should
+use a slot-based consensus mechanism such as Aura.</p>
+<h4 id="optional---defining-a-new-epoch-hook"><a class="doc-anchor" href="#optional---defining-a-new-epoch-hook">§</a>Optional - defining a new epoch hook</h4>
+<p>A Partner Chain may need to perform custom logic when a new epoch starts, eg. pay
+out block production rewards, update chain participant standings etc. For this purpose,
+the pallet can be configured with a handler that will be triggered during initialization
+of each first block of a new epoch.</p>
+<p>To create a new epoch handler, simply define a type and have it implement the [OnNewEpoch] trait:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>sidechain_domain::{ ScEpochNumber, ScSlotNumber };
+<span class="kw">use </span>sp_runtime::Weight;
+
+<span class="kw">struct </span>MyNewEpochHandler;
+<span class="kw">impl </span>sp_sidechain::OnNewEpoch <span class="kw">for </span>MyNewEpochHandler {
+    <span class="kw">fn </span>on_new_epoch(old_epoch: ScEpochNumber, new_epoch: ScEpochNumber) -&gt; Weight {
+        <span class="macro">log::info!</span>(<span class="string">"Partner Chain epoch changed from {old_epoch} to {new_epoch}"</span>);
+        Weight::zero()
+    }
+}</code></pre></div>
+<p>The weight returned by <code>on_new_epoch</code> should match its real resource use.</p>
+<h3 id="adding-to-runtime"><a class="doc-anchor" href="#adding-to-runtime">§</a>Adding to runtime</h3>
+<p>The pallet requires minimal configuration, as it is only mandatory to inject the function
+that provides the current slot. Assuming that Aura consensus is used, the pallet can
+be configured like the following:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">impl </span>pallet_sidechain::Config <span class="kw">for </span>Runtime {
+    <span class="kw">fn </span>current_slot_number() -&gt; ScSlotNumber {
+        ScSlotNumber(<span class="kw-2">*</span>pallet_aura::CurrentSlot::&lt;<span class="self">Self</span>&gt;::get())
+    }
+    <span class="kw">type </span>OnNewEpoch = MyNewEpochHandler;
+}</code></pre></div>
+<p>Optionally, a new epoch handler can be configured like in the example above. Partner Chains
+that do not need to run additional logic at epoch change can use the empty implementation
+available for [()]:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">type </span>OnNewEpoch = MyNewEpochHandler;</code></pre></div>
+<p>If multiple handlers need to be added, a tuple can be used for convenience:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">type </span>OnNewEpoch = (NewEpochHandler1, NewEpochHandler2);</code></pre></div>
+<h3 id="genesis-configuration"><a class="doc-anchor" href="#genesis-configuration">§</a>Genesis configuration</h3>
+<p>After the pallet is added to the runtime, configure it in your rust node code:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>pallet_sidechain::GenesisConfig::&lt;Runtime&gt; {
+    genesis_utxo: UtxoId::from_str(<span class="string">"0000000000000000000000000000000000000000000000000000000000000000#0"</span>).unwrap(),
+    slots_per_epoch: SlotsPerEpoch(<span class="number">60</span>),
+    ..Default::default()
+}</code></pre></div>
+<p>or via a chain spec Json file:</p>
+<div class="example-wrap"><pre class="language-json"><code>{
+    &quot;sidechain_pallet&quot;: {
+        &quot;genesisUtxo&quot;: &quot;0000000000000000000000000000000000000000000000000000000000000000#0&quot;,
+        &quot;slotsPerEpoch&quot;: 60
+    }
+}</code></pre></div></div></details><h2 id="reexports" class="section-header">Re-exports<a href="#reexports" class="anchor">§</a></h2><dl class="item-table reexports"><dt><code>pub use <a class="mod" href="pallet/index.html" title="mod pallet_sidechain::pallet">pallet</a>::*;</code></dt></dl><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="pallet/index.html" title="mod pallet_sidechain::pallet">pallet</a></dt><dd>The <code>pallet</code> module in each FRAME pallet hosts the most important items needed
 to construct this pallet.</dd></dl></section></div></main></body></html>
