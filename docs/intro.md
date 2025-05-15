@@ -508,17 +508,20 @@ names of the enviroment variables correspond directly to the names of genesis
 config fields.
 
 ###### Sidechain
-- `GENESIS_UTXO`
+- `GENESIS_UTXO`: genesis UTXO of the Partner Chain
+- `SLOTS_PER_EPOCH`: number of slots per Partner Chain epoch
 
 ###### Committee selection
-- `COMMITTEE_CANDIDATE_ADDRESS`: 
-- `D_PARAMETER_POLICY_ID`
-- `PERMISSIONED_CANDIDATES_POLICY_ID`
+- `COMMITTEE_CANDIDATE_ADDRESS`: Cardano address of SPO registrations
+- `D_PARAMETER_POLICY_ID`: ID of the minting policy used for the D-Parameter
+- `PERMISSIONED_CANDIDATES_POLICY_ID`: ID of the minting policy used for the
+  permissioned candidates
 
 ###### Native Token Management
-- `NATIVE_TOKEN_POLICY_ID`
-- `NATIVE_TOKEN_ASSET_NAME`
-- `ILLIQUID_SUPPLY_VALIDATOR_ADDRESS`
+- `NATIVE_TOKEN_POLICY_ID` and `NATIVE_TOKEN_ASSET_NAME`: Minting policy and asseet
+  name of the Cardano native token of the Partner Chain
+- `ILLIQUID_SUPPLY_VALIDATOR_ADDRESS`: Cardano address at which tokens are locked
+  before being available on the Partner Chain
 
 #### Keys
 The partner chain node needs three different keys to be present in a Substrate key store accessible
@@ -527,7 +530,10 @@ by the partner chain node.
 1. `aura_pub_key`: The aura public key (sr25519)
 1. `grandpa_pub_key`: The grandpa public key (Ed25519)
 
-By default the partner chain node process will look for key stores in the base path directory.
+By default the partner chain node process will look for key stores in the base path directory. Refer to the [official Polkadot  guide](https://docs.polkadot.com/infrastructure/running-a-validator/onboarding-and-offboarding/key-management/)
+or your particular Partner Chain's documentation for information on how
+to manage your node keys.
+
 ### Features
 
 #### Features Overview
