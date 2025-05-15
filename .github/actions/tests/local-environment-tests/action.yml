@@ -11,7 +11,7 @@ inputs:
     description: "PC Artifact Tag"
     required: true
   tests:
-    description: "Test set to run (committee, delegator-rewards, smart-contracts, wizards, or full). 'full' runs all tests across multiple epochs."
+    description: "Test set to run (committee, delegator-rewards, smart-contracts, wizards, or full)"
     required: true
 
 outputs: {}
