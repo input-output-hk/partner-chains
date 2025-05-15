@@ -9,9 +9,7 @@ use sidechain_domain::{
 	MainchainBlock, McBlockHash, McBlockNumber, McEpochNumber, McSlotNumber, McTxHash, UtxoId,
 	UtxoIndex,
 };
-use sqlx::{
-	Decode, Pool, Postgres, database::HasValueRef, error::BoxDynError, postgres::PgTypeInfo,
-};
+use sqlx::{Decode, Pool, Postgres, database::Database, error::BoxDynError, postgres::PgTypeInfo};
 use std::str::FromStr;
 
 #[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
@@ -147,7 +145,7 @@ impl sqlx::Type<Postgres> for NativeTokenAmount {
 }
 
 impl<'r> Decode<'r, Postgres> for NativeTokenAmount {
-	fn decode(value: <Postgres as HasValueRef<'r>>::ValueRef) -> Result<Self, BoxDynError> {
+	fn decode(value: <Postgres as Database>::ValueRef<'r>) -> Result<Self, BoxDynError> {
 		let decoded = <sqlx::types::BigDecimal as Decode<Postgres>>::decode(value)?;
 		let i = decoded.to_u128().ok_or("NativeTokenQuantity is always a u128".to_string())?;
 		Ok(Self(i))

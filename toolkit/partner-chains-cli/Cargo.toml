@@ -29,7 +29,7 @@ sp-runtime = { workspace = true, features = ["std"] }
 thiserror = { workspace = true }
 tempfile = { workspace = true }
 secp256k1 = { workspace = true, features = ["std"] }
-colored = { version = "2.1.0" }
+colored = { workspace = true }
 ogmios-client = { workspace = true, features = ["jsonrpsee-client"] }
 tokio = { workspace = true }
 cardano-serialization-lib = { workspace = true }

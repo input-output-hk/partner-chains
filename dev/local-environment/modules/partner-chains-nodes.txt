@@ -9,7 +9,6 @@
       - ./configurations/partner-chains-nodes/partner-chains-node-1/entrypoint.sh:/entrypoint.sh
     environment:
       DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/cexplorer"
-      SIDECHAIN_BLOCK_BENEFICIARY: "0000000000000000000000000000000000000000000000000000000000000001"
       CARDANO_SECURITY_PARAMETER: "5"
       CARDANO_ACTIVE_SLOTS_COEFF: "0.4"
       MC__FIRST_EPOCH_NUMBER: "0"
@@ -38,7 +37,6 @@
       - ./configurations/partner-chains-nodes/partner-chains-node-2/entrypoint.sh:/entrypoint.sh
     environment:
       DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/cexplorer"
-      SIDECHAIN_BLOCK_BENEFICIARY: "0000000000000000000000000000000000000000000000000000000000000002"
       CARDANO_SECURITY_PARAMETER: "5"
       CARDANO_ACTIVE_SLOTS_COEFF: "0.4"
       MC__FIRST_EPOCH_NUMBER: "0"
@@ -67,7 +65,6 @@
       - ./configurations/partner-chains-nodes/partner-chains-node-3/entrypoint.sh:/entrypoint.sh
     environment:
       DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/cexplorer"
-      SIDECHAIN_BLOCK_BENEFICIARY: "0000000000000000000000000000000000000000000000000000000000000003"
       CARDANO_SECURITY_PARAMETER: "5"
       CARDANO_ACTIVE_SLOTS_COEFF: "0.4"
       MC__FIRST_EPOCH_NUMBER: "0"
@@ -98,7 +95,6 @@
       - ./configurations/partner-chains-nodes/partner-chains-node-4/network:/network
     environment:
       DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/cexplorer"
-      SIDECHAIN_BLOCK_BENEFICIARY: "0000000000000000000000000000000000000000000000000000000000000004"
       CARDANO_SECURITY_PARAMETER: "5"
       CARDANO_ACTIVE_SLOTS_COEFF: "0.4"
       MC__FIRST_EPOCH_NUMBER: "0"
@@ -129,7 +125,6 @@
       - ./configurations/partner-chains-nodes/partner-chains-node-5/network:/network
     environment:
       DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/cexplorer"
-      SIDECHAIN_BLOCK_BENEFICIARY: "0000000000000000000000000000000000000000000000000000000000000005"
       CARDANO_SECURITY_PARAMETER: "5"
       CARDANO_ACTIVE_SLOTS_COEFF: "0.4"
       MC__FIRST_EPOCH_NUMBER: "0"

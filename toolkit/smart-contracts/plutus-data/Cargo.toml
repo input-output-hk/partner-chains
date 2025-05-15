@@ -19,6 +19,7 @@ cardano-serialization-lib = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
+raw-scripts = { workspace = true }
 serde_json = { workspace = true }
 hex-literal = { workspace = true }
 pretty_assertions = { workspace = true }

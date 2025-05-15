@@ -15,6 +15,12 @@
     * [db\-sync](#db-sync)
     * [ogmios](#ogmios)
     * [cardano node](#cardano-node)
+    * [System Design](#system-design)
+  * [Running Partner Chain Dependencies](#running-a-partner-chain-dependencies)
+    * [Running cardano-node](#running-cardano-node)
+    * [Running db-sync](#running-db-sync)
+    * [Running PostgreSQL](#running-postgresql)
+    * [Running ogmios](#running-ogmios)
   * [Features](#features)
     * [Features Overview](#feature-overview)
     * [Block Participation Rewards](#block-participation-rewards)
@@ -159,6 +165,67 @@ _Offchain_ code, which provides logic for building and executing Cardano transac
 Finally, many features expose **Cli Commands** that support their operation. These include commands to interact
 with the Cardano main chain using the offchain code, create various signatures, and query the Partner Chain's
 state and configuraiont.
+
+### Running Partner Chain Dependencies
+In order to run a partner chain, several services must be running on the same network as the node
+instance. All of these services are external projects and provide their own documentation. This
+documentaion will mostly refer to existing documentation but point out any specifics relating to
+using these services in the context of a partner chain setup.
+
+#### Running cardano-node
+[cardano-node](https://github.com/IntersectMBO/cardano-node) is the core service for connecting to
+the Cardano blockchain and is mandatory for running a partner chain. Please refer to the [project
+website](https://github.com/IntersectMBO/cardano-node) for detailed instructions on configuring and
+running cardano-node.
+
+:warning: Please note that your cardano-node instance needs to be fully synchronized before you can
+start to create a partner chain setup. The synchronization time depends on the network conditions and
+hardware characteristics but below are some approximations:
+
+| network  | approximated sync time |
+| ------------- | ------------- |
+| preview       | hours  |
+| pre-prod      | up to a day|
+| mainnet       | ~2 days|
+
+#### Running db-sync
+In order to observe the state of the Cardano ledger, the partner chain relies on
+[db-sync](https://github.com/IntersectMBO/cardano-db-sync) as chain-indexer. The default
+configuration is sufficient. Make sure to refer to the project
+[documentation](https://github.com/IntersectMBO/cardano-db-sync/blob/master/doc/Readme.md) for
+further details.
+
+:warning: Please note that db-sync needs to be **fully synchronized**. Attempting to run a partner chain node
+with a db-sync instance that lags behind will result in consensus errors. The synchronization time
+depends on the network conditions and hardware characteristics but below are some approximations:
+
+
+| network  | approximated sync time |
+| ------------- | ------------- |
+| preview       | hours  |
+| pre-prod      | up to a day|
+| mainnet       | ~2 days|
+
+
+#### Running PostgreSQL
+
+A [PostgreSQL](https://www.postgresql.org/) database is a runtime requirement via db-sync as the
+indexer persists ledger state and events in the database. The partner chain node also needs to
+access the database directly.
+
+:warning: Make sure to create a database called `cexplorer` and make it accessible to the user which
+will execute your partner chain node executable.
+
+
+#### Running ogmios
+[ogmios](https://github.com/CardanoSolutions/ogmios) is a lightweight bridge-interface providing a
+http/websocket interface for communicating with a local cardano node. Unlike _db-sync_, which is
+always mandatory, ogmios is only required when interacting with the smart contracts as chain
+builder, or when registering as SPO.
+
+Please refer to the [project
+documentation](https://ogmios.dev/getting-started/building/#-documentation) for details on how to
+run and configure ogmios.
 
 ### Features
 
