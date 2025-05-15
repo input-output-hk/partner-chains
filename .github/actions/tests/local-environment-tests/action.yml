@@ -11,7 +11,7 @@ inputs:
     description: "PC Artifact Tag"
     required: true
   tests:
-    description: "Test set to run (premerge or postmerge)"
+    description: "Test set to run (committee, delegator-rewards, smart-contracts, wizards, or full). 'full' runs all tests across multiple epochs."
     required: true
 
 outputs: {}
@@ -23,25 +23,33 @@ runs:
       uses: actions/checkout@v4
       with:
         ref: ${{ inputs.sha }}
+
     - name: Acquire AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
         role-to-assume: ${{ env.AWS_ROLE_ARN_SECRET }}
         aws-region: ${{ env.AWS_REGION }}
+
     - name: Login to ECR
       uses: docker/login-action@v3
       with:
         registry: ${{ env.ECR_REGISTRY_SECRET }}
+
     - name: Deploy local environment
       run: |
         mkdir -p dev/local-environment/configurations/tests/e2e-tests
         cp -r e2e-tests/* dev/local-environment/configurations/tests/e2e-tests
         cd dev/local-environment
-        bash setup.sh --non-interactive --postgres-password azMpOp4mTqhlKDmgCVQr --node-image ${{ inputs.image }} --tests
+        if [ "${{ inputs.tests }}" = "wizards" ]; then
+          bash setup.sh --non-interactive --postgres-password azMpOp4mTqhlKDmgCVQr --node-image ${{ inputs.image }} --tests -d 5
+        else
+          bash setup.sh --non-interactive --postgres-password azMpOp4mTqhlKDmgCVQr --node-image ${{ inputs.image }} --tests
+        fi
         docker compose up -d
         cd ../../
       shell: bash
-    - name: Wait for partner-chains-node-1 to start
+
+    - name: Wait for first node to start
       id: wait-pc-node
       continue-on-error: true
       run: |
@@ -55,53 +63,66 @@ runs:
         restart_count=0
         max_restarts=10
 
+        # Set the container name based on test type
+        if [ "${{ inputs.tests }}" = "wizards" ]; then
+          CONTAINER_NAME="partner-chains-wizard-1"
+        else
+          CONTAINER_NAME="partner-chains-node-1"
+        fi
+
         # Wait for the Partner Chain node to be ready or until max restarts or epoch 2 is reached
-        while ! docker exec partner-chains-node-1 [ -e /shared/partner-chains-node-1.ready ]; do
+        while ! docker exec $CONTAINER_NAME [ -e /shared/$CONTAINER_NAME.ready ]; do
           epoch=$(docker exec cardano-node-1 cardano-cli latest query tip --testnet-magic 42 | jq -r .epoch)
           echo "Epoch: $epoch"
-          container_status=$(docker inspect -f '{{.State.Status}}' partner-chains-node-1)
+          container_status=$(docker inspect -f '{{.State.Status}}' $CONTAINER_NAME)
           echo "Container status: $container_status"
           if [ "$container_status" = "restarting" ]; then
             restart_count=$((restart_count + 1))
-            echo "partner-chains-node-1 is restarting ($restart_count/$max_restarts)"
+            echo "$CONTAINER_NAME is restarting ($restart_count/$max_restarts)"
             if [ "$restart_count" -ge "$max_restarts" ]; then
-              echo "partner-chains-node-1 has restarted $restart_count times. Failing early."
+              echo "$CONTAINER_NAME has restarted $restart_count times. Failing early."
               exit 1
             fi
           else
             restart_count=0
           fi
           if [ "$epoch" -ge 2 ]; then
-            echo "Epoch has reached 2 and partner-chains-node-1 is still not ready."
+            echo "Epoch has reached 2 and $CONTAINER_NAME is still not ready."
             exit 1
           fi
           sleep 10
         done
       shell: bash
+
     - name: Collect Docker logs
       run: |
-        mkdir -p local-environment-logs-initial
+        mkdir -p local-environment-${{ inputs.tests }}-logs-initial
         docker ps -a --format '{{.Names}}' | while read line; do
           echo "Collecting logs for container $line"
-          docker logs "$line" > "local-environment-logs-initial/$line.log" 2>&1 || true
+          docker logs "$line" > "local-environment-${{ inputs.tests }}-logs-initial/$line.log" 2>&1 || true
         done
       shell: bash
+
     - name: Upload Docker logs artifact
       uses: actions/upload-artifact@v4
       with:
-        name: local-environment-logs-initial
-        path: local-environment-logs-initial/
+        name: local-environment-${{ inputs.tests }}-logs-initial
+        path: local-environment-${{ inputs.tests }}-logs-initial/
+
     - name: Fail the job
       if: ${{ steps.wait-pc-node.outcome == 'failure' }}
       run: exit 1
       shell: bash
+
     - name: Run smoke tests
+      if: ${{ inputs.tests == 'full' }}
       uses: ./.github/actions/tests/run-e2e-tests
       with:
         env: ${{ env.TEST_ENVIRONMENT }}
         keyword: "test_get_status or test_get_params"
         blockchain: substrate
         local-environment: "true"
+
     - name: Wait for epoch 2
       uses: ./.github/actions/tests/wait-for-epoch
       with:
@@ -109,11 +130,14 @@ runs:
         deployment: docker
         node: cardano-node-1
         environment:
+
     - name: Let PC warm up
       run: |
         sleep 30
       shell: bash
+
     - name: Run all tests (do not verify full MC epoch)
+      if: ${{ inputs.tests == 'full' }}
       uses: ./.github/actions/tests/run-e2e-tests
       with:
         env: ${{ env.TEST_ENVIRONMENT }}
@@ -121,16 +145,18 @@ runs:
         blockchain: substrate
         markers: "not probability and not rpc"
         local-environment: "true"
+
     - name: Wait for epoch 3
-      if: ${{ inputs.tests == 'postmerge' }}
+      if: ${{ inputs.tests == 'full' || inputs.tests == 'wizards' }}
       uses: ./.github/actions/tests/wait-for-epoch
       with:
         epoch: 3
         deployment: docker
         node: cardano-node-1
         environment:
+
     - name: Run all tests (do not verify full MC epoch)
-      if: ${{ inputs.tests == 'postmerge' }}
+      if: ${{ inputs.tests == 'full' }}
       uses: ./.github/actions/tests/run-e2e-tests
       with:
         env: ${{ env.TEST_ENVIRONMENT }}
@@ -138,16 +164,18 @@ runs:
         blockchain: substrate
         markers: "not probability"
         local-environment: "true"
+
     - name: Wait for epoch 4
-      if: ${{ inputs.tests == 'postmerge' }}
+      if: ${{ inputs.tests == 'full' }}
       uses: ./.github/actions/tests/wait-for-epoch
       with:
         epoch: 4
         deployment: docker
         node: cardano-node-1
         environment:
+
     - name: Run all tests
-      if: ${{ inputs.tests == 'postmerge' }}
+      if: ${{ inputs.tests == 'full' }}
       uses: ./.github/actions/tests/run-e2e-tests
       with:
         env: ${{ env.TEST_ENVIRONMENT }}
@@ -156,8 +184,9 @@ runs:
         blockchain: substrate
         markers: "not probability and not reserve"
         local-environment: "true"
+
     - name: Check if no skipped tests
-      if: ${{ inputs.tests == 'postmerge' }}
+      if: ${{ inputs.tests == 'full' }}
       run: |
         skipped=$(jq -r .summary.skipped e2e-tests/logs/.report.json)
         if [ "$skipped" != "null" ]; then
@@ -165,21 +194,24 @@ runs:
           exit 1
         fi
       shell: bash
+
     - name: Collect container logs
       if: always()
       run: |
-        mkdir -p local-environment-logs-full
+        mkdir -p local-environment-${{ inputs.tests }}-logs-full
         docker ps -a --format '{{.Names}}' | while read line; do
           echo "Collecting logs for container $line"
-          docker logs "$line" > "local-environment-logs-full/$line.log" 2>&1 || true
+          docker logs "$line" > "local-environment-${{ inputs.tests }}-logs-full/$line.log" 2>&1 || true
         done
       shell: bash
+
     - name: Upload container logs
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: local-environment-logs-full
-        path: local-environment-logs-full/
+        name: local-environment-${{ inputs.tests }}-logs-full
+        path: local-environment-${{ inputs.tests }}-logs-full/
+
     - name: Stop partner-chains-demo
       run: |
         cd dev/local-environment

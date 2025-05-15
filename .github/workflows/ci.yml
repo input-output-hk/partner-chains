@@ -99,12 +99,12 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Deploy and test against local environment
-        uses: ./.github/actions/tests/local-environment-delegator-rewards-tests
+        uses: ./.github/actions/tests/local-environment-tests
         with:
           tag: CI
           image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
           sha: ${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
-          tests: premerge
+          tests: delegator-rewards
         env:
           SUBSTRATE_REPO_SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
           EARTHLY_TAR: ${{ secrets.EARTHLY_TAR }}
@@ -124,12 +124,12 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Deploy and test against local environment
-        uses: ./.github/actions/tests/local-environment-committee-tests
+        uses: ./.github/actions/tests/local-environment-tests
         with:
           tag: CI
           image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
           sha: ${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
-          tests: premerge
+          tests: committee
         env:
           SUBSTRATE_REPO_SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
           EARTHLY_TAR: ${{ secrets.EARTHLY_TAR }}
@@ -149,12 +149,12 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Deploy and test against local environment
-        uses: ./.github/actions/tests/local-environment-smart-contracts-tests
+        uses: ./.github/actions/tests/local-environment-tests
         with:
           tag: CI
           image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
           sha: ${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
-          tests: premerge
+          tests: smart-contracts
         env:
           SUBSTRATE_REPO_SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
           EARTHLY_TAR: ${{ secrets.EARTHLY_TAR }}
@@ -174,12 +174,12 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Deploy and test against local environment with wizards
-        uses: ./.github/actions/tests/local-environment-wizards-tests
+        uses: ./.github/actions/tests/local-environment-tests
         with:
           tag: CI
           image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
           sha: ${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
-          tests: premerge
+          tests: wizards
         env:
           SUBSTRATE_REPO_SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
           EARTHLY_TAR: ${{ secrets.EARTHLY_TAR }}
@@ -548,7 +548,7 @@ jobs:
           tag: CI
           image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-x86_64-post-merge.outputs.sha }}
           sha: ${{ needs.build-linux-x86_64-post-merge.outputs.sha }}
-          tests: postmerge
+          tests: full
         env:
           SUBSTRATE_REPO_SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
           EARTHLY_TAR: ${{ secrets.EARTHLY_TAR }}
