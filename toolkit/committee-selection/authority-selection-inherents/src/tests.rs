@@ -339,7 +339,7 @@ fn ariadne_4_to_7_test() {
 		.map(|member| account_id_to_name(member.account_id()))
 		.collect::<Vec<_>>();
 	committee_names.sort();
-	// Each permissioned has 1 guaranteed. henry, ida, james and kim as well. There are 3 randomly selected: eve, ferdie and james.
+	// Each permissioned has 1 guaranteed. Registered candidates henry, ida, james and kim have 1 place for sure as well and three places are assigned randomly.
 	let expected_committee_names = vec![
 		"alice", "bob", "charlie", "dave", "eve", "eve", "ferdie", "henry", "ida", "james", "kim",
 	];
