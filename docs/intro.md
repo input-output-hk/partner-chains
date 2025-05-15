@@ -455,9 +455,9 @@ configured with the following main chain scripts:
 
 Some of the configuration values used by the Partner Chain toolkit components are
 read from the local environment. These generally come in two categories:
-operational data used by the data sources; and some of the genesis configuration
-fields in case of Partner Chains that read them from environment while generating
-their chain spec file or running a node without one.
+1. operational data used by the data sources
+2. genesis configuration. Some Partner Chains may read them from environment when
+   run without a chain spec file or when generating a new one.
 
 ##### Data source configuration
 
