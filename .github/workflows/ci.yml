@@ -88,7 +88,7 @@ jobs:
             ./to-build/staging_preview_chain_spec.json
             ./to-build/staging_preprod_chain_spec.json
 
-  local-environment-tests:
+  local-environment-delegator-rewards-tests:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
     needs: build-linux-x86_64-pre-merge
     runs-on: ubuntu-latest
@@ -99,7 +99,57 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Deploy and test against local environment
-        uses: ./.github/actions/tests/local-environment-tests
+        uses: ./.github/actions/tests/local-environment-delegator-rewards-tests
+        with:
+          tag: CI
+          image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
+          sha: ${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
+          tests: premerge
+        env:
+          SUBSTRATE_REPO_SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
+          EARTHLY_TAR: ${{ secrets.EARTHLY_TAR }}
+          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+          AWS_REGION: ${{ env.AWS_REGION }}
+          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
+          TEST_ENVIRONMENT: local
+  local-environment-committee-tests:
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
+    needs: build-linux-x86_64-pre-merge
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Deploy and test against local environment
+        uses: ./.github/actions/tests/local-environment-committee-tests
+        with:
+          tag: CI
+          image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
+          sha: ${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
+          tests: premerge
+        env:
+          SUBSTRATE_REPO_SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
+          EARTHLY_TAR: ${{ secrets.EARTHLY_TAR }}
+          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+          AWS_REGION: ${{ env.AWS_REGION }}
+          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
+          TEST_ENVIRONMENT: local
+  local-environment-smart-contracts-tests:
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
+    needs: build-linux-x86_64-pre-merge
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Deploy and test against local environment
+        uses: ./.github/actions/tests/local-environment-smart-contracts-tests
         with:
           tag: CI
           image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
@@ -140,8 +190,8 @@ jobs:
           TEST_ENVIRONMENT: local
 
   local-environment-tests-alert:
-    needs: local-environment-tests
-    if: always() && needs.local-environment-tests.result != 'skipped' && github.event_name == 'pull_request' && github.event.pull_request.merged == false
+    needs: [local-environment-delegator-rewards-tests, local-environment-smart-contracts-tests, local-environment-wizards-tests]
+    if: always() && (needs.local-environment-delegator-rewards-tests.result != 'skipped' || needs.local-environment-smart-contracts-tests.result != 'skipped' || needs.local-environment-wizards-tests.result != 'skipped') && github.event_name == 'pull_request' && github.event.pull_request.merged == false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -236,13 +286,25 @@ jobs:
 
   pre-merge-checks-complete:
     if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.merged == false }}
-    needs: [build-linux-x86_64-pre-merge, local-environment-tests, devshell-tests, upload-chain-specs-pre-merge, documentation-tests]
+    needs: [
+      build-linux-x86_64-pre-merge,
+      local-environment-delegator-rewards-tests,
+      local-environment-committee-tests,
+      local-environment-smart-contracts-tests,
+      local-environment-wizards-tests,
+      devshell-tests,
+      upload-chain-specs-pre-merge,
+      documentation-tests
+    ]
     runs-on: ubuntu-latest
     steps:
       - name: Check if any needed job failed
         run: |
           if [[ "${{ needs.build-linux-x86_64-pre-merge.result }}" != "success" ||
-                "${{ needs.local-environment-tests.result }}" != "success" ||
+                "${{ needs.local-environment-delegator-rewards-tests.result }}" != "success" ||
+                "${{ needs.local-environment-committee-tests.result }}" != "success" ||
+                "${{ needs.local-environment-smart-contracts-tests.result }}" != "success" ||
+                "${{ needs.local-environment-wizards-tests.result }}" != "success" ||
                 "${{ needs.devshell-tests.result }}" != "success" ||
                 "${{ needs.upload-chain-specs-pre-merge.result }}" != "success" ||
                 "${{ needs.documentation-tests.result }}" != "success" ]]; then
