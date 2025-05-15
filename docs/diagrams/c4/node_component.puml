@@ -1,0 +1,20 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+Container_Boundary(user_blockchain, "User Block Chain Client") {
+  Component(user_node_and_runtime, "User Block Chain Node & Runtime Code")
+  Component(cardano_dependent_feature, "Cardano Dependent Feature Crates", "Functionality related to some Cardano state")
+  Component(cardano_independent_feature, "Cardano Independent Feature Crates", "Functionality that does not need observing Cardano")
+}
+
+Container_Ext(postgres, "Postgres Database")
+Container_Ext(cardano_db_sync, "Cardano DB Sync")
+Container_Ext(cardano_node, "Cardano Node")
+
+Rel(user_node_and_runtime, cardano_dependent_feature, "integrates")
+Rel(user_node_and_runtime, cardano_independent_feature, "integrates")
+Rel(cardano_db_sync, postgres, "Updates")
+Rel(cardano_db_sync, cardano_node, "Follows")
+Rel(cardano_dependent_feature, postgres, "SQL requests")
+
+@enduml
