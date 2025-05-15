@@ -1,0 +1,38 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Json RPC for the Block Producer Fees pallet"><title>pallet_block_producer_fees_rpc - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-0ce1a80b.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="pallet_block_producer_fees_rpc" data-themes="" data-resource-suffix="" data-rustdoc-version="1.89.0-nightly (414482f6a 2025-05-13)" data-channel="nightly" data-search-js="search-f7877310.js" data-settings-js="settings-5514c975.js" ><script src="../static.files/storage-4e99c027.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-7ef8a74a.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../pallet_block_producer_fees_rpc/index.html">pallet_<wbr>block_<wbr>producer_<wbr>fees_<wbr>rpc</a><span class="version">1.6.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#contents" title="Contents">Contents</a></li><li><a href="#usage---pc-builders" title="Usage - PC Builders">Usage - PC Builders</a></li></ul><h3><a href="#structs">Crate Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#traits" title="Traits">Traits</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>pallet_block_producer_fees_rpc</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/pallet_block_producer_fees_rpc/lib.rs.html#1-109">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Json RPC for the Block Producer Fees pallet</p>
+<h3 id="contents"><a class="doc-anchor" href="#contents">§</a>Contents</h3>
+<p>This crate provides the [BlockProducerFeesRpcApiServer] trait defining the JsonRPC method to display
+block producer fees and its concrete implementation <a href="struct.BlockProducerFeesRpc.html" title="struct pallet_block_producer_fees_rpc::BlockProducerFeesRpc">BlockProducerFeesRpc</a>.</p>
+<h3 id="usage---pc-builders"><a class="doc-anchor" href="#usage---pc-builders">§</a>Usage - PC Builders</h3>
+<p>To use the Json RPC service defined in this crate, first make your runtime implement
+[sp_block_producer_fees::BlockProducerFeesApi]. Eg. assuming the pallet <code>BlockProducerFeesPallet</code>
+in your runtime uses <code>AccountId</code> as the account id type, the following should be included in your
+<code>impl_runtime_apis</code> block:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">impl </span>BlockProducerFeesApi&lt;Block, AccountId&gt; <span class="kw">for </span>Runtime
+{
+	<span class="kw">fn </span>get_all_fees() -&gt; Vec&lt;(AccountId, sp_block_producer_fees::PerTenThousands)&gt; {
+		BlockProducerFees::get_all_latest().map(|(account_id, (_slot, fee))| (account_id, fee)).collect()
+	}
+}</code></pre></div>
+<p>Afterwards, the <a href="struct.BlockProducerFeesRpc.html" title="struct pallet_block_producer_fees_rpc::BlockProducerFeesRpc">BlockProducerFeesRpc</a> Json RPC service can be added into the Json RPC stack of your node.
+Example where AccountId type parameter is set to AccountId32:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jsonrpsee::RpcModule;
+<span class="kw">use </span>std::sync::Arc;
+<span class="kw">use </span>sp_block_producer_fees::<span class="kw-2">*</span>;
+<span class="kw">use </span>pallet_block_producer_fees_rpc::<span class="kw-2">*</span>;
+
+<span class="kw">fn </span>create_rpc&lt;C, Block&gt;(client: Arc&lt;C&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;RpcModule&lt;()&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error&gt;&gt;
+<span class="kw">where
+  </span>C: Send + Sync + <span class="lifetime">'static</span>,
+  Block: sp_runtime::traits::Block,
+  C: sp_api::ProvideRuntimeApi&lt;Block&gt;,
+  C: sp_blockchain::HeaderBackend&lt;Block&gt;,
+  C::Api: BlockProducerFeesApi&lt;Block, sp_runtime::AccountId32&gt;
+{
+    <span class="kw">let </span><span class="kw-2">mut </span>module = RpcModule::new(());
+    module.merge(BlockProducerFeesRpc::new(client.clone()).into_rpc())<span class="question-mark">?</span>;
+    <span class="comment">// other RPC modules
+    </span><span class="prelude-val">Ok</span>(module)
+}</code></pre></div>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.BlockProducerFeesRpc.html" title="struct pallet_block_producer_fees_rpc::BlockProducerFeesRpc">Block<wbr>Producer<wbr>Fees<wbr>Rpc</a></dt><dd>Concrete implementation of [BlockProducerFeesRpcApiServer] that uses [BlockProducerFeesRpcApi] for querying runtime storage.</dd><dt><a class="struct" href="struct.FeesSettings.html" title="struct pallet_block_producer_fees_rpc::FeesSettings">Fees<wbr>Settings</a></dt><dd>Fees settings for given account</dd></dl><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><dl class="item-table"><dt><a class="trait" href="trait.BlockProducerFeesRpcClient.html" title="trait pallet_block_producer_fees_rpc::BlockProducerFeesRpcClient">Block<wbr>Producer<wbr>Fees<wbr>RpcClient</a></dt><dd>Client implementation for the <code>BlockProducerFeesRpc</code> RPC API.</dd><dt><a class="trait" href="trait.BlockProducerFeesRpcServer.html" title="trait pallet_block_producer_fees_rpc::BlockProducerFeesRpcServer">Block<wbr>Producer<wbr>Fees<wbr>RpcServer</a></dt><dd>Server trait implementation for the <code>BlockProducerFeesRpc</code> RPC API.</dd></dl></section></div></main></body></html>

@@ -1,0 +1,1 @@
+searchState.loadedDescShard("sp_block_producer_fees", 0, "Primitives for block producer fees feature\nRuntime API for block producer fees. Required for …\nMargin Fee precision is 0.01 of a percent, so 1/10000 is …\nRetrieves the latests fees of all accounts that have set …")

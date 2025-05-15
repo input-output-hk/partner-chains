@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["BlockProducerFeesRpc","FeesSettings"],"trait":["BlockProducerFeesRpcClient","BlockProducerFeesRpcServer"]};
