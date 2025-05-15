@@ -30,6 +30,7 @@ pub mod pallet {
 	use super::*;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
+	use sp_block_producer_fees::PerTenThousands;
 	use sp_consensus_slots::Slot;
 	use sp_std::collections::vec_deque::VecDeque;
 
@@ -55,9 +56,6 @@ pub mod pallet {
 		/// Benchmark helper type used for running benchmarks
 		type BenchmarkHelper: benchmarking::BenchmarkHelper<Self::AccountId>;
 	}
-
-	// Margin Fee precision is 0.01 of a percent, so 1/10000 is used as a unit.
-	type PerTenThousands = u16;
 
 	type FeeChange = (Slot, PerTenThousands);
 

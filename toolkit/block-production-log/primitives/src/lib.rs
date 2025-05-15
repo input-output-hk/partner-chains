@@ -56,11 +56,11 @@ mod test;
 
 use parity_scale_codec::{Decode, Encode};
 use sp_inherents::{InherentIdentifier, IsFatalError};
-use sp_runtime::traits::Block as BlockT;
 #[cfg(feature = "std")]
 use {
 	sp_api::{ApiExt, ProvideRuntimeApi},
 	sp_inherents::InherentData,
+	sp_runtime::traits::Block as BlockT,
 };
 
 /// Inherent identifier used by the Block Production Log pallet
