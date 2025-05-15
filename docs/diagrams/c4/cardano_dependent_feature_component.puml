@@ -2,7 +2,7 @@
 !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
 
 Component(data_sources, "Data sources implementation", "Crate", "Thin layer for quering the data, implements interfaces required by the given feature")
-Component(primitives, "Primitives", "Crate", "defines data source interface and FRAME Runtime APIs, implements, implements FRAME Inherent Data Providers using data sources APIs")
+Component(primitives, "Primitives", "Crate", "defines data source interface and FRAME Runtime APIs, implements FRAME Inherent Data Providers using data sources APIs")
 Component(pallet, "Pallet", "Crate", "FRAME Pallet")
 Component(rpc, "RPC", "Crate", "Optional RPC methods related to the feature")
 Component_Ext(node, "Node", "Crate")

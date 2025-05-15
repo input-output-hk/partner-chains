@@ -3,8 +3,8 @@
 
 Container_Boundary(user_blockchain, "User Block Chain Client") {
   Component(user_node_and_runtime, "User Block Chain Node & Runtime Code")
-  Component(cardano_dependent_feature, "Cardano Depended Feature Crates", "Functionality related to some Cardano state")
-  Component(cardano_independent_feature, "Cardano Independed Feature Crates", "Functionality that does not need observing Cardano")
+  Component(cardano_dependent_feature, "Cardano Dependent Feature Crates", "Functionality related to some Cardano state")
+  Component(cardano_independent_feature, "Cardano Independent Feature Crates", "Functionality that does not need observing Cardano")
 }
 
 Container_Ext(postgres, "Postgres Database")

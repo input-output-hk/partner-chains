@@ -3,7 +3,7 @@
 
 Container(partner_chains_compatible_node, "User BlockChain Node & Runtime", "Polkadot node")
 Container(smart_contracts, "Smart Contracts CLI", "CLI application", "CLI commands to plug into user executable")
-Container_Ext(ogmios, "Ogmios", "Service", "Gateway between JsonRPC and Cardano protocols")
+Container_Ext(ogmios, "Ogmios", "Service", "JsonRPC gateway for Cardano protocols")
 Container_Ext(postgres, "Postgres Database")
 Container_Ext(cardano_db_sync, "Cardano DB Sync")
 Container_Ext(cardano_node, "Cardano Node")
