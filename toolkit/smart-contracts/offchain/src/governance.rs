@@ -125,7 +125,7 @@ impl GovernanceData {
 			.await
 			.map_err(|e| {
 				JsError::from_str(&format!(
-					"Could not query UTXOs Governance Validator at {}: {}",
+					"Could not query Governance Validator UTxOs at {}: {}",
 					version_oracle_data.validator_address, e
 				))
 			})?;

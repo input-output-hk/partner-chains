@@ -53,17 +53,17 @@ pub async fn init_reserve_management<
 ) -> anyhow::Result<Vec<MultiSigSmartContractResult>> {
 	let reserve_validator = ScriptData::new(
 		"Reserve Management Validator",
-		RESERVE_VALIDATOR.to_vec(),
+		RESERVE_VALIDATOR.0.to_vec(),
 		ScriptId::ReserveValidator,
 	);
 	let reserve_policy = ScriptData::new(
 		"Reserve Management Policy",
-		RESERVE_AUTH_POLICY.to_vec(),
+		RESERVE_AUTH_POLICY.0.to_vec(),
 		ScriptId::ReserveAuthPolicy,
 	);
 	let ics_validator = ScriptData::new(
 		"Illiquid Circulation Validator",
-		ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR.to_vec(),
+		ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR.0.to_vec(),
 		ScriptId::IlliquidCirculationSupplyValidator,
 	);
 	Ok(vec![
@@ -85,7 +85,7 @@ struct ScriptData {
 impl ScriptData {
 	fn new(name: &str, raw_bytes: Vec<u8>, id: ScriptId) -> Self {
 		let plutus_script =
-			PlutusScript::from_raw(&raw_bytes).expect("Plutus script should be valid");
+			PlutusScript::from_wrapped_cbor(&raw_bytes).expect("Plutus script should be valid");
 		Self { name: name.to_string(), plutus_script, id: id as u32 }
 	}
 
@@ -95,7 +95,7 @@ impl ScriptData {
 	) -> Result<PlutusScript, JsError> {
 		self.plutus_script
 			.clone()
-			.apply_uplc_data(version_oracle.policy_id_as_plutus_data())
+			.apply_data_uplc(version_oracle.policy_id_as_plutus_data())
 			.map_err(|e| JsError::from_str(&e.to_string()))
 	}
 }
@@ -390,7 +390,7 @@ mod tests {
 	fn test_initialized_script() -> ScriptData {
 		ScriptData::new(
 			"Test Script",
-			raw_scripts::RESERVE_VALIDATOR.to_vec(),
+			raw_scripts::RESERVE_VALIDATOR.0.to_vec(),
 			ScriptId::ReserveValidator,
 		)
 	}

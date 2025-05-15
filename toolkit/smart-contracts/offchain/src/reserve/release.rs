@@ -187,6 +187,7 @@ fn v_function_from_utxo(utxo: &OgmiosUtxo) -> anyhow::Result<PlutusScript> {
 mod tests {
 	use super::{AssetNameExt, Costs, TransactionContext, empty_asset_name, reserve_release_tx};
 	use crate::{
+		apply_data,
 		cardano_keys::CardanoPaymentSigningKey,
 		plutus_script::PlutusScript,
 		reserve::{ReserveData, ReserveUtxo, release::OgmiosUtxoExt},
@@ -200,6 +201,10 @@ mod tests {
 		ReserveDatum, ReserveImmutableSettings, ReserveMutableSettings, ReserveStats,
 	};
 	use pretty_assertions::assert_eq;
+	use raw_scripts::{
+		EXAMPLE_V_FUNCTION_POLICY, ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR, RESERVE_AUTH_POLICY,
+		RESERVE_VALIDATOR,
+	};
 	use sidechain_domain::{AssetName, PolicyId};
 
 	fn payment_key() -> CardanoPaymentSigningKey {
@@ -245,24 +250,21 @@ mod tests {
 	}
 
 	fn reserve_validator_script() -> PlutusScript {
-		PlutusScript::from_raw(raw_scripts::RESERVE_VALIDATOR).unwrap()
+		RESERVE_VALIDATOR.into()
 	}
 
 	fn auth_policy_script() -> PlutusScript {
-		PlutusScript::from_raw(raw_scripts::RESERVE_AUTH_POLICY).unwrap()
+		RESERVE_AUTH_POLICY.into()
 	}
 
 	fn illiquid_supply_validator_script() -> PlutusScript {
-		PlutusScript::from_raw(raw_scripts::ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR).unwrap()
+		ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR.into()
 	}
 
 	const UNIX_T0: u64 = 1736504093000u64;
 
 	fn applied_v_function() -> PlutusScript {
-		PlutusScript::from_raw(raw_scripts::EXAMPLE_V_FUNCTION_POLICY)
-			.unwrap()
-			.apply_data(UNIX_T0)
-			.unwrap()
+		apply_data![EXAMPLE_V_FUNCTION_POLICY, UNIX_T0].unwrap()
 	}
 
 	fn version_oracle_address() -> String {
