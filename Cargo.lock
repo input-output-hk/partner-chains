@@ -6384,11 +6384,26 @@ dependencies = [
  "frame-system",
  "parity-scale-codec",
  "scale-info",
+ "sp-block-producer-fees",
  "sp-consensus-slots",
  "sp-core",
  "sp-io",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "pallet-block-producer-fees-rpc"
+version = "1.6.0"
+dependencies = [
+ "derive-new",
+ "jsonrpsee",
+ "parity-scale-codec",
+ "serde",
+ "sp-api",
+ "sp-block-producer-fees",
+ "sp-blockchain",
+ "sp-runtime",
 ]
 
 [[package]]
@@ -6982,6 +6997,7 @@ dependencies = [
  "hex-literal",
  "jsonrpsee",
  "log",
+ "pallet-block-producer-fees-rpc",
  "pallet-block-producer-metadata-rpc",
  "pallet-partner-chains-session",
  "pallet-session-validator-management",
@@ -7018,6 +7034,7 @@ dependencies = [
  "sp-api",
  "sp-block-builder",
  "sp-block-participation",
+ "sp-block-producer-fees",
  "sp-block-producer-metadata",
  "sp-block-production-log",
  "sp-blockchain",
@@ -7091,6 +7108,7 @@ dependencies = [
  "sp-api",
  "sp-block-builder",
  "sp-block-participation",
+ "sp-block-producer-fees",
  "sp-block-producer-metadata",
  "sp-block-production-log",
  "sp-consensus-aura",
@@ -10454,6 +10472,15 @@ dependencies = [
  "sp-runtime",
  "thiserror 2.0.12",
  "tokio",
+]
+
+[[package]]
+name = "sp-block-producer-fees"
+version = "1.6.0"
+dependencies = [
+ "parity-scale-codec",
+ "sp-api",
+ "sp-std",
 ]
 
 [[package]]

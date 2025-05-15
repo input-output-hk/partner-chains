@@ -16,6 +16,7 @@ frame-support = { workspace = true }
 frame-system = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
+sp-block-producer-fees = { workspace = true }
 sp-consensus-slots = { workspace = true }
 sp-std = { workspace = true }
 
@@ -32,6 +33,7 @@ std = [
 	"frame-system/std",
 	"parity-scale-codec/std",
 	"scale-info/std",
+	"sp-block-producer-fees/std",
 	"sp-std/std",
 ]
 runtime-benchmarks = [

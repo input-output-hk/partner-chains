@@ -48,6 +48,8 @@ members = [
 	"toolkit/block-participation/pallet",
 	"toolkit/block-participation/primitives",
 	"toolkit/block-producer-fees/pallet",
+	"toolkit/block-producer-fees/primitives",
+	"toolkit/block-producer-fees/rpc",
 	"toolkit/block-producer-metadata/pallet",
 	"toolkit/block-producer-metadata/primitives",
 	"toolkit/block-producer-metadata/rpc",
@@ -309,6 +311,8 @@ sp-block-participation = { path = "toolkit/block-participation/primitives", defa
 
 # block producer fees
 pallet-block-producer-fees = { path = "toolkit/block-producer-fees/pallet", default-features = false }
+pallet-block-producer-fees-rpc = { path = "toolkit/block-producer-fees/rpc", default-features = false }
+sp-block-producer-fees = { path = "toolkit/block-producer-fees/primitives", default-features = false }
 
 # block producer metadata
 pallet-block-producer-metadata = { path = "toolkit/block-producer-metadata/pallet", default-features = false }
