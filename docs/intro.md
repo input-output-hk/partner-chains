@@ -25,6 +25,8 @@
     * [`chain-spec.json`](#chain-spec.json)
     * [Environment Variables](#environment-variables)
     * [Keys](#keys)
+  * [Wizards](#wizards)
+    * [generate-keys](#generate-keys)
   * [Features](#features)
     * [Features Overview](#feature-overview)
     * [Block Participation Rewards](#block-participation-rewards)
@@ -254,7 +256,7 @@ the runtime, resulting in the config field `governedMap` etc.
 ##### Obtaining main chain scripts
 
 Some of the pallets need to be configured with _main chain scripts_, that is Cardano script addresses
-and hashes that are needed for Cardano observability components to correctly locate data in the Cardano 
+and hashes that are needed for Cardano observability components to correctly locate data in the Cardano
 ledger. These parameters can be obtained using the genesis UTXO of the Partner Chain by executing the
 `get-scripts` command provided together with other Partner Chain smart contracts offchain commands:
 ```shell
@@ -533,6 +535,181 @@ by the partner chain node.
 By default the partner chain node process will look for key stores in the base path directory. Refer to the [official Polkadot  guide](https://docs.polkadot.com/infrastructure/running-a-validator/onboarding-and-offboarding/key-management/)
 or your particular Partner Chain's documentation for information on how
 to manage your node keys.
+
+### Wizards
+The Partner Chain toolkit provides several wizards that serve as convenience layer to carry out
+configuration or bootstrapping actions. The tasks performed by the wizards can also be carried out
+by interacting with different commands directly. If you prefer full control over convenience of use,
+you don't _have_ to use the wizards.
+
+All wizards are available as sub-commands to the `wizards` command. Passing `--help` will list all
+available wizards:
+```shell
+$ pc-node wizards --help
+```
+
+#### generate-keys
+The `generate-keys` wizard creates all necessary keys and saves them to the node's default keystore
+location. The following three keys will be created:
+
+- cross-chain key (ECDSA)
+- grandpa key (ED25519)
+- aura key (SR25519)
+
+Additonally, the wizard will generate a network key if it doesn't exist already.
+
+**Prerequisites**
+
+none
+
+**Output**
+
+- `pc-resources-config.json`
+- `partner-chains-public-keys.json`
+
+**Running the wizard**
+
+```shell
+$ pc-node wizards generate-keys
+```
+A successful run will conclude with output similar to the one below (**note**: output is abbreviated):
+```
+ 🔑 The following public keys were generated and saved to the partner-chains-public-keys.json file:
+ {
+   "sidechain_pub_key": "0x02aec45eb3b0ee511be154e0daab9d3d77e9f5c2a1cbde075244727655bad12592",
+   "aura_pub_key": "0xc074d26b17c018fba23c14b305871dc0126ac868c10a0e60bdeb0a353bd5e20f",
+   "grandpa_pub_key": "0x6bdd6017b99b30885b544f51712ecfc0adc61f3e1835201a1aebcce1eb9dcee0"
+ }
+ You may share them with your chain governance authority
+ if you wish to be included as a permissioned candidate.
+
+ ⚙️ Generating network key
+ running external command: mkdir -p ./data/network
+ running external command: /tmp/partner-chain
+ command output: 12D3KooWK9wfu9pmbUaCoTuU6eP4X3VmWWPGDdRVXK7T8KiCrTRm
+```
+
+</details>
+
+#### prepare-configuration
+The `prepare-configuration` wizard will guide you through the configuration needed to create a
+governance authority. The main output of this wizard is the `pc-config.json` file.
+
+**Prerequisites**
+
+- The `ogmios` service must be up and running
+- The wizard will ask for the payment signing key file `payment.skey`.
+- The payment address must be funded
+
+**Output**
+
+- `pc-chain-config.json`
+- `pc-resources-config.json`
+
+Please refer to the `cardano-cli`
+[documentation](https://developers.cardano.org/docs/get-started/cardano-cli/get-started/#generate-a-payment-key-pair-and-an-address)
+for details on how to create keys.
+
+**Running the wizard**
+
+```shell
+$ pc-node wizards prepare-configuration
+```
+A successful run will conclude with output similiar to the following
+```
+Governance initialized successfully for UTXO: f1885ad969f4e8572c34d281fe4f7e4f7c4e68183a9ea2c17961ef848da
+3ea41#0
+Cardano addresses have been set up:
+- Committee Candidates Address: addr_test1wzy80cnj69fzm34pz6v9kzq3z3y8vwyy44t57ex3lu0w22gmqu0h4
+- D Parameter Policy ID: fd08f51e106671e9129a4bb698066f018b393d7385986e103bce1fec
+- Permissioned Candidates Policy ID: da8248dd4dc957e38b6f9f9a611c95a3bc46125df1bc801efdfe606f
+- Illiquid Supply Address: addr_test1wzyxafwqnez8tlw59jg6m0q33gj3ker078pghvqv7v5yfgcm9qre4
+Partner Chains can store their initial token supply on Cardano as Cardano native tokens.
+Creation of the native token is not supported by this wizard and must be performed manually before this s
+tep.
+> Do you want to configure a native token for you Partner Chain? No
+Chain configuration (pc-chain-config.json) is now ready for distribution to network participants.
+
+If you intend to run a chain with permissioned candidates, you must manually set their keys in the pc-cha
+in-config.json file before proceeding. Here's an example of how to add permissioned candidates:
+
+{
+  ...
+  "initial_permissioned_candidates": [
+    {
+      "aura_pub_key": "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde49a5684e7a56da27d",
+      "grandpa_pub_key": "0x88dc3417d5058ec4b4503e0c12ea1a0a89be200f498922423d4334014fa6b0ee",
+      "sidechain_pub_key": "0x020a1091341fe5664bfa1782d5e0477968906ac916b04cb365ec3153755684d9a1"
+    },
+    {
+      "aura_pub_key": "0x8eaf04151687736326c9fea17e25fc5287613698c912909cb226aa4794f26a48",
+      "grandpa_pub_key": "0xd17c2d7823ebf260fd138f2d7e27d114cb145d968b5ff5006125f2414fadae69",
+      "sidechain_pub_key": "0x0390084fdbf27d2b79d26a4f13f0cdd982cb755a661969143c37cbc49ef5b91f27"
+    }
+  ]
+}
+
+After setting up the permissioned candidates, execute the 'create-chain-spec' command to generate the fin
+al chain specification.
+🚀 All done!
+```
+
+#### create-chain-spec
+
+The `create-chain-spec` wizard creates a chain specification based on an existing
+`pc-chain-config.json` file (which can be generated using the `prepare-configuration` wizard).
+
+**Prerequisites**
+
+- `pc-chain-config.json`
+
+**Output**
+
+- `chain-spec.json`
+
+**Running the wizard**
+
+```shell
+$ pc-node wizards create-chain-spec
+```
+
+A successful run will conclude with output similar to the following
+```
+This wizard will create a chain spec JSON file according to the provided configuration, using WASM runtime code from the compiled node binary.
+Chain parameters:
+- Genesis UTXO: f1885ad969f4e8572c34d281fe4f7e4f7c4e68183a9ea2c17961ef848da3ea41#0
+SessionValidatorManagement Main Chain Configuration:
+- committee_candidate_address: addr_test1wzy80cnj69fzm34pz6v9kzq3z3y8vwyy44t57ex3lu0w22gmqu0h4
+- d_parameter_policy_id: fd08f51e106671e9129a4bb698066f018b393d7385986e103bce1fec
+- permissioned_candidates_policy_id: da8248dd4dc957e38b6f9f9a611c95a3bc46125df1bc801efdfe606f
+Native Token Management Configuration (unused if empty):
+- asset name: 0x
+- asset policy ID: 0x00000000000000000000000000000000000000000000000000000000
+- illiquid supply address: addr_test1wzyxafwqnez8tlw59jg6m0q33gj3ker078pghvqv7v5yfgcm9qre4
+Initial permissioned candidates:
+- Partner Chains Key: 0x03381169b112b614f8c5df1fb70d483d91d6b3b8d23af3b5e48eb0c0e7d090c57e, AURA: 0x5ab1f762b4f068d18000244ca2a1defa1ab7cfe7391521203c84323fbd1bfb73, GRANDPA: 0xaf350a984cc5ede7edec4e798edab89e0935b6250d447e212a29b94cf56114a1
+> Do you want to continue? Yes
+running external command: /tmp/pc-node build-spec --disable-default-bootnode > chain-spec.json
+command output: 2025-05-15 15:47:58 Building chain spec
+chain-spec.json file has been created.
+If you are the governance authority, you can distribute it to the validators.
+Run 'setup-main-chain-state' command to set D-parameter and permissioned candidates on Cardano.
+```
+
+The chain specification file created by this wizard is ready to be distributed to block production
+committee candidates.
+
+#### setup-main-chain-state
+
+The `setup-main-chain-state` wizard configures the D-parameter and permissioned candidates list on
+the main chain.
+
+**Prerequisites**
+
+- `pc-chain-config.json`
+
+#### start-node
+The `start-node` wizard starts a partner chain node
 
 ### Features
 
