@@ -332,8 +332,8 @@ Grandpa for its consensus, the configuration may look like the following:
 ```
 
 Keep in mind that for compatibility with Grandpa, a Partner Chain needs to also use
-the stock Session pallet provided by Substrate. As this pallet does is no longer
-responsible for managing session committee anymore, its genesis configuration
+the stock Session pallet provided by Substrate. As this pallet is no longer
+responsible for managing session committee, its genesis configuration
 should be left empty, ie.:
 ```json
 {
