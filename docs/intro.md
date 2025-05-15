@@ -495,9 +495,9 @@ as well as information on Cardano slot and epoch configuration:
 Lastly, every Partner Chain node needs the `BLOCK_STABILITY_MARGIN` variable to
 be set. This variable determines an additional margin added to
 `CARDANO_SECURITY_PARAMETER` when selecting the latest stable Cardano block to be
-included in the block header. This value can be set to `0` by default, but higher
-values if the network experiences a high number of blocks rejected because of
-Db-Sync lag.
+included in the block header. This value should normally be set to `0`, but `1`
+can be used if the network experiences a high number of blocks rejected because of
+Db-Sync lag. Values higher than `1` should not be used in general.
 
 ##### Genesis configuration environment variables
 
