@@ -144,7 +144,7 @@ impl IOContext for DefaultCmdRunContext {
 	}
 
 	fn new_tmp_dir(&self) -> PathBuf {
-		TempDir::new().expect("Failed to create temporary directory").into_path()
+		TempDir::new().expect("Failed to create temporary directory").keep()
 	}
 
 	fn read_file(&self, path: &str) -> Option<String> {

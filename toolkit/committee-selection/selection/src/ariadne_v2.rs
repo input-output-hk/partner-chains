@@ -217,9 +217,9 @@ mod tests {
 			r2_count += committee.iter().filter(|c| **c == "R2").count();
 		}
 		let tolerance = 5;
-		assert!(1333 - tolerance <= p1_count && p1_count <= 1333 + tolerance);
-		assert!(1200 - tolerance <= r1_count && r1_count <= 1200 + tolerance);
-		assert!(1800 - tolerance <= r2_count && r2_count <= 1800 + tolerance);
+		assert!(1343 - tolerance <= p1_count && p1_count <= 1343 + tolerance);
+		assert!(1220 - tolerance <= r1_count && r1_count <= 1220 + tolerance);
+		assert!(1780 - tolerance <= r2_count && r2_count <= 1780 + tolerance);
 	}
 
 	#[test]

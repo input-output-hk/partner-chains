@@ -29,6 +29,8 @@ block hash on construction instead of retrieving it by itself. Use `McHashInhere
 to provide it in your IDP stack.
 * Introduced customization of root origin for few pallets via `MainChainScriptsOrigin` trait
 * Made `mock` module of `pallet-session-validator-management` private
+* Updated dependecies
+* Updated polkadot-sdk to polkadot-stable2503-2
 
 ## Removed
 

@@ -35,7 +35,7 @@ fn select_with_weight<T>(
 	total_weight: Weight,
 	rand: &mut ChaCha20Rng,
 ) -> usize {
-	let random_number: u128 = rand.gen_range(0..total_weight);
+	let random_number: u128 = rand.random_range(0..total_weight);
 
 	let mut cumulative_weight: Weight = 0;
 	for (index, (_, weight)) in candidates.iter().enumerate() {
