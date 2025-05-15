@@ -1,4 +1,4 @@
-//! Crate provides Json RPC method getting the Block Producer Fees
+//! Json RPC for the Block Producer Fees pallet
 //!
 //! ## Contents
 //!
@@ -59,7 +59,7 @@ use std::sync::Arc;
 
 /// Json RPC methods related to the Block Producer Metadata feature of Partner Chains Toolkit
 #[rpc(client, server, namespace = "pc")]
-pub trait BlockProducerFeesRpcApi<AccountId: Decode> {
+pub trait BlockProducerFeesRpc<AccountId: Decode> {
 	/// Returns the latest recorded fees. To get all stored data query pallet storage directly.
 	#[method(name = "getBlockProducerFees")]
 	fn get_block_producer_fees(&self) -> RpcResult<Vec<FeesSettings<AccountId>>>;
@@ -76,11 +76,12 @@ pub struct BlockProducerFeesRpc<C, Block, AccountId> {
 #[derive(Clone, Deserialize, Serialize)]
 pub struct FeesSettings<AccountId> {
 	account_id: AccountId,
+	/// Margin fee in percent
 	margin_fee: f64,
 }
 
 #[async_trait]
-impl<C, Block, AccountId: Decode + Sync + Send + 'static> BlockProducerFeesRpcApiServer<AccountId>
+impl<C, Block, AccountId: Decode + Sync + Send + 'static> BlockProducerFeesRpcServer<AccountId>
 	for BlockProducerFeesRpc<C, Block, AccountId>
 where
 	Block: BlockT,
