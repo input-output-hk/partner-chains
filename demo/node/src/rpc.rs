@@ -11,6 +11,7 @@ use authority_selection_inherents::{
 	CommitteeMember, authority_selection_inputs::AuthoritySelectionInputs,
 };
 use jsonrpsee::RpcModule;
+use pallet_block_producer_fees_rpc::*;
 use pallet_block_producer_metadata_rpc::*;
 use pallet_session_validator_management_rpc::*;
 use pallet_sidechain_rpc::*;
@@ -77,6 +78,7 @@ where
 	C::Api: sidechain_slots::SlotApi<Block>,
 	C::Api: sp_sidechain::GetGenesisUtxo<Block>,
 	C::Api: sp_sidechain::GetSidechainStatus<Block>,
+	C::Api: sp_block_producer_fees::BlockProducerFeesApi<Block, AccountId>,
 	C::Api: sp_block_producer_metadata::BlockProducerMetadataApi<Block, BlockProducerMetadataType>,
 	C::Api: sp_session_validator_management::SessionValidatorManagementApi<
 			Block,
@@ -107,6 +109,7 @@ where
 		)
 		.into_rpc(),
 	)?;
+	module.merge(BlockProducerFeesRpc::new(client.clone()).into_rpc())?;
 	module.merge(BlockProducerMetadataRpc::new(client.clone()).into_rpc())?;
 
 	let GrandpaDeps {
