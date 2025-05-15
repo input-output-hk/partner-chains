@@ -37,7 +37,7 @@ use sidechain_domain::{
 	byte_string::ByteString,
 };
 use std::time::Duration;
-use testcontainers::{ContainerAsync, GenericImage, runners::AsyncRunner};
+use testcontainers::{Container, GenericImage, clients::Cli};
 use tokio_retry::{Retry, strategy::FixedInterval};
 
 mod legacy_governance_tx;
@@ -96,7 +96,8 @@ const UPDATED_TOTAL_ACCRUED_FUNCTION_SCRIPT_HASH: PolicyId = PolicyId([234u8; 28
 #[tokio::test]
 async fn governance_flow() {
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
-	let container = image.start().await.unwrap();
+	let cli = Cli::default();
+	let container = cli.run(image);
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_goveranance(&client).await;
 	let _ = run_update_governance(&client, genesis_utxo).await;
@@ -131,7 +132,8 @@ async fn governance_flow() {
 #[tokio::test]
 async fn upsert_d_param() {
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
-	let container = image.start().await.unwrap();
+	let client = Cli::default();
+	let container = client.run(image);
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_goveranance(&client).await;
 	assert!(
@@ -154,7 +156,8 @@ async fn upsert_d_param() {
 #[tokio::test]
 async fn upsert_permissioned_candidates() {
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
-	let container = image.start().await.unwrap();
+	let client = Cli::default();
+	let container = client.run(image);
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_goveranance(&client).await;
 	assert!(run_upsert_permissioned_candidates(genesis_utxo, 77, &client).await.is_some());
@@ -165,7 +168,8 @@ async fn upsert_permissioned_candidates() {
 #[tokio::test]
 async fn reserve_management_scenario() {
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
-	let container = image.start().await.unwrap();
+	let client = Cli::default();
+	let container = client.run(image);
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_goveranance(&client).await;
 	let _ = run_update_governance(&client, genesis_utxo).await;
@@ -218,7 +222,8 @@ async fn reserve_management_scenario() {
 #[tokio::test]
 async fn reserve_release_to_zero_scenario() {
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
-	let container = image.start().await.unwrap();
+	let client = Cli::default();
+	let container = client.run(image);
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_goveranance(&client).await;
 	let txs = run_init_reserve_management(genesis_utxo, &client).await;
@@ -235,7 +240,8 @@ async fn reserve_release_to_zero_scenario() {
 #[tokio::test]
 async fn register() {
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
-	let container = image.start().await.unwrap();
+	let client = Cli::default();
+	let container = client.run(image);
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_goveranance(&client).await;
 	let signature = SidechainSignature([21u8; 33].to_vec());
@@ -249,7 +255,8 @@ async fn register() {
 #[tokio::test]
 async fn update_legacy_governance() {
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
-	let container = image.start().await.unwrap();
+	let client = Cli::default();
+	let container = client.run(image);
 	let client = initialize(&container).await;
 
 	let genesis_utxo =
@@ -276,7 +283,8 @@ async fn update_legacy_governance() {
 async fn governed_map_operations() {
 	// Initialize client and container
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
-	let container = image.start().await.unwrap();
+	let client = Cli::default();
+	let container = client.run(image);
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_goveranance(&client).await;
 	let await_tx = FixedDelayRetries::new(Duration::from_millis(500), 100);
@@ -366,7 +374,8 @@ async fn governed_map_operations() {
 async fn governed_map_update() {
 	// Initialize client and container
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
-	let container = image.start().await.unwrap();
+	let client = Cli::default();
+	let container = client.run(image);
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_goveranance(&client).await;
 	let await_tx = FixedDelayRetries::new(Duration::from_millis(500), 100);
@@ -411,8 +420,8 @@ async fn governed_map_update() {
 	assert!(result.is_err(), "Updating an existing key should fail with incorrect expected value");
 }
 
-async fn initialize(container: &ContainerAsync<GenericImage>) -> OgmiosClients {
-	let ogmios_port = container.get_host_port_ipv4(1337).await.unwrap();
+async fn initialize<'a>(container: &Container<'a, GenericImage>) -> OgmiosClients {
+	let ogmios_port = container.get_host_port_ipv4(1337);
 	println!("Ogmios port: {}", ogmios_port);
 
 	let client = await_ogmios(ogmios_port).await.unwrap();
