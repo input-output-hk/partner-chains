@@ -1,0 +1,16 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+Container_Boundary(user_blockchain, "User BlockChain Client Executable") {
+  Component(substrate_cli, "User executable Substrate CLI")
+  Component(smart_contracts, "Partner Chains Smart Contracts CLI Commands")
+}
+
+Container_Ext(ogmios, "Ogmios (protocol gateway)")
+Container_Ext(cardano_node, "Cardano Node")
+
+Rel(smart_contracts, ogmios, "Queries and submits transactions")
+Rel(substrate_cli, smart_contracts, "Integrates")
+Rel(ogmios, cardano_node, "Translates requests")
+
+@enduml
