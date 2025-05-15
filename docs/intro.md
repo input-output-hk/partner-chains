@@ -466,7 +466,7 @@ connection to a Postgres database fed by Db-Sync to query Cardano data. For this
 a connection string should be provided when running a Partner Chain's node in the
 `DB_SYNC_POSTGRES_CONNECTION_STRING` environment variable, eg.:
 ```sh
-export DB_SYNC_POSTGRES_CONNECTION_STRING="postgres://postgres:password123@localhost/cexplorer"
+export DB_SYNC_POSTGRES_CONNECTION_STRING="postgres://postgres-user:password@localhost/db-sync-db"
 ```
 
 Some data sources also expect environment variables that provide data on network
