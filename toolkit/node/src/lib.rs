@@ -1,4 +1,5 @@
 pub mod data_source;
+pub mod inherent_data;
 pub mod rpc;
 
 use derive_new::new;
