@@ -1,0 +1,68 @@
+[package]
+name = "partner-chains-node"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+version.workspace = true
+description = "Components for building a Partner Chain node"
+
+[dependencies]
+async-trait = { workspace = true }
+derive-new = { workspace = true }
+sp-api = { workspace = true }
+sp-blockchain = { workspace = true }
+sp-consensus = { workspace = true }
+sp-core = { workspace = true }
+sp-inherents = { workspace = true, features = ["std"] }
+sp-runtime = { workspace = true, features = ["std"] }
+substrate-prometheus-endpoint = { workspace = true }
+
+sidechain-domain = { workspace = true, features = ["std"] }
+sidechain-slots = { workspace = true, features = ["std"] }
+time-source = { workspace = true }
+
+authority-selection-inherents = { workspace = true, features = ["std", "mock"] }
+pallet-sidechain-rpc = { workspace = true }
+sp-session-validator-management = { workspace = true, features = ["std"] }
+sidechain-mc-hash = { workspace = true, features = ["mock"] }
+
+sp-block-participation = { workspace = true, features = ["std"], optional = true }
+sp-block-producer-metadata = { workspace = true, features = ["std"], optional = true }
+sp-governed-map = { workspace = true, features = ["std"], optional = true }
+sp-native-token-management = { workspace = true, features = ["std"], optional = true }
+sp-block-production-log = { workspace = true, features = ["std"], optional = true }
+
+partner-chains-db-sync-data-sources = { workspace = true, features = [
+	"block-source",
+	"candidate-source",
+	"mc-hash",
+	"sidechain-rpc",
+] }
+partner-chains-mock-data-sources = { workspace = true, features = [
+	"block-source",
+	"candidate-source",
+	"mc-hash",
+	"sidechain-rpc",
+] }
+
+[lints]
+workspace = true
+
+[features]
+governed-map = [
+    "partner-chains-db-sync-data-sources/governed-map",
+    "partner-chains-mock-data-sources/governed-map",
+    "dep:governed-map",
+]
+native-token-management = [
+    "partner-chains-db-sync-data-sources/native-token",
+    "partner-chains-mock-data-sources/native-token",
+    "dep:sp-native-token-management",
+]
+block-participation = [
+    "partner-chains-db-sync-data-sources/block-participation",
+    "partner-chains-mock-data-sources/block-participation",
+    "dep:sp-block-production-log",
+    "dep:block-participation",
+]

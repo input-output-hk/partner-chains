@@ -5,7 +5,6 @@
 
 #![warn(missing_docs)]
 
-use crate::data_sources::DataSources;
 use authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
 use authority_selection_inherents::{
 	CommitteeMember, authority_selection_inputs::AuthoritySelectionInputs,
@@ -20,6 +19,7 @@ use partner_chains_demo_runtime::{
 	opaque::{Block, SessionKeys},
 };
 use partner_chains_demo_runtime::{BlockNumber, BlockProducerMetadataType, CrossChainPublic, Hash};
+use partner_chains_node::data_source::PartnerChainsDataSource;
 use sc_consensus_grandpa::{
 	FinalityProofProvider, GrandpaJustificationStream, SharedAuthoritySet, SharedVoterState,
 };
@@ -58,7 +58,7 @@ pub struct FullDeps<C, P, B, T> {
 	/// GRANDPA specific dependencies.
 	pub grandpa: GrandpaDeps<B>,
 	/// Data sources.
-	pub data_sources: DataSources,
+	pub data_sources: PartnerChainsDataSource,
 	/// Source of system time
 	pub time_source: Arc<T>,
 }
