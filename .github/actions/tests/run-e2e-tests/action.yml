@@ -43,6 +43,10 @@ inputs:
     description: 'Number of threads to use'
     required: false
     default: '4'
+  tests:
+    description: 'Test mode (committee, delegator-rewards, smart-contracts, wizards, or full)'
+    required: false
+    default: 'full'
 
 runs:
   using: composite
@@ -77,23 +81,93 @@ runs:
           decrypt_switch="--decrypt"
         fi
 
-        pytest_cmd="pytest --blockchain '${{ inputs.blockchain }}' \
-          --env '${{ inputs.env }}' \
-          --log-cli-level '${{ inputs.log_level }}' \
-          -k '${{ inputs.keyword }}' \
-          ${markers_switch} \
-          -n '${{ inputs.threads}}' \
-          --dist=loadgroup \
-          --ci-run \
-          --init-timestamp '${{ inputs.init_timestamp }}' \
-          ${mc_epoch_switch} \
-          ${latest_mc_epoch_switch} \
-          ${deployment_mc_epoch_switch} \
-          ${decrypt_switch} \
-          --json-report \
-          --json-report-file=logs/.report.json \
-          --json-report-summary \
-          --junitxml=logs/junit_report.xml"
+        # Define pytest command based on test mode
+        if [ "${{ inputs.tests }}" = "committee" ]; then
+          pytest_cmd="pytest --blockchain '${{ inputs.blockchain }}' \
+            --env '${{ inputs.env }}' \
+            --log-cli-level '${{ inputs.log_level }}' \
+            -k 'committee' \
+            -m 'committee_distribution or committee_rotation or committee_members' \
+            -n '${{ inputs.threads}}' \
+            --dist=loadgroup \
+            --ci-run \
+            --init-timestamp '${{ inputs.init_timestamp }}' \
+            --mc-epoch '3' \
+            ${latest_mc_epoch_switch} \
+            ${deployment_mc_epoch_switch} \
+            ${decrypt_switch} \
+            --json-report \
+            --json-report-file=logs/.report.json \
+            --json-report-summary \
+            --junitxml=logs/junit_report.xml"
+
+        elif [ "${{ inputs.tests }}" = "delegator-rewards" ]; then
+          pytest_cmd="pytest --blockchain '${{ inputs.blockchain }}' \
+            --env '${{ inputs.env }}' \
+            --log-cli-level '${{ inputs.log_level }}' \
+            -k 'delegator_rewards' \
+            -m 'delegator_rewards' \
+            -n '${{ inputs.threads}}' \
+            --dist=loadgroup \
+            --ci-run \
+            --init-timestamp '${{ inputs.init_timestamp }}' \
+            ${decrypt_switch} \
+            --json-report \
+            --json-report-file=logs/.report.json \
+            --json-report-summary \
+            --junitxml=logs/junit_report.xml"
+
+        elif [ "${{ inputs.tests }}" = "smart-contracts" ]; then
+          pytest_cmd="pytest --blockchain '${{ inputs.blockchain }}' \
+            --env '${{ inputs.env }}' \
+            --log-cli-level '${{ inputs.log_level }}' \
+            -k 'reserve' \
+            -m 'reserve' \
+            -n '${{ inputs.threads}}' \
+            --dist=loadgroup \
+            --ci-run \
+            --init-timestamp '${{ inputs.init_timestamp }}' \
+            ${decrypt_switch} \
+            --json-report \
+            --json-report-file=logs/.report.json \
+            --json-report-summary \
+            --junitxml=logs/junit_report.xml"
+
+        elif [ "${{ inputs.tests }}" = "wizards" ]; then
+          pytest_cmd="pytest --blockchain '${{ inputs.blockchain }}' \
+            --env '${{ inputs.env }}' \
+            --log-cli-level '${{ inputs.log_level }}' \
+            -k 'substrate' \
+            -m 'substrate' \
+            -n '${{ inputs.threads}}' \
+            --dist=loadgroup \
+            --ci-run \
+            --init-timestamp '${{ inputs.init_timestamp }}' \
+            ${decrypt_switch} \
+            --json-report \
+            --json-report-file=logs/.report.json \
+            --json-report-summary \
+            --junitxml=logs/junit_report.xml"
+
+        else  # full mode
+          pytest_cmd="pytest --blockchain '${{ inputs.blockchain }}' \
+            --env '${{ inputs.env }}' \
+            --log-cli-level '${{ inputs.log_level }}' \
+            -k '${{ inputs.keyword }}' \
+            ${markers_switch} \
+            -n '${{ inputs.threads}}' \
+            --dist=loadgroup \
+            --ci-run \
+            --init-timestamp '${{ inputs.init_timestamp }}' \
+            ${mc_epoch_switch} \
+            ${latest_mc_epoch_switch} \
+            ${deployment_mc_epoch_switch} \
+            ${decrypt_switch} \
+            --json-report \
+            --json-report-file=logs/.report.json \
+            --json-report-summary \
+            --junitxml=logs/junit_report.xml"
+        fi
 
         if [[ "${{ inputs.local-environment }}" == "true" ]]; then
           echo "Running tests via docker exec"
