@@ -109,8 +109,8 @@ can be used to pass the reference hashes to other IDPs.</p>
         </span><span class="prelude-val">Ok</span>((mc_hash <span class="comment">/* other inherent data providers */</span>))
     }
 }</code></pre></div>
-<p>Note that for verification the implementation now accepts additional arguments of types [Slot] and [McBlockHash]
-which are provided by the import queue based on the header. In this case, the [McBlockHash] value comes from the
+<p>Note that for verification the implementation now accepts additional arguments of types [Slot] and <a href="../sidechain_domain/struct.McBlockHash.html" title="struct sidechain_domain::McBlockHash">McBlockHash</a>
+which are provided by the import queue based on the header. In this case, the <a href="../sidechain_domain/struct.McBlockHash.html" title="struct sidechain_domain::McBlockHash">McBlockHash</a> value comes from the
 [InherentDigest] defined in next section.</p>
 <h3 id="import-queue-configuration"><a class="doc-anchor" href="#import-queue-configuration">§</a>Import queue configuration</h3>
 <p>To be able to save and retrieve inherent data in the block header, your node should use the <a href="sp_partner_chains_consensus_aura::block_proposal::PartnerChainsProposer">PartnerChainsProposer</a>

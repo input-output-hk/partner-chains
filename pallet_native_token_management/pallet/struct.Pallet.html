@@ -2,7 +2,7 @@
 functions within the pallet.</p>
 </div></details><h2 id="implementations" class="section-header">Implementations<a href="#implementations" class="anchor">§</a></h2><div id="implementations-list"><details class="toggle implementors-toggle" open><summary><section id="impl-Pallet%3CT%3E" class="impl"><a class="src rightside" href="../../src/pallet_native_token_management/lib.rs.html#177-226">Source</a><a href="#impl-Pallet%3CT%3E" class="anchor">§</a><h3 class="code-header">impl&lt;T: <a class="trait" href="trait.Config.html" title="trait pallet_native_token_management::pallet::Config">Config</a>&gt; <a class="struct" href="struct.Pallet.html" title="struct pallet_native_token_management::pallet::Pallet">Pallet</a>&lt;T&gt;</h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.transfer_tokens" class="method"><a class="src rightside" href="../../src/pallet_native_token_management/lib.rs.html#47">Source</a><h4 class="code-header">pub fn <a href="#method.transfer_tokens" class="fn">transfer_tokens</a>(
     origin: OriginFor&lt;T&gt;,
-    token_amount: NativeTokenAmount,
+    token_amount: <a class="struct" href="../../sidechain_domain/struct.NativeTokenAmount.html" title="struct sidechain_domain::NativeTokenAmount">NativeTokenAmount</a>,
 ) -&gt; DispatchResult</h4></section></summary><div class="docblock"><p>Inherent that registers new native token transfer from the Cardano main chain and triggers
 the handler configured in <a href="trait.Config.html#associatedtype.TokenTransferHandler" title="associated type pallet_native_token_management::pallet::Config::TokenTransferHandler">Config::TokenTransferHandler</a>.</p>
 <p>Arguments:</p>
@@ -11,9 +11,9 @@ the handler configured in <a href="trait.Config.html#associatedtype.TokenTransfe
 </ul>
 </div></details><details class="toggle method-toggle" open><summary><section id="method.set_main_chain_scripts" class="method"><a class="src rightside" href="../../src/pallet_native_token_management/lib.rs.html#47">Source</a><h4 class="code-header">pub fn <a href="#method.set_main_chain_scripts" class="fn">set_main_chain_scripts</a>(
     origin: OriginFor&lt;T&gt;,
-    native_token_policy_id: PolicyId,
-    native_token_asset_name: AssetName,
-    illiquid_supply_validator_address: MainchainAddress,
+    native_token_policy_id: <a class="struct" href="../../sidechain_domain/struct.PolicyId.html" title="struct sidechain_domain::PolicyId">PolicyId</a>,
+    native_token_asset_name: <a class="struct" href="../../sidechain_domain/struct.AssetName.html" title="struct sidechain_domain::AssetName">AssetName</a>,
+    illiquid_supply_validator_address: <a class="struct" href="../../sidechain_domain/struct.MainchainAddress.html" title="struct sidechain_domain::MainchainAddress">MainchainAddress</a>,
 ) -&gt; DispatchResult</h4></section></summary><div class="docblock"><p>Changes the main chain scripts used for observing native token transfers.</p>
 <p>This extrinsic must be run either using <code>sudo</code> or some other chain governance mechanism.</p>
 </div></details></div></details><details class="toggle implementors-toggle" open><summary><section id="impl-Pallet%3CT%3E-1" class="impl"><a class="src rightside" href="../../src/pallet_native_token_management/lib.rs.html#241-250">Source</a><a href="#impl-Pallet%3CT%3E-1" class="anchor">§</a><h3 class="code-header">impl&lt;T: <a class="trait" href="trait.Config.html" title="trait pallet_native_token_management::pallet::Config">Config</a>&gt; <a class="struct" href="struct.Pallet.html" title="struct pallet_native_token_management::pallet::Pallet">Pallet</a>&lt;T&gt;</h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.get_main_chain_scripts" class="method"><a class="src rightside" href="../../src/pallet_native_token_management/lib.rs.html#243-245">Source</a><h4 class="code-header">pub fn <a href="#method.get_main_chain_scripts" class="fn">get_main_chain_scripts</a>() -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;MainChainScripts&gt;</h4></section></summary><div class="docblock"><p>Returns the main chain scripts currently configured in the pallet</p>

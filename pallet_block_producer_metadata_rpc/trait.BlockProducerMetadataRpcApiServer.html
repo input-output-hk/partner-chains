@@ -6,7 +6,7 @@
     // Required method
     fn <a href="#tymethod.get_block_producer_metadata" class="fn">get_block_producer_metadata</a>(
         &amp;self,
-        cross_chain_public_key: CrossChainPublicKey,
+        cross_chain_public_key: <a class="struct" href="../sidechain_domain/struct.CrossChainPublicKey.html" title="struct sidechain_domain::CrossChainPublicKey">CrossChainPublicKey</a>,
     ) -&gt; RpcResult&lt;<a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;Metadata&gt;&gt;;
 
     // Provided method
@@ -15,7 +15,7 @@
 }</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Server trait implementation for the <code>BlockProducerMetadataRpcApi</code> RPC API.</p>
 </div></details><h2 id="required-methods" class="section-header">Required Methods<a href="#required-methods" class="anchor">§</a></h2><div class="methods"><details class="toggle method-toggle" open><summary><section id="tymethod.get_block_producer_metadata" class="method"><a class="src rightside" href="../src/pallet_block_producer_metadata_rpc/lib.rs.html#70-73">Source</a><h4 class="code-header">fn <a href="#tymethod.get_block_producer_metadata" class="fn">get_block_producer_metadata</a>(
     &amp;self,
-    cross_chain_public_key: CrossChainPublicKey,
+    cross_chain_public_key: <a class="struct" href="../sidechain_domain/struct.CrossChainPublicKey.html" title="struct sidechain_domain::CrossChainPublicKey">CrossChainPublicKey</a>,
 ) -&gt; RpcResult&lt;<a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;Metadata&gt;&gt;</h4></section></summary><div class="docblock"><p>Returns JSON-encoded metadata for given <code>cross_chain_public_key</code> from the storage of the current tip if it exists.</p>
 </div></details></div><h2 id="provided-methods" class="section-header">Provided Methods<a href="#provided-methods" class="anchor">§</a></h2><div class="methods"><details class="toggle method-toggle" open><summary><section id="method.into_rpc" class="method"><a class="src rightside" href="../src/pallet_block_producer_metadata_rpc/lib.rs.html#66">Source</a><h4 class="code-header">fn <a href="#method.into_rpc" class="fn">into_rpc</a>(self) -&gt; RpcModule&lt;Self&gt;<div class="where">where
     Metadata: <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a> + <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Sync.html" title="trait core::marker::Sync">Sync</a> + 'static + <a class="trait" href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html" title="trait core::clone::Clone">Clone</a> + <a class="trait" href="https://docs.rs/serde/1.0.219/serde/ser/trait.Serialize.html" title="trait serde::ser::Serialize">Serialize</a>,</div></h4></section></summary><div class="docblock"><p>Collects all the methods and subscriptions defined in the trait and adds them into a single <code>RpcModule</code>.</p>

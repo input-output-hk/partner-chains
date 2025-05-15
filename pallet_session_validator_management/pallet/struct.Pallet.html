@@ -4,7 +4,7 @@ functions within the pallet.</p>
     origin: OriginFor&lt;T&gt;,
     validators: BoundedVec&lt;T::<a class="associatedtype" href="trait.Config.html#associatedtype.CommitteeMember" title="type pallet_session_validator_management::pallet::Config::CommitteeMember">CommitteeMember</a>, T::<a class="associatedtype" href="trait.Config.html#associatedtype.MaxValidators" title="type pallet_session_validator_management::pallet::Config::MaxValidators">MaxValidators</a>&gt;,
     for_epoch_number: T::<a class="associatedtype" href="trait.Config.html#associatedtype.ScEpochNumber" title="type pallet_session_validator_management::pallet::Config::ScEpochNumber">ScEpochNumber</a>,
-    selection_inputs_hash: SizedByteString&lt;32&gt;,
+    selection_inputs_hash: <a class="struct" href="../../sidechain_domain/byte_string/struct.SizedByteString.html" title="struct sidechain_domain::byte_string::SizedByteString">SizedByteString</a>&lt;32&gt;,
 ) -&gt; DispatchResult</h4></section></summary><div class="docblock"><p>‘for_epoch_number’ parameter is needed only for validation purposes, because we need to make sure that
 check_inherent uses the same epoch_number as was used to create inherent data.
 Alternative approach would be to put epoch number inside InherentData. However, sidechain
@@ -12,9 +12,9 @@ epoch number is set in Runtime, thus, inherent data provider doesn’t have to k
 On top of that, the latter approach is slightly more complicated to code.</p>
 </div></details><details class="toggle method-toggle" open><summary><section id="method.set_main_chain_scripts" class="method"><a class="src rightside" href="../../src/pallet_session_validator_management/lib.rs.html#27">Source</a><h4 class="code-header">pub fn <a href="#method.set_main_chain_scripts" class="fn">set_main_chain_scripts</a>(
     origin: OriginFor&lt;T&gt;,
-    committee_candidate_address: MainchainAddress,
-    d_parameter_policy_id: PolicyId,
-    permissioned_candidates_policy_id: PolicyId,
+    committee_candidate_address: <a class="struct" href="../../sidechain_domain/struct.MainchainAddress.html" title="struct sidechain_domain::MainchainAddress">MainchainAddress</a>,
+    d_parameter_policy_id: <a class="struct" href="../../sidechain_domain/struct.PolicyId.html" title="struct sidechain_domain::PolicyId">PolicyId</a>,
+    permissioned_candidates_policy_id: <a class="struct" href="../../sidechain_domain/struct.PolicyId.html" title="struct sidechain_domain::PolicyId">PolicyId</a>,
 ) -&gt; DispatchResult</h4></section></summary><div class="docblock"><p>Changes the main chain scripts used for committee rotation.</p>
 <p>This extrinsic must be run either using <code>sudo</code> or some other chain governance mechanism.</p>
 </div></details></div></details><details class="toggle implementors-toggle" open><summary><section id="impl-Pallet%3CT%3E-1" class="impl"><a class="src rightside" href="../../src/pallet_session_validator_management/lib.rs.html#343-426">Source</a><a href="#impl-Pallet%3CT%3E-1" class="anchor">§</a><h3 class="code-header">impl&lt;T: <a class="trait" href="trait.Config.html" title="trait pallet_session_validator_management::pallet::Config">Config</a>&gt; <a class="struct" href="struct.Pallet.html" title="struct pallet_session_validator_management::pallet::Pallet">Pallet</a>&lt;T&gt;</h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.get_next_unset_epoch_number" class="method"><a class="src rightside" href="../../src/pallet_session_validator_management/lib.rs.html#345-349">Source</a><h4 class="code-header">pub fn <a href="#method.get_next_unset_epoch_number" class="fn">get_next_unset_epoch_number</a>() -&gt; T::<a class="associatedtype" href="trait.Config.html#associatedtype.ScEpochNumber" title="type pallet_session_validator_management::pallet::Config::ScEpochNumber">ScEpochNumber</a></h4></section></summary><div class="docblock"><p>Returns epoch number for which next committee hasn’t been set yet.</p>
