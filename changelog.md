@@ -6,6 +6,16 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Changed
 
+## Removed
+
+## Fixed
+
+## Added
+
+# v1.7.0
+
+## Changed
+
 * `prepare-configuration` wizard suggests payment signing key hash as governance authority if there is no value in chain config stored so far.
 * Automatically create required index on `tx_out` table `address` column. Constructor signatures have changed - this change is not source compatible.
 * BREAKING: Wizards are not generating keys nor looking for them in `<base_path>/chains/partner_chains_template` but use `<base_path>` instead.

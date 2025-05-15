@@ -2,7 +2,7 @@
     "stack_config": {
         "ogmios_host": "staging-preview-services-service.staging-preview.svc.cluster.local",
         "ogmios_port": 1337,
-        "tools_host": "10.0.12.65",
+        "tools_host": "10.0.12.163",
         "ssh": {
             "username": "root",
             "host": "${stack_config[tools_host]}",
