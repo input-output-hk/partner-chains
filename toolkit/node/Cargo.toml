@@ -6,6 +6,7 @@ homepage.workspace = true
 repository.workspace = true
 version.workspace = true
 description = "Components for building a Partner Chain node"
+license = "Apache-2.0"
 
 [dependencies]
 async-trait = { workspace = true }
