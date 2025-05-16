@@ -220,7 +220,7 @@ jobs:
     if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.merged == false }}
     needs: [
       build-linux-x86_64-pre-merge,
-      local-environment-tests-alert,
+      local-environment-tests,
       devshell-tests,
       upload-chain-specs-pre-merge,
       documentation-tests
@@ -230,7 +230,7 @@ jobs:
       - name: Check if any needed job failed
         run: |
           if [[ "${{ needs.build-linux-x86_64-pre-merge.result }}" != "success" ||
-                "${{ needs.local-environment-tests-alert.result }}" != "success" ||
+                "${{ needs.local-environment-tests.result }}" != "success" ||
                 "${{ needs.devshell-tests.result }}" != "success" ||
                 "${{ needs.upload-chain-specs-pre-merge.result }}" != "success" ||
                 "${{ needs.documentation-tests.result }}" != "success" ]]; then
