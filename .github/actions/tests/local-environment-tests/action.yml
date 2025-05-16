@@ -11,7 +11,7 @@ inputs:
     description: "PC Artifact Tag"
     required: true
   markers:
-    description: "Test set to run (smoke, rpc, reserve, governed_map, delegator_rewards, ariadne, wizards, or full)"
+    description: "Test set to run (smoke, rpc, reserve, governed_map, delegator_rewards, ariadne or full). If wizards is selected, manual tests steps (not e2e tests) will be run."
     required: true
 
 outputs: {}
