@@ -21,6 +21,14 @@ use {
 	sp_runtime::Serialize,
 };
 
+#[macro_export]
+macro_rules! partner_chains_rpc {
+	($config:expr, $data_source:expr, $client:expr, $module:expr) => {{
+		$crate::rpc::add_sidechain_rpc($config, $data_source, $client.clone(), &mut $module)?;
+		$crate::rpc::add_block_participation_rpc($client.clone(), &mut $module)?;
+	}};
+}
+
 pub fn add_sidechain_rpc<T, C, B, CommitteeMember>(
 	config: &PartnerChainsNodeConfig,
 	data_source: &PartnerChainsDataSource,
@@ -88,12 +96,4 @@ pub fn add_block_participation_rpc<T, C, B>(
 	_module: &mut RpcModule<T>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 	Ok(())
-}
-
-#[macro_export]
-macro_rules! partner_chains_rpc {
-	($config:expr, $data_source:expr, $client:expr, $module:expr) => {{
-		$crate::rpc::add_sidechain_rpc($config, $data_source, $client.clone(), &mut $module)?;
-		$crate::rpc::add_block_participation_rpc($client.clone(), &mut $module)?;
-	}};
 }
