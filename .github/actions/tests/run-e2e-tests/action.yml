@@ -10,7 +10,7 @@ inputs:
     required: false
     default: 'test_'
   markers:
-    description: 'Run tests by markers (-m). Available markers: smoke, rpc, reserve, governed_map, delegator_rewards, ariadne, wizards, or full'
+    description: 'Run tests by markers (-m). Available markers: smoke, rpc, reserve, governed_map, delegator_rewards, ariadne or full'
     required: false
   mc_epoch:
     description: 'MC epoch to test (committee tests)'
