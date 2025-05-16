@@ -120,21 +120,10 @@ runs:
         mkdir -p e2e-tests
         docker cp tests:/e2e-tests/logs e2e-tests
 
-    - name: Set safe markers
-      id: safe-markers
-      shell: bash
-      run: |
-        if [ -n "${{ inputs.markers }}" ]; then
-          safe_markers="${{ inputs.markers// /}}"
-        else
-          safe_markers="default"
-        fi
-        echo "safe_markers=$safe_markers" >> $GITHUB_OUTPUT
-
     - name: Upload test results
       uses: actions/upload-artifact@v4
       with:
-        name: test-results-${{ steps.safe-markers.outputs.safe_markers }}
+        name: test-results-${{ inputs.markers }}
         path: e2e-tests/logs
         overwrite: true
         if-no-files-found: error

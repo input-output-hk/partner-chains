@@ -102,16 +102,6 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - name: Set safe markers
-        id: safe-markers
-        shell: bash
-        run: |
-          if [ -n "${{ matrix.markers }}" ]; then
-            safe_markers=$(echo "${{ matrix.markers }}" | tr -d ' ')
-          else
-            safe_markers="default"
-          fi
-          echo "safe_markers=$safe_markers" >> $GITHUB_OUTPUT
       - name: Deploy and test against local environment
         uses: ./.github/actions/tests/local-environment-tests
         with:
@@ -144,20 +134,10 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - name: Set safe markers
-        id: safe-markers
-        shell: bash
-        run: |
-          if [ -n "${{ matrix.markers }}" ]; then
-            safe_markers=$(echo "${{ matrix.markers }}" | tr -d ' ')
-          else
-            safe_markers="default"
-          fi
-          echo "safe_markers=$safe_markers" >> $GITHUB_OUTPUT
       - name: Download test report
         uses: actions/download-artifact@v4
         with:
-          name: test-results-${{ steps.safe-markers.outputs.safe_markers }}
+          name: test-results-${{ matrix.markers }}
           path: e2e-tests/logs
       - name: Report to slack
         env:
@@ -489,16 +469,6 @@ jobs:
         with:
           fetch-depth: 0
           ref: master
-      - name: Set safe markers
-        id: safe-markers
-        shell: bash
-        run: |
-          if [ -n "${{ matrix.markers }}" ]; then
-            safe_markers=$(echo "${{ matrix.markers }}" | tr -d ' ')
-          else
-            safe_markers="default"
-          fi
-          echo "safe_markers=$safe_markers" >> $GITHUB_OUTPUT
       - name: Deploy and test against local environment
         uses: ./.github/actions/tests/local-environment-tests
         with:
@@ -528,20 +498,10 @@ jobs:
         with:
           fetch-depth: 0
           ref: master
-      - name: Set safe markers
-        id: safe-markers
-        shell: bash
-        run: |
-          if [ -n "${{ matrix.markers }}" ]; then
-            safe_markers=$(echo "${{ matrix.markers }}" | tr -d ' ')
-          else
-            safe_markers="default"
-          fi
-          echo "safe_markers=$safe_markers" >> $GITHUB_OUTPUT
       - name: Download test report
         uses: actions/download-artifact@v4
         with:
-          name: test-results-${{ steps.safe-markers.outputs.safe_markers }}
+          name: test-results-${{ matrix.markers }}
           path: e2e-tests/logs
       - name: Report to slack
         env:
@@ -603,40 +563,12 @@ jobs:
           kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
           K8S_SERVER: ${{ secrets.K8S_SERVER }}
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
-#      - name: Run direct kubectl exec tests against ci-preview
-#        uses: ./.github/actions/tests/k8s-direct-tests
-#        with:
-#          namespace: ci-preview
-#          pod: ci-preview-validator-1
-#        env:
-#          AWS_REGION: "eu-central-1"
-#          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-#          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
-#          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
-#          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
-#          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
-#          K8S_SERVER: ${{ secrets.K8S_SERVER }}
-#          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
       - name: Test against ci-preview
         uses: ./.github/actions/tests/run-e2e-tests
-#      - name: Run pytests against ci-preview over kubectl exec
-#        uses: ./.github/actions/tests/k8s-e2e-tests
         with:
           env: ci
           decrypt: true
           blockchain: substrate
-#        env:
-#          USE_KUBECTL_RPC: true
-#          KUBECTL_EXEC_POD: ci-preview-validator-1
-#          K8S_NAMESPACE: ci-preview
-#          AWS_REGION: "eu-central-1"
-#          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-#          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
-#          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
-#          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
-#          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
-#          K8S_SERVER: ${{ secrets.K8S_SERVER }}
-#          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
   post-merge-actions-complete:
     if: ${{ always() && (github.event_name == 'pull_request' && github.event.pull_request.merged == true) }}
