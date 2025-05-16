@@ -1,6 +1,7 @@
 use super::*;
 use rpc_mock::*;
 use sidechain_domain::*;
+#[allow(deprecated)]
 use sp_sidechain::SidechainStatus;
 
 sp_api::mock_impl_runtime_apis! {
