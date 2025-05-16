@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from src.cardano_cli import CardanoCli
-from src.partner_chain_rpc import PartnerChainRpcResponse, DParam
+from src.partner_chain_rpc import PartnerChainRpc, PartnerChainRpcResponse, DParam
 from src.partner_chains_node.node import PartnerChainsNode
 from src.partner_chains_node.models import AddressAssociationSignature, BlockProducerMetadataSignature
 from config.api_config import Node
@@ -30,6 +30,7 @@ class Wallet:
 class BlockchainApi(ABC):
     cardano_cli: CardanoCli
     partner_chains_node: PartnerChainsNode
+    partner_chain_rpc: PartnerChainRpc
 
     @abstractmethod
     def close(self):
@@ -496,6 +497,20 @@ class BlockchainApi(ABC):
 
         Returns:
             block participation data
+        """
+        pass
+
+    @abstractmethod
+    def set_block_producer_margin_fee(self, margin_fee: int, wallet: Wallet) -> Transaction:
+        """
+        Sets the block producer's margin fee.
+
+        Arguments:
+            margin_fee {int} -- Margin fee in percentage
+            wallet {Wallet} -- Wallet used to sign the transaction
+
+        Returns:
+            Transaction
         """
         pass
 
