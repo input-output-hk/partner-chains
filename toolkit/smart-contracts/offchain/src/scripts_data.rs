@@ -1,4 +1,4 @@
-use crate::apply_data;
+use crate::plutus_script;
 use crate::{OffchainError, csl::NetworkTypeExt, plutus_script::PlutusScript};
 use cardano_serialization_lib::NetworkIdKind;
 use ogmios_client::query_network::QueryNetwork;
@@ -59,7 +59,7 @@ pub struct PolicyIds {
 	pub governed_map: PolicyId,
 }
 
-/// Trait for [get_scripts_data].
+/// Trait for [get_scripts_data], to make it mockable.
 pub trait GetScriptsData {
 	#[allow(async_fn_in_trait)]
 	/// For the given `genesis_utxo` it returns the [ScriptsData] of the partner chain smart contracts.
@@ -85,9 +85,10 @@ pub fn get_scripts_data(
 	network: NetworkIdKind,
 ) -> anyhow::Result<ScriptsData> {
 	let version_oracle_data = version_oracle(genesis_utxo, network)?;
-	let committee_candidate_validator = apply_data![COMMITTEE_CANDIDATE_VALIDATOR, genesis_utxo]?;
+	let committee_candidate_validator =
+		plutus_script![COMMITTEE_CANDIDATE_VALIDATOR, genesis_utxo]?;
 	let d_parameter_data = d_parameter_scripts(genesis_utxo, network)?;
-	let illiquid_circulation_supply_validator = apply_data![
+	let illiquid_circulation_supply_validator = plutus_script![
 		ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR,
 		version_oracle_data.policy_id_as_plutus_data()
 	]?;
@@ -154,10 +155,10 @@ pub fn version_oracle(
 	genesis_utxo: UtxoId,
 	network: NetworkIdKind,
 ) -> Result<PlutusScriptData, anyhow::Error> {
-	let validator = apply_data![VERSION_ORACLE_VALIDATOR, genesis_utxo]?;
+	let validator = plutus_script![VERSION_ORACLE_VALIDATOR, genesis_utxo]?;
 	let validator_address = validator.address_bech32(network)?;
 	let policy =
-		apply_data![VERSION_ORACLE_POLICY, genesis_utxo, validator.address_data(network)?]?;
+		plutus_script![VERSION_ORACLE_POLICY, genesis_utxo, validator.address_data(network)?]?;
 	Ok(PlutusScriptData { validator, validator_address, policy })
 }
 
@@ -167,9 +168,10 @@ pub(crate) fn governed_map_scripts(
 ) -> Result<PlutusScriptData, anyhow::Error> {
 	let version_oracle_data = version_oracle(genesis_utxo, network)?;
 	let validator =
-		apply_data![GOVERNED_MAP_VALIDATOR, genesis_utxo, version_oracle_data.policy_id()]?;
+		plutus_script![GOVERNED_MAP_VALIDATOR, genesis_utxo, version_oracle_data.policy_id()]?;
 	let validator_address = validator.address_bech32(network)?;
-	let policy = apply_data![GOVERNED_MAP_POLICY, genesis_utxo, version_oracle_data.policy_id()]?;
+	let policy =
+		plutus_script![GOVERNED_MAP_POLICY, genesis_utxo, version_oracle_data.policy_id()]?;
 	Ok(PlutusScriptData { validator, validator_address, policy })
 }
 
@@ -179,9 +181,9 @@ pub(crate) fn d_parameter_scripts(
 ) -> Result<PlutusScriptData, anyhow::Error> {
 	let version_oracle_data = version_oracle(genesis_utxo, network)?;
 	let validator =
-		apply_data![D_PARAMETER_VALIDATOR, genesis_utxo, version_oracle_data.policy_id()]?;
+		plutus_script![D_PARAMETER_VALIDATOR, genesis_utxo, version_oracle_data.policy_id()]?;
 	let validator_address = validator.address_bech32(network)?;
-	let policy = apply_data![
+	let policy = plutus_script![
 		D_PARAMETER_POLICY,
 		genesis_utxo,
 		version_oracle_data.policy_id(),
@@ -195,13 +197,13 @@ pub(crate) fn permissioned_candidates_scripts(
 	network: NetworkIdKind,
 ) -> Result<PlutusScriptData, anyhow::Error> {
 	let version_oracle_data = version_oracle(genesis_utxo, network)?;
-	let validator = apply_data![
+	let validator = plutus_script![
 		PERMISSIONED_CANDIDATES_VALIDATOR,
 		genesis_utxo,
 		version_oracle_data.policy_id()
 	]?;
 	let validator_address = validator.address_bech32(network)?;
-	let policy = apply_data![
+	let policy = plutus_script![
 		PERMISSIONED_CANDIDATES_POLICY,
 		genesis_utxo,
 		version_oracle_data.policy_id(),
@@ -213,7 +215,7 @@ pub(crate) fn permissioned_candidates_scripts(
 pub(crate) fn registered_candidates_scripts(
 	genesis_utxo: UtxoId,
 ) -> Result<PlutusScript, anyhow::Error> {
-	let validator = apply_data![COMMITTEE_CANDIDATE_VALIDATOR, genesis_utxo]?;
+	let validator = plutus_script![COMMITTEE_CANDIDATE_VALIDATOR, genesis_utxo]?;
 	Ok(validator)
 }
 
@@ -229,10 +231,11 @@ pub(crate) fn reserve_scripts(
 	network: NetworkIdKind,
 ) -> Result<ReserveScripts, anyhow::Error> {
 	let version_oracle_data = version_oracle(genesis_utxo, network)?;
-	let validator = apply_data![RESERVE_VALIDATOR, version_oracle_data.policy_id_as_plutus_data()]?;
+	let validator =
+		plutus_script![RESERVE_VALIDATOR, version_oracle_data.policy_id_as_plutus_data()]?;
 	let auth_policy =
-		apply_data![RESERVE_AUTH_POLICY, version_oracle_data.policy_id_as_plutus_data()]?;
-	let illiquid_circulation_supply_validator = apply_data![
+		plutus_script![RESERVE_AUTH_POLICY, version_oracle_data.policy_id_as_plutus_data()]?;
+	let illiquid_circulation_supply_validator = plutus_script![
 		ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR,
 		version_oracle_data.policy_id_as_plutus_data()
 	]?;

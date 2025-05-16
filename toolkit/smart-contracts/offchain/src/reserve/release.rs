@@ -187,8 +187,8 @@ fn v_function_from_utxo(utxo: &OgmiosUtxo) -> anyhow::Result<PlutusScript> {
 mod tests {
 	use super::{AssetNameExt, Costs, TransactionContext, empty_asset_name, reserve_release_tx};
 	use crate::{
-		apply_data,
 		cardano_keys::CardanoPaymentSigningKey,
+		plutus_script,
 		plutus_script::PlutusScript,
 		reserve::{ReserveData, ReserveUtxo, release::OgmiosUtxoExt},
 		scripts_data::ReserveScripts,
@@ -264,7 +264,7 @@ mod tests {
 	const UNIX_T0: u64 = 1736504093000u64;
 
 	fn applied_v_function() -> PlutusScript {
-		apply_data![EXAMPLE_V_FUNCTION_POLICY, UNIX_T0].unwrap()
+		plutus_script![EXAMPLE_V_FUNCTION_POLICY, UNIX_T0].unwrap()
 	}
 
 	fn version_oracle_address() -> String {

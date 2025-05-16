@@ -181,20 +181,20 @@ impl From<raw_scripts::RawScript> for PlutusScript {
 ///
 /// Example:
 /// ```rust,ignore
-/// apply_data![SOME_SCRIPT, genesis_utxo, plutus::Datum::ListDatum(Vec::new())]
+/// plutus_script![SOME_SCRIPT, genesis_utxo, plutus::Datum::ListDatum(Vec::new())]
 /// ```
 #[macro_export]
-macro_rules! apply_data {
-    ($ps:expr, $arg:expr) => (
-		$crate::plutus_script::PlutusScript::from($ps)
-			.apply_data_uplc($crate::plutus_script::PlutusDataWrapper::from($arg).0)
+macro_rules! plutus_script {
+    ($ps:expr $(,$args:expr)*) => (
+		{
+			let script = $crate::plutus_script::PlutusScript::from($ps);
+			plutus_script!(@inner, script $(,$args)*)
+		}
 	);
-    ($ps:expr, $arg:expr, $($args:expr),+) => (
-        apply_data!(
-			$crate::plutus_script::PlutusScript::from($ps)
-				.apply_data_uplc($crate::plutus_script::PlutusDataWrapper::from($arg).0)?,
-			$($args),+
-		)
+	(@inner, $ps:expr) => (Ok($ps));
+    (@inner, $ps:expr, $arg:expr $(,$args:expr)*) => (
+		$ps.apply_data_uplc($crate::plutus_script::PlutusDataWrapper::from($arg).0)
+	    	.and_then(|ps| plutus_script!(@inner, ps $(,$args)*))
     )
 }
 
@@ -250,13 +250,13 @@ pub(crate) mod tests {
 
 	#[test]
 	fn apply_parameters_to_deregister() {
-		let applied = apply_data![CANDIDATES_SCRIPT_RAW, TEST_GENESIS_UTXO].unwrap();
+		let applied = plutus_script![CANDIDATES_SCRIPT_RAW, TEST_GENESIS_UTXO].unwrap();
 		assert_eq!(hex::encode(applied.bytes), hex::encode(CANDIDATES_SCRIPT_WITH_APPLIED_PARAMS));
 	}
 
 	#[test]
 	fn unapply_term_csl() {
-		let applied = apply_data![CANDIDATES_SCRIPT_RAW, TEST_GENESIS_UTXO].unwrap();
+		let applied = plutus_script![CANDIDATES_SCRIPT_RAW, TEST_GENESIS_UTXO].unwrap();
 		let data: PlutusData = applied.unapply_data_csl().unwrap();
 		assert_eq!(
 			data,
@@ -267,7 +267,7 @@ pub(crate) mod tests {
 
 	#[test]
 	fn unapply_term_uplc() {
-		let applied = apply_data![CANDIDATES_SCRIPT_RAW, TEST_GENESIS_UTXO].unwrap();
+		let applied = plutus_script![CANDIDATES_SCRIPT_RAW, TEST_GENESIS_UTXO].unwrap();
 		let data: uplc::PlutusData = applied.unapply_data_uplc().unwrap();
 		assert_eq!(
 			data,

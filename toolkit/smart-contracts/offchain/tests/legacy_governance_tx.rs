@@ -1,7 +1,7 @@
 use cardano_serialization_lib::*;
 use hex_literal::hex;
 use pallas_primitives::MaybeIndefArray;
-use partner_chains_cardano_offchain::apply_data;
+use partner_chains_cardano_offchain::plutus_script;
 use partner_chains_cardano_offchain::scripts_data::version_oracle;
 use sidechain_domain::UtxoId;
 
@@ -20,7 +20,7 @@ pub fn legacy_governance_init_transaction(
 				.hash()
 				.to_bytes();
 		use uplc::PlutusData::{Array, BigInt, BoundedBytes};
-		apply_data![
+		plutus_script![
 			raw_scripts::MULTI_SIG_POLICY,
 			Array(MaybeIndefArray::Indef(vec![
 				Array(MaybeIndefArray::Indef(vec![BoundedBytes(

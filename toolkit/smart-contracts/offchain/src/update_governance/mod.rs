@@ -6,7 +6,6 @@
 //! 3. Produces a new governance UTXO at the version oracle validator address with a version oracle
 //!    Plutus datum attached that contains the script ID (32) and policy hash.
 use crate::{
-	apply_data,
 	await_tx::AwaitTx,
 	cardano_keys::CardanoPaymentSigningKey,
 	csl::{
@@ -16,6 +15,7 @@ use crate::{
 	governance::{GovernanceData, MultiSigParameters},
 	init_governance::transaction::version_oracle_datum_output,
 	multisig::{MultiSigSmartContractResult, submit_or_create_tx_to_sign},
+	plutus_script,
 };
 use cardano_serialization_lib::{PlutusData, Transaction, TransactionBuilder, TxInputsBuilder};
 use ogmios_client::{
@@ -75,8 +75,8 @@ fn update_governance_tx(
 	ctx: &TransactionContext,
 ) -> anyhow::Result<Transaction> {
 	let multi_sig_policy = governance_parameters.as_simple_at_least_n().to_csl_native_script();
-	let version_oracle_validator = apply_data![version_oracle_validator, genesis_utxo]?;
-	let version_oracle_policy = apply_data![
+	let version_oracle_validator = plutus_script![version_oracle_validator, genesis_utxo]?;
+	let version_oracle_policy = plutus_script![
 		version_oracle_policy,
 		genesis_utxo,
 		version_oracle_validator.address_data(ctx.network)?
