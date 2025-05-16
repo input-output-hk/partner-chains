@@ -131,12 +131,6 @@ runs:
         sleep 30
       shell: bash
 
-#    - name: Run wizards epoch 2 steps
-#      if: ${{ inputs.markers == 'wizards' }}
-#      run: |
-#        docker exec partner-chains-node-1 parter-chains-node wizards 
-#      shell: bash
-
     - name: Run Epoch 2 Tests
       if: ${{ inputs.markers != 'wizards' }}
       uses: ./.github/actions/tests/run-e2e-tests
@@ -144,7 +138,17 @@ runs:
         env: ${{ env.TEST_ENVIRONMENT }}
         init_timestamp: ${{ env.INIT_TIMESTAMP }}
         blockchain: substrate
-        markers: "not probability and not rpc"
+        markers: ${{ inputs.markers }}
+        local-environment: "true"
+
+    - name: Run Epoch 2 Tests (wizards)
+      if: ${{ inputs.markers != 'wizards' }}
+      uses: ./.github/actions/tests/run-e2e-tests
+      with:
+        env: ${{ env.TEST_ENVIRONMENT }}
+        init_timestamp: ${{ env.INIT_TIMESTAMP }}
+        blockchain: substrate
+        markers: "smoke"
         local-environment: "true"
 
     - name: Wait for epoch 3
@@ -163,7 +167,7 @@ runs:
         env: ${{ env.TEST_ENVIRONMENT }}
         init_timestamp: ${{ env.INIT_TIMESTAMP }}
         blockchain: substrate
-        markers: "not probability"
+        markers: ${{ inputs.markers }}
         local-environment: "true"
 
     - name: Wait for epoch 4
@@ -183,7 +187,7 @@ runs:
         mc_epoch: 3
         init_timestamp: ${{ env.INIT_TIMESTAMP }}
         blockchain: substrate
-        markers: "not probability and not reserve"
+        markers: ${{ inputs.markers }}
         local-environment: "true"
 
     - name: Check if no skipped tests
