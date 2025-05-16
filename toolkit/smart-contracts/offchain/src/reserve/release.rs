@@ -188,18 +188,23 @@ mod tests {
 	use super::{AssetNameExt, Costs, TransactionContext, empty_asset_name, reserve_release_tx};
 	use crate::{
 		cardano_keys::CardanoPaymentSigningKey,
+		plutus_script,
 		plutus_script::PlutusScript,
 		reserve::{ReserveData, ReserveUtxo, release::OgmiosUtxoExt},
 		scripts_data::ReserveScripts,
 		test_values::{payment_addr, protocol_parameters},
 	};
-	use cardano_serialization_lib::{Int, Language, NetworkIdKind, PolicyID, Transaction};
+	use cardano_serialization_lib::{Int, NetworkIdKind, PolicyID, Transaction};
 	use hex_literal::hex;
 	use ogmios_client::types::{Asset, OgmiosTx, OgmiosUtxo, OgmiosValue};
 	use partner_chains_plutus_data::reserve::{
 		ReserveDatum, ReserveImmutableSettings, ReserveMutableSettings, ReserveStats,
 	};
 	use pretty_assertions::assert_eq;
+	use raw_scripts::{
+		EXAMPLE_V_FUNCTION_POLICY, ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR, RESERVE_AUTH_POLICY,
+		RESERVE_VALIDATOR,
+	};
 	use sidechain_domain::{AssetName, PolicyId};
 
 	fn payment_key() -> CardanoPaymentSigningKey {
@@ -245,33 +250,21 @@ mod tests {
 	}
 
 	fn reserve_validator_script() -> PlutusScript {
-		PlutusScript::from_wrapped_cbor(raw_scripts::RESERVE_VALIDATOR, Language::new_plutus_v2())
-			.unwrap()
+		RESERVE_VALIDATOR.into()
 	}
 
 	fn auth_policy_script() -> PlutusScript {
-		PlutusScript::from_wrapped_cbor(raw_scripts::RESERVE_AUTH_POLICY, Language::new_plutus_v2())
-			.unwrap()
+		RESERVE_AUTH_POLICY.into()
 	}
 
 	fn illiquid_supply_validator_script() -> PlutusScript {
-		PlutusScript::from_wrapped_cbor(
-			raw_scripts::ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR,
-			Language::new_plutus_v2(),
-		)
-		.unwrap()
+		ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR.into()
 	}
 
 	const UNIX_T0: u64 = 1736504093000u64;
 
 	fn applied_v_function() -> PlutusScript {
-		PlutusScript::from_wrapped_cbor(
-			raw_scripts::EXAMPLE_V_FUNCTION_POLICY,
-			Language::new_plutus_v2(),
-		)
-		.unwrap()
-		.apply_data(UNIX_T0)
-		.unwrap()
+		plutus_script![EXAMPLE_V_FUNCTION_POLICY, UNIX_T0].unwrap()
 	}
 
 	fn version_oracle_address() -> String {

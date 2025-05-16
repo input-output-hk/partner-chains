@@ -24,11 +24,11 @@ use crate::{
 	governance::GovernanceData,
 	multisig::{MultiSigSmartContractResult, submit_or_create_tx_to_sign},
 	plutus_script::PlutusScript,
-	scripts_data::{self, VersionOracleData},
+	scripts_data::{self, PlutusScriptData},
 };
 use cardano_serialization_lib::{
-	AssetName, BigNum, ConstrPlutusData, JsError, Language, MultiAsset, PlutusData, PlutusList,
-	ScriptRef, Transaction, TransactionBuilder, TransactionOutputBuilder,
+	AssetName, BigNum, ConstrPlutusData, JsError, MultiAsset, PlutusData, PlutusList, ScriptRef,
+	Transaction, TransactionBuilder, TransactionOutputBuilder,
 };
 use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
@@ -53,17 +53,17 @@ pub async fn init_reserve_management<
 ) -> anyhow::Result<Vec<MultiSigSmartContractResult>> {
 	let reserve_validator = ScriptData::new(
 		"Reserve Management Validator",
-		RESERVE_VALIDATOR.to_vec(),
+		RESERVE_VALIDATOR.0.to_vec(),
 		ScriptId::ReserveValidator,
 	);
 	let reserve_policy = ScriptData::new(
 		"Reserve Management Policy",
-		RESERVE_AUTH_POLICY.to_vec(),
+		RESERVE_AUTH_POLICY.0.to_vec(),
 		ScriptId::ReserveAuthPolicy,
 	);
 	let ics_validator = ScriptData::new(
 		"Illiquid Circulation Validator",
-		ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR.to_vec(),
+		ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR.0.to_vec(),
 		ScriptId::IlliquidCirculationSupplyValidator,
 	);
 	Ok(vec![
@@ -84,18 +84,18 @@ struct ScriptData {
 
 impl ScriptData {
 	fn new(name: &str, raw_bytes: Vec<u8>, id: ScriptId) -> Self {
-		let plutus_script = PlutusScript::from_wrapped_cbor(&raw_bytes, Language::new_plutus_v2())
-			.expect("Plutus script should be valid");
+		let plutus_script =
+			PlutusScript::from_wrapped_cbor(&raw_bytes).expect("Plutus script should be valid");
 		Self { name: name.to_string(), plutus_script, id: id as u32 }
 	}
 
 	fn applied_plutus_script(
 		&self,
-		version_oracle: &VersionOracleData,
+		version_oracle: &PlutusScriptData,
 	) -> Result<PlutusScript, JsError> {
 		self.plutus_script
 			.clone()
-			.apply_uplc_data(version_oracle.policy_id_as_plutus_data())
+			.apply_data_uplc(version_oracle.policy_id_as_plutus_data())
 			.map_err(|e| JsError::from_str(&e.to_string()))
 	}
 }
@@ -134,7 +134,7 @@ async fn initialize_script<
 fn init_script_tx(
 	script: &ScriptData,
 	governance: &GovernanceData,
-	version_oracle: &VersionOracleData,
+	version_oracle: &PlutusScriptData,
 	costs: Costs,
 	ctx: &TransactionContext,
 ) -> anyhow::Result<Transaction> {
@@ -193,7 +193,7 @@ fn version_oracle_plutus_list(script_id: u32, script_hash: &[u8]) -> PlutusList 
 // * Version Oracle Policy Id
 async fn script_is_initialized<T: QueryLedgerState>(
 	script: &ScriptData,
-	version_oracle: &VersionOracleData,
+	version_oracle: &PlutusScriptData,
 	ctx: &TransactionContext,
 	client: &T,
 ) -> Result<bool, anyhow::Error> {
@@ -205,7 +205,7 @@ async fn script_is_initialized<T: QueryLedgerState>(
 // * Version Oracle Policy Id
 pub(crate) async fn find_script_utxo<T: QueryLedgerState>(
 	script_id: u32,
-	version_oracle: &VersionOracleData,
+	version_oracle: &PlutusScriptData,
 	ctx: &TransactionContext,
 	client: &T,
 ) -> Result<Option<OgmiosUtxo>, anyhow::Error> {
@@ -228,7 +228,7 @@ mod tests {
 	use crate::{
 		csl::{Costs, OgmiosUtxoExt, TransactionContext, unit_plutus_data},
 		governance::GovernanceData,
-		scripts_data::{self, VersionOracleData},
+		scripts_data::{self, PlutusScriptData},
 		test_values::{
 			make_utxo, payment_addr, payment_key, protocol_parameters, test_governance_policy,
 		},
@@ -298,12 +298,12 @@ mod tests {
 			.and_then(|ma| ma.get(&test_governance_data().policy.script().script_hash().into()))
 			.and_then(|gov_ma| gov_ma.get(&AssetName::new(vec![]).unwrap()))
 			.unwrap();
-		assert_eq!(gov_token_amount, BigNum::one(), "Change contains one goverenance token");
+		assert_eq!(gov_token_amount, BigNum::one(), "Change contains one governance token");
 	}
 
 	#[test]
 	fn init_script_tx_reference_input() {
-		// a script reference input of the current Goveranance UTXO
+		// a script reference input of the current Governance UTXO
 		let ref_input = make_init_script_tx()
 			.body()
 			.reference_inputs()
@@ -390,7 +390,7 @@ mod tests {
 	fn test_initialized_script() -> ScriptData {
 		ScriptData::new(
 			"Test Script",
-			raw_scripts::RESERVE_VALIDATOR.to_vec(),
+			raw_scripts::RESERVE_VALIDATOR.0.to_vec(),
 			ScriptId::ReserveValidator,
 		)
 	}
@@ -403,7 +403,7 @@ mod tests {
 		GovernanceData { policy: test_governance_policy(), utxo: test_governance_input() }
 	}
 
-	fn version_oracle_data() -> VersionOracleData {
+	fn version_oracle_data() -> PlutusScriptData {
 		scripts_data::version_oracle(UtxoId::new([255u8; 32], 0), NetworkIdKind::Testnet).unwrap()
 	}
 

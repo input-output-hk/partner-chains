@@ -1,7 +1,7 @@
 use cardano_serialization_lib::*;
 use hex_literal::hex;
 use pallas_primitives::MaybeIndefArray;
-use partner_chains_cardano_offchain::plutus_script::PlutusScript as PCPlutusScript;
+use partner_chains_cardano_offchain::plutus_script;
 use partner_chains_cardano_offchain::scripts_data::version_oracle;
 use sidechain_domain::UtxoId;
 
@@ -13,22 +13,24 @@ pub fn legacy_governance_init_transaction(
 	governance_authority_key: [u8; 32],
 ) -> Vec<u8> {
 	let multisig_policy_script = {
-		let governance_authorithy_key_hash =
+		let governance_authority_key_hash =
 			PrivateKey::from_normal_bytes(&governance_authority_key)
 				.unwrap()
 				.to_public()
 				.hash()
 				.to_bytes();
-		PCPlutusScript::from_wrapped_cbor(raw_scripts::MULTI_SIG_POLICY, Language::new_plutus_v2())
-			.unwrap()
-			.apply_uplc_data(uplc::PlutusData::Array(MaybeIndefArray::Indef(vec![
-				uplc::PlutusData::Array(MaybeIndefArray::Indef(vec![
-					uplc::PlutusData::BoundedBytes(governance_authorithy_key_hash.into()),
-				])),
-				uplc::PlutusData::BigInt(uplc::BigInt::Int(1.into())),
-			])))
-			.unwrap()
-			.to_csl()
+		use uplc::PlutusData::{Array, BigInt, BoundedBytes};
+		plutus_script![
+			raw_scripts::MULTI_SIG_POLICY,
+			Array(MaybeIndefArray::Indef(vec![
+				Array(MaybeIndefArray::Indef(vec![BoundedBytes(
+					governance_authority_key_hash.into()
+				),])),
+				BigInt(uplc::BigInt::Int(1.into())),
+			]))
+		]
+		.unwrap()
+		.to_csl()
 	};
 
 	let version_oracle_data = version_oracle(genesis_utxo, NetworkIdKind::Testnet).unwrap();
