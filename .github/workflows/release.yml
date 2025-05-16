@@ -206,6 +206,9 @@ jobs:
       contents: read
     needs: partner-chain-ready
     runs-on: eks
+    strategy:
+      matrix:
+        markers: [smoke, rpc]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -224,7 +227,7 @@ jobs:
           blockchain: substrate
           env: staging
           decrypt: true
-          markers: "smoke or rpc"
+          markers: ${{ matrix.markers }}
           threads: 1
 
   run-all-tests:

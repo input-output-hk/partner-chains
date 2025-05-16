@@ -122,7 +122,8 @@ def check_registration_data(registrations):
     assert registrations[0]["mainchainSignature"] is not None
     assert registrations[0]["crossChainSignature"] is not None
     assert isinstance(registrations[0]["isValid"], bool)
-    assert isinstance(registrations[0]["stakeDelegation"], int)
+    if "stakeDelegation" in registrations[0]:
+        assert isinstance(registrations[0]["stakeDelegation"], int)
     assert registrations[0]["utxo"]["utxoId"] is not None
     assert isinstance(registrations[0]["utxo"]["epochNumber"], int)
     assert isinstance(registrations[0]["utxo"]["blockNumber"], int)

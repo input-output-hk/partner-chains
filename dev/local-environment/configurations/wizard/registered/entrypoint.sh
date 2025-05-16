@@ -19,8 +19,8 @@ EOF
 }
 
 
-if [ -f "/shared/partner-chains-wizard-3.ready" ]; then
-    echo "/shared/partner-chains-wizard-3.ready exists. Skipping configuration..."
+if [ -f "/shared/partner-chains-node-3.ready" ]; then
+    echo "/shared/partner-chains-node-3.ready exists. Skipping configuration..."
     start_node
     exit 0
 fi
@@ -111,7 +111,7 @@ EOF
 echo "Configuring Node P2P port..."
 jq '.node_p2p_port = 30335' pc-resources-config.json > tmp.json && mv tmp.json pc-resources-config.json
 
-touch /shared/partner-chains-wizard-3.ready
+touch /shared/partner-chains-node-3.ready
 echo "Registration complete."
 
 start_node

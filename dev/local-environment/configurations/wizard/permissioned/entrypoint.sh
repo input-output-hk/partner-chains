@@ -7,8 +7,8 @@ cp /usr/local/bin/partner-chains-node /data/partner-chains-node
 cd /data
 
 
-if [ -f "/shared/partner-chains-wizard-2.ready" ]; then
-    echo "/shared/partner-chains-wizard-2.ready exists. Skipping configuration and starting the node..."
+if [ -f "/shared/partner-chains-node-2.ready" ]; then
+    echo "/shared/partner-chains-node-2.ready exists. Skipping configuration and starting the node..."
     expect <<EOF
 spawn ./partner-chains-node wizards start-node
 expect "Proceed? (Y/n)"
@@ -32,7 +32,7 @@ expect eof
 EOF
 
 cp partner-chains-public-keys.json /shared/partner-chains-public-keys.json
-touch /shared/partner-chains-wizard-2-keys.ready
+touch /shared/partner-chains-node-2-keys.ready
 
 
 echo "Waiting for chain-spec.json and pc-chain-config.json to be ready..."
@@ -50,7 +50,7 @@ cp /shared/pc-chain-config.json /data/pc-chain-config.json
 echo "Configuring Node P2P port..."
 jq '.node_p2p_port = 30334' pc-resources-config.json > tmp.json && mv tmp.json pc-resources-config.json
 
-touch /shared/partner-chains-wizard-2.ready
+touch /shared/partner-chains-node-2.ready
 echo "Configuration complete."
 
 echo "Starting the node..."
