@@ -45,7 +45,7 @@
         '';
 
         useFetchCargoVendor = true;
-        cargoHash = "sha256-y0sHdHicouV3rRw2i17kfFXKQJlFcu0rtsKXs2SNVX0=";
+        cargoHash = "sha256-fV1CSccsvr30DiSaFrhjMHJlZ6OMxsvXdf5Sno7Nrb0=";
         buildType = "production";
         #buildAndTestSubdir = dir;
         doCheck = false;
