@@ -94,12 +94,6 @@ runs:
         done
       shell: bash
 
-#    - name: Run wizards runtime migration
-#      if: ${{ inputs.tests == 'wizards' }}
-#      run: |
-#        docker exec partner-chains-wizard-1 parter-chains-node wizards 
-#      shell: bash
-
     - name: Collect Docker logs
       run: |
         mkdir -p local-environment-${{ inputs.tests }}-logs-initial
@@ -121,6 +115,7 @@ runs:
       shell: bash
 
     - name: Run Epoch 1 Tests
+      if: ${{ inputs.tests != 'wizards' }}
       uses: ./.github/actions/tests/run-e2e-tests
       with:
         env: ${{ env.TEST_ENVIRONMENT }}
@@ -130,7 +125,6 @@ runs:
         tests: ${{ inputs.tests }}
 
     - name: Wait for epoch 2
-      if: ${{ inputs.tests == 'full' || inputs.tests == 'ariadne' }}
       uses: ./.github/actions/tests/wait-for-epoch
       with:
         epoch: 2
@@ -144,8 +138,14 @@ runs:
         sleep 30
       shell: bash
 
+#    - name: Run wizards epoch 2 steps
+#      if: ${{ inputs.tests == 'wizards' }}
+#      run: |
+#        docker exec partner-chains-wizard-1 parter-chains-node wizards 
+#      shell: bash
+
     - name: Run Epoch 2 Tests
-      if: ${{ inputs.tests == 'full' || inputs.tests == 'ariadne' }}
+      if: ${{ inputs.tests != 'wizards' }}
       uses: ./.github/actions/tests/run-e2e-tests
       with:
         env: ${{ env.TEST_ENVIRONMENT }}
