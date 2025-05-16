@@ -170,10 +170,7 @@ runs:
 
     - name: Check if no skipped tests
       run: |
-        if [[ "${{ inputs.markers }}" == "wizards" ]]; then
-          skipped=$(jq -r .summary.skipped e2e-tests/smoke/logs/.report.json)
-        else
-          skipped=$(jq -r .summary.skipped e2e-tests/${{ inputs.markers }}/logs/.report.json)
+        skipped=$(jq -r .summary.skipped e2e-tests/${{ inputs.markers }}/logs/.report.json)
         fi
         if [ "$skipped" != "null" ]; then
           echo "Skipped tests found: $skipped. Check test logs for more information."

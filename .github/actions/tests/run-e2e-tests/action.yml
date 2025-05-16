@@ -1,4 +1,5 @@
 name: 'Run Pytest Tests'
+
 description: 'Activate Python virtual environment and run end-to-end tests'
 
 inputs:
