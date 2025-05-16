@@ -102,6 +102,16 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Set safe markers
+        id: safe-markers
+        shell: bash
+        run: |
+          if [ -n "${{ matrix.markers }}" ]; then
+            safe_markers=$(echo "${{ matrix.markers }}" | tr -d ' ')
+          else
+            safe_markers="default"
+          fi
+          echo "safe_markers=$safe_markers" >> $GITHUB_OUTPUT
       - name: Deploy and test against local environment
         uses: ./.github/actions/tests/local-environment-tests
         with:
@@ -125,18 +135,29 @@ jobs:
         needs.local-environment-tests.result != 'skipped'
       ) && github.event_name == 'pull_request' && github.event.pull_request.merged == false
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        markers: [smoke, rpc, reserve, governed_map, delegator_rewards, ariadne, wizards]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - name: Create logs directory
-        run: mkdir -p e2e-tests/logs
+      - name: Set safe markers
+        id: safe-markers
+        shell: bash
+        run: |
+          if [ -n "${{ matrix.markers }}" ]; then
+            safe_markers=$(echo "${{ matrix.markers }}" | tr -d ' ')
+          else
+            safe_markers="default"
+          fi
+          echo "safe_markers=$safe_markers" >> $GITHUB_OUTPUT
       - name: Download test report
         uses: actions/download-artifact@v4
         with:
-          name: test-results
+          name: test-results-${{ steps.safe-markers.outputs.safe_markers }}
           path: e2e-tests/logs
       - name: Report to slack
         env:
@@ -148,8 +169,8 @@ jobs:
           github_actor_username: ${{ github.actor }}
           env: local-pre-merge
         run: |
-          cd e2e-tests
-          ./report_slack.sh $repository $slack_ref_name $job_url $env $github_actor_username null
+          cd e2e-tests/logs
+          ../../../e2e-tests/report_slack.sh $repository $slack_ref_name $job_url $env $github_actor_username null "${{ matrix.markers }}"
         shell: bash
 
   devshell-tests:
@@ -468,6 +489,16 @@ jobs:
         with:
           fetch-depth: 0
           ref: master
+      - name: Set safe markers
+        id: safe-markers
+        shell: bash
+        run: |
+          if [ -n "${{ matrix.markers }}" ]; then
+            safe_markers=$(echo "${{ matrix.markers }}" | tr -d ' ')
+          else
+            safe_markers="default"
+          fi
+          echo "safe_markers=$safe_markers" >> $GITHUB_OUTPUT
       - name: Deploy and test against local environment
         uses: ./.github/actions/tests/local-environment-tests
         with:
@@ -488,18 +519,29 @@ jobs:
     needs: local-environment-tests-post-merge
     if: always() && needs.local-environment-tests-post-merge.result != 'skipped'
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        markers: [smoke, rpc, reserve, governed_map, delegator_rewards, ariadne, wizards]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: master
-      - name: Create logs directory
-        run: mkdir -p e2e-tests/logs
+      - name: Set safe markers
+        id: safe-markers
+        shell: bash
+        run: |
+          if [ -n "${{ matrix.markers }}" ]; then
+            safe_markers=$(echo "${{ matrix.markers }}" | tr -d ' ')
+          else
+            safe_markers="default"
+          fi
+          echo "safe_markers=$safe_markers" >> $GITHUB_OUTPUT
       - name: Download test report
         uses: actions/download-artifact@v4
         with:
-          name: test-results
+          name: test-results-${{ steps.safe-markers.outputs.safe_markers }}
           path: e2e-tests/logs
       - name: Report to slack
         env:
@@ -511,8 +553,8 @@ jobs:
           github_actor_username: ${{ github.actor }}
           env: local-post-merge
         run: |
-          cd e2e-tests
-          ./report_slack.sh $repository $slack_ref_name $job_url $env $github_actor_username null
+          cd e2e-tests/logs
+          ../../../e2e-tests/report_slack.sh $repository $slack_ref_name $job_url $env $github_actor_username null "${{ matrix.markers }}"
         shell: bash
 
   deploy-ci-preview:
