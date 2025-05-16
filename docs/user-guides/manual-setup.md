@@ -1,29 +1,33 @@
 # Partner chains setup
 
-Partner chains provide text based CLIs for setting up partner chain and starting nodes called wizards.
-In [chain builder](./chain_builder.md), [permissioned node owner](./permissioned.md), and (registered node owner)[./registered.md] manuals these wizards are used.
+Partner chains provide text based CLIs, for setting up partner chain and starting nodes, called wizards.
+In [chain builder](./chain-builder.md), [permissioned node owner](./permissioned.md), and [registered node owner](./registered.md) manuals these wizards are used.
 
 This document explains what is performed by wizards and how perform such operations manually.
 
+For dependencies setup please read the [chain builder guide](./chain-builder.md)
+
 ## Generating keys
 
-`<node-executable wizards generate-keys` creates 3 specific keys, stores them in the keystore and also creates a JSON file with public keys.
+`<node-executable> wizards generate-keys` creates 3 specific keys, stores them in the keystore and also creates a JSON file with public keys.
 These 3 keys are:
 * Aura, sr25519 scheme key, with "key-type" `aura`
 * GRANDPA, ed25519 scheme key, with "key-type" `gran`
 * cross-chain, ecdsa scheme key, with "key-type" `crch`
 
 For each of these keys commands that are two commands invoked by wizard.
-The first is
+The first one is
 ```bash
 <node-executable> key generate --scheme <scheme> --output-type json
 ```
 , that has `secretPhrase` and `publicKey` fields in the output.
-The second is
+Please do save these outputs as they are useful in the subsequent steps.
+
+The second one is
 ```bash
 <node-executable> key insert --keystore-path <base-path>/keystore --scheme <scheme> --key-type <key-type> --suri <secretPhrase>
 ```
-that stores generated key in a keystore.
+that stores the generated key in the keystore.
 
 Commands above serve as recipe for generating and inserting required key in the keystore.
 Will there be a need for key of different schema or type or in different location, it should now be easy to get it.
@@ -38,7 +42,7 @@ Please note that running node will require using `--base-path`, `--keystore-path
 
 ## Prepare configuration
 
-`<node-executable wizards prepare-configuration` sets up partner chain governance on the main chain and computes additional parameters that are used in later steps of the setup.
+`<node-executable> wizards prepare-configuration` sets up partner chain governance on the main chain and computes additional parameters that are used in later steps of the setup.
 
 ### Establishing partner chain on Cardano
 
@@ -48,7 +52,7 @@ command to spend the UTXO that will become the Genesis UTXO of your chain.
 The Genesis UTXO has to be spendable by the payment key.
 This command initializes governance of the chain as M of N multisig parametrized by GOVERNANCE_AUTHORITY and THRESHOLD parameters.
 
-Note: for more details please read (smart-contracts documentation)[../../toolkit/smart-contracts/readme.md]
+Note: for more details please read [smart-contracts commands documentation](../../toolkit/smart-contracts/commands/readme.md).
 
 ### Discover smart-contracts addresses and script hashes
 
@@ -58,14 +62,14 @@ This guide assumes that the output is saved to `addresses.json` file.
 ### Establish bootnodes
 
 Wizard perpares one bootnode address that is derived from the generated node network key and user input.
-This guide does not cover bootnodes as not partner chains specific.
-Partner chains do not add any bootnode requirements nor capabilities.
+This guide does not cover bootnodes as not partner chains specific topic.
+Partner chains do not add any requirements nor capabilities in regards to bootnodes.
 
 ## Create chain-spec file
 
-`<node-executable wizards prepare-configuration` uses data from the previous step to generate chain-spec file.
+`<node-executable> wizards create-chain-spec` uses data from the previous step to generate chain-spec file.
 It is important to understand that most of chain-spec file generation is delegated to `<node-exectuable>` itself.
-Specifically, wizards set some specific environment variables and assumes that `<node-exectuable> build-spec` will use them and will not require any other variables.
+Specifically, wizard sets some specific environment variables and assumes that `<node-exectuable> build-spec` will use and that it will not require any other variables.
 Because what `<node-exectuable> build-spec` uses and requires is finally in control of the chain developer, the following command can only be seens as an example:
 ```bash
 export COMMITTEE_CANDIDATE_ADDRESS=$(jq -r '.addresses.CommitteeCandidateValidator' addresses.json)
@@ -81,4 +85,78 @@ For chains that do not intent to use them, it is assumed that `<node-exectuable>
 Run `<node-executable> build-spec --disable-default-bootnode > chain-spec.json`.
 As stated above, the content of the file depends mostly on `<node-executable>`.
 
-Please consult
+Please consult our [intro doc chain-spec](../intro.md#chain-spec.json) section and update all the required fields, most notably:
+* `genesisUtxo` and `slotsPerEpoch` of Sidechain Pallet
+* `initialValidators` of Partner Chains Session Pallet
+* `initialAuthorities` of Session Validator Management Pallet
+* all occurrances `mainChainScripts`
+
+## Setup D-parameter and permissioned Permissioned Candidates
+
+`<node-executable> wizards setup-main-chain-state` guides user through creating (and conditionally submitting) two transactions that set up smart-contracts state.
+
+The first one sets the D-parameter.
+`<node-executable> smart-contracts upsert-d-parameter` is the lower level command that can be used for it.
+
+The second one sets the permissioned candidates.
+`<node-executable> smart-contracts upsert-permissioned-candidates` is the command to set permissioned candidates.
+
+For more details, please refer to [smart-contracts commands documentation](../../toolkit/smart-contracts/commands/readme.md).
+
+Please note that partner chains committee selection feature will use this data only after two Cardano epoch boundaries.
+If these transactions were submitted in the epoch N, then committee selection will use this data from epoch N+2.
+
+## Running partner chains node
+
+`<node-executable> wizards start-node` sets up environment variables required for following the Cardano and runs `<node-executable> --validator --chain chain-spec.json --base-path <BASE_PATH> --keystore-path <KEYSTORE_PATH> --node-key-file <NODE_KEY_FILE> --port <WSPORT> <BOOTNODES_PARAMETERS>`.
+
+For setting the environment variables please consult [the documentation here](../intro.md#environment-variables).
+
+Other parameters are regular substrate node parameters.
+Use them accordingly to your setup.
+
+## Register as committee candidate
+
+For dependencies setup and broader context please read [registered guide](./registered.md).
+
+This guide presents commands that could be used instead of `register1`, `register2`, and `register3` wizards.
+
+### Getting signatures
+
+Registration requires posting a message containing signatures to Cardano.
+These signatures prove that SPO wants to be regarded as committee candidate for given partner chain.
+Use:
+```bash
+<node-executable> registration-signatures \
+  --genesis-utxo <GENESIS_UTXO> \
+  --mainchain-signing-key <STAKE_POOL_OPERATOR_SIGNING_KEY> \
+  --sidechain-signing-key <PARTNER_CHAIN_SIGNING_KEY> \
+  --registration-utxo <REGISTRATION_UTXO>
+```
+* GENESIS_UTXO is the UTXO that identifies partner chain
+* STAKE_POOL_OPERATOR_SIGNING_KEY is the `cborHex` without the first 4 characters of _StakePoolSigningKey_ed25519_ key file.
+This is cold key, therefore this command is intented to be used on an offline machine.
+* PARTNER_CHAIN_SIGNING_KEY is hex of the ecdsa key created the first step of this guide, `secretSeed` field of the `key generate` output.
+* REGISTRATION_UTXO is a UTXO that SPO is able to spent when posting the message with signature. It prevents replay attacks.
+
+The command outputs a JSON with following fields:
+* `spo_public_key` - derived from STAKE_POOL_OPERATOR_SIGNING_KEY
+* `spo_signature` - signature of a _registration message_ made with STAKE_POOL_OPERATOR_SIGNING_KEY signing key
+* `sidechain_public_key` - derived from PARTNER_CHAIN_SIGNING_KEY
+* `sidechain_signature` - signature of a _registration message_ made with STAKE_POOL_OPERATOR_SIGNING_KEY signing key
+
+Note: the _registration message_ is composed of genesis UTXO, sidechain public key, and registration UTXO.
+
+### Submitting registration
+
+Having this data obtained on an offline machine, it should be used on an online one to submit registration transaction to Cardano.
+Use the `<node-executable> smart-contracts register` command.
+There are two parameters requiring explanation:
+* `partner-chain-signature` - use `sidechain_signature` field of `registration-signatures`
+* `partner-chain-public-keys` - use `<PARTNER_CHAIN_SIGNING_KEY>:<AURA_KEY>:<GRANDPA_KEY>`,
+where AURA_KEY and GRANDPA_KEY are obtained in same way as PARTNER_CHAIN_SIGNING_KEY was obtained for the `registration-signatures` command.
+
+After this command is executed registration should become "effective" after two Cardano epochs boundaries.
+`<node-executable> registration-status --mainchain-pub-key <SPO_PUBLIC_KEY> --mc-epoch-number <CARDANO_EPOCH_NUMBER> --chain chain-spec.json`
+can be used to see if according to partner chain the registration is valid.
+Before running this command environment variables required by Cardano observability layer should be set, like when [running partner chains nodes](#running-partner-chains-node).

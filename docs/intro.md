@@ -377,7 +377,7 @@ data observed on Cardano and storing configuration for the observability data
 source. Its genesis configuration includes:
 - `initialAuthorities`:
   The initial authority set. The entries on this list should correspond to those
-  set in `initialValiadors` of the Session pallet, and consist of two components:
+  set in `initialValidators` of the Session pallet, and consist of two components:
   the validator's cross-chain public key and validator's session keys. The session
   keys depend on the key set used by the consensus mechanism employed by the Partner
   Chain and should have the same values as those in `initialValidators`. The
