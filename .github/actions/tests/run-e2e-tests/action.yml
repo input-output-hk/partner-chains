@@ -44,7 +44,7 @@ inputs:
     required: false
     default: '4'
   tests:
-    description: 'Test mode (committee, delegator-rewards, smart-contracts, wizards, or full)'
+    description: 'Test mode (smoke, rpc, reserve, governed_map, delegator_rewards, ariadne, or full)'
     required: false
     default: 'full'
 
@@ -82,31 +82,12 @@ runs:
         fi
 
         # Define pytest command based on test mode
-        if [ "${{ inputs.tests }}" = "committee" ]; then
+        if [ "${{ inputs.tests }}" = "smoke" ]; then
           pytest_cmd="pytest --blockchain '${{ inputs.blockchain }}' \
             --env '${{ inputs.env }}' \
             --log-cli-level '${{ inputs.log_level }}' \
-            -k 'committee' \
-            -m 'committee_distribution or committee_rotation or committee_members' \
-            -n '${{ inputs.threads}}' \
-            --dist=loadgroup \
-            --ci-run \
-            --init-timestamp '${{ inputs.init_timestamp }}' \
-            --mc-epoch '3' \
-            ${latest_mc_epoch_switch} \
-            ${deployment_mc_epoch_switch} \
-            ${decrypt_switch} \
-            --json-report \
-            --json-report-file=logs/.report.json \
-            --json-report-summary \
-            --junitxml=logs/junit_report.xml"
-
-        elif [ "${{ inputs.tests }}" = "delegator-rewards" ]; then
-          pytest_cmd="pytest --blockchain '${{ inputs.blockchain }}' \
-            --env '${{ inputs.env }}' \
-            --log-cli-level '${{ inputs.log_level }}' \
-            -k 'delegator_rewards' \
-            -m 'delegator_rewards' \
+            -k 'smoke' \
+            -m 'smoke' \
             -n '${{ inputs.threads}}' \
             --dist=loadgroup \
             --ci-run \
@@ -117,7 +98,23 @@ runs:
             --json-report-summary \
             --junitxml=logs/junit_report.xml"
 
-        elif [ "${{ inputs.tests }}" = "smart-contracts" ]; then
+        elif [ "${{ inputs.tests }}" = "rpc" ]; then
+          pytest_cmd="pytest --blockchain '${{ inputs.blockchain }}' \
+            --env '${{ inputs.env }}' \
+            --log-cli-level '${{ inputs.log_level }}' \
+            -k 'rpc' \
+            -m 'rpc' \
+            -n '${{ inputs.threads}}' \
+            --dist=loadgroup \
+            --ci-run \
+            --init-timestamp '${{ inputs.init_timestamp }}' \
+            ${decrypt_switch} \
+            --json-report \
+            --json-report-file=logs/.report.json \
+            --json-report-summary \
+            --junitxml=logs/junit_report.xml"
+
+        elif [ "${{ inputs.tests }}" = "reserve" ]; then
           pytest_cmd="pytest --blockchain '${{ inputs.blockchain }}' \
             --env '${{ inputs.env }}' \
             --log-cli-level '${{ inputs.log_level }}' \
@@ -133,12 +130,44 @@ runs:
             --json-report-summary \
             --junitxml=logs/junit_report.xml"
 
-        elif [ "${{ inputs.tests }}" = "wizards" ]; then
+        elif [ "${{ inputs.tests }}" = "governed_map" ]; then
           pytest_cmd="pytest --blockchain '${{ inputs.blockchain }}' \
             --env '${{ inputs.env }}' \
             --log-cli-level '${{ inputs.log_level }}' \
-            -k 'substrate' \
-            -m 'substrate' \
+            -k 'governed_map' \
+            -m 'governed_map' \
+            -n '${{ inputs.threads}}' \
+            --dist=loadgroup \
+            --ci-run \
+            --init-timestamp '${{ inputs.init_timestamp }}' \
+            ${decrypt_switch} \
+            --json-report \
+            --json-report-file=logs/.report.json \
+            --json-report-summary \
+            --junitxml=logs/junit_report.xml"
+
+        elif [ "${{ inputs.tests }}" = "delegator_rewards" ]; then
+          pytest_cmd="pytest --blockchain '${{ inputs.blockchain }}' \
+            --env '${{ inputs.env }}' \
+            --log-cli-level '${{ inputs.log_level }}' \
+            -k 'delegator_rewards' \
+            -m 'delegator_rewards' \
+            -n '${{ inputs.threads}}' \
+            --dist=loadgroup \
+            --ci-run \
+            --init-timestamp '${{ inputs.init_timestamp }}' \
+            ${decrypt_switch} \
+            --json-report \
+            --json-report-file=logs/.report.json \
+            --json-report-summary \
+            --junitxml=logs/junit_report.xml"
+
+        elif [ "${{ inputs.tests }}" = "ariadne" ]; then
+          pytest_cmd="pytest --blockchain '${{ inputs.blockchain }}' \
+            --env '${{ inputs.env }}' \
+            --log-cli-level '${{ inputs.log_level }}' \
+            -k 'ariadne' \
+            -m 'ariadne' \
             -n '${{ inputs.threads}}' \
             --dist=loadgroup \
             --ci-run \

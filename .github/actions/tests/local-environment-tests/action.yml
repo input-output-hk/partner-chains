@@ -94,6 +94,12 @@ runs:
         done
       shell: bash
 
+    - name: Run wizards runtime migration
+      if: ${{ inputs.tests == 'wizards' }}
+      run: |
+        docker exec partner-chains-wizard-1 parter-chains-node wizards 
+      shell: bash
+
     - name: Collect Docker logs
       run: |
         mkdir -p local-environment-${{ inputs.tests }}-logs-initial
