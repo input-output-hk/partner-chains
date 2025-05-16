@@ -429,15 +429,10 @@ class SubstrateApi(BlockchainApi):
         return rotation_candidates
 
     def get_permissioned_candidates(self, mc_epoch, valid_only):
-        logger.info(f"Getting permissioned candidates for {mc_epoch} MC epoch.")
-        response = self.partner_chain_rpc.partner_chain_get_ariadne_parameters(mc_epoch)
-        if response.error:
-            logger.error(f"Couldn't get permissioned candidates for {mc_epoch} MC epoch: {response.error}")
-            return None
-        candidates = response.result["permissionedCandidates"]
+        response = self.partner_chain_rpc.partner_chain_get_ariadne_parameters(mc_epoch).result
         if valid_only:
-            candidates = [candidate for candidate in candidates if candidate["isValid"]]
-        return candidates
+            return [c for c in response["permissionedCandidates"] if c["isValid"]]
+        return response["permissionedCandidates"]
 
     def get_permissioned_rotation_candidates(self, mc_epoch):
         logger.info(f"Getting permissioned rotation candidates for {mc_epoch} MC epoch.")
@@ -490,9 +485,9 @@ class SubstrateApi(BlockchainApi):
     def get_d_param(self, mc_epoch=None) -> DParam:
         if not mc_epoch:
             mc_epoch = self.get_mc_epoch()
-        response = self.partner_chain_rpc.partner_chain_get_ariadne_parameters(mc_epoch).result["dParameter"]
-        d_param = DParam(response["numPermissionedCandidates"], response["numRegisteredCandidates"])
-        return d_param
+
+        d = self.partner_chain_rpc.partner_chain_get_ariadne_parameters(mc_epoch).result["dParameter"]
+        return DParam(d["numPermissionedCandidates"], d["numRegisteredCandidates"])
 
     def get_block_extrinsic_value(self, extrinsic_name, block_no):
         block = self.get_block(block_no)
@@ -665,7 +660,11 @@ class SubstrateApi(BlockchainApi):
         return tx
 
     def get_address_association(self, stake_key_hash):
-        result = self.substrate.query("AddressAssociations", "AddressAssociations", [f"0x{stake_key_hash}"])
+        # Remove 0x prefix if present
+        if stake_key_hash.startswith('0x'):
+            stake_key_hash = stake_key_hash[2:]
+            
+        result = self.substrate.query("AddressAssociations", "AddressAssociations", [stake_key_hash])
         logger.debug(f"Address association for {stake_key_hash}: {result}")
         return result.value
 

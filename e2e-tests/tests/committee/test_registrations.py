@@ -4,6 +4,7 @@ from src.db.models import Candidates
 from sqlalchemy.orm import Session
 from pytest import mark
 from config.api_config import ApiConfig
+from tests.committee.conftest import candidate_skey_with_cli
 
 
 @mark.candidate_status("inactive")

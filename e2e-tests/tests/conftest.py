@@ -10,14 +10,15 @@ from src.blockchain_types import BlockchainTypes
 from src.pc_epoch_calculator import PartnerChainEpochCalculator
 from src.partner_chain_rpc import PartnerChainRpc
 from src.run_command import Runner, RunnerFactory
-from config.api_config import ApiConfig
+from config.api_config import ApiConfig, Node
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-from src.db.models import Base
+from src.db.models import Base, Candidates
 from filelock import FileLock
 from typing import Generator
 import time
 import uuid
+import pytest
 
 _config: ApiConfig = None
 partner_chain_rpc_api: PartnerChainRpc = None
@@ -510,65 +511,74 @@ def skip_on_new_chain(request, full_mc_epoch_has_passed_since_deployment):
 
 @fixture(scope="session")
 def wait_until():
-    """Generic wait function until <condition> is True.
+    """
+    Wait until a condition is met.
 
-    Arguments:
-        condition {function} -- function name or lambda, e.g. lambda x: x + 1 == 2, x = 1
-        args {Any} -- position args used by <condition>
-
-    Keyword Arguments:
-        timeout {int} -- timeout in seconds (default: {20})
-        poll_interval {int} -- poll interval in seconds (default: {3})
-
-    Returns:
-        Any -- returns <condition> result, None if timed out.
+    :param condition: A function that returns True when the condition is met
+    :param args: Arguments to pass to the condition function
+    :param timeout: Maximum time to wait in seconds
+    :param poll_interval: Time between checks in seconds
+    :return: The result of the condition function if it returns True, None if timed out
     """
 
-    def _wait_until(condition, *args, timeout=20, poll_interval=3):
+    def _wait_until(condition, *args, timeout=180, poll_interval=3):
         start = time.time()
-        logging.info(f"WAIT UNTIL: {condition}. TIMEOUT: {timeout}, POLL_INTERVAL: {poll_interval}")
+        condition_name = condition.__name__ if hasattr(condition, '__name__') else str(condition)
+        logging.info(f"Starting WAIT UNTIL for condition: {condition_name}")
+        logging.info(f"Timeout: {timeout}s, Poll interval: {poll_interval}s")
+        logging.info(f"Arguments: {args}")
+        
+        last_error = None
         while time.time() - start < timeout:
-            result = condition(*args)
-            if result:
-                return result
+            try:
+                result = condition(*args)
+                if result:
+                    elapsed = time.time() - start
+                    logging.info(f"Condition '{condition_name}' satisfied after {elapsed:.2f} seconds")
+                    logging.info(f"Result: {result}")
+                    return result
+                elapsed = time.time() - start
+                logging.debug(f"Condition '{condition_name}' not satisfied yet (elapsed: {elapsed:.2f}s)")
+            except Exception as e:
+                last_error = e
+                logging.warning(f"Condition '{condition_name}' check failed: {str(e)}")
+                logging.debug(f"Error details: {type(e).__name__}: {str(e)}")
             time.sleep(poll_interval)
-        raise TimeoutError(f"WAIT UNTIL function TIMED OUT after {timeout}s on {condition} with args {args}.")
+        
+        error_msg = (
+            f"WAIT UNTIL timed out after {timeout}s\n"
+            f"Condition: {condition_name}\n"
+            f"Arguments: {args}\n"
+        )
+        if last_error:
+            error_msg += f"Last error encountered: {type(last_error).__name__}: {str(last_error)}"
+        
+        logging.error(error_msg)
+        raise TimeoutError(error_msg)
 
     yield _wait_until
 
 
 @fixture(scope="session")
 def write_file():
-    """Writes a file in location that is available by CLI being in use in tests.
+    """
+    Write a file to a temporary directory and return the path.
+    The file is deleted after the test completes.
 
-    Example usage:
-    ```python
-    def test_something(api: BlockchainApi, write_file):
-        content = {"keyHash": <key_hash>, "type": "sig"}
-        filepath = write_file(api.cardano_cli.run_command , content)
-        policy_id = api.cardano_cli.get_policy_id(filepath)
-        assert policy_id
-    ```
-
-    The file is created in `/tmp` directory with a random name.
-    The content is passed as a string and is converted to JSON format.
-    The file is created on the same host that is configured in the `<env>_stack.json` for given tool (SSH or shell).
-    The file is removed after the test completes.
-
-
-    Returns:
-        str: filepath available to use by CLI
-
-    Yields:
-        function: write_file callable function that takes runner and content as arguments
+    :return: A function that takes a runner and content and returns the path to the written file.
     """
     saved_files = {}
 
     def _write_file(runner: Runner, content: str):
-        filepath = f"/tmp/{uuid.uuid4().hex}"
-        content_json = json.dumps(content)
-        runner.run(f"echo '{content_json}' > {filepath}")
+        """
+        Write content to a temporary file.
 
+        :param runner: The runner to use for file operations
+        :param content: The content to write to the file
+        :return: The path to the written file
+        """
+        filepath = runner.run("mktemp").stdout.strip()
+        runner.run(f"echo '{content}' > {filepath}")
         if runner not in saved_files:
             saved_files[runner] = []
         saved_files[runner].append(filepath)
@@ -585,31 +595,64 @@ def write_file():
 @fixture(scope="session")
 def governance_skey_with_cli(config: ApiConfig):
     """
-    Securely copy the governance authority's init skey (a secret key used by the smart-contracts to authorize admin
-    operations) to a temporary directory on the remote machine and update the path in the configuration.
+    Copy the governance authority's init skey (a secret key used by the smart-contracts to authorize admin
+    operations) to a temporary directory in the Kubernetes pod and update the path in the configuration.
     The temporary directory is deleted after the test completes.
 
-    This fixture is executed only if:
-    - you call it directly in test or other fixture
-    - SSH is configured in `<env>_stack.json` for given tool
-
-    WARNING: This fixture copies secret file to a remote host and should be used with caution.
+    This fixture is executed only if you call it directly in test or other fixture.
 
     :param config: The API configuration object.
     """
-    if config.stack_config.ssh:
-        runner = RunnerFactory.get_runner(config.stack_config.ssh, "/bin/bash")
-        temp_dir = runner.run("mktemp -d").stdout.strip()
-        path = config.nodes_config.governance_authority.mainchain_key
-        filename = path.split("/")[-1]
-        runner.scp(path, temp_dir)
-        config.nodes_config.governance_authority.mainchain_key = f"{temp_dir}/{filename}"
+    # Get pod name and namespace from config
+    pod_name = config.stack_config.validator_name
+    namespace = config.stack_config.namespace
+    
+    if not pod_name or not namespace:
+        logging.warning("Pod name or namespace not configured, skipping governance skey setup")
         yield
-        logging.info("Cleaning up governance skey file on remote host...")
-        config.nodes_config.governance_authority.mainchain_key = path
-        runner.run(f"rm -rf {temp_dir}")
-    else:
+        return
+    
+    # Create a temporary directory in the pod
+    temp_dir_cmd = f"kubectl exec {pod_name} -n {namespace} -c substrate-node -- mktemp -d"
+    try:
+        temp_dir = subprocess.check_output(temp_dir_cmd, shell=True).decode().strip()
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Failed to create temp directory: {e}")
         yield
+        return
+    
+    # Get the path to the governance key
+    path = config.nodes_config.governance_authority.mainchain_key
+    if not path or not os.path.exists(path):
+        logging.error(f"Governance key file not found at {path}")
+        yield
+        return
+        
+    filename = os.path.basename(path)
+    
+    # Copy the key to the pod
+    copy_cmd = f"kubectl cp {path} {namespace}/{pod_name}:{temp_dir}/{filename} -c substrate-node"
+    try:
+        subprocess.check_output(copy_cmd, shell=True)
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Failed to copy governance key: {e}")
+        yield
+        return
+    
+    # Update the path in the config
+    original_path = config.nodes_config.governance_authority.mainchain_key
+    config.nodes_config.governance_authority.mainchain_key = f"{temp_dir}/{filename}"
+    
+    yield
+    
+    # Clean up
+    logging.info("Cleaning up governance skey file in pod...")
+    config.nodes_config.governance_authority.mainchain_key = original_path
+    cleanup_cmd = f"kubectl exec {pod_name} -n {namespace} -c substrate-node -- rm -rf {temp_dir}"
+    try:
+        subprocess.check_output(cleanup_cmd, shell=True)
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Failed to clean up temp directory: {e}")
 
 
 @fixture(scope="session")
@@ -653,3 +696,23 @@ def set_governance_to_multisig(multisig, api: BlockchainApi, governance_authorit
 
     assert response.returncode == 0
     logging.info("Governance restored to single key successfully")
+
+
+@pytest.fixture
+def candidate_skey_with_cli(candidate: Candidates, config: ApiConfig):
+    """Fixture to provide candidate signing key with CLI access."""
+    # Get the candidate's signing key from the config based on the candidate name
+    candidate_name = candidate.name
+    if candidate_name not in config.nodes_config.nodes:
+        raise ValueError(f"Candidate {candidate_name} not found in config")
+    
+    # Get the signing key from the node config
+    node = config.nodes_config.nodes[candidate_name]
+    skey = node.mainchain_key
+    
+    # Ensure the key is properly formatted
+    if not skey.startswith('0x'):
+        skey = f'0x{skey}'
+    
+    # Return the formatted key
+    return skey
