@@ -6993,9 +6993,8 @@ dependencies = [
  "pallet-sidechain-rpc",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc",
- "partner-chains-db-sync-data-sources",
  "partner-chains-demo-runtime",
- "partner-chains-mock-data-sources",
+ "partner-chains-node",
  "partner-chains-node-commands",
  "sc-basic-authorship",
  "sc-cli",
@@ -7142,6 +7141,42 @@ dependencies = [
  "sp-governed-map",
  "sp-native-token-management",
  "sp-timestamp",
+]
+
+[[package]]
+name = "partner-chains-node"
+version = "1.6.0"
+dependencies = [
+ "async-trait",
+ "authority-selection-inherents",
+ "derive-new",
+ "jsonrpsee",
+ "pallet-block-producer-fees-rpc",
+ "pallet-block-producer-metadata-rpc",
+ "pallet-session-validator-management-rpc",
+ "pallet-sidechain-rpc",
+ "partner-chains-db-sync-data-sources",
+ "partner-chains-mock-data-sources",
+ "sidechain-domain",
+ "sidechain-mc-hash",
+ "sidechain-slots",
+ "sp-api",
+ "sp-block-participation",
+ "sp-block-producer-fees",
+ "sp-block-producer-metadata",
+ "sp-block-production-log",
+ "sp-blockchain",
+ "sp-consensus",
+ "sp-core",
+ "sp-governed-map",
+ "sp-inherents",
+ "sp-native-token-management",
+ "sp-runtime",
+ "sp-session-validator-management",
+ "sp-session-validator-management-query",
+ "sp-sidechain",
+ "substrate-prometheus-endpoint",
+ "time-source",
 ]
 
 [[package]]

@@ -56,6 +56,7 @@ members = [
 	"toolkit/utils/db-sync-sqlx",
 	"toolkit/governed-map/primitives",
 	"toolkit/governed-map/pallet",
+	"toolkit/node",
 ]
 resolver = "2"
 
@@ -327,6 +328,9 @@ partner-chains-mock-data-sources = { path = "toolkit/data-sources/mock", default
 # Governed Map
 sp-governed-map = { path = "toolkit/governed-map/primitives", default-features = false }
 pallet-governed-map = { path = "toolkit/governed-map/pallet", default-features = false }
+
+# Wiring Helpers
+partner-chains-node = { path = "toolkit/node", default-features = false }
 
 # demo node
 partner-chains-demo-runtime = { path = "demo/runtime" }

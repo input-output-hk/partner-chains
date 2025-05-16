@@ -52,6 +52,7 @@ std = [
 	"bech32/std",
 	"sp-io/std",
 	"secp256k1/std",
+	"secp256k1/global-context",
 	"ed25519-zebra",
 	"ed25519-zebra/std",
 ]
