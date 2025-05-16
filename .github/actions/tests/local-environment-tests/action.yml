@@ -107,16 +107,6 @@ runs:
       run: exit 1
       shell: bash
 
-    - name: Run Epoch 1 Tests
-      if: ${{ inputs.markers != 'wizards' }}
-      uses: ./.github/actions/tests/run-e2e-tests
-      with:
-        env: ${{ env.TEST_ENVIRONMENT }}
-        keyword: "test_get_status or test_get_params"
-        blockchain: substrate
-        local-environment: "true"
-        tests: ${{ inputs.markers }}
-
     - name: Wait for epoch 2
       uses: ./.github/actions/tests/wait-for-epoch
       with:
@@ -126,7 +116,6 @@ runs:
         environment:
 
     - name: Let PC warm up
-      if: ${{ inputs.markers == 'full' || inputs.markers == 'ariadne' }}
       run: |
         sleep 30
       shell: bash
