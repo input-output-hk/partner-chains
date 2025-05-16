@@ -35,8 +35,6 @@ use {
 	sp_native_token_management::NativeTokenManagementDataSource,
 };
 
-// use sc_service::error::Error as ServiceError;
-
 #[derive(Clone)]
 pub struct PartnerChainsDataSource {
 	pub mc_hash: Arc<dyn McHashDataSource + Send + Sync>,
