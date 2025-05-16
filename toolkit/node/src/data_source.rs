@@ -70,7 +70,9 @@ impl PartnerChainsDataSource {
 			Self::new_db_sync_from_env(
 				metrics_registry_opt,
 				candidates_for_epoch_cache_size,
+				#[cfg(feature = "governed-map")]
 				governed_map_cache_size,
+				#[cfg(feature = "block-participation")]
 				stake_cache_size,
 			)
 			.await
