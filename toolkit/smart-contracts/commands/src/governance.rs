@@ -31,7 +31,7 @@ impl GovernanceCmd {
 pub struct InitGovernanceCmd {
 	#[clap(flatten)]
 	common_arguments: crate::CommonArguments,
-	/// Governance authority to be set, hex encoded, space delimited, order does not matter
+	/// Governance authority to be set, list of hex encoded, space delimited public key hashes, order does not matter
 	#[arg(short = 'g', long, num_args = 1.., value_delimiter = ' ')]
 	governance_authority: Vec<MainchainKeyHash>,
 	/// Governance threshold to be set
