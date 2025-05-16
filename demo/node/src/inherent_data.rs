@@ -1,25 +1,21 @@
 use authority_selection_inherents::CommitteeMember;
 use authority_selection_inherents::ariadne_inherent_data_provider::AriadneInherentDataProvider as AriadneIDP;
-use authority_selection_inherents::authority_selection_inputs::{
-	AuthoritySelectionDataSource, AuthoritySelectionInputs,
-};
+use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 use derive_new::new;
 use jsonrpsee::core::async_trait;
 use partner_chains_demo_runtime::{
 	BlockAuthor, CrossChainPublic,
 	opaque::{Block, SessionKeys},
 };
+use partner_chains_node::PartnerChainsNodeConfig;
+use partner_chains_node::data_source::PartnerChainsDataSource;
 use sc_consensus_aura::{SlotDuration, find_pre_digest};
 use sc_service::Arc;
-use sidechain_domain::{
-	DelegatorKey, McBlockHash, ScEpochNumber, mainchain_epoch::MainchainEpochConfig,
-};
-use sidechain_mc_hash::{McHashDataSource, McHashInherentDataProvider as McHashIDP};
-use sidechain_slots::ScSlotConfig;
+use sidechain_domain::{DelegatorKey, McBlockHash, ScEpochNumber};
+use sidechain_mc_hash::McHashInherentDataProvider as McHashIDP;
 use sp_api::ProvideRuntimeApi;
 use sp_block_participation::{
-	BlockParticipationApi,
-	inherent_data::{BlockParticipationDataSource, BlockParticipationInherentDataProvider},
+	BlockParticipationApi, inherent_data::BlockParticipationInherentDataProvider,
 };
 use sp_block_production_log::{BlockAuthorInherentProvider, BlockProductionLogApi};
 use sp_blockchain::HeaderBackend;
@@ -27,11 +23,10 @@ use sp_consensus_aura::{
 	Slot, inherents::InherentDataProvider as AuraIDP, sr25519::AuthorityPair as AuraPair,
 };
 use sp_core::Pair;
-use sp_governed_map::{GovernedMapDataSource, GovernedMapIDPApi, GovernedMapInherentDataProvider};
+use sp_governed_map::{GovernedMapIDPApi, GovernedMapInherentDataProvider};
 use sp_inherents::CreateInherentDataProviders;
 use sp_native_token_management::{
-	NativeTokenManagementApi, NativeTokenManagementDataSource,
-	NativeTokenManagementInherentDataProvider as NativeTokenIDP,
+	NativeTokenManagementApi, NativeTokenManagementInherentDataProvider as NativeTokenIDP,
 };
 use sp_partner_chains_consensus_aura::CurrentSlotProvider;
 use sp_runtime::traits::{Block as BlockT, Header, Zero};
@@ -42,13 +37,9 @@ use time_source::TimeSource;
 
 #[derive(new)]
 pub struct ProposalCIDP<T> {
-	config: CreateInherentDataConfig,
+	config: PartnerChainsNodeConfig,
 	client: Arc<T>,
-	mc_hash_data_source: Arc<dyn McHashDataSource + Send + Sync>,
-	authority_selection_data_source: Arc<dyn AuthoritySelectionDataSource + Send + Sync>,
-	native_token_data_source: Arc<dyn NativeTokenManagementDataSource + Send + Sync>,
-	block_participation_data_source: Arc<dyn BlockParticipationDataSource + Send + Sync>,
-	governed_map_data_source: Arc<dyn GovernedMapDataSource + Send + Sync>,
+	partner_chain_data_source: PartnerChainsDataSource,
 }
 
 #[async_trait]
@@ -83,23 +74,15 @@ where
 		parent_hash: <Block as BlockT>::Hash,
 		_extra_args: (),
 	) -> Result<Self::InherentDataProviders, Box<dyn std::error::Error + Send + Sync>> {
-		let Self {
-			config,
-			client,
-			mc_hash_data_source,
-			authority_selection_data_source,
-			native_token_data_source,
-			block_participation_data_source,
-			governed_map_data_source,
-		} = self;
-		let CreateInherentDataConfig { mc_epoch_config, sc_slot_config, time_source } = config;
+		let Self { config, client, partner_chain_data_source } = self;
+		let PartnerChainsNodeConfig { mc_epoch_config, sc_slot_config, time_source } = config;
 
 		let (slot, timestamp) =
 			timestamp_and_slot_cidp(sc_slot_config.slot_duration, time_source.clone());
 		let parent_header = client.expect_header(parent_hash)?;
 		let mc_hash = McHashIDP::new_proposal(
 			parent_header,
-			mc_hash_data_source.as_ref(),
+			partner_chain_data_source.mc_hash.as_ref(),
 			*slot,
 			sc_slot_config.slot_duration,
 		)
@@ -111,7 +94,7 @@ where
 			mc_epoch_config,
 			parent_hash,
 			*slot,
-			authority_selection_data_source.as_ref(),
+			partner_chain_data_source.authority_selection.as_ref(),
 			mc_hash.mc_epoch(),
 		)
 		.await?;
@@ -120,7 +103,7 @@ where
 
 		let native_token = NativeTokenIDP::new(
 			client.clone(),
-			native_token_data_source.as_ref(),
+			partner_chain_data_source.native_token.as_ref(),
 			mc_hash.mc_hash(),
 			mc_hash.previous_mc_hash(),
 			parent_hash,
@@ -129,7 +112,7 @@ where
 
 		let payouts = BlockParticipationInherentDataProvider::new(
 			client.as_ref(),
-			block_participation_data_source.as_ref(),
+			partner_chain_data_source.block_participation.as_ref(),
 			parent_hash,
 			*slot,
 			mc_epoch_config,
@@ -142,7 +125,7 @@ where
 			parent_hash,
 			mc_hash.mc_hash(),
 			mc_hash.previous_mc_hash(),
-			governed_map_data_source.as_ref(),
+			partner_chain_data_source.governed_map.as_ref(),
 		)
 		.await?;
 
@@ -161,18 +144,18 @@ where
 
 #[derive(new)]
 pub struct VerifierCIDP<T> {
-	config: CreateInherentDataConfig,
+	config: PartnerChainsNodeConfig,
 	client: Arc<T>,
-	mc_hash_data_source: Arc<dyn McHashDataSource + Send + Sync>,
-	authority_selection_data_source: Arc<dyn AuthoritySelectionDataSource + Send + Sync>,
-	native_token_data_source: Arc<dyn NativeTokenManagementDataSource + Send + Sync>,
-	block_participation_data_source: Arc<dyn BlockParticipationDataSource + Send + Sync>,
-	governed_map_data_source: Arc<dyn GovernedMapDataSource + Send + Sync>,
+	partner_chain_data_source: PartnerChainsDataSource,
 }
 
 impl<T: Send + Sync> CurrentSlotProvider for VerifierCIDP<T> {
 	fn slot(&self) -> Slot {
-		*timestamp_and_slot_cidp(self.config.slot_duration(), self.config.time_source.clone()).0
+		*timestamp_and_slot_cidp(
+			self.config.sc_slot_config.slot_duration,
+			self.config.time_source.clone(),
+		)
+		.0
 	}
 }
 
@@ -205,16 +188,8 @@ where
 		parent_hash: <Block as BlockT>::Hash,
 		(verified_block_slot, mc_hash): (Slot, McBlockHash),
 	) -> Result<Self::InherentDataProviders, Box<dyn Error + Send + Sync>> {
-		let Self {
-			config,
-			client,
-			mc_hash_data_source,
-			authority_selection_data_source,
-			native_token_data_source,
-			block_participation_data_source,
-			governed_map_data_source,
-		} = self;
-		let CreateInherentDataConfig { mc_epoch_config, sc_slot_config, time_source, .. } = config;
+		let Self { config, client, partner_chain_data_source } = self;
+		let PartnerChainsNodeConfig { mc_epoch_config, sc_slot_config, time_source, .. } = config;
 
 		let timestamp = TimestampIDP::new(Timestamp::new(time_source.get_current_time_millis()));
 		let parent_header = client.expect_header(parent_hash)?;
@@ -224,8 +199,8 @@ where
 			parent_slot,
 			verified_block_slot,
 			mc_hash.clone(),
-			config.slot_duration(),
-			mc_hash_data_source.as_ref(),
+			config.sc_slot_config.slot_duration,
+			partner_chain_data_source.mc_hash.as_ref(),
 		)
 		.await?;
 
@@ -235,14 +210,14 @@ where
 			mc_epoch_config,
 			parent_hash,
 			verified_block_slot,
-			authority_selection_data_source.as_ref(),
+			partner_chain_data_source.authority_selection.as_ref(),
 			mc_state_reference.epoch,
 		)
 		.await?;
 
 		let native_token = NativeTokenIDP::new(
 			client.clone(),
-			native_token_data_source.as_ref(),
+			partner_chain_data_source.native_token.as_ref(),
 			mc_hash.clone(),
 			mc_state_reference.previous_mc_hash(),
 			parent_hash,
@@ -254,7 +229,7 @@ where
 
 		let payouts = BlockParticipationInherentDataProvider::new(
 			client.as_ref(),
-			block_participation_data_source.as_ref(),
+			partner_chain_data_source.block_participation.as_ref(),
 			parent_hash,
 			verified_block_slot,
 			mc_epoch_config,
@@ -267,7 +242,7 @@ where
 			parent_hash,
 			mc_hash,
 			mc_state_reference.previous_mc_hash(),
-			governed_map_data_source.as_ref(),
+			partner_chain_data_source.governed_map.as_ref(),
 		)
 		.await?;
 
@@ -290,20 +265,6 @@ pub fn slot_from_predigest(
 		Ok(None)
 	} else {
 		Ok(Some(find_pre_digest::<Block, <AuraPair as Pair>::Signature>(header)?))
-	}
-}
-
-#[derive(new, Clone)]
-pub(crate) struct CreateInherentDataConfig {
-	pub mc_epoch_config: MainchainEpochConfig,
-	// TODO ETCM-4079 make sure that this struct can be instantiated only if sidechain epoch duration is divisible by slot_duration
-	pub sc_slot_config: ScSlotConfig,
-	pub time_source: Arc<dyn TimeSource + Send + Sync>,
-}
-
-impl CreateInherentDataConfig {
-	pub fn slot_duration(&self) -> SlotDuration {
-		self.sc_slot_config.slot_duration
 	}
 }
 

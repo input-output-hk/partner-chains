@@ -5,21 +5,18 @@
 
 #![warn(missing_docs)]
 
-use crate::data_sources::DataSources;
 use authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
 use authority_selection_inherents::{
 	CommitteeMember, authority_selection_inputs::AuthoritySelectionInputs,
 };
 use jsonrpsee::RpcModule;
-use pallet_block_producer_fees_rpc::*;
-use pallet_block_producer_metadata_rpc::*;
-use pallet_session_validator_management_rpc::*;
-use pallet_sidechain_rpc::*;
 use partner_chains_demo_runtime::{
 	AccountId, Balance, Nonce,
 	opaque::{Block, SessionKeys},
 };
 use partner_chains_demo_runtime::{BlockNumber, BlockProducerMetadataType, CrossChainPublic, Hash};
+use partner_chains_node::data_source::PartnerChainsDataSource;
+use partner_chains_node::{PartnerChainsNodeConfig, partner_chains_rpc};
 use sc_consensus_grandpa::{
 	FinalityProofProvider, GrandpaJustificationStream, SharedAuthoritySet, SharedVoterState,
 };
@@ -27,13 +24,10 @@ use sc_consensus_grandpa_rpc::{Grandpa, GrandpaApiServer};
 use sc_rpc::SubscriptionTaskExecutor;
 use sc_transaction_pool_api::TransactionPool;
 use sidechain_domain::ScEpochNumber;
-use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
-use sp_session_validator_management_query::SessionValidatorManagementQuery;
 use std::sync::Arc;
-use time_source::TimeSource;
 
 /// Extra dependencies for GRANDPA
 pub struct GrandpaDeps<B> {
@@ -50,7 +44,7 @@ pub struct GrandpaDeps<B> {
 }
 
 /// Full client dependencies.
-pub struct FullDeps<C, P, B, T> {
+pub struct FullDeps<C, P, B> {
 	/// The client instance to use.
 	pub client: Arc<C>,
 	/// Transaction pool instance.
@@ -58,14 +52,14 @@ pub struct FullDeps<C, P, B, T> {
 	/// GRANDPA specific dependencies.
 	pub grandpa: GrandpaDeps<B>,
 	/// Data sources.
-	pub data_sources: DataSources,
-	/// Source of system time
-	pub time_source: Arc<T>,
+	pub data_sources: PartnerChainsDataSource,
+	/// Partner Chain-specific node configuration
+	pub partner_chain_node_config: PartnerChainsNodeConfig,
 }
 
 /// Instantiate all full RPC extensions.
-pub fn create_full<C, P, B, T>(
-	deps: FullDeps<C, P, B, T>,
+pub fn create_full<C, P, B>(
+	deps: FullDeps<C, P, B>,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
 	C: ProvideRuntimeApi<Block>,
@@ -90,27 +84,15 @@ where
 	P: TransactionPool + 'static,
 	B: sc_client_api::Backend<Block> + Send + Sync + 'static,
 	B::State: sc_client_api::backend::StateBackend<sp_runtime::traits::HashingFor<Block>>,
-	T: TimeSource + Send + Sync + 'static,
 {
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
 	use substrate_frame_rpc_system::{System, SystemApiServer};
 
 	let mut module = RpcModule::new(());
-	let FullDeps { client, pool, grandpa, data_sources, time_source } = deps;
+	let FullDeps { client, pool, grandpa, partner_chain_node_config, data_sources } = deps;
 
 	module.merge(System::new(client.clone(), pool.clone()).into_rpc())?;
 	module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
-	module.merge(
-		SidechainRpc::new(
-			client.clone(),
-			MainchainEpochConfig::read_from_env().unwrap(),
-			data_sources.sidechain_rpc.clone(),
-			time_source.clone(),
-		)
-		.into_rpc(),
-	)?;
-	module.merge(BlockProducerFeesRpc::new(client.clone()).into_rpc())?;
-	module.merge(BlockProducerMetadataRpc::new(client.clone()).into_rpc())?;
 
 	let GrandpaDeps {
 		shared_voter_state,
@@ -129,18 +111,8 @@ where
 		)
 		.into_rpc(),
 	)?;
-	module.merge(
-		SessionValidatorManagementRpc::new(Arc::new(SessionValidatorManagementQuery::new(
-			client.clone(),
-			data_sources.authority_selection.clone(),
-		)))
-		.into_rpc(),
-	)?;
 
-	// Extend this RPC with a custom API by using the following syntax.
-	// `YourRpcStruct` should have a reference to a client, which is needed
-	// to call into the runtime.
-	// `module.merge(YourRpcTrait::into_rpc(YourRpcStruct::new(ReferenceToClient, ...)))?;`
+	partner_chains_rpc!(&partner_chain_node_config, &data_sources, client, module);
 
 	Ok(module)
 }

@@ -1,11 +1,9 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
-use crate::data_sources::DataSources;
-use crate::inherent_data::{CreateInherentDataConfig, ProposalCIDP, VerifierCIDP};
+use crate::inherent_data::{ProposalCIDP, VerifierCIDP};
 use crate::rpc::GrandpaDeps;
-use partner_chains_db_sync_data_sources::metrics::McFollowerMetrics;
-use partner_chains_db_sync_data_sources::metrics::register_metrics_warn_errors;
 use partner_chains_demo_runtime::{self, RuntimeApi, opaque::Block};
+use partner_chains_node::{PartnerChainsNodeConfig, data_source::PartnerChainsDataSource};
 use sc_client_api::BlockBackend;
 use sc_consensus_aura::{ImportQueueParams, SlotProportion, StartAuraParams};
 use sc_consensus_grandpa::SharedVoterState;
@@ -14,13 +12,11 @@ use sc_partner_chains_consensus_aura::import_queue as partner_chains_aura_import
 use sc_service::{Configuration, TaskManager, WarpSyncConfig, error::Error as ServiceError};
 use sc_telemetry::{Telemetry, TelemetryWorker};
 use sc_transaction_pool_api::OffchainTransactionPoolFactory;
-use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 use sidechain_mc_hash::McHashInherentDigest;
 use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;
 use sp_partner_chains_consensus_aura::block_proposal::PartnerChainsProposerFactory;
 use sp_runtime::traits::Block as BlockT;
 use std::{sync::Arc, time::Duration};
-use time_source::SystemTimeSource;
 use tokio::task;
 
 type HostFunctions = sp_io::SubstrateHostFunctions;
@@ -33,6 +29,9 @@ type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 /// The minimum period of blocks on which justifications will be
 /// imported and generated.
 const GRANDPA_JUSTIFICATION_PERIOD: u32 = 512;
+const CANDIDATES_FOR_EPOCH_CACHE_SIZE: usize = 64;
+const STAKE_CACHE_SIZE: usize = 100;
+const GOVERNED_MAP_CACHE_SIZE: u16 = 100;
 
 #[allow(clippy::type_complexity)]
 pub fn new_partial(
@@ -53,17 +52,21 @@ pub fn new_partial(
 			>,
 			sc_consensus_grandpa::LinkHalf<Block, FullClient, FullSelectChain>,
 			Option<Telemetry>,
-			DataSources,
-			Option<McFollowerMetrics>,
+			PartnerChainsDataSource,
+			PartnerChainsNodeConfig,
 		),
 	>,
 	ServiceError,
 > {
-	let mc_follower_metrics = register_metrics_warn_errors(config.prometheus_registry());
 	let data_sources = task::block_in_place(|| {
 		config
 			.tokio_handle
-			.block_on(crate::data_sources::create_cached_data_sources(mc_follower_metrics.clone()))
+			.block_on(PartnerChainsDataSource::new_db_sync_or_mock_from_env(
+				config.prometheus_registry(),
+				CANDIDATES_FOR_EPOCH_CACHE_SIZE,
+				GOVERNED_MAP_CACHE_SIZE,
+				STAKE_CACHE_SIZE,
+			))
 	})?;
 
 	let telemetry = config
@@ -113,13 +116,7 @@ pub fn new_partial(
 		telemetry.as_ref().map(|x| x.handle()),
 	)?;
 
-	let sc_slot_config = sidechain_slots::runtime_api_client::slot_config(&*client)
-		.map_err(sp_blockchain::Error::from)?;
-
-	let time_source = Arc::new(SystemTimeSource);
-	let epoch_config = MainchainEpochConfig::read_from_env()
-		.map_err(|err| ServiceError::Application(err.into()))?;
-	let inherent_config = CreateInherentDataConfig::new(epoch_config, sc_slot_config, time_source);
+	let partner_chain_node_config = PartnerChainsNodeConfig::new_from_env(client.as_ref())?;
 
 	let import_queue = partner_chains_aura_import_queue::import_queue::<
 		AuraPair,
@@ -134,13 +131,9 @@ pub fn new_partial(
 		justification_import: Some(Box::new(grandpa_block_import.clone())),
 		client: client.clone(),
 		create_inherent_data_providers: VerifierCIDP::new(
-			inherent_config,
+			partner_chain_node_config.clone(),
 			client.clone(),
-			data_sources.mc_hash.clone(),
-			data_sources.authority_selection.clone(),
-			data_sources.native_token.clone(),
-			data_sources.block_participation.clone(),
-			data_sources.governed_map.clone(),
+			data_sources.clone(),
 		),
 		spawner: &task_manager.spawn_essential_handle(),
 		registry: config.prometheus_registry(),
@@ -157,7 +150,13 @@ pub fn new_partial(
 		keystore_container,
 		select_chain,
 		transaction_pool,
-		other: (grandpa_block_import, grandpa_link, telemetry, data_sources, mc_follower_metrics),
+		other: (
+			grandpa_block_import,
+			grandpa_link,
+			telemetry,
+			data_sources,
+			partner_chain_node_config,
+		),
 	})
 }
 
@@ -176,7 +175,7 @@ pub async fn new_full<Network: sc_network::NetworkBackend<Block, <Block as Block
 		keystore_container,
 		select_chain,
 		transaction_pool,
-		other: (block_import, grandpa_link, mut telemetry, data_sources, _),
+		other: (block_import, grandpa_link, mut telemetry, data_sources, partner_chain_node_config),
 	} = new_partial(&config)?;
 
 	let metrics = Network::register_notification_metrics(config.prometheus_registry());
@@ -234,6 +233,7 @@ pub async fn new_full<Network: sc_network::NetworkBackend<Block, <Block as Block
 		let shared_authority_set = grandpa_link.shared_authority_set().clone();
 		let justification_stream = grandpa_link.justification_stream();
 		let data_sources = data_sources.clone();
+		let partner_chain_node_config = partner_chain_node_config.clone();
 
 		move |subscription_executor| {
 			let grandpa = GrandpaDeps {
@@ -251,7 +251,7 @@ pub async fn new_full<Network: sc_network::NetworkBackend<Block, <Block as Block
 				pool: pool.clone(),
 				grandpa,
 				data_sources: data_sources.clone(),
-				time_source: Arc::new(SystemTimeSource),
+				partner_chain_node_config: partner_chain_node_config.clone(),
 			};
 			crate::rpc::create_full(deps).map_err(Into::into)
 		}
@@ -283,13 +283,6 @@ pub async fn new_full<Network: sc_network::NetworkBackend<Block, <Block as Block
 		let proposer_factory: PartnerChainsProposerFactory<_, _, McHashInherentDigest> =
 			PartnerChainsProposerFactory::new(basic_authorship_proposer_factory);
 
-		let sc_slot_config = sidechain_slots::runtime_api_client::slot_config(&*client)
-			.map_err(sp_blockchain::Error::from)?;
-		let time_source = Arc::new(SystemTimeSource);
-		let mc_epoch_config = MainchainEpochConfig::read_from_env()
-			.map_err(|err| ServiceError::Application(err.into()))?;
-		let inherent_config =
-			CreateInherentDataConfig::new(mc_epoch_config, sc_slot_config.clone(), time_source);
 		let aura = sc_partner_chains_consensus_aura::start_aura::<
 			AuraPair,
 			_,
@@ -304,19 +297,15 @@ pub async fn new_full<Network: sc_network::NetworkBackend<Block, <Block as Block
 			_,
 			McHashInherentDigest,
 		>(StartAuraParams {
-			slot_duration: sc_slot_config.slot_duration,
+			slot_duration: partner_chain_node_config.sc_slot_config.slot_duration,
 			client: client.clone(),
 			select_chain,
 			block_import,
 			proposer_factory,
 			create_inherent_data_providers: ProposalCIDP::new(
-				inherent_config,
+				partner_chain_node_config.clone(),
 				client.clone(),
-				data_sources.mc_hash.clone(),
-				data_sources.authority_selection.clone(),
-				data_sources.native_token.clone(),
-				data_sources.block_participation,
-				data_sources.governed_map,
+				data_sources.clone(),
 			),
 			force_authoring,
 			backoff_authoring_blocks,

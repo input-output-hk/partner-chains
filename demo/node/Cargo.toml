@@ -91,22 +91,9 @@ frame-benchmarking = { workspace = true }
 partner-chains-demo-runtime = { workspace = true }
 sidechain-mc-hash = { workspace = true, features = ["mock"] }
 sp-native-token-management = { workspace = true }
-partner-chains-db-sync-data-sources = { workspace = true, features = [
-	"block-source",
-	"candidate-source",
+partner-chains-node = { workspace = true, features = [
 	"governed-map",
-	"native-token",
-	"mc-hash",
-	"sidechain-rpc",
-	"block-participation",
-] }
-partner-chains-mock-data-sources = { workspace = true, features = [
-	"block-source",
-	"candidate-source",
-	"governed-map",
-	"native-token",
-	"mc-hash",
-	"sidechain-rpc",
+	"native-token-management",
 	"block-participation",
 ] }
 tokio = { workspace = true }
