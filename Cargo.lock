@@ -742,7 +742,7 @@ dependencies = [
 
 [[package]]
 name = "authority-selection-inherents"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "async-trait",
  "frame-support",
@@ -1124,7 +1124,7 @@ checksum = "7575182f7272186991736b70173b0ea045398f984bf5ebbb3804736ce1330c9d"
 
 [[package]]
 name = "byte-string-derive"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "hex",
  "quote",
@@ -1459,7 +1459,7 @@ dependencies = [
 
 [[package]]
 name = "cli-commands"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "anyhow",
  "assert_cmd",
@@ -2102,7 +2102,7 @@ dependencies = [
 
 [[package]]
 name = "db-sync-sqlx"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "num-traits",
  "sidechain-domain",
@@ -6103,7 +6103,7 @@ dependencies = [
 
 [[package]]
 name = "ogmios-client"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "anyhow",
  "fraction",
@@ -6261,7 +6261,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-address-associations"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6347,7 +6347,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-block-participation"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6365,7 +6365,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-block-producer-fees"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6382,7 +6382,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-block-producer-fees-rpc"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "derive-new",
  "jsonrpsee",
@@ -6396,7 +6396,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-block-producer-metadata"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6416,7 +6416,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-block-producer-metadata-rpc"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "derive-new",
  "jsonrpsee",
@@ -6434,7 +6434,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-block-production-log"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6453,7 +6453,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-governed-map"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6493,7 +6493,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-native-token-management"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6508,7 +6508,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-partner-chains-session"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6547,7 +6547,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-session-validator-management"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "derive-new",
  "frame-support",
@@ -6567,7 +6567,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-session-validator-management-benchmarking"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6592,7 +6592,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-session-validator-management-rpc"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "derive-new",
  "jsonrpsee",
@@ -6602,7 +6602,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-sidechain"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6620,7 +6620,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-sidechain-rpc"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "derive-new",
  "hex",
@@ -6852,7 +6852,7 @@ checksum = "7924d1d0ad836f665c9065e26d016c673ece3993f30d340068b16f282afc1156"
 
 [[package]]
 name = "partner-chains-cardano-offchain"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "anyhow",
  "cardano-serialization-lib",
@@ -6883,7 +6883,7 @@ dependencies = [
 
 [[package]]
 name = "partner-chains-cli"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "anyhow",
  "cardano-serialization-lib",
@@ -6915,7 +6915,7 @@ dependencies = [
 
 [[package]]
 name = "partner-chains-data-sources-cli"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "authority-selection-inherents",
  "clap",
@@ -6931,7 +6931,7 @@ dependencies = [
 
 [[package]]
 name = "partner-chains-db-sync-data-sources"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "async-trait",
  "authority-selection-inherents",
@@ -6971,7 +6971,7 @@ dependencies = [
 
 [[package]]
 name = "partner-chains-demo-node"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "assert_cmd",
  "async-trait",
@@ -7051,7 +7051,7 @@ dependencies = [
 
 [[package]]
 name = "partner-chains-demo-runtime"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "authority-selection-inherents",
  "derive-new",
@@ -7125,7 +7125,7 @@ dependencies = [
 
 [[package]]
 name = "partner-chains-mock-data-sources"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "async-trait",
  "authority-selection-inherents",
@@ -7146,7 +7146,7 @@ dependencies = [
 
 [[package]]
 name = "partner-chains-node-commands"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "authority-selection-inherents",
  "clap",
@@ -7173,7 +7173,7 @@ dependencies = [
 
 [[package]]
 name = "partner-chains-plutus-data"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "cardano-serialization-lib",
  "hex-literal 1.0.0",
@@ -7187,7 +7187,7 @@ dependencies = [
 
 [[package]]
 name = "partner-chains-smart-contracts-commands"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -7380,7 +7380,7 @@ checksum = "7edddbd0b52d732b21ad9a5fab5c704c14cd949e5e9a1ec5929a24fded1b904c"
 
 [[package]]
 name = "plutus"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "hex",
  "minicbor",
@@ -7390,7 +7390,7 @@ dependencies = [
 
 [[package]]
 name = "plutus-datum-derive"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "quote",
  "syn 2.0.101",
@@ -9272,7 +9272,7 @@ dependencies = [
 
 [[package]]
 name = "sc-partner-chains-consensus-aura"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "async-trait",
  "futures",
@@ -9877,7 +9877,7 @@ dependencies = [
 
 [[package]]
 name = "selection"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "quickcheck",
  "quickcheck_macros",
@@ -10119,7 +10119,7 @@ checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 
 [[package]]
 name = "sidechain-block-search"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "hex",
  "hex-literal 1.0.0",
@@ -10139,7 +10139,7 @@ dependencies = [
 
 [[package]]
 name = "sidechain-domain"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "bech32 0.11.0",
  "blake2b_simd",
@@ -10170,7 +10170,7 @@ dependencies = [
 
 [[package]]
 name = "sidechain-mc-hash"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "async-trait",
  "derive-new",
@@ -10189,7 +10189,7 @@ dependencies = [
 
 [[package]]
 name = "sidechain-slots"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "envy",
  "parity-scale-codec",
@@ -10425,7 +10425,7 @@ dependencies = [
 
 [[package]]
 name = "sp-block-participation"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "async-trait",
  "log",
@@ -10443,7 +10443,7 @@ dependencies = [
 
 [[package]]
 name = "sp-block-producer-fees"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
@@ -10452,7 +10452,7 @@ dependencies = [
 
 [[package]]
 name = "sp-block-producer-metadata"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "hex-literal 1.0.0",
  "k256",
@@ -10463,7 +10463,7 @@ dependencies = [
 
 [[package]]
 name = "sp-block-production-log"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "async-trait",
  "hex",
@@ -10684,7 +10684,7 @@ dependencies = [
 
 [[package]]
 name = "sp-governed-map"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "async-trait",
  "log",
@@ -10792,7 +10792,7 @@ dependencies = [
 
 [[package]]
 name = "sp-native-token-management"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "async-trait",
  "derive-new",
@@ -10830,7 +10830,7 @@ dependencies = [
 
 [[package]]
 name = "sp-partner-chains-consensus-aura"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "futures",
  "sp-blockchain",
@@ -10927,7 +10927,7 @@ dependencies = [
 
 [[package]]
 name = "sp-session-validator-management"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "envy",
  "parity-scale-codec",
@@ -10944,7 +10944,7 @@ dependencies = [
 
 [[package]]
 name = "sp-session-validator-management-query"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "async-trait",
  "authority-selection-inherents",
@@ -10972,7 +10972,7 @@ dependencies = [
 
 [[package]]
 name = "sp-sidechain"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "envy",
  "frame-support",
@@ -11969,7 +11969,7 @@ dependencies = [
 
 [[package]]
 name = "time-source"
-version = "1.6.0"
+version = "1.7.0"
 
 [[package]]
 name = "tiny-keccak"
