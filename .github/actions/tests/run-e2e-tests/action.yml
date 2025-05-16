@@ -10,7 +10,7 @@ inputs:
     required: false
     default: 'test_'
   markers:
-    description: 'Run tests by markers (-m)'
+    description: 'Run tests by markers (-m). Available markers: smoke, rpc, reserve, governed_map, delegator_rewards, ariadne, wizards, or full'
     required: false
   mc_epoch:
     description: 'MC epoch to test (committee tests)'
@@ -43,10 +43,6 @@ inputs:
     description: 'Number of threads to use'
     required: false
     default: '4'
-  tests:
-    description: 'Test mode (smoke, rpc, reserve, governed_map, delegator_rewards, ariadne, or full)'
-    required: false
-    default: 'full'
 
 runs:
   using: composite
@@ -81,39 +77,23 @@ runs:
           decrypt_switch="--decrypt"
         fi
 
-        # Define pytest command based on test mode
-        if [ "${{ inputs.tests }}" = "full" ]; then
-          pytest_cmd="pytest --blockchain '${{ inputs.blockchain }}' \
-            --env '${{ inputs.env }}' \
-            --log-cli-level '${{ inputs.log_level }}' \
-            ${markers_switch} \
-            -n '${{ inputs.threads}}' \
-            --dist=loadgroup \
-            --ci-run \
-            --init-timestamp '${{ inputs.init_timestamp }}' \
-            ${mc_epoch_switch} \
-            ${latest_mc_epoch_switch} \
-            ${deployment_mc_epoch_switch} \
-            ${decrypt_switch} \
-            --json-report \
-            --json-report-file=logs/.report.json \
-            --json-report-summary \
-            --junitxml=logs/junit_report.xml"
-        else
-          pytest_cmd="pytest --blockchain '${{ inputs.blockchain }}' \
-            --env '${{ inputs.env }}' \
-            --log-cli-level '${{ inputs.log_level }}' \
-            -m '${{ inputs.tests }}' \
-            -n '${{ inputs.threads}}' \
-            --dist=loadgroup \
-            --ci-run \
-            --init-timestamp '${{ inputs.init_timestamp }}' \
-            ${decrypt_switch} \
-            --json-report \
-            --json-report-file=logs/.report.json \
-            --json-report-summary \
-            --junitxml=logs/junit_report.xml"
-        fi
+        # Define pytest command
+        pytest_cmd="pytest --blockchain '${{ inputs.blockchain }}' \
+          --env '${{ inputs.env }}' \
+          --log-cli-level '${{ inputs.log_level }}' \
+          ${markers_switch} \
+          -n '${{ inputs.threads}}' \
+          --dist=loadgroup \
+          --ci-run \
+          --init-timestamp '${{ inputs.init_timestamp }}' \
+          ${mc_epoch_switch} \
+          ${latest_mc_epoch_switch} \
+          ${deployment_mc_epoch_switch} \
+          ${decrypt_switch} \
+          --json-report \
+          --json-report-file=logs/.report.json \
+          --json-report-summary \
+          --junitxml=logs/junit_report.xml"
 
         if [[ "${{ inputs.local-environment }}" == "true" ]]; then
           echo "Running tests via docker exec"

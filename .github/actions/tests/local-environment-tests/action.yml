@@ -10,7 +10,7 @@ inputs:
   tag:
     description: "PC Artifact Tag"
     required: true
-  tests:
+  markers:
     description: "Test set to run (smoke, rpc, reserve, governed_map, delegator_rewards, ariadne, wizards, or full)"
     required: true
 
@@ -40,7 +40,7 @@ runs:
         mkdir -p dev/local-environment/configurations/tests/e2e-tests
         cp -r e2e-tests/* dev/local-environment/configurations/tests/e2e-tests
         cd dev/local-environment
-        if [ "${{ inputs.tests }}" = "wizards" ]; then
+        if [ "${{ inputs.markers }}" = "wizards" ]; then
           bash setup.sh --non-interactive --postgres-password azMpOp4mTqhlKDmgCVQr --node-image ${{ inputs.image }} --tests -d 5
         else
           bash setup.sh --non-interactive --postgres-password azMpOp4mTqhlKDmgCVQr --node-image ${{ inputs.image }} --tests
@@ -64,7 +64,7 @@ runs:
         max_restarts=10
 
         # Set the container name based on test type
-        if [ "${{ inputs.tests }}" = "wizards" ]; then
+        if [ "${{ inputs.markers }}" = "wizards" ]; then
           CONTAINER_NAME="partner-chains-wizard-1"
         else
           CONTAINER_NAME="partner-chains-node-1"
@@ -96,18 +96,18 @@ runs:
 
     - name: Collect Docker logs
       run: |
-        mkdir -p local-environment-${{ inputs.tests }}-logs-initial
+        mkdir -p local-environment-${{ inputs.markers }}-logs-initial
         docker ps -a --format '{{.Names}}' | while read line; do
           echo "Collecting logs for container $line"
-          docker logs "$line" > "local-environment-${{ inputs.tests }}-logs-initial/$line.log" 2>&1 || true
+          docker logs "$line" > "local-environment-${{ inputs.markers }}-logs-initial/$line.log" 2>&1 || true
         done
       shell: bash
 
     - name: Upload Docker logs artifact
       uses: actions/upload-artifact@v4
       with:
-        name: local-environment-${{ inputs.tests }}-logs-initial
-        path: local-environment-${{ inputs.tests }}-logs-initial/
+        name: local-environment-${{ inputs.markers }}-logs-initial
+        path: local-environment-${{ inputs.markers }}-logs-initial/
 
     - name: Fail the job
       if: ${{ steps.wait-pc-node.outcome == 'failure' }}
@@ -115,14 +115,14 @@ runs:
       shell: bash
 
     - name: Run Epoch 1 Tests
-      if: ${{ inputs.tests != 'wizards' }}
+      if: ${{ inputs.markers != 'wizards' }}
       uses: ./.github/actions/tests/run-e2e-tests
       with:
         env: ${{ env.TEST_ENVIRONMENT }}
         keyword: "test_get_status or test_get_params"
         blockchain: substrate
         local-environment: "true"
-        tests: ${{ inputs.tests }}
+        tests: ${{ inputs.markers }}
 
     - name: Wait for epoch 2
       uses: ./.github/actions/tests/wait-for-epoch
@@ -133,19 +133,19 @@ runs:
         environment:
 
     - name: Let PC warm up
-      if: ${{ inputs.tests == 'full' || inputs.tests == 'ariadne' }}
+      if: ${{ inputs.markers == 'full' || inputs.markers == 'ariadne' }}
       run: |
         sleep 30
       shell: bash
 
 #    - name: Run wizards epoch 2 steps
-#      if: ${{ inputs.tests == 'wizards' }}
+#      if: ${{ inputs.markers == 'wizards' }}
 #      run: |
 #        docker exec partner-chains-wizard-1 parter-chains-node wizards 
 #      shell: bash
 
     - name: Run Epoch 2 Tests
-      if: ${{ inputs.tests != 'wizards' }}
+      if: ${{ inputs.markers != 'wizards' }}
       uses: ./.github/actions/tests/run-e2e-tests
       with:
         env: ${{ env.TEST_ENVIRONMENT }}
@@ -155,7 +155,7 @@ runs:
         local-environment: "true"
 
     - name: Wait for epoch 3
-      if: ${{ inputs.tests == 'full' || inputs.tests == 'ariadne' }}
+      if: ${{ inputs.markers == 'full' || inputs.markers == 'ariadne' }}
       uses: ./.github/actions/tests/wait-for-epoch
       with:
         epoch: 3
@@ -164,7 +164,7 @@ runs:
         environment:
 
     - name: Run Epoch 3 Tests
-      if: ${{ inputs.tests == 'full' || inputs.tests == 'ariadne' }}
+      if: ${{ inputs.markers == 'full' || inputs.markers == 'ariadne' }}
       uses: ./.github/actions/tests/run-e2e-tests
       with:
         env: ${{ env.TEST_ENVIRONMENT }}
@@ -174,7 +174,7 @@ runs:
         local-environment: "true"
 
     - name: Wait for epoch 4
-      if: ${{ inputs.tests == 'full' || inputs.tests == 'ariadne' }}
+      if: ${{ inputs.markers == 'full' || inputs.markers == 'ariadne' }}
       uses: ./.github/actions/tests/wait-for-epoch
       with:
         epoch: 4
@@ -183,7 +183,7 @@ runs:
         environment:
 
     - name: Run Epoch 4 Tests
-      if: ${{ inputs.tests == 'full' || inputs.tests == 'ariadne' }}
+      if: ${{ inputs.markers == 'full' || inputs.markers == 'ariadne' }}
       uses: ./.github/actions/tests/run-e2e-tests
       with:
         env: ${{ env.TEST_ENVIRONMENT }}
@@ -194,7 +194,7 @@ runs:
         local-environment: "true"
 
     - name: Check if no skipped tests
-      if: ${{ inputs.tests == 'full' || inputs.tests == 'ariadne' }}
+      if: ${{ inputs.markers == 'full' || inputs.markers == 'ariadne' }}
       run: |
         skipped=$(jq -r .summary.skipped e2e-tests/logs/.report.json)
         if [ "$skipped" != "null" ]; then
@@ -206,10 +206,10 @@ runs:
     - name: Collect container logs
       if: always()
       run: |
-        mkdir -p local-environment-${{ inputs.tests }}-logs-full
+        mkdir -p local-environment-${{ inputs.markers }}-logs-full
         docker ps -a --format '{{.Names}}' | while read line; do
           echo "Collecting logs for container $line"
-          docker logs "$line" > "local-environment-${{ inputs.tests }}-logs-full/$line.log" 2>&1 || true
+          docker logs "$line" > "local-environment-${{ inputs.markers }}-logs-full/$line.log" 2>&1 || true
         done
       shell: bash
 
@@ -217,8 +217,8 @@ runs:
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: local-environment-${{ inputs.tests }}-logs-full
-        path: local-environment-${{ inputs.tests }}-logs-full/
+        name: local-environment-${{ inputs.markers }}-logs-full
+        path: local-environment-${{ inputs.markers }}-logs-full/
 
     - name: Stop partner-chains-demo
       run: |

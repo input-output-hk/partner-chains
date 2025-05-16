@@ -95,7 +95,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        test_mode: [smoke, rpc, reserve, governed_map, delegator_rewards, ariadne, wizards]
+        markers: [smoke, rpc, reserve, governed_map, delegator_rewards, ariadne, wizards]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -108,7 +108,7 @@ jobs:
           tag: CI
           image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
           sha: ${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
-          tests: ${{ matrix.test_mode }}
+          markers: ${{ matrix.markers }}
         env:
           SUBSTRATE_REPO_SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
           EARTHLY_TAR: ${{ secrets.EARTHLY_TAR }}
@@ -474,7 +474,7 @@ jobs:
           tag: CI
           image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-x86_64-post-merge.outputs.sha }}
           sha: ${{ needs.build-linux-x86_64-post-merge.outputs.sha }}
-          tests: full
+          markers: full
         env:
           SUBSTRATE_REPO_SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
           EARTHLY_TAR: ${{ secrets.EARTHLY_TAR }}
