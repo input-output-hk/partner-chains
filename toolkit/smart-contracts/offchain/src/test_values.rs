@@ -135,7 +135,7 @@ pub(crate) fn ogmios_native_1_of_1_script() -> OgmiosScript {
 pub(crate) fn ogmios_plutus_script() -> OgmiosScript {
 	OgmiosScript {
 		language: "plutus:v2".into(),
-		cbor: raw_scripts::MULTI_SIG_POLICY.to_vec(),
+		cbor: raw_scripts::MULTI_SIG_POLICY.0.to_vec(),
 		json: None,
 	}
 }

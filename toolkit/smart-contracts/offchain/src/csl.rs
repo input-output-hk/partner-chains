@@ -334,9 +334,10 @@ impl OgmiosUtxoExt for OgmiosUtxo {
 			&self.value.to_csl()?,
 		);
 		if let Some(script) = self.script.clone() {
-			let plutus_script_ref_opt = PlutusScript::from_ogmios(script.clone())
-				.ok()
-				.map(|plutus_script| ScriptRef::new_plutus_script(&plutus_script.to_csl()));
+			let plutus_script_ref_opt =
+				script.clone().try_into().ok().map(|plutus_script: PlutusScript| {
+					ScriptRef::new_plutus_script(&plutus_script.to_csl())
+				});
 			let script_ref_opt = plutus_script_ref_opt.or_else(|| {
 				NativeScript::from_bytes(script.cbor)
 					.ok()
