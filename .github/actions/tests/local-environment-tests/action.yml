@@ -107,7 +107,7 @@ runs:
       run: exit 1
       shell: bash
 
-    - name: Wait for epoch 2
+    - name: Wait for Epoch 2
       uses: ./.github/actions/tests/wait-for-epoch
       with:
         epoch: 2
@@ -140,7 +140,7 @@ runs:
         markers: "smoke"
         local-environment: "true"
 
-    - name: Wait for epoch 3
+    - name: Wait for Epoch 3
       if: ${{ inputs.markers == 'full' || inputs.markers == 'ariadne' }}
       uses: ./.github/actions/tests/wait-for-epoch
       with:
@@ -159,7 +159,7 @@ runs:
         markers: ${{ inputs.markers }}
         local-environment: "true"
 
-    - name: Wait for epoch 4
+    - name: Wait for Epoch 4
       if: ${{ inputs.markers == 'full' || inputs.markers == 'ariadne' }}
       uses: ./.github/actions/tests/wait-for-epoch
       with:
