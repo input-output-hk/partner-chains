@@ -10,7 +10,7 @@ inputs:
     required: false
     default: 'test_'
   markers:
-    description: 'Run tests by markers (-m). Available markers: smoke, rpc, reserve, governed_map, delegator_rewards, ariadne or full'
+    description: 'Run tests by markers (-m). Available markers: smoke, rpc, reserve, governed_map, delegator_rewards, ariadne, wizards or full'
     required: false
   mc_epoch:
     description: 'MC epoch to test (committee tests)'
@@ -53,7 +53,9 @@ runs:
       shell: bash
       run: |
         markers_switch=""
-        if [ -n "${{ inputs.markers }}" ]; then
+        if [ "${{ inputs.markers }}" = "wizards" ]; then
+          markers_switch="-m smoke"
+        elif [ -n "${{ inputs.markers }}" ]; then
           markers_switch="-m '${{ inputs.markers }}'"
         fi
         

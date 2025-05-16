@@ -11,7 +11,7 @@ inputs:
     description: "PC Artifact Tag"
     required: true
   markers:
-    description: "Test set to run (smoke, rpc, reserve, governed_map, delegator_rewards, ariadne or full). If wizards is selected, manual tests steps (not e2e tests) will be run."
+    description: 'Run tests by markers (-m). Available markers: smoke, rpc, reserve, governed_map, delegator_rewards, ariadne, wizards or full'
     required: true
 
 outputs: {}
@@ -121,23 +121,12 @@ runs:
       shell: bash
 
     - name: Run Epoch 2 Tests
-      if: ${{ inputs.markers != 'wizards' }}
       uses: ./.github/actions/tests/run-e2e-tests
       with:
         env: ${{ env.TEST_ENVIRONMENT }}
         init_timestamp: ${{ env.INIT_TIMESTAMP }}
         blockchain: substrate
         markers: ${{ inputs.markers }}
-        local-environment: "true"
-
-    - name: Run Epoch 2 Tests (wizards)
-      if: inputs.markers == 'wizards'
-      uses: ./.github/actions/tests/run-e2e-tests
-      with:
-        env: ${{ env.TEST_ENVIRONMENT }}
-        init_timestamp: ${{ env.INIT_TIMESTAMP }}
-        blockchain: substrate
-        markers: "smoke"
         local-environment: "true"
 
     - name: Wait for Epoch 3
