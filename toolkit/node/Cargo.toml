@@ -20,10 +20,10 @@ sp-runtime = { workspace = true, features = ["std"] }
 substrate-prometheus-endpoint = { workspace = true }
 jsonrpsee = { workspace = true }
 
+# Local dependencies
 sidechain-domain = { workspace = true, features = ["std"] }
 sidechain-slots = { workspace = true, features = ["std"] }
 time-source = { workspace = true }
-
 authority-selection-inherents = { workspace = true, features = ["std", "mock"] }
 pallet-sidechain-rpc = { workspace = true }
 sp-session-validator-management = { workspace = true, features = ["std"] }
@@ -32,6 +32,7 @@ pallet-session-validator-management-rpc = { workspace = true }
 sp-session-validator-management-query = { workspace = true }
 sidechain-mc-hash = { workspace = true, features = ["mock"] }
 
+# Optional local dependencies
 sp-block-participation = { workspace = true, features = ["std"], optional = true }
 sp-block-producer-metadata = { workspace = true, features = ["std"], optional = true }
 sp-governed-map = { workspace = true, features = ["std"], optional = true }
