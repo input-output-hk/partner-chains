@@ -182,7 +182,6 @@ runs:
           pytest_cmd="pytest --blockchain '${{ inputs.blockchain }}' \
             --env '${{ inputs.env }}' \
             --log-cli-level '${{ inputs.log_level }}' \
-            -k '${{ inputs.keyword }}' \
             ${markers_switch} \
             -n '${{ inputs.threads}}' \
             --dist=loadgroup \

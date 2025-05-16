@@ -88,6 +88,110 @@ jobs:
             ./to-build/staging_preview_chain_spec.json
             ./to-build/staging_preprod_chain_spec.json
 
+  local-environment-smoke-tests:
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
+    needs: build-linux-x86_64-pre-merge
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Deploy and test against local environment
+        uses: ./.github/actions/tests/local-environment-tests
+        with:
+          tag: CI
+          image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
+          sha: ${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
+          tests: smoke
+        env:
+          SUBSTRATE_REPO_SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
+          EARTHLY_TAR: ${{ secrets.EARTHLY_TAR }}
+          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+          AWS_REGION: ${{ env.AWS_REGION }}
+          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
+          TEST_ENVIRONMENT: local
+
+  local-environment-rpc-tests:
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
+    needs: build-linux-x86_64-pre-merge
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Deploy and test against local environment
+        uses: ./.github/actions/tests/local-environment-tests
+        with:
+          tag: CI
+          image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
+          sha: ${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
+          tests: rpc
+        env:
+          SUBSTRATE_REPO_SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
+          EARTHLY_TAR: ${{ secrets.EARTHLY_TAR }}
+          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+          AWS_REGION: ${{ env.AWS_REGION }}
+          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
+          TEST_ENVIRONMENT: local
+
+  local-environment-reserve-tests:
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
+    needs: build-linux-x86_64-pre-merge
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Deploy and test against local environment
+        uses: ./.github/actions/tests/local-environment-tests
+        with:
+          tag: CI
+          image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
+          sha: ${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
+          tests: reserve
+        env:
+          SUBSTRATE_REPO_SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
+          EARTHLY_TAR: ${{ secrets.EARTHLY_TAR }}
+          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+          AWS_REGION: ${{ env.AWS_REGION }}
+          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
+          TEST_ENVIRONMENT: local
+
+  local-environment-governed-map-tests:
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
+    needs: build-linux-x86_64-pre-merge
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Deploy and test against local environment
+        uses: ./.github/actions/tests/local-environment-tests
+        with:
+          tag: CI
+          image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
+          sha: ${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
+          tests: governed_map
+        env:
+          SUBSTRATE_REPO_SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
+          EARTHLY_TAR: ${{ secrets.EARTHLY_TAR }}
+          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+          AWS_REGION: ${{ env.AWS_REGION }}
+          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
+          TEST_ENVIRONMENT: local
+
   local-environment-delegator-rewards-tests:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
     needs: build-linux-x86_64-pre-merge
@@ -104,7 +208,7 @@ jobs:
           tag: CI
           image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
           sha: ${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
-          tests: delegator-rewards
+          tests: delegator_rewards
         env:
           SUBSTRATE_REPO_SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
           EARTHLY_TAR: ${{ secrets.EARTHLY_TAR }}
@@ -114,7 +218,7 @@ jobs:
           ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
           TEST_ENVIRONMENT: local
 
-  local-environment-committee-tests:
+  local-environment-ariadne-tests:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
     needs: build-linux-x86_64-pre-merge
     runs-on: ubuntu-latest
@@ -130,33 +234,7 @@ jobs:
           tag: CI
           image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
           sha: ${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
-          tests: committee
-        env:
-          SUBSTRATE_REPO_SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
-          EARTHLY_TAR: ${{ secrets.EARTHLY_TAR }}
-          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
-          AWS_REGION: ${{ env.AWS_REGION }}
-          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
-          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
-          TEST_ENVIRONMENT: local
-
-  local-environment-smart-contracts-tests:
-    if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
-    needs: build-linux-x86_64-pre-merge
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - name: Deploy and test against local environment
-        uses: ./.github/actions/tests/local-environment-tests
-        with:
-          tag: CI
-          image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
-          sha: ${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
-          tests: smart-contracts
+          tests: ariadne
         env:
           SUBSTRATE_REPO_SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
           EARTHLY_TAR: ${{ secrets.EARTHLY_TAR }}
@@ -193,8 +271,25 @@ jobs:
           TEST_ENVIRONMENT: local
 
   local-environment-tests-alert:
-    needs: [local-environment-delegator-rewards-tests, local-environment-smart-contracts-tests, local-environment-wizards-tests]
-    if: always() && (needs.local-environment-delegator-rewards-tests.result != 'skipped' || needs.local-environment-smart-contracts-tests.result != 'skipped' || needs.local-environment-wizards-tests.result != 'skipped') && github.event_name == 'pull_request' && github.event.pull_request.merged == false
+    needs: [
+      local-environment-smoke-tests,
+      local-environment-rpc-tests,
+      local-environment-reserve-tests,
+      local-environment-governed-map-tests,
+      local-environment-delegator-rewards-tests,
+      local-environment-ariadne-tests,
+      local-environment-wizards-tests
+    ]
+    if: >-
+      always() && (
+        needs.local-environment-smoke-tests.result != 'skipped' ||
+        needs.local-environment-rpc-tests.result != 'skipped' ||
+        needs.local-environment-reserve-tests.result != 'skipped' ||
+        needs.local-environment-governed-map-tests.result != 'skipped' ||
+        needs.local-environment-delegator-rewards-tests.result != 'skipped' ||
+        needs.local-environment-ariadne-tests.result != 'skipped' ||
+        needs.local-environment-wizards-tests.result != 'skipped'
+      ) && github.event_name == 'pull_request' && github.event.pull_request.merged == false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -291,10 +386,7 @@ jobs:
     if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.merged == false }}
     needs: [
       build-linux-x86_64-pre-merge,
-      local-environment-delegator-rewards-tests,
-      local-environment-committee-tests,
-      local-environment-smart-contracts-tests,
-      local-environment-wizards-tests,
+      local-environment-tests-alert,
       devshell-tests,
       upload-chain-specs-pre-merge,
       documentation-tests
@@ -304,10 +396,7 @@ jobs:
       - name: Check if any needed job failed
         run: |
           if [[ "${{ needs.build-linux-x86_64-pre-merge.result }}" != "success" ||
-                "${{ needs.local-environment-delegator-rewards-tests.result }}" != "success" ||
-                "${{ needs.local-environment-committee-tests.result }}" != "success" ||
-                "${{ needs.local-environment-smart-contracts-tests.result }}" != "success" ||
-                "${{ needs.local-environment-wizards-tests.result }}" != "success" ||
+                "${{ needs.local-environment-tests-alert.result }}" != "success" ||
                 "${{ needs.devshell-tests.result }}" != "success" ||
                 "${{ needs.upload-chain-specs-pre-merge.result }}" != "success" ||
                 "${{ needs.documentation-tests.result }}" != "success" ]]; then
