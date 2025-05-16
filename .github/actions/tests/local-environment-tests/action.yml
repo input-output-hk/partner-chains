@@ -86,19 +86,19 @@ runs:
           else
             restart_count=0
           fi
-          if [ "$epoch" -ge 2 ]; then
-            echo "Epoch has reached 2 and $CONTAINER_NAME is still not ready."
+          if [ "$epoch" -ge 1 ]; then
+            echo "Epoch has reached 1 and $CONTAINER_NAME is still not ready."
             exit 1
           fi
           sleep 10
         done
       shell: bash
 
-    - name: Run wizards runtime migration
-      if: ${{ inputs.tests == 'wizards' }}
-      run: |
-        docker exec partner-chains-wizard-1 parter-chains-node wizards 
-      shell: bash
+#    - name: Run wizards runtime migration
+#      if: ${{ inputs.tests == 'wizards' }}
+#      run: |
+#        docker exec partner-chains-wizard-1 parter-chains-node wizards 
+#      shell: bash
 
     - name: Collect Docker logs
       run: |
@@ -120,16 +120,17 @@ runs:
       run: exit 1
       shell: bash
 
-    - name: Run smoke tests
-      if: ${{ inputs.tests == 'full' }}
+    - name: Run Epoch 1 Tests
       uses: ./.github/actions/tests/run-e2e-tests
       with:
         env: ${{ env.TEST_ENVIRONMENT }}
         keyword: "test_get_status or test_get_params"
         blockchain: substrate
         local-environment: "true"
+        tests: ${{ inputs.tests }}
 
     - name: Wait for epoch 2
+      if: ${{ inputs.tests == 'full' || inputs.tests == 'ariadne' }}
       uses: ./.github/actions/tests/wait-for-epoch
       with:
         epoch: 2
@@ -138,12 +139,13 @@ runs:
         environment:
 
     - name: Let PC warm up
+      if: ${{ inputs.tests == 'full' || inputs.tests == 'ariadne' }}
       run: |
         sleep 30
       shell: bash
 
-    - name: Run all tests (do not verify full MC epoch)
-      if: ${{ inputs.tests == 'full' }}
+    - name: Run Epoch 2 Tests
+      if: ${{ inputs.tests == 'full' || inputs.tests == 'ariadne' }}
       uses: ./.github/actions/tests/run-e2e-tests
       with:
         env: ${{ env.TEST_ENVIRONMENT }}
@@ -153,7 +155,7 @@ runs:
         local-environment: "true"
 
     - name: Wait for epoch 3
-      if: ${{ inputs.tests == 'full' || inputs.tests == 'wizards' }}
+      if: ${{ inputs.tests == 'full' || inputs.tests == 'ariadne' }}
       uses: ./.github/actions/tests/wait-for-epoch
       with:
         epoch: 3
@@ -161,8 +163,8 @@ runs:
         node: cardano-node-1
         environment:
 
-    - name: Run all tests (do not verify full MC epoch)
-      if: ${{ inputs.tests == 'full' }}
+    - name: Run Epoch 3 Tests
+      if: ${{ inputs.tests == 'full' || inputs.tests == 'ariadne' }}
       uses: ./.github/actions/tests/run-e2e-tests
       with:
         env: ${{ env.TEST_ENVIRONMENT }}
@@ -172,7 +174,7 @@ runs:
         local-environment: "true"
 
     - name: Wait for epoch 4
-      if: ${{ inputs.tests == 'full' }}
+      if: ${{ inputs.tests == 'full' || inputs.tests == 'ariadne' }}
       uses: ./.github/actions/tests/wait-for-epoch
       with:
         epoch: 4
@@ -180,8 +182,8 @@ runs:
         node: cardano-node-1
         environment:
 
-    - name: Run all tests
-      if: ${{ inputs.tests == 'full' }}
+    - name: Run Epoch 4 Tests
+      if: ${{ inputs.tests == 'full' || inputs.tests == 'ariadne' }}
       uses: ./.github/actions/tests/run-e2e-tests
       with:
         env: ${{ env.TEST_ENVIRONMENT }}
@@ -192,7 +194,7 @@ runs:
         local-environment: "true"
 
     - name: Check if no skipped tests
-      if: ${{ inputs.tests == 'full' }}
+      if: ${{ inputs.tests == 'full' || inputs.tests == 'ariadne' }}
       run: |
         skipped=$(jq -r .summary.skipped e2e-tests/logs/.report.json)
         if [ "$skipped" != "null" ]; then
