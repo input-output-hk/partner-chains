@@ -1,9 +1,48 @@
 from pytest import mark, skip
 from src.blockchain_api import BlockchainApi
+from config.api_config import ApiConfig
+import logging
 
 
 @mark.rpc
 class TestRpc:
+    @mark.test_key('ETCM-6994')
+    def test_get_status(self, api: BlockchainApi):
+        """Test partner_chain_getStatus() has same data as cardano-cli query tip
+
+        * execute partner_chain_getStatus() API call
+        * get mainchain epoch and slot from cardano-cli
+        * check that mainchain slot from getStatus() is equal to slot from cardano-cli
+        * check nextEpochTimestamp from getStatus()
+        """
+        expected_mc_epoch = api.get_mc_epoch()
+        expected_mc_slot = api.get_mc_slot()
+
+        partner_chain_status = api.get_status()
+        assert partner_chain_status['mainchain']['epoch'] == expected_mc_epoch
+
+        SLOT_DIFF_TOLERANCE = 100
+        assert abs(partner_chain_status['mainchain']['slot'] - expected_mc_slot) <= SLOT_DIFF_TOLERANCE
+        logging.info(
+            f"Slot difference between getStatus() and cardano_cli tip is \
+            {abs(partner_chain_status['mainchain']['slot'] - expected_mc_slot)}"
+        )
+
+        assert partner_chain_status['mainchain']['nextEpochTimestamp']
+        assert partner_chain_status['sidechain']['nextEpochTimestamp']
+        assert partner_chain_status['sidechain']['epoch']
+        assert partner_chain_status['sidechain']['slot']
+
+    @mark.test_key('ETCM-7442')
+    def test_get_params(self, api: BlockchainApi, config: ApiConfig):
+        """Test partner_chain_getParams() returns proper values
+
+        * execute partner_chain_getParams() API call
+        * check that the return data is equal to the config values
+        """
+        params = api.get_params()
+        assert params["genesis_utxo"] == config.genesis_utxo, "Genesis UTXO mismatch"
+
     @mark.test_key('ETCM-7445')
     def test_get_ariadne_parameters(self, api: BlockchainApi):
         """Test sidechain_getAriadneParameters() returns data about d-parameter and candidates
@@ -37,7 +76,6 @@ class TestRpc:
                 check_registration_data(trustless_registrations[entry])
 
     @mark.test_key('ETCM-7446')
-    @mark.ariadne
     def test_get_epoch_committee(self, api: BlockchainApi):
         """Test sidechain_getEpochCommittee() returns committee members for a given sidechain epoch
 
