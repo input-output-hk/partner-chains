@@ -75,10 +75,12 @@ where
 		_extra_args: (),
 	) -> Result<Self::InherentDataProviders, Box<dyn std::error::Error + Send + Sync>> {
 		let Self { config, client, partner_chain_data_source } = self;
-		let PartnerChainsNodeConfig { mc_epoch_config, sc_slot_config, time_source } = config;
+		let PartnerChainsNodeConfig { mc_epoch_config, sc_slot_config } = config;
 
-		let (slot, timestamp) =
-			timestamp_and_slot_cidp(sc_slot_config.slot_duration, time_source.clone());
+		let (slot, timestamp) = timestamp_and_slot_cidp(
+			sc_slot_config.slot_duration,
+			partner_chain_data_source.time.clone(),
+		);
 		let parent_header = client.expect_header(parent_hash)?;
 		let mc_hash = McHashIDP::new_proposal(
 			parent_header,
@@ -153,7 +155,7 @@ impl<T: Send + Sync> CurrentSlotProvider for VerifierCIDP<T> {
 	fn slot(&self) -> Slot {
 		*timestamp_and_slot_cidp(
 			self.config.sc_slot_config.slot_duration,
-			self.config.time_source.clone(),
+			self.partner_chain_data_source.time.clone(),
 		)
 		.0
 	}
@@ -189,9 +191,11 @@ where
 		(verified_block_slot, mc_hash): (Slot, McBlockHash),
 	) -> Result<Self::InherentDataProviders, Box<dyn Error + Send + Sync>> {
 		let Self { config, client, partner_chain_data_source } = self;
-		let PartnerChainsNodeConfig { mc_epoch_config, sc_slot_config, time_source, .. } = config;
+		let PartnerChainsNodeConfig { mc_epoch_config, sc_slot_config, .. } = config;
 
-		let timestamp = TimestampIDP::new(Timestamp::new(time_source.get_current_time_millis()));
+		let timestamp = TimestampIDP::new(Timestamp::new(
+			partner_chain_data_source.time.get_current_time_millis(),
+		));
 		let parent_header = client.expect_header(parent_hash)?;
 		let parent_slot = slot_from_predigest(&parent_header)?;
 		let mc_state_reference = McHashIDP::new_verification(
