@@ -163,7 +163,9 @@ where
 		let first_epoch = {
 			let second_block = (self.client)
 				.hash(1.into())
-				.map_err(err_debug)?
+				.map_err(|err| {
+					format!("Node is not in archive mode, not able to fetch first block: {err:?}")
+				})?
 				.ok_or("Only the Genesis Block exists at the moment!")?;
 			(self.client.runtime_api())
 				.get_sidechain_status(second_block)
