@@ -755,8 +755,7 @@ class SubstrateApi(BlockchainApi):
         return result
 
     def subscribe_governed_map_change(self, key=None, key_value=None):
-        current_main_chain_block = self.get_mc_block()
-        max_main_chain_block = current_main_chain_block + self.config.main_chain.security_param
+        max_mc_reference_block = self.get_mc_block()
 
         def subscribed_change_handler(registered_changes):
             if key_value:
@@ -771,9 +770,13 @@ class SubstrateApi(BlockchainApi):
         def subscription_handler(obj, update_nr, subscription_id):
             block_no = obj["header"]["number"]
             logger.debug(f"New block #{block_no}")
-            block = self.substrate.get_block(block_number=block_no)
+
+            mc_hash = self.get_mc_hash_from_pc_block_header(obj)
+            mc_block = self.get_mc_block_by_block_hash(mc_hash).block_no
+            logger.debug(f"Main chain reference block: {mc_block}")
 
             subscribed_change = None
+            block = self.substrate.get_block(block_number=block_no)
             for idx, extrinsic in enumerate(block["extrinsics"]):
                 logger.debug(f"# {idx}: {extrinsic.value}")
                 if (
@@ -786,7 +789,7 @@ class SubstrateApi(BlockchainApi):
             if subscribed_change:
                 self.substrate.rpc_request("chain_unsubscribeNewHeads", [subscription_id])
                 return subscribed_change
-            if self.get_mc_block() > max_main_chain_block:
+            if mc_block > max_mc_reference_block:
                 logger.warning("Max main chain block reached. Stopping subscription.")
                 self.substrate.rpc_request("chain_unsubscribeNewHeads", [subscription_id])
                 return False
@@ -800,7 +803,7 @@ class SubstrateApi(BlockchainApi):
 
         logger.info(
             f"Subscribing to Governed Map changes. {change_to_observe_msg}. "
-            f"Max main chain block: {max_main_chain_block} ({self.config.main_chain.security_param} blocks ahead)"
+            f"Max main chain reference block: {max_mc_reference_block}."
         )
         result = self.substrate.subscribe_block_headers(subscription_handler)
         return result
