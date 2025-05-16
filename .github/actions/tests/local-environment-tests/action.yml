@@ -65,7 +65,7 @@ runs:
 
         # Set the container name based on test type
         if [ "${{ inputs.markers }}" = "wizards" ]; then
-          CONTAINER_NAME="partner-chains-wizard-1"
+          CONTAINER_NAME="partner-chains-node-1"
         else
           CONTAINER_NAME="partner-chains-node-1"
         fi
@@ -141,7 +141,7 @@ runs:
 #    - name: Run wizards epoch 2 steps
 #      if: ${{ inputs.markers == 'wizards' }}
 #      run: |
-#        docker exec partner-chains-wizard-1 parter-chains-node wizards 
+#        docker exec partner-chains-node-1 parter-chains-node wizards 
 #      shell: bash
 
     - name: Run Epoch 2 Tests
