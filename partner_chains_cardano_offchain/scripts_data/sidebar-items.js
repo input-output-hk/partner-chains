@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["get_scripts_data","get_scripts_data_with_ogmios","version_oracle"],"struct":["Addresses","PolicyIds","ScriptsData","VersionOracleData"],"trait":["GetScriptsData"]};
+window.SIDEBAR_ITEMS = {"fn":["get_scripts_data","get_scripts_data_with_ogmios","version_oracle"],"struct":["Addresses","PlutusScriptData","PolicyIds","ScriptsData"],"trait":["GetScriptsData"]};

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["PlutusScript"]};
+window.SIDEBAR_ITEMS = {"struct":["PlutusDataWrapper","PlutusScript"]};

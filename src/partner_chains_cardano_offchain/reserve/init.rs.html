@@ -24,11 +24,11 @@
 <a href=#24 id=24 data-nosnippet>24</a>	governance::GovernanceData,
 <a href=#25 id=25 data-nosnippet>25</a>	multisig::{MultiSigSmartContractResult, submit_or_create_tx_to_sign},
 <a href=#26 id=26 data-nosnippet>26</a>	plutus_script::PlutusScript,
-<a href=#27 id=27 data-nosnippet>27</a>	scripts_data::{<span class="self">self</span>, VersionOracleData},
+<a href=#27 id=27 data-nosnippet>27</a>	scripts_data::{<span class="self">self</span>, PlutusScriptData},
 <a href=#28 id=28 data-nosnippet>28</a>};
 <a href=#29 id=29 data-nosnippet>29</a><span class="kw">use </span>cardano_serialization_lib::{
-<a href=#30 id=30 data-nosnippet>30</a>	AssetName, BigNum, ConstrPlutusData, JsError, Language, MultiAsset, PlutusData, PlutusList,
-<a href=#31 id=31 data-nosnippet>31</a>	ScriptRef, Transaction, TransactionBuilder, TransactionOutputBuilder,
+<a href=#30 id=30 data-nosnippet>30</a>	AssetName, BigNum, ConstrPlutusData, JsError, MultiAsset, PlutusData, PlutusList, ScriptRef,
+<a href=#31 id=31 data-nosnippet>31</a>	Transaction, TransactionBuilder, TransactionOutputBuilder,
 <a href=#32 id=32 data-nosnippet>32</a>};
 <a href=#33 id=33 data-nosnippet>33</a><span class="kw">use </span>ogmios_client::{
 <a href=#34 id=34 data-nosnippet>34</a>	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
@@ -53,17 +53,17 @@
 <a href=#53 id=53 data-nosnippet>53</a>) -&gt; anyhow::Result&lt;Vec&lt;MultiSigSmartContractResult&gt;&gt; {
 <a href=#54 id=54 data-nosnippet>54</a>	<span class="kw">let </span>reserve_validator = ScriptData::new(
 <a href=#55 id=55 data-nosnippet>55</a>		<span class="string">"Reserve Management Validator"</span>,
-<a href=#56 id=56 data-nosnippet>56</a>		RESERVE_VALIDATOR.to_vec(),
+<a href=#56 id=56 data-nosnippet>56</a>		RESERVE_VALIDATOR.<span class="number">0</span>.to_vec(),
 <a href=#57 id=57 data-nosnippet>57</a>		ScriptId::ReserveValidator,
 <a href=#58 id=58 data-nosnippet>58</a>	);
 <a href=#59 id=59 data-nosnippet>59</a>	<span class="kw">let </span>reserve_policy = ScriptData::new(
 <a href=#60 id=60 data-nosnippet>60</a>		<span class="string">"Reserve Management Policy"</span>,
-<a href=#61 id=61 data-nosnippet>61</a>		RESERVE_AUTH_POLICY.to_vec(),
+<a href=#61 id=61 data-nosnippet>61</a>		RESERVE_AUTH_POLICY.<span class="number">0</span>.to_vec(),
 <a href=#62 id=62 data-nosnippet>62</a>		ScriptId::ReserveAuthPolicy,
 <a href=#63 id=63 data-nosnippet>63</a>	);
 <a href=#64 id=64 data-nosnippet>64</a>	<span class="kw">let </span>ics_validator = ScriptData::new(
 <a href=#65 id=65 data-nosnippet>65</a>		<span class="string">"Illiquid Circulation Validator"</span>,
-<a href=#66 id=66 data-nosnippet>66</a>		ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR.to_vec(),
+<a href=#66 id=66 data-nosnippet>66</a>		ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR.<span class="number">0</span>.to_vec(),
 <a href=#67 id=67 data-nosnippet>67</a>		ScriptId::IlliquidCirculationSupplyValidator,
 <a href=#68 id=68 data-nosnippet>68</a>	);
 <a href=#69 id=69 data-nosnippet>69</a>	<span class="prelude-val">Ok</span>(<span class="macro">vec!</span>[
@@ -84,18 +84,18 @@
 <a href=#84 id=84 data-nosnippet>84</a>
 <a href=#85 id=85 data-nosnippet>85</a><span class="kw">impl </span>ScriptData {
 <a href=#86 id=86 data-nosnippet>86</a>	<span class="kw">fn </span>new(name: <span class="kw-2">&amp;</span>str, raw_bytes: Vec&lt;u8&gt;, id: ScriptId) -&gt; <span class="self">Self </span>{
-<a href=#87 id=87 data-nosnippet>87</a>		<span class="kw">let </span>plutus_script = PlutusScript::from_wrapped_cbor(<span class="kw-2">&amp;</span>raw_bytes, Language::new_plutus_v2())
-<a href=#88 id=88 data-nosnippet>88</a>			.expect(<span class="string">"Plutus script should be valid"</span>);
+<a href=#87 id=87 data-nosnippet>87</a>		<span class="kw">let </span>plutus_script =
+<a href=#88 id=88 data-nosnippet>88</a>			PlutusScript::from_wrapped_cbor(<span class="kw-2">&amp;</span>raw_bytes).expect(<span class="string">"Plutus script should be valid"</span>);
 <a href=#89 id=89 data-nosnippet>89</a>		<span class="self">Self </span>{ name: name.to_string(), plutus_script, id: id <span class="kw">as </span>u32 }
 <a href=#90 id=90 data-nosnippet>90</a>	}
 <a href=#91 id=91 data-nosnippet>91</a>
 <a href=#92 id=92 data-nosnippet>92</a>	<span class="kw">fn </span>applied_plutus_script(
 <a href=#93 id=93 data-nosnippet>93</a>		<span class="kw-2">&amp;</span><span class="self">self</span>,
-<a href=#94 id=94 data-nosnippet>94</a>		version_oracle: <span class="kw-2">&amp;</span>VersionOracleData,
+<a href=#94 id=94 data-nosnippet>94</a>		version_oracle: <span class="kw-2">&amp;</span>PlutusScriptData,
 <a href=#95 id=95 data-nosnippet>95</a>	) -&gt; <span class="prelude-ty">Result</span>&lt;PlutusScript, JsError&gt; {
 <a href=#96 id=96 data-nosnippet>96</a>		<span class="self">self</span>.plutus_script
 <a href=#97 id=97 data-nosnippet>97</a>			.clone()
-<a href=#98 id=98 data-nosnippet>98</a>			.apply_uplc_data(version_oracle.policy_id_as_plutus_data())
+<a href=#98 id=98 data-nosnippet>98</a>			.apply_data_uplc(version_oracle.policy_id_as_plutus_data())
 <a href=#99 id=99 data-nosnippet>99</a>			.map_err(|e| JsError::from_str(<span class="kw-2">&amp;</span>e.to_string()))
 <a href=#100 id=100 data-nosnippet>100</a>	}
 <a href=#101 id=101 data-nosnippet>101</a>}
@@ -134,7 +134,7 @@
 <a href=#134 id=134 data-nosnippet>134</a><span class="kw">fn </span>init_script_tx(
 <a href=#135 id=135 data-nosnippet>135</a>	script: <span class="kw-2">&amp;</span>ScriptData,
 <a href=#136 id=136 data-nosnippet>136</a>	governance: <span class="kw-2">&amp;</span>GovernanceData,
-<a href=#137 id=137 data-nosnippet>137</a>	version_oracle: <span class="kw-2">&amp;</span>VersionOracleData,
+<a href=#137 id=137 data-nosnippet>137</a>	version_oracle: <span class="kw-2">&amp;</span>PlutusScriptData,
 <a href=#138 id=138 data-nosnippet>138</a>	costs: Costs,
 <a href=#139 id=139 data-nosnippet>139</a>	ctx: <span class="kw-2">&amp;</span>TransactionContext,
 <a href=#140 id=140 data-nosnippet>140</a>) -&gt; anyhow::Result&lt;Transaction&gt; {
@@ -193,7 +193,7 @@
 <a href=#193 id=193 data-nosnippet>193</a>// * Version Oracle Policy Id
 <a href=#194 id=194 data-nosnippet>194</a></span><span class="kw">async fn </span>script_is_initialized&lt;T: QueryLedgerState&gt;(
 <a href=#195 id=195 data-nosnippet>195</a>	script: <span class="kw-2">&amp;</span>ScriptData,
-<a href=#196 id=196 data-nosnippet>196</a>	version_oracle: <span class="kw-2">&amp;</span>VersionOracleData,
+<a href=#196 id=196 data-nosnippet>196</a>	version_oracle: <span class="kw-2">&amp;</span>PlutusScriptData,
 <a href=#197 id=197 data-nosnippet>197</a>	ctx: <span class="kw-2">&amp;</span>TransactionContext,
 <a href=#198 id=198 data-nosnippet>198</a>	client: <span class="kw-2">&amp;</span>T,
 <a href=#199 id=199 data-nosnippet>199</a>) -&gt; <span class="prelude-ty">Result</span>&lt;bool, anyhow::Error&gt; {
@@ -205,7 +205,7 @@
 <a href=#205 id=205 data-nosnippet>205</a>// * Version Oracle Policy Id
 <a href=#206 id=206 data-nosnippet>206</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>find_script_utxo&lt;T: QueryLedgerState&gt;(
 <a href=#207 id=207 data-nosnippet>207</a>	script_id: u32,
-<a href=#208 id=208 data-nosnippet>208</a>	version_oracle: <span class="kw-2">&amp;</span>VersionOracleData,
+<a href=#208 id=208 data-nosnippet>208</a>	version_oracle: <span class="kw-2">&amp;</span>PlutusScriptData,
 <a href=#209 id=209 data-nosnippet>209</a>	ctx: <span class="kw-2">&amp;</span>TransactionContext,
 <a href=#210 id=210 data-nosnippet>210</a>	client: <span class="kw-2">&amp;</span>T,
 <a href=#211 id=211 data-nosnippet>211</a>) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;OgmiosUtxo&gt;, anyhow::Error&gt; {
@@ -228,7 +228,7 @@
 <a href=#228 id=228 data-nosnippet>228</a>	<span class="kw">use crate</span>::{
 <a href=#229 id=229 data-nosnippet>229</a>		csl::{Costs, OgmiosUtxoExt, TransactionContext, unit_plutus_data},
 <a href=#230 id=230 data-nosnippet>230</a>		governance::GovernanceData,
-<a href=#231 id=231 data-nosnippet>231</a>		scripts_data::{<span class="self">self</span>, VersionOracleData},
+<a href=#231 id=231 data-nosnippet>231</a>		scripts_data::{<span class="self">self</span>, PlutusScriptData},
 <a href=#232 id=232 data-nosnippet>232</a>		test_values::{
 <a href=#233 id=233 data-nosnippet>233</a>			make_utxo, payment_addr, payment_key, protocol_parameters, test_governance_policy,
 <a href=#234 id=234 data-nosnippet>234</a>		},
@@ -298,12 +298,12 @@
 <a href=#298 id=298 data-nosnippet>298</a>			.and_then(|ma| ma.get(<span class="kw-2">&amp;</span>test_governance_data().policy.script().script_hash().into()))
 <a href=#299 id=299 data-nosnippet>299</a>			.and_then(|gov_ma| gov_ma.get(<span class="kw-2">&amp;</span>AssetName::new(<span class="macro">vec!</span>[]).unwrap()))
 <a href=#300 id=300 data-nosnippet>300</a>			.unwrap();
-<a href=#301 id=301 data-nosnippet>301</a>		<span class="macro">assert_eq!</span>(gov_token_amount, BigNum::one(), <span class="string">"Change contains one goverenance token"</span>);
+<a href=#301 id=301 data-nosnippet>301</a>		<span class="macro">assert_eq!</span>(gov_token_amount, BigNum::one(), <span class="string">"Change contains one governance token"</span>);
 <a href=#302 id=302 data-nosnippet>302</a>	}
 <a href=#303 id=303 data-nosnippet>303</a>
 <a href=#304 id=304 data-nosnippet>304</a>	<span class="attr">#[test]
 <a href=#305 id=305 data-nosnippet>305</a>	</span><span class="kw">fn </span>init_script_tx_reference_input() {
-<a href=#306 id=306 data-nosnippet>306</a>		<span class="comment">// a script reference input of the current Goveranance UTXO
+<a href=#306 id=306 data-nosnippet>306</a>		<span class="comment">// a script reference input of the current Governance UTXO
 <a href=#307 id=307 data-nosnippet>307</a>		</span><span class="kw">let </span>ref_input = make_init_script_tx()
 <a href=#308 id=308 data-nosnippet>308</a>			.body()
 <a href=#309 id=309 data-nosnippet>309</a>			.reference_inputs()
@@ -390,7 +390,7 @@
 <a href=#390 id=390 data-nosnippet>390</a>	<span class="kw">fn </span>test_initialized_script() -&gt; ScriptData {
 <a href=#391 id=391 data-nosnippet>391</a>		ScriptData::new(
 <a href=#392 id=392 data-nosnippet>392</a>			<span class="string">"Test Script"</span>,
-<a href=#393 id=393 data-nosnippet>393</a>			raw_scripts::RESERVE_VALIDATOR.to_vec(),
+<a href=#393 id=393 data-nosnippet>393</a>			raw_scripts::RESERVE_VALIDATOR.<span class="number">0</span>.to_vec(),
 <a href=#394 id=394 data-nosnippet>394</a>			ScriptId::ReserveValidator,
 <a href=#395 id=395 data-nosnippet>395</a>		)
 <a href=#396 id=396 data-nosnippet>396</a>	}
@@ -403,7 +403,7 @@
 <a href=#403 id=403 data-nosnippet>403</a>		GovernanceData { policy: test_governance_policy(), utxo: test_governance_input() }
 <a href=#404 id=404 data-nosnippet>404</a>	}
 <a href=#405 id=405 data-nosnippet>405</a>
-<a href=#406 id=406 data-nosnippet>406</a>	<span class="kw">fn </span>version_oracle_data() -&gt; VersionOracleData {
+<a href=#406 id=406 data-nosnippet>406</a>	<span class="kw">fn </span>version_oracle_data() -&gt; PlutusScriptData {
 <a href=#407 id=407 data-nosnippet>407</a>		scripts_data::version_oracle(UtxoId::new([<span class="number">255u8</span>; <span class="number">32</span>], <span class="number">0</span>), NetworkIdKind::Testnet).unwrap()
 <a href=#408 id=408 data-nosnippet>408</a>	}
 <a href=#409 id=409 data-nosnippet>409</a>
