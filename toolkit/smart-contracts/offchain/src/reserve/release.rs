@@ -373,7 +373,7 @@ mod tests {
 		ReserveDatum {
 			immutable_settings: ReserveImmutableSettings { t0: 0, token: token_id() },
 			mutable_settings: ReserveMutableSettings {
-				total_accrued_function_script_hash: applied_v_function().policy_id(),
+				total_accrued_function_asset_name: applied_v_function().policy_id(),
 				initial_incentive: 0,
 			},
 			stats: ReserveStats { token_total_amount_transferred: 10 },

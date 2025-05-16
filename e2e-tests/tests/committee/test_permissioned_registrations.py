@@ -7,9 +7,7 @@ from pytest import mark
 from typing import Tuple
 
 
-@mark.ariadne
 @mark.test_key('ETCM-7015')
-@mark.registration
 @mark.xdist_group(name="governance_action")
 @mark.usefixtures("governance_skey_with_cli")
 def test_upsert_permissioned_candidates(

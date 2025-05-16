@@ -42,8 +42,10 @@
 //! from Polkadot SDK.
 
 use super::*;
+use alloc::collections::BTreeMap;
 use alloc::format;
 use frame_benchmarking::v2::*;
+use frame_support::assert_ok;
 use frame_system::RawOrigin;
 use sidechain_domain::bounded_str;
 
@@ -51,7 +53,10 @@ use sidechain_domain::bounded_str;
 pub trait BenchmarkHelper<T: crate::Config> {
 	/// Returns a list of changes to the Governed Map parameters of length `length`.
 	fn changes(length: u32) -> crate::Changes<T> {
-		BoundedVec::truncate_from((0..length).map(|i| (Self::key(i), Self::value(i))).collect())
+		BoundedBTreeMap::try_from(
+			(0..length).map(|i| (Self::key(i), Self::value(i))).collect::<BTreeMap<_, _>>(),
+		)
+		.unwrap()
 	}
 
 	/// Returns `index`th mock Governance Map key
@@ -89,6 +94,11 @@ mod benchmarks {
 
 	#[benchmark]
 	fn register_changes(l: Linear<1, { T::MaxChanges::get() }>) {
+		assert_ok!(Pallet::<T>::set_main_chain_scripts(
+			RawOrigin::Root.into(),
+			T::BenchmarkHelper::main_chain_scripts(),
+		));
+
 		let changes = T::BenchmarkHelper::changes(l);
 
 		#[extrinsic_call]

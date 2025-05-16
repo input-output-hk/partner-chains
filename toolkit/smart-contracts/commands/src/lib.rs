@@ -49,7 +49,7 @@ pub enum SmartContractsCmd {
 #[derive(Clone, Debug, clap::Parser)]
 #[command(author, version, about, long_about = None)]
 pub struct CommonArguments {
-	#[arg(default_value = "ws://localhost:1337", long, short = 'O')]
+	#[arg(default_value = "ws://localhost:1337", long, short = 'O', env)]
 	ogmios_url: String,
 	#[arg(default_value = "5", long)]
 	retry_delay_seconds: u64,

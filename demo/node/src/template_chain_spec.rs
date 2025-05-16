@@ -52,7 +52,7 @@ pub fn chain_spec() -> Result<ChainSpec, envy::Error> {
 			..Default::default()
 		},
 		governed_map: GovernedMapConfig {
-			main_chain_script: Some(Default::default()),
+			main_chain_scripts: Some(Default::default()),
 			..Default::default()
 		},
 		glutton: Default::default(),

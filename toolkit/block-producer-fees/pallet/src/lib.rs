@@ -30,6 +30,7 @@ pub mod pallet {
 	use super::*;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
+	use sp_block_producer_fees::PerTenThousands;
 	use sp_consensus_slots::Slot;
 	use sp_std::collections::vec_deque::VecDeque;
 
@@ -41,22 +42,20 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
-		/// Maximum number of past changes per one block producer kept in the storage.
+		/// The maximum number of past changes per one block producer kept in the storage.
+		#[pallet::constant]
 		type HistoricalChangesPerProducer: Get<u16>;
 
 		/// Weight information on extrinsic in the pallet. For convenience weights in [weights] module can be used.
 		type WeightInfo: WeightInfo;
 
-		/// The slot number of the current block.
+		/// Should provide the slot number of the current block.
 		fn current_slot() -> Slot;
 
 		#[cfg(feature = "runtime-benchmarks")]
 		/// Benchmark helper type used for running benchmarks
 		type BenchmarkHelper: benchmarking::BenchmarkHelper<Self::AccountId>;
 	}
-
-	// Margin Fee precision is 0.01 of a percent, so use 1/10000 as unit.
-	type PerTenThousands = u16;
 
 	type FeeChange = (Slot, PerTenThousands);
 
@@ -96,7 +95,7 @@ pub mod pallet {
 			PALLET_VERSION
 		}
 
-		/// Retrieves all stored block producer fees settings.
+		/// Retrieves all stored block producer fees settings. The most recent fees are in front of vecdeque.
 		pub fn get_all() -> impl Iterator<Item = (T::AccountId, VecDeque<FeeChange>)> {
 			FeesChanges::<T>::iter()
 		}
@@ -108,7 +107,8 @@ pub mod pallet {
 			})
 		}
 
-		/// Retrieves block producers fees settings.
+		/// Retrieves fees settings for the given account id.
+		/// Empty collection is returned if there are no settings stored for given id.
 		pub fn get(id: T::AccountId) -> VecDeque<FeeChange> {
 			FeesChanges::<T>::get(id)
 		}

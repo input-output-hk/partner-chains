@@ -92,7 +92,11 @@ For further instructions, please see [Ogmios](https://ogmios.dev/getting-started
 
 ### 1.1.2 Cardano DB Sync
 
-The partner chain needs DB Sync on `cardano-node` to observe Cardano's state.
+The partner chain needs DB Sync on a `cardano-node` to observe Cardano's state.
+
+Cardano DB Sync is configurable in regards to the data it indexes.
+The default configuration works well, if you don't use the default configuration,
+then please read [partner-chains-db-sync-data-sources module header](../../toolkit/data-sources/db-sync/src/lib.rs)
 
 #### A critical note on Cardano DB Sync!
 

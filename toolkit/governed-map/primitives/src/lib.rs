@@ -123,21 +123,10 @@ pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"govrnmap";
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct MainChainScriptsV1 {
-	/// Cardano address of the Governed Map validator, at which UTXOs containig key-value pairs are located
+	/// Cardano address of the Governed Map validator, at which UTXOs containing key-value pairs are located
 	pub validator_address: MainchainAddress,
 	/// Policy of the asset used to mark the UTXOs containing the Governed Map's key-value pairs
 	pub asset_policy_id: PolicyId,
-}
-
-/// Type describing a change made to a single key-value pair in the Governed Map.
-#[derive(Decode, Encode, TypeInfo, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct GovernedMapChangeV1 {
-	/// Key of the entry being modified
-	pub key: String,
-	/// New value under `key`
-	/// * [None] value indicates deletion
-	/// * [Some] value indicates insertion or update
-	pub new_value: Option<ByteString>,
 }
 
 /// Error type returned when creating or validating the Governed Map inherent
@@ -167,10 +156,6 @@ pub enum InherentError {
 	/// This should not normally occur if the pallet is configured to accept at least as many changes
 	/// as the planned number of keys in use, or if the number of keys exceeds this limit but the number
 	/// of changes is low enough not to overwhelm a non-stalled chain.
-	///
-	/// As this error prevents the production of a block, if this error occurs on a live chain, then the
-	/// only way of fixing it is to change the mappings on Cardano close enough to the last state
-	/// registered in the pallet to bring the change count below the limit.
 	#[cfg_attr(feature = "std", error("Number of changes to the Governed Map exceeds the limit"))]
 	TooManyChanges,
 }
@@ -235,7 +220,13 @@ impl_tuple_on_governed_mapping_change!(A, B, C);
 impl_tuple_on_governed_mapping_change!(A, B, C, D);
 impl_tuple_on_governed_mapping_change!(A, B, C, D, E);
 
-type ChangesV1 = Vec<GovernedMapChangeV1>;
+/// Inherent data produced by the Governed Map observation
+///
+/// List of changes that occured since last observation
+/// Elements are key-value pairs where:
+/// - [None] value indicates deletion
+/// - [Some] value indicates insertion or update
+pub type GovernedMapInherentDataV1 = BTreeMap<String, Option<ByteString>>;
 
 /// Inherent data provider providing the list of Governed Map changes that occurred since previous observation.
 #[cfg(feature = "std")]
@@ -245,8 +236,8 @@ pub enum GovernedMapInherentDataProvider {
 	Inert,
 	/// Active variant that will provide data.
 	ActiveV1 {
-		/// List of changes to the Governed Map that occurred since previous observation
-		changes: ChangesV1,
+		/// Inherent data provided by this IDP
+		data: GovernedMapInherentDataV1,
 	},
 }
 
@@ -258,8 +249,8 @@ impl sp_inherents::InherentDataProvider for GovernedMapInherentDataProvider {
 		inherent_data: &mut sp_inherents::InherentData,
 	) -> Result<(), sp_inherents::Error> {
 		match self {
-			Self::ActiveV1 { changes } if !changes.is_empty() => {
-				inherent_data.put_data(INHERENT_IDENTIFIER, &changes)?;
+			Self::ActiveV1 { data } => {
+				inherent_data.put_data(INHERENT_IDENTIFIER, &data)?;
 			},
 			_ => {},
 		}
@@ -284,6 +275,13 @@ impl sp_inherents::InherentDataProvider for GovernedMapInherentDataProvider {
 #[cfg(feature = "std")]
 #[async_trait::async_trait]
 pub trait GovernedMapDataSource {
+	/// Returns all key-value mappings stored in the Governed Map on Cardano after execution of `mc_block`.
+	async fn get_state_at_block(
+		&self,
+		mc_block: McBlockHash,
+		main_chain_scripts: MainChainScriptsV1,
+	) -> Result<BTreeMap<String, ByteString>, Box<dyn std::error::Error + Send + Sync>>;
+
 	/// Queries all changes that occurred in the mappings of the Governed Map on Cardano in the given range of blocks.
 	///
 	/// # Arguments:
@@ -330,6 +328,7 @@ impl GovernedMapInherentDataProvider {
 	/// - `client`: runtime client capable of providing [GovernedMapIDPApi] runtime API
 	/// - `parent_hash`: parent hash of the current block
 	/// - `mc_hash`: Cardano block hash referenced by the current block
+	/// - `parent_mc_hash`: Cardano block hash referenced by the parent of the current block
 	/// - `data_source`: data source implementing [GovernedMapDataSource]
 	pub async fn new<T, Block>(
 		client: &T,
@@ -376,25 +375,43 @@ impl GovernedMapInherentDataProvider {
 			return Ok(Self::Inert);
 		};
 
-		let current_entries = data_source
-			.get_mapping_changes(parent_mc_hash, mc_hash, main_chain_script)
-			.await
-			.map_err(InherentProviderCreationError::DataSourceError)?;
+		if api.is_initialized(parent_hash)? {
+			let raw_changes = data_source
+				.get_mapping_changes(parent_mc_hash, mc_hash, main_chain_script)
+				.await
+				.map_err(InherentProviderCreationError::DataSourceError)?;
 
-		let mut changes: ChangesV1 = ChangesV1::new();
+			let mut changes = GovernedMapInherentDataV1::new();
 
-		for (key, value) in current_entries.into_iter() {
-			let key = key.into();
-			let change = match value {
-				None => GovernedMapChangeV1 { key, new_value: None },
-				Some(value) => GovernedMapChangeV1 { key, new_value: Some(value.into()) },
-			};
-			changes.push(change);
+			for (key, value) in raw_changes.into_iter() {
+				changes.insert(key, value);
+			}
+
+			Ok(Self::ActiveV1 { data: changes })
+		} else {
+			let new_state = data_source
+				.get_state_at_block(mc_hash, main_chain_script)
+				.await
+				.map_err(InherentProviderCreationError::DataSourceError)?;
+
+			let current_state = api.get_current_state(parent_hash)?;
+
+			let mut changes = GovernedMapInherentDataV1::new();
+
+			for key in current_state.keys() {
+				if !new_state.contains_key(key) {
+					changes.insert(key.clone(), None);
+				}
+			}
+
+			for (key, value) in new_state.into_iter() {
+				if current_state.get(&key) != Some(&value) {
+					changes.insert(key, Some(value));
+				}
+			}
+
+			Ok(Self::ActiveV1 { data: changes })
 		}
-
-		changes.sort();
-
-		Ok(Self::ActiveV1 { changes })
 	}
 }
 
@@ -403,6 +420,10 @@ sp_api::decl_runtime_apis! {
 	#[api_version(1)]
 	pub trait GovernedMapIDPApi
 	{
+		/// Returns initialization state of the pallet
+		fn is_initialized() -> bool;
+		/// Returns all mappings currently stored in the pallet
+		fn get_current_state() -> BTreeMap<String, ByteString>;
 		/// Returns the main chain scripts currently set in the pallet or [None] otherwise
 		fn get_main_chain_scripts() -> Option<MainChainScriptsV1>;
 		/// Returns the current version of the pallet, 1-based.

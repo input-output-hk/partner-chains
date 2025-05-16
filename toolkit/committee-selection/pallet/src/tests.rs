@@ -34,6 +34,14 @@ mod inherent_tests {
 		});
 	}
 
+	#[test]
+	fn only_one_inherent_can_run_per_block() {
+		new_test_ext().execute_with(|| {
+			set_validators_directly(&[ALICE, BOB], 1).expect("Frist call should succeed");
+			set_validators_directly(&[ALICE, BOB], 1).expect_err("Second call should fail");
+		});
+	}
+
 	fn test_validators_change_through_inherents(new_validators: &[MockValidator]) {
 		set_validators_through_inherents(new_validators);
 		let mut expected_validators = ids_and_keys_fn(new_validators);
@@ -181,7 +189,8 @@ mod committee_rotation_tests {
 		new_test_ext().execute_with(|| {
 			initialize_first_committee();
 			set_validators_through_inherents(&[ALICE]);
-			let (current_committee_epoch, _) = SessionCommitteeManagement::get_current_committee();
+			let current_committee_epoch =
+				SessionCommitteeManagement::current_committee_storage().epoch;
 			assert_eq!(current_committee_epoch, current_epoch_number());
 		});
 	}

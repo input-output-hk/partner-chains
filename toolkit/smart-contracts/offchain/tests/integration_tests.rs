@@ -757,7 +757,7 @@ async fn assert_mutable_settings_eq<T: QueryLedgerState + ogmios_client::OgmiosC
 
 	let mutable_settings = reserve_datum.mutable_settings;
 	assert_eq!(
-		mutable_settings.total_accrued_function_script_hash,
+		mutable_settings.total_accrued_function_asset_name,
 		updated_total_accrued_function_script_hash
 	);
 	assert_eq!(mutable_settings.initial_incentive, 0);

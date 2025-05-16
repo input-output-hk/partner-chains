@@ -16,30 +16,44 @@ use sp_runtime::traits::Verify;
 /// because it will be hashed and signed for signature verification.
 #[derive(Debug, ToDatum)]
 pub struct RegisterValidatorSignedMessage {
+	/// Genesis UTxO identifying the Partner Chain
 	pub genesis_utxo: UtxoId,
+	/// Partner Chain public key of the registered candidate
 	pub sidechain_pub_key: Vec<u8>,
-	/// UTxO that is an input parameter to the registration transaction
+	/// UTxO that is an input parameter to the registration transaction.
+	/// It is spent during the registration process. Prevents replay attacks.
 	pub registration_utxo: UtxoId,
 }
 
 #[derive(Clone, Debug, Encode, Decode, PartialEq, Eq, PartialOrd, Ord)]
+/// Type representing a registered candidate.
 pub struct CandidateWithStake<TAccountId, TAccountKeys> {
+	/// Stake pool public key of the registered candidate
 	pub stake_pool_pub_key: StakePoolPublicKey,
 	/// Amount of ADA staked/locked by the Authority Candidate
 	pub stake_delegation: StakeDelegation,
+	/// Account id of the registered candidate
 	pub account_id: TAccountId,
+	/// Account keys of the registered candidate
 	pub account_keys: TAccountKeys,
 }
 
 #[derive(Clone, Debug, Encode, Decode, PartialEq, Eq, PartialOrd, Ord)]
+/// Type representing a permissioned candidate.
 pub struct PermissionedCandidate<TAccountId, TAccountKeys> {
+	/// Account id of the permissioned candidate
 	pub account_id: TAccountId,
+	/// Account keys of the permissioned candidate
 	pub account_keys: TAccountKeys,
 }
 
 #[derive(Clone, Debug, Encode, Decode, PartialEq, Eq, PartialOrd, Ord)]
+/// Type representing candidates. Candidates can be either registered or permissioned.
+/// See [sidechain_domain::DParameter] for more details.
 pub enum Candidate<TAccountId, TAccountKeys> {
+	/// A permissioned candidate
 	Permissioned(PermissionedCandidate<TAccountId, TAccountKeys>),
+	/// A registered candidate
 	Registered(CandidateWithStake<TAccountId, TAccountKeys>),
 }
 
@@ -61,6 +75,7 @@ impl<AuthorityId, AuthorityKeys> From<Candidate<AuthorityId, AuthorityKeys>>
 }
 
 impl<TAccountId, TAccountKeys> Candidate<TAccountId, TAccountKeys> {
+	/// Returns the account id of the candidate
 	pub fn account_id(&self) -> &TAccountId {
 		match self {
 			Candidate::Permissioned(c) => &c.account_id,
@@ -68,6 +83,7 @@ impl<TAccountId, TAccountKeys> Candidate<TAccountId, TAccountKeys> {
 		}
 	}
 
+	/// Returns the account keys of the candidate
 	pub fn account_keys(&self) -> &TAccountKeys {
 		match self {
 			Candidate::Permissioned(c) => &c.account_keys,
@@ -75,6 +91,7 @@ impl<TAccountId, TAccountKeys> Candidate<TAccountId, TAccountKeys> {
 		}
 	}
 
+	/// Returns the stake delegation of the candidate
 	pub fn stake_delegation(&self) -> Option<StakeDelegation> {
 		match self {
 			Candidate::Permissioned(_) => None,
@@ -103,7 +120,7 @@ where
 		})
 		.collect()
 }
-
+/// Filters invalid candidates from a list of [PermissionedCandidateData].
 pub fn filter_invalid_permissioned_candidates<TAccountId, TAccountKeys>(
 	permissioned_candidates: Vec<PermissionedCandidateData>,
 ) -> Vec<Candidate<TAccountId, TAccountKeys>>
@@ -156,9 +173,12 @@ where
 
 #[derive(Debug, PartialEq, Eq, Clone, Encode, Decode, TypeInfo)]
 #[cfg_attr(feature = "std", derive(thiserror::Error, Serialize, Deserialize))]
+/// Stake validation error type
 pub enum StakeError {
+	/// Stake should be greater than 0.
 	#[cfg_attr(feature = "std", error("Stake should be greater than 0"))]
 	InvalidStake,
+	/// Stake delegation information cannot be computed yet. Registration will turn valid if stake delegation for the epoch will be greater than 0.
 	#[cfg_attr(
 		feature = "std",
 		error(
@@ -170,37 +190,47 @@ pub enum StakeError {
 
 #[derive(Debug, PartialEq, Eq, Clone, Encode, Decode, TypeInfo)]
 #[cfg_attr(feature = "std", derive(thiserror::Error, Serialize, Deserialize))]
+/// Registration data error type
 pub enum RegistrationDataError {
-	#[cfg_attr(feature = "std", error("Registration data is invalid: InvalidMainchainSignature"))]
+	/// Registration with invalid mainchain signature
+	#[cfg_attr(feature = "std", error("Registration with invalid mainchain signature"))]
 	InvalidMainchainSignature,
-	#[cfg_attr(feature = "std", error("Registration data is invalid: InvalidSidechainSignature"))]
+	/// Registration with invalid sidechain signature
+	#[cfg_attr(feature = "std", error("Registration with invalid sidechain signature"))]
 	InvalidSidechainSignature,
-	#[cfg_attr(feature = "std", error("Registration data is invalid: InvalidTxInput"))]
+	/// Registration with invalid transaction input
+	#[cfg_attr(feature = "std", error("Registration with invalid transaction input"))]
 	InvalidTxInput,
-	#[cfg_attr(feature = "std", error("Registration data is invalid: InvalidMainchainPubKey"))]
+	/// Registration with invalid mainchain public key
+	#[cfg_attr(feature = "std", error("Registration with invalid mainchain public key"))]
 	InvalidMainchainPubKey,
-	#[cfg_attr(feature = "std", error("Registration data is invalid: InvalidSidechainPubKey"))]
+	/// Registration with invalid sidechain public key
+	#[cfg_attr(feature = "std", error("Registration with invalid sidechain public key"))]
 	InvalidSidechainPubKey,
-	#[cfg_attr(feature = "std", error("Registration data is invalid: InvalidAuraKey"))]
+	/// Registration with invalid Aura key
+	#[cfg_attr(feature = "std", error("Registration with invalid Aura key"))]
 	InvalidAuraKey,
-	#[cfg_attr(feature = "std", error("Registration data is invalid: InvalidGrandpaKey"))]
+	/// Registration with invalid GRANDPA key
+	#[cfg_attr(feature = "std", error("Registration with invalid GRANDPA key"))]
 	InvalidGrandpaKey,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Encode, Decode, TypeInfo)]
 #[cfg_attr(feature = "std", derive(thiserror::Error, Serialize, Deserialize))]
+/// Permissioned candidate data error type
 pub enum PermissionedCandidateDataError {
-	#[cfg_attr(
-		feature = "std",
-		error("Permissioned candidate data is invalid: InvalidSidechainPubKey")
-	)]
+	/// Permissioned candidate with invalid sidechain public key
+	#[cfg_attr(feature = "std", error("Permissioned candidate with invalid sidechain public key"))]
 	InvalidSidechainPubKey,
-	#[cfg_attr(feature = "std", error("Permissioned candidate data is invalid: InvalidAuraKey"))]
+	/// Permissioned candidate with invalid Aura key
+	#[cfg_attr(feature = "std", error("Permissioned candidate with invalid Aura key"))]
 	InvalidAuraKey,
-	#[cfg_attr(feature = "std", error("Permissioned candidate data is invalid: InvalidGrandpaKey"))]
+	/// Permissioned candidate with invalid GRANDPA key
+	#[cfg_attr(feature = "std", error("Permissioned candidate with invalid GRANDPA key"))]
 	InvalidGrandpaKey,
 }
 
+/// Validates Aura, GRANDPA, and Partner Chain public keys of [PermissionedCandidateData].
 pub fn validate_permissioned_candidate_data<AccountId: TryFrom<SidechainPublicKey>>(
 	candidate: PermissionedCandidateData,
 ) -> Result<(AccountId, sr25519::Public, ed25519::Public), PermissionedCandidateDataError> {
@@ -220,7 +250,13 @@ pub fn validate_permissioned_candidate_data<AccountId: TryFrom<SidechainPublicKe
 	))
 }
 
-/// Is the registration data provided by the authority candidate valid?
+/// Validates registration data provided by the authority candidate.
+///
+/// Validates:
+/// * Aura, GRANDPA, and Partner Chain public keys of the candidate
+/// * stake pool signature
+/// * sidechain signature
+/// * transaction inputs contain correct registration utxo
 pub fn validate_registration_data(
 	stake_pool_pub_key: &StakePoolPublicKey,
 	registration_data: &RegistrationData,
@@ -256,11 +292,10 @@ pub fn validate_registration_data(
 	)?;
 	verify_tx_inputs(registration_data)?;
 
-	// TODO - Stake Validation: https://input-output.atlassian.net/browse/ETCM-4082
-
 	Ok((sidechain_pub_key, (aura_pub_key, grandpa_pub_key)))
 }
 
+/// Validates stake delegation. Stake must be known and positive.
 pub fn validate_stake(stake: Option<StakeDelegation>) -> Result<StakeDelegation, StakeError> {
 	match stake {
 		None => Err(StakeError::UnknownStake),
@@ -292,10 +327,6 @@ fn verify_stake_pool_signature(
 	}
 }
 
-// Pre EIP155 signature.v convention
-const NEGATIVE_POINT_SIGN: u8 = 27;
-const POSITIVE_POINT_SIGN: u8 = 28;
-
 fn verify_sidechain_signature(
 	pub_key: ecdsa::Public,
 	signature: &SidechainSignature,
@@ -306,6 +337,9 @@ fn verify_sidechain_signature(
 	let mut sidechain_signature_with_v = [0u8; 65];
 	sidechain_signature_with_v[..64].copy_from_slice(&sidechain_signature);
 	// TODO: Extract to crypto util. See https://github.com/input-output-hk/partner-chains/pull/61#discussion_r1293205895
+	// Pre EIP155 signature.v convention
+	const NEGATIVE_POINT_SIGN: u8 = 27;
+	const POSITIVE_POINT_SIGN: u8 = 28;
 	let is_valid = [NEGATIVE_POINT_SIGN, POSITIVE_POINT_SIGN].iter().any(|v| {
 		sidechain_signature_with_v[64] = *v;
 		ecdsa::Signature::from(sidechain_signature_with_v).verify(signed_message_encoded, &pub_key)
@@ -321,11 +355,28 @@ fn verify_tx_inputs(registration_data: &RegistrationData) -> Result<(), Registra
 	}
 }
 
-// When implementing, make sure that the same validation is used here and in the committee selection logic
 sp_api::decl_runtime_apis! {
+	/// Runtime API trait for candidate validation
+	///
+	/// When implementing, make sure that the same validation is used here and in the committee selection logic!
 	pub trait CandidateValidationApi {
+		/// Should validate data provided by registered candidate,
+		/// and return [RegistrationDataError] in case of validation failure.
+		///
+		/// Should validate:
+		/// * Aura, GRANDPA, and Partner Chain public keys of the candidate
+		/// * stake pool signature
+		/// * sidechain signature
+		/// * transaction inputs contain correct registration utxo
 		fn validate_registered_candidate_data(mainchain_pub_key: &StakePoolPublicKey, registration_data: &RegistrationData) -> Option<RegistrationDataError>;
+		/// Should validate candidate stake and return [StakeError] in case of validation failure.
+		/// Should validate stake exists and is positive.
 		fn validate_stake(stake: Option<StakeDelegation>) -> Option<StakeError>;
+		/// Should validate data provided by permissioned candidate,
+		/// and return [PermissionedCandidateDataError] in case of validation failure.
+		///
+		/// Should validate:
+		/// * Aura, GRANDPA, and Partner Chain public keys of the candidate
 		fn validate_permissioned_candidate_data(candidate: PermissionedCandidateData) -> Option<PermissionedCandidateDataError>;
 	}
 }

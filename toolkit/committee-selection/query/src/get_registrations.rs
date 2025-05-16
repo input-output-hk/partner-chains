@@ -1,3 +1,4 @@
+//! Module implementing getting candidate registrations for epoch
 use crate::*;
 use authority_selection_inherents::filter_invalid_candidates::RegistrationDataError;
 use authority_selection_inherents::filter_invalid_candidates::{

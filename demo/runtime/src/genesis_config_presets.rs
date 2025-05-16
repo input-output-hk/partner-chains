@@ -62,7 +62,7 @@ fn testnet_genesis(
 		session: Default::default(),
 		native_token_management: Default::default(),
 		governed_map: GovernedMapConfig {
-			main_chain_script: Some(sp_governed_map::MainChainScriptsV1::default()),
+			main_chain_scripts: Some(sp_governed_map::MainChainScriptsV1::default()),
 			..Default::default()
 		},
 		glutton: Default::default(),

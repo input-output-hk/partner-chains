@@ -353,9 +353,14 @@ impl FromStr for GovernanceAuthoritiesKeyHashes {
 
 impl Display for GovernanceAuthoritiesKeyHashes {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		for key_hash in self.0.iter() {
+		let mut it = self.0.iter();
+		// Intersperse with a single space
+		if let Some(key_hash) = it.next() {
 			f.write_str(&key_hash.to_hex_string())?;
-			f.write_char(' ')?;
+			for key_hash in it {
+				f.write_char(' ')?;
+				f.write_str(&key_hash.to_hex_string())?;
+			}
 		}
 		Ok(())
 	}
@@ -608,15 +613,6 @@ pub mod config_fields {
 		default: Some("30333"),
 		_marker: PhantomData,
 	};
-
-	pub const SIDECHAIN_BLOCK_BENEFICIARY: ConfigFieldDefinition<'static, String> =
-		ConfigFieldDefinition {
-			config_file: RESOURCES_CONFIG_FILE_PATH,
-			path: &["sidechain_block_beneficiary"],
-			name: "beneficiary for blocks created by the given node",
-			default: None,
-			_marker: PhantomData,
-		};
 
 	pub const INITIAL_GOVERNANCE_AUTHORITIES: ConfigFieldDefinition<
 		'static,

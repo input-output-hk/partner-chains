@@ -42,6 +42,10 @@ Once your node is synced with the preview testnet, you are ready to continue wit
 
 The partner chain needs DB Sync on a `cardano-node` to observe Cardano's state.
 
+Cardano DB Sync is configurable in regards to the data it indexes.
+The default configuration works well, if you don't use the default configuration,
+then please read [partner-chains-db-sync-data-sources module header](../../toolkit/data-sources/db-sync/src/lib.rs)
+
 #### A critical note on Cardano DB Sync!
 
 > Before starting the partner chain node, and during normal operations, it is essential that the DB Sync component is fully synchronized.

@@ -1,3 +1,4 @@
+//! Plutus data types for reserve functionality.
 use crate::{
 	DataDecodingError, DecodingResult, VersionedDatum, VersionedGenericDatum,
 	decoding_error_and_log, plutus_data_version_and_payload,
@@ -6,34 +7,54 @@ use cardano_serialization_lib::{BigInt, BigNum, ConstrPlutusData, PlutusData, Pl
 use sidechain_domain::{AssetId, AssetName, PolicyId};
 
 #[derive(Debug, Clone)]
+/// Redeemer for reserve
 pub enum ReserveRedeemer {
+	/// Deposit tokens to the reserve
 	DepositToReserve = 0,
+	/// Releases funds from the reserve to the illiquid supply
 	ReleaseFromReserve = 1,
+	/// Update mutable reserve management system settings
 	UpdateReserve = 2,
+	/// Releases all the remaining funds from the reserve to the illiquid supply
 	Handover = 3,
 }
 
 #[derive(Debug, Clone, PartialEq)]
+/// Datum of the reserve storing settings and stats
 pub struct ReserveDatum {
+	/// Reserve settings that *are not* changeable after creation
 	pub immutable_settings: ReserveImmutableSettings,
+	/// Reserve settings that *are* changeable after creation
 	pub mutable_settings: ReserveMutableSettings,
+	/// Reserve stats
 	pub stats: ReserveStats,
 }
 
 #[derive(Debug, Clone, PartialEq)]
+/// Type representing reserve settings that *are not* changeable after creation
 pub struct ReserveImmutableSettings {
+	/// Unused, set to 0
 	pub t0: u64,
+	/// Reserve token asset Id
 	pub token: AssetId,
 }
 
 #[derive(Debug, Clone, PartialEq)]
+/// Type representing reserve settings that *are* changeable after creation
 pub struct ReserveMutableSettings {
-	pub total_accrued_function_script_hash: PolicyId,
+	/// Asset name of the 'total accrued function' minting policy, also called V-function,
+	/// that determines the maximum amount of tokens that can be released from the reserve at any given moment.
+	/// This is accomplished by minting v-function tokens with the policy, and comparing the released amount
+	/// to the token amount in the reserver validator script.
+	pub total_accrued_function_asset_name: PolicyId,
+	/// Initial amount of tokens to deposit. They must be present in the payment wallet.
 	pub initial_incentive: u64,
 }
 
 #[derive(Debug, Clone, PartialEq)]
+/// Type representing continuously changing information about the reserve
 pub struct ReserveStats {
+	/// Total amount of tokens released from reserve
 	pub token_total_amount_transferred: u64,
 }
 
@@ -67,7 +88,7 @@ impl From<ReserveDatum> for PlutusData {
 
 				let mut v_function_hash_and_initial_incentive = PlutusList::new();
 				v_function_hash_and_initial_incentive.add(&PlutusData::new_bytes(
-					value.mutable_settings.total_accrued_function_script_hash.0.to_vec(),
+					value.mutable_settings.total_accrued_function_asset_name.0.to_vec(),
 				));
 				v_function_hash_and_initial_incentive.add(&PlutusData::new_integer(&BigInt::from(
 					value.mutable_settings.initial_incentive,
@@ -112,6 +133,7 @@ impl VersionedDatum for ReserveDatum {
 }
 
 impl ReserveDatum {
+	/// Calculates new reserve after withdrawal by adding `amount` to `token_total_amount_transferred`.
 	pub fn after_withdrawal(self, amount: u64) -> Self {
 		Self {
 			stats: ReserveStats {
@@ -144,7 +166,7 @@ fn decode_v0_reserve_datum(datum: &PlutusData) -> Option<ReserveDatum> {
 	Some(ReserveDatum {
 		immutable_settings: ReserveImmutableSettings { t0, token },
 		mutable_settings: ReserveMutableSettings {
-			total_accrued_function_script_hash,
+			total_accrued_function_asset_name: total_accrued_function_script_hash,
 			initial_incentive,
 		},
 		stats,
@@ -185,7 +207,7 @@ mod tests {
 				},
 			},
 			mutable_settings: ReserveMutableSettings {
-				total_accrued_function_script_hash: PolicyId([2; 28]),
+				total_accrued_function_asset_name: PolicyId([2; 28]),
 				initial_incentive: 0,
 			},
 			stats: ReserveStats { token_total_amount_transferred: 1000 },

@@ -224,7 +224,7 @@ jobs:
           blockchain: substrate
           env: staging
           decrypt: true
-          markers: "CD or rpc"
+          markers: "smoke or rpc"
           threads: 1
 
   run-all-tests:

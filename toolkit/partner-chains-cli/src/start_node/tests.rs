@@ -7,8 +7,7 @@ const DATA_PATH: &str = "/path/to/data";
 const CHAIN_SPEC_FILE: &str = "chain-spec.json";
 const DB_CONNECTION_STRING: &str =
 	"postgresql://postgres-user:postgres-password@localhost:5432/cexplorer";
-const SIDECHAIN_BLOCK_BENEFICIARY_STRING: &str =
-	"01e552298e47454041ea31273b4b630c64c104e4514aa3643490b8aaca9cf8ed";
+
 fn keystore_path() -> String {
 	format!("{DATA_PATH}/keystore")
 }
@@ -31,7 +30,6 @@ fn expected_final_resources_config_json() -> serde_json::Value {
 	serde_json::json!({
 		"substrate_node_base_path": DATA_PATH,
 		"db_sync_postgres_connection_string": DB_CONNECTION_STRING,
-		"sidechain_block_beneficiary": SIDECHAIN_BLOCK_BENEFICIARY_STRING,
 		"node_p2p_port": 30333
 	})
 }
@@ -79,7 +77,6 @@ fn default_chain_config_run_command() -> String {
          MC__FIRST_EPOCH_NUMBER='{FIRST_EPOCH_NUMBER}' \\
          MC__FIRST_SLOT_NUMBER='{FIRST_SLOT_NUMBER}' \\
          BLOCK_STABILITY_MARGIN='0' \\
-		 SIDECHAIN_BLOCK_BENEFICIARY='{SIDECHAIN_BLOCK_BENEFICIARY_STRING}' \\
  <mock executable> --validator --chain {CHAIN_SPEC_FILE} --base-path {DATA_PATH} --keystore-path {DATA_PATH}/keystore --node-key-file {DATA_PATH}/network/secret_ed25519 --port {node_ws_port} --bootnodes {BOOTNODE}"
 	)
 }
@@ -100,7 +97,6 @@ fn value_check_prompt() -> MockIO {
         MockIO::eprint(&format!("        FIRST_EPOCH_NUMBER                 = {}", FIRST_EPOCH_NUMBER)),
         MockIO::eprint(&format!("        FIRST_SLOT_NUMBER                  = {}", FIRST_SLOT_NUMBER)),
         MockIO::eprint(&format!("        DB_SYNC_POSTGRES_CONNECTION_STRING = {}", DB_CONNECTION_STRING)),
-	    MockIO::eprint(&format!("        SIDECHAIN_BLOCK_BENEFICIARY        = {}", SIDECHAIN_BLOCK_BENEFICIARY_STRING)),
         MockIO::prompt_yes_no("Proceed?", true, true)
 
     ])
@@ -128,7 +124,6 @@ fn happy_path() {
 			MockIO::eprint(&format!(
 				"🛠️ Loaded DB-Sync Postgres connection string from config ({RESOURCES_CONFIG_PATH}): {DB_CONNECTION_STRING}"
 			)),
-			MockIO::list_dir(&keystore_path(), Some(keystore_files.clone())),
 			value_check_prompt(),
 			MockIO::run_command(&default_chain_config_run_command(), "irrelevant")
 		]);

@@ -18,35 +18,6 @@
         sha256 = "X/4ZBHO3iW0fOenQ3foEvscgAPJYl2abspaBThDOukI=";
       };
 
-      nightlyToolchain =
-        (fenixPkgs.toolchainOf {
-          channel = "nightly";
-          date = "2025-04-27";
-          sha256 = "sha256-DnyK5MS+xYySA+csnnMogu2gtEfyiy10W0ATmAvmjGg=";
-        }).withComponents
-          [
-            "cargo"
-            "clippy"
-            "rust-src"
-            "rustc"
-            "rustfmt"
-          ];
-
-      gen-cargo-docs = pkgs.writeScriptBin "gen-cargo-docs" ''
-        export PATH=${nightlyToolchain}/bin:$PATH
-        export RUST_SRC_PATH="${nightlyToolchain}/lib/rustlib/src/rust/library";
-        export LD_LIBRARY_PATH=${
-          pkgs.lib.makeLibraryPath [
-            nightlyToolchain
-            pkgs.stdenv.cc.cc
-            pkgs.libz
-          ]
-        }
-        cargo --version
-        rustc --version
-        RUSTDOCFLAGS="--enable-index-page -Zunstable-options" SKIP_WASM_BUILD=1 ${nightlyToolchain}/bin/cargo doc --no-deps
-      '';
-
     in
     {
       devShells = {
@@ -56,7 +27,6 @@
           LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
           LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
             rustToolchain
-            pkgs.stdenv.cc.cc
             pkgs.libz
           ];
           # https://github.com/NixOS/nixpkgs/issues/370494#issuecomment-2625163369
@@ -98,7 +68,6 @@
               cargo-edit
               cargo-license
               nixfmt-rfc-style
-              gen-cargo-docs
 
               # infra packages
               earthly

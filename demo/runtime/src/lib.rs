@@ -8,6 +8,7 @@ extern crate frame_benchmarking;
 
 extern crate alloc;
 
+use alloc::collections::BTreeMap;
 use alloc::string::String;
 use authority_selection_inherents::CommitteeMember;
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
@@ -33,7 +34,7 @@ use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier
 use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
-use sidechain_domain::byte_string::{BoundedString, SizedByteString};
+use sidechain_domain::byte_string::{BoundedString, ByteString, SizedByteString};
 use sidechain_domain::{
 	CrossChainPublicKey, DelegatorKey, MainchainKeyHash, PermissionedCandidateData,
 	RegistrationData, ScEpochNumber, ScSlotNumber, StakeDelegation, StakePoolPublicKey, UtxoId,
@@ -516,7 +517,7 @@ impl pallet_block_producer_metadata::benchmarking::BenchmarkHelper<BlockProducer
 {
 	fn metadata() -> BlockProducerMetadataType {
 		BlockProducerMetadataType {
-			url: "https://cool.stuff/spo.json".as_bytes().to_vec().try_into().unwrap(),
+			url: "https://cool.stuff/spo.json".try_into().unwrap(),
 			hash: SizedByteString::from([0; 32]),
 		}
 	}
@@ -1014,6 +1015,13 @@ impl_runtime_apis! {
 		}
 	}
 
+	impl sp_block_producer_fees::BlockProducerFeesApi<Block, AccountId> for Runtime
+	{
+		fn get_all_fees() -> Vec<(AccountId, sp_block_producer_fees::PerTenThousands)> {
+			BlockProducerFees::get_all_latest().map(|(account_id, (_slot, fee))| (account_id, fee)).collect()
+		}
+	}
+
 	#[api_version(2)]
 	impl sp_session_validator_management::SessionValidatorManagementApi<
 		Block,
@@ -1022,10 +1030,10 @@ impl_runtime_apis! {
 		sidechain_domain::ScEpochNumber
 	> for Runtime {
 		fn get_current_committee() -> (ScEpochNumber, Vec<CommitteeMember<CrossChainPublic, SessionKeys>>) {
-			SessionCommitteeManagement::get_current_committee()
+			SessionCommitteeManagement::current_committee_storage().as_pair()
 		}
 		fn get_next_committee() -> Option<(ScEpochNumber, Vec<CommitteeMember<CrossChainPublic, SessionKeys>>)> {
-			SessionCommitteeManagement::get_next_committee()
+			Some(SessionCommitteeManagement::next_committee_storage()?.as_pair())
 		}
 		fn get_next_unset_epoch_number() -> sidechain_domain::ScEpochNumber {
 			SessionCommitteeManagement::get_next_unset_epoch_number()
@@ -1078,6 +1086,12 @@ impl_runtime_apis! {
 	}
 
 	impl sp_governed_map::GovernedMapIDPApi<Block> for Runtime {
+		fn is_initialized() -> bool {
+			GovernedMap::is_initialized()
+		}
+		fn get_current_state() -> BTreeMap<String, ByteString> {
+			GovernedMap::get_all_key_value_pairs_unbounded().collect()
+		}
 		fn get_main_chain_scripts() -> Option<MainChainScriptsV1> {
 			GovernedMap::get_main_chain_scripts()
 		}

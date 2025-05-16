@@ -1,6 +1,6 @@
 use num_traits::ToPrimitive;
 use sidechain_domain::*;
-use sqlx::database::{HasArguments, HasValueRef};
+use sqlx::database::Database;
 use sqlx::encode::IsNull;
 use sqlx::error::BoxDynError;
 use sqlx::postgres::PgTypeInfo;
@@ -24,7 +24,7 @@ macro_rules! sqlx_implementations_for_wrapper {
 		where
 			$WRAPPED: Decode<'r, Postgres>,
 		{
-			fn decode(value: <Postgres as HasValueRef<'r>>::ValueRef) -> Result<Self, BoxDynError> {
+			fn decode(value: <Postgres as Database>::ValueRef<'r>) -> Result<Self, BoxDynError> {
 				let decoded: $WRAPPED = <$WRAPPED as Decode<Postgres>>::decode(value)?;
 				Ok(Self(decoded.try_into()?))
 			}
@@ -40,10 +40,11 @@ macro_rules! sqlx_implementations_for_wrapper {
 		impl<'q> Encode<'q, Postgres> for $NAME {
 			fn encode_by_ref(
 				&self,
-				buf: &mut <Postgres as HasArguments<'q>>::ArgumentBuffer,
-			) -> IsNull {
+				buf: &mut <Postgres as Database>::ArgumentBuffer<'q>,
+			) -> std::result::Result<IsNull, Box<(dyn std::error::Error + Send + Sync + 'static)>>
+			{
 				buf.extend(&self.0.to_be_bytes());
-				IsNull::No
+				Ok(IsNull::No)
 			}
 		}
 
@@ -61,7 +62,7 @@ macro_rules! sqlx_implementations_for_wrapper {
 	};
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Ord, PartialOrd, Clone, PartialEq, Eq)]
 pub struct BlockNumber(pub u32);
 sqlx_implementations_for_wrapper!(i32, "INT4", BlockNumber, McBlockNumber);
 
@@ -78,7 +79,7 @@ sqlx_implementations_for_wrapper!(i64, "INT8", SlotNumber, McSlotNumber);
 pub struct TxIndex(pub u16);
 sqlx_implementations_for_wrapper!(i16, "INT2", TxIndex, UtxoIndex);
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialOrd, Ord, PartialEq, Eq)]
 pub struct TxIndexInBlock(pub u32);
 sqlx_implementations_for_wrapper!(i32, "INT4", TxIndexInBlock, McTxIndexInBlock);
 
@@ -93,7 +94,7 @@ impl sqlx::Type<Postgres> for TxValue {
 }
 
 impl<'r> Decode<'r, Postgres> for TxValue {
-	fn decode(value: <Postgres as HasValueRef<'r>>::ValueRef) -> Result<Self, BoxDynError> {
+	fn decode(value: <Postgres as Database>::ValueRef<'r>) -> Result<Self, BoxDynError> {
 		let decoded = <sqlx::types::BigDecimal as Decode<Postgres>>::decode(value)?;
 		let i = decoded.to_i128().ok_or("TxValue is always an integer".to_string())?;
 		Ok(Self(i))
@@ -111,7 +112,7 @@ impl sqlx::Type<Postgres> for StakeDelegation {
 }
 
 impl<'r> Decode<'r, Postgres> for StakeDelegation {
-	fn decode(value: <Postgres as HasValueRef<'r>>::ValueRef) -> Result<Self, BoxDynError> {
+	fn decode(value: <Postgres as Database>::ValueRef<'r>) -> Result<Self, BoxDynError> {
 		let decoded = <sqlx::types::BigDecimal as Decode<Postgres>>::decode(value)?;
 		let i = decoded.to_u64().ok_or("StakeDelegation is always a u64".to_string())?;
 		Ok(Self(i))

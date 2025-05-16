@@ -1,0 +1,14 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+Person(user,"Block Chain user")
+
+System(user_blockchain, "Block Chain using Partner Chains")
+
+System_Ext(cardano, "Cardano Network")
+
+Rel(user_blockchain, cardano, "Has setup on")
+Rel(user_blockchain, cardano, "Observes")
+Rel(user, user_blockchain, "Uses specific block chain functionalites")
+
+@enduml

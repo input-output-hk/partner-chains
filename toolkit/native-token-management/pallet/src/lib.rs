@@ -17,6 +17,7 @@
 //!            sender-receiver metadata channel to implement one.
 //!
 #![cfg_attr(not(feature = "std"), no_std)]
+#![deny(missing_docs)]
 
 use frame_support::pallet_prelude::*;
 use frame_system::pallet_prelude::*;
@@ -39,6 +40,7 @@ pub use weights::WeightInfo;
 ///
 /// The handler will be called with **the total sum** of transfers since the previous partner chain block.
 pub trait TokenTransferHandler {
+	/// New transfer even handler
 	fn handle_token_transfer(token_amount: NativeTokenAmount) -> DispatchResult;
 }
 
@@ -51,31 +53,61 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
+		/// Even type used by the runtime
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// Origin for governance calls
 		type MainChainScriptsOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
+		/// Event handler for incoming native token transfers
 		type TokenTransferHandler: TokenTransferHandler;
+
+		/// Weight information for this pallet's extrinsics
 		type WeightInfo: WeightInfo;
 	}
 
+	/// Events emitted by this pallet
 	#[pallet::event]
+	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
+		/// Signals that a new native token transfer has been processed by the pallet
 		TokensTransfered(NativeTokenAmount),
+	}
+
+	/// Error type used by the pallet's extrinsics
+	#[pallet::error]
+	pub enum Error<T> {
+		/// Indicates that the inherent was called while there was no main chain scripts set in the
+		/// pallet's storage. This is indicative of a programming bug.
+		CalledWithoutConfiguration,
+		/// Indicates that the inherent was called a second time in the same block
+		TransferAlreadyHandled,
 	}
 
 	#[pallet::storage]
 	pub type MainChainScriptsConfiguration<T: Config> =
 		StorageValue<_, sp_native_token_management::MainChainScripts, OptionQuery>;
 
+	/// Stores the pallet's initialization state.
+	///
+	/// The pallet is considered initialized if its inherent has been successfuly called at least once since
+	/// genesis or the last invocation of [set_main_chain_scripts][Pallet::set_main_chain_scripts].
 	#[pallet::storage]
 	pub type Initialized<T: Config> = StorageValue<_, bool, ValueQuery>;
 
+	/// Transient storage containing the amount of native token transfer registered in the current block.
+	///
+	/// Any value in this storage is only present during execution of a block and is emptied on block finalization.
+	#[pallet::storage]
+	pub type TransferedThisBlock<T: Config> = StorageValue<_, NativeTokenAmount, OptionQuery>;
+
+	/// Genesis configuration of the pallet
 	#[pallet::genesis_config]
 	#[derive(frame_support::DefaultNoBound)]
 	pub struct GenesisConfig<T: Config> {
+		/// Initial main chain scripts
 		pub main_chain_scripts: sp_native_token_management::MainChainScripts,
+		#[allow(missing_docs)]
 		pub _marker: PhantomData<T>,
 	}
 
@@ -143,6 +175,11 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		/// Inherent that registers new native token transfer from the Cardano main chain and triggers
+		/// the handler configured in [Config::TokenTransferHandler].
+		///
+		/// Arguments:
+		/// - `token_amount`: the total amount of tokens transferred since the last invocation of the inherent
 		#[pallet::call_index(0)]
 		#[pallet::weight((T::WeightInfo::transfer_tokens(), DispatchClass::Mandatory))]
 		pub fn transfer_tokens(
@@ -150,16 +187,19 @@ pub mod pallet {
 			token_amount: NativeTokenAmount,
 		) -> DispatchResult {
 			ensure_none(origin)?;
-			assert!(
+			ensure!(
 				MainChainScriptsConfiguration::<T>::exists(),
-				"BUG: Inherent should not be run unless the main chain scripts are set."
+				Error::<T>::CalledWithoutConfiguration
 			);
+			ensure!(!TransferedThisBlock::<T>::exists(), Error::<T>::TransferAlreadyHandled);
 			Initialized::<T>::mutate(|initialized| {
 				if !*initialized {
 					*initialized = true
 				}
 				true
 			});
+			TransferedThisBlock::<T>::put(token_amount);
+			Self::deposit_event(Event::TokensTransfered(token_amount));
 			T::TokenTransferHandler::handle_token_transfer(token_amount)
 		}
 
@@ -185,10 +225,25 @@ pub mod pallet {
 		}
 	}
 
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		/// A dummy `on_initialize` to return the amount of weight that `on_finalize` requires to
+		/// execute.
+		fn on_initialize(_n: BlockNumberFor<T>) -> Weight {
+			T::WeightInfo::on_finalize()
+		}
+
+		fn on_finalize(_block: BlockNumberFor<T>) {
+			TransferedThisBlock::<T>::kill();
+		}
+	}
+
 	impl<T: Config> Pallet<T> {
+		/// Returns the main chain scripts currently configured in the pallet
 		pub fn get_main_chain_scripts() -> Option<sp_native_token_management::MainChainScripts> {
 			MainChainScriptsConfiguration::<T>::get()
 		}
+		/// Returns the current initialization status of the pallet
 		pub fn initialized() -> bool {
 			Initialized::<T>::get()
 		}
