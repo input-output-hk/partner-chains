@@ -131,7 +131,7 @@ runs:
         local-environment: "true"
 
     - name: Run Epoch 2 Tests (wizards)
-      if: ${{ inputs.markers = 'wizards' }}
+      if: inputs.markers == 'wizards'
       uses: ./.github/actions/tests/run-e2e-tests
       with:
         env: ${{ env.TEST_ENVIRONMENT }}
