@@ -1,4 +1,5 @@
 //! A fresh FRAME-based Substrate node, ready for hacking.
+#![allow(deprecated)]
 
 pub mod chain_spec;
 mod data_sources;

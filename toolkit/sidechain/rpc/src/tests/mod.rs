@@ -9,13 +9,13 @@ use rpc_mock::*;
 
 mod get_status_tests {
 	use super::*;
+	use crate::GetParamsOutput;
 	use mock::SidechainRpcDataSourceMock;
 	use pretty_assertions::assert_eq;
 	use sidechain_domain::mainchain_epoch::{Duration, MainchainEpochConfig};
 	use sidechain_domain::*;
 	use sp_consensus_slots::SlotDuration;
 	use sp_core::offchain::Timestamp;
-	use sp_sidechain::query::Output;
 
 	#[tokio::test]
 	async fn should_return_correct_status() {
@@ -36,13 +36,8 @@ mod get_status_tests {
 		let slot_duration = SlotDuration::from_millis(60);
 		let slots_per_epoch = 10;
 
-		let client = Arc::new(TestApi {
-			runtime_api: TestRuntimeApi {
-				sidechain_status: vec![],
-				slot_duration,
-				slots_per_epoch,
-			},
-		});
+		let client =
+			Arc::new(TestApi { runtime_api: TestRuntimeApi { slot_duration, slots_per_epoch } });
 		let current_time_millis: u64 = 1_000_000_000_000;
 		let time_source = Arc::new(MockedTimeSource { current_time_millis });
 
@@ -103,7 +98,7 @@ mod get_status_tests {
 
 		assert_eq!(
 			response.expect("Response should not be an error"),
-			Output { genesis_utxo: crate::tests::mock::mock_utxo_id() },
+			GetParamsOutput { genesis_utxo: crate::tests::mock::mock_utxo_id() },
 		)
 	}
 }

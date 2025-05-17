@@ -4,15 +4,11 @@ use frame_support::pallet_prelude::Weight;
 use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use sidechain_domain::{ScEpochNumber, ScSlotNumber, UtxoId};
-#[cfg(feature = "std")]
-use sp_runtime::traits::Block as BlockT;
-
-#[cfg(feature = "std")]
-pub mod query;
 
 #[cfg(test)]
 mod tests;
 
+#[deprecated(since = "1.8.0", note = "See deprecation notes for [GetSidechainStatus]")]
 #[derive(TypeInfo, Clone, Encode, Decode)]
 pub struct SidechainStatus {
 	pub epoch: ScEpochNumber,
@@ -48,23 +44,20 @@ on_new_epoch_tuple_impl!(A, B);
 on_new_epoch_tuple_impl!(A, B, C);
 on_new_epoch_tuple_impl!(A, B, C, D);
 
-sp_api::decl_runtime_apis! {
-	pub trait GetGenesisUtxo {
-		fn genesis_utxo() -> UtxoId;
-	}
-	pub trait GetSidechainStatus {
-		fn get_sidechain_status() -> SidechainStatus;
+#[allow(deprecated)]
+mod api_declarations {
+	use super::*;
+	sp_api::decl_runtime_apis! {
+		pub trait GetGenesisUtxo {
+			fn genesis_utxo() -> UtxoId;
+		}
+		#[deprecated(since = "1.8.0", note = "Code that needs this data should define its own runtime API instead.")]
+		pub trait GetSidechainStatus {
+			fn get_sidechain_status() -> SidechainStatus;
+		}
 	}
 }
-
-#[cfg(feature = "std")]
-pub trait SidechainApi<Block: BlockT>: GetSidechainStatus<Block> + GetGenesisUtxo<Block> {}
-
-#[cfg(feature = "std")]
-impl<Block: BlockT, T: GetGenesisUtxo<Block> + GetSidechainStatus<Block>> SidechainApi<Block>
-	for T
-{
-}
+pub use api_declarations::*;
 
 #[cfg(feature = "std")]
 pub fn read_genesis_utxo_from_env_with_defaults() -> Result<UtxoId, envy::Error> {

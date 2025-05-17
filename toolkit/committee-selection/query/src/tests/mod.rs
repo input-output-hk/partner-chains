@@ -14,6 +14,7 @@ use sp_core::bytes::to_hex;
 use sp_core::crypto::Ss58Codec;
 use sp_core::{Pair, ecdsa, ed25519};
 use sp_runtime::{MultiSigner, traits::IdentifyAccount};
+#[allow(deprecated)]
 use sp_sidechain::SidechainStatus;
 use std::borrow::BorrowMut;
 use std::collections::HashMap;

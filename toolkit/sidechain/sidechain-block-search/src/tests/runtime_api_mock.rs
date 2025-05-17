@@ -1,9 +1,11 @@
 use super::*;
 use rpc_mock::*;
 use sidechain_domain::*;
+#[allow(deprecated)]
 use sp_sidechain::SidechainStatus;
 
 sp_api::mock_impl_runtime_apis! {
+#[allow(deprecated)]
 	impl GetSidechainStatus<Block> for TestRuntimeApi {
 		#[advanced]
 		fn get_sidechain_status(at: <Block as BlockT>::Hash) -> Result<SidechainStatus, sp_api::ApiError> {

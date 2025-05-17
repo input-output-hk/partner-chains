@@ -2,6 +2,7 @@ use sp_api::ApiError;
 
 use super::*;
 
+#[allow(deprecated)]
 impl<C, Block> SidechainInfo<Block> for C
 where
 	C: Client<Block> + Send + Sync + 'static,
