@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["read_genesis_utxo_from_env_with_defaults"],"mod":["query"],"struct":["SidechainStatus"],"trait":["GetGenesisUtxo","GetSidechainStatus","OnNewEpoch","SidechainApi"]};
+window.SIDEBAR_ITEMS = {"fn":["read_genesis_utxo_from_env_with_defaults"],"struct":["SidechainStatus"],"trait":["GetGenesisUtxo","GetSidechainStatus","OnNewEpoch"]};

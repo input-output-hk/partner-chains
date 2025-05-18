@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["error_object_from"],"mod":["types"],"struct":["SidechainRpc"],"trait":["SidechainRpcApiClient","SidechainRpcApiServer","SidechainRpcDataSource"]};
+window.SIDEBAR_ITEMS = {"fn":["error_object_from"],"mod":["types"],"struct":["GetParamsOutput","SidechainRpc"],"trait":["SidechainRpcApiClient","SidechainRpcApiServer","SidechainRpcDataSource"]};
