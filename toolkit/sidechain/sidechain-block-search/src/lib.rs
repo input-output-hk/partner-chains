@@ -12,6 +12,7 @@ use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::Block as BlockT;
 use sp_runtime::traits::NumberFor;
+#[allow(deprecated)]
 use sp_sidechain::GetSidechainStatus;
 use std::cmp::Ordering;
 use std::ops::Range;
