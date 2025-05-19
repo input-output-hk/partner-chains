@@ -2,16 +2,21 @@ use crate::io::IOContext;
 use crate::ogmios::{OgmiosRequest, OgmiosResponse};
 use anyhow::anyhow;
 use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
-use partner_chains_cardano_offchain::d_param::UpsertDParam;
+use partner_chains_cardano_offchain::d_param::{GetDParam, UpsertDParam};
 use partner_chains_cardano_offchain::governance::MultiSigParameters;
 use partner_chains_cardano_offchain::init_governance::InitGovernance;
 use partner_chains_cardano_offchain::multisig::MultiSigSmartContractResult;
-use partner_chains_cardano_offchain::permissioned_candidates::UpsertPermissionedCandidates;
+use partner_chains_cardano_offchain::permissioned_candidates::{
+	GetPermissionedCandidates, UpsertPermissionedCandidates,
+};
 use partner_chains_cardano_offchain::register::{Deregister, Register};
 use partner_chains_cardano_offchain::scripts_data::{GetScriptsData, ScriptsData};
 use partner_chains_cardano_offchain::{OffchainError, cardano_keys::CardanoPaymentSigningKey};
 use pretty_assertions::assert_eq;
-use sidechain_domain::{CandidateRegistration, DParameter, McTxHash, StakePoolPublicKey, UtxoId};
+use sidechain_domain::{
+	CandidateRegistration, DParameter, McTxHash, PermissionedCandidateData, StakePoolPublicKey,
+	UtxoId,
+};
 use sp_core::offchain::Timestamp;
 use std::collections::HashMap;
 use std::panic::{UnwindSafe, catch_unwind, resume_unwind};
@@ -234,10 +239,13 @@ pub struct OffchainMock {
 	pub scripts_data: HashMap<UtxoId, Result<ScriptsData, OffchainError>>,
 	pub init_governance:
 		HashMap<(UtxoId, MultiSigParameters, PrivateKeyBytes), Result<McTxHash, OffchainError>>,
+	pub get_d_param: HashMap<UtxoId, Result<Option<DParameter>, String>>,
 	pub upsert_d_param: HashMap<
 		(UtxoId, DParameter, PrivateKeyBytes),
 		Result<Option<MultiSigSmartContractResult>, String>,
 	>,
+	pub get_permissioned_candidates:
+		HashMap<UtxoId, Result<Option<Vec<sidechain_domain::PermissionedCandidateData>>, String>>,
 	pub upsert_permissioned_candidates: HashMap<
 		(UtxoId, Vec<sidechain_domain::PermissionedCandidateData>, PrivateKeyBytes),
 		Result<Option<MultiSigSmartContractResult>, String>,
@@ -282,6 +290,14 @@ impl OffchainMock {
 		}
 	}
 
+	pub(crate) fn with_get_d_param(
+		self,
+		genesis_utxo: UtxoId,
+		result: Result<Option<DParameter>, String>,
+	) -> Self {
+		Self { get_d_param: [(genesis_utxo, result)].into(), ..self }
+	}
+
 	pub(crate) fn with_upsert_d_param(
 		self,
 		genesis_utxo: UtxoId,
@@ -317,6 +333,14 @@ impl OffchainMock {
 				.into(),
 			..self
 		}
+	}
+
+	pub(crate) fn with_get_permissioned_candidates(
+		self,
+		genesis_utxo: UtxoId,
+		result: Result<Option<Vec<PermissionedCandidateData>>, String>,
+	) -> Self {
+		Self { get_permissioned_candidates: [(genesis_utxo, result)].into(), ..self }
 	}
 
 	pub(crate) fn with_upsert_permissioned_candidates(
@@ -359,6 +383,16 @@ impl InitGovernance for OffchainMock {
 			.unwrap_or_else(|| {
 				Err(OffchainError::InternalError("No mock for init_governance".into()))
 			})
+	}
+}
+
+impl GetDParam for OffchainMock {
+	async fn get_d_param(&self, genesis_utxo: UtxoId) -> anyhow::Result<Option<DParameter>> {
+		self.get_d_param
+			.get(&genesis_utxo)
+			.cloned()
+			.unwrap_or_else(|| Err(format!("No mock for get_d_param({genesis_utxo:?})")))
+			.map_err(|err| anyhow!("{err}"))
 	}
 }
 
@@ -420,6 +454,21 @@ impl Deregister for OffchainMock {
 					hex::encode(payment_signing_key.to_bytes())
 				)))
 			})
+	}
+}
+
+impl GetPermissionedCandidates for OffchainMock {
+	async fn get_permissioned_candidates(
+		&self,
+		genesis_utxo: UtxoId,
+	) -> anyhow::Result<Option<Vec<sidechain_domain::PermissionedCandidateData>>> {
+		self.get_permissioned_candidates
+			.get(&genesis_utxo)
+			.cloned()
+			.unwrap_or_else(|| {
+				Err(format!("No mock for get_permissioned_candidates({genesis_utxo:?})"))
+			})
+			.map_err(|err| anyhow!("{err}"))
 	}
 }
 
