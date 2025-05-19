@@ -1,5 +1,5 @@
-pub mod types;
-
+//! Json RPC for the Sidechain pallet
+#![deny(missing_docs)]
 use derive_new::new;
 use jsonrpsee::{
 	core::{RpcResult, async_trait},
@@ -17,34 +17,47 @@ use std::sync::Arc;
 use time_source::*;
 use types::*;
 
+/// Response types returned by RPC endpoints for Sidechain pallet
+pub mod types;
+
 #[cfg(test)]
 mod tests;
 
-#[cfg(any(test, feature = "mock"))]
-pub mod mock;
+#[cfg(any(test))]
+mod mock;
 
+/// Response type of the [SidechainRpcApi::get_params] method
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Debug)]
 pub struct GetParamsOutput {
+	/// Genesis UTXO of the queried Partner Chain
 	pub genesis_utxo: UtxoId,
 }
 
+/// Json RPC API for querying basic information about a Partner Chain
 #[rpc(client, server, namespace = "sidechain")]
 pub trait SidechainRpcApi {
+	/// Gets the genesis UTXO of the Partner Chain
+	///
+	/// note: the legacy name `get_params` comes from the times when there were more parameters that
+	///       defined a Partner Chain than a single genesis UTXO
 	#[method(name = "getParams")]
 	fn get_params(&self) -> RpcResult<GetParamsOutput>;
 
-	/// Returns data related to the status of both the main chain and the sidechain, like their epochs or the timestamp associated to the next epoch.
+	/// Gets information about current Partner Chain and Cardano slot and epoch number
 	#[method(name = "getStatus")]
 	async fn get_status(&self) -> RpcResult<GetStatusResponse>;
 }
 
+/// Data source used by [SidechainRpc] for querying latest block
 #[async_trait]
 pub trait SidechainRpcDataSource {
+	/// Returns the latest Partner Chain block info
 	async fn get_latest_block_info(
 		&self,
 	) -> Result<MainchainBlock, Box<dyn std::error::Error + Send + Sync>>;
 }
 
+/// Json RPC service implementing [SidechainRpcApiServer]
 #[derive(new)]
 pub struct SidechainRpc<C, Block> {
 	client: Arc<C>,
@@ -119,6 +132,6 @@ where
 	}
 }
 
-pub fn error_object_from<T: std::fmt::Debug>(err: T) -> ErrorObjectOwned {
+fn error_object_from<T: std::fmt::Debug>(err: T) -> ErrorObjectOwned {
 	ErrorObject::owned::<u8>(-1, format!("{err:?}"), None)
 }
