@@ -1,4 +1,73 @@
 //! Json RPC for the Sidechain pallet
+//!
+//! # Usage
+//!
+//! ## Implementing runtime APIs
+//!
+//! Your runtime should implement the [SlotApi] and [GetGenesisUtxo] runtime APIs. For example, if
+//! your chain uses Aura for consensus, they may be implemented similar to this:
+//! ```rust,ignore
+//! impl sidechain_slots::SlotApi<Block> for Runtime {
+//!    fn slot_config() -> sidechain_slots::ScSlotConfig {
+//!      sidechain_slots::ScSlotConfig {
+//!        slots_per_epoch: Sidechain::slots_per_epoch(),
+//!        slot_duration: <Self as AuraApi<Block, AuraId>>::slot_duration()
+//!      }
+//!    }
+//!  }
+//! impl sp_sidechain::GetGenesisUtxo<Block> for Runtime {
+//!   fn genesis_utxo() -> UtxoId {
+//!     Sidechain::genesis_utxo()
+//!   }
+//! }
+//! ```
+//!
+//! ## Adding to the RPC stack
+//!
+//! Once the runtime APIs are in place, the RPC can be added to the node:
+//!
+//! ```rust
+//! # use jsonrpsee::RpcModule;
+//! # use pallet_sidechain_rpc::{*, types::GetBestHash};
+//! # use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
+//! # use sidechain_slots::SlotApi;
+//! # use sp_api::ProvideRuntimeApi;
+//! # use sp_runtime::traits::Block as BlockT;
+//! # use sp_sidechain::GetGenesisUtxo;
+//! # use std::sync::Arc;
+//! # use time_source::TimeSource;
+//! fn create_rpc<B: BlockT, C: Send + Sync + 'static>(
+//!    client: Arc<C>,
+//!    time_source: Arc<dyn TimeSource + Send + Sync>,
+//!    data_source: Arc<dyn SidechainRpcDataSource + Send + Sync>,
+//! ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
+//! where
+//!     C: ProvideRuntimeApi<B> + GetBestHash<B>,
+//!     C::Api: SlotApi<B> + GetGenesisUtxo<B>
+//! {
+//!
+//!     let mut module = RpcModule::new(());
+//!     module.merge(
+//!         SidechainRpc::new(
+//!             client.clone(),
+//!             MainchainEpochConfig::read_from_env().unwrap(),
+//!             data_source,
+//!             time_source,
+//!         )
+//!         .into_rpc(),
+//!     )?;
+//!
+//!     // ... other RPCs
+//!     Ok(module)
+//! }
+//! ```
+//!
+//! Note that your node should already have necessary time and data sources wired in. A Db-Sync-based
+//! data source is provided by the Partner Chain toolkit in the `partner_chains_db_sync_data_sources`
+//! crate.
+//!
+//! [GetGenesisUtxo]: sp_sidechain::GetGenesisUtxo
+//! [SlotApi]: sidechain_slots::SlotApi
 #![deny(missing_docs)]
 use derive_new::new;
 use jsonrpsee::{
