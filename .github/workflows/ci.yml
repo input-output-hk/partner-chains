@@ -152,8 +152,8 @@ jobs:
           cd e2e-tests
           # Ensure logs directory exists
           mkdir -p logs
-          # Copy downloaded artifacts to where the script expects them
-          cp -r logs-${{ matrix.markers }}/* logs/
+          # Copy downloaded artifacts to where the script expects them, including hidden files
+          cp -r logs-${{ matrix.markers }}/. logs/
           ./report_slack.sh $repository $slack_ref_name $job_url $env $github_actor_username null "${{ matrix.markers }}"
         shell: bash
 
@@ -520,8 +520,8 @@ jobs:
           cd e2e-tests
           # Ensure logs directory exists
           mkdir -p logs
-          # Copy downloaded artifacts to where the script expects them
-          cp -r logs-${{ matrix.markers }}/* logs/
+          # Copy downloaded artifacts to where the script expects them, including hidden files
+          cp -r logs-${{ matrix.markers }}/. logs/
           ./report_slack.sh $repository $slack_ref_name $job_url $env $github_actor_username null "${{ matrix.markers }}"
         shell: bash
 
