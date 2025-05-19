@@ -121,7 +121,7 @@ runs:
       shell: bash
 
     - name: Run Epoch 2 Tests
-      if: ${{ inputs.markers != 'delegation_rewards' }}
+      if: ${{ inputs.markers != 'full' && inputs.markers != 'ariadne' && inputs.markers != 'delegation_rewards' }}
       uses: ./.github/actions/tests/run-e2e-tests
       with:
         env: ${{ env.TEST_ENVIRONMENT }}
