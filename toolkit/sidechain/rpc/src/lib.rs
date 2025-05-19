@@ -11,7 +11,7 @@
 //!    fn slot_config() -> sidechain_slots::ScSlotConfig {
 //!      sidechain_slots::ScSlotConfig {
 //!        slots_per_epoch: Sidechain::slots_per_epoch(),
-//!        slot_duration: <Self as AuraApi<Block, AuraId>>::slot_duration()
+//!        slot_duration: SlotDuration(Aura::slot_duration())
 //!      }
 //!    }
 //!  }
