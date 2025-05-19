@@ -55,9 +55,7 @@ class PartnerChainRpc:
             if os.environ.get("USE_KUBECTL_RPC") != "true":
                 # Use standard HTTP request method
                 response = requests.post(
-                    self.url,
-                    headers=self.headers,
-                    json=self.__get_body(method=method, params=params)
+                    self.url, headers=self.headers, json=self.__get_body(method=method, params=params)
                 )
                 return response.json()
             else:
@@ -67,9 +65,19 @@ class PartnerChainRpc:
 
                 payload = json.dumps(self.__get_body(method=method, params=params))
                 cmd = [
-                    "kubectl", "exec", pod, "-n", namespace, "--",
-                    "curl", "-s", "-H", "Content-Type: application/json",
-                    "-d", payload, "http://localhost:9933"
+                    "kubectl",
+                    "exec",
+                    pod,
+                    "-n",
+                    namespace,
+                    "--",
+                    "curl",
+                    "-s",
+                    "-H",
+                    "Content-Type: application/json",
+                    "-d",
+                    payload,
+                    "http://localhost:9933",
                 ]
                 result = subprocess.run(cmd, capture_output=True, text=True, check=True)
                 if not result.stdout.strip():
@@ -113,5 +121,10 @@ class PartnerChainRpc:
 
     def partner_chain_get_block_producer_metadata(self, cross_chain_pub_key_hash: str) -> PartnerChainRpcResponse:
         json_data = self.__exec_rpc("pc_getMetadata", [f"0x{cross_chain_pub_key_hash}"])
+        logger.debug(json_data)
+        return PartnerChainRpcResponse.model_validate(json_data)
+
+    def partner_chain_get_block_producer_fees(self) -> PartnerChainRpcResponse:
+        json_data = self.__exec_rpc("pc_getBlockProducerFees")
         logger.debug(json_data)
         return PartnerChainRpcResponse.model_validate(json_data)
