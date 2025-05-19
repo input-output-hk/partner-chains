@@ -150,7 +150,7 @@ jobs:
           env: local-pre-merge
         run: |
           cd e2e-tests/logs
-          ../../../e2e-tests/report_slack.sh $repository $slack_ref_name $job_url $env $github_actor_username null "${{ matrix.markers }}"
+          ../../../../e2e-tests/report_slack.sh $repository $slack_ref_name $job_url $env $github_actor_username null "${{ matrix.markers }}"
         shell: bash
 
   devshell-tests:
@@ -514,7 +514,7 @@ jobs:
           env: local-post-merge
         run: |
           cd e2e-tests/logs
-          ../../../e2e-tests/report_slack.sh $repository $slack_ref_name $job_url $env $github_actor_username null "${{ matrix.markers }}"
+          ../../../../e2e-tests/report_slack.sh $repository $slack_ref_name $job_url $env $github_actor_username null "${{ matrix.markers }}"
         shell: bash
 
   deploy-ci-preview:
