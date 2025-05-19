@@ -1,6 +1,7 @@
 use std::cmp::Ordering;
 use std::ops::{Add, Div, Sub};
 
+/// Performs binary search over `range` using ordering provided by `f`
 pub fn binary_search_by<T, F, E>(range: std::ops::Range<T>, mut f: F) -> Option<T>
 where
 	F: FnMut(&T) -> Result<Ordering, E>,
