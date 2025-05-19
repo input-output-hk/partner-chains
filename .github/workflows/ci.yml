@@ -138,7 +138,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: test-results-${{ matrix.markers }}
-          path: e2e-tests/logs
+          path: e2e-tests/logs-${{ matrix.markers }}
       - name: Report to slack
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -149,8 +149,12 @@ jobs:
           github_actor_username: ${{ github.actor }}
           env: local-pre-merge
         run: |
-          cd e2e-tests/logs
-          ../../../../e2e-tests/report_slack.sh $repository $slack_ref_name $job_url $env $github_actor_username null "${{ matrix.markers }}"
+          cd e2e-tests
+          # Ensure logs directory exists
+          mkdir -p logs
+          # Copy downloaded artifacts to where the script expects them
+          cp -r logs-${{ matrix.markers }}/* logs/
+          ./report_slack.sh $repository $slack_ref_name $job_url $env $github_actor_username null "${{ matrix.markers }}"
         shell: bash
 
   devshell-tests:
@@ -502,7 +506,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: test-results-${{ matrix.markers }}
-          path: e2e-tests/logs
+          path: e2e-tests/logs-${{ matrix.markers }}
       - name: Report to slack
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -513,8 +517,12 @@ jobs:
           github_actor_username: ${{ github.actor }}
           env: local-post-merge
         run: |
-          cd e2e-tests/logs
-          ../../../../e2e-tests/report_slack.sh $repository $slack_ref_name $job_url $env $github_actor_username null "${{ matrix.markers }}"
+          cd e2e-tests
+          # Ensure logs directory exists
+          mkdir -p logs
+          # Copy downloaded artifacts to where the script expects them
+          cp -r logs-${{ matrix.markers }}/* logs/
+          ./report_slack.sh $repository $slack_ref_name $job_url $env $github_actor_username null "${{ matrix.markers }}"
         shell: bash
 
   deploy-ci-preview:
