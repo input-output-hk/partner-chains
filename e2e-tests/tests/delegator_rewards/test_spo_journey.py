@@ -205,10 +205,11 @@ def test_no_unexpected_producers(block_participation):
     assert not block_participation["producer_participation"], "Unexpected producer participation data"
 
 
+@mark.xdist_group("faucet_tx")
 class TestMarginFee:
     @fixture(scope="class")
     def random_margin_fee(self) -> int:
-        return random.randint(1, 10000)
+        return random.randint(0, 10000)
 
     @fixture(scope="class", autouse=True)
     def set_margin_fee(self, api: BlockchainApi, get_wallet: Wallet, random_margin_fee) -> Transaction:

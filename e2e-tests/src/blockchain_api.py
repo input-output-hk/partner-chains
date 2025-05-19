@@ -506,7 +506,7 @@ class BlockchainApi(ABC):
         Sets the block producer's margin fee.
 
         Arguments:
-            margin_fee {int} -- Margin fee in percentage
+            margin_fee {int} -- integer from 0 to 10000, where 10000 is 100,00%
             wallet {Wallet} -- Wallet used to sign the transaction
 
         Returns:
