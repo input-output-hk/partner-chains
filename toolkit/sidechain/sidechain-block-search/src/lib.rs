@@ -7,6 +7,37 @@
 //! lookup: slot and epoch. This crate provides a mechanism to quickly query for blocks based on
 //! their Partner Chain epoch or slot by applying a binary search over historical blocks.
 //!
+//! # Usage
+//!
+//! The binary search feature is provided via the [FindSidechainBlock] trait. This trait is
+//! implemented for any runtime client that implements the [GetSidechainStatus] runtime API.
+//! To query the blockchain, a predicate must be passed to the query that defines the searched
+//! block. Some predefined targets are defined in the [predicates] module, otherwise a new target
+//! type can be defined by implementing the [CompareStrategy] trait.
+//!
+//! Given a runtime client that satisfies the trait bounds, the blockchain can be queried like this:
+//!
+//! ```rust
+//! use sidechain_block_search::predicates::AnyBlockInEpoch;
+//! use sidechain_block_search::{ FindSidechainBlock, Client };
+//! use sidechain_domain::*;
+//! use sp_api::ProvideRuntimeApi;
+//! use sp_runtime::traits::{ Block as BlockT, NumberFor };
+//! use sp_sidechain::GetSidechainStatus;
+//!
+//! fn query_example<B, C>(client: C)
+//! where
+//!     B: BlockT,
+//!     NumberFor<B>: From<u32> + Into<u32>,
+//!     C: ProvideRuntimeApi<B> + Client<B> + Send + Sync + 'static,
+//!     C::Api: GetSidechainStatus<B>
+//! {
+//!     let search_target = AnyBlockInEpoch {
+//!         epoch: ScEpochNumber(42)
+//!     };
+//!     let result = client.find_block(search_target);
+//! }
+//! ```
 
 #![deny(missing_docs)]
 
