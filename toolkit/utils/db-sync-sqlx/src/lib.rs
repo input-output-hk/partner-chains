@@ -207,6 +207,7 @@ impl From<sidechain_domain::AssetId> for Asset {
 #[derive(Debug, Copy, Clone, sqlx::FromRow, PartialEq)]
 pub struct EpochNumberRow(pub EpochNumber);
 
+#[allow(deprecated)]
 impl From<EpochNumberRow> for EpochNumber {
 	fn from(r: EpochNumberRow) -> Self {
 		r.0
