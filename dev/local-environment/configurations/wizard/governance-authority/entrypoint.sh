@@ -20,8 +20,8 @@ start_node() {
     wait
 }
 
-if [ -f "/shared/partner-chains-wizard-1.ready" ]; then
-    echo "/shared/partner-chains-wizard-1.ready exists. Skipping configuration and starting the node..."
+if [ -f "/shared/partner-chains-node-1.ready" ]; then
+    echo "/shared/partner-chains-node-1.ready exists. Skipping configuration and starting the node..."
     start_node
     exit 0
 fi
@@ -65,7 +65,7 @@ send "\r"
 expect "Enter bootnode TCP port (3033)"
 send "30333\r"
 expect "Enter bootnode hostname (localhost)"
-send "partner-chains-wizard-1\r"
+send "partner-chains-node-1\r"
 expect "Ogmios protocol (http/https)"
 send "\r"
 expect "Ogmios hostname (localhost)"
@@ -90,7 +90,7 @@ EOF
 
 echo "Waiting for permissioned candidate's keys to be generated..."
 while true; do
-    if [ -f "/shared/partner-chains-wizard-2-keys.ready" ]; then
+    if [ -f "/shared/partner-chains-node-2-keys.ready" ]; then
         break
     else
         sleep 1
@@ -169,7 +169,7 @@ expect "Done. Main chain state is set."
 expect eof
 EOF
 
-touch /shared/partner-chains-wizard-1.ready
+touch /shared/partner-chains-node-1.ready
 echo "Partner Chain configuration is complete, and will be able to start after two mainchain epochs."
 
 start_node
