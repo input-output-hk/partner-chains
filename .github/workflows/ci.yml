@@ -89,7 +89,6 @@ jobs:
             ./to-build/staging_preprod_chain_spec.json
 
   local-env:
-    continue-on-error: true
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
     needs: build-linux-x86_64-pre-merge
     runs-on: ubuntu-latest
