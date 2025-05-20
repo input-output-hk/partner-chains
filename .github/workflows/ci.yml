@@ -529,10 +529,11 @@ jobs:
     steps:
       - name: Check if any needed job failed
         run: |
-          if [[ "${{ needs.deploy-rustdoc.result }}" != "success" ||
-                "${{ needs.build-linux-x86_64-post-merge.result }}" != "success" ||
-                "${{ needs.upload-chain-specs.result }}" != "success" ]]
-                "${{ needs.deploy-ci-preview.result }}" != "success" ]]
+          if [[ "${{ needs.build-linux-x86_64-post-merge.result }}" != "success" ||
+                "${{ needs.deploy-rustdoc.result }}" != "success" ||
+                "${{ needs.upload-chain-specs.result }}" != "success" ||
+                "${{ needs.ci-preview-tests-post-merge.result }}" != "success" ||
+                "${{ needs.deploy-ci-preview.result }}" != "success" ||
                 "${{ needs.upload-to-s3.result }}" != "success" ]]; then
             echo "One or more needed jobs failed."
             exit 1
