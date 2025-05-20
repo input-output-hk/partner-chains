@@ -201,7 +201,7 @@ impl From<sidechain_domain::AssetId> for Asset {
 
 /// Helper row type for querying just epoch number
 #[deprecated(
-	since = "1.8.0",
+	since = "1.7.0",
 	note = "Deprecated due to not being either a primitive type or a complete Db-Sync table row."
 )]
 #[derive(Debug, Copy, Clone, sqlx::FromRow, PartialEq)]
