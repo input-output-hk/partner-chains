@@ -1,8 +1,10 @@
+//! Substrate Prometheus metrics client for Db-Sync-based Partner Chain data sources
 use log::warn;
 use substrate_prometheus_endpoint::{
 	CounterVec, HistogramOpts, HistogramVec, Opts, PrometheusError, Registry, U64, register,
 };
 
+/// Substrate Prometheus metrics client used by Partner Chain data sources
 #[derive(Clone)]
 pub struct McFollowerMetrics {
 	time_elapsed: HistogramVec,
@@ -10,13 +12,13 @@ pub struct McFollowerMetrics {
 }
 
 impl McFollowerMetrics {
-	pub fn time_elapsed(&self) -> &HistogramVec {
+	pub(crate) fn time_elapsed(&self) -> &HistogramVec {
 		&self.time_elapsed
 	}
-	pub fn call_count(&self) -> &CounterVec<U64> {
+	pub(crate) fn call_count(&self) -> &CounterVec<U64> {
 		&self.call_count
 	}
-	pub fn register(registry: &Registry) -> Result<Self, PrometheusError> {
+	pub(crate) fn register(registry: &Registry) -> Result<Self, PrometheusError> {
 		Ok(Self {
 			time_elapsed: register(
 				HistogramVec::new(
@@ -42,6 +44,7 @@ impl McFollowerMetrics {
 	}
 }
 
+/// Registers new metrics with Substrate Prometheus metrics service and returns a client instance
 pub fn register_metrics_warn_errors(
 	metrics_registry_opt: Option<&Registry>,
 ) -> Option<McFollowerMetrics> {
@@ -93,11 +96,11 @@ macro_rules! observed_async_trait {
 }
 
 #[cfg(test)]
-pub mod mock {
+pub(crate) mod mock {
 	use crate::metrics::McFollowerMetrics;
 	use substrate_prometheus_endpoint::{CounterVec, HistogramOpts, HistogramVec, Opts};
 
-	pub fn test_metrics() -> McFollowerMetrics {
+	pub(crate) fn test_metrics() -> McFollowerMetrics {
 		McFollowerMetrics {
 			time_elapsed: HistogramVec::new(HistogramOpts::new("test", "test"), &["method_name"])
 				.unwrap(),

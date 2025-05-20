@@ -3,7 +3,7 @@ use partner_chains_plutus_data::permissioned_candidates::PermissionedCandidateDa
 use partner_chains_plutus_data::permissioned_candidates::PermissionedCandidateDatums;
 use sidechain_domain::*;
 
-pub fn raw_permissioned_candidate_data_from(
+pub(crate) fn raw_permissioned_candidate_data_from(
 	datum: PermissionedCandidateDatumV0,
 ) -> RawPermissionedCandidateData {
 	let PermissionedCandidateDatumV0 { sidechain_public_key, aura_public_key, grandpa_public_key } =
@@ -11,7 +11,7 @@ pub fn raw_permissioned_candidate_data_from(
 	RawPermissionedCandidateData { sidechain_public_key, aura_public_key, grandpa_public_key }
 }
 
-pub fn raw_permissioned_candidate_data_vec_from(
+pub(crate) fn raw_permissioned_candidate_data_vec_from(
 	datums: PermissionedCandidateDatums,
 ) -> Vec<RawPermissionedCandidateData> {
 	match datums {

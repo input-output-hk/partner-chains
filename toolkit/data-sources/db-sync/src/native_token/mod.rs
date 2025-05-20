@@ -1,3 +1,4 @@
+//! Db-Sync data source used by Partner Chain Native Token Management feature
 use crate::db_model::{Block, BlockNumber};
 use crate::metrics::McFollowerMetrics;
 use crate::observed_async_trait;
@@ -11,11 +12,19 @@ use std::sync::{Arc, Mutex};
 #[cfg(test)]
 mod tests;
 
+/// Db-Sync data source for the Native Token Management feature of the Partner Chains toolkit.
+///
+/// See documentation for [sp_native_token_management] for information about the feature.
 pub struct NativeTokenManagementDataSourceImpl {
+	/// Postgres connection pool
 	pub pool: PgPool,
+	/// Prometheus metrics client
 	pub metrics_opt: Option<McFollowerMetrics>,
+	/// Cardano security parameter, ie. the number of confirmations needed to stabilize a block
 	security_parameter: u32,
+	/// Size of internal data cache
 	cache_size: u16,
+	/// Internal data cache
 	cache: Arc<Mutex<Cache>>,
 }
 
@@ -69,6 +78,7 @@ impl NativeTokenManagementDataSource for NativeTokenManagementDataSourceImpl {
 });
 
 impl NativeTokenManagementDataSourceImpl {
+	/// Creates a new instance of the data source
 	pub async fn new(
 		pool: PgPool,
 		metrics_opt: Option<McFollowerMetrics>,
@@ -80,6 +90,7 @@ impl NativeTokenManagementDataSourceImpl {
 		Ok(Self { pool, metrics_opt, security_parameter, cache_size, cache })
 	}
 
+	/// Creates a new instance of the data source, reading configuration from the environment
 	pub async fn new_from_env(
 		pool: PgPool,
 		metrics_opt: Option<McFollowerMetrics>,
