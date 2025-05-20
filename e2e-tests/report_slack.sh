@@ -7,6 +7,7 @@ repository=$1
 ref_name=$2
 job_url=$3
 xray_id=$6
+marker_name=$7
 
 xray_exec_url="${jira_url}/browse/${xray_id}"
 
@@ -45,6 +46,9 @@ add_part $xpassed "xpassed"
 
 msg="======= $msg in ${duration_rounded_down}s ======="
 msg+="\nTest Environment: $env"
+if [ -n "$marker_name" ]; then
+  msg+="\nTest Marker: $marker_name"
+fi
 msg+="\nTriggered by: $github_actor_username"
 
 if [[ $exit_code -eq 0 ]]

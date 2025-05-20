@@ -5,10 +5,8 @@ from config.api_config import ApiConfig
 import logging as logger
 
 
-@mark.CD
+@mark.smoke
 class TestSmoke:
-    @mark.ariadne
-    @mark.substrate
     @mark.test_key('ETCM-6992')
     def test_block_producing(self, api: BlockchainApi, config: ApiConfig):
         """Test node producing a block
@@ -24,8 +22,6 @@ class TestSmoke:
         sleep(sleep_time)
         assert api.get_latest_pc_block_number() > block_number
 
-    @mark.ariadne
-    @mark.substrate
     @mark.test_key('ETCM-6993')
     @mark.xdist_group("faucet_tx")
     def test_transaction(self, api: BlockchainApi, new_wallet: Wallet, get_wallet: Wallet, config: ApiConfig):
@@ -57,44 +53,3 @@ class TestSmoke:
         sender_balance_after = api.get_pc_balance(sender_wallet.address)
         assert value == receiver_balance, "Receiver's balance mismatch"
         assert sender_balance_after == sender_balance_before - value - tx.total_fee_amount, "Sender's balance mismatch"
-
-    @mark.test_key('ETCM-6994')
-    @mark.ariadne
-    @mark.rpc
-    def test_get_status(self, api: BlockchainApi):
-        """Test partner_chain_getStatus() has same data as cardano-cli query tip
-
-        * execute partner_chain_getStatus() API call
-        * get mainchain epoch and slot from cardano-cli
-        * check that mainchain slot from getStatus() is equal to slot from cardano-cli
-        * check nextEpochTimestamp from getStatus()
-        """
-        expected_mc_epoch = api.get_mc_epoch()
-        expected_mc_slot = api.get_mc_slot()
-
-        partner_chain_status = api.get_status()
-        assert partner_chain_status['mainchain']['epoch'] == expected_mc_epoch
-
-        SLOT_DIFF_TOLERANCE = 100
-        assert abs(partner_chain_status['mainchain']['slot'] - expected_mc_slot) <= SLOT_DIFF_TOLERANCE
-        logger.info(
-            f"Slot difference between getStatus() and cardano_cli tip is \
-            {abs(partner_chain_status['mainchain']['slot'] - expected_mc_slot)}"
-        )
-
-        assert partner_chain_status['mainchain']['nextEpochTimestamp']
-        assert partner_chain_status['sidechain']['nextEpochTimestamp']
-        assert partner_chain_status['sidechain']['epoch']
-        assert partner_chain_status['sidechain']['slot']
-
-    @mark.ariadne
-    @mark.rpc
-    @mark.test_key('ETCM-7442')
-    def test_get_params(self, api: BlockchainApi, config: ApiConfig):
-        """Test partner_chain_getParams() returns proper values
-
-        * execute partner_chain_getParams() API call
-        * check that the return data is equal to the config values
-        """
-        params = api.get_params()
-        assert params["genesis_utxo"] == config.genesis_utxo, "Genesis UTXO mismatch"

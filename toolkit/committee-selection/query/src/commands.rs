@@ -1,6 +1,11 @@
+//! Implementations for CLI query commands for getting Ariadne params and registration status
 use crate::SessionValidatorManagementQueryApi;
 use sidechain_domain::{McEpochNumber, StakePoolPublicKey};
 
+/// Returns Ariadne parameters in JSON format that are effective for the given epoch
+/// Arguments:
+///  - query: query api implementing [SessionValidatorManagementQueryApi] trait
+///  - mc_epoch_number: mainchain epoch for which to get Ariadne parameters
 pub async fn cli_get_ariadne_parameters(
 	query: impl SessionValidatorManagementQueryApi,
 	mc_epoch_number: McEpochNumber,
@@ -13,6 +18,11 @@ pub async fn cli_get_ariadne_parameters(
 	serde_json::to_string_pretty(&json).map_err(|err| err.to_string())
 }
 
+/// Returns Registration status in JSON format
+/// Arguments:
+///  - query: query api implementing [SessionValidatorManagementQueryApi] trait
+///  - mc_epoch_number: mainchain epoch for which to get Registration status
+///  - stake_pool_public_key: stake pool pub key for which to get Registration status
 pub async fn cli_get_registration_status(
 	query: impl SessionValidatorManagementQueryApi,
 	mc_epoch_number: McEpochNumber,

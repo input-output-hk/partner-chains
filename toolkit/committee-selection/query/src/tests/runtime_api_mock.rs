@@ -8,6 +8,8 @@ use mock::*;
 use sidechain_domain::*;
 use sp_core::{Decode, Encode};
 use sp_session_validator_management::MainChainScripts;
+#[allow(deprecated)]
+use sp_sidechain::GetSidechainStatus;
 use std::str::FromStr;
 
 pub type Block = sp_runtime::generic::Block<
@@ -31,6 +33,7 @@ impl TryFrom<SidechainPublicKey> for CrossChainPublic {
 }
 
 sp_api::mock_impl_runtime_apis! {
+	#[allow(deprecated)]
 	impl GetSidechainStatus<Block> for TestRuntimeApi {
 		#[advanced]
 		fn get_sidechain_status(at: <Block as BlockT>::Hash) -> Result<SidechainStatus, sp_api::ApiError> {

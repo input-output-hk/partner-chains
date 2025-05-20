@@ -77,8 +77,6 @@ class TestCommitteeDistribution:
 
         return _t_candidates_seats
 
-    @mark.committee_distribution
-    @mark.ariadne
     @mark.xdist_group("governance_action")
     @mark.usefixtures("governance_skey_with_cli")
     def test_update_d_param(
@@ -129,8 +127,6 @@ class TestCommitteeDistribution:
         ), "D-param update did not take effect"
 
     @mark.test_key('ETCM-7150')
-    @mark.committee_distribution
-    @mark.ariadne
     def test_epoch_committee_ratio_complies_with_dparam(
         self,
         pc_epoch,
@@ -162,8 +158,6 @@ class TestCommitteeDistribution:
         logging.info(f"Ariadne observed ratio: {ratio}, expected ratio: {expected_ratio}")
         assert expected_ratio == ratio
 
-    @mark.ariadne
-    @mark.committee_distribution
     def test_epoch_p_candidates_seats(
         self,
         config: ApiConfig,
@@ -199,8 +193,6 @@ class TestCommitteeDistribution:
         actual_p_candidates = p_candidates_seats(pc_epoch)
         assert expected_p_candidates == actual_p_candidates, f"Expected {expected_p_candidates} P-candidates, got {actual_p_candidates}"
 
-    @mark.ariadne
-    @mark.committee_distribution
     def test_epoch_t_candidates_seats(
         self,
         config: ApiConfig,
@@ -237,8 +229,6 @@ class TestCommitteeDistribution:
         assert expected_t_candidates == actual_t_candidates, f"Expected {expected_t_candidates} T-candidates, got {actual_t_candidates}"
 
     @mark.test_key('ETCM-7032')
-    @mark.committee_distribution
-    @mark.ariadne
     def test_epoch_committee_size_complies_with_dparam(
         self, config: ApiConfig, get_pc_epoch_committee, pc_epoch, pc_epoch_calculator, current_mc_epoch, d_param_cache
     ):
@@ -262,8 +252,6 @@ class TestCommitteeDistribution:
         assert len(committee) == expected_committee_size, f"Committee size mismatch for pc epoch {pc_epoch}."
 
     @mark.test_key('ETCM-7027')
-    @mark.ariadne
-    @mark.committee_distribution
     def test_mc_epoch_committee_participation_total_number(
         self, api: BlockchainApi, config: ApiConfig, mc_epoch, get_total_attendance_for_mc_epoch
     ):
@@ -284,9 +272,7 @@ class TestCommitteeDistribution:
             f"Expected total attendance {expected_total_attendance}, got {actual_total_attendance}"
 
     @mark.test_key('ETCM-7028')
-    @mark.ariadne
     @mark.probability
-    @mark.committee_distribution
     def test_mc_epoch_committee_participation_probability(
         self, mc_epoch, update_committee_expected_attendance, config: ApiConfig, db: Session
     ):
@@ -311,8 +297,6 @@ class TestCommitteeDistribution:
                 target - tolerance <= actual <= target + tolerance
             ), f"Incorrect attendance for {candidate.pc_pub_key}"
 
-    @mark.ariadne
-    @mark.committee_distribution
     def test_guaranteed_seats(self, mc_epoch, update_committee_expected_attendance, config: ApiConfig, db: Session):
         if mc_epoch < config.deployment_mc_epoch:
             skip("Cannot query committee before initial epoch.")
@@ -327,10 +311,7 @@ class TestCommitteeDistribution:
 
 
 class TestCommitteeRotation:
-
     @mark.test_key('ETCM-6991')
-    @mark.ariadne
-    @mark.committee_rotation
     def test_committee_members_rotate_over_pc_epochs(
         self, config: ApiConfig, pc_epoch_calculator: PartnerChainEpochCalculator, get_pc_epoch_committee, mc_epoch
     ):
@@ -369,8 +350,6 @@ class TestCommitteeRotation:
 
     @mark.candidate_status("active")
     @mark.test_key('ETCM-6987')
-    @mark.ariadne
-    @mark.committee_rotation
     def test_active_trustless_candidates_were_in_committee(
         self, trustless_rotation_candidates: Candidates, get_candidate_participation: int
     ):
@@ -390,8 +369,6 @@ class TestCommitteeRotation:
 
     @mark.candidate_status("inactive")
     @mark.test_key('ETCM-6988')
-    @mark.ariadne
-    @mark.committee_rotation
     def test_inactive_trustless_candidates_were_not_in_committee(
         self, trustless_rotation_candidates: Candidates, get_candidate_participation: int
     ):
@@ -411,8 +388,6 @@ class TestCommitteeRotation:
 
     @mark.candidate_status("active")
     @mark.test_key('ETCM-6989')
-    @mark.ariadne
-    @mark.committee_rotation
     def test_active_permissioned_candidates_were_in_committee(
         self, permissioned_rotation_candidates: PermissionedCandidates, get_candidate_participation: int
     ):
@@ -432,8 +407,6 @@ class TestCommitteeRotation:
 
     @mark.candidate_status("inactive")
     @mark.test_key('ETCM-6990')
-    @mark.ariadne
-    @mark.committee_rotation
     def test_inactive_permissioned_candidates_were_not_in_committee(
         self, permissioned_rotation_candidates: PermissionedCandidates, get_candidate_participation: int
     ):
@@ -453,10 +426,7 @@ class TestCommitteeRotation:
 
 
 class TestCommitteeMembers:
-
     @mark.test_key('ETCM-7033')
-    @mark.ariadne
-    @mark.committee_members
     def test_there_is_at_least_one_trustless_candidate(self, api: BlockchainApi, current_mc_epoch):
         """Test that the configured d-parameter has at least one trustless candidate"""
         if api.get_d_param(current_mc_epoch).trustless_candidates_number == 0:
@@ -466,8 +436,6 @@ class TestCommitteeMembers:
         assert len(api.get_trustless_candidates(current_mc_epoch, valid_only=True)) > 0
 
     @mark.test_key('ETCM-7034')
-    @mark.ariadne
-    @mark.committee_members
     def test_there_is_at_least_one_permissioned_candidate(self, api: BlockchainApi, current_mc_epoch):
         """Test that the configured d-parameter has at least one permissioned candidate"""
         if api.get_d_param(current_mc_epoch).permissioned_candidates_number == 0:
@@ -475,8 +443,6 @@ class TestCommitteeMembers:
         assert len(api.get_permissioned_candidates(current_mc_epoch, valid_only=True)) > 0
 
     @mark.test_key('ETCM-7026')
-    @mark.ariadne
-    @mark.committee_members
     def test_no_rogue_committee_members(
         self,
         db: Session,
@@ -510,9 +476,7 @@ class TestCommitteeMembers:
                 pub_key in active_candidates
             ), f"Committee member {pub_key} not an active candidate for pc epoch {pc_epoch}"
 
-    @mark.ariadne
     @mark.test_key('ETCM-7029')
-    @mark.committee_members
     def test_authorities_matching_committee(self, api: BlockchainApi, config: ApiConfig):
         """Test that authorities match validators for a given partner chain epoch
 

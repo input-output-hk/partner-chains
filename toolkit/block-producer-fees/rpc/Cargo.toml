@@ -1,0 +1,24 @@
+[package]
+name = "pallet-block-producer-fees-rpc"
+version.workspace = true
+license = "Apache-2.0"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+parity-scale-codec = { workspace = true, features = ['std'] }
+jsonrpsee = { workspace = true }
+serde = { workspace = true, features = ['std'] }
+sp-runtime = { workspace = true, features = ['std'] }
+sp-api = { workspace = true, features = ['std'] }
+sp-block-producer-fees = { workspace = true, features = ['std'] }
+sp-blockchain = { workspace = true }
+derive-new = { workspace = true }
+
+[features]
+default = []

@@ -2,7 +2,6 @@ use crate::db_model::{Block, BlockNumber};
 use crate::metrics::McFollowerMetrics;
 use crate::observed_async_trait;
 use crate::{DataSourceError, Result};
-use derive_new::new;
 use itertools::Itertools;
 use sidechain_domain::*;
 use sp_native_token_management::{MainChainScripts, NativeTokenManagementDataSource};
@@ -12,13 +11,11 @@ use std::sync::{Arc, Mutex};
 #[cfg(test)]
 mod tests;
 
-#[derive(new)]
 pub struct NativeTokenManagementDataSourceImpl {
 	pub pool: PgPool,
 	pub metrics_opt: Option<McFollowerMetrics>,
 	security_parameter: u32,
 	cache_size: u16,
-	#[new(default)]
 	cache: Arc<Mutex<Cache>>,
 }
 
@@ -72,21 +69,26 @@ impl NativeTokenManagementDataSource for NativeTokenManagementDataSourceImpl {
 });
 
 impl NativeTokenManagementDataSourceImpl {
-	pub fn new_from_env(
+	pub async fn new(
 		pool: PgPool,
 		metrics_opt: Option<McFollowerMetrics>,
-	) -> std::result::Result<Self, &'static str> {
+		security_parameter: u32,
+		cache_size: u16,
+	) -> std::result::Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+		crate::db_model::create_idx_tx_out_address(&pool).await?;
+		let cache = Default::default();
+		Ok(Self { pool, metrics_opt, security_parameter, cache_size, cache })
+	}
+
+	pub async fn new_from_env(
+		pool: PgPool,
+		metrics_opt: Option<McFollowerMetrics>,
+	) -> std::result::Result<Self, Box<dyn std::error::Error + Send + Sync>> {
 		let security_parameter: u32 = std::env::var("CARDANO_SECURITY_PARAMETER")
 			.ok()
 			.and_then(|s| s.parse().ok())
 			.ok_or("Couldn't read env variable CARDANO_SECURITY_PARAMETER as u32")?;
-		Ok(Self {
-			pool,
-			metrics_opt,
-			security_parameter,
-			cache_size: 1000,
-			cache: Default::default(),
-		})
+		Self::new(pool, metrics_opt, security_parameter, 1000).await
 	}
 
 	fn get_from_cache(

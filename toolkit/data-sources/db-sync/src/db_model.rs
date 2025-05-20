@@ -9,9 +9,7 @@ use sidechain_domain::{
 	MainchainBlock, McBlockHash, McBlockNumber, McEpochNumber, McSlotNumber, McTxHash, UtxoId,
 	UtxoIndex,
 };
-use sqlx::{
-	Decode, Pool, Postgres, database::HasValueRef, error::BoxDynError, postgres::PgTypeInfo,
-};
+use sqlx::{Decode, Pool, Postgres, database::Database, error::BoxDynError, postgres::PgTypeInfo};
 use std::str::FromStr;
 
 #[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
@@ -114,12 +112,22 @@ pub(crate) struct DatumOutput {
 	pub datum: DbDatum,
 }
 
+#[derive(Debug, Clone, PartialEq, sqlx::Type)]
+#[repr(i32)]
+/// Describes the type of a single change to the governed map
+pub(crate) enum GovernedMapAction {
+	/// Spending of a governed map utxo
+	Spend,
+	/// Creation of a governed map utxo
+	Create,
+}
+
 #[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
 pub(crate) struct DatumChangeOutput {
 	pub datum: DbDatum,
 	pub block_no: BlockNumber,
 	pub block_index: TxIndexInBlock,
-	pub action: String,
+	pub action: GovernedMapAction,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -137,7 +145,7 @@ impl sqlx::Type<Postgres> for NativeTokenAmount {
 }
 
 impl<'r> Decode<'r, Postgres> for NativeTokenAmount {
-	fn decode(value: <Postgres as HasValueRef<'r>>::ValueRef) -> Result<Self, BoxDynError> {
+	fn decode(value: <Postgres as Database>::ValueRef<'r>) -> Result<Self, BoxDynError> {
 		let decoded = <sqlx::types::BigDecimal as Decode<Postgres>>::decode(value)?;
 		let i = decoded.to_u128().ok_or("NativeTokenQuantity is always a u128".to_string())?;
 		Ok(Self(i))
@@ -332,8 +340,10 @@ pub(crate) async fn get_stake_distribution(
 	pool: &Pool<Postgres>,
 	epoch: EpochNumber,
 ) -> Result<Vec<StakePoolEntry>, SqlxError> {
-	let sql = "SELECT ph.hash_raw as pool_hash, SUM(es.amount) as stake FROM epoch_stake es
-       	INNER JOIN pool_hash ph ON es.pool_id = ph.id
+	let sql = "
+        SELECT ph.hash_raw as pool_hash, SUM(es.amount) as stake
+        FROM epoch_stake es
+        INNER JOIN pool_hash ph ON es.pool_id = ph.id
         WHERE es.epoch_no = $1
         GROUP BY ph.hash_raw";
 	Ok(sqlx::query_as::<_, StakePoolEntry>(sql).bind(epoch).fetch_all(pool).await?)
@@ -385,7 +395,7 @@ pub(crate) async fn get_changes(
 ) -> Result<Vec<DatumChangeOutput>, SqlxError> {
 	let query = "
 		((SELECT
-			datum.value as datum, origin_block.block_no as block_no, origin_tx.block_index as block_index, 'upsert' as action
+			datum.value as datum, origin_block.block_no as block_no, origin_tx.block_index as block_index, $6 as action, 1 as action_order
 		FROM tx_out
 		INNER JOIN tx origin_tx			ON tx_out.tx_id = origin_tx.id
 		INNER JOIN block origin_block	ON origin_tx.block_id = origin_block.id
@@ -398,7 +408,7 @@ pub(crate) async fn get_changes(
 			AND multi_asset.name = $5)
 		UNION
 		(SELECT
-			datum.value as datum, consuming_block.block_no as block_no, consuming_tx.block_index as block_index, 'remove' as action
+			datum.value as datum, consuming_block.block_no as block_no, consuming_tx.block_index as block_index, $7 as action, -1 as action_order
 		FROM tx_out
 		LEFT JOIN tx_in consuming_tx_in	ON tx_out.tx_id = consuming_tx_in.tx_out_id AND tx_out.index = consuming_tx_in.tx_out_index
 		LEFT JOIN tx consuming_tx		ON consuming_tx_in.tx_in_id = consuming_tx.id
@@ -411,13 +421,15 @@ pub(crate) async fn get_changes(
 			AND (consuming_tx_in.id IS NOT NULL AND ($2 IS NULL OR consuming_block.block_no > $2) AND consuming_block.block_no <= $3)
 			AND multi_asset.policy = $4
 			AND multi_asset.name = $5))
-		ORDER BY block_no, block_index ASC";
+		ORDER BY block_no, block_index, action_order ASC";
 	Ok(sqlx::query_as::<_, DatumChangeOutput>(query)
 		.bind(&address.0)
 		.bind(after_block)
 		.bind(to_block)
 		.bind(&asset.policy_id.0)
 		.bind(&asset.asset_name.0)
+		.bind(GovernedMapAction::Create)
+		.bind(GovernedMapAction::Spend)
 		.fetch_all(pool)
 		.await?)
 }
@@ -518,22 +530,46 @@ pub(crate) async fn get_utxos_for_address(
 /// Used by `get_token_utxo_for_epoch` (CandidatesDataSourceImpl),
 #[cfg(feature = "candidate-source")]
 pub(crate) async fn create_idx_ma_tx_out_ident(pool: &Pool<Postgres>) -> Result<(), SqlxError> {
-	let sql = "CREATE INDEX IF NOT EXISTS idx_ma_tx_out_ident ON ma_tx_out(ident)";
-	info!("Executing '{}', this might take a while", sql);
-	sqlx::query(sql).execute(pool).await?;
-	info!("Index 'idx_ma_tx_out_ident' is created");
+	let exists = index_exists(pool, "idx_ma_tx_out_ident").await?;
+	if exists {
+		info!("Index 'idx_ma_tx_out_ident' already exists");
+	} else {
+		let sql = "CREATE INDEX IF NOT EXISTS idx_ma_tx_out_ident ON ma_tx_out(ident)";
+		info!("Executing '{}', this might take a while", sql);
+		sqlx::query(sql).execute(pool).await?;
+		info!("Index 'idx_ma_tx_out_ident' has been created");
+	}
 	Ok(())
 }
 
-#[cfg(test)]
+/// Used by multiple queries across functionalities.
+#[cfg(any(feature = "candidate-source", feature = "native-token", feature = "governed-map"))]
+pub(crate) async fn create_idx_tx_out_address(pool: &Pool<Postgres>) -> Result<(), SqlxError> {
+	let exists = index_exists(pool, "idx_tx_out_address").await?;
+	if exists {
+		info!("Index 'idx_tx_out_address' already exists");
+	} else {
+		let sql = "CREATE INDEX IF NOT EXISTS idx_tx_out_address ON tx_out USING hash (address)";
+		info!("Executing '{}', this might take a long time", sql);
+		sqlx::query(sql).execute(pool).await?;
+		info!("Index 'idx_tx_out_address' has been created");
+	}
+	Ok(())
+}
+
 /// Check if the index exists.
-pub(crate) async fn index_exists(pool: &Pool<Postgres>, index_name: &str) -> bool {
+async fn index_exists(pool: &Pool<Postgres>, index_name: &str) -> Result<bool, sqlx::Error> {
 	sqlx::query("select * from pg_indexes where indexname = $1")
 		.bind(index_name)
 		.fetch_all(pool)
 		.await
 		.map(|rows| rows.len() == 1)
-		.unwrap()
+}
+
+#[cfg(test)]
+/// Check if the index exists. Panics on errors.
+pub(crate) async fn index_exists_unsafe(pool: &Pool<Postgres>, index_name: &str) -> bool {
+	index_exists(pool, index_name).await.unwrap()
 }
 
 /// Sums all transfers between genesis and the first block that is produced with the feature on.

@@ -1,6 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
+#![allow(deprecated)]
 
 #[cfg(feature = "runtime-benchmarks")]
 #[macro_use]
@@ -517,7 +518,7 @@ impl pallet_block_producer_metadata::benchmarking::BenchmarkHelper<BlockProducer
 {
 	fn metadata() -> BlockProducerMetadataType {
 		BlockProducerMetadataType {
-			url: "https://cool.stuff/spo.json".as_bytes().to_vec().try_into().unwrap(),
+			url: "https://cool.stuff/spo.json".try_into().unwrap(),
 			hash: SizedByteString::from([0; 32]),
 		}
 	}
@@ -1005,6 +1006,13 @@ impl_runtime_apis! {
 			cross_chain_pub_key: &CrossChainPublicKey,
 		) -> Option<BlockProducerMetadataType> {
 			BlockProducerMetadata::get_metadata_for(&cross_chain_pub_key)
+		}
+	}
+
+	impl sp_block_producer_fees::BlockProducerFeesApi<Block, AccountId> for Runtime
+	{
+		fn get_all_fees() -> Vec<(AccountId, sp_block_producer_fees::PerTenThousands)> {
+			BlockProducerFees::get_all_latest().map(|(account_id, (_slot, fee))| (account_id, fee)).collect()
 		}
 	}
 

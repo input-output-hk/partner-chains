@@ -2,6 +2,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
+#![deny(missing_docs)]
 
 pub mod migrations;
 /// [`pallet_session`] integration.
@@ -12,8 +13,8 @@ pub mod session_manager;
 
 pub use pallet::*;
 
-#[cfg(any(test, feature = "mock"))]
-pub mod mock;
+#[cfg(test)]
+mod mock;
 
 #[cfg(test)]
 mod tests;
@@ -45,17 +46,23 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
+		/// The ubiquitous event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		#[pallet::constant]
+		/// Maximum amount of validators.
 		type MaxValidators: Get<u32>;
+		/// Type identifying authorities.
 		type AuthorityId: Member
 			+ Parameter
 			+ MaybeSerializeDeserialize
 			+ MaxEncodedLen
 			+ Ord
 			+ Into<Self::AccountId>;
+		/// Type of authority keys.
 		type AuthorityKeys: Parameter + Member + MaybeSerializeDeserialize + Ord + MaxEncodedLen;
+		/// Type of input data used by `select_authorities` to select a committee.
 		type AuthoritySelectionInputs: Parameter;
+		/// Type of the epoch number used by the partner chain.
 		type ScEpochNumber: Parameter
 			+ MaxEncodedLen
 			+ Zero
@@ -68,6 +75,7 @@ pub mod pallet {
 			+ From<u64>
 			+ Into<u64>;
 
+		/// Type of committee members returned by `select_authorities`.
 		type CommitteeMember: Parameter
 			+ Member
 			+ MaybeSerializeDeserialize
@@ -77,11 +85,14 @@ pub mod pallet {
 		/// Origin for governance calls
 		type MainChainScriptsOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
+		/// Should select a committee for `sidechain_epoch` based on selection inputs `input`.
+		/// Should return [None] if selection was impossible for the given input.
 		fn select_authorities(
 			input: Self::AuthoritySelectionInputs,
 			sidechain_epoch: Self::ScEpochNumber,
 		) -> Option<BoundedVec<Self::CommitteeMember, Self::MaxValidators>>;
 
+		/// Should return the current partner chain epoch.
 		fn current_epoch_number() -> Self::ScEpochNumber;
 
 		/// Weight functions needed for pallet_session_validator_management.
@@ -97,14 +108,18 @@ pub mod pallet {
 
 	#[derive(CloneNoBound, Encode, Decode, TypeInfo, MaxEncodedLen)]
 	#[scale_info(skip_type_params(MaxValidators))]
+	/// Committee info type used on-chain.
 	pub struct CommitteeInfo<ScEpochNumber: Clone, CommitteeMember: Clone, MaxValidators> {
+		/// Epoch number the committee is selected for.
 		pub epoch: ScEpochNumber,
+		/// List of committee members.
 		pub committee: BoundedVec<CommitteeMember, MaxValidators>,
 	}
 
 	impl<ScEpochNumber: Clone, CommitteeMember: Clone, MaxValidators>
 		CommitteeInfo<ScEpochNumber, CommitteeMember, MaxValidators>
 	{
+		/// Returns committee info as a pair of epoch number and list of committee members
 		pub fn as_pair(self) -> (ScEpochNumber, Vec<CommitteeMember>) {
 			(self.epoch, self.committee.to_vec())
 		}
@@ -141,14 +156,18 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T> {
+		/// [Pallet::set] has been called with epoch number that is not current epoch + 1
 		InvalidEpoch,
-		UnnecessarySetCall,
+		/// [Pallet::set] has been called a second time for the same next epoch
+		NextCommitteeAlreadySet,
 	}
 
 	#[pallet::genesis_config]
 	#[derive(frame_support::DefaultNoBound)]
 	pub struct GenesisConfig<T: Config> {
+		/// Initial committee members of the partner chain.
 		pub initial_authorities: Vec<T::CommitteeMember>,
+		/// Initial [MainChainScripts] of the partner chain.
 		pub main_chain_scripts: MainChainScripts,
 	}
 
@@ -189,7 +208,7 @@ pub mod pallet {
 		type Error = InherentError;
 		const INHERENT_IDENTIFIER: InherentIdentifier = INHERENT_IDENTIFIER;
 
-		/// Responsible for calling `Call:set()` on each block by the block author, if the validator list changed
+		/// Responsible for calling [Call:set] on each block by the block author, if the validator list changed
 		fn create_inherent(data: &InherentData) -> Option<Self::Call> {
 			if NextCommittee::<T>::exists() {
 				None
@@ -286,6 +305,7 @@ pub mod pallet {
 			ensure_none(origin)?;
 			let expected_epoch_number = CurrentCommittee::<T>::get().epoch + One::one();
 			ensure!(for_epoch_number == expected_epoch_number, Error::<T>::InvalidEpoch);
+			ensure!(!NextCommittee::<T>::exists(), Error::<T>::NextCommitteeAlreadySet);
 			let len = validators.len();
 			info!(
 				"💼 Storing committee of size {len} for epoch {for_epoch_number}, input data hash: {}",
@@ -321,20 +341,14 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
+		/// Returns epoch number for which next committee hasn't been set yet.
 		pub fn get_next_unset_epoch_number() -> T::ScEpochNumber {
 			NextCommittee::<T>::get()
 				.map(|next_committee| next_committee.epoch + One::one())
 				.unwrap_or(CurrentCommittee::<T>::get().epoch + One::one())
 		}
 
-		pub fn get_current_authority(index: usize) -> Option<T::AuthorityId> {
-			CurrentCommittee::<T>::get()
-				.committee
-				.get(index)
-				.map(|authority| authority.authority_id())
-				.clone()
-		}
-
+		/// Returns current committee member for an index, repeating them in a round-robin fashion if needed.
 		pub fn get_current_authority_round_robin(index: usize) -> Option<T::CommitteeMember> {
 			let committee = CurrentCommittee::<T>::get().committee;
 			if committee.is_empty() {
@@ -344,16 +358,20 @@ pub mod pallet {
 			committee.get(index % committee.len() as usize).cloned()
 		}
 
+		/// Returns current committee from storage.
 		pub fn current_committee_storage()
 		-> CommitteeInfo<T::ScEpochNumber, T::CommitteeMember, T::MaxValidators> {
 			CurrentCommittee::<T>::get()
 		}
 
+		/// Returns next committee from storage.
 		pub fn next_committee_storage()
 		-> Option<CommitteeInfo<T::ScEpochNumber, T::CommitteeMember, T::MaxValidators>> {
 			NextCommittee::<T>::get()
 		}
 
+		/// Returns the `AuthorityId`s of next committee from storage.
+		///
 		/// This function's result should be always defined after inherent call of 1st block of each epoch
 		pub fn next_committee() -> Option<BoundedVec<T::AuthorityId, T::MaxValidators>> {
 			Some(BoundedVec::truncate_from(
@@ -377,6 +395,7 @@ pub mod pallet {
 			(decoded_data, data_hash)
 		}
 
+		/// Calculates committee using configured `select_authorities` function
 		pub fn calculate_committee(
 			authority_selection_inputs: T::AuthoritySelectionInputs,
 			sidechain_epoch: T::ScEpochNumber,
@@ -384,6 +403,8 @@ pub mod pallet {
 			T::select_authorities(authority_selection_inputs, sidechain_epoch).map(|c| c.to_vec())
 		}
 
+		/// If [NextCommittee] is defined, it moves its value to [CurrentCommittee] storage.
+		/// Returns the value taken from [NextCommittee].
 		pub fn rotate_committee_to_next_epoch() -> Option<Vec<T::CommitteeMember>> {
 			let next_committee = NextCommittee::<T>::take()?;
 
@@ -398,6 +419,7 @@ pub mod pallet {
 			Some(validators)
 		}
 
+		/// Returns main chain scripts.
 		pub fn get_main_chain_scripts() -> MainChainScripts {
 			MainChainScriptsConfiguration::<T>::get()
 		}

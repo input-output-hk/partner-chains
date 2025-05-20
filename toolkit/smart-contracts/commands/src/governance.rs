@@ -8,6 +8,7 @@ use sidechain_domain::{MainchainKeyHash, UtxoId};
 
 #[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
+/// Commands for managing the governance of the partner chain
 pub enum GovernanceCmd {
 	/// Initialize Partner Chain governance
 	Init(InitGovernanceCmd),
@@ -18,6 +19,7 @@ pub enum GovernanceCmd {
 }
 
 impl GovernanceCmd {
+	/// Executes the internal command
 	pub async fn execute(self) -> crate::SubCmdResult {
 		match self {
 			Self::Init(cmd) => cmd.execute().await,
@@ -28,16 +30,18 @@ impl GovernanceCmd {
 }
 
 #[derive(Clone, Debug, clap::Parser)]
+/// Command for initializing the governance of the partner chain
 pub struct InitGovernanceCmd {
 	#[clap(flatten)]
 	common_arguments: crate::CommonArguments,
-	/// Governance authority to be set, hex encoded, space delimited, order does not matter
 	#[arg(short = 'g', long, num_args = 1.., value_delimiter = ' ')]
+	/// Governance authority to be set, hex encoded, space delimited, order does not matter
 	governance_authority: Vec<MainchainKeyHash>,
-	/// Governance threshold to be set
 	#[arg(short = 't', long)]
+	/// Minimum number of authorities required to sign a transaction
 	threshold: u8,
 	#[clap(flatten)]
+	/// Path to the payment key file
 	payment_key_file: PaymentFilePath,
 	/// Genesis UTXO of the new chain, it will be spent durning initialization. If not set, then one will be selected from UTXOs of the payment key.
 	#[arg(long, short = 'c')]
@@ -45,6 +49,7 @@ pub struct InitGovernanceCmd {
 }
 
 impl InitGovernanceCmd {
+	/// Initializes the governance of the partner chain.
 	pub async fn execute(self) -> crate::SubCmdResult {
 		let payment_key = self.payment_key_file.read_key()?;
 		let client = self.common_arguments.get_ogmios_client().await?;
@@ -65,22 +70,26 @@ impl InitGovernanceCmd {
 }
 
 #[derive(Clone, Debug, clap::Parser)]
+/// Command for updating the governance of the partner chain
 pub struct UpdateGovernanceCmd {
 	#[clap(flatten)]
 	common_arguments: crate::CommonArguments,
 	/// New governance authorities keys hashes, hex encoded, space delimited, order does not matter
 	#[arg(short = 'g', long, num_args = 1.., value_delimiter = ' ')]
 	governance_authority: Vec<MainchainKeyHash>,
-	/// Governance threshold to be set
+	/// Minimum number of authorities required to sign a transaction
 	#[arg(short = 't', long)]
 	threshold: u8,
 	#[clap(flatten)]
+	/// Path to the payment key file
 	payment_key_file: PaymentFilePath,
 	#[clap(flatten)]
+	/// Genesis UTXO. This has to be the same as the one used during governance initialization.
 	genesis_utxo: GenesisUtxo,
 }
 
 impl UpdateGovernanceCmd {
+	/// Updates the governance of the partner chain.
 	pub async fn execute(self) -> crate::SubCmdResult {
 		let payment_key = self.payment_key_file.read_key()?;
 		let client = self.common_arguments.get_ogmios_client().await?;
@@ -101,15 +110,17 @@ impl UpdateGovernanceCmd {
 }
 
 #[derive(Clone, Debug, clap::Parser)]
+/// Command for getting the current governance authorities and threshold.
 pub struct GetPolicyCmd {
 	#[clap(flatten)]
 	common_arguments: crate::CommonArguments,
-	/// Genesis UTXO that identifies the partner chain.
 	#[arg(long, short = 'c')]
+	/// Genesis UTXO that identifies the partner chain.
 	genesis_utxo: UtxoId,
 }
 
 impl GetPolicyCmd {
+	/// Gets the current governance authorities and threshold.
 	pub async fn execute(self) -> crate::SubCmdResult {
 		let client = self.common_arguments.get_ogmios_client().await?;
 		let summary = get_governance_policy_summary(self.genesis_utxo, &client).await?;

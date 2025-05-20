@@ -85,6 +85,7 @@ class SmartContracts:
         self.config = config
         self.reserve = SmartContracts.Reserve(self)
         self.governance = SmartContracts.Governance(self)
+        self.governed_map = SmartContracts.GovernedMap(self)
 
     def get_scripts(self) -> dict:
         """Get all scripts from the node."""
@@ -297,3 +298,69 @@ class SmartContracts:
             )
             response = self.run_command.run(cmd)
             return parse_json_response(response)
+
+    class GovernedMap:
+        def __init__(self, parent: "SmartContracts"):
+            self.cli = parent.cli
+            self.run_command = parent.run_command
+            self.config = parent.config
+            self.parent = parent
+
+        def insert(self, key, value, payment_key):
+            cmd = (
+                f"{self.cli} smart-contracts governed-map insert "
+                f"--key {key} "
+                f"--value {value} "
+                f"--payment-key-file {payment_key} "
+                f"--genesis-utxo {self.config.genesis_utxo} "
+                f"--ogmios-url {self.config.stack_config.ogmios_url}"
+            )
+            response = self.run_command.run(cmd)
+            parsed_response = parse_json_response(response)
+            return handle_governance_signature(parsed_response, self.parent)
+
+        def list(self):
+            cmd = (
+                f"{self.cli} smart-contracts governed-map list "
+                f"--genesis-utxo {self.config.genesis_utxo} "
+                f"--ogmios-url {self.config.stack_config.ogmios_url}"
+            )
+            response = self.run_command.run(cmd)
+            return parse_json_response(response)
+
+        def remove(self, key, payment_key):
+            cmd = (
+                f"{self.cli} smart-contracts governed-map remove "
+                f"--key {key} "
+                f"--payment-key-file {payment_key} "
+                f"--genesis-utxo {self.config.genesis_utxo} "
+                f"--ogmios-url {self.config.stack_config.ogmios_url}"
+            )
+            response = self.run_command.run(cmd)
+            parsed_response = parse_json_response(response)
+            return handle_governance_signature(parsed_response, self.parent)
+
+        def get(self, key):
+            cmd = (
+                f"{self.cli} smart-contracts governed-map get "
+                f"--key {key} "
+                f"--genesis-utxo {self.config.genesis_utxo} "
+                f"--ogmios-url {self.config.stack_config.ogmios_url}"
+            )
+            response = self.run_command.run(cmd)
+            return parse_json_response(response)
+
+        def update(self, key, value, payment_key, current_value=None):
+            cmd = (
+                f"{self.cli} smart-contracts governed-map update "
+                f"--key {key} "
+                f"--value {value} "
+                f"--payment-key-file {payment_key} "
+                f"--genesis-utxo {self.config.genesis_utxo} "
+                f"--ogmios-url {self.config.stack_config.ogmios_url}"
+            )
+            if current_value:
+                cmd += f" --current-value {current_value}"
+            response = self.run_command.run(cmd)
+            parsed_response = parse_json_response(response)
+            return handle_governance_signature(parsed_response, self.parent)

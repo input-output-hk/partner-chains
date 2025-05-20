@@ -107,6 +107,9 @@ def pytest_configure(config: Config):
         config.getoption("--init-timestamp"),
     )
 
+    # Set main chain security param to be able to skip tests that would run for too long
+    config.security_param = _config.main_chain.security_param
+
     global partner_chain_rpc_api, partner_chain_epoch_calc
     partner_chain_rpc_api = PartnerChainRpc(_config.nodes_config.node.rpc_url)
     partner_chain_epoch_calc = PartnerChainEpochCalculator(_config)
@@ -214,6 +217,14 @@ def pytest_collection_modifyitems(items):
         for marker in item.iter_markers(name="test_key"):
             test_key = marker.args[0]
             item.user_properties.append(("test_key", test_key))
+
+
+def pytest_runtest_logstart(nodeid, location):
+    logging.info(f"Starting test: {nodeid}")
+
+
+def pytest_runtest_logfinish(nodeid, location):
+    logging.info(f"Finished test: {nodeid}")
 
 
 def pytest_runtest_makereport(item, call):
@@ -402,13 +413,6 @@ def api(blockchain, config, secrets, db_sync) -> Generator[BlockchainApi, None, 
 
 
 @fixture(scope="function", autouse=True)
-def log_test_name(request):
-    logging.info(f"Running test: {request.node.nodeid}")
-    yield
-    logging.info(f"Finished test: {request.node.nodeid}")
-
-
-@fixture(scope="function", autouse=True)
 def teardown(request, api: BlockchainApi):
     """Close api connection after each test to avoid idle connections and BrokenPipeError.
     Skip teardown for test_blocks.py to speed up the execution.
@@ -466,8 +470,28 @@ def new_wallet(api: BlockchainApi) -> Wallet:
 
 
 @fixture(scope="session")
-def get_wallet(api: BlockchainApi) -> Wallet:
-    return api.get_wallet()
+def get_wallet(api: BlockchainApi, secrets) -> Wallet:
+    faucet = secrets["wallets"]["faucet-0"]
+    address = faucet["address"]
+    public_key = faucet["public_key"]
+    secret = faucet["secret_seed"]
+    scheme = faucet["scheme"]
+    return api.get_wallet(address=address, public_key=public_key, secret=secret, scheme=scheme)
+
+
+@fixture(scope="session")
+def get_scripts(api: BlockchainApi):
+    return api.partner_chains_node.smart_contracts.get_scripts().json
+
+
+@fixture(scope="session")
+def addresses(get_scripts):
+    return get_scripts["addresses"]
+
+
+@fixture(scope="session")
+def policy_ids(get_scripts):
+    return get_scripts["policyIds"]
 
 
 @fixture(scope="session")

@@ -1,4 +1,6 @@
+//! This crate provides inherents for authority selection.
 #![cfg_attr(not(feature = "std"), no_std)]
+#![deny(missing_docs)]
 
 extern crate alloc;
 
@@ -34,9 +36,24 @@ pub mod mock;
 	PartialEq,
 	Eq,
 )]
+/// Type representing committee members, either permissioned or registered
 pub enum CommitteeMember<AuthorityId, AuthorityKeys> {
-	Permissioned { id: AuthorityId, keys: AuthorityKeys },
-	Registered { id: AuthorityId, keys: AuthorityKeys, stake_pool_pub_key: StakePoolPublicKey },
+	/// A permissioned candidate
+	Permissioned {
+		/// Authority id of the candidate
+		id: AuthorityId,
+		/// Authority keys of the candidate
+		keys: AuthorityKeys,
+	},
+	/// A registered candidate
+	Registered {
+		/// Authority id of the candidate
+		id: AuthorityId,
+		/// Authority keys of the candidate
+		keys: AuthorityKeys,
+		/// Stake pool pub key of the candidate
+		stake_pool_pub_key: StakePoolPublicKey,
+	},
 }
 
 impl<AuthorityId, AuthorityKeys> From<(AuthorityId, AuthorityKeys)>
@@ -48,6 +65,7 @@ impl<AuthorityId, AuthorityKeys> From<(AuthorityId, AuthorityKeys)>
 }
 
 impl<AuthorityId, AuthorityKeys> CommitteeMember<AuthorityId, AuthorityKeys> {
+	/// Constructs new permissioned candidate
 	pub fn permissioned(id: AuthorityId, keys: AuthorityKeys) -> Self {
 		Self::Permissioned { id, keys }
 	}

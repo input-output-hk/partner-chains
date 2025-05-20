@@ -1,6 +1,13 @@
+use crate::plutus_script;
 use crate::{OffchainError, csl::NetworkTypeExt, plutus_script::PlutusScript};
-use cardano_serialization_lib::{Language, NetworkIdKind};
+use cardano_serialization_lib::NetworkIdKind;
 use ogmios_client::query_network::QueryNetwork;
+use raw_scripts::{
+	COMMITTEE_CANDIDATE_VALIDATOR, D_PARAMETER_POLICY, D_PARAMETER_VALIDATOR, GOVERNED_MAP_POLICY,
+	GOVERNED_MAP_VALIDATOR, ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR, PERMISSIONED_CANDIDATES_POLICY,
+	PERMISSIONED_CANDIDATES_VALIDATOR, RESERVE_AUTH_POLICY, RESERVE_VALIDATOR,
+	VERSION_ORACLE_POLICY, VERSION_ORACLE_VALIDATOR,
+};
 use serde::Serialize;
 use sidechain_domain::{PolicyId, UtxoId};
 use uplc::PlutusData;
@@ -10,20 +17,29 @@ use uplc::PlutusData;
 #[derive(Clone, Debug, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct ScriptsData {
+	/// Validator scripts addresses.
 	pub addresses: Addresses,
+	/// Policy ids.
 	pub policy_ids: PolicyIds,
 }
 
-/// Bech32 address of applied validators in partner-chains smart contracts.
+/// Bech32 addresses of applied validators in partner-chains smart contracts.
 #[derive(Clone, Debug, Default, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "PascalCase")]
 pub struct Addresses {
+	/// Address of committee candidate validator script
 	pub committee_candidate_validator: String,
+	/// Address of D-parameter validator script
 	pub d_parameter_validator: String,
+	/// Address of illiquid circulation supply validator script
 	pub illiquid_circulation_supply_validator: String,
+	/// Address of permissioned candidates validator script
 	pub permissioned_candidates_validator: String,
+	/// Address of reserve validator script
 	pub reserve_validator: String,
+	/// Address of version oracle validator script
 	pub version_oracle_validator: String,
+	/// Address of governed map validator script
 	pub governed_map_validator: String,
 }
 
@@ -31,16 +47,22 @@ pub struct Addresses {
 #[derive(Clone, Debug, Default, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "PascalCase")]
 pub struct PolicyIds {
+	/// PolicyId of D-parameter minting policy
 	pub d_parameter: PolicyId,
+	/// PolicyId of permissioned candidates minting policy
 	pub permissioned_candidates: PolicyId,
+	/// PolicyId of reserve auth minting policy
 	pub reserve_auth: PolicyId,
+	/// PolicyId of version oracle minting policy
 	pub version_oracle: PolicyId,
+	/// PolicyId of governed map minting policy
 	pub governed_map: PolicyId,
 }
 
+/// Trait for [get_scripts_data], to make it mockable.
 pub trait GetScriptsData {
 	#[allow(async_fn_in_trait)]
-	/// For the given `pc_params` it returns the addresses, hashes and policy ids of the partner chain smart contracts.
+	/// For the given `genesis_utxo` it returns the [ScriptsData] of the partner chain smart contracts.
 	async fn get_scripts_data(&self, genesis_utxo: UtxoId) -> Result<ScriptsData, OffchainError>;
 }
 
@@ -57,51 +79,47 @@ impl<T: QueryNetwork> GetScriptsData for T {
 	}
 }
 
-/// For the given `pc_params` it returns the addresses, hashes and policy ids of the partner chain smart contracts.
+/// Returns [ScriptsData] of the smart contracts for the partner chain identified by `genesis_utxo`.
 pub fn get_scripts_data(
 	genesis_utxo: UtxoId,
 	network: NetworkIdKind,
 ) -> anyhow::Result<ScriptsData> {
 	let version_oracle_data = version_oracle(genesis_utxo, network)?;
-
-	let committee_candidate_validator = PlutusScript::from_wrapped_cbor(
-		raw_scripts::COMMITTEE_CANDIDATE_VALIDATOR,
-		Language::new_plutus_v2(),
-	)?
-	.apply_data(genesis_utxo)?;
-	let (d_parameter_validator, d_parameter_policy) = d_parameter_scripts(genesis_utxo, network)?;
-	let illiquid_circulation_supply_validator = PlutusScript::from_wrapped_cbor(
-		raw_scripts::ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR,
-		Language::new_plutus_v2(),
-	)?
-	.apply_uplc_data(version_oracle_data.policy_id_as_plutus_data())?;
-	let (permissioned_candidates_validator, permissioned_candidates_policy) =
-		permissioned_candidates_scripts(genesis_utxo, network)?;
+	let committee_candidate_validator =
+		plutus_script![COMMITTEE_CANDIDATE_VALIDATOR, genesis_utxo]?;
+	let d_parameter_data = d_parameter_scripts(genesis_utxo, network)?;
+	let illiquid_circulation_supply_validator = plutus_script![
+		ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR,
+		version_oracle_data.policy_id_as_plutus_data()
+	]?;
+	let permissioned_candidates_data = permissioned_candidates_scripts(genesis_utxo, network)?;
 	let reserve = reserve_scripts(genesis_utxo, network)?;
-	let (governed_map_validator, governed_map_policy) =
-		governed_map_scripts(genesis_utxo, network)?;
+	let governed_map_data = governed_map_scripts(genesis_utxo, network)?;
 	Ok(ScriptsData {
 		addresses: Addresses {
 			committee_candidate_validator: committee_candidate_validator.address_bech32(network)?,
-			d_parameter_validator: d_parameter_validator.address_bech32(network)?,
+			d_parameter_validator: d_parameter_data.validator_address.clone(),
 			illiquid_circulation_supply_validator: illiquid_circulation_supply_validator
 				.address_bech32(network)?,
-			permissioned_candidates_validator: permissioned_candidates_validator
-				.address_bech32(network)?,
+			permissioned_candidates_validator: permissioned_candidates_data
+				.validator_address
+				.clone(),
 			reserve_validator: reserve.validator.address_bech32(network)?,
-			version_oracle_validator: version_oracle_data.validator.address_bech32(network)?,
-			governed_map_validator: governed_map_validator.address_bech32(network)?,
+			version_oracle_validator: version_oracle_data.validator_address.clone(),
+			governed_map_validator: governed_map_data.validator_address.clone(),
 		},
 		policy_ids: PolicyIds {
-			d_parameter: d_parameter_policy.policy_id(),
-			permissioned_candidates: permissioned_candidates_policy.policy_id(),
+			d_parameter: d_parameter_data.policy_id(),
+			permissioned_candidates: permissioned_candidates_data.policy_id(),
 			reserve_auth: reserve.auth_policy.policy_id(),
 			version_oracle: version_oracle_data.policy_id(),
-			governed_map: governed_map_policy.policy_id(),
+			governed_map: governed_map_data.policy_id(),
 		},
 	})
 }
 
+/// Returns [ScriptsData] of the smart contracts for the partner chain identified by `genesis_utxo`,
+/// for the network configured in `client`.
 pub async fn get_scripts_data_with_ogmios(
 	genesis_utxo: UtxoId,
 	client: &impl QueryNetwork,
@@ -110,129 +128,94 @@ pub async fn get_scripts_data_with_ogmios(
 	get_scripts_data(genesis_utxo, network)
 }
 
-pub struct VersionOracleData {
+/// Type representing a PlutusScript validator and policy pair.
+pub struct PlutusScriptData {
+	/// Cardano validator script.
 	pub validator: PlutusScript,
+	/// Bech32 address of `validator`.
+	pub validator_address: String,
+	/// Cardano minding policy.
 	pub policy: PlutusScript,
 }
 
-impl VersionOracleData {
+impl PlutusScriptData {
+	/// Returns [PolicyId] of [PlutusScriptData].
 	pub fn policy_id(&self) -> PolicyId {
 		self.policy.policy_id()
 	}
 
+	/// Returns [PolicyId] of [PlutusScriptData] as [PlutusData].
 	pub fn policy_id_as_plutus_data(&self) -> PlutusData {
 		PlutusData::BoundedBytes(self.policy.script_hash().to_vec().into())
 	}
 }
 
-// Returns version oracle data required by other scripts.
+/// Returns version oracle data required by other scripts.
 pub fn version_oracle(
 	genesis_utxo: UtxoId,
 	network: NetworkIdKind,
-) -> Result<VersionOracleData, anyhow::Error> {
-	let validator = PlutusScript::from_wrapped_cbor(
-		raw_scripts::VERSION_ORACLE_VALIDATOR,
-		Language::new_plutus_v2(),
-	)?
-	.apply_data(genesis_utxo)?;
-	let policy_script = PlutusScript::from_wrapped_cbor(
-		raw_scripts::VERSION_ORACLE_POLICY,
-		Language::new_plutus_v2(),
-	)?
-	.apply_data(genesis_utxo)?
-	.apply_uplc_data(validator.address_data(network)?)?;
-	Ok(VersionOracleData { validator, policy: policy_script })
-}
-
-pub(crate) fn version_scripts_and_address(
-	genesis_utxo: UtxoId,
-	network: NetworkIdKind,
-) -> Result<(PlutusScript, PlutusScript, String), anyhow::Error> {
-	let validator = PlutusScript::from_wrapped_cbor(
-		raw_scripts::VERSION_ORACLE_VALIDATOR,
-		Language::new_plutus_v2(),
-	)?
-	.apply_data(genesis_utxo)?;
-	let policy = PlutusScript::from_wrapped_cbor(
-		raw_scripts::VERSION_ORACLE_POLICY,
-		Language::new_plutus_v2(),
-	)?
-	.apply_data(genesis_utxo)?
-	.apply_uplc_data(validator.address_data(network)?)?;
-	let address = validator.address_bech32(network)?;
-	Ok((validator, policy, address))
+) -> Result<PlutusScriptData, anyhow::Error> {
+	let validator = plutus_script![VERSION_ORACLE_VALIDATOR, genesis_utxo]?;
+	let validator_address = validator.address_bech32(network)?;
+	let policy =
+		plutus_script![VERSION_ORACLE_POLICY, genesis_utxo, validator.address_data(network)?]?;
+	Ok(PlutusScriptData { validator, validator_address, policy })
 }
 
 pub(crate) fn governed_map_scripts(
 	genesis_utxo: UtxoId,
 	network: NetworkIdKind,
-) -> Result<(PlutusScript, PlutusScript), anyhow::Error> {
+) -> Result<PlutusScriptData, anyhow::Error> {
 	let version_oracle_data = version_oracle(genesis_utxo, network)?;
-	let validator = PlutusScript::from_wrapped_cbor(
-		raw_scripts::GOVERNED_MAP_VALIDATOR,
-		Language::new_plutus_v2(),
-	)?
-	.apply_data(genesis_utxo)?
-	.apply_data(version_oracle_data.policy_id())?;
-	let policy = PlutusScript::from_wrapped_cbor(
-		raw_scripts::GOVERNED_MAP_POLICY,
-		Language::new_plutus_v2(),
-	)?
-	.apply_data(genesis_utxo)?
-	.apply_data(version_oracle_data.policy_id())?;
-	Ok((validator, policy))
+	let validator =
+		plutus_script![GOVERNED_MAP_VALIDATOR, genesis_utxo, version_oracle_data.policy_id()]?;
+	let validator_address = validator.address_bech32(network)?;
+	let policy =
+		plutus_script![GOVERNED_MAP_POLICY, genesis_utxo, version_oracle_data.policy_id()]?;
+	Ok(PlutusScriptData { validator, validator_address, policy })
 }
 
 pub(crate) fn d_parameter_scripts(
 	genesis_utxo: UtxoId,
 	network: NetworkIdKind,
-) -> Result<(PlutusScript, PlutusScript), anyhow::Error> {
+) -> Result<PlutusScriptData, anyhow::Error> {
 	let version_oracle_data = version_oracle(genesis_utxo, network)?;
-	let d_parameter_validator = PlutusScript::from_wrapped_cbor(
-		raw_scripts::D_PARAMETER_VALIDATOR,
-		Language::new_plutus_v2(),
-	)?
-	.apply_data(genesis_utxo)?
-	.apply_data(version_oracle_data.policy_id())?;
-	let d_parameter_policy = PlutusScript::from_wrapped_cbor(
-		raw_scripts::D_PARAMETER_POLICY,
-		Language::new_plutus_v2(),
-	)?
-	.apply_data(genesis_utxo)?
-	.apply_data(version_oracle_data.policy_id())?
-	.apply_uplc_data(d_parameter_validator.address_data(network)?)?;
-	Ok((d_parameter_validator, d_parameter_policy))
+	let validator =
+		plutus_script![D_PARAMETER_VALIDATOR, genesis_utxo, version_oracle_data.policy_id()]?;
+	let validator_address = validator.address_bech32(network)?;
+	let policy = plutus_script![
+		D_PARAMETER_POLICY,
+		genesis_utxo,
+		version_oracle_data.policy_id(),
+		validator.address_data(network)?
+	]?;
+	Ok(PlutusScriptData { validator, validator_address, policy })
 }
 
 pub(crate) fn permissioned_candidates_scripts(
 	genesis_utxo: UtxoId,
 	network: NetworkIdKind,
-) -> Result<(PlutusScript, PlutusScript), anyhow::Error> {
+) -> Result<PlutusScriptData, anyhow::Error> {
 	let version_oracle_data = version_oracle(genesis_utxo, network)?;
-	let validator = PlutusScript::from_wrapped_cbor(
-		raw_scripts::PERMISSIONED_CANDIDATES_VALIDATOR,
-		Language::new_plutus_v2(),
-	)?
-	.apply_data(genesis_utxo)?
-	.apply_data(version_oracle_data.policy_id())?;
-	let policy = PlutusScript::from_wrapped_cbor(
-		raw_scripts::PERMISSIONED_CANDIDATES_POLICY,
-		Language::new_plutus_v2(),
-	)?
-	.apply_data(genesis_utxo)?
-	.apply_data(version_oracle_data.policy_id())?
-	.apply_uplc_data(validator.address_data(network)?)?;
-	Ok((validator, policy))
+	let validator = plutus_script![
+		PERMISSIONED_CANDIDATES_VALIDATOR,
+		genesis_utxo,
+		version_oracle_data.policy_id()
+	]?;
+	let validator_address = validator.address_bech32(network)?;
+	let policy = plutus_script![
+		PERMISSIONED_CANDIDATES_POLICY,
+		genesis_utxo,
+		version_oracle_data.policy_id(),
+		validator.address_data(network)?
+	]?;
+	Ok(PlutusScriptData { validator, validator_address, policy })
 }
 
 pub(crate) fn registered_candidates_scripts(
 	genesis_utxo: UtxoId,
 ) -> Result<PlutusScript, anyhow::Error> {
-	let validator = PlutusScript::from_wrapped_cbor(
-		raw_scripts::COMMITTEE_CANDIDATE_VALIDATOR,
-		Language::new_plutus_v2(),
-	)?
-	.apply_data(genesis_utxo)?;
+	let validator = plutus_script![COMMITTEE_CANDIDATE_VALIDATOR, genesis_utxo]?;
 	Ok(validator)
 }
 
@@ -249,18 +232,13 @@ pub(crate) fn reserve_scripts(
 ) -> Result<ReserveScripts, anyhow::Error> {
 	let version_oracle_data = version_oracle(genesis_utxo, network)?;
 	let validator =
-		PlutusScript::from_wrapped_cbor(raw_scripts::RESERVE_VALIDATOR, Language::new_plutus_v2())?
-			.apply_uplc_data(version_oracle_data.policy_id_as_plutus_data())?;
-	let auth_policy = PlutusScript::from_wrapped_cbor(
-		raw_scripts::RESERVE_AUTH_POLICY,
-		Language::new_plutus_v2(),
-	)?
-	.apply_uplc_data(version_oracle_data.policy_id_as_plutus_data())?;
-	let illiquid_circulation_supply_validator = PlutusScript::from_wrapped_cbor(
-		raw_scripts::ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR,
-		Language::new_plutus_v2(),
-	)?
-	.apply_uplc_data(version_oracle_data.policy_id_as_plutus_data())?;
+		plutus_script![RESERVE_VALIDATOR, version_oracle_data.policy_id_as_plutus_data()]?;
+	let auth_policy =
+		plutus_script![RESERVE_AUTH_POLICY, version_oracle_data.policy_id_as_plutus_data()]?;
+	let illiquid_circulation_supply_validator = plutus_script![
+		ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR,
+		version_oracle_data.policy_id_as_plutus_data()
+	]?;
 	Ok(ReserveScripts { validator, auth_policy, illiquid_circulation_supply_validator })
 }
 

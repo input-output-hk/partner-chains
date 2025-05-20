@@ -91,6 +91,7 @@ pallet-block-participation = { workspace = true }
 sp-block-participation = { workspace = true }
 pallet-governed-map = { workspace = true }
 sp-governed-map = { workspace = true }
+sp-block-producer-fees = { workspace = true }
 pallet-block-producer-fees = { workspace = true }
 
 [dev-dependencies]
@@ -126,6 +127,7 @@ std = [
 	"frame-try-runtime/std",
 	"pallet-aura/std",
 	"pallet-balances/std",
+	"pallet-block-producer-fees/std",
 	"pallet-block-production-log/std",
 	"pallet-grandpa/std",
 	"pallet-sudo/std",
@@ -140,6 +142,7 @@ std = [
 	"sp-block-producer-metadata/std",
 	"sp-api/std",
 	"sp-block-builder/std",
+	"sp-block-producer-fees/std",
 	"sp-consensus-aura/std",
 	"sp-consensus-grandpa/std",
 	"sp-consensus-slots/std",

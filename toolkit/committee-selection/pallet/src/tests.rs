@@ -34,6 +34,14 @@ mod inherent_tests {
 		});
 	}
 
+	#[test]
+	fn only_one_inherent_can_run_per_block() {
+		new_test_ext().execute_with(|| {
+			set_validators_directly(&[ALICE, BOB], 1).expect("Frist call should succeed");
+			set_validators_directly(&[ALICE, BOB], 1).expect_err("Second call should fail");
+		});
+	}
+
 	fn test_validators_change_through_inherents(new_validators: &[MockValidator]) {
 		set_validators_through_inherents(new_validators);
 		let mut expected_validators = ids_and_keys_fn(new_validators);

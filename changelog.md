@@ -6,6 +6,18 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Changed
 
+## Removed
+
+## Fixed
+
+## Added
+
+# v1.7.0
+
+## Changed
+
+* `prepare-configuration` wizard suggests payment signing key hash as governance authority if there is no value in chain config stored so far.
+* Automatically create required index on `tx_out` table `address` column. Constructor signatures have changed - this change is not source compatible.
 * BREAKING: Wizards are not generating keys nor looking for them in `<base_path>/chains/partner_chains_template` but use `<base_path>` instead.
 This change requires users that generated keystores and network key using previous versions of the wizards to move their keys two directories above.
 * Wizards are adjusted to use multiple governance authorities from the chain governance initialization through setting up Ariadne parameters
@@ -26,6 +38,11 @@ if any. It can be accessed through `previous_mc_hash` function.
 block hash on construction instead of retrieving it by itself. Use `McHashInherentDataProvider::previous_mc_hash`
 to provide it in your IDP stack.
 * Introduced customization of root origin for few pallets via `MainChainScriptsOrigin` trait
+* Made `mock` module of `pallet-session-validator-management` private
+* Updated dependecies
+* Updated polkadot-sdk to polkadot-stable2503-2
+* Deprecated the `GetSidechainStatus` runtime API in `sp-sidechain` crate. Code
+that needs data that it served should define its own runtime API instead.
 
 ## Removed
 
@@ -37,17 +54,23 @@ Its functionality was merged into `pallet-partner-chains-session` under the feat
 the feature `pallet-session-compat`.
 * `TryFrom<&serde_json::Value> for Datum` and `From<&Datum> for serde_json::Value` instances from `plutus`.
 * `ATMSPlainAggregatePubKey`, `ValidatorHash` and `SidechainPublicKeysSorted` types from `domain`.
+* `SidechainApi` trait from `sp-sidechain` and its return type `SidechainStatus`. Code that uses it should directly use
+the APIs that were grouped into this trait or ideally define its own runtime API instead (see deprecation of `GetSidechainStatus`).
 
 ## Fixed
 
 * `prepare-configuration` wizard now updates existing `chain_parameters.genesis_utxo` field in `pc-chain-config.json`
 * MC Hash inherent data provider will not propose older MC state than one already present in the ledger
 * `governance init` when genesis utxo had a script attached, then transaction fee was sometimes calculated incorrectly
+* [SECURITY FIX] Vulnerability of multiple crates, where a malicious block producing node could put multiple copies
+of the inherent in the block. This was because Substrate only checks whether an inherent is valid and doesn't ensure
+its uniqueness. This issue was fixed by including checks within the inherents themselves. Affected pallets that were
+patched are: `session-validator-management`, `block-participation`, `native-token-management`.
+**Partner Chain builders should update their pallet versions and run a runtime upgrade as soon as possible.**
 
 ## Added
 * `pallet-block-producer-fees` - with settings for the rewards payout logic
-* `governed-map remove` command, that removes a key-value pair from the governed map
-* `governed-map insert` command, that inserts a key-value pair into the governed map
+* `governed-map` new feature that allows setting any arbitrary data to be managed via existing governance mechanism
 * `ariadne_v2` selection algorithm that selects committee respecting D-parameter and candidates
 weights, but has much less variance, thanks to assigning guaranteed seats to candidates with
 expected number of seats greater or equal 1.

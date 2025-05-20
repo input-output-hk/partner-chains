@@ -80,6 +80,8 @@ sp-blockchain = { workspace = true }
 sp-block-builder = { workspace = true }
 sc-basic-authorship = { workspace = true }
 substrate-frame-rpc-system = { workspace = true }
+pallet-block-producer-fees-rpc = { workspace = true }
+sp-block-producer-fees = { workspace = true }
 pallet-transaction-payment-rpc = { workspace = true }
 
 # These dependencies are used for runtime benchmarking
@@ -90,22 +92,22 @@ partner-chains-demo-runtime = { workspace = true }
 sidechain-mc-hash = { workspace = true, features = ["mock"] }
 sp-native-token-management = { workspace = true }
 partner-chains-db-sync-data-sources = { workspace = true, features = [
-    "block-source",
-    "candidate-source",
-    "governed-map",
-    "native-token",
-    "mc-hash",
-    "sidechain-rpc",
-    "block-participation",
+	"block-source",
+	"candidate-source",
+	"governed-map",
+	"native-token",
+	"mc-hash",
+	"sidechain-rpc",
+	"block-participation",
 ] }
 partner-chains-mock-data-sources = { workspace = true, features = [
-    "block-source",
-    "candidate-source",
-    "governed-map",
-    "native-token",
-    "mc-hash",
-    "sidechain-rpc",
-    "block-participation",
+	"block-source",
+	"candidate-source",
+	"governed-map",
+	"native-token",
+	"mc-hash",
+	"sidechain-rpc",
+	"block-participation",
 ] }
 tokio = { workspace = true }
 sp-block-participation = { workspace = true, features = ["std"] }
@@ -121,7 +123,7 @@ hex-literal = { workspace = true }
 time-source = { workspace = true, features = ["mock"] }
 assert_cmd = { workspace = true }
 sp-native-token-management = { workspace = true, features = ["mock"] }
-pallet-sidechain-rpc = { workspace = true, features = ["mock"] }
+pallet-sidechain-rpc = { workspace = true }
 authority-selection-inherents = { workspace = true, features = ["mock"] }
 
 [features]

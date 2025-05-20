@@ -20,9 +20,7 @@ parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 sp-api = { workspace = true }
 sp-runtime = { workspace = true }
-sp-blockchain = { workspace = true, optional = true }
 serde = { workspace = true, optional = true }
-serde_json = { workspace = true, optional = true }
 
 [features]
 default = ["std"]
@@ -36,6 +34,4 @@ std = [
     "sp-api/std",
     "sp-runtime/std",
 	"serde",
-	"serde_json",
-	"sp-blockchain"
 ]

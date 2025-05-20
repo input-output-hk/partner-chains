@@ -24,6 +24,7 @@ use sp_session_validator_management::CommitteeMember as CommitteeMemberT;
 use sp_session_validator_management::SessionValidatorManagementApi;
 use sp_session_validator_management_query::SessionValidatorManagementQuery;
 use sp_session_validator_management_query::commands::*;
+#[allow(deprecated)]
 use sp_sidechain::{GetGenesisUtxo, GetSidechainStatus};
 use std::future::Future;
 use std::str::FromStr;
@@ -114,6 +115,7 @@ pub enum PartnerChainsSubcommand<
 	Wizards(partner_chains_cli::Command<RuntimeBindings>),
 }
 
+#[allow(deprecated)]
 pub fn run<
 	Cli,
 	Block,
@@ -156,7 +158,7 @@ where
 			let runner = cli.create_runner(&cmd)?;
 			runner.async_run(|config| {
 				let (client, task_manager, _) = get_deps(config)?;
-				Ok((print_result(sp_sidechain::query::get_genesis_utxo(client)), task_manager))
+				Ok((print_result(cli_commands::get_genesis_utxo::execute(client)), task_manager))
 			})
 		},
 		PartnerChainsSubcommand::RegistrationStatus(cmd) => {

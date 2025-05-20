@@ -80,9 +80,7 @@ impl From<&ReserveParameters> for ReserveDatum {
 			// Not configurable anymore, hardcoded to 0. If users need "t0" for their V-function, they are responsible for storing it somewhere.
 			immutable_settings: ReserveImmutableSettings { t0: 0, token: value.token.clone() },
 			mutable_settings: ReserveMutableSettings {
-				total_accrued_function_script_hash: value
-					.total_accrued_function_script_hash
-					.clone(),
+				total_accrued_function_asset_name: value.total_accrued_function_script_hash.clone(),
 				// this value is hard-coded to zero as a temporary fix because of a vulnerability in the on-chain
 				// contract code that would allow the reserve to be drained for non-zero values
 				initial_incentive: 0,

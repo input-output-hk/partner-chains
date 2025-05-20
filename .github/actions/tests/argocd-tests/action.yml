@@ -98,7 +98,7 @@ runs:
                 --secret JIRA_URL="$JIRA_URL" \
                 --ssh-auth-sock="$SSH_AUTH_SOCK" \
                 +report \
-                --markers=CD \
+                --markers=smoke \
                 --node_host="${{ inputs.node-host }}" \
                 --node_port="${{ inputs.node-port }}" \
                 --log_level=debug \

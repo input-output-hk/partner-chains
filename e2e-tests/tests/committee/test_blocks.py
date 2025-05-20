@@ -58,7 +58,6 @@ def test_block_producer_can_update_their_metadata(api: BlockchainApi, get_wallet
 
 @mark.skip_on_new_chain
 @mark.test_key('ETCM-7020')
-@mark.committee_rotation
 def test_block_authors_match_committee_seats(
     api: BlockchainApi,
     config: ApiConfig,
@@ -118,7 +117,6 @@ def test_block_authors_match_committee_seats(
 
 
 @mark.test_key('ETCM-7481')
-@mark.mc_state_reference_block
 def test_block_headers_have_mc_hash(api: BlockchainApi, config: ApiConfig, pc_epoch, get_pc_epoch_blocks):
     """Test block headers have mainchain hash
     * Get blocks for current partner chain epoch

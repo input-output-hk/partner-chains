@@ -1,0 +1,24 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+Component(data_sources, "Data sources implementation", "Crate", "Thin layer for quering the data, implements interfaces required by the given feature")
+Component(primitives, "Primitives", "Crate", "defines data source interface and FRAME Runtime APIs, implements FRAME Inherent Data Providers using data sources APIs")
+Component(pallet, "Pallet", "Crate", "FRAME Pallet")
+Component(rpc, "RPC", "Crate", "Optional RPC methods related to the feature")
+Component_Ext(node, "Node", "Crate")
+Component_Ext(runtime, "Runtime", "Crate")
+
+Container_Ext(postgres, "Cardano DB Sync Postgres Database")
+
+
+Rel(data_sources, postgres, "Queries feature relevant data")
+Rel(data_sources, primitives, "Implements APIs")
+Rel(node, data_sources, "Creates instances")
+Rel(node, primitives, "Instantiates and includes Inherent Data Providers in block production and import")
+Rel(node, runtime, "Includes")
+Rel(runtime, primitives, "Implements Runtime APIs")
+Rel(runtime, pallet, "Includes")
+Rel(node, rpc, "Includes")
+Rel(rpc, runtime, "Uses implemented APIs")
+
+@enduml

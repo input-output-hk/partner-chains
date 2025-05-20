@@ -1,4 +1,33 @@
-//! Provides implementations of Data Sources that read from db-sync postgres
+//! Provides implementations of Data Sources that read from db-sync postgres.
+//!
+//! ## Cardano DB Sync configuration
+//! Cardano DB Sync instance requires specific configuration to maintain schema and data required by Partner Chains.
+//! See [configuration doc](https://github.com/IntersectMBO/cardano-db-sync/blob/master/doc/configuration.md).
+//!
+//! `insert_options.tx_out.value` - if present then it has to be `"enable"` (default) or `"consumed"`.
+//!  When `"consumed"` is used then `tx_out.force_tx_in` has to be `true`.
+//!  Code in this module depends on `tx_in` table.
+//!
+//! `insert_options.tx_out.use_address_table` - if present then it has to be `false` (default).
+//!
+//! `insert_options.ledger` - if present then it has to be `"enable"` (default).
+//!
+//! `insert_options.multi_asset` - if present then it has to be `true` (default).
+//!
+//! `insert_options.governance` - if present then it has to be `"enable"` (default).
+//!
+//! `insert_options.remove_jsonb_from_schema` - if present then it has to be `"disable"` (default).
+//!
+//! The default Cardano DB Sync configuration meets these requirements.
+//! It is enough to not provide a custom configuration.
+//!
+//! ## Custom Indexes
+//! Cardano DB Sync creates a number of indexes for its own purpose.
+//! Queries used in this module depend on some of them to be executed efficiently.
+//! What is more, additional indexes are required:
+//! * `idx_ma_tx_out_ident ON ma_tx_out(ident)`
+//! * `idx_tx_out_address ON tx_out USING hash (address)`
+//! This module provides functionality to automatically create such indexes on the node startup.
 use cardano_serialization_lib::PlutusData;
 
 pub mod data_sources;

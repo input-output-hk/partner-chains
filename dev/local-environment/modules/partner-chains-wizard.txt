@@ -1,6 +1,6 @@
 
-  partner-chains-wizard-1:
-    container_name: partner-chains-wizard-1
+  partner-chains-node-1:
+    container_name: partner-chains-node-1
     image: ${PARTNER_CHAINS_NODE_IMAGE}
     platform: linux/amd64
     user: "0:0"
@@ -18,7 +18,6 @@
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/cexplorer"
       GOVERNANCE_AUTHORITY: "e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"
-      SIDECHAIN_BLOCK_BENEFICIARY: "0000000000000000000000000000000000000000000000000000000000000001"
       CARDANO_SECURITY_PARAMETER: "5"
       CARDANO_ACTIVE_SLOTS_COEFF: "0.4"
       MC__FIRST_EPOCH_NUMBER: "0"
@@ -30,8 +29,8 @@
       - "9933:9933"
     entrypoint: ["/bin/bash", "/entrypoint.sh"]
 
-  partner-chains-wizard-2:
-    container_name: partner-chains-wizard-2
+  partner-chains-node-2:
+    container_name: partner-chains-node-2
     image: ${PARTNER_CHAINS_NODE_IMAGE}
     platform: linux/amd64
     user: "0:0"
@@ -44,8 +43,8 @@
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     entrypoint: ["/bin/bash", "/entrypoint.sh"]
 
-  partner-chains-wizard-3:
-    container_name: partner-chains-wizard-3
+  partner-chains-node-3:
+    container_name: partner-chains-node-3
     image: ${PARTNER_CHAINS_NODE_IMAGE}
     platform: linux/amd64
     user: "0:0"

@@ -3,18 +3,17 @@ use anyhow::{Context, Error, anyhow};
 use cardano_serialization_lib::{
 	Address, JsError, Language, LanguageKind, NetworkIdKind, PlutusData, ScriptHash,
 };
-use ogmios_client::types::OgmiosScript;
 use plutus::ToDatum;
 use sidechain_domain::{AssetId, AssetName, PolicyId};
-use uplc::{
-	ast::{DeBruijn, Program},
-	plutus_data,
-};
+use std::marker::PhantomData;
+use uplc::ast::{DeBruijn, Program};
 
-/// Wraps a Plutus script cbor
+/// Wraps a Plutus script CBOR
 #[derive(Clone, PartialEq, Eq)]
 pub struct PlutusScript {
+	/// CBOR bytes of the encoded Plutus script
 	pub bytes: Vec<u8>,
+	/// The language of the encoded Plutus script
 	pub language: Language,
 }
 
@@ -28,36 +27,25 @@ impl std::fmt::Debug for PlutusScript {
 }
 
 impl PlutusScript {
+	/// Constructs a [PlutusScript].
 	pub fn from_cbor(cbor: &[u8], language: Language) -> Self {
 		Self { bytes: cbor.into(), language }
-	}
-
-	pub fn from_ogmios(ogmios_script: OgmiosScript) -> anyhow::Result<Self> {
-		ogmios_script.try_into()
 	}
 
 	/// This function is needed to create [PlutusScript] from scripts in [raw_scripts],
 	/// which are encoded as a cbor byte string containing the cbor of the script
 	/// itself. This function removes this layer of wrapping.
-	pub fn from_wrapped_cbor(
-		plutus_script_raw_cbor: &[u8],
-		language: Language,
-	) -> anyhow::Result<Self> {
+	/// Language for all scrips in [raw_scripts] is [LanguageKind::PlutusV2].
+	pub fn from_wrapped_cbor(plutus_script_raw_cbor: &[u8]) -> anyhow::Result<Self> {
 		let plutus_script_bytes: uplc::PlutusData = minicbor::decode(plutus_script_raw_cbor)?;
 		let plutus_script_bytes = match plutus_script_bytes {
 			uplc::PlutusData::BoundedBytes(bb) => Ok(bb),
 			_ => Err(anyhow!("expected validator raw to be BoundedBytes")),
 		}?;
-		Ok(Self::from_cbor(&plutus_script_bytes, language))
+		Ok(Self::from_cbor(&plutus_script_bytes, Language::new_plutus_v2()))
 	}
 
-	pub fn apply_data(self, data: impl ToDatum) -> Result<Self, anyhow::Error> {
-		let data = plutus_data(&minicbor::to_vec(data.to_datum()).expect("to_vec is Infallible"))
-			.expect("trasformation from PC Datum to pallas PlutusData can't fail");
-		self.apply_uplc_data(data)
-	}
-
-	pub fn apply_uplc_data(self, data: uplc::PlutusData) -> Result<Self, anyhow::Error> {
+	pub fn apply_data_uplc(self, data: uplc::PlutusData) -> Result<Self, anyhow::Error> {
 		let mut buffer = Vec::new();
 		let mut program = Program::<DeBruijn>::from_cbor(&self.bytes, &mut buffer)
 			.map_err(|e| anyhow!(e.to_string()))?;
@@ -68,7 +56,7 @@ impl PlutusScript {
 		Ok(Self { bytes, ..self })
 	}
 
-	pub fn unapply_data_uplc(&self) -> Result<uplc::PlutusData, anyhow::Error> {
+	pub fn unapply_data_uplc(&self) -> anyhow::Result<uplc::PlutusData> {
 		let mut buffer = Vec::new();
 		let program = Program::<DeBruijn>::from_cbor(&self.bytes, &mut buffer).unwrap();
 		match program.term {
@@ -178,19 +166,82 @@ impl From<PlutusScript> for ogmios_client::types::OgmiosScript {
 	}
 }
 
+impl From<raw_scripts::RawScript> for PlutusScript {
+	fn from(value: raw_scripts::RawScript) -> Self {
+		PlutusScript::from_wrapped_cbor(value.0).expect("raw_scripts provides valid scripts")
+	}
+}
+
+/// Applies arguments to a Plutus script.
+/// The first argument is the script, the rest of the arguments are the datums that will be applied.
+/// * The script can be any type that implements [Into<PlutusScript>] for example [raw_scripts::RawScript].
+/// * The arguments can be any type that implements [Into<PlutusDataWrapper>]. Implementations are provided for
+///   [uplc::PlutusData] and [plutus::Datum].
+/// Returns [anyhow::Result<uplc::PlutusData>].
+///
+/// Example:
+/// ```rust,ignore
+/// plutus_script![SOME_SCRIPT, genesis_utxo, plutus::Datum::ListDatum(Vec::new())]
+/// ```
+#[macro_export]
+macro_rules! plutus_script {
+    ($ps:expr $(,$args:expr)*) => (
+		{
+			let script = $crate::plutus_script::PlutusScript::from($ps);
+			plutus_script!(@inner, script $(,$args)*)
+		}
+	);
+	(@inner, $ps:expr) => (Ok($ps));
+    (@inner, $ps:expr, $arg:expr $(,$args:expr)*) => (
+		$ps.apply_data_uplc($crate::plutus_script::PlutusDataWrapper::from($arg).0)
+	    	.and_then(|ps| plutus_script!(@inner, ps $(,$args)*))
+    )
+}
+
+/// Wrapper type for [uplc::PlutusData].
+///
+/// Note: The type argument is needed to make the compiler accept the implementation for
+/// `impl<T: ToDatum> From<T> for PlutusDataWrapper<T>`.
+pub struct PlutusDataWrapper<T>(pub uplc::PlutusData, PhantomData<T>);
+
+impl<T> PlutusDataWrapper<T> {
+	/// Constructs [PlutusDataWrapper].
+	pub fn new(d: uplc::PlutusData) -> Self {
+		Self(d, PhantomData)
+	}
+}
+
+impl From<uplc::PlutusData> for PlutusDataWrapper<()> {
+	fn from(value: uplc::PlutusData) -> Self {
+		PlutusDataWrapper::new(value)
+	}
+}
+
+impl<T: ToDatum> From<T> for PlutusDataWrapper<T> {
+	fn from(value: T) -> Self {
+		PlutusDataWrapper::new(to_plutus_data(value.to_datum()))
+	}
+}
+
+fn to_plutus_data(datum: plutus::Datum) -> uplc::PlutusData {
+	uplc::plutus_data(&minicbor::to_vec(datum).expect("to_vec is Infallible"))
+		.expect("trasformation from PC Datum to pallas PlutusData can't fail")
+}
+
 #[cfg(test)]
 pub(crate) mod tests {
 	use super::*;
 	use hex_literal::hex;
+	use raw_scripts::RawScript;
 	use sidechain_domain::{McTxHash, UtxoId, UtxoIndex};
 
 	pub(crate) const TEST_GENESIS_UTXO: UtxoId =
 		UtxoId { tx_hash: McTxHash([0u8; 32]), index: UtxoIndex(0) };
 
 	// Taken from smart-contracts repository
-	pub(crate) const CANDIDATES_SCRIPT_RAW: [u8; 318] = hex!(
+	pub(crate) const CANDIDATES_SCRIPT_RAW: RawScript = RawScript(&hex!(
 		"59013b590138010000323322323322323232322222533553353232323233012225335001100f2215333573466e3c014dd7001080909802000980798051bac330033530040022200148040dd7198011a980180311000a4010660026a600400644002900019112999ab9a33710002900009805a4810350543600133003001002300f22253350011300b49103505437002215333573466e1d20000041002133005337020089001000919199109198008018011aab9d001300735573c0026ea80044028402440204c01d2401035054350030092233335573e0024016466a0146ae84008c00cd5d100124c6010446666aae7c00480288cd4024d5d080118019aba20024988c98cd5ce00080109000891001091000980191299a800880211099a80280118020008910010910911980080200191918008009119801980100100081"
-	);
+	));
 
 	/// We know it is correct, because we are able to get the same hash as using code from smart-contract repository
 	pub(crate) const CANDIDATES_SCRIPT_WITH_APPLIED_PARAMS: [u8; 362] = hex!(
@@ -199,21 +250,13 @@ pub(crate) mod tests {
 
 	#[test]
 	fn apply_parameters_to_deregister() {
-		let applied =
-			PlutusScript::from_wrapped_cbor(&CANDIDATES_SCRIPT_RAW, Language::new_plutus_v2())
-				.unwrap()
-				.apply_data(TEST_GENESIS_UTXO)
-				.unwrap();
+		let applied = plutus_script![CANDIDATES_SCRIPT_RAW, TEST_GENESIS_UTXO].unwrap();
 		assert_eq!(hex::encode(applied.bytes), hex::encode(CANDIDATES_SCRIPT_WITH_APPLIED_PARAMS));
 	}
 
 	#[test]
 	fn unapply_term_csl() {
-		let applied =
-			PlutusScript::from_wrapped_cbor(&CANDIDATES_SCRIPT_RAW, Language::new_plutus_v2())
-				.unwrap()
-				.apply_data(TEST_GENESIS_UTXO)
-				.unwrap();
+		let applied = plutus_script![CANDIDATES_SCRIPT_RAW, TEST_GENESIS_UTXO].unwrap();
 		let data: PlutusData = applied.unapply_data_csl().unwrap();
 		assert_eq!(
 			data,
@@ -224,15 +267,11 @@ pub(crate) mod tests {
 
 	#[test]
 	fn unapply_term_uplc() {
-		let applied =
-			PlutusScript::from_wrapped_cbor(&CANDIDATES_SCRIPT_RAW, Language::new_plutus_v2())
-				.unwrap()
-				.apply_data(TEST_GENESIS_UTXO)
-				.unwrap();
+		let applied = plutus_script![CANDIDATES_SCRIPT_RAW, TEST_GENESIS_UTXO].unwrap();
 		let data: uplc::PlutusData = applied.unapply_data_uplc().unwrap();
 		assert_eq!(
 			data,
-			plutus_data(&minicbor::to_vec(TEST_GENESIS_UTXO.to_datum()).unwrap()).unwrap()
+			uplc::plutus_data(&minicbor::to_vec(TEST_GENESIS_UTXO.to_datum()).unwrap()).unwrap()
 		)
 	}
 }

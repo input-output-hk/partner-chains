@@ -1,10 +1,8 @@
-from pytest import mark
 from src.blockchain_api import BlockchainApi
 from config.api_config import ApiConfig
 import logging
 
 
-@mark.block_production_log
 def test_block_production_log_pallet(api: BlockchainApi, config: ApiConfig):
     block = api.get_block()
     block_no = block["header"]["number"]

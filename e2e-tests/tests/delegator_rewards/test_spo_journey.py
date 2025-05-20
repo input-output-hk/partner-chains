@@ -1,6 +1,7 @@
 import logging
+import random
 from config.api_config import ApiConfig
-from src.blockchain_api import BlockchainApi
+from src.blockchain_api import BlockchainApi, Transaction, Wallet
 from src.pc_epoch_calculator import PartnerChainEpochCalculator
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import text
@@ -202,3 +203,27 @@ def test_spo_participation(
 @mark.xdist_group("block_participation")
 def test_no_unexpected_producers(block_participation):
     assert not block_participation["producer_participation"], "Unexpected producer participation data"
+
+
+@mark.xdist_group("faucet_tx")
+class TestMarginFee:
+    @fixture(scope="class")
+    def random_margin_fee(self) -> int:
+        return random.randint(0, 10000)
+
+    @fixture(scope="class", autouse=True)
+    def set_margin_fee(self, api: BlockchainApi, get_wallet: Wallet, random_margin_fee) -> Transaction:
+        result = api.set_block_producer_margin_fee(random_margin_fee, wallet=get_wallet)
+        return result
+
+    def test_set_margin_fee(self, set_margin_fee: Transaction):
+        logging.info(f"Margin fee set: {set_margin_fee}")
+        assert set_margin_fee._receipt.is_success
+
+    def test_get_margin_fee(self, api: BlockchainApi, get_wallet: Wallet, random_margin_fee):
+        response = api.partner_chain_rpc.partner_chain_get_block_producer_fees()
+        account_id = get_wallet.address
+        logging.info(f"Account ID: {account_id}")
+        margin_fee = next((item["margin_fee"] for item in response.result if item["account_id"] == account_id), None)
+        logging.info(f"Margin fee: {margin_fee}")
+        assert random_margin_fee / 100 == margin_fee, f"Unexpected margin fee: {margin_fee}"

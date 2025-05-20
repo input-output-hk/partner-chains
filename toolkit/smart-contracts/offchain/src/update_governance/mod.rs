@@ -15,16 +15,15 @@ use crate::{
 	governance::{GovernanceData, MultiSigParameters},
 	init_governance::transaction::version_oracle_datum_output,
 	multisig::{MultiSigSmartContractResult, submit_or_create_tx_to_sign},
-	plutus_script::PlutusScript,
+	plutus_script,
 };
-use cardano_serialization_lib::{
-	Language, PlutusData, Transaction, TransactionBuilder, TxInputsBuilder,
-};
+use cardano_serialization_lib::{PlutusData, Transaction, TransactionBuilder, TxInputsBuilder};
 use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
 	query_network::QueryNetwork,
 	transactions::Transactions,
 };
+use raw_scripts::RawScript;
 use sidechain_domain::UtxoId;
 
 #[cfg(test)]
@@ -67,8 +66,8 @@ pub async fn run_update_governance<
 }
 
 fn update_governance_tx(
-	version_oracle_validator: &[u8],
-	version_oracle_policy: &[u8],
+	version_oracle_validator: RawScript,
+	version_oracle_policy: RawScript,
 	genesis_utxo: UtxoId,
 	governance_parameters: &MultiSigParameters,
 	governance_data: &GovernanceData,
@@ -76,13 +75,12 @@ fn update_governance_tx(
 	ctx: &TransactionContext,
 ) -> anyhow::Result<Transaction> {
 	let multi_sig_policy = governance_parameters.as_simple_at_least_n().to_csl_native_script();
-	let version_oracle_validator =
-		PlutusScript::from_wrapped_cbor(version_oracle_validator, Language::new_plutus_v2())?
-			.apply_data(genesis_utxo)?;
-	let version_oracle_policy =
-		PlutusScript::from_wrapped_cbor(version_oracle_policy, Language::new_plutus_v2())?
-			.apply_data(genesis_utxo)?
-			.apply_uplc_data(version_oracle_validator.address_data(ctx.network)?)?;
+	let version_oracle_validator = plutus_script![version_oracle_validator, genesis_utxo]?;
+	let version_oracle_policy = plutus_script![
+		version_oracle_policy,
+		genesis_utxo,
+		version_oracle_validator.address_data(ctx.network)?
+	]?;
 
 	let config = crate::csl::get_builder_config(ctx)?;
 	let mut tx_builder = TransactionBuilder::new(&config);

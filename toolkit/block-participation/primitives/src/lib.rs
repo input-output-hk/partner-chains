@@ -12,9 +12,9 @@
 //!
 //! ## Outline of operation
 //!
-//! 1. The inhrent data provider calls runtime API to check whether it should release block participation inherent
+//! 1. The inherent data provider calls runtime API to check whether it should release block participation inherent
 //!    data (all points below assume this check is positive) and gets the upper slot limit.
-//! 2. The inhrent data provider retrieves data on block production up to the slot limit using runtime API and Cardano
+//! 2. The inherent data provider retrieves data on block production up to the slot limit using runtime API and Cardano
 //!    delegation data using observability data source. The IDP joins and aggregates this data together producing
 //!    block participation data.
 //! 3. The IDP puts the block participation data into the inherent data of the current block, under the inherent
@@ -100,7 +100,7 @@ pub struct DelegatorBlockParticipationData<DelegatorId> {
 pub struct BlockProducerParticipationData<BlockProducerId, DelegatorId> {
 	/// Block producer ID
 	pub block_producer: BlockProducerId,
-	/// Number of block prodcued in the aggregation period represented by the current [BlockProducerParticipationData]
+	/// Number of block produced in the aggregation period represented by the current [BlockProducerParticipationData]
 	pub block_count: u32,
 	/// Total sum of shares of delegators in `delegators` field
 	pub delegator_total_shares: u64,
@@ -162,16 +162,16 @@ impl<BlockProducerId, DelegatorId> BlockProductionData<BlockProducerId, Delegato
 	derive(Decode, DecodeWithMemTracking, thiserror::Error, sp_runtime::RuntimeDebug)
 )]
 pub enum InherentError {
-	/// Indicates that inherent was not producer when expected
+	/// Indicates that inherent was not produced when expected
 	#[cfg_attr(feature = "std", error("Block participation inherent not produced when expected"))]
 	InherentRequired,
-	/// Indicates that inherent was producer when not expected
+	/// Indicates that inherent was produced when not expected
 	#[cfg_attr(feature = "std", error("Block participation inherent produced when not expected"))]
 	UnexpectedInherent,
 	/// Indicates that the inherent was produced with incorrect slot boundary
 	#[cfg_attr(feature = "std", error("Block participation up_to_slot incorrect"))]
 	IncorrectSlotBoundary,
-	/// Indicates that the inherent was producer with incorrect participatition data
+	/// Indicates that the inherent was produced with incorrect participation data
 	#[cfg_attr(feature = "std", error("Inherent data provided by the node is invalid"))]
 	InvalidInherentData,
 }
@@ -232,7 +232,7 @@ pub mod inherent_data {
 	use std::collections::HashMap;
 	use std::hash::Hash;
 
-	/// Cardano observability data source providing queries requird by [BlockParticipationInherentDataProvider].
+	/// Cardano observability data source providing queries required by [BlockParticipationInherentDataProvider].
 	#[async_trait::async_trait]
 	pub trait BlockParticipationDataSource {
 		/// Retrieves stake pool delegation distribution for provided epoch and pools

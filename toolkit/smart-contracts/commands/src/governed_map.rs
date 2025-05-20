@@ -8,6 +8,7 @@ use std::collections::HashMap;
 
 #[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
+/// Commands for managing the Governed Map key-value store on Cardano
 pub enum GovernedMapCmd {
 	/// Inserts a key-value pair into the Governed Map. If a value for the key already exists it won't be updated.
 	///
@@ -25,6 +26,7 @@ pub enum GovernedMapCmd {
 }
 
 impl GovernedMapCmd {
+	/// Executes the internal command
 	pub async fn execute(self) -> crate::SubCmdResult {
 		match self {
 			Self::Insert(cmd) => cmd.execute().await,
@@ -37,20 +39,26 @@ impl GovernedMapCmd {
 }
 
 #[derive(Clone, Debug, clap::Parser)]
+/// Command for inserting a key-value pair into the Governed Map
 pub struct InsertCmd {
 	#[clap(flatten)]
 	common_arguments: crate::CommonArguments,
-	#[arg(long, help = "The key of the entry, UTF-8 encodable string.")]
+	#[arg(long)]
+	/// The key of the entry, UTF-8 encodable string.
 	key: String,
-	#[arg(long, help = "The value of the entry, hex encoded bytes.")]
+	#[arg(long)]
+	/// The value of the entry, hex encoded bytes.
 	value: ByteString,
 	#[clap(flatten)]
+	/// Path to the payment key file
 	payment_key_file: PaymentFilePath,
 	#[clap(flatten)]
+	/// Genesis UTXO
 	genesis_utxo: GenesisUtxo,
 }
 
 impl InsertCmd {
+	/// Inserts a key-value pair into the Governed Map.
 	pub async fn execute(self) -> crate::SubCmdResult {
 		let payment_key = self.payment_key_file.read_key()?;
 
@@ -70,25 +78,29 @@ impl InsertCmd {
 }
 
 #[derive(Clone, Debug, clap::Parser)]
+/// Command for updating a existing key-value pair in the Governed Map
 pub struct UpdateCmd {
 	#[clap(flatten)]
 	common_arguments: crate::CommonArguments,
-	#[arg(long, help = "The key of the entry, UTF-8 encodable string.")]
+	#[arg(long)]
+	/// The key of the entry, UTF-8 encodable string.
 	key: String,
-	#[arg(long, help = "The value of the entry, hex encoded bytes.")]
+	#[arg(long)]
+	/// The value of the entry, hex encoded bytes.
 	value: ByteString,
-	#[arg(
-		long,
-		help = "If provided, update will fail unless the current value matches the one on the ledger."
-	)]
+	#[arg(long)]
+	/// If provided, update will fail unless the current value matches the one on the ledger.
 	current_value: Option<ByteString>,
 	#[clap(flatten)]
+	/// Path to the payment key file
 	payment_key_file: PaymentFilePath,
 	#[clap(flatten)]
+	/// Genesis UTXO
 	genesis_utxo: GenesisUtxo,
 }
 
 impl UpdateCmd {
+	/// Updates a key-value pair in the Governed Map.
 	pub async fn execute(self) -> crate::SubCmdResult {
 		let payment_key = self.payment_key_file.read_key()?;
 
@@ -109,18 +121,23 @@ impl UpdateCmd {
 }
 
 #[derive(Clone, Debug, clap::Parser)]
+/// Command for removing a key-value pair from the Governed Map
 pub struct RemoveCmd {
 	#[clap(flatten)]
 	common_arguments: crate::CommonArguments,
-	#[arg(long, help = "The key of the entry, UTF-8 encodable string.")]
+	#[arg(long)]
+	/// The key of the entry, UTF-8 encodable string.
 	key: String,
 	#[clap(flatten)]
+	/// Path to the payment key file
 	payment_key_file: PaymentFilePath,
 	#[clap(flatten)]
+	/// Genesis UTXO
 	genesis_utxo: GenesisUtxo,
 }
 
 impl RemoveCmd {
+	/// Removes a key-value pair from the Governed Map.
 	pub async fn execute(self) -> crate::SubCmdResult {
 		let payment_key = self.payment_key_file.read_key()?;
 
@@ -139,14 +156,17 @@ impl RemoveCmd {
 }
 
 #[derive(Clone, Debug, clap::Parser)]
+/// Command for listing all key-value pairs currently stored in the Governed Map
 pub struct ListCmd {
 	#[clap(flatten)]
 	common_arguments: crate::CommonArguments,
 	#[clap(flatten)]
+	/// Genesis UTXO
 	genesis_utxo: GenesisUtxo,
 }
 
 impl ListCmd {
+	/// Lists all key-value pairs currently stored in the Governed Map.
 	pub async fn execute(self) -> crate::SubCmdResult {
 		let client = self.common_arguments.get_ogmios_client().await?;
 		let kv_pairs: HashMap<_, _> = run_list(self.genesis_utxo.into(), &client)
@@ -159,16 +179,20 @@ impl ListCmd {
 }
 
 #[derive(Clone, Debug, clap::Parser)]
+/// Command for retrieving the value stored in the Governed Map for the given key
 pub struct GetCmd {
 	#[clap(flatten)]
 	common_arguments: crate::CommonArguments,
 	#[arg(long)]
+	/// The key of the entry, UTF-8 encodable string.
 	key: String,
 	#[clap(flatten)]
+	/// Genesis UTXO
 	genesis_utxo: GenesisUtxo,
 }
 
 impl GetCmd {
+	/// Retrieves the value stored in the Governed Map for the given key.
 	pub async fn execute(self) -> crate::SubCmdResult {
 		let client = self.common_arguments.get_ogmios_client().await?;
 		let Some(value) = run_get(self.genesis_utxo.into(), self.key.clone(), &client).await?
@@ -180,6 +204,7 @@ impl GetCmd {
 	}
 }
 
+/// Converts the result of a command into a JSON object.
 fn print_result_json(
 	result: anyhow::Result<Option<crate::MultiSigSmartContractResult>>,
 ) -> crate::SubCmdResult {

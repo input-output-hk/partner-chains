@@ -1,5 +1,5 @@
 use crate::candidates::CandidatesDataSourceImpl;
-use crate::db_model::index_exists;
+use crate::db_model::index_exists_unsafe;
 use crate::metrics::mock::test_metrics;
 use authority_selection_inherents::authority_selection_inputs::{
 	AuthoritySelectionDataSource, RawPermissionedCandidateData,
@@ -131,9 +131,11 @@ async fn test_get_ariadne_parameters_returns_the_latest_params_for_the_future_ep
 
 #[sqlx::test(migrations = "./testdata/migrations")]
 async fn test_make_source_creates_index(pool: PgPool) {
-	assert!(!index_exists(&pool, "idx_ma_tx_out_ident").await);
+	assert!(!index_exists_unsafe(&pool, "idx_ma_tx_out_ident").await);
+	assert!(!index_exists_unsafe(&pool, "idx_tx_out_address").await);
 	CandidatesDataSourceImpl::new(pool.clone(), None).await.unwrap();
-	assert!(index_exists(&pool, "idx_ma_tx_out_ident").await);
+	assert!(index_exists_unsafe(&pool, "idx_ma_tx_out_ident").await);
+	assert!(index_exists_unsafe(&pool, "idx_tx_out_address").await);
 }
 
 mod candidate_caching {

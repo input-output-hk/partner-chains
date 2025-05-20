@@ -12,11 +12,6 @@ pytestmark = [mark.reserve, mark.xdist_group(name="governance_action")]
 INITIAL_RESERVE_DEPOSIT = 1000
 
 
-@fixture(scope="module")
-def addresses(api: BlockchainApi):
-    return api.partner_chains_node.smart_contracts.get_scripts().json["addresses"]
-
-
 @fixture(scope="module", autouse=True)
 def init_reserve(api: BlockchainApi, payment_key):
     response = api.partner_chains_node.smart_contracts.reserve.init(payment_key)

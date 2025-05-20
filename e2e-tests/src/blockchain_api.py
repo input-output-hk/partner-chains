@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from src.cardano_cli import CardanoCli
-from src.partner_chain_rpc import PartnerChainRpcResponse, DParam
+from src.partner_chain_rpc import PartnerChainRpc, PartnerChainRpcResponse, DParam
 from src.partner_chains_node.node import PartnerChainsNode
 from src.partner_chains_node.models import AddressAssociationSignature, BlockProducerMetadataSignature
 from config.api_config import Node
@@ -30,6 +30,7 @@ class Wallet:
 class BlockchainApi(ABC):
     cardano_cli: CardanoCli
     partner_chains_node: PartnerChainsNode
+    partner_chain_rpc: PartnerChainRpc
 
     @abstractmethod
     def close(self):
@@ -405,10 +406,10 @@ class BlockchainApi(ABC):
         self, metadata: dict, cross_chain_signing_key: str
     ) -> BlockProducerMetadataSignature:
         """
-        Creates a signature for block procuder metadata.
+        Creates a signature for block producer metadata.
 
         Arguments:
-            metadata {dict} -- block procuder metadata
+            metadata {dict} -- block producer metadata
             cross_chain_signing_key {str} -- Cross Chain Signing key in hex format
 
         Returns:
@@ -500,11 +501,89 @@ class BlockchainApi(ABC):
         pass
 
     @abstractmethod
+    def set_block_producer_margin_fee(self, margin_fee: int, wallet: Wallet) -> Transaction:
+        """
+        Sets the block producer's margin fee.
+
+        Arguments:
+            margin_fee {int} -- integer from 0 to 10000, where 10000 is 100,00%
+            wallet {Wallet} -- Wallet used to sign the transaction
+
+        Returns:
+            Transaction
+        """
+        pass
+
+    @abstractmethod
     def get_initial_pc_epoch(self) -> int:
         """
         Returns initial PC epoch
 
         Returns:
             int -- initial PC epoch
+        """
+        pass
+
+    @abstractmethod
+    def set_governed_map_main_chain_scripts(self, address: str, policy_id: str, wallet: Wallet) -> Transaction:
+        """
+        Sets the governed map address and policy ID to observe.
+
+        Arguments:
+            address {str} -- An address to be set
+            policy_id {str} -- Policy ID
+            wallet {Wallet} -- Wallet used to sign the transaction
+
+        Returns:
+            tx {Transaction} -- Transaction object
+        """
+        pass
+
+    @abstractmethod
+    def get_governed_map(self) -> dict:
+        """
+        Retrieves the governed map from the main chain.
+
+        Returns:
+            dict -- Governed map
+        """
+        pass
+
+    @abstractmethod
+    def get_governed_map_key(self, key: str) -> str:
+        """
+        Retrieves a specific key from the governed map.
+
+        Arguments:
+            key {str} -- Key to retrieve
+
+        Returns:
+            str -- Value associated with the key
+        """
+        pass
+
+    @abstractmethod
+    def subscribe_governed_map_initialization(self) -> list:
+        """
+        Subscribes to the initialization of the governed map. Timeouts after <main_chain.security_param> blocks.
+
+        Returns:
+            list -- A diff between current governed map storage and new main chain state.
+        """
+        pass
+
+    @abstractmethod
+    def subscribe_governed_map_change(self, key: str = None, key_value: tuple = None) -> list | tuple | bool:
+        """
+        Subscribes to changes in the governed map. Timeouts after <main_chain.security_param> blocks.
+
+        Arguments:
+            key {str} -- Key to observe (default: {None})
+            key_value {tuple} -- Tuple of key and value to observe (default: {None})
+
+        Returns:
+            list | tuple | bool -- List of tuples or a single tuple with key and value of registered change
+                                    True - if the governed map was reinitialized with 0 changes
+                                    False - if no changes were observed during the timeout
         """
         pass

@@ -39,4 +39,3 @@ sp-consensus-slots = { workspace = true, features = ["std"] }
 
 [features]
 default = []
-mock = []

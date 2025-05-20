@@ -27,7 +27,6 @@ thiserror = { workspace = true, optional = true }
 serde = { workspace = true, optional = true }
 sp-version = { workspace = true, optional = true }
 derive-new = { workspace = true }
-derive_more = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true }
@@ -46,11 +45,7 @@ std = [
     "envy",
     "sp-version",
     "sp-version/std",
-    "serde"
+    "serde",
 ]
-serde = [
-	"dep:serde",
-	"scale-info/serde",
-	"sidechain-domain/serde",
-]
+serde = ["dep:serde", "scale-info/serde", "sidechain-domain/serde"]
 mock = []

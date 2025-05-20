@@ -69,9 +69,19 @@ class PartnerChainRpc:
                 namespace = os.environ.get("K8S_NAMESPACE", "default")
                 payload = json.dumps(body)
                 cmd = [
-                    "kubectl", "exec", pod, "-n", namespace, "--",
-                    "curl", "-s", "-H", "Content-Type: application/json",
-                    "-d", payload, "http://localhost:9933"
+                    "kubectl",
+                    "exec",
+                    pod,
+                    "-n",
+                    namespace,
+                    "--",
+                    "curl",
+                    "-s",
+                    "-H",
+                    "Content-Type: application/json",
+                    "-d",
+                    payload,
+                    "http://localhost:9933",
                 ]
                 result = subprocess.run(cmd, capture_output=True, text=True, check=True)
                 return json.loads(result.stdout)
@@ -138,5 +148,10 @@ class PartnerChainRpc:
 
     def partner_chain_get_block_producer_metadata(self, cross_chain_pub_key_hash: str):
         json_data = self.__exec_rpc("block-producer-metadata_getMetadata", [f"0x{cross_chain_pub_key_hash}"])
+        logger.debug(json_data)
+        return PartnerChainRpcResponse.model_validate(json_data)
+
+    def partner_chain_get_block_producer_fees(self) -> PartnerChainRpcResponse:
+        json_data = self.__exec_rpc("pc_getBlockProducerFees")
         logger.debug(json_data)
         return PartnerChainRpcResponse.model_validate(json_data)

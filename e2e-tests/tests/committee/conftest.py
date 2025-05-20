@@ -3,7 +3,7 @@ import logging
 import random
 from typing import Generator, Tuple
 from config.api_config import ApiConfig, Node
-from pytest import fixture, skip
+from pytest import fixture, mark, skip
 from sqlalchemy import select, func, text
 from sqlalchemy.orm import Session, aliased
 from contextlib import contextmanager
@@ -21,6 +21,12 @@ import os
 block_finder: BlockFinder = None
 
 CANDIDATES_STABILITY_OFFSET_IN_MC_EPOCHS = 2
+
+
+def pytest_collection_modifyitems(items):
+    for item in items:
+        if "tests/committee" in item.nodeid:
+            item.add_marker(mark.ariadne)
 
 
 def insert_candidates(db, candidates, type, mc_epoch):

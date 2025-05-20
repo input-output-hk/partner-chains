@@ -1,11 +1,13 @@
-use crate::GetGenesisUtxo;
 use sidechain_domain::UtxoId;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::Block as BlockT;
+use sp_sidechain::GetGenesisUtxo;
 use std::sync::Arc;
 
-pub async fn get_genesis_utxo<B, C>(client: Arc<C>) -> Result<String, String>
+/// Retrieves the genesis UTXO from the on-chain storage.
+/// This function should be used by a CLI command.
+pub async fn execute<B, C>(client: Arc<C>) -> Result<String, String>
 where
 	B: BlockT,
 	C: ProvideRuntimeApi<B> + Send + Sync + 'static,
@@ -21,6 +23,6 @@ where
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Debug)]
-pub struct Output {
+struct Output {
 	pub genesis_utxo: UtxoId,
 }

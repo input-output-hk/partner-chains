@@ -1,3 +1,5 @@
+//! Queries for committee selection
+#![deny(missing_docs)]
 pub mod commands;
 pub mod get_registrations;
 pub mod types;
@@ -19,6 +21,7 @@ use sp_runtime::traits::{Block as BlockT, Zero};
 use sp_session_validator_management::{
 	CommitteeMember as CommitteeMemberT, SessionValidatorManagementApi,
 };
+#[allow(deprecated)]
 use sp_sidechain::{GetGenesisUtxo, GetSidechainStatus};
 use std::sync::Arc;
 use types::*;
@@ -26,15 +29,17 @@ use types::*;
 #[cfg(test)]
 mod tests;
 
+/// Result type for queries
 pub type QueryResult<T> = Result<T, String>;
 
 #[async_trait]
+/// API for Session Validator Management Queries
 pub trait SessionValidatorManagementQueryApi {
 	/// Returns the committee for given sidechain epoch. The order of the list represents the order of slot allocation.
 	fn get_epoch_committee(&self, epoch_number: u64) -> QueryResult<GetCommitteeResponse>;
 
 	///
-	/// returns: Last active and valid registration followed by all newer invalid registrations for mc_epoch_number and mc_public_key.
+	/// returns: Last active and valid registration followed by all newer invalid registrations for mc_epoch_number and stake_pool_public_key.
 	/// Regardless of `mc_epoch_number` value, it always uses validation api from the latest sidechain block.
 	///
 	async fn get_registrations(
@@ -51,6 +56,7 @@ pub trait SessionValidatorManagementQueryApi {
 }
 
 #[derive(new)]
+/// Session Validator Management Query type wrapping client, and data source
 pub struct SessionValidatorManagementQuery<C, Block, CommitteeMember: Decode> {
 	client: Arc<C>,
 	candidate_data_source: Arc<dyn AuthoritySelectionDataSource + Send + Sync>,
@@ -124,6 +130,7 @@ where
 }
 
 #[async_trait]
+#[allow(deprecated)]
 impl<C, Block, CommitteeMember> SessionValidatorManagementQueryApi
 	for SessionValidatorManagementQuery<C, Block, CommitteeMember>
 where
@@ -158,7 +165,9 @@ where
 		let first_epoch = {
 			let second_block = (self.client)
 				.hash(1.into())
-				.map_err(err_debug)?
+				.map_err(|err| {
+					format!("Node is not in archive mode, not able to fetch first block: {err:?}")
+				})?
 				.ok_or("Only the Genesis Block exists at the moment!")?;
 			(self.client.runtime_api())
 				.get_sidechain_status(second_block)
@@ -262,6 +271,6 @@ where
 	}
 }
 
-pub fn err_debug<T: std::fmt::Debug>(err: T) -> String {
+fn err_debug<T: std::fmt::Debug>(err: T) -> String {
 	format!("{err:?}")
 }

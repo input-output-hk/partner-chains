@@ -18,7 +18,7 @@ pub mod init_governance;
 /// Types and functions related to smart-contracts that support MultiSig governance
 pub mod multisig;
 #[cfg(test)]
-pub mod ogmios_mock;
+mod ogmios_mock;
 /// Supports Permissioned Candidates upsert
 pub mod permissioned_candidates;
 /// Utilities for handling Plutus script data
@@ -26,12 +26,12 @@ pub mod plutus_script;
 /// Supports candidate registration
 pub mod register;
 pub mod reserve;
-/// Provides synthetized scripts data
+/// Provides synthesized scripts data
 pub mod scripts_data;
 /// Signing transactions
 pub mod sign_tx;
 #[cfg(test)]
-pub mod test_values;
+mod test_values;
 /// Supports governance updates
 pub mod update_governance;
 
