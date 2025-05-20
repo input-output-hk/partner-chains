@@ -103,7 +103,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Deploy and test against local environment
-        uses: ./.github/actions/tests/local-env
+        uses: ./.github/actions/tests/local-envvironment-tests
         with:
           tag: CI
           image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
@@ -474,7 +474,7 @@ jobs:
           fetch-depth: 0
           ref: master
       - name: Deploy and test against local environment
-        uses: ./.github/actions/tests/local-env
+        uses: ./.github/actions/tests/local-envvironment-tests
         with:
           tag: CI
           image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-x86_64-post-merge.outputs.sha }}
