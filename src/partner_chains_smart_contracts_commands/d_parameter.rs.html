@@ -3,37 +3,43 @@
 <a href=#3 id=3 data-nosnippet>3</a><span class="kw">use </span>sidechain_domain::DParameter;
 <a href=#4 id=4 data-nosnippet>4</a>
 <a href=#5 id=5 data-nosnippet>5</a><span class="attr">#[derive(Clone, Debug, clap::Parser)]
-<a href=#6 id=6 data-nosnippet>6</a></span><span class="kw">pub struct </span>UpsertDParameterCmd {
-<a href=#7 id=7 data-nosnippet>7</a>	<span class="attr">#[clap(flatten)]
-<a href=#8 id=8 data-nosnippet>8</a>	</span>common_arguments: <span class="kw">crate</span>::CommonArguments,
-<a href=#9 id=9 data-nosnippet>9</a>	<span class="attr">#[arg(long)]
-<a href=#10 id=10 data-nosnippet>10</a>	</span>permissioned_candidates_count: u16,
-<a href=#11 id=11 data-nosnippet>11</a>	<span class="attr">#[arg(long)]
-<a href=#12 id=12 data-nosnippet>12</a>	</span>registered_candidates_count: u16,
-<a href=#13 id=13 data-nosnippet>13</a>	<span class="attr">#[clap(flatten)]
-<a href=#14 id=14 data-nosnippet>14</a>	</span>payment_key_file: PaymentFilePath,
-<a href=#15 id=15 data-nosnippet>15</a>	<span class="attr">#[clap(flatten)]
-<a href=#16 id=16 data-nosnippet>16</a>	</span>genesis_utxo: GenesisUtxo,
-<a href=#17 id=17 data-nosnippet>17</a>}
-<a href=#18 id=18 data-nosnippet>18</a>
-<a href=#19 id=19 data-nosnippet>19</a><span class="kw">impl </span>UpsertDParameterCmd {
-<a href=#20 id=20 data-nosnippet>20</a>	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::SubCmdResult {
-<a href=#21 id=21 data-nosnippet>21</a>		<span class="kw">let </span>payment_key = <span class="self">self</span>.payment_key_file.read_key()<span class="question-mark">?</span>;
-<a href=#22 id=22 data-nosnippet>22</a>		<span class="kw">let </span>d_param = DParameter {
-<a href=#23 id=23 data-nosnippet>23</a>			num_permissioned_candidates: <span class="self">self</span>.permissioned_candidates_count,
-<a href=#24 id=24 data-nosnippet>24</a>			num_registered_candidates: <span class="self">self</span>.registered_candidates_count,
-<a href=#25 id=25 data-nosnippet>25</a>		};
-<a href=#26 id=26 data-nosnippet>26</a>		<span class="kw">let </span>client = <span class="self">self</span>.common_arguments.get_ogmios_client().<span class="kw">await</span><span class="question-mark">?</span>;
-<a href=#27 id=27 data-nosnippet>27</a>
-<a href=#28 id=28 data-nosnippet>28</a>		<span class="kw">let </span>result = upsert_d_param(
-<a href=#29 id=29 data-nosnippet>29</a>			<span class="self">self</span>.genesis_utxo.into(),
-<a href=#30 id=30 data-nosnippet>30</a>			<span class="kw-2">&amp;</span>d_param,
-<a href=#31 id=31 data-nosnippet>31</a>			<span class="kw-2">&amp;</span>payment_key,
-<a href=#32 id=32 data-nosnippet>32</a>			<span class="kw-2">&amp;</span>client,
-<a href=#33 id=33 data-nosnippet>33</a>			<span class="kw-2">&amp;</span><span class="self">self</span>.common_arguments.retries(),
-<a href=#34 id=34 data-nosnippet>34</a>		)
-<a href=#35 id=35 data-nosnippet>35</a>		.<span class="kw">await</span><span class="question-mark">?</span>;
-<a href=#36 id=36 data-nosnippet>36</a>
-<a href=#37 id=37 data-nosnippet>37</a>		<span class="prelude-val">Ok</span>(option_to_json(result))
-<a href=#38 id=38 data-nosnippet>38</a>	}
-<a href=#39 id=39 data-nosnippet>39</a>}</code></pre></div></section></main></body></html>
+<a href=#6 id=6 data-nosnippet>6</a></span><span class="doccomment">/// Command for upserting the D-parameter on the main chain
+<a href=#7 id=7 data-nosnippet>7</a></span><span class="kw">pub struct </span>UpsertDParameterCmd {
+<a href=#8 id=8 data-nosnippet>8</a>	<span class="attr">#[clap(flatten)]
+<a href=#9 id=9 data-nosnippet>9</a>	</span>common_arguments: <span class="kw">crate</span>::CommonArguments,
+<a href=#10 id=10 data-nosnippet>10</a>	<span class="attr">#[arg(long)]
+<a href=#11 id=11 data-nosnippet>11</a>	</span><span class="doccomment">/// Number of permissioned candidates
+<a href=#12 id=12 data-nosnippet>12</a>	</span>permissioned_candidates_count: u16,
+<a href=#13 id=13 data-nosnippet>13</a>	<span class="attr">#[arg(long)]
+<a href=#14 id=14 data-nosnippet>14</a>	</span><span class="doccomment">/// Number of registered candidates
+<a href=#15 id=15 data-nosnippet>15</a>	</span>registered_candidates_count: u16,
+<a href=#16 id=16 data-nosnippet>16</a>	<span class="attr">#[clap(flatten)]
+<a href=#17 id=17 data-nosnippet>17</a>	</span><span class="doccomment">/// Path to the payment key file
+<a href=#18 id=18 data-nosnippet>18</a>	</span>payment_key_file: PaymentFilePath,
+<a href=#19 id=19 data-nosnippet>19</a>	<span class="attr">#[clap(flatten)]
+<a href=#20 id=20 data-nosnippet>20</a>	</span><span class="doccomment">/// Genesis UTXO
+<a href=#21 id=21 data-nosnippet>21</a>	</span>genesis_utxo: GenesisUtxo,
+<a href=#22 id=22 data-nosnippet>22</a>}
+<a href=#23 id=23 data-nosnippet>23</a>
+<a href=#24 id=24 data-nosnippet>24</a><span class="kw">impl </span>UpsertDParameterCmd {
+<a href=#25 id=25 data-nosnippet>25</a>	<span class="doccomment">/// Creates the D-parameter and upserts it on the main chain.
+<a href=#26 id=26 data-nosnippet>26</a>	</span><span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::SubCmdResult {
+<a href=#27 id=27 data-nosnippet>27</a>		<span class="kw">let </span>payment_key = <span class="self">self</span>.payment_key_file.read_key()<span class="question-mark">?</span>;
+<a href=#28 id=28 data-nosnippet>28</a>		<span class="kw">let </span>d_param = DParameter {
+<a href=#29 id=29 data-nosnippet>29</a>			num_permissioned_candidates: <span class="self">self</span>.permissioned_candidates_count,
+<a href=#30 id=30 data-nosnippet>30</a>			num_registered_candidates: <span class="self">self</span>.registered_candidates_count,
+<a href=#31 id=31 data-nosnippet>31</a>		};
+<a href=#32 id=32 data-nosnippet>32</a>		<span class="kw">let </span>client = <span class="self">self</span>.common_arguments.get_ogmios_client().<span class="kw">await</span><span class="question-mark">?</span>;
+<a href=#33 id=33 data-nosnippet>33</a>
+<a href=#34 id=34 data-nosnippet>34</a>		<span class="kw">let </span>result = upsert_d_param(
+<a href=#35 id=35 data-nosnippet>35</a>			<span class="self">self</span>.genesis_utxo.into(),
+<a href=#36 id=36 data-nosnippet>36</a>			<span class="kw-2">&amp;</span>d_param,
+<a href=#37 id=37 data-nosnippet>37</a>			<span class="kw-2">&amp;</span>payment_key,
+<a href=#38 id=38 data-nosnippet>38</a>			<span class="kw-2">&amp;</span>client,
+<a href=#39 id=39 data-nosnippet>39</a>			<span class="kw-2">&amp;</span><span class="self">self</span>.common_arguments.retries(),
+<a href=#40 id=40 data-nosnippet>40</a>		)
+<a href=#41 id=41 data-nosnippet>41</a>		.<span class="kw">await</span><span class="question-mark">?</span>;
+<a href=#42 id=42 data-nosnippet>42</a>
+<a href=#43 id=43 data-nosnippet>43</a>		<span class="prelude-val">Ok</span>(option_to_json(result))
+<a href=#44 id=44 data-nosnippet>44</a>	}
+<a href=#45 id=45 data-nosnippet>45</a>}</code></pre></div></section></main></body></html>

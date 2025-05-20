@@ -4,31 +4,33 @@
 <a href=#4 id=4 data-nosnippet>4</a><span class="kw">use </span>sidechain_domain::{TransactionCbor, VKeyWitnessCbor};
 <a href=#5 id=5 data-nosnippet>5</a>
 <a href=#6 id=6 data-nosnippet>6</a><span class="attr">#[derive(Clone, Debug, clap::Parser)]
-<a href=#7 id=7 data-nosnippet>7</a></span><span class="kw">pub struct </span>AssembleAndSubmitCmd {
-<a href=#8 id=8 data-nosnippet>8</a>	<span class="attr">#[clap(flatten)]
-<a href=#9 id=9 data-nosnippet>9</a>	</span>common_arguments: <span class="kw">crate</span>::CommonArguments,
-<a href=#10 id=10 data-nosnippet>10</a>	<span class="attr">#[arg(long, value_parser = TransactionCbor::decode_hex)]
-<a href=#11 id=11 data-nosnippet>11</a>	</span><span class="doccomment">/// Hex-encoded transaction CBOR (with or without 0x prefix)
-<a href=#12 id=12 data-nosnippet>12</a>	</span>transaction: TransactionCbor,
-<a href=#13 id=13 data-nosnippet>13</a>	<span class="attr">#[arg(short, long, num_args = <span class="number">1</span>.., value_delimiter = <span class="string">' '</span>, value_parser = VKeyWitnessCbor::decode_hex)]
-<a href=#14 id=14 data-nosnippet>14</a>	</span><span class="doccomment">/// Witnesses of the transaction. Each witness is a hex-encoded CBOR (with or without 0x prefix), encoding a 1 element list containing a 2 elements list [[public_key, signature]].
-<a href=#15 id=15 data-nosnippet>15</a>	</span>witnesses: Vec&lt;VKeyWitnessCbor&gt;,
-<a href=#16 id=16 data-nosnippet>16</a>}
-<a href=#17 id=17 data-nosnippet>17</a>
-<a href=#18 id=18 data-nosnippet>18</a><span class="kw">impl </span>AssembleAndSubmitCmd {
-<a href=#19 id=19 data-nosnippet>19</a>	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::SubCmdResult {
-<a href=#20 id=20 data-nosnippet>20</a>		<span class="kw">let </span>client = <span class="self">self</span>.common_arguments.get_ogmios_client().<span class="kw">await</span><span class="question-mark">?</span>;
-<a href=#21 id=21 data-nosnippet>21</a>
-<a href=#22 id=22 data-nosnippet>22</a>		<span class="kw">let </span>transaction = transaction_from_bytes(<span class="self">self</span>.transaction.<span class="number">0</span>)<span class="question-mark">?</span>;
+<a href=#7 id=7 data-nosnippet>7</a></span><span class="doccomment">/// Command for assembling transaction with additional witnesses, and submitting it to the chain
+<a href=#8 id=8 data-nosnippet>8</a></span><span class="kw">pub struct </span>AssembleAndSubmitCmd {
+<a href=#9 id=9 data-nosnippet>9</a>	<span class="attr">#[clap(flatten)]
+<a href=#10 id=10 data-nosnippet>10</a>	</span>common_arguments: <span class="kw">crate</span>::CommonArguments,
+<a href=#11 id=11 data-nosnippet>11</a>	<span class="attr">#[arg(long, value_parser = TransactionCbor::decode_hex)]
+<a href=#12 id=12 data-nosnippet>12</a>	</span><span class="doccomment">/// Hex-encoded transaction CBOR (with or without 0x prefix)
+<a href=#13 id=13 data-nosnippet>13</a>	</span>transaction: TransactionCbor,
+<a href=#14 id=14 data-nosnippet>14</a>	<span class="attr">#[arg(short, long, num_args = <span class="number">1</span>.., value_delimiter = <span class="string">' '</span>, value_parser = VKeyWitnessCbor::decode_hex)]
+<a href=#15 id=15 data-nosnippet>15</a>	</span><span class="doccomment">/// Witnesses of the transaction. Each witness is a hex-encoded CBOR (with or without 0x prefix), encoding a 1 element list containing a 2 elements list [[public_key, signature]].
+<a href=#16 id=16 data-nosnippet>16</a>	</span>witnesses: Vec&lt;VKeyWitnessCbor&gt;,
+<a href=#17 id=17 data-nosnippet>17</a>}
+<a href=#18 id=18 data-nosnippet>18</a>
+<a href=#19 id=19 data-nosnippet>19</a><span class="kw">impl </span>AssembleAndSubmitCmd {
+<a href=#20 id=20 data-nosnippet>20</a>	<span class="doccomment">/// Deserialises the transaction and witnesses, combines them and submits the transaction to the chain.
+<a href=#21 id=21 data-nosnippet>21</a>	</span><span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::SubCmdResult {
+<a href=#22 id=22 data-nosnippet>22</a>		<span class="kw">let </span>client = <span class="self">self</span>.common_arguments.get_ogmios_client().<span class="kw">await</span><span class="question-mark">?</span>;
 <a href=#23 id=23 data-nosnippet>23</a>
-<a href=#24 id=24 data-nosnippet>24</a>		<span class="kw">let </span>witnesses = <span class="self">self
-<a href=#25 id=25 data-nosnippet>25</a>			</span>.witnesses
-<a href=#26 id=26 data-nosnippet>26</a>			.iter()
-<a href=#27 id=27 data-nosnippet>27</a>			.map(|w| vkey_witness_from_bytes(w.<span class="number">0</span>.clone().into_iter().skip(<span class="number">2</span>).collect()))
-<a href=#28 id=28 data-nosnippet>28</a>			.collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;<span class="kw">_</span>&gt;, <span class="kw">_</span>&gt;&gt;()<span class="question-mark">?</span>;
-<a href=#29 id=29 data-nosnippet>29</a>
-<a href=#30 id=30 data-nosnippet>30</a>		<span class="kw">let </span>tx_hash =
-<a href=#31 id=31 data-nosnippet>31</a>			assemble_tx(transaction, witnesses, <span class="kw-2">&amp;</span>client, <span class="kw-2">&amp;</span><span class="self">self</span>.common_arguments.retries()).<span class="kw">await</span><span class="question-mark">?</span>;
-<a href=#32 id=32 data-nosnippet>32</a>		<span class="prelude-val">Ok</span>(transaction_submitted_json(tx_hash))
-<a href=#33 id=33 data-nosnippet>33</a>	}
-<a href=#34 id=34 data-nosnippet>34</a>}</code></pre></div></section></main></body></html>
+<a href=#24 id=24 data-nosnippet>24</a>		<span class="kw">let </span>transaction = transaction_from_bytes(<span class="self">self</span>.transaction.<span class="number">0</span>)<span class="question-mark">?</span>;
+<a href=#25 id=25 data-nosnippet>25</a>
+<a href=#26 id=26 data-nosnippet>26</a>		<span class="kw">let </span>witnesses = <span class="self">self
+<a href=#27 id=27 data-nosnippet>27</a>			</span>.witnesses
+<a href=#28 id=28 data-nosnippet>28</a>			.iter()
+<a href=#29 id=29 data-nosnippet>29</a>			.map(|w| vkey_witness_from_bytes(w.<span class="number">0</span>.clone().into_iter().skip(<span class="number">2</span>).collect()))
+<a href=#30 id=30 data-nosnippet>30</a>			.collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;<span class="kw">_</span>&gt;, <span class="kw">_</span>&gt;&gt;()<span class="question-mark">?</span>;
+<a href=#31 id=31 data-nosnippet>31</a>
+<a href=#32 id=32 data-nosnippet>32</a>		<span class="kw">let </span>tx_hash =
+<a href=#33 id=33 data-nosnippet>33</a>			assemble_tx(transaction, witnesses, <span class="kw-2">&amp;</span>client, <span class="kw-2">&amp;</span><span class="self">self</span>.common_arguments.retries()).<span class="kw">await</span><span class="question-mark">?</span>;
+<a href=#34 id=34 data-nosnippet>34</a>		<span class="prelude-val">Ok</span>(transaction_submitted_json(tx_hash))
+<a href=#35 id=35 data-nosnippet>35</a>	}
+<a href=#36 id=36 data-nosnippet>36</a>}</code></pre></div></section></main></body></html>
