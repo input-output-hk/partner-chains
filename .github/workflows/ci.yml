@@ -88,7 +88,7 @@ jobs:
             ./to-build/staging_preview_chain_spec.json
             ./to-build/staging_preprod_chain_spec.json
 
-  local-environment-tests:
+  local-env:
     continue-on-error: true
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
     needs: build-linux-x86_64-pre-merge
@@ -103,7 +103,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Deploy and test against local environment
-        uses: ./.github/actions/tests/local-environment-tests
+        uses: ./.github/actions/tests/local-env
         with:
           tag: CI
           image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
@@ -118,11 +118,11 @@ jobs:
           ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
           TEST_ENVIRONMENT: local
 
-  local-environment-tests-alert:
-    needs: local-environment-tests
+  local-env-alert:
+    needs: local-env
     if: >-
       always() && (
-        needs.local-environment-tests.result != 'skipped'
+        needs.local-env.result != 'skipped'
       ) && github.event_name == 'pull_request' && github.event.pull_request.merged == false
     runs-on: ubuntu-latest
     strategy:
@@ -225,7 +225,7 @@ jobs:
     if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.merged == false }}
     needs: [
       build-linux-x86_64-pre-merge,
-      local-environment-tests,
+      local-env,
       devshell-tests,
       upload-chain-specs-pre-merge,
       documentation-tests
@@ -235,7 +235,7 @@ jobs:
       - name: Check if any needed job failed
         run: |
           if [[ "${{ needs.build-linux-x86_64-pre-merge.result }}" != "success" ||
-                "${{ needs.local-environment-tests.result }}" != "success" ||
+                "${{ needs.local-env.result }}" != "success" ||
                 "${{ needs.devshell-tests.result }}" != "success" ||
                 "${{ needs.upload-chain-specs-pre-merge.result }}" != "success" ||
                 "${{ needs.documentation-tests.result }}" != "success" ]]; then
@@ -463,7 +463,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  local-environment-tests-post-merge:
+  local-env-post-merge:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
     needs: build-linux-x86_64-post-merge
     runs-on: ubuntu-latest
@@ -474,7 +474,7 @@ jobs:
           fetch-depth: 0
           ref: master
       - name: Deploy and test against local environment
-        uses: ./.github/actions/tests/local-environment-tests
+        uses: ./.github/actions/tests/local-env
         with:
           tag: CI
           image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-x86_64-post-merge.outputs.sha }}
@@ -489,9 +489,9 @@ jobs:
           ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
           TEST_ENVIRONMENT: local
 
-  local-environment-tests-post-merge-alert:
-    needs: local-environment-tests-post-merge
-    if: always() && needs.local-environment-tests-post-merge.result != 'skipped'
+  local-env-post-merge-alert:
+    needs: local-env-post-merge
+    if: always() && needs.local-env-post-merge.result != 'skipped'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -528,7 +528,7 @@ jobs:
   deploy-ci-preview:
     needs:
       - build-linux-x86_64-post-merge
-      - local-environment-tests-post-merge-alert
+      - local-env-post-merge-alert
     permissions:
       id-token: write
       contents: write
@@ -585,7 +585,7 @@ jobs:
         build-linux-x86_64-post-merge,
         deploy-rustdoc,
         upload-chain-specs,
-        local-environment-tests-post-merge,
+        local-env-post-merge,
         ci-preview-tests-post-merge,
         deploy-ci-preview,
         upload-to-s3,
@@ -597,7 +597,7 @@ jobs:
           if [[ "${{ needs.deploy-rustdoc.result }}" != "success" ||
                 "${{ needs.build-linux-x86_64-post-merge.result }}" != "success" ||
                 "${{ needs.upload-chain-specs.result }}" != "success" ||
-                "${{ needs.local-environment-tests-post-merge.result }}" != "success" ]]
+                "${{ needs.local-env-post-merge.result }}" != "success" ]]
                 "${{ needs.deploy-ci-preview.result }}" != "success" ]]
                 "${{ needs.upload-to-s3.result }}" != "success" ]]; then
             echo "One or more needed jobs failed."
