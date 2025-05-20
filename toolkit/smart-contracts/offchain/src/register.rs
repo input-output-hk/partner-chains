@@ -23,8 +23,15 @@ use partner_chains_plutus_data::registered_candidates::{
 };
 use sidechain_domain::*;
 
+/// Trait for [register], to make it mockable.
 pub trait Register {
 	#[allow(async_fn_in_trait)]
+	/// This function submits a transaction to register a registered candidate.
+	/// Arguments:
+	///  - `retries`: Configuration for the retry logic of the transaction.
+	///  - `genesis_utxo`: UTxO identifying the Partner Chain.
+	///  - `candidate_registration`: [CandidateRegistration] registration data.
+	///  - `payment_signing_key`: Signing key of a governance authority member.
 	async fn register(
 		&self,
 		retries: FixedDelayRetries,
@@ -51,6 +58,13 @@ where
 	}
 }
 
+/// Submits a transaction to register a registered candidate.
+/// Arguments:
+///  - `genesis_utxo`: UTxO identifying the Partner Chain.
+///  - `candidate_registration`: [CandidateRegistration] registration data.
+///  - `payment_signing_key`: Signing key of a governance authority member.
+///  - `ogmios_client`: Ogmios client.
+///  - `await_tx`: [AwaitTx] strategy.
 pub async fn run_register<
 	C: QueryLedgerState + QueryNetwork + QueryUtxoByUtxoId + Transactions,
 	A: AwaitTx,
@@ -114,8 +128,15 @@ pub async fn run_register<
 	Ok(Some(McTxHash(result.transaction.id)))
 }
 
+/// Trait for [deregister], to make it mockable.
 pub trait Deregister {
 	#[allow(async_fn_in_trait)]
+	/// This function submits a transaction to deregister a registered candidate.
+	/// Arguments:
+	///  - `retries`: Configuration for the retry logic of the transaction.
+	///  - `genesis_utxo`: UTxO identifying the Partner Chain.
+	///  - `payment_signing_key`: Signing key of a governance authority member.
+	///  - `stake_ownership_pub_key`: Stake pub key of the registered candidate to be deregistered.
 	async fn deregister(
 		&self,
 		retries: FixedDelayRetries,
@@ -142,6 +163,13 @@ where
 	}
 }
 
+/// Submits a transaction to register a registered candidate.
+/// Arguments:
+///  - `genesis_utxo`: UTxO identifying the Partner Chain.
+///  - `payment_signing_key`: Signing key of a governance authority member.
+///  - `stake_ownership_pub_key`: Stake pub key of the registered candidate to be deregistered.
+///  - `client`: Bridge client.
+///  - `await_tx`: [AwaitTx] strategy.
 pub async fn run_deregister<
 	C: QueryLedgerState + QueryNetwork + QueryUtxoByUtxoId + Transactions,
 	A: AwaitTx,

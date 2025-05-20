@@ -2,15 +2,16 @@ use anyhow::anyhow;
 use cardano_serialization_lib::{PrivateKey, PublicKey};
 use sidechain_domain::MainchainKeyHash;
 
-/// Signing (payment) key abstraction layer. Hides internal crytpo library details.
+/// Signing (payment) key abstraction layer. Hides internal crypto library details.
 /// It is either:
-/// * 32 bytes regural private key
+/// * 32 bytes regular private key
 /// * 64 bytes extended private key
 pub struct CardanoPaymentSigningKey(pub(crate) PrivateKey);
 
 impl CardanoPaymentSigningKey {
+	/// Constructs [CardanoPaymentSigningKey] from 128 byte extended payment signing key.
+	/// The 128 bytes of the key are: 64 byte prefix, 32 byte verification key, 32 byte chain code
 	pub fn from_extended_128_bytes(bytes: [u8; 128]) -> anyhow::Result<Self> {
-		// All 128 bytes are: 64 bytes of prefix, 32 bytes of verification key, 32 bytes of chain code
 		let prefix: [u8; 64] = bytes[0..64].try_into().unwrap();
 		Ok(Self(
 			PrivateKey::from_extended_bytes(&prefix)
@@ -18,6 +19,7 @@ impl CardanoPaymentSigningKey {
 		))
 	}
 
+	/// Constructs [CardanoPaymentSigningKey] from 32 byte payment signing key.
 	pub fn from_normal_bytes(bytes: [u8; 32]) -> Result<Self, anyhow::Error> {
 		Ok(Self(
 			PrivateKey::from_normal_bytes(&bytes)
@@ -25,10 +27,12 @@ impl CardanoPaymentSigningKey {
 		))
 	}
 
+	/// Signs `message` with the [CardanoPaymentSigningKey].
 	pub fn sign(&self, message: &[u8]) -> Result<Vec<u8>, anyhow::Error> {
 		Ok(self.0.sign(message).to_bytes())
 	}
 
+	/// Converts [CardanoPaymentSigningKey] to domain type [MainchainKeyHash].
 	pub fn to_pub_key_hash(&self) -> MainchainKeyHash {
 		MainchainKeyHash(
 			self.0
@@ -41,10 +45,12 @@ impl CardanoPaymentSigningKey {
 		)
 	}
 
+	/// Converts [CardanoPaymentSigningKey] to CSL [PublicKey].
 	pub fn to_csl_pub_key(&self) -> PublicKey {
 		self.0.to_public()
 	}
 
+	/// Returns raw bytes of [CardanoPaymentSigningKey].
 	pub fn to_bytes(&self) -> Vec<u8> {
 		self.0.as_bytes()
 	}
@@ -81,12 +87,18 @@ impl Clone for CardanoPaymentSigningKey {
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+/// Type representing Cardano key file.
+///
+/// Note: Field names are used for serialization, do not rename.
 pub struct CardanoKeyFileContent {
+	/// Type of the Cardano key.
 	pub r#type: String,
+	/// CBOR hex of the key.
 	pub cbor_hex: String,
 }
 
 impl CardanoKeyFileContent {
+	/// Parses file to [CardanoKeyFileContent].
 	pub fn parse_file(path: &str) -> anyhow::Result<Self> {
 		let file_content = std::fs::read_to_string(path)
 			.map_err(|e| anyhow!("Could not read Cardano key file at: {path}. Cause: {e}"))?;

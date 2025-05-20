@@ -42,6 +42,11 @@ use raw_scripts::{
 };
 use sidechain_domain::UtxoId;
 
+/// Stores smart contracts used for reserve management in the versioning system.
+/// Scripts stored are:
+///  - Reserve Management Validator
+///  - Reserve Management Policy
+///  - Illiquid Circulation Validator
 pub async fn init_reserve_management<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 	A: AwaitTx,
@@ -200,9 +205,9 @@ async fn script_is_initialized<T: QueryLedgerState>(
 	Ok(find_script_utxo(script.id, version_oracle, ctx, client).await?.is_some())
 }
 
-// Finds an UTXO at Version Oracle Validator with Datum that contains
-// * given script id
-// * Version Oracle Policy Id
+/// Finds an UTXO at Version Oracle Validator with Datum that contains
+/// * given script id
+/// * Version Oracle Policy Id
 pub(crate) async fn find_script_utxo<T: QueryLedgerState>(
 	script_id: u32,
 	version_oracle: &PlutusScriptData,

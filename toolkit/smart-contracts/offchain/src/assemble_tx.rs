@@ -1,4 +1,4 @@
-use crate::await_tx::{AwaitTx, FixedDelayRetries};
+use crate::await_tx::AwaitTx;
 use anyhow::anyhow;
 use cardano_serialization_lib::{Transaction, Vkeywitness, Vkeywitnesses};
 use ogmios_client::query_ledger_state::QueryUtxoByUtxoId;
@@ -7,27 +7,7 @@ use ogmios_client::{
 };
 use sidechain_domain::{McTxHash, UtxoId};
 
-pub trait AssembleTx {
-	#[allow(async_fn_in_trait)]
-	async fn assemble_tx(
-		&self,
-		retries: &FixedDelayRetries,
-		transaction: Transaction,
-		witnesses: Vec<Vkeywitness>,
-	) -> anyhow::Result<McTxHash>;
-}
-
-impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId> AssembleTx for C {
-	async fn assemble_tx(
-		&self,
-		retries: &FixedDelayRetries,
-		transaction: Transaction,
-		witnesses: Vec<Vkeywitness>,
-	) -> anyhow::Result<McTxHash> {
-		assemble_tx(transaction, witnesses, self, retries).await
-	}
-}
-
+/// Adds `witnesses` to `transaction` and submits it with `ogmios_client`.
 pub async fn assemble_tx<
 	C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,
 	A: AwaitTx,

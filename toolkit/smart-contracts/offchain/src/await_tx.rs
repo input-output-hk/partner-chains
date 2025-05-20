@@ -4,40 +4,46 @@ use sidechain_domain::UtxoId;
 use std::time::Duration;
 use tokio_retry::{Retry, strategy::FixedInterval};
 
+/// Trait for [await_tx_output] to allow different awaiting strategies.
 pub trait AwaitTx {
 	#[allow(async_fn_in_trait)]
-	async fn await_tx_output<Q: QueryUtxoByUtxoId>(
+	/// Keeps querying `utxo_id` transaction output through `client` with some strategy depending on the implementation.
+	/// This is used for blocking until a submitted transaction is done.
+	async fn await_tx_output<C: QueryUtxoByUtxoId>(
 		&self,
-		query: &Q,
+		client: &C,
 		utxo_id: UtxoId,
 	) -> anyhow::Result<()>;
 }
 
+/// Type representing retries of a maximum amount and with a fixed delay.
 pub struct FixedDelayRetries {
 	delay: Duration,
 	retries: usize,
 }
 
 impl FixedDelayRetries {
+	/// Constructs [FixedDelayRetries] with `delay` [Duration] and `retries` amount of maximum retries.
 	pub fn new(delay: Duration, retries: usize) -> Self {
 		Self { delay, retries }
 	}
 
+	/// Constructs [FixedDelayRetries] that keeps retrying every 5 seconds for 5 minutes.
 	pub fn five_minutes() -> Self {
 		Self { delay: Duration::from_secs(5), retries: 59 }
 	}
 }
 
 impl AwaitTx for FixedDelayRetries {
-	async fn await_tx_output<Q: QueryUtxoByUtxoId>(
+	async fn await_tx_output<C: QueryUtxoByUtxoId>(
 		&self,
-		query: &Q,
+		client: &C,
 		utxo_id: UtxoId,
 	) -> anyhow::Result<()> {
 		let strategy = FixedInterval::new(self.delay).take(self.retries);
 		let _ = Retry::spawn(strategy, || async {
 			log::info!("Probing for transaction output '{}'", utxo_id);
-			let utxo = query.query_utxo_by_id(utxo_id).await.map_err(|_| ())?;
+			let utxo = client.query_utxo_by_id(utxo_id).await.map_err(|_| ())?;
 			utxo.ok_or(())
 		})
 		.await

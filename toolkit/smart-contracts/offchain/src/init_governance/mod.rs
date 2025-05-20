@@ -19,8 +19,9 @@ mod tests;
 
 pub(crate) mod transaction;
 
+/// Trait for [init_governance], to make it mockable.
 pub trait InitGovernance {
-	/// Initializes goveranance mechanism with the authority being `governance_authority`,
+	/// Initializes governance mechanism with `governance_parameters`,
 	/// for the chain identified by `genesis_utxo_id`.
 	#[allow(async_fn_in_trait)]
 	async fn init_governance(
@@ -57,11 +58,16 @@ where
 }
 
 #[derive(serde::Serialize)]
+/// Result type of [run_init_governance]. Serialized to JSON.
 pub struct InitGovernanceResult {
+	/// Hash of submitted transaction.
 	pub tx_hash: McTxHash,
+	/// Genesis UTxO id identifying Partner Chain.
 	pub genesis_utxo: UtxoId,
 }
 
+/// Initializes multi-signature governance. Initialization spends provided `genesis_utxo_id` or picks one from the `payment_key`.
+/// This UTxO will identify the Partner Chain.
 pub async fn run_init_governance<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 	A: AwaitTx,

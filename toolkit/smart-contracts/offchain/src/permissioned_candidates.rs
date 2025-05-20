@@ -28,8 +28,15 @@ use partner_chains_plutus_data::permissioned_candidates::{
 };
 use sidechain_domain::{PermissionedCandidateData, UtxoId};
 
+/// Trait for [upsert_permissioned_candidates] to make it mockable.
 pub trait UpsertPermissionedCandidates {
 	#[allow(async_fn_in_trait)]
+	/// Upserts permissioned candidates list.
+	/// Arguments:
+	///  - `retries`: [FixedDelayRetries] configuration.
+	///  - `genesis_utxo`: Genesis UTxO identifying the Partner Chain.
+	///  - `candidates`: List of permissioned candidates. The current list (if exists) will be overwritten by this list.
+	///  - `payment_signing_key`: Payment signing key for governing authority member.
 	async fn upsert_permissioned_candidates(
 		&self,
 		retries: FixedDelayRetries,
@@ -60,6 +67,13 @@ impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId>
 	}
 }
 
+/// Upserts permissioned candidates list.
+/// Arguments:
+///  - `genesis_utxo`: Genesis UTxO identifying the Partner Chain.
+///  - `candidates`: List of permissioned candidates. The current list (if exists) will be overwritten by this list.
+///  - `payment_signing_key`: Payment signing key for governing authority member.
+///  - `client`: Bridge client.
+///  - `await_tx`: [AwaitTx] strategy.
 pub async fn upsert_permissioned_candidates<
 	C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,
 	A: AwaitTx,
@@ -67,13 +81,13 @@ pub async fn upsert_permissioned_candidates<
 	genesis_utxo: UtxoId,
 	candidates: &[PermissionedCandidateData],
 	payment_signing_key: &CardanoPaymentSigningKey,
-	ogmios_client: &C,
+	client: &C,
 	await_tx: &A,
 ) -> anyhow::Result<Option<MultiSigSmartContractResult>> {
-	let ctx = TransactionContext::for_payment_key(payment_signing_key, ogmios_client).await?;
+	let ctx = TransactionContext::for_payment_key(payment_signing_key, client).await?;
 	let scripts = scripts_data::permissioned_candidates_scripts(genesis_utxo, ctx.network)?;
-	let governance_data = GovernanceData::get(genesis_utxo, ogmios_client).await?;
-	let validator_utxos = ogmios_client.query_utxos(&[scripts.validator_address]).await?;
+	let governance_data = GovernanceData::get(genesis_utxo, client).await?;
+	let validator_utxos = client.query_utxos(&[scripts.validator_address]).await?;
 	let mut candidates = candidates.to_owned();
 	candidates.sort();
 
@@ -96,7 +110,7 @@ pub async fn upsert_permissioned_candidates<
 					&current_utxo,
 					&governance_data,
 					ctx,
-					ogmios_client,
+					client,
 					await_tx,
 				)
 				.await?,
@@ -113,7 +127,7 @@ pub async fn upsert_permissioned_candidates<
 					&candidates,
 					&governance_data,
 					ctx,
-					ogmios_client,
+					client,
 					await_tx,
 				)
 				.await?,

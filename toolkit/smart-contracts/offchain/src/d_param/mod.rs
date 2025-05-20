@@ -29,8 +29,15 @@ use sidechain_domain::{DParameter, UtxoId};
 #[cfg(test)]
 mod tests;
 
+/// Trait for [upsert_d_param], to make it mockable.
 pub trait UpsertDParam {
 	#[allow(async_fn_in_trait)]
+	/// This function upserts D-param.
+	/// Arguments:
+	///  - `retries`: Configuration for the retry logic of the transaction.
+	///  - `genesis_utxo`: UTxO identifying the Partner Chain.
+	///  - `d_parameter`: [DParameter] to be upserted.
+	///  - `payment_signing_key`: Signing key of a governance authority member.
 	async fn upsert_d_param(
 		&self,
 		retries: FixedDelayRetries,
@@ -52,6 +59,13 @@ impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId> Upse
 	}
 }
 
+/// This function upserts D-param.
+/// Arguments:
+///  - `genesis_utxo`: UTxO identifying the Partner Chain.
+///  - `d_parameter`: [DParameter] to be upserted.
+///  - `payment_signing_key`: Signing key of a governance authority member.
+///  - `client`: Bridge client.
+///  - `await_tx`: [AwaitTx] strategy.
 pub async fn upsert_d_param<
 	C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,
 	A: AwaitTx,
@@ -59,12 +73,12 @@ pub async fn upsert_d_param<
 	genesis_utxo: UtxoId,
 	d_parameter: &DParameter,
 	payment_signing_key: &CardanoPaymentSigningKey,
-	ogmios_client: &C,
+	client: &C,
 	await_tx: &A,
 ) -> anyhow::Result<Option<MultiSigSmartContractResult>> {
-	let ctx = TransactionContext::for_payment_key(payment_signing_key, ogmios_client).await?;
+	let ctx = TransactionContext::for_payment_key(payment_signing_key, client).await?;
 	let scripts = crate::scripts_data::d_parameter_scripts(genesis_utxo, ctx.network)?;
-	let validator_utxos = ogmios_client.query_utxos(&[scripts.validator_address.clone()]).await?;
+	let validator_utxos = client.query_utxos(&[scripts.validator_address.clone()]).await?;
 
 	let tx_hash_opt = match get_current_d_parameter(validator_utxos)? {
 		Some((_, current_d_param)) if current_d_param == *d_parameter => {
@@ -81,7 +95,7 @@ pub async fn upsert_d_param<
 					&current_utxo,
 					ctx,
 					genesis_utxo,
-					ogmios_client,
+					client,
 					await_tx,
 				)
 				.await?,
@@ -96,7 +110,7 @@ pub async fn upsert_d_param<
 					d_parameter,
 					ctx,
 					genesis_utxo,
-					ogmios_client,
+					client,
 					await_tx,
 				)
 				.await?,
@@ -104,7 +118,7 @@ pub async fn upsert_d_param<
 		},
 	};
 	if let Some(TransactionSubmitted(tx_hash)) = tx_hash_opt {
-		await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_hash.0, 0)).await?;
+		await_tx.await_tx_output(client, UtxoId::new(tx_hash.0, 0)).await?;
 	}
 	Ok(tx_hash_opt)
 }

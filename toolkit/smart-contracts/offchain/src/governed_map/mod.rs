@@ -30,6 +30,9 @@ use std::ops::Neg;
 #[cfg(test)]
 mod tests;
 
+/// Inserts an entry into the governed map.
+/// If the `key` is already set, the operation fails.
+/// If the `key` is already set to the provided `value` a transaction is not submitted and the operation succeeds.
 pub async fn run_insert<
 	C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,
 	A: AwaitTx,
@@ -145,6 +148,10 @@ fn insert_key_value_tx(
 	Ok(tx_builder.balance_update_and_build(ctx)?.remove_native_script_witnesses())
 }
 
+/// Updates an entry in the governed map.
+/// If `expected_current_value` is provided, the current `value` for the `key` must match it, otherwise the operation fails.
+/// If the `key` is not set, the operation fails.
+/// If the `key` is already set to the provided `value` a transaction is not submitted and the operation succeeds.
 pub async fn run_update<
 	C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,
 	A: AwaitTx,
@@ -294,6 +301,8 @@ fn update_key_value_tx(
 	Ok(tx_builder.balance_update_and_build(ctx)?.remove_native_script_witnesses())
 }
 
+/// Removes an entry from the governed map.
+/// If the `key` doesn't exist in the map a transaction is not submitted and the operation succeeds.
 pub async fn run_remove<
 	C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,
 	A: AwaitTx,
@@ -403,6 +412,7 @@ fn remove_key_value_tx(
 	Ok(tx_builder.balance_update_and_build(ctx)?.remove_native_script_witnesses())
 }
 
+/// Queries all entries stored in the governed map.
 pub async fn run_list<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId>(
 	genesis_utxo: UtxoId,
 	ogmios_client: &C,
@@ -414,6 +424,7 @@ pub async fn run_list<C: QueryLedgerState + QueryNetwork + Transactions + QueryU
 		.map(|(_, datum)| datum))
 }
 
+/// Queries the provided `key` from the governed map.
 pub async fn run_get<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId>(
 	genesis_utxo: UtxoId,
 	key: String,

@@ -1,5 +1,7 @@
 //! Off-chain code for Partner Chains Smart Contracts and general purpose utilities related to Cardano
+#![deny(missing_docs)]
 
+/// Code for adding signatures to multisig transaction and submitting it.
 pub mod assemble_tx;
 /// Primitives used for awaiting for tx being observed on the blockchain
 pub mod await_tx;
@@ -36,7 +38,10 @@ mod test_values;
 pub mod update_governance;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+/// Error type representing errors in offchain code.
 pub enum OffchainError {
+	/// Error coming from a call to Ogmios
 	OgmiosError(String),
+	/// Generic internal error
 	InternalError(String),
 }
