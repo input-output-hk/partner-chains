@@ -725,6 +725,20 @@ $ pc-node wizards register3 --genesis-utxo <GENESIS_UTXO>
 
 :information_source: The actual values will be provided in the `register2` output.
 
+#### deregister
+The `deregister` wizard removes a candidate from the committee. The candidate is identified by the
+genesis-utxo it was registered with.
+
+**Prerequisites**
+- `pc-chain-config.json` Contains partner chain properties
+- `payment.skey` Funded payment key
+- `cold.vkey` A public Cardano stake pool verification key
+
+**Running the wizard**
+```shell
+$ pc-node wizards deregister
+```
+
 ### Features
 
 #### Features Overview
