@@ -31,9 +31,10 @@
     * [create-chain-spec](#create-chain-spec)
     * [setup-main-chain-state](#setup-main-chain-state)
     * [start-node](#start-node)
-    * [register1](#register1)
-    * [register2](#register2)
-    * [register3](#register3)
+    * [registration wizards](#registration-wizards)
+      * [register1](#register1)
+      * [register2](#register2)
+      * [register3](#register3)
     * [deregister](#deregister)
   * [Features](#features)
     * [Features Overview](#feature-overview)
@@ -656,7 +657,13 @@ The `start-node` wizard starts a partner chain node
 $ pc-node wizards start-node
 ```
 
-#### register1
+#### registration wizards
+The wizard splits the SPO registration process into three separate steps, each performed as a separate command to allow operations requiring use of cold keys to be performed on a separate machine. These steps are:
+- `register1`: Selects the UTXO to be used for registration and creates the command for the next step
+- `register2`: Creates and signs the register message. This command needs access to a cold key.
+- `register3`: Submits the registration transaction using signed message obtained from previous step.
+
+##### register1
 
 The `register1` wizard is the first out of three steps in registering a node as committee
 candidate. The wizard will prompt users to select a UTXO which is going to be consumed in the
@@ -676,7 +683,7 @@ signatures. This command should be executed on an offline machine to ensure that
 $ pc-node wizards register1
 ```
 
-#### register2
+##### register2
 The `register2` wizard is the second out of three steps in registering a node as committee candidate.
 The wizard will use the user provided
 [cold.skey](https://developers.cardano.org/docs/operate-a-stake-pool/cardano-key-pairs/#cardano-stake-pool-key-pairs)
@@ -702,7 +709,7 @@ $ pc-node wizards register2 --genesis-utxo <GENESIS_UTXO>
 
 :information_source: The actual values will be provided in the `register1` output.
 
-#### register3
+##### register3
 The `register3` wizard is the third and final step in registering a node as committee candidate.
 
 **Prerequisites**
@@ -721,7 +728,7 @@ $ pc-node wizards register3 --genesis-utxo <GENESIS_UTXO>
 
 :information_source: The actual values will be provided in the `register2` output.
 
-#### deregister
+##### deregister
 The `deregister` wizard removes a candidate from the committee. The candidate is identified by the
 genesis-utxo it was registered with.
 
