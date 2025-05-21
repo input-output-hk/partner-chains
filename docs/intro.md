@@ -566,20 +566,17 @@ location. The following three keys will be created:
 
 Additonally, the wizard will generate a network key if it doesn't exist already.
 
-**Prerequisites**
+**Running the wizard**
 
-none
+```shell
+$ pc-node wizards generate-keys
+```
 
 **Output Files**
 
 - `pc-resources-config.json` Contains basic networking, ports and path settings
 - `partner-chains-public-keys.json` Contains aura, grandpa and sidechain public keys
 
-**Running the wizard**
-
-```shell
-$ pc-node wizards generate-keys
-```
 
 #### prepare-configuration
 The `prepare-configuration` wizard will guide you through the configuration needed to create a
@@ -595,17 +592,18 @@ Please refer to the `cardano-cli`
 [documentation](https://developers.cardano.org/docs/get-started/cardano-cli/get-started/#generate-a-payment-key-pair-and-an-address)
 for details on how to create keys.
 
+**Running the wizard**
+
+```shell
+$ pc-node wizards prepare-configuration
+```
+
 **Output**
 
 - `pc-chain-config.json` Contains partner chain properties
 - `pc-resources-config.json` Contains basic networking, ports and path settings
 
 
-**Running the wizard**
-
-```shell
-$ pc-node wizards prepare-configuration
-```
 
 #### create-chain-spec
 
@@ -613,21 +611,21 @@ The `create-chain-spec` wizard creates a chain specification based on an existin
 `pc-chain-config.json` file (which can be generated using the `prepare-configuration` wizard). The resulting chain specification file is ready to be distributed to block production
 committee candidates.
 
-
 **Prerequisites**
 
 - `pc-chain-config.json` Contains partner chain properties
 - `pc-resources-config.json` Contains basic networking, ports and path settings
-
-**Output**
-
-- `chain-spec.json` Substrate chain specification
 
 **Running the wizard**
 
 ```shell
 $ pc-node wizards create-chain-spec
 ```
+
+**Output**
+
+- `chain-spec.json` Substrate chain specification
+
 
 #### setup-main-chain-state
 
@@ -642,7 +640,6 @@ The `setup-main-chain-state` wizard configures the D-parameter and permissioned 
 - `pc-chain-config.json` Contains partner chain properties
 - `chain-spec.json` Substrate chain specification
 - The payment key address must be funded
-
 
 **Running the wizard**
 ```shell
