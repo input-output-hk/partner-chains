@@ -25,6 +25,17 @@
     * [`chain-spec.json`](#chain-spec.json)
     * [Environment Variables](#environment-variables)
     * [Keys](#keys)
+  * [Wizards](#wizards)
+    * [generate-keys](#generate-keys)
+    * [prepare-configuration](#prepare-configuration)
+    * [create-chain-spec](#create-chain-spec)
+    * [setup-main-chain-state](#setup-main-chain-state)
+    * [start-node](#start-node)
+    * [registration wizards](#registration-wizards)
+      * [register1](#register1)
+      * [register2](#register2)
+      * [register3](#register3)
+    * [deregister](#deregister)
   * [Features](#features)
     * [Features Overview](#feature-overview)
     * [Block Participation Rewards](#block-participation-rewards)
@@ -254,7 +265,7 @@ the runtime, resulting in the config field `governedMap` etc.
 ##### Obtaining main chain scripts
 
 Some of the pallets need to be configured with _main chain scripts_, that is Cardano script addresses
-and hashes that are needed for Cardano observability components to correctly locate data in the Cardano 
+and hashes that are needed for Cardano observability components to correctly locate data in the Cardano
 ledger. These parameters can be obtained using the genesis UTXO of the Partner Chain by executing the
 `get-scripts` command provided together with other Partner Chain smart contracts offchain commands:
 ```shell
@@ -533,6 +544,202 @@ by the partner chain node.
 By default the partner chain node process will look for key stores in the base path directory. Refer to the [official Polkadot  guide](https://docs.polkadot.com/infrastructure/running-a-validator/onboarding-and-offboarding/key-management/)
 or your particular Partner Chain's documentation for information on how
 to manage your node keys.
+
+### Wizards
+The Partner Chain toolkit provides several wizards that serve as convenience layer to carry out
+configuration or bootstrapping actions. The tasks performed by the wizards can also be carried out
+by interacting with different commands directly. If you prefer full control over convenience of use,
+you don't _have_ to use the wizards.
+
+All wizards are available as sub-commands to the `wizards` command. Passing `--help` will list all
+available wizards:
+```shell
+$ pc-node wizards --help
+```
+
+#### generate-keys
+The `generate-keys` wizard creates all necessary keys and saves them to the node's default keystore
+location. The following three keys will be created:
+
+- cross-chain key (ECDSA)
+- grandpa key (ED25519)
+- aura key (SR25519)
+
+Additonally, the wizard will generate a network key if it doesn't exist already.
+
+**Running the wizard**
+
+```shell
+$ pc-node wizards generate-keys
+```
+
+**Output Files**
+
+- `pc-resources-config.json` Contains basic networking, ports and path settings
+- `partner-chains-public-keys.json` Contains aura, grandpa and sidechain public keys
+
+
+#### prepare-configuration
+The `prepare-configuration` wizard will guide you through the configuration needed to create a
+governance authority. The main output of this wizard is the `pc-config.json` file.
+
+**Prerequisites**
+
+- The `ogmios` service must be up and running
+- The wizard will ask for the payment signing key file `payment.skey`.
+- The payment address must be funded
+
+Please refer to the `cardano-cli`
+[documentation](https://developers.cardano.org/docs/get-started/cardano-cli/get-started/#generate-a-payment-key-pair-and-an-address)
+for details on how to create keys.
+
+**Running the wizard**
+
+```shell
+$ pc-node wizards prepare-configuration
+```
+
+**Output**
+
+- `pc-chain-config.json` Contains partner chain properties
+- `pc-resources-config.json` Contains basic networking, ports and path settings
+
+
+
+#### create-chain-spec
+
+The `create-chain-spec` wizard creates a chain specification based on an existing
+`pc-chain-config.json` file (which can be generated using the `prepare-configuration` wizard).
+The resulting chain specification file is ready to be distributed to block production committee candidates.
+
+**Prerequisites**
+
+- `pc-chain-config.json` Contains partner chain properties
+- `pc-resources-config.json` Contains basic networking, ports and path settings
+
+**Running the wizard**
+
+```shell
+$ pc-node wizards create-chain-spec
+```
+
+**Output**
+
+- `chain-spec.json` Substrate chain specification
+
+
+#### setup-main-chain-state
+
+The `setup-main-chain-state` wizard configures the D-parameter and permissioned candidates list on the main chain.
+
+:warning: These operations require transaction fees, so the payment key must be funded with ADA.
+
+**Prerequisites**
+
+- `pc-chain-config.json` Contains partner chain properties
+- `chain-spec.json` Substrate chain specification
+- The payment key address must be funded
+
+**Running the wizard**
+```shell
+$ pc-node wizards setup-main-chain-state
+```
+
+#### start-node
+The `start-node` wizard starts a partner chain node
+
+**Prerequisites**
+- `pc-chain-config.json` Contains partner chain properties
+- `chain-spec.json` Substrate chain specification
+
+**Running the wizard**
+```shell
+$ pc-node wizards start-node
+```
+
+#### registration wizards
+The wizard splits the SPO registration process into three separate steps, each performed as a separate command to allow operations requiring use of cold keys to be performed on a separate machine. These steps are:
+- `register1`: Selects the UTXO to be used for registration and creates the command for the next step
+- `register2`: Creates and signs the register message. This command needs access to a cold key.
+- `register3`: Submits the registration transaction using signed message obtained from previous step.
+
+##### register1
+
+The `register1` wizard is the first out of three steps in registering a node as committee
+candidate. The wizard will prompt users to select a UTXO which is going to be consumed in the
+registration process that follows.
+
+After selecting a UTXO the wizard will print a `register2` wizard command for generating
+signatures. This command should be executed on an offline machine to ensure that the Cardano
+`cold.skey` (which will be required) is not exposed to the internet.
+
+**Prerequisites**
+- `pc-chain-config.json` Contains partner chain properties
+- `chain-spec.json` Substrate chain specification
+- The payment key address must be funded
+
+**Running the wizard**
+```shell
+$ pc-node wizards register1
+```
+
+##### register2
+The `register2` wizard is the second out of three steps in registering a node as committee candidate.
+The wizard will use the user provided
+[cold.skey](https://developers.cardano.org/docs/operate-a-stake-pool/cardano-key-pairs/#cardano-stake-pool-key-pairs)
+to sign the registration message.
+
+:warning: We suggest running the `register2` wizard on a separate machine that isn't connected to the internet.
+
+Finally, the wizard will output a `register3` wizard invocation that should be executed on
+the machine where `register1` was executed before to conclude the registration.
+
+**Prerequisites**
+- `cold.skey` A private Cardano stake pool signing key
+
+**Running the wizard**
+```shell
+$ pc-node wizards register2 --genesis-utxo <GENESIS_UTXO>
+      --registration-utxo <REGISTRATION_UTXO>
+      --sidechain-pub-key <SIDECHAIN_PUB_KEY>
+      --aura-pub-key <AURA_PUB_KEY>
+      --grandpa-pub-key <GRANDPA_PUB_KEY>
+      --sidechain-signature <SIDECHAIN_SIGNATURE>
+```
+
+:information_source: The actual values will be provided in the `register1` output.
+
+##### register3
+The `register3` wizard is the third and final step in registering a node as committee candidate.
+
+**Prerequisites**
+- `pc-chain-config.json` Contains partner chain properties
+- `chain-spec.json` Substrate chain specification
+
+**Running the wizard**
+```shell
+$ pc-node wizards register3 --genesis-utxo <GENESIS_UTXO>
+	--registration-utxo <REGISTRATION_UTXO>
+	--sidechain-pub-key <SIDECHAIN_PUB_KEY>
+	--aura-pub-key <AURA_PUB_KEY>
+	--grandpa-pub-key <GRANDPA_PUB_KEY>
+	--sidechain-signature <SIDECHAIN_SIGNATURE>
+```
+
+:information_source: The actual values will be provided in the `register2` output.
+
+#### deregister
+The `deregister` wizard removes SPO registration as a committee member candidate.
+
+**Prerequisites**
+- `pc-chain-config.json` Contains partner chain properties
+- `payment.skey` Funded payment key
+- `cold.vkey` A public Cardano stake pool verification key
+
+**Running the wizard**
+```shell
+$ pc-node wizards deregister
+```
 
 ### Features
 

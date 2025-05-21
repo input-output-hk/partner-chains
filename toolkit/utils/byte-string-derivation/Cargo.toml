@@ -6,6 +6,7 @@ authors.workspace = true
 edition.workspace = true
 homepage.workspace = true
 repository.workspace = true
+description = "Proc macros for generating conversions for byte string wrapper types"
 
 [lib]
 proc-macro = true
