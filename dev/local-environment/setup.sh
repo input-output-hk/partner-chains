@@ -476,6 +476,7 @@ EOF
         limits:
           cpus: \${CPU_PARTNER_CHAINS_NODE:-}
           memory: \${MEM_PARTNER_CHAINS_NODE:-}
+
 EOF
     done
 
@@ -512,6 +513,7 @@ EOF
         limits:
           cpus: \${CPU_PARTNER_CHAINS_NODE:-}
           memory: \${MEM_PARTNER_CHAINS_NODE:-}
+
 EOF
     done
 
