@@ -11,7 +11,7 @@ use sidechain_domain::{ScEpochNumber, ScSlotNumber, UtxoId};
 mod tests;
 
 /// Information about current Partner Chain slot and epoch.
-#[deprecated(since = "1.8.0", note = "See deprecation notes for [GetSidechainStatus]")]
+#[deprecated(since = "1.7.0", note = "See deprecation notes for [GetSidechainStatus]")]
 #[derive(TypeInfo, Clone, Encode, Decode)]
 pub struct SidechainStatus {
 	/// current Partner Chain epoch
@@ -65,7 +65,7 @@ mod api_declarations {
 		}
 
 		/// Runtime API for getting information about current Partner Chain slot and epoch
-		#[deprecated(since = "1.8.0", note = "Code that needs this data should define its own runtime API instead.")]
+		#[deprecated(since = "1.7.0", note = "Code that needs this data should define its own runtime API instead.")]
 		pub trait GetSidechainStatus {
 			/// Returns current Partner Chain slot and epoch
 			fn get_sidechain_status() -> SidechainStatus;
