@@ -88,8 +88,6 @@ new_address=$(cardano-cli latest address build \
 
 echo "New address created: $new_address"
 
-dave_address="addr_test1vphpcf32drhhznv6rqmrmgpuwq06kug0lkg22ux777rtlqst2er0r"
-eve_address="addr_test1vzzt5pwz3pum9xdgxalxyy52m3aqur0n43pcl727l37ggscl8h7v8"
 # An address that will keep an UTXO with script of a test V-function, related to the SPO rewards. See v-function.script file.
 vfunction_address="addr_test1vzuasm5nqzh7n909f7wang7apjprpg29l2f9sk6shlt84rqep6nyc"
 
@@ -98,16 +96,34 @@ tx_in1="781cb948a37c7c38b43872af9b1e22135a94826eafd3740260a6db0a303885d8#0"
 tx_in_amount=29993040000000000
 
 # Define output amounts
-tx_out1=1000000000 # new_address utxo 1
-tx_out2=1000000000 # new_address utxo 2
-tx_out3=1000000000 # partner-chains-node-4 (dave)
-tx_out4=1000000000 # partner-chains-node-5 (eve)
+tx_out1=1000000000 # partner-chains-setup
+tx_out2=1000000000 # partner-chains-setup (backup)
+tx_out3=1000000000 # partner-chains-setup (additional)
+tx_out4=1000000000 # partner-chains-setup (extra)
+
+# Fund 10 permissioned nodes
+for i in {1..10}; do
+    eval "tx_out${i}_permissioned=1000000000 # permissioned-$i"
+done
+
+# Fund 300 registered nodes
+for i in {1..300}; do
+    eval "tx_out${i}_registered=1000000000 # registered-$i"
+done
+
 tx_out5_lovelace=10000000
 tx_out5_reward_token="1000000 $reward_token_policy_id.$reward_token_asset_name"
 tx_out6=10000000
 
-# Total output without fee
-total_output=$((tx_out1 + tx_out2 + tx_out3 + tx_out4 + tx_out5_lovelace + tx_out6))
+# Calculate total output
+total_output=$((tx_out1 + tx_out2 + tx_out3 + tx_out4))
+for i in {1..10}; do
+    eval "total_output=\$((total_output + tx_out${i}_permissioned))"
+done
+for i in {1..300}; do
+    eval "total_output=\$((total_output + tx_out${i}_registered))"
+done
+total_output=$((total_output + tx_out5_lovelace + tx_out6))
 
 fee=1000000
 
@@ -119,8 +135,8 @@ cardano-cli latest transaction build-raw \
   --tx-in $tx_in1 \
   --tx-out "$new_address+$tx_out1" \
   --tx-out "$new_address+$tx_out2" \
-  --tx-out "$dave_address+$tx_out3" \
-  --tx-out "$eve_address+$tx_out4" \
+  --tx-out "$new_address+$tx_out3" \
+  --tx-out "$new_address+$tx_out4" \
   --tx-out "$new_address+$change" \
   --tx-out "$new_address+$tx_out5_lovelace+$tx_out5_reward_token" \
   --tx-out "$vfunction_address+$tx_out6" \
@@ -129,6 +145,23 @@ cardano-cli latest transaction build-raw \
   --mint "$tx_out5_reward_token" \
   --fee $fee \
   --out-file /data/tx.raw
+
+# Add outputs for all nodes
+for i in {1..10}; do
+    eval "amount=\$tx_out${i}_permissioned"
+    cardano-cli latest transaction build-raw \
+      --tx-body-file /data/tx.raw \
+      --tx-out "$new_address+$amount" \
+      --out-file /data/tx.raw
+done
+
+for i in {1..300}; do
+    eval "amount=\$tx_out${i}_registered"
+    cardano-cli latest transaction build-raw \
+      --tx-body-file /data/tx.raw \
+      --tx-out "$new_address+$amount" \
+      --out-file /data/tx.raw
+done
 
 # Sign the transaction
 cardano-cli latest transaction sign \
@@ -145,39 +178,31 @@ cardano-cli latest transaction submit \
   --tx-file /data/tx.signed \
   --testnet-magic 42
 
-echo "Transaction submitted to fund registered candidates and governance authority. Waiting 20 seconds for transaction to process..."
+echo "Transaction submitted to fund governance authority and all validator nodes. Waiting 20 seconds for transaction to process..."
 sleep 20
 echo "Balance:"
 
-# Query UTXOs at new_address, dave_address, and eve_address
+# Query UTXOs at new_address
 echo "Querying UTXO for new_address:"
 cardano-cli latest query utxo \
   --testnet-magic 42 \
   --address $new_address
 
-echo "Querying UTXO for Dave address:"
-cardano-cli latest query utxo \
-  --testnet-magic 42 \
-  --address $dave_address
-
-echo "Querying UTXO for Eve address:"
-cardano-cli latest query utxo \
-  --testnet-magic 42 \
-  --address $eve_address
-
 # Save dynamic values to shared config volume for other nodes to use
 echo $new_address > /shared/FUNDED_ADDRESS
 echo "Created /shared/FUNDED_ADDRESS with value: $new_address"
 
-echo "Querying and saving the first UTXO details for Dave address to /shared/dave.utxo:"
-cardano-cli latest query utxo --testnet-magic 42 --address "${dave_address}" | /busybox awk 'NR>2 { print $1 "#" $2; exit }' > /shared/dave.utxo
-echo "UTXO details for Dave saved in /shared/dave.utxo."
-cat /shared/dave.utxo
+# Save UTXO details for all nodes
+echo "Saving UTXO details for all nodes..."
+for i in {1..10}; do
+    echo "Saving UTXO for permissioned-$i..."
+    cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" | /busybox awk 'NR>2 { print $1 "#" $2; exit }' > "/shared/permissioned-${i}.utxo"
+done
 
-echo "Querying and saving the first UTXO details for Eve address to /shared/eve.utxo:"
-cardano-cli latest query utxo --testnet-magic 42 --address "${eve_address}" | /busybox awk 'NR>2 { print $1 "#" $2; exit }' > /shared/eve.utxo
-echo "UTXO details for Eve saved in /shared/eve.utxo."
-cat /shared/eve.utxo
+for i in {1..300}; do
+    echo "Saving UTXO for registered-$i..."
+    cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" | /busybox awk 'NR>2 { print $1 "#" $2; exit }' > "/shared/registered-${i}.utxo"
+done
 
 echo "Querying and saving the first UTXO details for new address to /shared/genesis.utxo:"
 cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" | /busybox awk 'NR>2 { print $1 "#" $2; exit }' > /shared/genesis.utxo

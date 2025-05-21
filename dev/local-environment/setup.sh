@@ -135,16 +135,23 @@ configure_ogmios() {
 
 resource_limits_setup() {
   echo "===== RESOURCE LIMITS SETUP ========"
+  echo "WARNING: Running 310 nodes requires significant system resources."
+  echo "Recommended minimum system requirements:"
+  echo "- CPU: 32 cores"
+  echo "- RAM: 64GB"
+  echo "- Storage: 500GB SSD"
+  echo
   read -p "Do you want to restrict CPU and Memory limits for the stack? (Y/N) " restrict_resources
   if [[ $restrict_resources == [Yy]* ]]; then
     if [[ $cardano_node_enabled == true ]]; then
-      read -p "Apply sensible limits (Total = 4 CPU / 4GB Memory)? (Y/N) " sensible_limits
+      read -p "Apply sensible limits (Total = 32 CPU / 32GB Memory)? (Y/N) " sensible_limits
     else
-      read -p "Apply sensible limits (Total = 3 CPU / 3GB Memory)? (Y/N) " sensible_limits
+      read -p "Apply sensible limits (Total = 31 CPU / 31GB Memory)? (Y/N) " sensible_limits
     fi
     if [[ $sensible_limits == [Yy]* ]]; then
-      CPU_PARTNER_CHAINS_NODE=0.4
-      MEM_PARTNER_CHAINS_NODE=400M
+      # Allocate 0.1 CPU and 100MB per node for 310 nodes
+      CPU_PARTNER_CHAINS_NODE=0.1
+      MEM_PARTNER_CHAINS_NODE=100M
       cpu_cardano=1
       mem_cardano=1000M
       cpu_postgres=0.5
@@ -154,8 +161,8 @@ resource_limits_setup() {
       cpu_ogmios=0.2
       mem_ogmios=500M
     else
-      CPU_PARTNER_CHAINS_NODE=$(validate_cpu_limit "Enter CPU limit for Partner Chains nodes (e.g., 0.4 for 0.4 CPU): ")
-      MEM_PARTNER_CHAINS_NODE=$(validate_memory_limit "Enter Memory limit for each of the 3 x Partner Chains nodes (e.g., 400M for 400 MB): ")
+      CPU_PARTNER_CHAINS_NODE=$(validate_cpu_limit "Enter CPU limit for each Partner Chains node (e.g., 0.1 for 0.1 CPU): ")
+      MEM_PARTNER_CHAINS_NODE=$(validate_memory_limit "Enter Memory limit for each Partner Chains node (e.g., 100M for 100 MB): ")
 
       cpu_cardano=$(validate_cpu_limit "Enter CPU limit for Cardano node (e.g., 1 for 1 CPU): ")
       mem_cardano=$(validate_memory_limit "Enter Memory limit for Cardano node (e.g., 1000M for 1000 MB): ")
@@ -308,61 +315,21 @@ create_docker_compose() {
         echo "Creating docker-compose.yml manifest file with service configurations."
     fi
 
-    echo "services:" > docker-compose.yml
+    # Generate node configurations and docker-compose.yml
+    ./generate-nodes.sh
 
-    case $deployment_option in
-      1)
-        echo -e "Including only Cardano testnet service.\n"
-        cat ./modules/cardano.txt >> docker-compose.yml
-        ;;
-      2)
-        echo -e "Including Cardano testnet, and Ogmios services.\n"
-        cat ./modules/cardano.txt >> docker-compose.yml
-        cat ./modules/ogmios.txt >> docker-compose.yml
-        ;;
-      3)
-        echo -e "Including Cardano testnet, Ogmios, DB-Sync, and Postgres services.\n"
-        cat ./modules/cardano.txt >> docker-compose.yml
-        cat ./modules/ogmios.txt >> docker-compose.yml
-        cat ./modules/db-sync.txt >> docker-compose.yml
-        cat ./modules/postgres.txt >> docker-compose.yml
-        ;;
-      4)
-        echo -e "Including all services with external partner chain node.\n"
-        cat ./modules/cardano.txt >> docker-compose.yml
-        cat ./modules/ogmios.txt >> docker-compose.yml
-        cat ./modules/db-sync.txt >> docker-compose.yml
-        cat ./modules/postgres.txt >> docker-compose.yml
-        cat ./modules/partner-chains-external-node.txt >> docker-compose.yml
-        cat ./modules/partner-chains-setup.txt >> docker-compose.yml
-        ;;
-      5)
-        echo -e "Including all services with wizard partner chain node.\n"
-        cat ./modules/cardano.txt >> docker-compose.yml
-        cat ./modules/ogmios.txt >> docker-compose.yml
-        cat ./modules/db-sync.txt >> docker-compose.yml
-        cat ./modules/postgres.txt >> docker-compose.yml
-        cat ./modules/partner-chains-wizard.txt >> docker-compose.yml
-        ;;
-      0)
-        echo -e "Including all services.\n"
-        cat ./modules/cardano.txt >> docker-compose.yml
-        cat ./modules/ogmios.txt >> docker-compose.yml
-        cat ./modules/db-sync.txt >> docker-compose.yml
-        cat ./modules/postgres.txt >> docker-compose.yml
-        cat ./modules/partner-chains-nodes.txt >> docker-compose.yml
-        cat ./modules/partner-chains-setup.txt >> docker-compose.yml
-        ;;
-      *)
-        echo "Invalid deployment option selected."
-        exit 1
-        ;;
-    esac
+    # Add other services
+    cat ./modules/cardano.txt >> docker-compose.yml
+    cat ./modules/ogmios.txt >> docker-compose.yml
+    cat ./modules/db-sync.txt >> docker-compose.yml
+    cat ./modules/postgres.txt >> docker-compose.yml
+    cat ./modules/partner-chains-setup.txt >> docker-compose.yml
+
     if [ "$tests_enabled" == "yes" ]; then
         echo -e "Including tests.\n"
         cat ./modules/tests.txt >> docker-compose.yml
     fi
-    cat ./modules/volumes.txt >> docker-compose.yml
+
     echo -e "docker-compose.yml file created successfully.\n"
 }
 

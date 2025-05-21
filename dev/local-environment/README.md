@@ -1,12 +1,12 @@
 # Partner Chains Local Environment
 
-This stack is designed to run a 5 x Partner Chains node local environment for a partner chain. It is based on the custom IO Substrate image.
+This stack is designed to run a 310 x Partner Chains node local environment for a partner chain. It is based on the custom IO Substrate image.
 
 ![alt text](pc-local-env.png)
 
 The local environment includes:
 
-- 5 x Partner Chains Nodes (3 x permissioned, 2 x registered)
+- 310 x Partner Chains Nodes (10 x permissioned, 300 x registered)
 - 1 x Cardano Node running private testnet with pre-configured genesis files (2 minutes epochs)
 - 1 x PostgreSQL database
 - 1 x Db-sync
@@ -14,6 +14,13 @@ The local environment includes:
 - 1 x Partner Chains Setup container based on Partner Chains Node Image to setup the smart-contracts
 
 The stack `setup.sh` script will create a docker-compose.yml stack configuration files, and populate an .env file with environment values. The stack can be deployed with `docker-compose up -d`.
+
+## System Requirements
+
+Running 310 nodes requires significant system resources. Recommended minimum requirements:
+- CPU: 32 cores
+- RAM: 64GB
+- Storage: 500GB SSD
 
 ## Local env - step by step
 

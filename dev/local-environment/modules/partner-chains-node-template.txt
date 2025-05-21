@@ -1,0 +1,26 @@
+partner-chains-node-${NODE_NUMBER}:
+  container_name: partner-chains-node-${NODE_NAME}
+  image: ${PARTNER_CHAINS_NODE_IMAGE}
+  platform: linux/amd64
+  volumes:
+    - shared-volume:/shared
+    - partner-chains-node-${NODE_NUMBER}-data:/data
+    - ./configurations/partner-chains-nodes/${NODE_NAME}/entrypoint.sh:/entrypoint.sh
+  environment:
+    DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/cexplorer"
+    CARDANO_SECURITY_PARAMETER: "5"
+    CARDANO_ACTIVE_SLOTS_COEFF: "0.4"
+    MC__FIRST_EPOCH_NUMBER: "0"
+    MC__FIRST_SLOT_NUMBER: "0"
+    MC__EPOCH_DURATION_MILLIS: "120000"
+    BLOCK_STABILITY_MARGIN: "0"
+  entrypoint: ["/bin/bash", "/entrypoint.sh"]
+  ports:
+    - "${RPC_PORT}:9933"
+    - "${PROMETHEUS_PORT}:9615"
+  restart: always
+  deploy:
+    resources:
+      limits:
+        cpus: ${CPU_PARTNER_CHAINS_NODE:-}
+        memory: ${MEM_PARTNER_CHAINS_NODE:-} 

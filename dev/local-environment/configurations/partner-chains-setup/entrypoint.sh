@@ -65,33 +65,52 @@ echo "Inserting D parameter..."
 ./partner-chains-node smart-contracts upsert-d-parameter \
     --ogmios-url http://ogmios:$OGMIOS_PORT \
     --genesis-utxo $GENESIS_UTXO \
-    --permissioned-candidates-count 3 \
-    --registered-candidates-count 2 \
+    --permissioned-candidates-count 10 \
+    --registered-candidates-count 300 \
     --payment-key-file /keys/funded_address.skey
 
 if [ $? -eq 0 ]; then
-    echo "Successfully inserted D-parameter (P = 3, R = 2)!"
+    echo "Successfully inserted D-parameter (P = 10, R = 300)!"
 else
     echo "Couldn't insert D-parameter..."
     exit 1
 fi
 
-# sidechain.vkey:aura.vkey:grandpa.vkey
-echo "Inserting permissioned candidates for Alice and Bob..."
+# Generate permissioned candidates
+echo "Generating permissioned candidates..."
+for i in {1..10}; do
+    node_name="permissioned-$i"
+    echo "Processing $node_name..."
+    
+    # Create directory for node keys
+    mkdir -p /partner-chains-nodes/$node_name/keys
+    
+    # Generate keys for each node
+    ./partner-chains-node key generate \
+        --scheme ecdsa \
+        --output-type json \
+        --output-file /partner-chains-nodes/$node_name/keys/sidechain.json
+    
+    ./partner-chains-node key generate \
+        --scheme sr25519 \
+        --output-type json \
+        --output-file /partner-chains-nodes/$node_name/keys/aura.json
+    
+    ./partner-chains-node key generate \
+        --scheme ed25519 \
+        --output-type json \
+        --output-file /partner-chains-nodes/$node_name/keys/grandpa.json
+    
+    # Extract public keys
+    sidechain_vkey=$(jq -r '.publicKey' /partner-chains-nodes/$node_name/keys/sidechain.json)
+    aura_vkey=$(jq -r '.publicKey' /partner-chains-nodes/$node_name/keys/aura.json)
+    grandpa_vkey=$(jq -r '.publicKey' /partner-chains-nodes/$node_name/keys/grandpa.json)
+    
+    # Add to permissioned candidates list
+    echo "$sidechain_vkey:$aura_vkey:$grandpa_vkey" >> permissioned_candidates.csv
+done
 
-alice_sidechain_vkey=$(cat /partner-chains-nodes/partner-chains-node-1/keys/sidechain.vkey)
-alice_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-1/keys/aura.vkey)
-alice_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-1/keys/grandpa.vkey)
-
-bob_sidechain_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/sidechain.vkey)
-bob_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/aura.vkey)
-bob_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/grandpa.vkey)
-
-cat <<EOF > permissioned_candidates.csv
-$alice_sidechain_vkey:$alice_aura_vkey:$alice_grandpa_vkey
-$bob_sidechain_vkey:$bob_aura_vkey:$bob_grandpa_vkey
-EOF
-
+echo "Inserting permissioned candidates..."
 ./partner-chains-node smart-contracts upsert-permissioned-candidates \
     --ogmios-url http://ogmios:$OGMIOS_PORT \
     --genesis-utxo $GENESIS_UTXO \
@@ -99,132 +118,103 @@ EOF
     --payment-key-file /keys/funded_address.skey
 
 if [ $? -eq 0 ]; then
-    echo "Permissioned candidates Alice and Bob inserted successfully!"
+    echo "Permissioned candidates inserted successfully!"
 else
-    echo "Permission candidates Alice and Bob failed to be added..."
+    echo "Failed to insert permissioned candidates..."
     exit 1
 fi
 
-echo "Inserting registered candidate Dave..."
-
-# Prepare Dave registration values
-dave_utxo=$(cat /shared/dave.utxo)
-dave_mainchain_signing_key=$(jq -r '.cborHex | .[4:]' /partner-chains-nodes/partner-chains-node-4/keys/cold.skey)
-dave_sidechain_signing_key=$(cat /partner-chains-nodes/partner-chains-node-4/keys/sidechain.skey)
-
-# Process registration signatures for Dave
-dave_output=$(./partner-chains-node registration-signatures \
-    --genesis-utxo $GENESIS_UTXO \
-    --mainchain-signing-key $dave_mainchain_signing_key \
-    --sidechain-signing-key $dave_sidechain_signing_key \
-    --registration-utxo $dave_utxo)
-
-# Extract signatures and keys from Dave output
-dave_spo_public_key=$(echo "$dave_output" | jq -r ".spo_public_key")
-dave_spo_signature=$(echo "$dave_output" | jq -r ".spo_signature")
-dave_sidechain_public_key=$(echo "$dave_output" | jq -r ".sidechain_public_key")
-dave_sidechain_signature=$(echo "$dave_output" | jq -r ".sidechain_signature")
-dave_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-4/keys/aura.vkey)
-dave_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-4/keys/grandpa.vkey)
-
-# Register Dave
-./partner-chains-node smart-contracts register \
-    --ogmios-url http://ogmios:$OGMIOS_PORT \
-    --genesis-utxo $GENESIS_UTXO \
-    --spo-public-key $dave_spo_public_key \
-    --spo-signature $dave_spo_signature \
-    --sidechain-public-keys $dave_sidechain_public_key:$dave_aura_vkey:$dave_grandpa_vkey \
-    --sidechain-signature $dave_sidechain_signature \
-    --registration-utxo $dave_utxo \
-    --payment-key-file /partner-chains-nodes/partner-chains-node-4/keys/payment.skey
-
-if [ $? -eq 0 ]; then
-    echo "Registered candidate Dave inserted successfully!"
-else
-    echo "Registration for Dave failed."
-    exit 1
-fi
+# Generate registered candidates
+echo "Generating registered candidates..."
+for i in {1..300}; do
+    node_name="registered-$i"
+    echo "Processing $node_name..."
+    
+    # Create directory for node keys
+    mkdir -p /partner-chains-nodes/$node_name/keys
+    
+    # Generate keys for each node
+    ./partner-chains-node key generate \
+        --scheme ecdsa \
+        --output-type json \
+        --output-file /partner-chains-nodes/$node_name/keys/sidechain.json
+    
+    ./partner-chains-node key generate \
+        --scheme sr25519 \
+        --output-type json \
+        --output-file /partner-chains-nodes/$node_name/keys/aura.json
+    
+    ./partner-chains-node key generate \
+        --scheme ed25519 \
+        --output-type json \
+        --output-file /partner-chains-nodes/$node_name/keys/grandpa.json
+    
+    # Generate cold key for registration
+    ./partner-chains-node key generate \
+        --scheme ed25519 \
+        --output-type json \
+        --output-file /partner-chains-nodes/$node_name/keys/cold.json
+    
+    # Extract public keys
+    sidechain_vkey=$(jq -r '.publicKey' /partner-chains-nodes/$node_name/keys/sidechain.json)
+    aura_vkey=$(jq -r '.publicKey' /partner-chains-nodes/$node_name/keys/aura.json)
+    grandpa_vkey=$(jq -r '.publicKey' /partner-chains-nodes/$node_name/keys/grandpa.json)
+    cold_vkey=$(jq -r '.publicKey' /partner-chains-nodes/$node_name/keys/cold.json)
+    
+    # Register the candidate
+    ./partner-chains-node smart-contracts register \
+        --ogmios-url http://ogmios:$OGMIOS_PORT \
+        --genesis-utxo $GENESIS_UTXO \
+        --spo-public-key $cold_vkey \
+        --spo-signature $(jq -r '.signature' /partner-chains-nodes/$node_name/keys/cold.json) \
+        --sidechain-public-keys $sidechain_vkey:$aura_vkey:$grandpa_vkey \
+        --sidechain-signature $(jq -r '.signature' /partner-chains-nodes/$node_name/keys/sidechain.json) \
+        --registration-utxo $GENESIS_UTXO \
+        --payment-key-file /keys/funded_address.skey
+done
 
 echo "Generating chain-spec.json file for Partnerchain Nodes..."
 ./partner-chains-node build-spec --disable-default-bootnode > chain-spec.json
 
 echo "Configuring Initial Validators..."
-jq '.genesis.runtimeGenesis.config.session.initialValidators = [
-     [
-         "5C7C2Z5sWbytvHpuLTvzKunnnRwQxft1jiqrLD5rhucQ5S9X",
-         {
-             "aura": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
-             "grandpa": "5FA9nQDVg267DEd8m1ZypXLBnvN7SFxYwV7ndqSYGiN9TTpu"
-         }
-     ],
-     [
-         "5DVskgSC9ncWQpxFMeUn45NU43RUq93ByEge6ApbnLk6BR9N",
-         {
-             "aura": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
-             "grandpa": "5GoNkf6WdbxCFnPdAnYYQyCjAKPJgLNxXwPjwTh6DGg6gN3E"
-         }
-     ],
-     [
-         "5EP2cMaCxLzhfD3aFAqqgu3kfXH7GcwweEv6JXZRP6ysRHkQ",
-         {
-             "aura": "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y",
-             "grandpa": "5DbKjhNLpqX3zqZdNBc9BGb4fHU1cRBaDhJUskrvkwfraDi6"
-         }
-     ]
- ]' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
+# Generate initial validators array
+echo "[" > initial_validators.json
+for i in {1..10}; do
+    node_name="permissioned-$i"
+    sidechain_vkey=$(jq -r '.publicKey' /partner-chains-nodes/$node_name/keys/sidechain.json)
+    aura_vkey=$(jq -r '.publicKey' /partner-chains-nodes/$node_name/keys/aura.json)
+    grandpa_vkey=$(jq -r '.publicKey' /partner-chains-nodes/$node_name/keys/grandpa.json)
+    
+    if [ $i -gt 1 ]; then
+        echo "," >> initial_validators.json
+    fi
+    
+    cat <<EOF >> initial_validators.json
+    [
+        "$sidechain_vkey",
+        {
+            "aura": "$aura_vkey",
+            "grandpa": "$grandpa_vkey"
+        }
+    ]
+EOF
+done
+echo "]" >> initial_validators.json
 
-echo "Configuring Initial Authorities..."
-jq '.genesis.runtimeGenesis.config.sessionCommitteeManagement.initialAuthorities = [
-  {
-    "Permissioned": {
-      "id": "KW39r9CJjAVzmkf9zQ4YDb2hqfAVGdRqn53eRqyruqpxAP5YL",
-      "keys": {
-        "aura": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
-        "grandpa": "5FA9nQDVg267DEd8m1ZypXLBnvN7SFxYwV7ndqSYGiN9TTpu"
-      }
-    }
-  },
-  {
-    "Permissioned": {
-      "id": "KWByAN7WfZABWS5AoWqxriRmF5f2jnDqy3rB5pfHLGkY93ibN",
-      "keys": {
-        "aura": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
-        "grandpa": "5GoNkf6WdbxCFnPdAnYYQyCjAKPJgLNxXwPjwTh6DGg6gN3E"
-      }
-    }
-  },
-  {
-    "Permissioned": {
-      "id": "KWBpGtyJLBkJERdZT1a1uu19c2uPpZm9nFd8SGtCfRUAT3Y4w",
-      "keys": {
-        "aura": "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y",
-        "grandpa": "5DbKjhNLpqX3zqZdNBc9BGb4fHU1cRBaDhJUskrvkwfraDi6"
-      }
-    }
-  }
-]' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
+# Update chain-spec.json with initial validators
+jq --slurpfile validators initial_validators.json '.genesis.runtimeGenesis.config.session.initialValidators = $validators[0]' chain-spec.json > chain-spec.json.tmp
+mv chain-spec.json.tmp chain-spec.json
 
-echo "Set initial funds to Alice (ecdsa), ?, and Alice (sr25519)"
-jq '.genesis.runtimeGenesis.config.balances.balances = [
-    ["5C7C2Z5sWbytvHpuLTvzKunnnRwQxft1jiqrLD5rhucQ5S9X", 1000000000000000],
-    ["5D9eDKbFt4JKaEndQvMmbJYnpX9ENUj8U9UUg1AxSa64FJxE", 1000000000000000],
-    ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY", 1000000000000000]
-]' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
-
-echo "Configuring Alice as sudo..."
-jq '.genesis.runtimeGenesis.config.sudo = {
-    "key": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
-}' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
-
-echo "Configuring Epoch Length..."
-jq '.genesis.runtimeGenesis.config.sidechain.slotsPerEpoch = 5' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
-
-echo "Copying chain-spec.json file to /shared/chain-spec.json..."
 cp chain-spec.json /shared/chain-spec.json
 echo "chain-spec.json generation complete."
 
-echo "Partnerchain configuration is complete, and will be able to start after two mainchain epochs."
+echo "Copying pc-chain-config.json file to /shared/pc-chain-config.json..."
+cp pc-chain-config.json /shared/pc-chain-config.json
+
+touch /shared/chain-spec.ready
 touch /shared/partner-chains-setup.ready
+
+echo "Setup complete!"
 
 echo -e "\n===== Partnerchain Configuration Complete =====\n"
 echo -e "Container will now idle, but will remain available for accessing the partner-chains-node commands as follows:\n"
