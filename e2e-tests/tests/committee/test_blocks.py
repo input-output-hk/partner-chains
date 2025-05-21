@@ -76,17 +76,13 @@ def test_block_authors_match_committee_seats(
     logger.info(f"Block produced in epoch {pc_epoch}: {block_range}")
     block_range_with_offset = range(block_range.start + 1, block_range.stop + 1)
     logger.info(f"Block produced in epoch {pc_epoch} with committee offset: {block_range_with_offset}")
-    first_block_no = block_range_with_offset.start
-    last_block_no = block_range_with_offset.stop
-    if last_block_no - first_block_no != config.nodes_config.slots_in_epoch:
-        skip(f'Some blocks missing on pc epoch {pc_epoch}. Found only {last_block_no - first_block_no} blocks.')
 
     committee = get_pc_epoch_committee(pc_epoch)
     committee_block_auth_pub_keys = []
     for member in committee:
         committee_block_auth_pub_keys.append(get_block_authorship_keys_dict[member["sidechainPubKey"]])
 
-    validator_set = api.get_validator_set(get_pc_epoch_blocks(pc_epoch)[first_block_no])
+    validator_set = api.get_validator_set(get_pc_epoch_blocks(pc_epoch)[block_range_with_offset.start])
     block_authors = []
     for block_no in get_pc_epoch_blocks(pc_epoch)["range"]:
         block_author = api.get_block_author(block=get_pc_epoch_blocks(pc_epoch)[block_no], validator_set=validator_set)
