@@ -72,12 +72,15 @@ def test_block_authors_match_committee_seats(
     The pc epoch comes from the argument given at runtime.
     """
     logger.info(f"Verifying block authors for pc epoch {pc_epoch}...")
-    first_block_no = get_pc_epoch_blocks(pc_epoch)["range"].start
-    last_block_no = get_pc_epoch_blocks(pc_epoch)["range"].stop
+    block_range = get_pc_epoch_blocks(pc_epoch)["range"]
+    logger.info(f"Block produced in epoch {pc_epoch}: {block_range}")
+    block_range_with_offset = range(block_range.start + 1, block_range.stop + 1)
+    logger.info(f"Block produced in epoch {pc_epoch} with committee offset: {block_range_with_offset}")
+    first_block_no = block_range_with_offset.start
+    last_block_no = block_range_with_offset.stop
     if last_block_no - first_block_no != config.nodes_config.slots_in_epoch:
         skip(f'Some blocks missing on pc epoch {pc_epoch}. Found only {last_block_no - first_block_no} blocks.')
 
-    # Committee members for current PC epoch
     committee = get_pc_epoch_committee(pc_epoch)
     committee_block_auth_pub_keys = []
     for member in committee:

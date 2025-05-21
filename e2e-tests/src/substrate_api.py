@@ -346,23 +346,33 @@ class SubstrateApi(BlockchainApi):
                 f"Cannot get blocks for current or future epoch {epoch}. Current epoch is {current_pc_epoch}."
             )
 
-        # search for first block in <epoch>
+        # search for a block in <epoch>
         slots_in_epoch = self.config.nodes_config.slots_in_epoch
         slots_to_go_back = (current_pc_epoch - epoch) * slots_in_epoch
         found_epoch = 0
         while found_epoch != epoch:
-            first_block = self.get_block(block_no=(current_block - slots_to_go_back))
+            block_in_searched_epoch = self.get_block(block_no=(current_block - slots_to_go_back))
             result = self.substrate.query(
-                "SessionCommitteeManagement", "CurrentCommittee", block_hash=first_block["header"]["hash"]
+                "SessionCommitteeManagement", "CurrentCommittee", block_hash=block_in_searched_epoch["header"]["hash"]
             )
             found_epoch = result.value["epoch"]
             if epoch - found_epoch > 1:
                 slots_to_go_back -= slots_in_epoch
             else:
                 slots_to_go_back -= 1
-        logger.info(f"Found first block in epoch {epoch}: {first_block['header']['number']}")
+        logger.info(f"Found a block in epoch {epoch}: {block_in_searched_epoch['header']['number']}")
 
-        # search for last block in <epoch>
+        # search for the first block in <epoch>
+        while found_epoch == epoch:
+            first_block = block_in_searched_epoch
+            result = self.substrate.query(
+                "SessionCommitteeManagement", "CurrentCommittee", block_hash=first_block["header"]["parentHash"]
+            )
+            found_epoch = result.value["epoch"]
+            block_in_searched_epoch = self.get_block(block_no=first_block["header"]["number"] - 1)
+        logger.info(f"Found the first block in epoch {epoch}: {first_block['header']['number']}")
+
+        # search for the last block in <epoch>
         slots_to_go_forward = slots_in_epoch
         found_epoch = 0
         while found_epoch != epoch:
@@ -372,7 +382,7 @@ class SubstrateApi(BlockchainApi):
             )
             found_epoch = result.value["epoch"]
             slots_to_go_forward -= 1
-        logger.info(f"Found last block in epoch {epoch}: {last_block['header']['number']}")
+        logger.info(f"Found the last block in epoch {epoch}: {last_block['header']['number']}")
 
         return range(first_block["header"]["number"], last_block["header"]["number"] + 1)
 
