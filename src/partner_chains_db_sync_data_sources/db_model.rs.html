@@ -328,314 +328,315 @@
 <a href=#328 id=328 data-nosnippet>328</a>WHERE block.block_no IS NOT NULL
 <a href=#329 id=329 data-nosnippet>329</a>ORDER BY block.block_no DESC
 <a href=#330 id=330 data-nosnippet>330</a>LIMIT 1"</span>;
-<a href=#331 id=331 data-nosnippet>331</a>	<span class="prelude-val">Ok</span>(sqlx::query_as::&lt;<span class="kw">_</span>, EpochNumberRow&gt;(sql)
-<a href=#332 id=332 data-nosnippet>332</a>		.bind(BlockNumber(security_parameter))
-<a href=#333 id=333 data-nosnippet>333</a>		.fetch_optional(pool)
-<a href=#334 id=334 data-nosnippet>334</a>		.<span class="kw">await</span><span class="question-mark">?
-<a href=#335 id=335 data-nosnippet>335</a>		</span>.map(EpochNumber::from))
-<a href=#336 id=336 data-nosnippet>336</a>}
-<a href=#337 id=337 data-nosnippet>337</a>
-<a href=#338 id=338 data-nosnippet>338</a><span class="attr">#[cfg(feature = <span class="string">"candidate-source"</span>)]
-<a href=#339 id=339 data-nosnippet>339</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>get_stake_distribution(
-<a href=#340 id=340 data-nosnippet>340</a>	pool: <span class="kw-2">&amp;</span>Pool&lt;Postgres&gt;,
-<a href=#341 id=341 data-nosnippet>341</a>	epoch: EpochNumber,
-<a href=#342 id=342 data-nosnippet>342</a>) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;StakePoolEntry&gt;, SqlxError&gt; {
-<a href=#343 id=343 data-nosnippet>343</a>	<span class="kw">let </span>sql = <span class="string">"
-<a href=#344 id=344 data-nosnippet>344</a>        SELECT ph.hash_raw as pool_hash, SUM(es.amount) as stake
-<a href=#345 id=345 data-nosnippet>345</a>        FROM epoch_stake es
-<a href=#346 id=346 data-nosnippet>346</a>        INNER JOIN pool_hash ph ON es.pool_id = ph.id
-<a href=#347 id=347 data-nosnippet>347</a>        WHERE es.epoch_no = $1
-<a href=#348 id=348 data-nosnippet>348</a>        GROUP BY ph.hash_raw"</span>;
-<a href=#349 id=349 data-nosnippet>349</a>	<span class="prelude-val">Ok</span>(sqlx::query_as::&lt;<span class="kw">_</span>, StakePoolEntry&gt;(sql).bind(epoch).fetch_all(pool).<span class="kw">await</span><span class="question-mark">?</span>)
-<a href=#350 id=350 data-nosnippet>350</a>}
-<a href=#351 id=351 data-nosnippet>351</a>
-<a href=#352 id=352 data-nosnippet>352</a><span class="doccomment">/// Returns the token data of the given policy at the given slot.
-<a href=#353 id=353 data-nosnippet>353</a></span><span class="attr">#[cfg(feature = <span class="string">"candidate-source"</span>)]
-<a href=#354 id=354 data-nosnippet>354</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>get_token_utxo_for_epoch(
-<a href=#355 id=355 data-nosnippet>355</a>	pool: <span class="kw-2">&amp;</span>Pool&lt;Postgres&gt;,
-<a href=#356 id=356 data-nosnippet>356</a>	asset: <span class="kw-2">&amp;</span>Asset,
-<a href=#357 id=357 data-nosnippet>357</a>	epoch: EpochNumber,
-<a href=#358 id=358 data-nosnippet>358</a>) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;TokenTxOutput&gt;, SqlxError&gt; {
-<a href=#359 id=359 data-nosnippet>359</a>	<span class="comment">// In practice queried assets always have empty name.
-<a href=#360 id=360 data-nosnippet>360</a>	// However, it's important to keep multi_asset.name condition, to enable use of compound index on multi_asset policy and name.
-<a href=#361 id=361 data-nosnippet>361</a>	</span><span class="kw">let </span>sql = <span class="string">"SELECT
-<a href=#362 id=362 data-nosnippet>362</a>			origin_tx.hash        AS origin_tx_hash,
-<a href=#363 id=363 data-nosnippet>363</a>        	tx_out.index          AS utxo_index,
-<a href=#364 id=364 data-nosnippet>364</a>        	origin_block.epoch_no AS tx_epoch_no,
-<a href=#365 id=365 data-nosnippet>365</a>        	origin_block.block_no AS tx_block_no,
-<a href=#366 id=366 data-nosnippet>366</a>        	origin_block.slot_no  AS tx_slot_no,
-<a href=#367 id=367 data-nosnippet>367</a>        	origin_tx.block_index AS tx_block_index,
-<a href=#368 id=368 data-nosnippet>368</a>        	datum.value           AS datum
-<a href=#369 id=369 data-nosnippet>369</a>        FROM ma_tx_out
-<a href=#370 id=370 data-nosnippet>370</a>        INNER JOIN multi_asset          ON ma_tx_out.ident = multi_asset.id
-<a href=#371 id=371 data-nosnippet>371</a>        INNER JOIN tx_out               ON ma_tx_out.tx_out_id = tx_out.id
-<a href=#372 id=372 data-nosnippet>372</a>        INNER JOIN tx origin_tx         ON tx_out.tx_id = origin_tx.id
-<a href=#373 id=373 data-nosnippet>373</a>        INNER JOIN block origin_block   ON origin_tx.block_id = origin_block.id
-<a href=#374 id=374 data-nosnippet>374</a>        LEFT JOIN datum                 ON tx_out.data_hash = datum.hash
-<a href=#375 id=375 data-nosnippet>375</a>        WHERE multi_asset.policy = $1
-<a href=#376 id=376 data-nosnippet>376</a>		AND multi_asset.name = $2
-<a href=#377 id=377 data-nosnippet>377</a>        AND origin_block.epoch_no &lt;= $3
-<a href=#378 id=378 data-nosnippet>378</a>        ORDER BY tx_block_no DESC, origin_tx.block_index DESC
-<a href=#379 id=379 data-nosnippet>379</a>        LIMIT 1"</span>;
-<a href=#380 id=380 data-nosnippet>380</a>	<span class="prelude-val">Ok</span>(sqlx::query_as::&lt;<span class="kw">_</span>, TokenTxOutput&gt;(sql)
-<a href=#381 id=381 data-nosnippet>381</a>		.bind(<span class="kw-2">&amp;</span>asset.policy_id.<span class="number">0</span>)
-<a href=#382 id=382 data-nosnippet>382</a>		.bind(<span class="kw-2">&amp;</span>asset.asset_name.<span class="number">0</span>)
-<a href=#383 id=383 data-nosnippet>383</a>		.bind(epoch)
-<a href=#384 id=384 data-nosnippet>384</a>		.fetch_optional(pool)
-<a href=#385 id=385 data-nosnippet>385</a>		.<span class="kw">await</span><span class="question-mark">?</span>)
-<a href=#386 id=386 data-nosnippet>386</a>}
-<a href=#387 id=387 data-nosnippet>387</a>
-<a href=#388 id=388 data-nosnippet>388</a><span class="attr">#[cfg(feature = <span class="string">"governed-map"</span>)]
-<a href=#389 id=389 data-nosnippet>389</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>get_changes(
-<a href=#390 id=390 data-nosnippet>390</a>	pool: <span class="kw-2">&amp;</span>Pool&lt;Postgres&gt;,
-<a href=#391 id=391 data-nosnippet>391</a>	address: <span class="kw-2">&amp;</span>Address,
-<a href=#392 id=392 data-nosnippet>392</a>	after_block: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;,
-<a href=#393 id=393 data-nosnippet>393</a>	to_block: BlockNumber,
-<a href=#394 id=394 data-nosnippet>394</a>	asset: Asset,
-<a href=#395 id=395 data-nosnippet>395</a>) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;DatumChangeOutput&gt;, SqlxError&gt; {
-<a href=#396 id=396 data-nosnippet>396</a>	<span class="kw">let </span>query = <span class="string">"
-<a href=#397 id=397 data-nosnippet>397</a>		((SELECT
-<a href=#398 id=398 data-nosnippet>398</a>			datum.value as datum, origin_block.block_no as block_no, origin_tx.block_index as block_index, $6 as action, 1 as action_order
-<a href=#399 id=399 data-nosnippet>399</a>		FROM tx_out
-<a href=#400 id=400 data-nosnippet>400</a>		INNER JOIN tx origin_tx			ON tx_out.tx_id = origin_tx.id
-<a href=#401 id=401 data-nosnippet>401</a>		INNER JOIN block origin_block	ON origin_tx.block_id = origin_block.id
-<a href=#402 id=402 data-nosnippet>402</a>		INNER JOIN datum				ON tx_out.data_hash = datum.hash
-<a href=#403 id=403 data-nosnippet>403</a>		INNER JOIN ma_tx_out			ON tx_out.id = ma_tx_out.tx_out_id
-<a href=#404 id=404 data-nosnippet>404</a>		INNER JOIN multi_asset			ON multi_asset.id = ma_tx_out.ident
-<a href=#405 id=405 data-nosnippet>405</a>		WHERE
-<a href=#406 id=406 data-nosnippet>406</a>			tx_out.address = $1 AND ($2 IS NULL OR origin_block.block_no &gt; $2) AND origin_block.block_no &lt;= $3
-<a href=#407 id=407 data-nosnippet>407</a>			AND multi_asset.policy = $4
-<a href=#408 id=408 data-nosnippet>408</a>			AND multi_asset.name = $5)
-<a href=#409 id=409 data-nosnippet>409</a>		UNION
-<a href=#410 id=410 data-nosnippet>410</a>		(SELECT
-<a href=#411 id=411 data-nosnippet>411</a>			datum.value as datum, consuming_block.block_no as block_no, consuming_tx.block_index as block_index, $7 as action, -1 as action_order
-<a href=#412 id=412 data-nosnippet>412</a>		FROM tx_out
-<a href=#413 id=413 data-nosnippet>413</a>		LEFT JOIN tx_in consuming_tx_in	ON tx_out.tx_id = consuming_tx_in.tx_out_id AND tx_out.index = consuming_tx_in.tx_out_index
-<a href=#414 id=414 data-nosnippet>414</a>		LEFT JOIN tx consuming_tx		ON consuming_tx_in.tx_in_id = consuming_tx.id
-<a href=#415 id=415 data-nosnippet>415</a>		LEFT JOIN block consuming_block	ON consuming_tx.block_id = consuming_block.id
-<a href=#416 id=416 data-nosnippet>416</a>		INNER JOIN datum				ON tx_out.data_hash = datum.hash
-<a href=#417 id=417 data-nosnippet>417</a>		INNER JOIN ma_tx_out			ON tx_out.id = ma_tx_out.tx_out_id
-<a href=#418 id=418 data-nosnippet>418</a>		INNER JOIN multi_asset			ON multi_asset.id = ma_tx_out.ident
-<a href=#419 id=419 data-nosnippet>419</a>		WHERE
-<a href=#420 id=420 data-nosnippet>420</a>			tx_out.address = $1
-<a href=#421 id=421 data-nosnippet>421</a>			AND (consuming_tx_in.id IS NOT NULL AND ($2 IS NULL OR consuming_block.block_no &gt; $2) AND consuming_block.block_no &lt;= $3)
-<a href=#422 id=422 data-nosnippet>422</a>			AND multi_asset.policy = $4
-<a href=#423 id=423 data-nosnippet>423</a>			AND multi_asset.name = $5))
-<a href=#424 id=424 data-nosnippet>424</a>		ORDER BY block_no, block_index, action_order ASC"</span>;
-<a href=#425 id=425 data-nosnippet>425</a>	<span class="prelude-val">Ok</span>(sqlx::query_as::&lt;<span class="kw">_</span>, DatumChangeOutput&gt;(query)
-<a href=#426 id=426 data-nosnippet>426</a>		.bind(<span class="kw-2">&amp;</span>address.<span class="number">0</span>)
-<a href=#427 id=427 data-nosnippet>427</a>		.bind(after_block)
-<a href=#428 id=428 data-nosnippet>428</a>		.bind(to_block)
-<a href=#429 id=429 data-nosnippet>429</a>		.bind(<span class="kw-2">&amp;</span>asset.policy_id.<span class="number">0</span>)
-<a href=#430 id=430 data-nosnippet>430</a>		.bind(<span class="kw-2">&amp;</span>asset.asset_name.<span class="number">0</span>)
-<a href=#431 id=431 data-nosnippet>431</a>		.bind(GovernedMapAction::Create)
-<a href=#432 id=432 data-nosnippet>432</a>		.bind(GovernedMapAction::Spend)
-<a href=#433 id=433 data-nosnippet>433</a>		.fetch_all(pool)
-<a href=#434 id=434 data-nosnippet>434</a>		.<span class="kw">await</span><span class="question-mark">?</span>)
-<a href=#435 id=435 data-nosnippet>435</a>}
-<a href=#436 id=436 data-nosnippet>436</a>
-<a href=#437 id=437 data-nosnippet>437</a><span class="attr">#[cfg(feature = <span class="string">"governed-map"</span>)]
-<a href=#438 id=438 data-nosnippet>438</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>get_datums_at_address_with_token(
-<a href=#439 id=439 data-nosnippet>439</a>	pool: <span class="kw-2">&amp;</span>Pool&lt;Postgres&gt;,
-<a href=#440 id=440 data-nosnippet>440</a>	address: <span class="kw-2">&amp;</span>Address,
-<a href=#441 id=441 data-nosnippet>441</a>	block: BlockNumber,
-<a href=#442 id=442 data-nosnippet>442</a>	asset: Asset,
-<a href=#443 id=443 data-nosnippet>443</a>) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;DatumOutput&gt;, SqlxError&gt; {
-<a href=#444 id=444 data-nosnippet>444</a>	<span class="kw">let </span>query = <span class="string">"
-<a href=#445 id=445 data-nosnippet>445</a>			SELECT
-<a href=#446 id=446 data-nosnippet>446</a>				datum.value as datum
-<a href=#447 id=447 data-nosnippet>447</a>			FROM tx_out
-<a href=#448 id=448 data-nosnippet>448</a>			INNER JOIN tx origin_tx			ON tx_out.tx_id = origin_tx.id
-<a href=#449 id=449 data-nosnippet>449</a>			INNER JOIN block origin_block	ON origin_tx.block_id = origin_block.id
-<a href=#450 id=450 data-nosnippet>450</a>			LEFT JOIN tx_in consuming_tx_in	ON tx_out.tx_id = consuming_tx_in.tx_out_id AND tx_out.index = consuming_tx_in.tx_out_index
-<a href=#451 id=451 data-nosnippet>451</a>			LEFT JOIN tx consuming_tx		ON consuming_tx_in.tx_in_id = consuming_tx.id
-<a href=#452 id=452 data-nosnippet>452</a>			LEFT JOIN block consuming_block	ON consuming_tx.block_id = consuming_block.id
-<a href=#453 id=453 data-nosnippet>453</a>			INNER JOIN datum				ON tx_out.data_hash = datum.hash
-<a href=#454 id=454 data-nosnippet>454</a>			INNER JOIN ma_tx_out			ON tx_out.id = ma_tx_out.tx_out_id
-<a href=#455 id=455 data-nosnippet>455</a>			INNER JOIN multi_asset			ON multi_asset.id = ma_tx_out.ident
-<a href=#456 id=456 data-nosnippet>456</a>			WHERE
-<a href=#457 id=457 data-nosnippet>457</a>				tx_out.address = $1 AND origin_block.block_no &lt;= $2
-<a href=#458 id=458 data-nosnippet>458</a>				AND (consuming_tx_in.id IS NULL OR consuming_block.block_no &gt; $2)
-<a href=#459 id=459 data-nosnippet>459</a>				AND multi_asset.policy = $3
-<a href=#460 id=460 data-nosnippet>460</a>				AND multi_asset.name = $4
-<a href=#461 id=461 data-nosnippet>461</a>				ORDER BY origin_block.block_no ASC, origin_tx.block_index ASC"</span>;
-<a href=#462 id=462 data-nosnippet>462</a>	<span class="prelude-val">Ok</span>(sqlx::query_as::&lt;<span class="kw">_</span>, DatumOutput&gt;(query)
-<a href=#463 id=463 data-nosnippet>463</a>		.bind(<span class="kw-2">&amp;</span>address.<span class="number">0</span>)
-<a href=#464 id=464 data-nosnippet>464</a>		.bind(block)
-<a href=#465 id=465 data-nosnippet>465</a>		.bind(<span class="kw-2">&amp;</span>asset.policy_id.<span class="number">0</span>)
-<a href=#466 id=466 data-nosnippet>466</a>		.bind(<span class="kw-2">&amp;</span>asset.asset_name.<span class="number">0</span>)
-<a href=#467 id=467 data-nosnippet>467</a>		.fetch_all(pool)
-<a href=#468 id=468 data-nosnippet>468</a>		.<span class="kw">await</span><span class="question-mark">?</span>)
-<a href=#469 id=469 data-nosnippet>469</a>}
-<a href=#470 id=470 data-nosnippet>470</a>
-<a href=#471 id=471 data-nosnippet>471</a><span class="attr">#[cfg(feature = <span class="string">"candidate-source"</span>)]
-<a href=#472 id=472 data-nosnippet>472</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>get_epoch_nonce(
-<a href=#473 id=473 data-nosnippet>473</a>	pool: <span class="kw-2">&amp;</span>Pool&lt;Postgres&gt;,
-<a href=#474 id=474 data-nosnippet>474</a>	epoch: EpochNumber,
-<a href=#475 id=475 data-nosnippet>475</a>) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;MainchainEpochNonce&gt;, SqlxError&gt; {
-<a href=#476 id=476 data-nosnippet>476</a>	<span class="kw">let </span>sql = <span class="string">"SELECT nonce FROM epoch_param WHERE epoch_no = $1"</span>;
-<a href=#477 id=477 data-nosnippet>477</a>	<span class="prelude-val">Ok</span>(sqlx::query_as::&lt;<span class="kw">_</span>, MainchainEpochNonce&gt;(sql)
-<a href=#478 id=478 data-nosnippet>478</a>		.bind(epoch)
-<a href=#479 id=479 data-nosnippet>479</a>		.fetch_optional(pool)
-<a href=#480 id=480 data-nosnippet>480</a>		.<span class="kw">await</span><span class="question-mark">?</span>)
-<a href=#481 id=481 data-nosnippet>481</a>}
-<a href=#482 id=482 data-nosnippet>482</a><span class="attr">#[cfg(feature = <span class="string">"candidate-source"</span>)]
-<a href=#483 id=483 data-nosnippet>483</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>get_utxos_for_address(
-<a href=#484 id=484 data-nosnippet>484</a>	pool: <span class="kw-2">&amp;</span>Pool&lt;Postgres&gt;,
-<a href=#485 id=485 data-nosnippet>485</a>	address: <span class="kw-2">&amp;</span>Address,
-<a href=#486 id=486 data-nosnippet>486</a>	block: BlockNumber,
-<a href=#487 id=487 data-nosnippet>487</a>) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;MainchainTxOutput&gt;, SqlxError&gt; {
-<a href=#488 id=488 data-nosnippet>488</a>	<span class="kw">let </span>query = <span class="string">"SELECT
-<a href=#489 id=489 data-nosnippet>489</a>          		origin_tx.hash as utxo_id_tx_hash,
-<a href=#490 id=490 data-nosnippet>490</a>          		tx_out.index as utxo_id_index,
-<a href=#491 id=491 data-nosnippet>491</a>          		origin_block.block_no as tx_block_no,
-<a href=#492 id=492 data-nosnippet>492</a>          		origin_block.slot_no as tx_slot_no,
-<a href=#493 id=493 data-nosnippet>493</a>          		origin_block.epoch_no as tx_epoch_no,
-<a href=#494 id=494 data-nosnippet>494</a>          		origin_tx.block_index as tx_index_in_block,
-<a href=#495 id=495 data-nosnippet>495</a>          		tx_out.address,
-<a href=#496 id=496 data-nosnippet>496</a>          		datum.value as datum,
-<a href=#497 id=497 data-nosnippet>497</a>          		array_agg(concat_ws('#', encode(consumes_tx.hash, 'hex'), consumes_tx_in.tx_out_index)) as tx_inputs
-<a href=#498 id=498 data-nosnippet>498</a>			FROM tx_out
-<a href=#499 id=499 data-nosnippet>499</a>			INNER JOIN tx    origin_tx       ON tx_out.tx_id = origin_tx.id
-<a href=#500 id=500 data-nosnippet>500</a>			INNER JOIN block origin_block    ON origin_tx.block_id = origin_block.id
-<a href=#501 id=501 data-nosnippet>501</a>          	LEFT JOIN tx_in consuming_tx_in  ON tx_out.tx_id = consuming_tx_in.tx_out_id AND tx_out.index = consuming_tx_in.tx_out_index
-<a href=#502 id=502 data-nosnippet>502</a>          	LEFT JOIN tx    consuming_tx     ON consuming_tx_in.tx_in_id = consuming_tx.id
-<a href=#503 id=503 data-nosnippet>503</a>          	LEFT JOIN block consuming_block  ON consuming_tx.block_id = consuming_block.id
-<a href=#504 id=504 data-nosnippet>504</a>			LEFT JOIN tx_in consumes_tx_in   ON consumes_tx_in.tx_in_id = origin_tx.id
-<a href=#505 id=505 data-nosnippet>505</a>          	LEFT JOIN tx_out consumes_tx_out ON consumes_tx_out.tx_id = consumes_tx_in.tx_out_id AND consumes_tx_in.tx_out_index = consumes_tx_out.index
-<a href=#506 id=506 data-nosnippet>506</a>          	LEFT JOIN tx consumes_tx         ON consumes_tx.id = consumes_tx_out.tx_id
-<a href=#507 id=507 data-nosnippet>507</a>          	LEFT JOIN datum                  ON tx_out.data_hash = datum.hash
-<a href=#508 id=508 data-nosnippet>508</a>          	WHERE
-<a href=#509 id=509 data-nosnippet>509</a>          		tx_out.address = $1 AND origin_block.block_no &lt;= $2
-<a href=#510 id=510 data-nosnippet>510</a>          		AND (consuming_tx_in.id IS NULL OR consuming_block.block_no &gt; $2)
-<a href=#511 id=511 data-nosnippet>511</a>          		GROUP BY (
-<a href=#512 id=512 data-nosnippet>512</a>					utxo_id_tx_hash,
-<a href=#513 id=513 data-nosnippet>513</a>					utxo_id_index,
-<a href=#514 id=514 data-nosnippet>514</a>					tx_block_no,
-<a href=#515 id=515 data-nosnippet>515</a>					tx_slot_no,
-<a href=#516 id=516 data-nosnippet>516</a>					tx_epoch_no,
-<a href=#517 id=517 data-nosnippet>517</a>					tx_index_in_block,
-<a href=#518 id=518 data-nosnippet>518</a>					tx_out.address,
-<a href=#519 id=519 data-nosnippet>519</a>					datum
-<a href=#520 id=520 data-nosnippet>520</a>				)"</span>;
-<a href=#521 id=521 data-nosnippet>521</a>	<span class="kw">let </span>rows = sqlx::query_as::&lt;<span class="kw">_</span>, MainchainTxOutputRow&gt;(query)
-<a href=#522 id=522 data-nosnippet>522</a>		.bind(<span class="kw-2">&amp;</span>address.<span class="number">0</span>)
-<a href=#523 id=523 data-nosnippet>523</a>		.bind(block)
-<a href=#524 id=524 data-nosnippet>524</a>		.fetch_all(pool)
-<a href=#525 id=525 data-nosnippet>525</a>		.<span class="kw">await</span><span class="question-mark">?</span>;
-<a href=#526 id=526 data-nosnippet>526</a>	<span class="kw">let </span>result: <span class="prelude-ty">Result</span>&lt;Vec&lt;MainchainTxOutput&gt;, sqlx::Error&gt; =
-<a href=#527 id=527 data-nosnippet>527</a>		rows.into_iter().map(MainchainTxOutput::try_from).collect();
-<a href=#528 id=528 data-nosnippet>528</a>	<span class="prelude-val">Ok</span>(result<span class="question-mark">?</span>)
-<a href=#529 id=529 data-nosnippet>529</a>}
-<a href=#530 id=530 data-nosnippet>530</a><span class="doccomment">/// Used by `get_token_utxo_for_epoch` (CandidatesDataSourceImpl),
-<a href=#531 id=531 data-nosnippet>531</a></span><span class="attr">#[cfg(feature = <span class="string">"candidate-source"</span>)]
-<a href=#532 id=532 data-nosnippet>532</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>create_idx_ma_tx_out_ident(pool: <span class="kw-2">&amp;</span>Pool&lt;Postgres&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;(), SqlxError&gt; {
-<a href=#533 id=533 data-nosnippet>533</a>	<span class="kw">let </span>exists = index_exists(pool, <span class="string">"idx_ma_tx_out_ident"</span>).<span class="kw">await</span><span class="question-mark">?</span>;
-<a href=#534 id=534 data-nosnippet>534</a>	<span class="kw">if </span>exists {
-<a href=#535 id=535 data-nosnippet>535</a>		<span class="macro">info!</span>(<span class="string">"Index 'idx_ma_tx_out_ident' already exists"</span>);
-<a href=#536 id=536 data-nosnippet>536</a>	} <span class="kw">else </span>{
-<a href=#537 id=537 data-nosnippet>537</a>		<span class="kw">let </span>sql = <span class="string">"CREATE INDEX IF NOT EXISTS idx_ma_tx_out_ident ON ma_tx_out(ident)"</span>;
-<a href=#538 id=538 data-nosnippet>538</a>		<span class="macro">info!</span>(<span class="string">"Executing '{}', this might take a while"</span>, sql);
-<a href=#539 id=539 data-nosnippet>539</a>		sqlx::query(sql).execute(pool).<span class="kw">await</span><span class="question-mark">?</span>;
-<a href=#540 id=540 data-nosnippet>540</a>		<span class="macro">info!</span>(<span class="string">"Index 'idx_ma_tx_out_ident' has been created"</span>);
-<a href=#541 id=541 data-nosnippet>541</a>	}
-<a href=#542 id=542 data-nosnippet>542</a>	<span class="prelude-val">Ok</span>(())
-<a href=#543 id=543 data-nosnippet>543</a>}
-<a href=#544 id=544 data-nosnippet>544</a>
-<a href=#545 id=545 data-nosnippet>545</a><span class="doccomment">/// Used by multiple queries across functionalities.
-<a href=#546 id=546 data-nosnippet>546</a></span><span class="attr">#[cfg(any(feature = <span class="string">"candidate-source"</span>, feature = <span class="string">"native-token"</span>, feature = <span class="string">"governed-map"</span>))]
-<a href=#547 id=547 data-nosnippet>547</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>create_idx_tx_out_address(pool: <span class="kw-2">&amp;</span>Pool&lt;Postgres&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;(), SqlxError&gt; {
-<a href=#548 id=548 data-nosnippet>548</a>	<span class="kw">let </span>exists = index_exists(pool, <span class="string">"idx_tx_out_address"</span>).<span class="kw">await</span><span class="question-mark">?</span>;
-<a href=#549 id=549 data-nosnippet>549</a>	<span class="kw">if </span>exists {
-<a href=#550 id=550 data-nosnippet>550</a>		<span class="macro">info!</span>(<span class="string">"Index 'idx_tx_out_address' already exists"</span>);
-<a href=#551 id=551 data-nosnippet>551</a>	} <span class="kw">else </span>{
-<a href=#552 id=552 data-nosnippet>552</a>		<span class="kw">let </span>sql = <span class="string">"CREATE INDEX IF NOT EXISTS idx_tx_out_address ON tx_out USING hash (address)"</span>;
-<a href=#553 id=553 data-nosnippet>553</a>		<span class="macro">info!</span>(<span class="string">"Executing '{}', this might take a long time"</span>, sql);
-<a href=#554 id=554 data-nosnippet>554</a>		sqlx::query(sql).execute(pool).<span class="kw">await</span><span class="question-mark">?</span>;
-<a href=#555 id=555 data-nosnippet>555</a>		<span class="macro">info!</span>(<span class="string">"Index 'idx_tx_out_address' has been created"</span>);
-<a href=#556 id=556 data-nosnippet>556</a>	}
-<a href=#557 id=557 data-nosnippet>557</a>	<span class="prelude-val">Ok</span>(())
-<a href=#558 id=558 data-nosnippet>558</a>}
-<a href=#559 id=559 data-nosnippet>559</a>
-<a href=#560 id=560 data-nosnippet>560</a><span class="doccomment">/// Check if the index exists.
-<a href=#561 id=561 data-nosnippet>561</a></span><span class="kw">async fn </span>index_exists(pool: <span class="kw-2">&amp;</span>Pool&lt;Postgres&gt;, index_name: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;bool, sqlx::Error&gt; {
-<a href=#562 id=562 data-nosnippet>562</a>	sqlx::query(<span class="string">"select * from pg_indexes where indexname = $1"</span>)
-<a href=#563 id=563 data-nosnippet>563</a>		.bind(index_name)
-<a href=#564 id=564 data-nosnippet>564</a>		.fetch_all(pool)
-<a href=#565 id=565 data-nosnippet>565</a>		.<span class="kw">await
-<a href=#566 id=566 data-nosnippet>566</a>		</span>.map(|rows| rows.len() == <span class="number">1</span>)
-<a href=#567 id=567 data-nosnippet>567</a>}
-<a href=#568 id=568 data-nosnippet>568</a>
-<a href=#569 id=569 data-nosnippet>569</a><span class="attr">#[cfg(test)]
-<a href=#570 id=570 data-nosnippet>570</a></span><span class="doccomment">/// Check if the index exists. Panics on errors.
-<a href=#571 id=571 data-nosnippet>571</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>index_exists_unsafe(pool: <span class="kw-2">&amp;</span>Pool&lt;Postgres&gt;, index_name: <span class="kw-2">&amp;</span>str) -&gt; bool {
-<a href=#572 id=572 data-nosnippet>572</a>	index_exists(pool, index_name).<span class="kw">await</span>.unwrap()
-<a href=#573 id=573 data-nosnippet>573</a>}
-<a href=#574 id=574 data-nosnippet>574</a>
-<a href=#575 id=575 data-nosnippet>575</a><span class="doccomment">/// Sums all transfers between genesis and the first block that is produced with the feature on.
-<a href=#576 id=576 data-nosnippet>576</a>/// Used by `get_native_token_transfers` (NativeTokenDataSourceImpl).
-<a href=#577 id=577 data-nosnippet>577</a></span><span class="attr">#[cfg(feature = <span class="string">"native-token"</span>)]
-<a href=#578 id=578 data-nosnippet>578</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>get_total_native_tokens_transfered(
-<a href=#579 id=579 data-nosnippet>579</a>	pool: <span class="kw-2">&amp;</span>Pool&lt;Postgres&gt;,
-<a href=#580 id=580 data-nosnippet>580</a>	to_block: BlockNumber,
-<a href=#581 id=581 data-nosnippet>581</a>	asset: Asset,
-<a href=#582 id=582 data-nosnippet>582</a>	illiquid_supply_address: Address,
-<a href=#583 id=583 data-nosnippet>583</a>) -&gt; <span class="prelude-ty">Result</span>&lt;NativeTokenAmount, SqlxError&gt; {
-<a href=#584 id=584 data-nosnippet>584</a>	<span class="kw">let </span>query = sqlx::query_as::&lt;<span class="kw">_</span>, (NativeTokenAmount,)&gt;(
-<a href=#585 id=585 data-nosnippet>585</a>		<span class="string">"
-<a href=#586 id=586 data-nosnippet>586</a>SELECT
-<a href=#587 id=587 data-nosnippet>587</a>    COALESCE(SUM(ma_tx_out.quantity), 0)
-<a href=#588 id=588 data-nosnippet>588</a>FROM tx_out
-<a href=#589 id=589 data-nosnippet>589</a>LEFT JOIN ma_tx_out    ON ma_tx_out.tx_out_id = tx_out.id
-<a href=#590 id=590 data-nosnippet>590</a>LEFT JOIN multi_asset  ON multi_asset.id = ma_tx_out.ident
-<a href=#591 id=591 data-nosnippet>591</a>INNER JOIN tx          ON tx_out.tx_id = tx.id
-<a href=#592 id=592 data-nosnippet>592</a>INNER JOIN block       ON tx.block_id = block.id
-<a href=#593 id=593 data-nosnippet>593</a>WHERE address = $1
-<a href=#594 id=594 data-nosnippet>594</a>AND multi_asset.policy = $2
-<a href=#595 id=595 data-nosnippet>595</a>AND multi_asset.name = $3
-<a href=#596 id=596 data-nosnippet>596</a>AND block.block_no &lt;= $4;
-<a href=#597 id=597 data-nosnippet>597</a>    "</span>,
-<a href=#598 id=598 data-nosnippet>598</a>	)
-<a href=#599 id=599 data-nosnippet>599</a>	.bind(<span class="kw-2">&amp;</span>illiquid_supply_address.<span class="number">0</span>)
-<a href=#600 id=600 data-nosnippet>600</a>	.bind(<span class="kw-2">&amp;</span>asset.policy_id.<span class="number">0</span>)
-<a href=#601 id=601 data-nosnippet>601</a>	.bind(<span class="kw-2">&amp;</span>asset.asset_name.<span class="number">0</span>)
-<a href=#602 id=602 data-nosnippet>602</a>	.bind(to_block);
-<a href=#603 id=603 data-nosnippet>603</a>
-<a href=#604 id=604 data-nosnippet>604</a>	<span class="prelude-val">Ok</span>(query.fetch_one(pool).<span class="kw">await</span><span class="question-mark">?</span>.<span class="number">0</span>)
-<a href=#605 id=605 data-nosnippet>605</a>}
-<a href=#606 id=606 data-nosnippet>606</a>
-<a href=#607 id=607 data-nosnippet>607</a><span class="doccomment">/// Returns the list of all blocks in given range,
-<a href=#608 id=608 data-nosnippet>608</a>/// together with the sum of all token amounts transferred to illiquid supply address in this block.
-<a href=#609 id=609 data-nosnippet>609</a>/// On devnet postgres it takes around 5ms to execute when querying 1000 blocks.
-<a href=#610 id=610 data-nosnippet>610</a>/// Used by `get_native_token_transfers` (NativeTokenDataSourceImpl).
-<a href=#611 id=611 data-nosnippet>611</a></span><span class="attr">#[cfg(feature = <span class="string">"native-token"</span>)]
-<a href=#612 id=612 data-nosnippet>612</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>get_native_token_transfers(
-<a href=#613 id=613 data-nosnippet>613</a>	pool: <span class="kw-2">&amp;</span>Pool&lt;Postgres&gt;,
-<a href=#614 id=614 data-nosnippet>614</a>	from_block: BlockNumber,
-<a href=#615 id=615 data-nosnippet>615</a>	to_block: BlockNumber,
-<a href=#616 id=616 data-nosnippet>616</a>	asset: Asset,
-<a href=#617 id=617 data-nosnippet>617</a>	illiquid_supply_address: Address,
-<a href=#618 id=618 data-nosnippet>618</a>) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;BlockTokenAmount&gt;, SqlxError&gt; {
-<a href=#619 id=619 data-nosnippet>619</a>	<span class="kw">let </span>query = sqlx::query_as::&lt;<span class="kw">_</span>, BlockTokenAmount&gt;(
-<a href=#620 id=620 data-nosnippet>620</a>		<span class="string">"
-<a href=#621 id=621 data-nosnippet>621</a>SELECT
-<a href=#622 id=622 data-nosnippet>622</a>    block.hash as block_hash, COALESCE(SUM(ma_tx_out.quantity), 0) as amount
-<a href=#623 id=623 data-nosnippet>623</a>FROM block
-<a href=#624 id=624 data-nosnippet>624</a>    LEFT JOIN tx ON block.id = tx.block_id
-<a href=#625 id=625 data-nosnippet>625</a>    LEFT JOIN tx_out ON tx.id = tx_out.tx_id AND tx_out.address = $1
-<a href=#626 id=626 data-nosnippet>626</a>    LEFT JOIN ma_tx_out    ON ma_tx_out.tx_out_id = tx_out.id
-<a href=#627 id=627 data-nosnippet>627</a>    LEFT JOIN multi_asset  ON multi_asset.id = ma_tx_out.ident AND multi_asset.policy = $2 AND multi_asset.name = $3
-<a href=#628 id=628 data-nosnippet>628</a>WHERE
-<a href=#629 id=629 data-nosnippet>629</a>    $4 &lt;= block.block_no AND block.block_no &lt;= $5
-<a href=#630 id=630 data-nosnippet>630</a>GROUP BY block.block_no, block.hash
-<a href=#631 id=631 data-nosnippet>631</a>ORDER BY block.block_no ASC;
-<a href=#632 id=632 data-nosnippet>632</a>    "</span>,
-<a href=#633 id=633 data-nosnippet>633</a>	)
-<a href=#634 id=634 data-nosnippet>634</a>	.bind(<span class="kw-2">&amp;</span>illiquid_supply_address.<span class="number">0</span>)
-<a href=#635 id=635 data-nosnippet>635</a>	.bind(<span class="kw-2">&amp;</span>asset.policy_id.<span class="number">0</span>)
-<a href=#636 id=636 data-nosnippet>636</a>	.bind(<span class="kw-2">&amp;</span>asset.asset_name.<span class="number">0</span>)
-<a href=#637 id=637 data-nosnippet>637</a>	.bind(from_block)
-<a href=#638 id=638 data-nosnippet>638</a>	.bind(to_block);
-<a href=#639 id=639 data-nosnippet>639</a>
-<a href=#640 id=640 data-nosnippet>640</a>	<span class="prelude-val">Ok</span>(query.fetch_all(pool).<span class="kw">await</span><span class="question-mark">?</span>)
-<a href=#641 id=641 data-nosnippet>641</a>}</code></pre></div></section></main></body></html>
+<a href=#331 id=331 data-nosnippet>331</a>	<span class="attr">#[allow(deprecated)]
+<a href=#332 id=332 data-nosnippet>332</a>	</span><span class="prelude-val">Ok</span>(sqlx::query_as::&lt;<span class="kw">_</span>, EpochNumberRow&gt;(sql)
+<a href=#333 id=333 data-nosnippet>333</a>		.bind(BlockNumber(security_parameter))
+<a href=#334 id=334 data-nosnippet>334</a>		.fetch_optional(pool)
+<a href=#335 id=335 data-nosnippet>335</a>		.<span class="kw">await</span><span class="question-mark">?
+<a href=#336 id=336 data-nosnippet>336</a>		</span>.map(EpochNumber::from))
+<a href=#337 id=337 data-nosnippet>337</a>}
+<a href=#338 id=338 data-nosnippet>338</a>
+<a href=#339 id=339 data-nosnippet>339</a><span class="attr">#[cfg(feature = <span class="string">"candidate-source"</span>)]
+<a href=#340 id=340 data-nosnippet>340</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>get_stake_distribution(
+<a href=#341 id=341 data-nosnippet>341</a>	pool: <span class="kw-2">&amp;</span>Pool&lt;Postgres&gt;,
+<a href=#342 id=342 data-nosnippet>342</a>	epoch: EpochNumber,
+<a href=#343 id=343 data-nosnippet>343</a>) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;StakePoolEntry&gt;, SqlxError&gt; {
+<a href=#344 id=344 data-nosnippet>344</a>	<span class="kw">let </span>sql = <span class="string">"
+<a href=#345 id=345 data-nosnippet>345</a>        SELECT ph.hash_raw as pool_hash, SUM(es.amount) as stake
+<a href=#346 id=346 data-nosnippet>346</a>        FROM epoch_stake es
+<a href=#347 id=347 data-nosnippet>347</a>        INNER JOIN pool_hash ph ON es.pool_id = ph.id
+<a href=#348 id=348 data-nosnippet>348</a>        WHERE es.epoch_no = $1
+<a href=#349 id=349 data-nosnippet>349</a>        GROUP BY ph.hash_raw"</span>;
+<a href=#350 id=350 data-nosnippet>350</a>	<span class="prelude-val">Ok</span>(sqlx::query_as::&lt;<span class="kw">_</span>, StakePoolEntry&gt;(sql).bind(epoch).fetch_all(pool).<span class="kw">await</span><span class="question-mark">?</span>)
+<a href=#351 id=351 data-nosnippet>351</a>}
+<a href=#352 id=352 data-nosnippet>352</a>
+<a href=#353 id=353 data-nosnippet>353</a><span class="doccomment">/// Returns the token data of the given policy at the given slot.
+<a href=#354 id=354 data-nosnippet>354</a></span><span class="attr">#[cfg(feature = <span class="string">"candidate-source"</span>)]
+<a href=#355 id=355 data-nosnippet>355</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>get_token_utxo_for_epoch(
+<a href=#356 id=356 data-nosnippet>356</a>	pool: <span class="kw-2">&amp;</span>Pool&lt;Postgres&gt;,
+<a href=#357 id=357 data-nosnippet>357</a>	asset: <span class="kw-2">&amp;</span>Asset,
+<a href=#358 id=358 data-nosnippet>358</a>	epoch: EpochNumber,
+<a href=#359 id=359 data-nosnippet>359</a>) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;TokenTxOutput&gt;, SqlxError&gt; {
+<a href=#360 id=360 data-nosnippet>360</a>	<span class="comment">// In practice queried assets always have empty name.
+<a href=#361 id=361 data-nosnippet>361</a>	// However, it's important to keep multi_asset.name condition, to enable use of compound index on multi_asset policy and name.
+<a href=#362 id=362 data-nosnippet>362</a>	</span><span class="kw">let </span>sql = <span class="string">"SELECT
+<a href=#363 id=363 data-nosnippet>363</a>			origin_tx.hash        AS origin_tx_hash,
+<a href=#364 id=364 data-nosnippet>364</a>        	tx_out.index          AS utxo_index,
+<a href=#365 id=365 data-nosnippet>365</a>        	origin_block.epoch_no AS tx_epoch_no,
+<a href=#366 id=366 data-nosnippet>366</a>        	origin_block.block_no AS tx_block_no,
+<a href=#367 id=367 data-nosnippet>367</a>        	origin_block.slot_no  AS tx_slot_no,
+<a href=#368 id=368 data-nosnippet>368</a>        	origin_tx.block_index AS tx_block_index,
+<a href=#369 id=369 data-nosnippet>369</a>        	datum.value           AS datum
+<a href=#370 id=370 data-nosnippet>370</a>        FROM ma_tx_out
+<a href=#371 id=371 data-nosnippet>371</a>        INNER JOIN multi_asset          ON ma_tx_out.ident = multi_asset.id
+<a href=#372 id=372 data-nosnippet>372</a>        INNER JOIN tx_out               ON ma_tx_out.tx_out_id = tx_out.id
+<a href=#373 id=373 data-nosnippet>373</a>        INNER JOIN tx origin_tx         ON tx_out.tx_id = origin_tx.id
+<a href=#374 id=374 data-nosnippet>374</a>        INNER JOIN block origin_block   ON origin_tx.block_id = origin_block.id
+<a href=#375 id=375 data-nosnippet>375</a>        LEFT JOIN datum                 ON tx_out.data_hash = datum.hash
+<a href=#376 id=376 data-nosnippet>376</a>        WHERE multi_asset.policy = $1
+<a href=#377 id=377 data-nosnippet>377</a>		AND multi_asset.name = $2
+<a href=#378 id=378 data-nosnippet>378</a>        AND origin_block.epoch_no &lt;= $3
+<a href=#379 id=379 data-nosnippet>379</a>        ORDER BY tx_block_no DESC, origin_tx.block_index DESC
+<a href=#380 id=380 data-nosnippet>380</a>        LIMIT 1"</span>;
+<a href=#381 id=381 data-nosnippet>381</a>	<span class="prelude-val">Ok</span>(sqlx::query_as::&lt;<span class="kw">_</span>, TokenTxOutput&gt;(sql)
+<a href=#382 id=382 data-nosnippet>382</a>		.bind(<span class="kw-2">&amp;</span>asset.policy_id.<span class="number">0</span>)
+<a href=#383 id=383 data-nosnippet>383</a>		.bind(<span class="kw-2">&amp;</span>asset.asset_name.<span class="number">0</span>)
+<a href=#384 id=384 data-nosnippet>384</a>		.bind(epoch)
+<a href=#385 id=385 data-nosnippet>385</a>		.fetch_optional(pool)
+<a href=#386 id=386 data-nosnippet>386</a>		.<span class="kw">await</span><span class="question-mark">?</span>)
+<a href=#387 id=387 data-nosnippet>387</a>}
+<a href=#388 id=388 data-nosnippet>388</a>
+<a href=#389 id=389 data-nosnippet>389</a><span class="attr">#[cfg(feature = <span class="string">"governed-map"</span>)]
+<a href=#390 id=390 data-nosnippet>390</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>get_changes(
+<a href=#391 id=391 data-nosnippet>391</a>	pool: <span class="kw-2">&amp;</span>Pool&lt;Postgres&gt;,
+<a href=#392 id=392 data-nosnippet>392</a>	address: <span class="kw-2">&amp;</span>Address,
+<a href=#393 id=393 data-nosnippet>393</a>	after_block: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;,
+<a href=#394 id=394 data-nosnippet>394</a>	to_block: BlockNumber,
+<a href=#395 id=395 data-nosnippet>395</a>	asset: Asset,
+<a href=#396 id=396 data-nosnippet>396</a>) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;DatumChangeOutput&gt;, SqlxError&gt; {
+<a href=#397 id=397 data-nosnippet>397</a>	<span class="kw">let </span>query = <span class="string">"
+<a href=#398 id=398 data-nosnippet>398</a>		((SELECT
+<a href=#399 id=399 data-nosnippet>399</a>			datum.value as datum, origin_block.block_no as block_no, origin_tx.block_index as block_index, $6 as action, 1 as action_order
+<a href=#400 id=400 data-nosnippet>400</a>		FROM tx_out
+<a href=#401 id=401 data-nosnippet>401</a>		INNER JOIN tx origin_tx			ON tx_out.tx_id = origin_tx.id
+<a href=#402 id=402 data-nosnippet>402</a>		INNER JOIN block origin_block	ON origin_tx.block_id = origin_block.id
+<a href=#403 id=403 data-nosnippet>403</a>		INNER JOIN datum				ON tx_out.data_hash = datum.hash
+<a href=#404 id=404 data-nosnippet>404</a>		INNER JOIN ma_tx_out			ON tx_out.id = ma_tx_out.tx_out_id
+<a href=#405 id=405 data-nosnippet>405</a>		INNER JOIN multi_asset			ON multi_asset.id = ma_tx_out.ident
+<a href=#406 id=406 data-nosnippet>406</a>		WHERE
+<a href=#407 id=407 data-nosnippet>407</a>			tx_out.address = $1 AND ($2 IS NULL OR origin_block.block_no &gt; $2) AND origin_block.block_no &lt;= $3
+<a href=#408 id=408 data-nosnippet>408</a>			AND multi_asset.policy = $4
+<a href=#409 id=409 data-nosnippet>409</a>			AND multi_asset.name = $5)
+<a href=#410 id=410 data-nosnippet>410</a>		UNION
+<a href=#411 id=411 data-nosnippet>411</a>		(SELECT
+<a href=#412 id=412 data-nosnippet>412</a>			datum.value as datum, consuming_block.block_no as block_no, consuming_tx.block_index as block_index, $7 as action, -1 as action_order
+<a href=#413 id=413 data-nosnippet>413</a>		FROM tx_out
+<a href=#414 id=414 data-nosnippet>414</a>		LEFT JOIN tx_in consuming_tx_in	ON tx_out.tx_id = consuming_tx_in.tx_out_id AND tx_out.index = consuming_tx_in.tx_out_index
+<a href=#415 id=415 data-nosnippet>415</a>		LEFT JOIN tx consuming_tx		ON consuming_tx_in.tx_in_id = consuming_tx.id
+<a href=#416 id=416 data-nosnippet>416</a>		LEFT JOIN block consuming_block	ON consuming_tx.block_id = consuming_block.id
+<a href=#417 id=417 data-nosnippet>417</a>		INNER JOIN datum				ON tx_out.data_hash = datum.hash
+<a href=#418 id=418 data-nosnippet>418</a>		INNER JOIN ma_tx_out			ON tx_out.id = ma_tx_out.tx_out_id
+<a href=#419 id=419 data-nosnippet>419</a>		INNER JOIN multi_asset			ON multi_asset.id = ma_tx_out.ident
+<a href=#420 id=420 data-nosnippet>420</a>		WHERE
+<a href=#421 id=421 data-nosnippet>421</a>			tx_out.address = $1
+<a href=#422 id=422 data-nosnippet>422</a>			AND (consuming_tx_in.id IS NOT NULL AND ($2 IS NULL OR consuming_block.block_no &gt; $2) AND consuming_block.block_no &lt;= $3)
+<a href=#423 id=423 data-nosnippet>423</a>			AND multi_asset.policy = $4
+<a href=#424 id=424 data-nosnippet>424</a>			AND multi_asset.name = $5))
+<a href=#425 id=425 data-nosnippet>425</a>		ORDER BY block_no, block_index, action_order ASC"</span>;
+<a href=#426 id=426 data-nosnippet>426</a>	<span class="prelude-val">Ok</span>(sqlx::query_as::&lt;<span class="kw">_</span>, DatumChangeOutput&gt;(query)
+<a href=#427 id=427 data-nosnippet>427</a>		.bind(<span class="kw-2">&amp;</span>address.<span class="number">0</span>)
+<a href=#428 id=428 data-nosnippet>428</a>		.bind(after_block)
+<a href=#429 id=429 data-nosnippet>429</a>		.bind(to_block)
+<a href=#430 id=430 data-nosnippet>430</a>		.bind(<span class="kw-2">&amp;</span>asset.policy_id.<span class="number">0</span>)
+<a href=#431 id=431 data-nosnippet>431</a>		.bind(<span class="kw-2">&amp;</span>asset.asset_name.<span class="number">0</span>)
+<a href=#432 id=432 data-nosnippet>432</a>		.bind(GovernedMapAction::Create)
+<a href=#433 id=433 data-nosnippet>433</a>		.bind(GovernedMapAction::Spend)
+<a href=#434 id=434 data-nosnippet>434</a>		.fetch_all(pool)
+<a href=#435 id=435 data-nosnippet>435</a>		.<span class="kw">await</span><span class="question-mark">?</span>)
+<a href=#436 id=436 data-nosnippet>436</a>}
+<a href=#437 id=437 data-nosnippet>437</a>
+<a href=#438 id=438 data-nosnippet>438</a><span class="attr">#[cfg(feature = <span class="string">"governed-map"</span>)]
+<a href=#439 id=439 data-nosnippet>439</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>get_datums_at_address_with_token(
+<a href=#440 id=440 data-nosnippet>440</a>	pool: <span class="kw-2">&amp;</span>Pool&lt;Postgres&gt;,
+<a href=#441 id=441 data-nosnippet>441</a>	address: <span class="kw-2">&amp;</span>Address,
+<a href=#442 id=442 data-nosnippet>442</a>	block: BlockNumber,
+<a href=#443 id=443 data-nosnippet>443</a>	asset: Asset,
+<a href=#444 id=444 data-nosnippet>444</a>) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;DatumOutput&gt;, SqlxError&gt; {
+<a href=#445 id=445 data-nosnippet>445</a>	<span class="kw">let </span>query = <span class="string">"
+<a href=#446 id=446 data-nosnippet>446</a>			SELECT
+<a href=#447 id=447 data-nosnippet>447</a>				datum.value as datum
+<a href=#448 id=448 data-nosnippet>448</a>			FROM tx_out
+<a href=#449 id=449 data-nosnippet>449</a>			INNER JOIN tx origin_tx			ON tx_out.tx_id = origin_tx.id
+<a href=#450 id=450 data-nosnippet>450</a>			INNER JOIN block origin_block	ON origin_tx.block_id = origin_block.id
+<a href=#451 id=451 data-nosnippet>451</a>			LEFT JOIN tx_in consuming_tx_in	ON tx_out.tx_id = consuming_tx_in.tx_out_id AND tx_out.index = consuming_tx_in.tx_out_index
+<a href=#452 id=452 data-nosnippet>452</a>			LEFT JOIN tx consuming_tx		ON consuming_tx_in.tx_in_id = consuming_tx.id
+<a href=#453 id=453 data-nosnippet>453</a>			LEFT JOIN block consuming_block	ON consuming_tx.block_id = consuming_block.id
+<a href=#454 id=454 data-nosnippet>454</a>			INNER JOIN datum				ON tx_out.data_hash = datum.hash
+<a href=#455 id=455 data-nosnippet>455</a>			INNER JOIN ma_tx_out			ON tx_out.id = ma_tx_out.tx_out_id
+<a href=#456 id=456 data-nosnippet>456</a>			INNER JOIN multi_asset			ON multi_asset.id = ma_tx_out.ident
+<a href=#457 id=457 data-nosnippet>457</a>			WHERE
+<a href=#458 id=458 data-nosnippet>458</a>				tx_out.address = $1 AND origin_block.block_no &lt;= $2
+<a href=#459 id=459 data-nosnippet>459</a>				AND (consuming_tx_in.id IS NULL OR consuming_block.block_no &gt; $2)
+<a href=#460 id=460 data-nosnippet>460</a>				AND multi_asset.policy = $3
+<a href=#461 id=461 data-nosnippet>461</a>				AND multi_asset.name = $4
+<a href=#462 id=462 data-nosnippet>462</a>				ORDER BY origin_block.block_no ASC, origin_tx.block_index ASC"</span>;
+<a href=#463 id=463 data-nosnippet>463</a>	<span class="prelude-val">Ok</span>(sqlx::query_as::&lt;<span class="kw">_</span>, DatumOutput&gt;(query)
+<a href=#464 id=464 data-nosnippet>464</a>		.bind(<span class="kw-2">&amp;</span>address.<span class="number">0</span>)
+<a href=#465 id=465 data-nosnippet>465</a>		.bind(block)
+<a href=#466 id=466 data-nosnippet>466</a>		.bind(<span class="kw-2">&amp;</span>asset.policy_id.<span class="number">0</span>)
+<a href=#467 id=467 data-nosnippet>467</a>		.bind(<span class="kw-2">&amp;</span>asset.asset_name.<span class="number">0</span>)
+<a href=#468 id=468 data-nosnippet>468</a>		.fetch_all(pool)
+<a href=#469 id=469 data-nosnippet>469</a>		.<span class="kw">await</span><span class="question-mark">?</span>)
+<a href=#470 id=470 data-nosnippet>470</a>}
+<a href=#471 id=471 data-nosnippet>471</a>
+<a href=#472 id=472 data-nosnippet>472</a><span class="attr">#[cfg(feature = <span class="string">"candidate-source"</span>)]
+<a href=#473 id=473 data-nosnippet>473</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>get_epoch_nonce(
+<a href=#474 id=474 data-nosnippet>474</a>	pool: <span class="kw-2">&amp;</span>Pool&lt;Postgres&gt;,
+<a href=#475 id=475 data-nosnippet>475</a>	epoch: EpochNumber,
+<a href=#476 id=476 data-nosnippet>476</a>) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;MainchainEpochNonce&gt;, SqlxError&gt; {
+<a href=#477 id=477 data-nosnippet>477</a>	<span class="kw">let </span>sql = <span class="string">"SELECT nonce FROM epoch_param WHERE epoch_no = $1"</span>;
+<a href=#478 id=478 data-nosnippet>478</a>	<span class="prelude-val">Ok</span>(sqlx::query_as::&lt;<span class="kw">_</span>, MainchainEpochNonce&gt;(sql)
+<a href=#479 id=479 data-nosnippet>479</a>		.bind(epoch)
+<a href=#480 id=480 data-nosnippet>480</a>		.fetch_optional(pool)
+<a href=#481 id=481 data-nosnippet>481</a>		.<span class="kw">await</span><span class="question-mark">?</span>)
+<a href=#482 id=482 data-nosnippet>482</a>}
+<a href=#483 id=483 data-nosnippet>483</a><span class="attr">#[cfg(feature = <span class="string">"candidate-source"</span>)]
+<a href=#484 id=484 data-nosnippet>484</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>get_utxos_for_address(
+<a href=#485 id=485 data-nosnippet>485</a>	pool: <span class="kw-2">&amp;</span>Pool&lt;Postgres&gt;,
+<a href=#486 id=486 data-nosnippet>486</a>	address: <span class="kw-2">&amp;</span>Address,
+<a href=#487 id=487 data-nosnippet>487</a>	block: BlockNumber,
+<a href=#488 id=488 data-nosnippet>488</a>) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;MainchainTxOutput&gt;, SqlxError&gt; {
+<a href=#489 id=489 data-nosnippet>489</a>	<span class="kw">let </span>query = <span class="string">"SELECT
+<a href=#490 id=490 data-nosnippet>490</a>          		origin_tx.hash as utxo_id_tx_hash,
+<a href=#491 id=491 data-nosnippet>491</a>          		tx_out.index as utxo_id_index,
+<a href=#492 id=492 data-nosnippet>492</a>          		origin_block.block_no as tx_block_no,
+<a href=#493 id=493 data-nosnippet>493</a>          		origin_block.slot_no as tx_slot_no,
+<a href=#494 id=494 data-nosnippet>494</a>          		origin_block.epoch_no as tx_epoch_no,
+<a href=#495 id=495 data-nosnippet>495</a>          		origin_tx.block_index as tx_index_in_block,
+<a href=#496 id=496 data-nosnippet>496</a>          		tx_out.address,
+<a href=#497 id=497 data-nosnippet>497</a>          		datum.value as datum,
+<a href=#498 id=498 data-nosnippet>498</a>          		array_agg(concat_ws('#', encode(consumes_tx.hash, 'hex'), consumes_tx_in.tx_out_index)) as tx_inputs
+<a href=#499 id=499 data-nosnippet>499</a>			FROM tx_out
+<a href=#500 id=500 data-nosnippet>500</a>			INNER JOIN tx    origin_tx       ON tx_out.tx_id = origin_tx.id
+<a href=#501 id=501 data-nosnippet>501</a>			INNER JOIN block origin_block    ON origin_tx.block_id = origin_block.id
+<a href=#502 id=502 data-nosnippet>502</a>          	LEFT JOIN tx_in consuming_tx_in  ON tx_out.tx_id = consuming_tx_in.tx_out_id AND tx_out.index = consuming_tx_in.tx_out_index
+<a href=#503 id=503 data-nosnippet>503</a>          	LEFT JOIN tx    consuming_tx     ON consuming_tx_in.tx_in_id = consuming_tx.id
+<a href=#504 id=504 data-nosnippet>504</a>          	LEFT JOIN block consuming_block  ON consuming_tx.block_id = consuming_block.id
+<a href=#505 id=505 data-nosnippet>505</a>			LEFT JOIN tx_in consumes_tx_in   ON consumes_tx_in.tx_in_id = origin_tx.id
+<a href=#506 id=506 data-nosnippet>506</a>          	LEFT JOIN tx_out consumes_tx_out ON consumes_tx_out.tx_id = consumes_tx_in.tx_out_id AND consumes_tx_in.tx_out_index = consumes_tx_out.index
+<a href=#507 id=507 data-nosnippet>507</a>          	LEFT JOIN tx consumes_tx         ON consumes_tx.id = consumes_tx_out.tx_id
+<a href=#508 id=508 data-nosnippet>508</a>          	LEFT JOIN datum                  ON tx_out.data_hash = datum.hash
+<a href=#509 id=509 data-nosnippet>509</a>          	WHERE
+<a href=#510 id=510 data-nosnippet>510</a>          		tx_out.address = $1 AND origin_block.block_no &lt;= $2
+<a href=#511 id=511 data-nosnippet>511</a>          		AND (consuming_tx_in.id IS NULL OR consuming_block.block_no &gt; $2)
+<a href=#512 id=512 data-nosnippet>512</a>          		GROUP BY (
+<a href=#513 id=513 data-nosnippet>513</a>					utxo_id_tx_hash,
+<a href=#514 id=514 data-nosnippet>514</a>					utxo_id_index,
+<a href=#515 id=515 data-nosnippet>515</a>					tx_block_no,
+<a href=#516 id=516 data-nosnippet>516</a>					tx_slot_no,
+<a href=#517 id=517 data-nosnippet>517</a>					tx_epoch_no,
+<a href=#518 id=518 data-nosnippet>518</a>					tx_index_in_block,
+<a href=#519 id=519 data-nosnippet>519</a>					tx_out.address,
+<a href=#520 id=520 data-nosnippet>520</a>					datum
+<a href=#521 id=521 data-nosnippet>521</a>				)"</span>;
+<a href=#522 id=522 data-nosnippet>522</a>	<span class="kw">let </span>rows = sqlx::query_as::&lt;<span class="kw">_</span>, MainchainTxOutputRow&gt;(query)
+<a href=#523 id=523 data-nosnippet>523</a>		.bind(<span class="kw-2">&amp;</span>address.<span class="number">0</span>)
+<a href=#524 id=524 data-nosnippet>524</a>		.bind(block)
+<a href=#525 id=525 data-nosnippet>525</a>		.fetch_all(pool)
+<a href=#526 id=526 data-nosnippet>526</a>		.<span class="kw">await</span><span class="question-mark">?</span>;
+<a href=#527 id=527 data-nosnippet>527</a>	<span class="kw">let </span>result: <span class="prelude-ty">Result</span>&lt;Vec&lt;MainchainTxOutput&gt;, sqlx::Error&gt; =
+<a href=#528 id=528 data-nosnippet>528</a>		rows.into_iter().map(MainchainTxOutput::try_from).collect();
+<a href=#529 id=529 data-nosnippet>529</a>	<span class="prelude-val">Ok</span>(result<span class="question-mark">?</span>)
+<a href=#530 id=530 data-nosnippet>530</a>}
+<a href=#531 id=531 data-nosnippet>531</a><span class="doccomment">/// Used by `get_token_utxo_for_epoch` (CandidatesDataSourceImpl),
+<a href=#532 id=532 data-nosnippet>532</a></span><span class="attr">#[cfg(feature = <span class="string">"candidate-source"</span>)]
+<a href=#533 id=533 data-nosnippet>533</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>create_idx_ma_tx_out_ident(pool: <span class="kw-2">&amp;</span>Pool&lt;Postgres&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;(), SqlxError&gt; {
+<a href=#534 id=534 data-nosnippet>534</a>	<span class="kw">let </span>exists = index_exists(pool, <span class="string">"idx_ma_tx_out_ident"</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+<a href=#535 id=535 data-nosnippet>535</a>	<span class="kw">if </span>exists {
+<a href=#536 id=536 data-nosnippet>536</a>		<span class="macro">info!</span>(<span class="string">"Index 'idx_ma_tx_out_ident' already exists"</span>);
+<a href=#537 id=537 data-nosnippet>537</a>	} <span class="kw">else </span>{
+<a href=#538 id=538 data-nosnippet>538</a>		<span class="kw">let </span>sql = <span class="string">"CREATE INDEX IF NOT EXISTS idx_ma_tx_out_ident ON ma_tx_out(ident)"</span>;
+<a href=#539 id=539 data-nosnippet>539</a>		<span class="macro">info!</span>(<span class="string">"Executing '{}', this might take a while"</span>, sql);
+<a href=#540 id=540 data-nosnippet>540</a>		sqlx::query(sql).execute(pool).<span class="kw">await</span><span class="question-mark">?</span>;
+<a href=#541 id=541 data-nosnippet>541</a>		<span class="macro">info!</span>(<span class="string">"Index 'idx_ma_tx_out_ident' has been created"</span>);
+<a href=#542 id=542 data-nosnippet>542</a>	}
+<a href=#543 id=543 data-nosnippet>543</a>	<span class="prelude-val">Ok</span>(())
+<a href=#544 id=544 data-nosnippet>544</a>}
+<a href=#545 id=545 data-nosnippet>545</a>
+<a href=#546 id=546 data-nosnippet>546</a><span class="doccomment">/// Used by multiple queries across functionalities.
+<a href=#547 id=547 data-nosnippet>547</a></span><span class="attr">#[cfg(any(feature = <span class="string">"candidate-source"</span>, feature = <span class="string">"native-token"</span>, feature = <span class="string">"governed-map"</span>))]
+<a href=#548 id=548 data-nosnippet>548</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>create_idx_tx_out_address(pool: <span class="kw-2">&amp;</span>Pool&lt;Postgres&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;(), SqlxError&gt; {
+<a href=#549 id=549 data-nosnippet>549</a>	<span class="kw">let </span>exists = index_exists(pool, <span class="string">"idx_tx_out_address"</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+<a href=#550 id=550 data-nosnippet>550</a>	<span class="kw">if </span>exists {
+<a href=#551 id=551 data-nosnippet>551</a>		<span class="macro">info!</span>(<span class="string">"Index 'idx_tx_out_address' already exists"</span>);
+<a href=#552 id=552 data-nosnippet>552</a>	} <span class="kw">else </span>{
+<a href=#553 id=553 data-nosnippet>553</a>		<span class="kw">let </span>sql = <span class="string">"CREATE INDEX IF NOT EXISTS idx_tx_out_address ON tx_out USING hash (address)"</span>;
+<a href=#554 id=554 data-nosnippet>554</a>		<span class="macro">info!</span>(<span class="string">"Executing '{}', this might take a long time"</span>, sql);
+<a href=#555 id=555 data-nosnippet>555</a>		sqlx::query(sql).execute(pool).<span class="kw">await</span><span class="question-mark">?</span>;
+<a href=#556 id=556 data-nosnippet>556</a>		<span class="macro">info!</span>(<span class="string">"Index 'idx_tx_out_address' has been created"</span>);
+<a href=#557 id=557 data-nosnippet>557</a>	}
+<a href=#558 id=558 data-nosnippet>558</a>	<span class="prelude-val">Ok</span>(())
+<a href=#559 id=559 data-nosnippet>559</a>}
+<a href=#560 id=560 data-nosnippet>560</a>
+<a href=#561 id=561 data-nosnippet>561</a><span class="doccomment">/// Check if the index exists.
+<a href=#562 id=562 data-nosnippet>562</a></span><span class="kw">async fn </span>index_exists(pool: <span class="kw-2">&amp;</span>Pool&lt;Postgres&gt;, index_name: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;bool, sqlx::Error&gt; {
+<a href=#563 id=563 data-nosnippet>563</a>	sqlx::query(<span class="string">"select * from pg_indexes where indexname = $1"</span>)
+<a href=#564 id=564 data-nosnippet>564</a>		.bind(index_name)
+<a href=#565 id=565 data-nosnippet>565</a>		.fetch_all(pool)
+<a href=#566 id=566 data-nosnippet>566</a>		.<span class="kw">await
+<a href=#567 id=567 data-nosnippet>567</a>		</span>.map(|rows| rows.len() == <span class="number">1</span>)
+<a href=#568 id=568 data-nosnippet>568</a>}
+<a href=#569 id=569 data-nosnippet>569</a>
+<a href=#570 id=570 data-nosnippet>570</a><span class="attr">#[cfg(test)]
+<a href=#571 id=571 data-nosnippet>571</a></span><span class="doccomment">/// Check if the index exists. Panics on errors.
+<a href=#572 id=572 data-nosnippet>572</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>index_exists_unsafe(pool: <span class="kw-2">&amp;</span>Pool&lt;Postgres&gt;, index_name: <span class="kw-2">&amp;</span>str) -&gt; bool {
+<a href=#573 id=573 data-nosnippet>573</a>	index_exists(pool, index_name).<span class="kw">await</span>.unwrap()
+<a href=#574 id=574 data-nosnippet>574</a>}
+<a href=#575 id=575 data-nosnippet>575</a>
+<a href=#576 id=576 data-nosnippet>576</a><span class="doccomment">/// Sums all transfers between genesis and the first block that is produced with the feature on.
+<a href=#577 id=577 data-nosnippet>577</a>/// Used by `get_native_token_transfers` (NativeTokenDataSourceImpl).
+<a href=#578 id=578 data-nosnippet>578</a></span><span class="attr">#[cfg(feature = <span class="string">"native-token"</span>)]
+<a href=#579 id=579 data-nosnippet>579</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>get_total_native_tokens_transfered(
+<a href=#580 id=580 data-nosnippet>580</a>	pool: <span class="kw-2">&amp;</span>Pool&lt;Postgres&gt;,
+<a href=#581 id=581 data-nosnippet>581</a>	to_block: BlockNumber,
+<a href=#582 id=582 data-nosnippet>582</a>	asset: Asset,
+<a href=#583 id=583 data-nosnippet>583</a>	illiquid_supply_address: Address,
+<a href=#584 id=584 data-nosnippet>584</a>) -&gt; <span class="prelude-ty">Result</span>&lt;NativeTokenAmount, SqlxError&gt; {
+<a href=#585 id=585 data-nosnippet>585</a>	<span class="kw">let </span>query = sqlx::query_as::&lt;<span class="kw">_</span>, (NativeTokenAmount,)&gt;(
+<a href=#586 id=586 data-nosnippet>586</a>		<span class="string">"
+<a href=#587 id=587 data-nosnippet>587</a>SELECT
+<a href=#588 id=588 data-nosnippet>588</a>    COALESCE(SUM(ma_tx_out.quantity), 0)
+<a href=#589 id=589 data-nosnippet>589</a>FROM tx_out
+<a href=#590 id=590 data-nosnippet>590</a>LEFT JOIN ma_tx_out    ON ma_tx_out.tx_out_id = tx_out.id
+<a href=#591 id=591 data-nosnippet>591</a>LEFT JOIN multi_asset  ON multi_asset.id = ma_tx_out.ident
+<a href=#592 id=592 data-nosnippet>592</a>INNER JOIN tx          ON tx_out.tx_id = tx.id
+<a href=#593 id=593 data-nosnippet>593</a>INNER JOIN block       ON tx.block_id = block.id
+<a href=#594 id=594 data-nosnippet>594</a>WHERE address = $1
+<a href=#595 id=595 data-nosnippet>595</a>AND multi_asset.policy = $2
+<a href=#596 id=596 data-nosnippet>596</a>AND multi_asset.name = $3
+<a href=#597 id=597 data-nosnippet>597</a>AND block.block_no &lt;= $4;
+<a href=#598 id=598 data-nosnippet>598</a>    "</span>,
+<a href=#599 id=599 data-nosnippet>599</a>	)
+<a href=#600 id=600 data-nosnippet>600</a>	.bind(<span class="kw-2">&amp;</span>illiquid_supply_address.<span class="number">0</span>)
+<a href=#601 id=601 data-nosnippet>601</a>	.bind(<span class="kw-2">&amp;</span>asset.policy_id.<span class="number">0</span>)
+<a href=#602 id=602 data-nosnippet>602</a>	.bind(<span class="kw-2">&amp;</span>asset.asset_name.<span class="number">0</span>)
+<a href=#603 id=603 data-nosnippet>603</a>	.bind(to_block);
+<a href=#604 id=604 data-nosnippet>604</a>
+<a href=#605 id=605 data-nosnippet>605</a>	<span class="prelude-val">Ok</span>(query.fetch_one(pool).<span class="kw">await</span><span class="question-mark">?</span>.<span class="number">0</span>)
+<a href=#606 id=606 data-nosnippet>606</a>}
+<a href=#607 id=607 data-nosnippet>607</a>
+<a href=#608 id=608 data-nosnippet>608</a><span class="doccomment">/// Returns the list of all blocks in given range,
+<a href=#609 id=609 data-nosnippet>609</a>/// together with the sum of all token amounts transferred to illiquid supply address in this block.
+<a href=#610 id=610 data-nosnippet>610</a>/// On devnet postgres it takes around 5ms to execute when querying 1000 blocks.
+<a href=#611 id=611 data-nosnippet>611</a>/// Used by `get_native_token_transfers` (NativeTokenDataSourceImpl).
+<a href=#612 id=612 data-nosnippet>612</a></span><span class="attr">#[cfg(feature = <span class="string">"native-token"</span>)]
+<a href=#613 id=613 data-nosnippet>613</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>get_native_token_transfers(
+<a href=#614 id=614 data-nosnippet>614</a>	pool: <span class="kw-2">&amp;</span>Pool&lt;Postgres&gt;,
+<a href=#615 id=615 data-nosnippet>615</a>	from_block: BlockNumber,
+<a href=#616 id=616 data-nosnippet>616</a>	to_block: BlockNumber,
+<a href=#617 id=617 data-nosnippet>617</a>	asset: Asset,
+<a href=#618 id=618 data-nosnippet>618</a>	illiquid_supply_address: Address,
+<a href=#619 id=619 data-nosnippet>619</a>) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;BlockTokenAmount&gt;, SqlxError&gt; {
+<a href=#620 id=620 data-nosnippet>620</a>	<span class="kw">let </span>query = sqlx::query_as::&lt;<span class="kw">_</span>, BlockTokenAmount&gt;(
+<a href=#621 id=621 data-nosnippet>621</a>		<span class="string">"
+<a href=#622 id=622 data-nosnippet>622</a>SELECT
+<a href=#623 id=623 data-nosnippet>623</a>    block.hash as block_hash, COALESCE(SUM(ma_tx_out.quantity), 0) as amount
+<a href=#624 id=624 data-nosnippet>624</a>FROM block
+<a href=#625 id=625 data-nosnippet>625</a>    LEFT JOIN tx ON block.id = tx.block_id
+<a href=#626 id=626 data-nosnippet>626</a>    LEFT JOIN tx_out ON tx.id = tx_out.tx_id AND tx_out.address = $1
+<a href=#627 id=627 data-nosnippet>627</a>    LEFT JOIN ma_tx_out    ON ma_tx_out.tx_out_id = tx_out.id
+<a href=#628 id=628 data-nosnippet>628</a>    LEFT JOIN multi_asset  ON multi_asset.id = ma_tx_out.ident AND multi_asset.policy = $2 AND multi_asset.name = $3
+<a href=#629 id=629 data-nosnippet>629</a>WHERE
+<a href=#630 id=630 data-nosnippet>630</a>    $4 &lt;= block.block_no AND block.block_no &lt;= $5
+<a href=#631 id=631 data-nosnippet>631</a>GROUP BY block.block_no, block.hash
+<a href=#632 id=632 data-nosnippet>632</a>ORDER BY block.block_no ASC;
+<a href=#633 id=633 data-nosnippet>633</a>    "</span>,
+<a href=#634 id=634 data-nosnippet>634</a>	)
+<a href=#635 id=635 data-nosnippet>635</a>	.bind(<span class="kw-2">&amp;</span>illiquid_supply_address.<span class="number">0</span>)
+<a href=#636 id=636 data-nosnippet>636</a>	.bind(<span class="kw-2">&amp;</span>asset.policy_id.<span class="number">0</span>)
+<a href=#637 id=637 data-nosnippet>637</a>	.bind(<span class="kw-2">&amp;</span>asset.asset_name.<span class="number">0</span>)
+<a href=#638 id=638 data-nosnippet>638</a>	.bind(from_block)
+<a href=#639 id=639 data-nosnippet>639</a>	.bind(to_block);
+<a href=#640 id=640 data-nosnippet>640</a>
+<a href=#641 id=641 data-nosnippet>641</a>	<span class="prelude-val">Ok</span>(query.fetch_all(pool).<span class="kw">await</span><span class="question-mark">?</span>)
+<a href=#642 id=642 data-nosnippet>642</a>}</code></pre></div></section></main></body></html>

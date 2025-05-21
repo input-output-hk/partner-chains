@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["Datum"],"fn":["to_datum_cbor_bytes"],"macro":["vec"],"mod":["vec"],"struct":["MapDatumEntry","Vec"],"trait":["ToDatum"]};
+window.SIDEBAR_ITEMS = {"enum":["Datum"],"fn":["to_datum_cbor_bytes"],"struct":["MapDatumEntry"],"trait":["ToDatum"]};

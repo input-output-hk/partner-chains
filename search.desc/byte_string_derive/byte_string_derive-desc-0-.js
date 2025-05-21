@@ -1,1 +1,1 @@
-searchState.loadedDescShard("byte_string_derive", 0, "")
+searchState.loadedDescShard("byte_string_derive", 0, "Proc macros for generating conversions for byte string …\nProc macro that can generate multiple helper functions and …")
