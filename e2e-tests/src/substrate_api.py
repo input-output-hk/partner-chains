@@ -686,6 +686,26 @@ class SubstrateApi(BlockchainApi):
         logger.debug(f"Block participation data: {result}")
         return result.value
 
+    @long_running_function
+    def set_block_producer_margin_fee(self, margin_fee, wallet):
+        tx = Transaction()
+        tx._unsigned = self.substrate.compose_call(
+            call_module="BlockProducerFees", call_function="set_fee", call_params={"fee_numerator": margin_fee}
+        )
+        logger.debug(f"Transaction built {tx._unsigned}")
+
+        if wallet.crypto_type and wallet.crypto_type == KeypairType.ECDSA:
+            tx._signed = self.__create_signed_ecdsa_extrinsic(call=tx._unsigned, keypair=wallet.raw)
+        else:
+            tx._signed = self.substrate.create_signed_extrinsic(call=tx._unsigned, keypair=wallet.raw)
+        logger.debug(f"Transaction signed {tx._signed}")
+
+        tx._receipt = self.substrate.submit_extrinsic(tx._signed, wait_for_inclusion=True)
+        logger.debug(f"Transaction sent {tx._receipt.extrinsic}")
+        tx.hash = tx._receipt.extrinsic_hash
+        tx.total_fee_amount = tx._receipt.total_fee_amount
+        return tx
+
     def get_initial_pc_epoch(self):
         block = self.get_block()
         block_hash = block["header"]["hash"]

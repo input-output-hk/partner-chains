@@ -4,6 +4,7 @@ use partner_chains_cardano_offchain::csl::{transaction_from_bytes, vkey_witness_
 use sidechain_domain::{TransactionCbor, VKeyWitnessCbor};
 
 #[derive(Clone, Debug, clap::Parser)]
+/// Command for assembling transaction with additional witnesses, and submitting it to the chain
 pub struct AssembleAndSubmitCmd {
 	#[clap(flatten)]
 	common_arguments: crate::CommonArguments,
@@ -16,6 +17,7 @@ pub struct AssembleAndSubmitCmd {
 }
 
 impl AssembleAndSubmitCmd {
+	/// Deserialises the transaction and witnesses, combines them and submits the transaction to the chain.
 	pub async fn execute(self) -> crate::SubCmdResult {
 		let client = self.common_arguments.get_ogmios_client().await?;
 

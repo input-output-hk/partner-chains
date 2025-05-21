@@ -1,6 +1,6 @@
 
-  partner-chains-wizard-1:
-    container_name: partner-chains-wizard-1
+  partner-chains-node-1:
+    container_name: partner-chains-node-1
     image: ${PARTNER_CHAINS_NODE_IMAGE}
     platform: linux/amd64
     user: "0:0"
@@ -29,8 +29,8 @@
       - "9933:9933"
     entrypoint: ["/bin/bash", "/entrypoint.sh"]
 
-  partner-chains-wizard-2:
-    container_name: partner-chains-wizard-2
+  partner-chains-node-2:
+    container_name: partner-chains-node-2
     image: ${PARTNER_CHAINS_NODE_IMAGE}
     platform: linux/amd64
     user: "0:0"
@@ -43,8 +43,8 @@
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     entrypoint: ["/bin/bash", "/entrypoint.sh"]
 
-  partner-chains-wizard-3:
-    container_name: partner-chains-wizard-3
+  partner-chains-node-3:
+    container_name: partner-chains-node-3
     image: ${PARTNER_CHAINS_NODE_IMAGE}
     platform: linux/amd64
     user: "0:0"

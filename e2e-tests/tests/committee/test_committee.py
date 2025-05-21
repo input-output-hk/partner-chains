@@ -158,6 +158,7 @@ class TestCommitteeDistribution:
         logging.info(f"Ariadne observed ratio: {ratio}, expected ratio: {expected_ratio}")
         assert expected_ratio == ratio
 
+    @mark.test_key('ETCM-9870')
     def test_epoch_p_candidates_seats(
         self,
         config: ApiConfig,
@@ -188,6 +189,7 @@ class TestCommitteeDistribution:
             expected_p_candidates = 0
         assert expected_p_candidates == p_candidates_seats(pc_epoch)
 
+    @mark.test_key('ETCM-10110')
     def test_epoch_t_candidates_seats(
         self,
         config: ApiConfig,
@@ -288,6 +290,7 @@ class TestCommitteeDistribution:
                 target - tolerance <= actual <= target + tolerance
             ), f"Incorrect attendance for {candidate.pc_pub_key}"
 
+    @mark.test_key('ETCM-10893')
     def test_guaranteed_seats(self, mc_epoch, update_committee_expected_attendance, config: ApiConfig, db: Session):
         if mc_epoch < config.deployment_mc_epoch:
             skip("Cannot query committee before initial epoch.")

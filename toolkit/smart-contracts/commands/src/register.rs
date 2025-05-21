@@ -8,16 +8,19 @@ use sidechain_domain::{
 	SidechainSignature, StakePoolPublicKey, UtxoId,
 };
 
+/// Command for registering a candidate on the main chain
 #[derive(Clone, Debug, clap::Parser)]
 pub struct RegisterCmd {
 	#[clap(flatten)]
 	common_arguments: crate::CommonArguments,
 	#[clap(flatten)]
+	/// Genesis UTXO
 	genesis_utxo: GenesisUtxo,
-	/// UTXO that will be spend when executing registration transaction, part of the registration message
 	#[arg(long)]
+	/// UTXO that will be spend when executing registration transaction, part of the registration message
 	registration_utxo: UtxoId,
 	#[clap(flatten)]
+	/// Path to the payment key file
 	payment_key_file: PaymentFilePath,
 	#[arg(
 		long,
@@ -27,18 +30,19 @@ pub struct RegisterCmd {
 	)]
 	/// Colon separated hex strings representing bytes of the Sidechain, Aura and Grandpa public keys
 	partner_chain_public_keys: PermissionedCandidateData,
-	/// Hex string of bytes of the registration message signature by partner-chain key, obtained by 'registration-signatures' command
 	#[arg(long, alias = "sidechain-signature")]
+	/// Hex string of bytes of the registration message signature by partner-chain key, obtained by 'registration-signatures' command
 	partner_chain_signature: SidechainSignature,
+	#[arg(long)]
 	/// Hex string representing bytes of the Stake Pool Verification Key
-	#[arg(long)]
 	spo_public_key: StakePoolPublicKey,
-	/// Hex string of bytes of the registration message signature by main chain key, obtained by 'registration-signatures' command
 	#[arg(long)]
+	/// Hex string of bytes of the registration message signature by main chain key, obtained by 'registration-signatures' command
 	spo_signature: MainchainSignature,
 }
 
 impl RegisterCmd {
+	/// Registers a candidate on the main chain.
 	pub async fn execute(self) -> crate::SubCmdResult {
 		let payment_key = self.payment_key_file.read_key()?;
 		let client = self.common_arguments.get_ogmios_client().await?;
@@ -68,19 +72,23 @@ impl RegisterCmd {
 }
 
 #[derive(Clone, Debug, clap::Parser)]
+/// Command for deregistering a candidate on the main chain
 pub struct DeregisterCmd {
 	#[clap(flatten)]
 	common_arguments: crate::CommonArguments,
 	#[clap(flatten)]
+	/// Genesis UTXO
 	genesis_utxo: GenesisUtxo,
 	#[clap(flatten)]
+	/// Path to the payment key file
 	payment_key_file: PaymentFilePath,
-	/// Hex string representing bytes of the Stake Pool Verification Key
 	#[arg(long)]
+	/// Hex string representing bytes of the Stake Pool Verification Key
 	spo_public_key: StakePoolPublicKey,
 }
 
 impl DeregisterCmd {
+	/// Deregisters a candidate on the main chain.
 	pub async fn execute(self) -> crate::SubCmdResult {
 		let payment_signing_key = self.payment_key_file.read_key()?;
 		let client = self.common_arguments.get_ogmios_client().await?;
