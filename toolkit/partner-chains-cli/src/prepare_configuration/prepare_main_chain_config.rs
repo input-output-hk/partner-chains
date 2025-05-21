@@ -1,8 +1,8 @@
 use crate::config::ServiceConfig;
 use crate::config::config_fields::{
-	COMMITTEE_CANDIDATES_ADDRESS, D_PARAMETER_POLICY_ID, ILLIQUID_SUPPLY_ADDRESS,
-	INITIAL_PERMISSIONED_CANDIDATES, NATIVE_TOKEN_ASSET_NAME, NATIVE_TOKEN_POLICY,
-	PERMISSIONED_CANDIDATES_POLICY_ID,
+	COMMITTEE_CANDIDATES_ADDRESS, D_PARAMETER_POLICY_ID, GOVERNED_MAP_POLICY_ID,
+	GOVERNED_MAP_VALIDATOR_ADDRESS, ILLIQUID_SUPPLY_ADDRESS, INITIAL_PERMISSIONED_CANDIDATES,
+	NATIVE_TOKEN_ASSET_NAME, NATIVE_TOKEN_POLICY, PERMISSIONED_CANDIDATES_POLICY_ID,
 };
 use crate::io::IOContext;
 use crate::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
@@ -42,16 +42,22 @@ fn set_up_cardano_addresses<C: IOContext>(
 	let permissioned_candidates_policy_id =
 		hex::encode(scripts_data.policy_ids.permissioned_candidates.0);
 	let illiquid_supply_addr = scripts_data.addresses.illiquid_circulation_supply_validator;
+	let governed_map_validator_addr = scripts_data.addresses.governed_map_validator;
+	let governed_map_policy_id = hex::encode(scripts_data.policy_ids.governed_map.0);
 	COMMITTEE_CANDIDATES_ADDRESS.save_to_file(&committee_candidate_validator_addr, context);
 	D_PARAMETER_POLICY_ID.save_to_file(&d_parameter_policy_id, context);
 	PERMISSIONED_CANDIDATES_POLICY_ID.save_to_file(&permissioned_candidates_policy_id, context);
 	ILLIQUID_SUPPLY_ADDRESS.save_to_file(&illiquid_supply_addr, context);
+	GOVERNED_MAP_VALIDATOR_ADDRESS.save_to_file(&governed_map_validator_addr, context);
+	GOVERNED_MAP_POLICY_ID.save_to_file(&governed_map_policy_id, context);
 	context.print(&format!(
 		"Cardano addresses have been set up:
 - Committee Candidates Address: {committee_candidate_validator_addr}
 - D Parameter Policy ID: {d_parameter_policy_id}
 - Permissioned Candidates Policy ID: {permissioned_candidates_policy_id}
-- Illiquid Supply Address: {illiquid_supply_addr}"
+- Illiquid Supply Address: {illiquid_supply_addr}
+- Governed Map Validator Address: {governed_map_validator_addr}
+- Governed Map Policy Id: {governed_map_policy_id}"
 	));
 	Ok(())
 }
@@ -121,6 +127,10 @@ mod tests {
 		"13db1ba564b3b264f45974fece44b2beb0a2326b10e65a0f7f300dfb";
 	const TEST_ILLIQUID_SUPPLY_ADDRESS: &str =
 		"addr_test1wqn2pkvvmesmxtfa4tz7w8gh8vumr52lpkrhcs4dkg30uqq77h5z4";
+	const TEST_GOVERNED_MAP_VALIDATOR_ADDRESS: &str =
+		"addr_test1wqcyptcm4ueft86vjnqng0k70gdazzukmyknuhmsjhmvfts7c0000";
+	const TEST_GOVERNED_MAP_POLICY_ID: &str =
+		"c814db91bfaf7f0078e2c69d13443ffc46c9957393174f7baa8d0000";
 
 	fn ogmios_config() -> ServiceConfig {
 		ServiceConfig {
@@ -247,7 +257,9 @@ mod tests {
 - Committee Candidates Address: {TEST_COMMITTEE_CANDIDATES_ADDRESS}
 - D Parameter Policy ID: {TEST_D_PARAMETER_POLICY_ID}
 - Permissioned Candidates Policy ID: {TEST_PERMISSIONED_CANDIDATES_POLICY_ID}
-- Illiquid Supply Address: {TEST_ILLIQUID_SUPPLY_ADDRESS}",
+- Illiquid Supply Address: {TEST_ILLIQUID_SUPPLY_ADDRESS}
+- Governed Map Validator Address: {TEST_GOVERNED_MAP_VALIDATOR_ADDRESS}
+- Governed Map Policy Id: {TEST_GOVERNED_MAP_POLICY_ID}",
 		))
 	}
 
@@ -258,6 +270,7 @@ mod tests {
 				addresses: Addresses {
 					committee_candidate_validator: TEST_COMMITTEE_CANDIDATES_ADDRESS.to_string(),
 					illiquid_circulation_supply_validator: TEST_ILLIQUID_SUPPLY_ADDRESS.to_string(),
+					governed_map_validator: TEST_GOVERNED_MAP_VALIDATOR_ADDRESS.to_string(),
 					..Default::default()
 				},
 				policy_ids: PolicyIds {
@@ -265,6 +278,7 @@ mod tests {
 						TEST_PERMISSIONED_CANDIDATES_POLICY_ID,
 					),
 					d_parameter: PolicyId::from_hex_unsafe(TEST_D_PARAMETER_POLICY_ID),
+					governed_map: PolicyId::from_hex_unsafe(TEST_GOVERNED_MAP_POLICY_ID),
 					..Default::default()
 				},
 			}),
@@ -287,6 +301,10 @@ mod tests {
 				"committee_candidates_address": TEST_COMMITTEE_CANDIDATES_ADDRESS,
 				"d_parameter_policy_id": TEST_D_PARAMETER_POLICY_ID,
 				"permissioned_candidates_policy_id": TEST_PERMISSIONED_CANDIDATES_POLICY_ID,
+				"governed_map": {
+					"policy_id": TEST_GOVERNED_MAP_POLICY_ID,
+					"validator_address": TEST_GOVERNED_MAP_VALIDATOR_ADDRESS,
+				},
 				"native_token": {
 					"illiquid_supply_address": TEST_ILLIQUID_SUPPLY_ADDRESS,
 					"asset": {
