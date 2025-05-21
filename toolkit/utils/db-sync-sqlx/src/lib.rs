@@ -200,19 +200,24 @@ impl From<sidechain_domain::AssetId> for Asset {
 }
 
 /// Helper row type for querying just epoch number
-#[deprecated(
-	since = "1.7.0",
-	note = "Deprecated due to not being either a primitive type or a complete Db-Sync table row."
-)]
-#[derive(Debug, Copy, Clone, sqlx::FromRow, PartialEq)]
-pub struct EpochNumberRow(pub EpochNumber);
-
 #[allow(deprecated)]
-impl From<EpochNumberRow> for EpochNumber {
-	fn from(r: EpochNumberRow) -> Self {
-		r.0
+mod epoch_number_row {
+	use super::*;
+	#[deprecated(
+		since = "1.7.0",
+		note = "Deprecated due to not being either a primitive type or a complete Db-Sync table row."
+	)]
+	#[derive(Debug, Copy, Clone, sqlx::FromRow, PartialEq)]
+	pub struct EpochNumberRow(pub EpochNumber);
+
+	#[allow(deprecated)]
+	impl From<EpochNumberRow> for EpochNumber {
+		fn from(r: EpochNumberRow) -> Self {
+			r.0
+		}
 	}
 }
+pub use epoch_number_row::*;
 
 /// Cardano address in human-readable form. Either Base58 for Byron addresses and Bech32 for Shelley.
 #[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
