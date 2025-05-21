@@ -827,3 +827,34 @@ class SubstrateApi(BlockchainApi):
         )
         result = self.substrate.subscribe_block_headers(subscription_handler)
         return result
+
+    def subscribe_token_transfer(self):
+        max_mc_reference_block = self.get_mc_block()
+
+        def subscription_handler(obj, update_nr, subscription_id):
+            block_no = obj["header"]["number"]
+            logger.debug(f"New block #{block_no}")
+
+            mc_hash = self.get_mc_hash_from_pc_block_header(obj)
+            mc_block = self.get_mc_block_by_block_hash(mc_hash).block_no
+            logger.debug(f"Main chain reference block: {mc_block}")
+
+            token_transfer_value = None
+            block = self.substrate.get_block(block_number=block_no)
+            for idx, extrinsic in enumerate(block["extrinsics"]):
+                logger.debug(f"# {idx}: {extrinsic.value}")
+                if (
+                    extrinsic.value["call"]["call_module"] == "NativeTokenManagement"
+                    and extrinsic.value["call"]["call_function"] == "transfer_tokens"
+                ):
+                    token_transfer_value = extrinsic.value["call"]["call_args"][0]["value"]
+                    break
+            if token_transfer_value:
+                return token_transfer_value
+            if mc_block > max_mc_reference_block:
+                logger.warning("Max main chain block reached. Stopping subscription.")
+                self.substrate.rpc_request("chain_unsubscribeNewHeads", [subscription_id])
+                return False
+
+        result = self.substrate.subscribe_block_headers(subscription_handler)
+        return result
