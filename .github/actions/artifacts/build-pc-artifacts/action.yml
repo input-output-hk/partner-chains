@@ -101,5 +101,5 @@ runs:
     - name: Upload partner-chains-demo-node artifact
       uses: actions/upload-artifact@v4
       with:
-        name: partner-chains-demo-node-${{ inputs.os }}-artifact
+        name: partner-chains-node-${{ inputs.os }}-artifact
         path: ${{ env.PARTNER_CHAINS_NODE }}
