@@ -328,6 +328,7 @@ FROM block INNER JOIN block as stable_block ON block.block_no - $1 = stable_bloc
 WHERE block.block_no IS NOT NULL
 ORDER BY block.block_no DESC
 LIMIT 1";
+	#[allow(deprecated)]
 	Ok(sqlx::query_as::<_, EpochNumberRow>(sql)
 		.bind(BlockNumber(security_parameter))
 		.fetch_optional(pool)
