@@ -51,6 +51,7 @@ env:
 
 jobs:
   download-from-s3:
+    continue-on-error: true
     if: ${{ !inputs.no-release }}
     runs-on: ubuntu-latest
     permissions:
