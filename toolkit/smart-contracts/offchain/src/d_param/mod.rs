@@ -34,13 +34,13 @@ pub trait UpsertDParam {
 	#[allow(async_fn_in_trait)]
 	/// This function upserts D-param.
 	/// Arguments:
-	///  - `retries`: Configuration for the retry logic of the transaction.
+	///  - `await_tx`: Configuration for the await logic of the transaction.
 	///  - `genesis_utxo`: UTxO identifying the Partner Chain.
 	///  - `d_parameter`: [DParameter] to be upserted.
-	///  - `payment_signing_key`: Signing key of a governance authority member.
+	///  - `payment_signing_key`: Signing key of the party paying fees.
 	async fn upsert_d_param(
 		&self,
-		retries: FixedDelayRetries,
+		await_tx: FixedDelayRetries,
 		genesis_utxo: UtxoId,
 		d_parameter: &DParameter,
 		payment_signing_key: &CardanoPaymentSigningKey,
@@ -50,12 +50,12 @@ pub trait UpsertDParam {
 impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId> UpsertDParam for C {
 	async fn upsert_d_param(
 		&self,
-		retries: FixedDelayRetries,
+		await_tx: FixedDelayRetries,
 		genesis_utxo: UtxoId,
 		d_parameter: &DParameter,
 		payment_signing_key: &CardanoPaymentSigningKey,
 	) -> anyhow::Result<Option<MultiSigSmartContractResult>> {
-		upsert_d_param(genesis_utxo, d_parameter, payment_signing_key, self, &retries).await
+		upsert_d_param(genesis_utxo, d_parameter, payment_signing_key, self, &await_tx).await
 	}
 }
 
@@ -63,8 +63,7 @@ impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId> Upse
 /// Arguments:
 ///  - `genesis_utxo`: UTxO identifying the Partner Chain.
 ///  - `d_parameter`: [DParameter] to be upserted.
-///  - `payment_signing_key`: Signing key of a governance authority member.
-///  - `client`: Bridge client.
+///  - `payment_signing_key`: Signing key of the party paying fees.
 ///  - `await_tx`: [AwaitTx] strategy.
 pub async fn upsert_d_param<
 	C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,

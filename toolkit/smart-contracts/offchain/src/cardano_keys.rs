@@ -32,7 +32,7 @@ impl CardanoPaymentSigningKey {
 		Ok(self.0.sign(message).to_bytes())
 	}
 
-	/// Converts [CardanoPaymentSigningKey] to domain type [MainchainKeyHash].
+	/// Hashes [CardanoPaymentSigningKey] to domain type [MainchainKeyHash].
 	pub fn to_pub_key_hash(&self) -> MainchainKeyHash {
 		MainchainKeyHash(
 			self.0

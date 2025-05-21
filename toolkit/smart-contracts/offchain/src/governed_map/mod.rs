@@ -31,8 +31,8 @@ use std::ops::Neg;
 mod tests;
 
 /// Inserts an entry into the governed map.
-/// If the `key` is already set, the operation fails.
 /// If the `key` is already set to the provided `value` a transaction is not submitted and the operation succeeds.
+/// Else if the `key` is already set, the operation fails.
 pub async fn run_insert<
 	C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,
 	A: AwaitTx,

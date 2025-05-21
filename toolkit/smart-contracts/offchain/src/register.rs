@@ -28,13 +28,12 @@ pub trait Register {
 	#[allow(async_fn_in_trait)]
 	/// This function submits a transaction to register a registered candidate.
 	/// Arguments:
-	///  - `retries`: Configuration for the retry logic of the transaction.
+	///  - `await_tx`: Configuration for the await logic of the transaction.
 	///  - `genesis_utxo`: UTxO identifying the Partner Chain.
 	///  - `candidate_registration`: [CandidateRegistration] registration data.
-	///  - `payment_signing_key`: Signing key of a governance authority member.
 	async fn register(
 		&self,
-		retries: FixedDelayRetries,
+		await_tx: FixedDelayRetries,
 		genesis_utxo: UtxoId,
 		candidate_registration: &CandidateRegistration,
 		payment_signing_key: &CardanoPaymentSigningKey,
@@ -47,12 +46,12 @@ where
 {
 	async fn register(
 		&self,
-		retries: FixedDelayRetries,
+		await_tx: FixedDelayRetries,
 		genesis_utxo: UtxoId,
 		candidate_registration: &CandidateRegistration,
 		payment_signing_key: &CardanoPaymentSigningKey,
 	) -> Result<Option<McTxHash>, OffchainError> {
-		run_register(genesis_utxo, candidate_registration, payment_signing_key, self, retries)
+		run_register(genesis_utxo, candidate_registration, payment_signing_key, self, await_tx)
 			.await
 			.map_err(|e| OffchainError::InternalError(e.to_string()))
 	}
@@ -62,7 +61,6 @@ where
 /// Arguments:
 ///  - `genesis_utxo`: UTxO identifying the Partner Chain.
 ///  - `candidate_registration`: [CandidateRegistration] registration data.
-///  - `payment_signing_key`: Signing key of a governance authority member.
 ///  - `ogmios_client`: Ogmios client.
 ///  - `await_tx`: [AwaitTx] strategy.
 pub async fn run_register<
@@ -133,13 +131,12 @@ pub trait Deregister {
 	#[allow(async_fn_in_trait)]
 	/// This function submits a transaction to deregister a registered candidate.
 	/// Arguments:
-	///  - `retries`: Configuration for the retry logic of the transaction.
+	///  - `await_tx`: Configuration for the await logic of the transaction.
 	///  - `genesis_utxo`: UTxO identifying the Partner Chain.
-	///  - `payment_signing_key`: Signing key of a governance authority member.
 	///  - `stake_ownership_pub_key`: Stake pub key of the registered candidate to be deregistered.
 	async fn deregister(
 		&self,
-		retries: FixedDelayRetries,
+		await_tx: FixedDelayRetries,
 		genesis_utxo: UtxoId,
 		payment_signing_key: &CardanoPaymentSigningKey,
 		stake_ownership_pub_key: StakePoolPublicKey,
@@ -152,12 +149,12 @@ where
 {
 	async fn deregister(
 		&self,
-		retries: FixedDelayRetries,
+		await_tx: FixedDelayRetries,
 		genesis_utxo: UtxoId,
 		payment_signing_key: &CardanoPaymentSigningKey,
 		stake_ownership_pub_key: StakePoolPublicKey,
 	) -> Result<Option<McTxHash>, OffchainError> {
-		run_deregister(genesis_utxo, payment_signing_key, stake_ownership_pub_key, self, retries)
+		run_deregister(genesis_utxo, payment_signing_key, stake_ownership_pub_key, self, await_tx)
 			.await
 			.map_err(|e| OffchainError::InternalError(e.to_string()))
 	}
@@ -166,9 +163,7 @@ where
 /// Submits a transaction to register a registered candidate.
 /// Arguments:
 ///  - `genesis_utxo`: UTxO identifying the Partner Chain.
-///  - `payment_signing_key`: Signing key of a governance authority member.
 ///  - `stake_ownership_pub_key`: Stake pub key of the registered candidate to be deregistered.
-///  - `client`: Bridge client.
 ///  - `await_tx`: [AwaitTx] strategy.
 pub async fn run_deregister<
 	C: QueryLedgerState + QueryNetwork + QueryUtxoByUtxoId + Transactions,

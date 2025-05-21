@@ -46,7 +46,7 @@ use sidechain_domain::UtxoId;
 /// Scripts stored are:
 ///  - Reserve Management Validator
 ///  - Reserve Management Policy
-///  - Illiquid Circulation Validator
+///  - Illiquid Circulation Supply Validator
 pub async fn init_reserve_management<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 	A: AwaitTx,
@@ -67,7 +67,7 @@ pub async fn init_reserve_management<
 		ScriptId::ReserveAuthPolicy,
 	);
 	let ics_validator = ScriptData::new(
-		"Illiquid Circulation Validator",
+		"Illiquid Circulation Supply Validator",
 		ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR.0.to_vec(),
 		ScriptId::IlliquidCirculationSupplyValidator,
 	);

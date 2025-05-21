@@ -21,12 +21,12 @@ pub(crate) mod transaction;
 
 /// Trait for [init_governance], to make it mockable.
 pub trait InitGovernance {
-	/// Initializes governance mechanism with `governance_parameters`,
-	/// for the chain identified by `genesis_utxo_id`.
+	/// Initializes governance mechanism with Cardano Native Script of type `atLeast` parametrized with values from
+	/// `governance_parameters`, for the chain identified by `genesis_utxo_id`.
 	#[allow(async_fn_in_trait)]
 	async fn init_governance(
 		&self,
-		retries: FixedDelayRetries,
+		await_tx: FixedDelayRetries,
 		governance_parameters: &MultiSigParameters,
 		payment_key: &CardanoPaymentSigningKey,
 		genesis_utxo_id: UtxoId,
@@ -39,7 +39,7 @@ where
 {
 	async fn init_governance(
 		&self,
-		retries: FixedDelayRetries,
+		await_tx: FixedDelayRetries,
 		governance_parameters: &MultiSigParameters,
 		payment_key: &CardanoPaymentSigningKey,
 		genesis_utxo_id: UtxoId,
@@ -49,7 +49,7 @@ where
 			payment_key,
 			Some(genesis_utxo_id),
 			self,
-			retries,
+			await_tx,
 		)
 		.await
 		.map(|result| result.tx_hash)
@@ -58,7 +58,7 @@ where
 }
 
 #[derive(serde::Serialize)]
-/// Result type of [run_init_governance]. Serialized to JSON.
+/// Result type of [run_init_governance].
 pub struct InitGovernanceResult {
 	/// Hash of submitted transaction.
 	pub tx_hash: McTxHash,

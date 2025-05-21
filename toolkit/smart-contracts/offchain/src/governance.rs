@@ -213,7 +213,7 @@ fn parse_simple_at_least_n_native_script(
 }
 
 #[derive(Serialize)]
-/// Summary of a governance policy.
+/// Summary of the M of N MultiSig governance policy.
 pub struct GovernancePolicySummary {
 	/// List of all key hashes of governance members.
 	pub key_hashes: Vec<ByteString>,

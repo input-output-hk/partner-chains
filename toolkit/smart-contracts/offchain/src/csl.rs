@@ -726,11 +726,11 @@ impl TransactionBuilderExt for TransactionBuilder {
 }
 
 #[derive(Clone, Debug)]
-/// Type representing a CSL Cardano script.
+/// Type representing a Cardano script.
 pub enum Script {
-	/// CSL Plutus script
+	/// Plutus script
 	Plutus(PlutusScript),
-	/// CSL Native script
+	/// Native script
 	Native(NativeScript),
 }
 

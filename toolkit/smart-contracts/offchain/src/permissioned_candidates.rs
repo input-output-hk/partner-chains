@@ -33,13 +33,13 @@ pub trait UpsertPermissionedCandidates {
 	#[allow(async_fn_in_trait)]
 	/// Upserts permissioned candidates list.
 	/// Arguments:
-	///  - `retries`: [FixedDelayRetries] configuration.
+	///  - `await_tx`: [FixedDelayRetries] configuration.
 	///  - `genesis_utxo`: Genesis UTxO identifying the Partner Chain.
 	///  - `candidates`: List of permissioned candidates. The current list (if exists) will be overwritten by this list.
-	///  - `payment_signing_key`: Payment signing key for governing authority member.
+	///  - `payment_signing_key`: Signing key of the party paying fees.
 	async fn upsert_permissioned_candidates(
 		&self,
-		retries: FixedDelayRetries,
+		await_tx: FixedDelayRetries,
 		genesis_utxo: UtxoId,
 		candidates: &[PermissionedCandidateData],
 		payment_signing_key: &CardanoPaymentSigningKey,
@@ -51,7 +51,7 @@ impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId>
 {
 	async fn upsert_permissioned_candidates(
 		&self,
-		retries: FixedDelayRetries,
+		await_tx: FixedDelayRetries,
 		genesis_utxo: UtxoId,
 		candidates: &[PermissionedCandidateData],
 		payment_signing_key: &CardanoPaymentSigningKey,
@@ -61,7 +61,7 @@ impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId>
 			candidates,
 			payment_signing_key,
 			self,
-			&retries,
+			&await_tx,
 		)
 		.await
 	}
@@ -71,8 +71,7 @@ impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId>
 /// Arguments:
 ///  - `genesis_utxo`: Genesis UTxO identifying the Partner Chain.
 ///  - `candidates`: List of permissioned candidates. The current list (if exists) will be overwritten by this list.
-///  - `payment_signing_key`: Payment signing key for governing authority member.
-///  - `client`: Bridge client.
+///  - `payment_signing_key`: Signing key of the party paying fees.
 ///  - `await_tx`: [AwaitTx] strategy.
 pub async fn upsert_permissioned_candidates<
 	C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,

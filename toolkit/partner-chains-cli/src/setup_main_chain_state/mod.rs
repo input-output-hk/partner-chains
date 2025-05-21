@@ -169,7 +169,7 @@ fn print_on_chain_d_parameter<C: IOContext>(
 }
 
 fn set_candidates_on_main_chain<C: IOContext>(
-	retries: FixedDelayRetries,
+	await_tx: FixedDelayRetries,
 	context: &C,
 	offchain: &C::Offchain,
 	candidates: SortedPermissionedCandidates,
@@ -184,7 +184,7 @@ fn set_candidates_on_main_chain<C: IOContext>(
 		let tokio_runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
 		let result = tokio_runtime
 			.block_on(offchain.upsert_permissioned_candidates(
-				retries,
+				await_tx,
 				genesis_utxo,
 				&candidates.0,
 				&pkey,
@@ -210,7 +210,7 @@ fn set_candidates_on_main_chain<C: IOContext>(
 }
 
 fn set_d_parameter_on_main_chain<C: IOContext>(
-	retries: FixedDelayRetries,
+	await_tx: FixedDelayRetries,
 	context: &C,
 	offchain: &C::Offchain,
 	default_d_parameter: DParameter,
@@ -237,7 +237,7 @@ fn set_d_parameter_on_main_chain<C: IOContext>(
 			sidechain_domain::DParameter { num_permissioned_candidates, num_registered_candidates };
 		let tokio_runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
 		let result = tokio_runtime.block_on(offchain.upsert_d_param(
-			retries,
+			await_tx,
 			genesis_utxo,
 			&d_parameter,
 			&payment_signing_key,

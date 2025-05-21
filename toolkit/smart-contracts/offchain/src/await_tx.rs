@@ -8,7 +8,7 @@ use tokio_retry::{Retry, strategy::FixedInterval};
 pub trait AwaitTx {
 	#[allow(async_fn_in_trait)]
 	/// Keeps querying `utxo_id` transaction output through `client` with some strategy depending on the implementation.
-	/// This is used for blocking until a submitted transaction is done.
+	/// This is used for waiting until the output of a submitted transaction can be observed.
 	async fn await_tx_output<C: QueryUtxoByUtxoId>(
 		&self,
 		client: &C,
@@ -16,14 +16,14 @@ pub trait AwaitTx {
 	) -> anyhow::Result<()>;
 }
 
-/// Type representing retries of a maximum amount and with a fixed delay.
+/// Type representing retries of a maximum number and with a fixed delay.
 pub struct FixedDelayRetries {
 	delay: Duration,
 	retries: usize,
 }
 
 impl FixedDelayRetries {
-	/// Constructs [FixedDelayRetries] with `delay` [Duration] and `retries` amount of maximum retries.
+	/// Constructs [FixedDelayRetries] with `delay` [Duration] and `retries` number of maximum retries.
 	pub fn new(delay: Duration, retries: usize) -> Self {
 		Self { delay, retries }
 	}
