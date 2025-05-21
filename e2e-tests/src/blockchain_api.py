@@ -49,6 +49,10 @@ class BlockchainApi(ABC):
         pass
 
     @abstractmethod
+    def get_pc_epoch_blocks(self, epoch: int) -> range:
+        pass
+
+    @abstractmethod
     def get_params(self) -> dict:
         pass
 

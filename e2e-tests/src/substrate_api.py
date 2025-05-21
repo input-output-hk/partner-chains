@@ -338,6 +338,44 @@ class SubstrateApi(BlockchainApi):
     def get_pc_epoch(self):
         return self.partner_chain_rpc.partner_chain_get_status().result['sidechain']['epoch']
 
+    def get_pc_epoch_blocks(self, epoch):
+        current_block = self.get_latest_pc_block_number()
+        current_pc_epoch = self.get_pc_epoch()
+        if epoch >= current_pc_epoch:
+            raise ValueError(
+                f"Cannot get blocks for current or future epoch {epoch}. Current epoch is {current_pc_epoch}."
+            )
+
+        # search for first block in <epoch>
+        slots_in_epoch = self.config.nodes_config.slots_in_epoch
+        slots_to_go_back = (current_pc_epoch - epoch) * slots_in_epoch
+        found_epoch = 0
+        while found_epoch != epoch:
+            first_block = self.get_block(block_no=(current_block - slots_to_go_back))
+            result = self.substrate.query(
+                "SessionCommitteeManagement", "CurrentCommittee", block_hash=first_block["header"]["hash"]
+            )
+            found_epoch = result.value["epoch"]
+            if epoch - found_epoch > 1:
+                slots_to_go_back -= slots_in_epoch
+            else:
+                slots_to_go_back -= 1
+        logger.info(f"Found first block in epoch {epoch}: {first_block['header']['number']}")
+
+        # search for last block in <epoch>
+        slots_to_go_forward = slots_in_epoch
+        found_epoch = 0
+        while found_epoch != epoch:
+            last_block = self.get_block(block_no=(first_block["header"]["number"] + slots_to_go_forward))
+            result = self.substrate.query(
+                "SessionCommitteeManagement", "CurrentCommittee", block_hash=last_block["header"]["hash"]
+            )
+            found_epoch = result.value["epoch"]
+            slots_to_go_forward -= 1
+        logger.info(f"Found last block in epoch {epoch}: {last_block['header']['number']}")
+
+        return range(first_block["header"]["number"], last_block["header"]["number"] + 1)
+
     def get_params(self):
         return self.partner_chain_rpc.partner_chain_get_params().result
 
