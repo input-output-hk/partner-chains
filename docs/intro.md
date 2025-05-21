@@ -664,7 +664,7 @@ The `register1` wizard is the first out of three steps in registering a node as 
 candidate. The wizard will prompt users to select a UTXO which is going to be consumed in the
 registration process that follows.
 
-After selecting a UTXO the wizard will print a `register2` wizard command invocation for generating
+After selecting a UTXO the wizard will print a `register2` wizard command for generating
 signatures. This command should be executed on an offline machine to ensure that the Cardano
 `cold.skey` (which will be required) is not exposed to the internet.
 
