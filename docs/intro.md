@@ -34,6 +34,7 @@
     * [register1](#register1)
     * [register2](#register2)
     * [register3](#register3)
+    * [deregister](#deregister)
   * [Features](#features)
     * [Features Overview](#feature-overview)
     * [Block Participation Rewards](#block-participation-rewards)
