@@ -25,6 +25,37 @@
     * [`chain-spec.json`](#chain-spec.json)
     * [Environment Variables](#environment-variables)
     * [Keys](#keys)
+  * [Partner Chain Commands](#partner-chain-commands)
+    * [registration-status](#registration-status)
+    * [ariadne-parameters](#ariadne-parameters)
+    * [registration-signatures](#registration-signatures)
+    * [sign-address-association](#sign-address-association)
+    * [sign-block-producer-metadata](#sign-block-producer-metadata)
+    * [smart-contracts](#smart-contracts)
+      * [get-scripts](#get-scripts)
+      * [upsert-d-parameter](#upsert-d-parameter)
+      * [upsert-permissioned-candidates](#upsert-permissioned-candidates)
+      * [register](#register)
+      * [deregister](#deregister)
+      * [reserve](#reserve)
+        * [init](#init)
+        * [create](#create)
+        * [deposit](#deposit)
+        * [update-settings](#update-settings)
+        * [handover](#handover)
+        * [release](#release)
+      * [governance](#governance)
+        * [init](#init)
+        * [update](#update)
+        * [get-policy](#get-policy)
+      * [assemble-and-submit-tx](#assemble-and-submit-tx)
+      * [sign-tx](#sign-tx)
+      * [governed-map](#governed-map)
+        * [insert](#insert)
+        * [update](#update)
+        * [remove](#remove)
+        * [list](#list)
+        * [get](#get)
   * [Wizards](#wizards)
     * [generate-keys](#generate-keys)
     * [prepare-configuration](#prepare-configuration)
@@ -544,6 +575,234 @@ By default the partner chain node process will look for key stores in the base p
 or your particular Partner Chain's documentation for information on how
 to manage your node keys.
 
+### Partner Chain Commands
+The Partner Chain toolkit provides a range of commands to interact with the chain or carry out
+administrative tasks. Note that all commands also accept a set of general options which can be
+listed by passing `--help` to the respectvie command.
+
+#### registration-status
+Returns registration status for a given mainchain public key and epoch number. If registration
+has been included in Cardano block in epoch N, then it should be returned by this command if
+epoch greater than N+1 is provided. If this command won't show your registration after a few
+minutes after it has been included in a cardano block, you can start debugging for unsuccessful
+registration.
+
+```shell
+$ pc-node registration-status --stake-pool-pub-key <STAKE_POOL_PUB_KEY>
+    --mc-epoch-number <MC_EPOCH_NUMBER>
+```
+#### ariadne-parameters
+Returns ariadne parameters effective at given mainchain epoch number. Parameters are effective
+two epochs after the block their change is included in.
+
+```shell
+$ pc-node ariadne-parameter --mc-epoch-number <MC_EPOCH_NUMBER>
+```
+
+#### registration-signatures
+Generates registration signatures for partner chains committee candidates.
+
+```shell
+$ pc-node registration-signatures --genesis-utxo <GENESIS_UTXO>
+    --mainchain-signing-key <MAINCHAIN_SIGNING_KEY>
+    --sidechain-signing-key <SIDECHAIN_SIGNING_KEY>
+    --registration-utxo <REGISTRATION_UTXO>
+```
+#### sign-address-association
+Signs address association
+
+```shell
+$ pc-node sign-address-association --genesis-utxo <GENESIS_UTXO>
+    --partnerchain-address <PARTNERCHAIN_ADDRESS>
+    --signing-key <SIGNING_KEY>
+```
+#### sign-block-producer-metadata
+Signs block producer metadata for submitting to the runtime.
+
+```shell
+$ pc-node sign-block-producer-metadata --genesis-utxo <GENESIS_UTXO>
+    --metadata-file <METADATA_FILE>
+    --cross-chain-signing-key <CROSS_CHAIN_SIGNING_KEY>
+```
+#### smart-contracts
+The smart contracts command provides multiple sub-commands for interacting with Partner Chain smart
+contracts on Cardano.
+##### get-scripts
+Prints validator addresses and policy IDs of Partner Chain smart contracts
+
+```shell
+$ pc-node smart-contracts get-scripts --genesis-utxo <GENESIS_UTXO>
+```
+
+##### upsert-d-parameter
+Upsert D-parameter
+
+```shell
+$ pc-node smart-contracts upsert-d-parameter
+    --permissioned-candidates-count <PERMISSIONED_CANDIDATES_COUNT>
+    --registered-candidates-count <REGISTERED_CANDIDATES_COUNT>
+    --payment-key-file <PAYMENT_KEY_FILE>
+    --genesis-utxo <GENESIS_UTXO>
+```
+##### upsert-permissioned-candidates
+Upsert Permissioned Candidates
+
+```shell
+$ pc-node smart-contracts upsert-permissioned-candidates
+    --permissioned-candidates-file <PERMISSIONED_CANDIDATES_FILE>
+    --payment-key-file <PAYMENT_KEY_FILE>
+    --genesis-utxo <GENESIS_UTXO>
+```
+##### register
+Register candidate
+
+```shell
+$ pc-node smart-contracts register
+    --genesis-utxo <GENESIS_UTXO>
+    --registration-utxo <REGISTRATION_UTXO>
+    --payment-key-file <PAYMENT_KEY_FILE>
+    --partner-chain-public-keys <PARTNERCHAIN_KEY:AURA_KEY:GRANDPA_KEY>
+    --partner-chain-signature <PARTNER_CHAIN_SIGNATURE>
+    --spo-public-key <SPO_PUBLIC_KEY>
+    --spo-signature <SPO_SIGNATURE>
+```
+##### deregister
+Deregister candidate
+
+```shell
+$ pc-node smart-contracts deregister
+    --genesis-utxo <GENESIS_UTXO>
+    --payment-key-file <PAYMENT_KEY_FILE>
+    --spo-public-key <SPO_PUBLIC_KEY>
+```
+##### reserve
+Commands for management of rewards reserve
+###### init
+Initializes the reserve management.
+```shell
+pc-node smart-contracts reserve init
+    --payment-key-file <PAYMENT_KEY_FILE>
+    --genesis-utxo <GENESIS_UTXO>
+```
+###### create
+Creates the reserve management.
+```shell
+$ pc-node smart-contracts reserve create
+    --payment-key-file <PAYMENT_KEY_FILE>
+    --genesis-utxo <GENESIS_UTXO>
+    --total-accrued-function-script-hash <TOTAL_ACCRUED_FUNCTION_SCRIPT_HASH>
+    --initial-deposit-amount <INITIAL_DEPOSIT_AMOUNT>
+    --token <TOKEN>
+```
+
+###### deposit
+Deposits tokens from payment key wallt to the reserve
+```shell
+$ pc-node smart-contracts deposit
+    --payment-key-file <PAYMENT_KEY_FILE>
+    --genesis-utxo <GENESIS_UTXO>
+    --amount <AMOUNT>
+```
+###### update-settings
+Update reserve management
+```shell
+$ pc-node smart-contracts reserve update-settings
+    --payment-key-file <PAYMENT_KEY_FILE>
+    --genesis-utxo <GENESIS_UTXO>
+    --total-accrued-function-script-hash <TOTAL_ACCRUED_FUNCTION_SCRIPT_HASH>
+```
+###### handover
+Releases all the remaining funds from the reserve to the illiquid supply
+```shell
+$ pc-node smart-contracts reserve
+    --payment-key-file <PAYMENT_KEY_FILE>
+    --genesis-utxo <GENESIS_UTXO>
+```
+###### release
+Releases funds from the reserve to the illiquid supply
+```shell
+$ pc-node smart-contracts reserve release
+    --payment-key-file <PAYMENT_KEY_FILE>
+    --genesis-utxo <GENESIS_UTXO>
+    --reference-utxo <REFERENCE_UTXO>
+    --amount <AMOUNT>
+```
+##### governance
+Managing on-chain governance.
+###### init
+Initialize Partner Chain governance
+```shell
+$ pc-node smart-contracts governance init
+    --threshold <THRESHOLD>
+    --payment-key-file <PAYMENT_KEY_FILE>
+```
+###### update
+Update Partner Chain governance
+```shell
+$ pc-node smart-contracts governance update
+    --threshold <THRESHOLD>
+    --payment-key-file <PAYMENT_KEY_FILE>
+    --genesis-utxo <GENESIS_UTXO>
+```
+###### get-policy
+Prints JSON summary of the current governance policy of a chain. Prints null if governance
+policy has not been set for given genesis utxo.
+```shell
+$ pc-node smart-contracts get-policy --genesis-utxo <GENESIS_UTXO>
+```
+
+##### assemble-and-submit-tx
+Assemble and submit a transaction
+
+```shell
+$ pc-node smart-contracts assemble-and-submit-tx --transaction <TRANSACTION>
+```
+##### sign-tx
+Sign a transaction CBOR using a payment signing key
+```shell
+$ pc-node sign-tx --transaction <TRANSACTION>
+    --payment-key-file <PAYMENT_KEY_FILE>
+```
+##### governed-map
+Manage the Governed Map key-value store on Cardano
+###### insert
+Insert a key-value pair into the Governed Map. If the value for the key already exists it won't be
+updated.
+```shell
+$ pc-node governed-map insert
+    --key <KEY>
+    --value <VALUE>
+    --payment-key-file <PAYMENT_KEY_FILE>
+    --genesis-utxo <GENESIS_UTXO>
+```
+###### update
+Updates a key-value pair in the Governed Map. If the key is missing it won't be inserted.
+```shell
+$ pc-node governed-map update
+    --key <KEY>
+    --value <VALUE>
+    --payment-key-file <PAYMENT_KEY_FILE>
+    --genesis-utxo <GENESIS_UTXO>
+```
+###### remove
+Removes a key-value pair from the Governed Map.
+```shell
+$ pc-node governed-map remove
+    --key <KEY>
+    --payment-key-file <PAYMENT_KEY_FILE>
+    --genesis-utxo <GENESIS_UTXO>
+```
+###### list
+Lists all key-value pairs currently stored in the Governed Map
+```shell
+$ pc-node governed-map list --genesis-utxo <GENESIS_UTXO>
+```
+###### get
+Retrieves the value stored in the Governed Map for the given key
+```shell
+$ pc-node governed-map get --key <KEY> --genesis-utxo <GENESIS_UTXO>
+```
+
 ### Wizards
 The Partner Chain toolkit provides several wizards that serve as convenience layer to carry out
 configuration or bootstrapping actions. The tasks performed by the wizards can also be carried out
@@ -739,7 +998,6 @@ The `deregister` wizard removes SPO registration as a committee member candidate
 ```shell
 $ pc-node wizards deregister
 ```
-
 ### Features
 
 #### Features Overview
