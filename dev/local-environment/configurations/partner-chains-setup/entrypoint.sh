@@ -76,8 +76,10 @@ else
     exit 1
 fi
 
-# Generate permissioned candidates
-echo "Generating permissioned candidates..."
+# Generate and insert permissioned candidates (1-10)
+echo "Generating and inserting permissioned candidates..."
+> permissioned_candidates.csv
+
 for i in {1..10}; do
     node_name="permissioned-$i"
     echo "Processing $node_name..."
@@ -124,8 +126,8 @@ else
     exit 1
 fi
 
-# Generate registered candidates
-echo "Generating registered candidates..."
+# Generate and register registered nodes (1-300)
+echo "Generating and registering registered candidates..."
 for i in {1..300}; do
     node_name="registered-$i"
     echo "Processing $node_name..."
@@ -155,20 +157,33 @@ for i in {1..300}; do
         --output-type json \
         --output-file /partner-chains-nodes/$node_name/keys/cold.json
     
-    # Extract public keys
-    sidechain_vkey=$(jq -r '.publicKey' /partner-chains-nodes/$node_name/keys/sidechain.json)
+    # Extract keys and generate signatures
+    mainchain_signing_key=$(jq -r '.cborHex | .[4:]' /partner-chains-nodes/$node_name/keys/cold.json)
+    sidechain_signing_key=$(jq -r '.secretKey' /partner-chains-nodes/$node_name/keys/sidechain.json)
+    
+    # Process registration signatures
+    registration_output=$(./partner-chains-node registration-signatures \
+        --genesis-utxo $GENESIS_UTXO \
+        --mainchain-signing-key $mainchain_signing_key \
+        --sidechain-signing-key $sidechain_signing_key \
+        --registration-utxo $GENESIS_UTXO)
+    
+    # Extract signatures and keys
+    spo_public_key=$(echo "$registration_output" | jq -r ".spo_public_key")
+    spo_signature=$(echo "$registration_output" | jq -r ".spo_signature")
+    sidechain_public_key=$(echo "$registration_output" | jq -r ".sidechain_public_key")
+    sidechain_signature=$(echo "$registration_output" | jq -r ".sidechain_signature")
     aura_vkey=$(jq -r '.publicKey' /partner-chains-nodes/$node_name/keys/aura.json)
     grandpa_vkey=$(jq -r '.publicKey' /partner-chains-nodes/$node_name/keys/grandpa.json)
-    cold_vkey=$(jq -r '.publicKey' /partner-chains-nodes/$node_name/keys/cold.json)
     
-    # Register the candidate
+    # Register the node
     ./partner-chains-node smart-contracts register \
         --ogmios-url http://ogmios:$OGMIOS_PORT \
         --genesis-utxo $GENESIS_UTXO \
-        --spo-public-key $cold_vkey \
-        --spo-signature $(jq -r '.signature' /partner-chains-nodes/$node_name/keys/cold.json) \
-        --sidechain-public-keys $sidechain_vkey:$aura_vkey:$grandpa_vkey \
-        --sidechain-signature $(jq -r '.signature' /partner-chains-nodes/$node_name/keys/sidechain.json) \
+        --spo-public-key $spo_public_key \
+        --spo-signature $spo_signature \
+        --sidechain-public-keys $sidechain_public_key:$aura_vkey:$grandpa_vkey \
+        --sidechain-signature $sidechain_signature \
         --registration-utxo $GENESIS_UTXO \
         --payment-key-file /keys/funded_address.skey
 done
