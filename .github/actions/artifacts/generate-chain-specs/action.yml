@@ -23,8 +23,6 @@ runs:
         ./partner-chains-node-${{ inputs.tag }}-x86_64-linux build-spec --chain staging --disable-default-bootnode > ci_preview_chain_spec.json
         source ./dev/envs/staging-preview/.envrc
         ./partner-chains-node-${{ inputs.tag }}-x86_64-linux build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
-        source ./dev/envs/staging-preprod/.envrc
-        ./partner-chains-node-${{ inputs.tag }}-x86_64-linux build-spec --chain staging --disable-default-bootnode > staging_preprod_chain_spec.json
     - name: Upload Chain Specs
       uses: actions/upload-artifact@v4
       with:
@@ -33,4 +31,3 @@ runs:
           devnet_chain_spec.json
           ci_preview_chain_spec.json
           staging_preview_chain_spec.json
-          staging_preprod_chain_spec.json

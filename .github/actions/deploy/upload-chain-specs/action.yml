@@ -1,5 +1,5 @@
 name: Upload Chain Spec Artifacts to Kubernetes PVC
-description: Uploads chain‑spec artifacts to PVCs for devnet, staging‑preview and staging‑preprod.
+description: Uploads chain‑spec artifacts to PVCs for devnet and staging‑preview.
 
 inputs:
   sha:
@@ -52,8 +52,4 @@ runs:
 
         if [ -f ./staging_preview_chain_spec.json ]; then
           kubectl cp ./staging_preview_chain_spec.json staging-preview/pvc-uploader-staging-preview:/mnt/chain-spec/staging-preview-chain-spec-${{ inputs.sha }}.json
-        fi
-
-        if [ -f ./staging_preprod_chain_spec.json ]; then
-          kubectl cp ./staging_preprod_chain_spec.json staging-preprod/pvc-uploader-staging-preprod:/mnt/chain-spec/staging-preprod-chain-spec-${{ inputs.sha }}.json
         fi

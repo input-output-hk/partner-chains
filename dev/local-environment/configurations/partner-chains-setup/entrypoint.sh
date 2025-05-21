@@ -56,9 +56,15 @@ export PERMISSIONED_CANDIDATES_POLICY_ID=$(jq -r '.policyIds.PermissionedCandida
 echo "Permissioned candidates policy ID: $PERMISSIONED_CANDIDATES_POLICY_ID"
 
 echo "Setting values for NATIVE_TOKEN_POLICY_ID, NATIVE_TOKEN_ASSET_NAME, and ILLIQUID_SUPPLY_VALIDATOR_ADDRESS for chain-spec creation"
+export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS=$(jq -r '.addresses.IlliquidCirculationSupplyValidator' addresses.json)
+echo "Illiquid Circulation Supply Validator address: $ILLIQUID_SUPPLY_VALIDATOR_ADDRESS"
 export NATIVE_TOKEN_POLICY_ID="1fab25f376bc49a181d03a869ee8eaa3157a3a3d242a619ca7995b2b"
 export NATIVE_TOKEN_ASSET_NAME="52657761726420746f6b656e"
-export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS="addr_test1wpy8ewg646rg4ce78nl3aassmkquf4wlxcaugqlxwzcylkca0q8v3"
+
+export GOVERNED_MAP_VALIDATOR_ADDRESS=$(jq -r '.addresses.GovernedMapValidator' addresses.json)
+echo "Governed Map Validator Address: $GOVERNED_MAP_VALIDATOR_ADDRESS"
+export GOVERNED_MAP_POLICY_ID=$(jq -r '.policyIds.GovernedMap' addresses.json)
+echo "Governed Map Policy ID: $GOVERNED_MAP_POLICY_ID"
 
 echo "Inserting D parameter..."
 
@@ -145,7 +151,7 @@ else
     exit 1
 fi
 
-echo "Generating chain-spec.json file for Partnerchain Nodes..."
+echo "Generating chain-spec.json file for Partner chain Nodes..."
 ./partner-chains-node build-spec --disable-default-bootnode > chain-spec.json
 
 echo "Configuring Initial Validators..."
@@ -204,6 +210,13 @@ jq '.genesis.runtimeGenesis.config.sessionCommitteeManagement.initialAuthorities
   }
 ]' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
 
+echo "Setting Governed Map scripts..."
+export GOVERNED_MAP_VALIDATOR_ADDRESS_HEX="0x$(echo $GOVERNED_MAP_VALIDATOR_ADDRESS | xxd -p -c 128)"
+jq --arg address $GOVERNED_MAP_VALIDATOR_ADDRESS_HEX --arg policy_id $GOVERNED_MAP_POLICY_ID '.genesis.runtimeGenesis.config.governedMap.mainChainScripts = {
+  "validator_address": $address,
+  "asset_policy_id": $policy_id
+}' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
+
 echo "Set initial funds to Alice (ecdsa), ?, and Alice (sr25519)"
 jq '.genesis.runtimeGenesis.config.balances.balances = [
     ["5C7C2Z5sWbytvHpuLTvzKunnnRwQxft1jiqrLD5rhucQ5S9X", 1000000000000000],
@@ -223,10 +236,10 @@ echo "Copying chain-spec.json file to /shared/chain-spec.json..."
 cp chain-spec.json /shared/chain-spec.json
 echo "chain-spec.json generation complete."
 
-echo "Partnerchain configuration is complete, and will be able to start after two mainchain epochs."
+echo "Partner chain configuration is complete, and will be able to start after two mainchain epochs."
 touch /shared/partner-chains-setup.ready
 
-echo -e "\n===== Partnerchain Configuration Complete =====\n"
+echo -e "\n===== Partner chain Configuration Complete =====\n"
 echo -e "Container will now idle, but will remain available for accessing the partner-chains-node commands as follows:\n"
 echo "docker exec partner-chains-setup partner-chains-node smart-contracts --help"
 
