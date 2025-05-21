@@ -608,8 +608,8 @@ $ pc-node wizards prepare-configuration
 #### create-chain-spec
 
 The `create-chain-spec` wizard creates a chain specification based on an existing
-`pc-chain-config.json` file (which can be generated using the `prepare-configuration` wizard). The resulting chain specification file is ready to be distributed to block production
-committee candidates.
+`pc-chain-config.json` file (which can be generated using the `prepare-configuration` wizard).
+The resulting chain specification file is ready to be distributed to block production committee candidates.
 
 **Prerequisites**
 
