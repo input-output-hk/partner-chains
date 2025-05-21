@@ -633,8 +633,6 @@ The `setup-main-chain-state` wizard configures the D-parameter and permissioned 
 
 :warning: These operations require transaction fees, so the payment key must be funded with ADA.
 
-:information_source: The transactions performed by this wizard can
-
 **Prerequisites**
 
 - `pc-chain-config.json` Contains partner chain properties
