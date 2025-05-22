@@ -632,7 +632,7 @@ The smart contracts command provides multiple sub-commands for interacting with 
 contracts on Cardano. Note that all of the smart-contract commands require the `ogmios` service to
 be running locally.
 ##### get-scripts
-Prints validator addresses and policy IDs of Partner Chain smart contracts
+Prints validator addresses and policy IDs of smart contracts of Partner Chain identified by given UTXO
 
 ```shell
 $ pc-node smart-contracts get-scripts --genesis-utxo <GENESIS_UTXO>
