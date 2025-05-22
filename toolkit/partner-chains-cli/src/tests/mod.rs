@@ -206,7 +206,7 @@ impl MockIOContext {
 	}
 }
 
-// The only external dependnecy of Offchain is Ogmios. This key is Ogmios address.
+// The only external dependency of Offchain is Ogmios. This key is Ogmios address.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub(crate) struct OffchainMockKey {
 	ogmios_addr: String,

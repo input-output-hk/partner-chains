@@ -648,7 +648,7 @@ pub mod config_fields {
 			config_file: CHAIN_CONFIG_FILE_PATH,
 			path: &["initial_governance", "threshold"],
 			name: "Initial Multisig Governance Threshold",
-			default: Some("0"),
+			default: Some("1"),
 			_marker: PhantomData,
 		};
 }
