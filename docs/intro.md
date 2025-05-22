@@ -588,7 +588,8 @@ minutes after it has been included in a cardano block, you can start debugging f
 registration.
 
 ```shell
-$ pc-node registration-status --stake-pool-pub-key <STAKE_POOL_PUB_KEY>
+$ pc-node registration-status
+    --stake-pool-pub-key <STAKE_POOL_PUB_KEY>
     --mc-epoch-number <MC_EPOCH_NUMBER>
 ```
 #### ariadne-parameters
@@ -612,7 +613,8 @@ $ pc-node registration-signatures --genesis-utxo <GENESIS_UTXO>
 Signs address association
 
 ```shell
-$ pc-node sign-address-association --genesis-utxo <GENESIS_UTXO>
+$ pc-node sign-address-association
+    --genesis-utxo <GENESIS_UTXO>
     --partnerchain-address <PARTNERCHAIN_ADDRESS>
     --signing-key <SIGNING_KEY>
 ```
@@ -620,13 +622,15 @@ $ pc-node sign-address-association --genesis-utxo <GENESIS_UTXO>
 Signs block producer metadata for submitting to the runtime.
 
 ```shell
-$ pc-node sign-block-producer-metadata --genesis-utxo <GENESIS_UTXO>
+$ pc-node sign-block-producer-metadata
+    --genesis-utxo <GENESIS_UTXO>
     --metadata-file <METADATA_FILE>
     --cross-chain-signing-key <CROSS_CHAIN_SIGNING_KEY>
 ```
 #### smart-contracts
 The smart contracts command provides multiple sub-commands for interacting with Partner Chain smart
-contracts on Cardano.
+contracts on Cardano. Note that all of the smart-contract commands require the `ogmios` service to
+be running locally.
 ##### get-scripts
 Prints validator addresses and policy IDs of Partner Chain smart contracts
 
@@ -760,7 +764,8 @@ $ pc-node smart-contracts assemble-and-submit-tx --transaction <TRANSACTION>
 ##### sign-tx
 Sign a transaction CBOR using a payment signing key
 ```shell
-$ pc-node sign-tx --transaction <TRANSACTION>
+$ pc-node sign-tx
+    --transaction <TRANSACTION>
     --payment-key-file <PAYMENT_KEY_FILE>
 ```
 ##### governed-map
@@ -800,7 +805,9 @@ $ pc-node governed-map list --genesis-utxo <GENESIS_UTXO>
 ###### get
 Retrieves the value stored in the Governed Map for the given key
 ```shell
-$ pc-node governed-map get --key <KEY> --genesis-utxo <GENESIS_UTXO>
+$ pc-node governed-map get
+    --key <KEY>
+    --genesis-utxo <GENESIS_UTXO>
 ```
 
 ### Wizards
