@@ -543,6 +543,24 @@ pub mod config_fields {
 			_marker: PhantomData,
 		};
 
+	pub const GOVERNED_MAP_VALIDATOR_ADDRESS: ConfigFieldDefinition<'static, String> =
+		ConfigFieldDefinition {
+			config_file: CHAIN_CONFIG_FILE_PATH,
+			path: &["cardano_addresses", "governed_map", "validator_address"],
+			name: "Governed Map Validator Address",
+			default: None,
+			_marker: PhantomData,
+		};
+
+	pub const GOVERNED_MAP_POLICY_ID: ConfigFieldDefinition<'static, String> =
+		ConfigFieldDefinition {
+			config_file: CHAIN_CONFIG_FILE_PATH,
+			path: &["cardano_addresses", "governed_map", "policy_id"],
+			name: "Governed Map Policy Id",
+			default: None,
+			_marker: PhantomData,
+		};
+
 	pub const CARDANO_SECURITY_PARAMETER: ConfigFieldDefinition<'static, u64> =
 		ConfigFieldDefinition {
 			config_file: CHAIN_CONFIG_FILE_PATH,

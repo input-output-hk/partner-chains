@@ -203,6 +203,12 @@ fn test_chain_spec_content() -> serde_json::Value {
 								"permissioned_candidates_policy_id": "0x5678"
 							}
 						},
+						"governedMap": {
+							"mainChainScripts": {
+								"validator_address": "",
+								"asset_policy_id": "0x0000"
+							}
+						}
 					}
 				}
 			},
@@ -237,6 +243,10 @@ fn cardano_addresses_json() -> serde_json::Value {
 			},
 			"illiquid_supply_address": "addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz"
 		},
+		"governed_map": {
+			"validator_address": "addr_test1wqpjpjq08treyvmqjca0qy5kw8xgq4awgt945v46jsxgyhsafz4ws",
+			"policy_id": "c814db91bfaf7f0078e2c69d13443ffc46c9957393174f7baa8d0000"
+		}
 	})
 }
 
@@ -267,6 +277,13 @@ fn show_chain_parameters() -> MockIO {
 		),
 		MockIO::print(
 			"- illiquid supply address: addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz",
+		),
+		MockIO::print("Governed Map Configuration:"),
+		MockIO::print(
+			"- validator address: addr_test1wqpjpjq08treyvmqjca0qy5kw8xgq4awgt945v46jsxgyhsafz4ws",
+		),
+		MockIO::print(
+			"- asset policy ID: c814db91bfaf7f0078e2c69d13443ffc46c9957393174f7baa8d0000",
 		),
 	])
 }
@@ -376,6 +393,12 @@ fn updated_chain_spec() -> serde_json::Value {
 								"permissioned_candidates_policy_id": "0x5678"
 							}
 						},
+						"governedMap": {
+							"mainChainScripts": {
+								"asset_policy_id": "0xc814db91bfaf7f0078e2c69d13443ffc46c9957393174f7baa8d0000",
+								"validator_address": "0x616464725f74657374317771706a706a71303874726579766d716a6361307179356b773878677134617767743934357634366a73786779687361667a347773"
+							}
+						}
 					}
 				}
 			},

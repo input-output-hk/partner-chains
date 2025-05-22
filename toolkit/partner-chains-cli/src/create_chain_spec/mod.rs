@@ -32,6 +32,10 @@ const SESSION_INITIAL_VALIDATORS_PATH: &str =
 	"/genesis/runtimeGenesis/config/session/initialValidators";
 const SESSION_VALIDATOR_MANAGEMENT_INITIAL_AUTHORITIES_PATH: &str =
 	"/genesis/runtimeGenesis/config/sessionCommitteeManagement/initialAuthorities";
+const GOVERNED_MAP_VALIDATOR_ADDRESS_PATH: &str =
+	"/genesis/runtimeGenesis/config/governedMap/mainChainScripts/validator_address";
+const GOVERNED_MAP_ASSET_POLICY_ID_PATH: &str =
+	"/genesis/runtimeGenesis/config/governedMap/mainChainScripts/asset_policy_id";
 
 impl<T: CreateChainSpecRuntimeBindings> CmdRun for CreateChainSpecCmd<T> {
 	fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
@@ -40,7 +44,7 @@ impl<T: CreateChainSpecRuntimeBindings> CmdRun for CreateChainSpecCmd<T> {
 		Self::print_config(context, &config);
 		if context.prompt_yes_no("Do you want to continue?", true) {
 			Self::run_build_spec_command(context, &config)?;
-			Self::update_chain_spec_authorities(context, &config)?;
+			Self::update_chain_spec_field_not_filled_by_the_node(context, &config)?;
 			context.print("chain-spec.json file has been created.");
 			context.print(
 				"If you are the governance authority, you can distribute it to the validators.",
@@ -76,6 +80,15 @@ impl<T: CreateChainSpecRuntimeBindings> CreateChainSpecCmd<T> {
 		context.print(&format!("- asset name: {}", config.native_token_asset_name));
 		context.print(&format!("- asset policy ID: {}", config.native_token_policy));
 		context.print(&format!("- illiquid supply address: {}", config.illiquid_supply_address));
+		context.print("Governed Map Configuration:");
+		context.print(&format!(
+			"- validator address: {}",
+			config.governed_map_validator_address.clone().unwrap_or_default()
+		));
+		context.print(&format!(
+			"- asset policy ID: {}",
+			config.governed_map_asset_policy_id.clone().unwrap_or_default()
+		));
 		use colored::Colorize;
 		if config.initial_permissioned_candidates_raw.is_empty() {
 			context.print("WARNING: The list of initial permissioned candidates is empty. Generated chain spec will not allow the chain to start.".red().to_string().as_str());
@@ -118,7 +131,7 @@ impl<T: CreateChainSpecRuntimeBindings> CreateChainSpecCmd<T> {
 		)
 	}
 
-	fn update_chain_spec_authorities<C: IOContext>(
+	fn update_chain_spec_field_not_filled_by_the_node<C: IOContext>(
 		context: &C,
 		config: &CreateChainSpecConfig,
 	) -> anyhow::Result<()> {
@@ -152,6 +165,22 @@ impl<T: CreateChainSpecRuntimeBindings> CreateChainSpecCmd<T> {
 			SESSION_VALIDATOR_MANAGEMENT_INITIAL_AUTHORITIES_PATH,
 			initial_authorities,
 		)?;
+		match config.governed_map_validator_address.clone() {
+			Some(address) => Self::update_field(
+				&mut chain_spec,
+				GOVERNED_MAP_VALIDATOR_ADDRESS_PATH,
+				serde_json::Value::String(format!("0x{}", hex::encode(address.as_bytes()))),
+			)?,
+			None => (),
+		}
+		match config.governed_map_asset_policy_id.clone() {
+			Some(policy_id) => Self::update_field(
+				&mut chain_spec,
+				GOVERNED_MAP_ASSET_POLICY_ID_PATH,
+				serde_json::Value::String(format!("0x{policy_id}")),
+			)?,
+			None => (),
+		}
 		context.write_file("chain-spec.json", serde_json::to_string_pretty(&chain_spec)?.as_str());
 		Ok(())
 	}
@@ -183,6 +212,8 @@ struct CreateChainSpecConfig {
 	native_token_policy: String,
 	native_token_asset_name: String,
 	illiquid_supply_address: String,
+	governed_map_validator_address: Option<String>,
+	governed_map_asset_policy_id: Option<String>,
 }
 
 impl CreateChainSpecConfig {
@@ -210,6 +241,9 @@ impl CreateChainSpecConfig {
 			native_token_policy: load_config_field(c, &config_fields::NATIVE_TOKEN_POLICY)?,
 			native_token_asset_name: load_config_field(c, &config_fields::NATIVE_TOKEN_ASSET_NAME)?,
 			illiquid_supply_address: load_config_field(c, &config_fields::ILLIQUID_SUPPLY_ADDRESS)?,
+			governed_map_validator_address: config_fields::GOVERNED_MAP_VALIDATOR_ADDRESS
+				.load_from_file(c),
+			governed_map_asset_policy_id: config_fields::GOVERNED_MAP_POLICY_ID.load_from_file(c),
 		})
 	}
 }
