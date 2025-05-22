@@ -8,8 +8,8 @@
 <a href=#8 id=8 data-nosnippet>8</a>
 <a href=#9 id=9 data-nosnippet>9</a></span><span class="kw">use </span><span class="kw">crate</span>::await_tx::{AwaitTx, FixedDelayRetries};
 <a href=#10 id=10 data-nosnippet>10</a><span class="kw">use </span><span class="kw">crate</span>::csl::{
-<a href=#11 id=11 data-nosnippet>11</a>	CostStore, Costs, InputsBuilderExt, TransactionBuilderExt, TransactionContext, TransactionExt,
-<a href=#12 id=12 data-nosnippet>12</a>	empty_asset_name, get_builder_config,
+<a href=#11 id=11 data-nosnippet>11</a>	CostStore, Costs, InputsBuilderExt, NetworkTypeExt, TransactionBuilderExt, TransactionContext,
+<a href=#12 id=12 data-nosnippet>12</a>	TransactionExt, empty_asset_name, get_builder_config,
 <a href=#13 id=13 data-nosnippet>13</a>};
 <a href=#14 id=14 data-nosnippet>14</a><span class="kw">use </span><span class="kw">crate</span>::governance::GovernanceData;
 <a href=#15 id=15 data-nosnippet>15</a><span class="kw">use </span><span class="kw">crate</span>::multisig::{MultiSigSmartContractResult, submit_or_create_tx_to_sign};
@@ -297,276 +297,296 @@
 <a href=#297 id=297 data-nosnippet>297</a>	PlutusData::new_integer(<span class="kw-2">&amp;</span>BigInt::zero())
 <a href=#298 id=298 data-nosnippet>298</a>}
 <a href=#299 id=299 data-nosnippet>299</a>
-<a href=#300 id=300 data-nosnippet>300</a><span class="attr">#[cfg(test)]
-<a href=#301 id=301 data-nosnippet>301</a></span><span class="kw">mod </span>tests {
-<a href=#302 id=302 data-nosnippet>302</a>	<span class="kw">use super</span>::{mint_permissioned_candidates_token_tx, update_permissioned_candidates_tx};
-<a href=#303 id=303 data-nosnippet>303</a>	<span class="kw">use crate</span>::{
-<a href=#304 id=304 data-nosnippet>304</a>		csl::{Costs, TransactionContext, empty_asset_name},
-<a href=#305 id=305 data-nosnippet>305</a>		governance::GovernanceData,
-<a href=#306 id=306 data-nosnippet>306</a>		test_values::<span class="kw-2">*</span>,
-<a href=#307 id=307 data-nosnippet>307</a>	};
-<a href=#308 id=308 data-nosnippet>308</a>	<span class="kw">use </span>cardano_serialization_lib::{Address, ExUnits, Int, NetworkIdKind, PlutusData};
-<a href=#309 id=309 data-nosnippet>309</a>	<span class="kw">use </span>hex_literal::hex;
-<a href=#310 id=310 data-nosnippet>310</a>	<span class="kw">use </span>ogmios_client::types::{Asset <span class="kw">as </span>OgmiosAsset, OgmiosTx, OgmiosUtxo, OgmiosValue};
-<a href=#311 id=311 data-nosnippet>311</a>	<span class="kw">use </span>partner_chains_plutus_data::permissioned_candidates::permissioned_candidates_to_plutus_data;
-<a href=#312 id=312 data-nosnippet>312</a>	<span class="kw">use </span>sidechain_domain::{
-<a href=#313 id=313 data-nosnippet>313</a>		AuraPublicKey, GrandpaPublicKey, PermissionedCandidateData, SidechainPublicKey,
-<a href=#314 id=314 data-nosnippet>314</a>	};
-<a href=#315 id=315 data-nosnippet>315</a>
-<a href=#316 id=316 data-nosnippet>316</a>	<span class="attr">#[test]
-<a href=#317 id=317 data-nosnippet>317</a>	</span><span class="kw">fn </span>mint_permissioned_candiates_token_tx_regression_test() {
-<a href=#318 id=318 data-nosnippet>318</a>		<span class="kw">let </span>tx = mint_permissioned_candidates_token_tx(
-<a href=#319 id=319 data-nosnippet>319</a>			<span class="kw-2">&amp;</span>test_validator(),
-<a href=#320 id=320 data-nosnippet>320</a>			<span class="kw-2">&amp;</span>test_policy(),
-<a href=#321 id=321 data-nosnippet>321</a>			<span class="kw-2">&amp;</span>input_candidates(),
-<a href=#322 id=322 data-nosnippet>322</a>			<span class="kw-2">&amp;</span>test_governance_data(),
-<a href=#323 id=323 data-nosnippet>323</a>			test_costs_mint(),
-<a href=#324 id=324 data-nosnippet>324</a>			<span class="kw-2">&amp;</span>test_tx_context(),
-<a href=#325 id=325 data-nosnippet>325</a>		)
-<a href=#326 id=326 data-nosnippet>326</a>		.unwrap();
-<a href=#327 id=327 data-nosnippet>327</a>
-<a href=#328 id=328 data-nosnippet>328</a>		<span class="kw">let </span>body = tx.body();
-<a href=#329 id=329 data-nosnippet>329</a>		<span class="kw">let </span>inputs = body.inputs();
-<a href=#330 id=330 data-nosnippet>330</a>		<span class="comment">// Both payment utxos are used as inputs
-<a href=#331 id=331 data-nosnippet>331</a>		</span><span class="macro">assert_eq!</span>(
-<a href=#332 id=332 data-nosnippet>332</a>			inputs.get(<span class="number">0</span>).to_string(),
-<a href=#333 id=333 data-nosnippet>333</a>			<span class="string">"0404040404040404040404040404040404040404040404040404040404040404#1"
-<a href=#334 id=334 data-nosnippet>334</a>		</span>);
-<a href=#335 id=335 data-nosnippet>335</a>		<span class="macro">assert_eq!</span>(
-<a href=#336 id=336 data-nosnippet>336</a>			inputs.get(<span class="number">1</span>).to_string(),
-<a href=#337 id=337 data-nosnippet>337</a>			<span class="string">"0707070707070707070707070707070707070707070707070707070707070707#0"
-<a href=#338 id=338 data-nosnippet>338</a>		</span>);
-<a href=#339 id=339 data-nosnippet>339</a>		<span class="comment">// The greater payment utxo is used as collateral
-<a href=#340 id=340 data-nosnippet>340</a>		</span><span class="macro">assert_eq!</span>(
-<a href=#341 id=341 data-nosnippet>341</a>			body.collateral().unwrap().get(<span class="number">0</span>).to_string(),
-<a href=#342 id=342 data-nosnippet>342</a>			<span class="string">"0404040404040404040404040404040404040404040404040404040404040404#1"
-<a href=#343 id=343 data-nosnippet>343</a>		</span>);
-<a href=#344 id=344 data-nosnippet>344</a>		<span class="kw">let </span>outputs = body.outputs();
-<a href=#345 id=345 data-nosnippet>345</a>		<span class="comment">// There is a change for payment
-<a href=#346 id=346 data-nosnippet>346</a>		</span><span class="kw">let </span>change_output = outputs.into_iter().find(|o| o.address() == payment_addr()).unwrap();
-<a href=#347 id=347 data-nosnippet>347</a>		<span class="comment">// There is 1 permissioned candidates token in the validator address output
-<a href=#348 id=348 data-nosnippet>348</a>		</span><span class="kw">let </span>script_output = outputs.into_iter().find(|o| o.address() == validator_addr()).unwrap();
-<a href=#349 id=349 data-nosnippet>349</a>		<span class="kw">let </span>coins_sum = change_output
-<a href=#350 id=350 data-nosnippet>350</a>			.amount()
-<a href=#351 id=351 data-nosnippet>351</a>			.coin()
-<a href=#352 id=352 data-nosnippet>352</a>			.checked_add(<span class="kw-2">&amp;</span>script_output.amount().coin())
-<a href=#353 id=353 data-nosnippet>353</a>			.unwrap()
-<a href=#354 id=354 data-nosnippet>354</a>			.checked_add(<span class="kw-2">&amp;</span>body.fee())
-<a href=#355 id=355 data-nosnippet>355</a>			.unwrap();
-<a href=#356 id=356 data-nosnippet>356</a>		<span class="macro">assert_eq!</span>(
-<a href=#357 id=357 data-nosnippet>357</a>			coins_sum,
-<a href=#358 id=358 data-nosnippet>358</a>			(greater_payment_utxo().value.lovelace + lesser_payment_utxo().value.lovelace).into()
-<a href=#359 id=359 data-nosnippet>359</a>		);
-<a href=#360 id=360 data-nosnippet>360</a>		<span class="macro">assert_eq!</span>(
-<a href=#361 id=361 data-nosnippet>361</a>			script_output
-<a href=#362 id=362 data-nosnippet>362</a>				.amount()
-<a href=#363 id=363 data-nosnippet>363</a>				.multiasset()
-<a href=#364 id=364 data-nosnippet>364</a>				.unwrap()
-<a href=#365 id=365 data-nosnippet>365</a>				.get_asset(<span class="kw-2">&amp;</span>token_policy_id().into(), <span class="kw-2">&amp;</span>empty_asset_name(),),
-<a href=#366 id=366 data-nosnippet>366</a>			<span class="number">1u64</span>.into()
-<a href=#367 id=367 data-nosnippet>367</a>		);
-<a href=#368 id=368 data-nosnippet>368</a>		<span class="macro">assert_eq!</span>(script_output.plutus_data().unwrap(), expected_plutus_data());
-<a href=#369 id=369 data-nosnippet>369</a>		<span class="comment">// This token is minted in the transaction
-<a href=#370 id=370 data-nosnippet>370</a>		</span><span class="kw">let </span>mint = body.mint().unwrap();
-<a href=#371 id=371 data-nosnippet>371</a>		<span class="macro">assert_eq!</span>(
-<a href=#372 id=372 data-nosnippet>372</a>			mint.get(<span class="kw-2">&amp;</span>token_policy_id().into())
-<a href=#373 id=373 data-nosnippet>373</a>				.unwrap()
-<a href=#374 id=374 data-nosnippet>374</a>				.get(<span class="number">0</span>)
-<a href=#375 id=375 data-nosnippet>375</a>				.unwrap()
-<a href=#376 id=376 data-nosnippet>376</a>				.get(<span class="kw-2">&amp;</span>empty_asset_name())
-<a href=#377 id=377 data-nosnippet>377</a>				.unwrap(),
-<a href=#378 id=378 data-nosnippet>378</a>			Int::new_i32(<span class="number">1</span>)
+<a href=#300 id=300 data-nosnippet>300</a><span class="kw">pub trait </span>GetPermissionedCandidates {
+<a href=#301 id=301 data-nosnippet>301</a>	<span class="attr">#[allow(async_fn_in_trait)]
+<a href=#302 id=302 data-nosnippet>302</a>	</span><span class="kw">async fn </span>get_permissioned_candidates(
+<a href=#303 id=303 data-nosnippet>303</a>		<span class="kw-2">&amp;</span><span class="self">self</span>,
+<a href=#304 id=304 data-nosnippet>304</a>		genesis_utxo: UtxoId,
+<a href=#305 id=305 data-nosnippet>305</a>	) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;Vec&lt;PermissionedCandidateData&gt;&gt;&gt;;
+<a href=#306 id=306 data-nosnippet>306</a>}
+<a href=#307 id=307 data-nosnippet>307</a>
+<a href=#308 id=308 data-nosnippet>308</a><span class="kw">impl</span>&lt;C: QueryLedgerState + QueryNetwork&gt; GetPermissionedCandidates <span class="kw">for </span>C {
+<a href=#309 id=309 data-nosnippet>309</a>	<span class="kw">async fn </span>get_permissioned_candidates(
+<a href=#310 id=310 data-nosnippet>310</a>		<span class="kw-2">&amp;</span><span class="self">self</span>,
+<a href=#311 id=311 data-nosnippet>311</a>		genesis_utxo: UtxoId,
+<a href=#312 id=312 data-nosnippet>312</a>	) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;Vec&lt;PermissionedCandidateData&gt;&gt;&gt; {
+<a href=#313 id=313 data-nosnippet>313</a>		<span class="kw">let </span>network = <span class="self">self</span>.shelley_genesis_configuration().<span class="kw">await</span><span class="question-mark">?</span>.network.to_csl();
+<a href=#314 id=314 data-nosnippet>314</a>		<span class="kw">let </span>scripts = scripts_data::permissioned_candidates_scripts(genesis_utxo, network)<span class="question-mark">?</span>;
+<a href=#315 id=315 data-nosnippet>315</a>		<span class="kw">let </span>validator_utxos = <span class="self">self</span>.query_utxos(<span class="kw-2">&amp;</span>[scripts.validator_address]).<span class="kw">await</span><span class="question-mark">?</span>;
+<a href=#316 id=316 data-nosnippet>316</a>		<span class="prelude-val">Ok</span>(get_current_permissioned_candidates(validator_utxos)<span class="question-mark">?</span>.map(|(<span class="kw">_</span>, candidates)| candidates))
+<a href=#317 id=317 data-nosnippet>317</a>	}
+<a href=#318 id=318 data-nosnippet>318</a>}
+<a href=#319 id=319 data-nosnippet>319</a>
+<a href=#320 id=320 data-nosnippet>320</a><span class="attr">#[cfg(test)]
+<a href=#321 id=321 data-nosnippet>321</a></span><span class="kw">mod </span>tests {
+<a href=#322 id=322 data-nosnippet>322</a>	<span class="kw">use super</span>::{mint_permissioned_candidates_token_tx, update_permissioned_candidates_tx};
+<a href=#323 id=323 data-nosnippet>323</a>	<span class="kw">use crate</span>::{
+<a href=#324 id=324 data-nosnippet>324</a>		csl::{Costs, TransactionContext, empty_asset_name},
+<a href=#325 id=325 data-nosnippet>325</a>		governance::GovernanceData,
+<a href=#326 id=326 data-nosnippet>326</a>		test_values::<span class="kw-2">*</span>,
+<a href=#327 id=327 data-nosnippet>327</a>	};
+<a href=#328 id=328 data-nosnippet>328</a>	<span class="kw">use </span>cardano_serialization_lib::{Address, ExUnits, Int, NetworkIdKind, PlutusData};
+<a href=#329 id=329 data-nosnippet>329</a>	<span class="kw">use </span>hex_literal::hex;
+<a href=#330 id=330 data-nosnippet>330</a>	<span class="kw">use </span>ogmios_client::types::{Asset <span class="kw">as </span>OgmiosAsset, OgmiosTx, OgmiosUtxo, OgmiosValue};
+<a href=#331 id=331 data-nosnippet>331</a>	<span class="kw">use </span>partner_chains_plutus_data::permissioned_candidates::permissioned_candidates_to_plutus_data;
+<a href=#332 id=332 data-nosnippet>332</a>	<span class="kw">use </span>sidechain_domain::{
+<a href=#333 id=333 data-nosnippet>333</a>		AuraPublicKey, GrandpaPublicKey, PermissionedCandidateData, SidechainPublicKey,
+<a href=#334 id=334 data-nosnippet>334</a>	};
+<a href=#335 id=335 data-nosnippet>335</a>
+<a href=#336 id=336 data-nosnippet>336</a>	<span class="attr">#[test]
+<a href=#337 id=337 data-nosnippet>337</a>	</span><span class="kw">fn </span>mint_permissioned_candiates_token_tx_regression_test() {
+<a href=#338 id=338 data-nosnippet>338</a>		<span class="kw">let </span>tx = mint_permissioned_candidates_token_tx(
+<a href=#339 id=339 data-nosnippet>339</a>			<span class="kw-2">&amp;</span>test_validator(),
+<a href=#340 id=340 data-nosnippet>340</a>			<span class="kw-2">&amp;</span>test_policy(),
+<a href=#341 id=341 data-nosnippet>341</a>			<span class="kw-2">&amp;</span>input_candidates(),
+<a href=#342 id=342 data-nosnippet>342</a>			<span class="kw-2">&amp;</span>test_governance_data(),
+<a href=#343 id=343 data-nosnippet>343</a>			test_costs_mint(),
+<a href=#344 id=344 data-nosnippet>344</a>			<span class="kw-2">&amp;</span>test_tx_context(),
+<a href=#345 id=345 data-nosnippet>345</a>		)
+<a href=#346 id=346 data-nosnippet>346</a>		.unwrap();
+<a href=#347 id=347 data-nosnippet>347</a>
+<a href=#348 id=348 data-nosnippet>348</a>		<span class="kw">let </span>body = tx.body();
+<a href=#349 id=349 data-nosnippet>349</a>		<span class="kw">let </span>inputs = body.inputs();
+<a href=#350 id=350 data-nosnippet>350</a>		<span class="comment">// Both payment utxos are used as inputs
+<a href=#351 id=351 data-nosnippet>351</a>		</span><span class="macro">assert_eq!</span>(
+<a href=#352 id=352 data-nosnippet>352</a>			inputs.get(<span class="number">0</span>).to_string(),
+<a href=#353 id=353 data-nosnippet>353</a>			<span class="string">"0404040404040404040404040404040404040404040404040404040404040404#1"
+<a href=#354 id=354 data-nosnippet>354</a>		</span>);
+<a href=#355 id=355 data-nosnippet>355</a>		<span class="macro">assert_eq!</span>(
+<a href=#356 id=356 data-nosnippet>356</a>			inputs.get(<span class="number">1</span>).to_string(),
+<a href=#357 id=357 data-nosnippet>357</a>			<span class="string">"0707070707070707070707070707070707070707070707070707070707070707#0"
+<a href=#358 id=358 data-nosnippet>358</a>		</span>);
+<a href=#359 id=359 data-nosnippet>359</a>		<span class="comment">// The greater payment utxo is used as collateral
+<a href=#360 id=360 data-nosnippet>360</a>		</span><span class="macro">assert_eq!</span>(
+<a href=#361 id=361 data-nosnippet>361</a>			body.collateral().unwrap().get(<span class="number">0</span>).to_string(),
+<a href=#362 id=362 data-nosnippet>362</a>			<span class="string">"0404040404040404040404040404040404040404040404040404040404040404#1"
+<a href=#363 id=363 data-nosnippet>363</a>		</span>);
+<a href=#364 id=364 data-nosnippet>364</a>		<span class="kw">let </span>outputs = body.outputs();
+<a href=#365 id=365 data-nosnippet>365</a>		<span class="comment">// There is a change for payment
+<a href=#366 id=366 data-nosnippet>366</a>		</span><span class="kw">let </span>change_output = outputs.into_iter().find(|o| o.address() == payment_addr()).unwrap();
+<a href=#367 id=367 data-nosnippet>367</a>		<span class="comment">// There is 1 permissioned candidates token in the validator address output
+<a href=#368 id=368 data-nosnippet>368</a>		</span><span class="kw">let </span>script_output = outputs.into_iter().find(|o| o.address() == validator_addr()).unwrap();
+<a href=#369 id=369 data-nosnippet>369</a>		<span class="kw">let </span>coins_sum = change_output
+<a href=#370 id=370 data-nosnippet>370</a>			.amount()
+<a href=#371 id=371 data-nosnippet>371</a>			.coin()
+<a href=#372 id=372 data-nosnippet>372</a>			.checked_add(<span class="kw-2">&amp;</span>script_output.amount().coin())
+<a href=#373 id=373 data-nosnippet>373</a>			.unwrap()
+<a href=#374 id=374 data-nosnippet>374</a>			.checked_add(<span class="kw-2">&amp;</span>body.fee())
+<a href=#375 id=375 data-nosnippet>375</a>			.unwrap();
+<a href=#376 id=376 data-nosnippet>376</a>		<span class="macro">assert_eq!</span>(
+<a href=#377 id=377 data-nosnippet>377</a>			coins_sum,
+<a href=#378 id=378 data-nosnippet>378</a>			(greater_payment_utxo().value.lovelace + lesser_payment_utxo().value.lovelace).into()
 <a href=#379 id=379 data-nosnippet>379</a>		);
-<a href=#380 id=380 data-nosnippet>380</a>
-<a href=#381 id=381 data-nosnippet>381</a>		<span class="comment">// Collateral return must be set
-<a href=#382 id=382 data-nosnippet>382</a>		</span><span class="kw">let </span>collateral_return = body.collateral_return().unwrap();
-<a href=#383 id=383 data-nosnippet>383</a>		<span class="macro">assert_eq!</span>(collateral_return.address(), payment_addr());
-<a href=#384 id=384 data-nosnippet>384</a>		<span class="kw">let </span>total_collateral = body.total_collateral().unwrap();
-<a href=#385 id=385 data-nosnippet>385</a>		<span class="macro">assert_eq!</span>(
-<a href=#386 id=386 data-nosnippet>386</a>			collateral_return.amount().coin().checked_add(<span class="kw-2">&amp;</span>total_collateral).unwrap(),
-<a href=#387 id=387 data-nosnippet>387</a>			greater_payment_utxo().value.lovelace.into()
-<a href=#388 id=388 data-nosnippet>388</a>		);
-<a href=#389 id=389 data-nosnippet>389</a>	}
-<a href=#390 id=390 data-nosnippet>390</a>
-<a href=#391 id=391 data-nosnippet>391</a>	<span class="attr">#[test]
-<a href=#392 id=392 data-nosnippet>392</a>	</span><span class="kw">fn </span>update_permissioned_candidates_tx_regression_test() {
-<a href=#393 id=393 data-nosnippet>393</a>		<span class="kw">let </span>script_utxo_lovelace = <span class="number">1952430</span>;
-<a href=#394 id=394 data-nosnippet>394</a>		<span class="kw">let </span>script_utxo = OgmiosUtxo {
-<a href=#395 id=395 data-nosnippet>395</a>			transaction: OgmiosTx { id: [<span class="number">15</span>; <span class="number">32</span>] },
-<a href=#396 id=396 data-nosnippet>396</a>			index: <span class="number">0</span>,
-<a href=#397 id=397 data-nosnippet>397</a>			value: OgmiosValue {
-<a href=#398 id=398 data-nosnippet>398</a>				lovelace: script_utxo_lovelace,
-<a href=#399 id=399 data-nosnippet>399</a>				native_tokens: <span class="macro">vec!</span>[(
-<a href=#400 id=400 data-nosnippet>400</a>					token_policy_id(),
-<a href=#401 id=401 data-nosnippet>401</a>					<span class="macro">vec!</span>[OgmiosAsset { name: <span class="macro">vec!</span>[], amount: <span class="number">1 </span>}],
-<a href=#402 id=402 data-nosnippet>402</a>				)]
-<a href=#403 id=403 data-nosnippet>403</a>				.into_iter()
-<a href=#404 id=404 data-nosnippet>404</a>				.collect(),
-<a href=#405 id=405 data-nosnippet>405</a>			},
-<a href=#406 id=406 data-nosnippet>406</a>			address: validator_addr().to_bech32(<span class="prelude-val">None</span>).unwrap(),
-<a href=#407 id=407 data-nosnippet>407</a>			..Default::default()
-<a href=#408 id=408 data-nosnippet>408</a>		};
-<a href=#409 id=409 data-nosnippet>409</a>
-<a href=#410 id=410 data-nosnippet>410</a>		<span class="kw">let </span>tx = update_permissioned_candidates_tx(
-<a href=#411 id=411 data-nosnippet>411</a>			<span class="kw-2">&amp;</span>test_validator(),
-<a href=#412 id=412 data-nosnippet>412</a>			<span class="kw-2">&amp;</span>test_policy(),
-<a href=#413 id=413 data-nosnippet>413</a>			<span class="kw-2">&amp;</span>input_candidates(),
-<a href=#414 id=414 data-nosnippet>414</a>			<span class="kw-2">&amp;</span>script_utxo,
-<a href=#415 id=415 data-nosnippet>415</a>			<span class="kw-2">&amp;</span>test_governance_data(),
-<a href=#416 id=416 data-nosnippet>416</a>			test_costs_update(),
-<a href=#417 id=417 data-nosnippet>417</a>			<span class="kw-2">&amp;</span>test_tx_context(),
-<a href=#418 id=418 data-nosnippet>418</a>		)
-<a href=#419 id=419 data-nosnippet>419</a>		.unwrap();
-<a href=#420 id=420 data-nosnippet>420</a>		<span class="kw">let </span>body = tx.body();
-<a href=#421 id=421 data-nosnippet>421</a>		<span class="kw">let </span>inputs = body.inputs();
-<a href=#422 id=422 data-nosnippet>422</a>		<span class="comment">// Script input goes to inputs
-<a href=#423 id=423 data-nosnippet>423</a>		</span><span class="macro">assert_eq!</span>(
-<a href=#424 id=424 data-nosnippet>424</a>			inputs.get(<span class="number">0</span>).to_string(),
-<a href=#425 id=425 data-nosnippet>425</a>			<span class="string">"0404040404040404040404040404040404040404040404040404040404040404#1"
-<a href=#426 id=426 data-nosnippet>426</a>		</span>);
-<a href=#427 id=427 data-nosnippet>427</a>		<span class="comment">// Payment input goes to inputs
-<a href=#428 id=428 data-nosnippet>428</a>		</span><span class="macro">assert_eq!</span>(
-<a href=#429 id=429 data-nosnippet>429</a>			inputs.get(<span class="number">1</span>).to_string(),
-<a href=#430 id=430 data-nosnippet>430</a>			<span class="string">"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f#0"
-<a href=#431 id=431 data-nosnippet>431</a>		</span>);
-<a href=#432 id=432 data-nosnippet>432</a>		<span class="comment">// The greater payment utxo is used as collateral
-<a href=#433 id=433 data-nosnippet>433</a>		</span><span class="macro">assert_eq!</span>(
-<a href=#434 id=434 data-nosnippet>434</a>			body.collateral().unwrap().get(<span class="number">0</span>).to_string(),
-<a href=#435 id=435 data-nosnippet>435</a>			<span class="string">"0404040404040404040404040404040404040404040404040404040404040404#1"
-<a href=#436 id=436 data-nosnippet>436</a>		</span>);
-<a href=#437 id=437 data-nosnippet>437</a>		<span class="kw">let </span>outputs = body.outputs();
-<a href=#438 id=438 data-nosnippet>438</a>		<span class="comment">// There is a change for payment
-<a href=#439 id=439 data-nosnippet>439</a>		</span><span class="kw">let </span>change_output = outputs.into_iter().find(|o| o.address() == payment_addr()).unwrap();
-<a href=#440 id=440 data-nosnippet>440</a>		<span class="comment">// There is 1 permissioned candidates token in the validator address output
-<a href=#441 id=441 data-nosnippet>441</a>		</span><span class="kw">let </span>script_output = outputs.into_iter().find(|o| o.address() == validator_addr()).unwrap();
-<a href=#442 id=442 data-nosnippet>442</a>		<span class="kw">let </span>coins_sum = change_output
-<a href=#443 id=443 data-nosnippet>443</a>			.amount()
-<a href=#444 id=444 data-nosnippet>444</a>			.coin()
-<a href=#445 id=445 data-nosnippet>445</a>			.checked_add(<span class="kw-2">&amp;</span>script_output.amount().coin())
-<a href=#446 id=446 data-nosnippet>446</a>			.unwrap()
-<a href=#447 id=447 data-nosnippet>447</a>			.checked_add(<span class="kw-2">&amp;</span>body.fee())
-<a href=#448 id=448 data-nosnippet>448</a>			.unwrap();
-<a href=#449 id=449 data-nosnippet>449</a>		<span class="macro">assert_eq!</span>(
-<a href=#450 id=450 data-nosnippet>450</a>			coins_sum,
-<a href=#451 id=451 data-nosnippet>451</a>			(greater_payment_utxo().value.lovelace + script_utxo_lovelace).into()
-<a href=#452 id=452 data-nosnippet>452</a>		);
-<a href=#453 id=453 data-nosnippet>453</a>		<span class="macro">assert_eq!</span>(
-<a href=#454 id=454 data-nosnippet>454</a>			script_output
-<a href=#455 id=455 data-nosnippet>455</a>				.amount()
-<a href=#456 id=456 data-nosnippet>456</a>				.multiasset()
-<a href=#457 id=457 data-nosnippet>457</a>				.unwrap()
-<a href=#458 id=458 data-nosnippet>458</a>				.get_asset(<span class="kw-2">&amp;</span>token_policy_id().into(), <span class="kw-2">&amp;</span>empty_asset_name(),),
-<a href=#459 id=459 data-nosnippet>459</a>			<span class="number">1u64</span>.into()
-<a href=#460 id=460 data-nosnippet>460</a>		);
-<a href=#461 id=461 data-nosnippet>461</a>		<span class="macro">assert_eq!</span>(script_output.plutus_data().unwrap(), expected_plutus_data());
-<a href=#462 id=462 data-nosnippet>462</a>
-<a href=#463 id=463 data-nosnippet>463</a>		<span class="comment">// Collateral return must be set
-<a href=#464 id=464 data-nosnippet>464</a>		</span><span class="kw">let </span>collateral_return = body.collateral_return().unwrap();
-<a href=#465 id=465 data-nosnippet>465</a>		<span class="macro">assert_eq!</span>(collateral_return.address(), payment_addr());
-<a href=#466 id=466 data-nosnippet>466</a>		<span class="kw">let </span>total_collateral = body.total_collateral().unwrap();
-<a href=#467 id=467 data-nosnippet>467</a>		<span class="macro">assert_eq!</span>(
-<a href=#468 id=468 data-nosnippet>468</a>			collateral_return.amount().coin().checked_add(<span class="kw-2">&amp;</span>total_collateral).unwrap(),
-<a href=#469 id=469 data-nosnippet>469</a>			greater_payment_utxo().value.lovelace.into()
-<a href=#470 id=470 data-nosnippet>470</a>		);
-<a href=#471 id=471 data-nosnippet>471</a>	}
-<a href=#472 id=472 data-nosnippet>472</a>
-<a href=#473 id=473 data-nosnippet>473</a>	<span class="kw">fn </span>permissioned_candidates_ex_units() -&gt; ExUnits {
-<a href=#474 id=474 data-nosnippet>474</a>		ExUnits::new(<span class="kw-2">&amp;</span><span class="number">10000u32</span>.into(), <span class="kw-2">&amp;</span><span class="number">200u32</span>.into())
-<a href=#475 id=475 data-nosnippet>475</a>	}
-<a href=#476 id=476 data-nosnippet>476</a>	<span class="kw">fn </span>governance_ex_units() -&gt; ExUnits {
-<a href=#477 id=477 data-nosnippet>477</a>		ExUnits::new(<span class="kw-2">&amp;</span><span class="number">99999u32</span>.into(), <span class="kw-2">&amp;</span><span class="number">999u32</span>.into())
-<a href=#478 id=478 data-nosnippet>478</a>	}
-<a href=#479 id=479 data-nosnippet>479</a>
-<a href=#480 id=480 data-nosnippet>480</a>	<span class="kw">fn </span>test_costs_mint() -&gt; Costs {
-<a href=#481 id=481 data-nosnippet>481</a>		Costs::new(
-<a href=#482 id=482 data-nosnippet>482</a>			<span class="macro">vec!</span>[
-<a href=#483 id=483 data-nosnippet>483</a>				(test_policy().csl_script_hash(), permissioned_candidates_ex_units()),
-<a href=#484 id=484 data-nosnippet>484</a>				(test_governance_policy().script().script_hash().into(), governance_ex_units()),
-<a href=#485 id=485 data-nosnippet>485</a>			]
-<a href=#486 id=486 data-nosnippet>486</a>			.into_iter()
-<a href=#487 id=487 data-nosnippet>487</a>			.collect(),
-<a href=#488 id=488 data-nosnippet>488</a>			<span class="macro">vec!</span>[(<span class="number">0</span>, permissioned_candidates_ex_units())].into_iter().collect(),
-<a href=#489 id=489 data-nosnippet>489</a>		)
-<a href=#490 id=490 data-nosnippet>490</a>	}
-<a href=#491 id=491 data-nosnippet>491</a>
-<a href=#492 id=492 data-nosnippet>492</a>	<span class="kw">fn </span>test_costs_update() -&gt; Costs {
-<a href=#493 id=493 data-nosnippet>493</a>		Costs::new(
-<a href=#494 id=494 data-nosnippet>494</a>			<span class="macro">vec!</span>[(test_governance_policy().script().script_hash().into(), governance_ex_units())]
-<a href=#495 id=495 data-nosnippet>495</a>				.into_iter()
-<a href=#496 id=496 data-nosnippet>496</a>				.collect(),
-<a href=#497 id=497 data-nosnippet>497</a>			<span class="macro">vec!</span>[(<span class="number">0</span>, permissioned_candidates_ex_units())].into_iter().collect(),
-<a href=#498 id=498 data-nosnippet>498</a>		)
-<a href=#499 id=499 data-nosnippet>499</a>	}
-<a href=#500 id=500 data-nosnippet>500</a>
-<a href=#501 id=501 data-nosnippet>501</a>	<span class="kw">fn </span>test_goveranance_utxo() -&gt; OgmiosUtxo {
-<a href=#502 id=502 data-nosnippet>502</a>		OgmiosUtxo { transaction: OgmiosTx { id: [<span class="number">123</span>; <span class="number">32</span>] }, index: <span class="number">17</span>, ..Default::default() }
-<a href=#503 id=503 data-nosnippet>503</a>	}
-<a href=#504 id=504 data-nosnippet>504</a>
-<a href=#505 id=505 data-nosnippet>505</a>	<span class="kw">fn </span>test_governance_data() -&gt; GovernanceData {
-<a href=#506 id=506 data-nosnippet>506</a>		GovernanceData { policy: test_governance_policy(), utxo: test_goveranance_utxo() }
-<a href=#507 id=507 data-nosnippet>507</a>	}
-<a href=#508 id=508 data-nosnippet>508</a>
-<a href=#509 id=509 data-nosnippet>509</a>	<span class="kw">fn </span>test_tx_context() -&gt; TransactionContext {
-<a href=#510 id=510 data-nosnippet>510</a>		TransactionContext {
-<a href=#511 id=511 data-nosnippet>511</a>			payment_key: payment_key(),
-<a href=#512 id=512 data-nosnippet>512</a>			payment_key_utxos: <span class="macro">vec!</span>[
-<a href=#513 id=513 data-nosnippet>513</a>				lesser_payment_utxo(),
-<a href=#514 id=514 data-nosnippet>514</a>				greater_payment_utxo(),
-<a href=#515 id=515 data-nosnippet>515</a>				make_utxo(<span class="number">14u8</span>, <span class="number">0</span>, <span class="number">400000</span>, <span class="kw-2">&amp;</span>payment_addr()),
-<a href=#516 id=516 data-nosnippet>516</a>			],
-<a href=#517 id=517 data-nosnippet>517</a>			network: NetworkIdKind::Testnet,
-<a href=#518 id=518 data-nosnippet>518</a>			protocol_parameters: protocol_parameters(),
-<a href=#519 id=519 data-nosnippet>519</a>			change_address: payment_addr(),
-<a href=#520 id=520 data-nosnippet>520</a>		}
-<a href=#521 id=521 data-nosnippet>521</a>	}
-<a href=#522 id=522 data-nosnippet>522</a>
-<a href=#523 id=523 data-nosnippet>523</a>	<span class="kw">fn </span>lesser_payment_utxo() -&gt; OgmiosUtxo {
-<a href=#524 id=524 data-nosnippet>524</a>		make_utxo(<span class="number">7u8</span>, <span class="number">0</span>, <span class="number">1700000</span>, <span class="kw-2">&amp;</span>payment_addr())
-<a href=#525 id=525 data-nosnippet>525</a>	}
-<a href=#526 id=526 data-nosnippet>526</a>
-<a href=#527 id=527 data-nosnippet>527</a>	<span class="kw">fn </span>greater_payment_utxo() -&gt; OgmiosUtxo {
-<a href=#528 id=528 data-nosnippet>528</a>		make_utxo(<span class="number">4u8</span>, <span class="number">1</span>, <span class="number">1800000</span>, <span class="kw-2">&amp;</span>payment_addr())
-<a href=#529 id=529 data-nosnippet>529</a>	}
-<a href=#530 id=530 data-nosnippet>530</a>
-<a href=#531 id=531 data-nosnippet>531</a>	<span class="kw">fn </span>validator_addr() -&gt; Address {
-<a href=#532 id=532 data-nosnippet>532</a>		Address::from_bech32(<span class="string">"addr_test1wpha4546lvfcau5jsrwpht9h6350m3au86fev6nwmuqz9gqer2ung"</span>)
-<a href=#533 id=533 data-nosnippet>533</a>			.unwrap()
-<a href=#534 id=534 data-nosnippet>534</a>	}
-<a href=#535 id=535 data-nosnippet>535</a>
-<a href=#536 id=536 data-nosnippet>536</a>	<span class="kw">fn </span>token_policy_id() -&gt; [u8; <span class="number">28</span>] {
-<a href=#537 id=537 data-nosnippet>537</a>		<span class="macro">hex!</span>(<span class="string">"f14241393964259a53ca546af364e7f5688ca5aaa35f1e0da0f951b2"</span>)
-<a href=#538 id=538 data-nosnippet>538</a>	}
-<a href=#539 id=539 data-nosnippet>539</a>
-<a href=#540 id=540 data-nosnippet>540</a>	<span class="kw">fn </span>input_candidates() -&gt; Vec&lt;PermissionedCandidateData&gt; {
-<a href=#541 id=541 data-nosnippet>541</a>		<span class="macro">vec!</span>[
-<a href=#542 id=542 data-nosnippet>542</a>			PermissionedCandidateData {
-<a href=#543 id=543 data-nosnippet>543</a>				sidechain_public_key: SidechainPublicKey(
-<a href=#544 id=544 data-nosnippet>544</a>					<span class="macro">hex!</span>(<span class="string">"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"</span>)
-<a href=#545 id=545 data-nosnippet>545</a>						.into(),
-<a href=#546 id=546 data-nosnippet>546</a>				),
-<a href=#547 id=547 data-nosnippet>547</a>				aura_public_key: AuraPublicKey(
-<a href=#548 id=548 data-nosnippet>548</a>					<span class="macro">hex!</span>(<span class="string">"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"</span>).into(),
-<a href=#549 id=549 data-nosnippet>549</a>				),
-<a href=#550 id=550 data-nosnippet>550</a>				grandpa_public_key: GrandpaPublicKey(
-<a href=#551 id=551 data-nosnippet>551</a>					<span class="macro">hex!</span>(<span class="string">"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"</span>).into(),
-<a href=#552 id=552 data-nosnippet>552</a>				),
-<a href=#553 id=553 data-nosnippet>553</a>			},
-<a href=#554 id=554 data-nosnippet>554</a>			PermissionedCandidateData {
-<a href=#555 id=555 data-nosnippet>555</a>				sidechain_public_key: SidechainPublicKey(
-<a href=#556 id=556 data-nosnippet>556</a>					<span class="macro">hex!</span>(<span class="string">"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"</span>)
-<a href=#557 id=557 data-nosnippet>557</a>						.into(),
-<a href=#558 id=558 data-nosnippet>558</a>				),
-<a href=#559 id=559 data-nosnippet>559</a>				aura_public_key: AuraPublicKey(
-<a href=#560 id=560 data-nosnippet>560</a>					<span class="macro">hex!</span>(<span class="string">"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"</span>).into(),
-<a href=#561 id=561 data-nosnippet>561</a>				),
-<a href=#562 id=562 data-nosnippet>562</a>				grandpa_public_key: GrandpaPublicKey(
-<a href=#563 id=563 data-nosnippet>563</a>					<span class="macro">hex!</span>(<span class="string">"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"</span>).into(),
-<a href=#564 id=564 data-nosnippet>564</a>				),
-<a href=#565 id=565 data-nosnippet>565</a>			},
-<a href=#566 id=566 data-nosnippet>566</a>		]
-<a href=#567 id=567 data-nosnippet>567</a>	}
-<a href=#568 id=568 data-nosnippet>568</a>
-<a href=#569 id=569 data-nosnippet>569</a>	<span class="kw">fn </span>expected_plutus_data() -&gt; PlutusData {
-<a href=#570 id=570 data-nosnippet>570</a>		permissioned_candidates_to_plutus_data(<span class="kw-2">&amp;</span>input_candidates())
-<a href=#571 id=571 data-nosnippet>571</a>	}
-<a href=#572 id=572 data-nosnippet>572</a>}</code></pre></div></section></main></body></html>
+<a href=#380 id=380 data-nosnippet>380</a>		<span class="macro">assert_eq!</span>(
+<a href=#381 id=381 data-nosnippet>381</a>			script_output
+<a href=#382 id=382 data-nosnippet>382</a>				.amount()
+<a href=#383 id=383 data-nosnippet>383</a>				.multiasset()
+<a href=#384 id=384 data-nosnippet>384</a>				.unwrap()
+<a href=#385 id=385 data-nosnippet>385</a>				.get_asset(<span class="kw-2">&amp;</span>token_policy_id().into(), <span class="kw-2">&amp;</span>empty_asset_name(),),
+<a href=#386 id=386 data-nosnippet>386</a>			<span class="number">1u64</span>.into()
+<a href=#387 id=387 data-nosnippet>387</a>		);
+<a href=#388 id=388 data-nosnippet>388</a>		<span class="macro">assert_eq!</span>(script_output.plutus_data().unwrap(), expected_plutus_data());
+<a href=#389 id=389 data-nosnippet>389</a>		<span class="comment">// This token is minted in the transaction
+<a href=#390 id=390 data-nosnippet>390</a>		</span><span class="kw">let </span>mint = body.mint().unwrap();
+<a href=#391 id=391 data-nosnippet>391</a>		<span class="macro">assert_eq!</span>(
+<a href=#392 id=392 data-nosnippet>392</a>			mint.get(<span class="kw-2">&amp;</span>token_policy_id().into())
+<a href=#393 id=393 data-nosnippet>393</a>				.unwrap()
+<a href=#394 id=394 data-nosnippet>394</a>				.get(<span class="number">0</span>)
+<a href=#395 id=395 data-nosnippet>395</a>				.unwrap()
+<a href=#396 id=396 data-nosnippet>396</a>				.get(<span class="kw-2">&amp;</span>empty_asset_name())
+<a href=#397 id=397 data-nosnippet>397</a>				.unwrap(),
+<a href=#398 id=398 data-nosnippet>398</a>			Int::new_i32(<span class="number">1</span>)
+<a href=#399 id=399 data-nosnippet>399</a>		);
+<a href=#400 id=400 data-nosnippet>400</a>
+<a href=#401 id=401 data-nosnippet>401</a>		<span class="comment">// Collateral return must be set
+<a href=#402 id=402 data-nosnippet>402</a>		</span><span class="kw">let </span>collateral_return = body.collateral_return().unwrap();
+<a href=#403 id=403 data-nosnippet>403</a>		<span class="macro">assert_eq!</span>(collateral_return.address(), payment_addr());
+<a href=#404 id=404 data-nosnippet>404</a>		<span class="kw">let </span>total_collateral = body.total_collateral().unwrap();
+<a href=#405 id=405 data-nosnippet>405</a>		<span class="macro">assert_eq!</span>(
+<a href=#406 id=406 data-nosnippet>406</a>			collateral_return.amount().coin().checked_add(<span class="kw-2">&amp;</span>total_collateral).unwrap(),
+<a href=#407 id=407 data-nosnippet>407</a>			greater_payment_utxo().value.lovelace.into()
+<a href=#408 id=408 data-nosnippet>408</a>		);
+<a href=#409 id=409 data-nosnippet>409</a>	}
+<a href=#410 id=410 data-nosnippet>410</a>
+<a href=#411 id=411 data-nosnippet>411</a>	<span class="attr">#[test]
+<a href=#412 id=412 data-nosnippet>412</a>	</span><span class="kw">fn </span>update_permissioned_candidates_tx_regression_test() {
+<a href=#413 id=413 data-nosnippet>413</a>		<span class="kw">let </span>script_utxo_lovelace = <span class="number">1952430</span>;
+<a href=#414 id=414 data-nosnippet>414</a>		<span class="kw">let </span>script_utxo = OgmiosUtxo {
+<a href=#415 id=415 data-nosnippet>415</a>			transaction: OgmiosTx { id: [<span class="number">15</span>; <span class="number">32</span>] },
+<a href=#416 id=416 data-nosnippet>416</a>			index: <span class="number">0</span>,
+<a href=#417 id=417 data-nosnippet>417</a>			value: OgmiosValue {
+<a href=#418 id=418 data-nosnippet>418</a>				lovelace: script_utxo_lovelace,
+<a href=#419 id=419 data-nosnippet>419</a>				native_tokens: <span class="macro">vec!</span>[(
+<a href=#420 id=420 data-nosnippet>420</a>					token_policy_id(),
+<a href=#421 id=421 data-nosnippet>421</a>					<span class="macro">vec!</span>[OgmiosAsset { name: <span class="macro">vec!</span>[], amount: <span class="number">1 </span>}],
+<a href=#422 id=422 data-nosnippet>422</a>				)]
+<a href=#423 id=423 data-nosnippet>423</a>				.into_iter()
+<a href=#424 id=424 data-nosnippet>424</a>				.collect(),
+<a href=#425 id=425 data-nosnippet>425</a>			},
+<a href=#426 id=426 data-nosnippet>426</a>			address: validator_addr().to_bech32(<span class="prelude-val">None</span>).unwrap(),
+<a href=#427 id=427 data-nosnippet>427</a>			..Default::default()
+<a href=#428 id=428 data-nosnippet>428</a>		};
+<a href=#429 id=429 data-nosnippet>429</a>
+<a href=#430 id=430 data-nosnippet>430</a>		<span class="kw">let </span>tx = update_permissioned_candidates_tx(
+<a href=#431 id=431 data-nosnippet>431</a>			<span class="kw-2">&amp;</span>test_validator(),
+<a href=#432 id=432 data-nosnippet>432</a>			<span class="kw-2">&amp;</span>test_policy(),
+<a href=#433 id=433 data-nosnippet>433</a>			<span class="kw-2">&amp;</span>input_candidates(),
+<a href=#434 id=434 data-nosnippet>434</a>			<span class="kw-2">&amp;</span>script_utxo,
+<a href=#435 id=435 data-nosnippet>435</a>			<span class="kw-2">&amp;</span>test_governance_data(),
+<a href=#436 id=436 data-nosnippet>436</a>			test_costs_update(),
+<a href=#437 id=437 data-nosnippet>437</a>			<span class="kw-2">&amp;</span>test_tx_context(),
+<a href=#438 id=438 data-nosnippet>438</a>		)
+<a href=#439 id=439 data-nosnippet>439</a>		.unwrap();
+<a href=#440 id=440 data-nosnippet>440</a>		<span class="kw">let </span>body = tx.body();
+<a href=#441 id=441 data-nosnippet>441</a>		<span class="kw">let </span>inputs = body.inputs();
+<a href=#442 id=442 data-nosnippet>442</a>		<span class="comment">// Script input goes to inputs
+<a href=#443 id=443 data-nosnippet>443</a>		</span><span class="macro">assert_eq!</span>(
+<a href=#444 id=444 data-nosnippet>444</a>			inputs.get(<span class="number">0</span>).to_string(),
+<a href=#445 id=445 data-nosnippet>445</a>			<span class="string">"0404040404040404040404040404040404040404040404040404040404040404#1"
+<a href=#446 id=446 data-nosnippet>446</a>		</span>);
+<a href=#447 id=447 data-nosnippet>447</a>		<span class="comment">// Payment input goes to inputs
+<a href=#448 id=448 data-nosnippet>448</a>		</span><span class="macro">assert_eq!</span>(
+<a href=#449 id=449 data-nosnippet>449</a>			inputs.get(<span class="number">1</span>).to_string(),
+<a href=#450 id=450 data-nosnippet>450</a>			<span class="string">"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f#0"
+<a href=#451 id=451 data-nosnippet>451</a>		</span>);
+<a href=#452 id=452 data-nosnippet>452</a>		<span class="comment">// The greater payment utxo is used as collateral
+<a href=#453 id=453 data-nosnippet>453</a>		</span><span class="macro">assert_eq!</span>(
+<a href=#454 id=454 data-nosnippet>454</a>			body.collateral().unwrap().get(<span class="number">0</span>).to_string(),
+<a href=#455 id=455 data-nosnippet>455</a>			<span class="string">"0404040404040404040404040404040404040404040404040404040404040404#1"
+<a href=#456 id=456 data-nosnippet>456</a>		</span>);
+<a href=#457 id=457 data-nosnippet>457</a>		<span class="kw">let </span>outputs = body.outputs();
+<a href=#458 id=458 data-nosnippet>458</a>		<span class="comment">// There is a change for payment
+<a href=#459 id=459 data-nosnippet>459</a>		</span><span class="kw">let </span>change_output = outputs.into_iter().find(|o| o.address() == payment_addr()).unwrap();
+<a href=#460 id=460 data-nosnippet>460</a>		<span class="comment">// There is 1 permissioned candidates token in the validator address output
+<a href=#461 id=461 data-nosnippet>461</a>		</span><span class="kw">let </span>script_output = outputs.into_iter().find(|o| o.address() == validator_addr()).unwrap();
+<a href=#462 id=462 data-nosnippet>462</a>		<span class="kw">let </span>coins_sum = change_output
+<a href=#463 id=463 data-nosnippet>463</a>			.amount()
+<a href=#464 id=464 data-nosnippet>464</a>			.coin()
+<a href=#465 id=465 data-nosnippet>465</a>			.checked_add(<span class="kw-2">&amp;</span>script_output.amount().coin())
+<a href=#466 id=466 data-nosnippet>466</a>			.unwrap()
+<a href=#467 id=467 data-nosnippet>467</a>			.checked_add(<span class="kw-2">&amp;</span>body.fee())
+<a href=#468 id=468 data-nosnippet>468</a>			.unwrap();
+<a href=#469 id=469 data-nosnippet>469</a>		<span class="macro">assert_eq!</span>(
+<a href=#470 id=470 data-nosnippet>470</a>			coins_sum,
+<a href=#471 id=471 data-nosnippet>471</a>			(greater_payment_utxo().value.lovelace + script_utxo_lovelace).into()
+<a href=#472 id=472 data-nosnippet>472</a>		);
+<a href=#473 id=473 data-nosnippet>473</a>		<span class="macro">assert_eq!</span>(
+<a href=#474 id=474 data-nosnippet>474</a>			script_output
+<a href=#475 id=475 data-nosnippet>475</a>				.amount()
+<a href=#476 id=476 data-nosnippet>476</a>				.multiasset()
+<a href=#477 id=477 data-nosnippet>477</a>				.unwrap()
+<a href=#478 id=478 data-nosnippet>478</a>				.get_asset(<span class="kw-2">&amp;</span>token_policy_id().into(), <span class="kw-2">&amp;</span>empty_asset_name(),),
+<a href=#479 id=479 data-nosnippet>479</a>			<span class="number">1u64</span>.into()
+<a href=#480 id=480 data-nosnippet>480</a>		);
+<a href=#481 id=481 data-nosnippet>481</a>		<span class="macro">assert_eq!</span>(script_output.plutus_data().unwrap(), expected_plutus_data());
+<a href=#482 id=482 data-nosnippet>482</a>
+<a href=#483 id=483 data-nosnippet>483</a>		<span class="comment">// Collateral return must be set
+<a href=#484 id=484 data-nosnippet>484</a>		</span><span class="kw">let </span>collateral_return = body.collateral_return().unwrap();
+<a href=#485 id=485 data-nosnippet>485</a>		<span class="macro">assert_eq!</span>(collateral_return.address(), payment_addr());
+<a href=#486 id=486 data-nosnippet>486</a>		<span class="kw">let </span>total_collateral = body.total_collateral().unwrap();
+<a href=#487 id=487 data-nosnippet>487</a>		<span class="macro">assert_eq!</span>(
+<a href=#488 id=488 data-nosnippet>488</a>			collateral_return.amount().coin().checked_add(<span class="kw-2">&amp;</span>total_collateral).unwrap(),
+<a href=#489 id=489 data-nosnippet>489</a>			greater_payment_utxo().value.lovelace.into()
+<a href=#490 id=490 data-nosnippet>490</a>		);
+<a href=#491 id=491 data-nosnippet>491</a>	}
+<a href=#492 id=492 data-nosnippet>492</a>
+<a href=#493 id=493 data-nosnippet>493</a>	<span class="kw">fn </span>permissioned_candidates_ex_units() -&gt; ExUnits {
+<a href=#494 id=494 data-nosnippet>494</a>		ExUnits::new(<span class="kw-2">&amp;</span><span class="number">10000u32</span>.into(), <span class="kw-2">&amp;</span><span class="number">200u32</span>.into())
+<a href=#495 id=495 data-nosnippet>495</a>	}
+<a href=#496 id=496 data-nosnippet>496</a>	<span class="kw">fn </span>governance_ex_units() -&gt; ExUnits {
+<a href=#497 id=497 data-nosnippet>497</a>		ExUnits::new(<span class="kw-2">&amp;</span><span class="number">99999u32</span>.into(), <span class="kw-2">&amp;</span><span class="number">999u32</span>.into())
+<a href=#498 id=498 data-nosnippet>498</a>	}
+<a href=#499 id=499 data-nosnippet>499</a>
+<a href=#500 id=500 data-nosnippet>500</a>	<span class="kw">fn </span>test_costs_mint() -&gt; Costs {
+<a href=#501 id=501 data-nosnippet>501</a>		Costs::new(
+<a href=#502 id=502 data-nosnippet>502</a>			<span class="macro">vec!</span>[
+<a href=#503 id=503 data-nosnippet>503</a>				(test_policy().csl_script_hash(), permissioned_candidates_ex_units()),
+<a href=#504 id=504 data-nosnippet>504</a>				(test_governance_policy().script().script_hash().into(), governance_ex_units()),
+<a href=#505 id=505 data-nosnippet>505</a>			]
+<a href=#506 id=506 data-nosnippet>506</a>			.into_iter()
+<a href=#507 id=507 data-nosnippet>507</a>			.collect(),
+<a href=#508 id=508 data-nosnippet>508</a>			<span class="macro">vec!</span>[(<span class="number">0</span>, permissioned_candidates_ex_units())].into_iter().collect(),
+<a href=#509 id=509 data-nosnippet>509</a>		)
+<a href=#510 id=510 data-nosnippet>510</a>	}
+<a href=#511 id=511 data-nosnippet>511</a>
+<a href=#512 id=512 data-nosnippet>512</a>	<span class="kw">fn </span>test_costs_update() -&gt; Costs {
+<a href=#513 id=513 data-nosnippet>513</a>		Costs::new(
+<a href=#514 id=514 data-nosnippet>514</a>			<span class="macro">vec!</span>[(test_governance_policy().script().script_hash().into(), governance_ex_units())]
+<a href=#515 id=515 data-nosnippet>515</a>				.into_iter()
+<a href=#516 id=516 data-nosnippet>516</a>				.collect(),
+<a href=#517 id=517 data-nosnippet>517</a>			<span class="macro">vec!</span>[(<span class="number">0</span>, permissioned_candidates_ex_units())].into_iter().collect(),
+<a href=#518 id=518 data-nosnippet>518</a>		)
+<a href=#519 id=519 data-nosnippet>519</a>	}
+<a href=#520 id=520 data-nosnippet>520</a>
+<a href=#521 id=521 data-nosnippet>521</a>	<span class="kw">fn </span>test_goveranance_utxo() -&gt; OgmiosUtxo {
+<a href=#522 id=522 data-nosnippet>522</a>		OgmiosUtxo { transaction: OgmiosTx { id: [<span class="number">123</span>; <span class="number">32</span>] }, index: <span class="number">17</span>, ..Default::default() }
+<a href=#523 id=523 data-nosnippet>523</a>	}
+<a href=#524 id=524 data-nosnippet>524</a>
+<a href=#525 id=525 data-nosnippet>525</a>	<span class="kw">fn </span>test_governance_data() -&gt; GovernanceData {
+<a href=#526 id=526 data-nosnippet>526</a>		GovernanceData { policy: test_governance_policy(), utxo: test_goveranance_utxo() }
+<a href=#527 id=527 data-nosnippet>527</a>	}
+<a href=#528 id=528 data-nosnippet>528</a>
+<a href=#529 id=529 data-nosnippet>529</a>	<span class="kw">fn </span>test_tx_context() -&gt; TransactionContext {
+<a href=#530 id=530 data-nosnippet>530</a>		TransactionContext {
+<a href=#531 id=531 data-nosnippet>531</a>			payment_key: payment_key(),
+<a href=#532 id=532 data-nosnippet>532</a>			payment_key_utxos: <span class="macro">vec!</span>[
+<a href=#533 id=533 data-nosnippet>533</a>				lesser_payment_utxo(),
+<a href=#534 id=534 data-nosnippet>534</a>				greater_payment_utxo(),
+<a href=#535 id=535 data-nosnippet>535</a>				make_utxo(<span class="number">14u8</span>, <span class="number">0</span>, <span class="number">400000</span>, <span class="kw-2">&amp;</span>payment_addr()),
+<a href=#536 id=536 data-nosnippet>536</a>			],
+<a href=#537 id=537 data-nosnippet>537</a>			network: NetworkIdKind::Testnet,
+<a href=#538 id=538 data-nosnippet>538</a>			protocol_parameters: protocol_parameters(),
+<a href=#539 id=539 data-nosnippet>539</a>			change_address: payment_addr(),
+<a href=#540 id=540 data-nosnippet>540</a>		}
+<a href=#541 id=541 data-nosnippet>541</a>	}
+<a href=#542 id=542 data-nosnippet>542</a>
+<a href=#543 id=543 data-nosnippet>543</a>	<span class="kw">fn </span>lesser_payment_utxo() -&gt; OgmiosUtxo {
+<a href=#544 id=544 data-nosnippet>544</a>		make_utxo(<span class="number">7u8</span>, <span class="number">0</span>, <span class="number">1700000</span>, <span class="kw-2">&amp;</span>payment_addr())
+<a href=#545 id=545 data-nosnippet>545</a>	}
+<a href=#546 id=546 data-nosnippet>546</a>
+<a href=#547 id=547 data-nosnippet>547</a>	<span class="kw">fn </span>greater_payment_utxo() -&gt; OgmiosUtxo {
+<a href=#548 id=548 data-nosnippet>548</a>		make_utxo(<span class="number">4u8</span>, <span class="number">1</span>, <span class="number">1800000</span>, <span class="kw-2">&amp;</span>payment_addr())
+<a href=#549 id=549 data-nosnippet>549</a>	}
+<a href=#550 id=550 data-nosnippet>550</a>
+<a href=#551 id=551 data-nosnippet>551</a>	<span class="kw">fn </span>validator_addr() -&gt; Address {
+<a href=#552 id=552 data-nosnippet>552</a>		Address::from_bech32(<span class="string">"addr_test1wpha4546lvfcau5jsrwpht9h6350m3au86fev6nwmuqz9gqer2ung"</span>)
+<a href=#553 id=553 data-nosnippet>553</a>			.unwrap()
+<a href=#554 id=554 data-nosnippet>554</a>	}
+<a href=#555 id=555 data-nosnippet>555</a>
+<a href=#556 id=556 data-nosnippet>556</a>	<span class="kw">fn </span>token_policy_id() -&gt; [u8; <span class="number">28</span>] {
+<a href=#557 id=557 data-nosnippet>557</a>		<span class="macro">hex!</span>(<span class="string">"f14241393964259a53ca546af364e7f5688ca5aaa35f1e0da0f951b2"</span>)
+<a href=#558 id=558 data-nosnippet>558</a>	}
+<a href=#559 id=559 data-nosnippet>559</a>
+<a href=#560 id=560 data-nosnippet>560</a>	<span class="kw">fn </span>input_candidates() -&gt; Vec&lt;PermissionedCandidateData&gt; {
+<a href=#561 id=561 data-nosnippet>561</a>		<span class="macro">vec!</span>[
+<a href=#562 id=562 data-nosnippet>562</a>			PermissionedCandidateData {
+<a href=#563 id=563 data-nosnippet>563</a>				sidechain_public_key: SidechainPublicKey(
+<a href=#564 id=564 data-nosnippet>564</a>					<span class="macro">hex!</span>(<span class="string">"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"</span>)
+<a href=#565 id=565 data-nosnippet>565</a>						.into(),
+<a href=#566 id=566 data-nosnippet>566</a>				),
+<a href=#567 id=567 data-nosnippet>567</a>				aura_public_key: AuraPublicKey(
+<a href=#568 id=568 data-nosnippet>568</a>					<span class="macro">hex!</span>(<span class="string">"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"</span>).into(),
+<a href=#569 id=569 data-nosnippet>569</a>				),
+<a href=#570 id=570 data-nosnippet>570</a>				grandpa_public_key: GrandpaPublicKey(
+<a href=#571 id=571 data-nosnippet>571</a>					<span class="macro">hex!</span>(<span class="string">"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"</span>).into(),
+<a href=#572 id=572 data-nosnippet>572</a>				),
+<a href=#573 id=573 data-nosnippet>573</a>			},
+<a href=#574 id=574 data-nosnippet>574</a>			PermissionedCandidateData {
+<a href=#575 id=575 data-nosnippet>575</a>				sidechain_public_key: SidechainPublicKey(
+<a href=#576 id=576 data-nosnippet>576</a>					<span class="macro">hex!</span>(<span class="string">"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"</span>)
+<a href=#577 id=577 data-nosnippet>577</a>						.into(),
+<a href=#578 id=578 data-nosnippet>578</a>				),
+<a href=#579 id=579 data-nosnippet>579</a>				aura_public_key: AuraPublicKey(
+<a href=#580 id=580 data-nosnippet>580</a>					<span class="macro">hex!</span>(<span class="string">"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"</span>).into(),
+<a href=#581 id=581 data-nosnippet>581</a>				),
+<a href=#582 id=582 data-nosnippet>582</a>				grandpa_public_key: GrandpaPublicKey(
+<a href=#583 id=583 data-nosnippet>583</a>					<span class="macro">hex!</span>(<span class="string">"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"</span>).into(),
+<a href=#584 id=584 data-nosnippet>584</a>				),
+<a href=#585 id=585 data-nosnippet>585</a>			},
+<a href=#586 id=586 data-nosnippet>586</a>		]
+<a href=#587 id=587 data-nosnippet>587</a>	}
+<a href=#588 id=588 data-nosnippet>588</a>
+<a href=#589 id=589 data-nosnippet>589</a>	<span class="kw">fn </span>expected_plutus_data() -&gt; PlutusData {
+<a href=#590 id=590 data-nosnippet>590</a>		permissioned_candidates_to_plutus_data(<span class="kw-2">&amp;</span>input_candidates())
+<a href=#591 id=591 data-nosnippet>591</a>	}
+<a href=#592 id=592 data-nosnippet>592</a>}</code></pre></div></section></main></body></html>

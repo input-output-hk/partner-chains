@@ -7,8 +7,8 @@
 <a href=#7 id=7 data-nosnippet>7</a></span><span class="kw">use </span><span class="kw">crate</span>::await_tx::{AwaitTx, FixedDelayRetries};
 <a href=#8 id=8 data-nosnippet>8</a><span class="kw">use </span><span class="kw">crate</span>::cardano_keys::CardanoPaymentSigningKey;
 <a href=#9 id=9 data-nosnippet>9</a><span class="kw">use </span><span class="kw">crate</span>::csl::{
-<a href=#10 id=10 data-nosnippet>10</a>	CostStore, Costs, InputsBuilderExt, TransactionBuilderExt, TransactionContext, TransactionExt,
-<a href=#11 id=11 data-nosnippet>11</a>	empty_asset_name, get_builder_config, unit_plutus_data,
+<a href=#10 id=10 data-nosnippet>10</a>	CostStore, Costs, InputsBuilderExt, NetworkTypeExt, TransactionBuilderExt, TransactionContext,
+<a href=#11 id=11 data-nosnippet>11</a>	TransactionExt, empty_asset_name, get_builder_config, unit_plutus_data,
 <a href=#12 id=12 data-nosnippet>12</a>};
 <a href=#13 id=13 data-nosnippet>13</a><span class="kw">use </span><span class="kw">crate</span>::governance::GovernanceData;
 <a href=#14 id=14 data-nosnippet>14</a><span class="kw">use </span><span class="kw">crate</span>::multisig::submit_or_create_tx_to_sign;
@@ -262,4 +262,25 @@
 <a href=#262 id=262 data-nosnippet>262</a>	)<span class="question-mark">?</span>;
 <a href=#263 id=263 data-nosnippet>263</a>
 <a href=#264 id=264 data-nosnippet>264</a>	<span class="prelude-val">Ok</span>(tx_builder.balance_update_and_build(ctx)<span class="question-mark">?</span>.remove_native_script_witnesses())
-<a href=#265 id=265 data-nosnippet>265</a>}</code></pre></div></section></main></body></html>
+<a href=#265 id=265 data-nosnippet>265</a>}
+<a href=#266 id=266 data-nosnippet>266</a>
+<a href=#267 id=267 data-nosnippet>267</a><span class="kw">pub trait </span>GetDParam {
+<a href=#268 id=268 data-nosnippet>268</a>	<span class="attr">#[allow(async_fn_in_trait)]
+<a href=#269 id=269 data-nosnippet>269</a>	</span><span class="kw">async fn </span>get_d_param(<span class="kw-2">&amp;</span><span class="self">self</span>, genesis_utxo: UtxoId) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;DParameter&gt;&gt;;
+<a href=#270 id=270 data-nosnippet>270</a>}
+<a href=#271 id=271 data-nosnippet>271</a>
+<a href=#272 id=272 data-nosnippet>272</a><span class="kw">impl</span>&lt;C: QueryLedgerState + QueryNetwork&gt; GetDParam <span class="kw">for </span>C {
+<a href=#273 id=273 data-nosnippet>273</a>	<span class="kw">async fn </span>get_d_param(<span class="kw-2">&amp;</span><span class="self">self</span>, genesis_utxo: UtxoId) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;DParameter&gt;&gt; {
+<a href=#274 id=274 data-nosnippet>274</a>		get_d_param(genesis_utxo, <span class="self">self</span>).<span class="kw">await
+<a href=#275 id=275 data-nosnippet>275</a>	</span>}
+<a href=#276 id=276 data-nosnippet>276</a>}
+<a href=#277 id=277 data-nosnippet>277</a>
+<a href=#278 id=278 data-nosnippet>278</a><span class="kw">pub async fn </span>get_d_param&lt;C: QueryLedgerState + QueryNetwork&gt;(
+<a href=#279 id=279 data-nosnippet>279</a>	genesis_utxo: UtxoId,
+<a href=#280 id=280 data-nosnippet>280</a>	ogmios_client: <span class="kw-2">&amp;</span>C,
+<a href=#281 id=281 data-nosnippet>281</a>) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;DParameter&gt;&gt; {
+<a href=#282 id=282 data-nosnippet>282</a>	<span class="kw">let </span>network = ogmios_client.shelley_genesis_configuration().<span class="kw">await</span><span class="question-mark">?</span>.network.to_csl();
+<a href=#283 id=283 data-nosnippet>283</a>	<span class="kw">let </span>scripts = <span class="kw">crate</span>::scripts_data::d_parameter_scripts(genesis_utxo, network)<span class="question-mark">?</span>;
+<a href=#284 id=284 data-nosnippet>284</a>	<span class="kw">let </span>validator_utxos = ogmios_client.query_utxos(<span class="kw-2">&amp;</span>[scripts.validator_address.clone()]).<span class="kw">await</span><span class="question-mark">?</span>;
+<a href=#285 id=285 data-nosnippet>285</a>	<span class="prelude-val">Ok</span>(get_current_d_parameter(validator_utxos)<span class="question-mark">?</span>.map(|(<span class="kw">_</span>, d_parameter)| d_parameter))
+<a href=#286 id=286 data-nosnippet>286</a>}</code></pre></div></section></main></body></html>
