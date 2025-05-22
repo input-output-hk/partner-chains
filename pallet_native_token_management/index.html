@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Pallet allowing Partner Chains to support movement of their native token from Cardano."><title>pallet_native_token_management - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-0ce1a80b.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="pallet_native_token_management" data-themes="" data-resource-suffix="" data-rustdoc-version="1.89.0-nightly (bf64d66bd 2025-05-21)" data-channel="nightly" data-search-js="search-f7877310.js" data-settings-js="settings-5514c975.js" ><script src="../static.files/storage-4e99c027.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-7ef8a74a.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../pallet_native_token_management/index.html">pallet_<wbr>native_<wbr>token_<wbr>management</a><span class="version">1.7.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#reexports">Crate Items</a></h3><ul class="block"><li><a href="#reexports" title="Re-exports">Re-exports</a></li><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#traits" title="Traits">Traits</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>pallet_native_token_management</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/pallet_native_token_management/lib.rs.html#1-251">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Pallet allowing Partner Chains to support movement of their native token from Cardano.</p>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Pallet allowing Partner Chains to support movement of their native token from Cardano."><title>pallet_native_token_management - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-0ce1a80b.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="pallet_native_token_management" data-themes="" data-resource-suffix="" data-rustdoc-version="1.89.0-nightly (bf64d66bd 2025-05-21)" data-channel="nightly" data-search-js="search-f7877310.js" data-settings-js="settings-5514c975.js" ><script src="../static.files/storage-4e99c027.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-7ef8a74a.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../pallet_native_token_management/index.html">pallet_<wbr>native_<wbr>token_<wbr>management</a><span class="version">1.7.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#context-and-purpose-of-this-pallet" title="Context and purpose of this pallet">Context and purpose of this pallet</a></li><li><a href="#usage" title="Usage">Usage</a><ul><li><a href="#defining-a-transfer-handler" title="Defining a transfer handler">Defining a transfer handler</a></li><li><a href="#adding-to-the-runtime" title="Adding to the runtime">Adding to the runtime</a></li><li><a href="#script-configuration" title="Script configuration">Script configuration</a></li></ul></li></ul><h3><a href="#reexports">Crate Items</a></h3><ul class="block"><li><a href="#reexports" title="Re-exports">Re-exports</a></li><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#traits" title="Traits">Traits</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>pallet_native_token_management</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/pallet_native_token_management/lib.rs.html#1-338">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Pallet allowing Partner Chains to support movement of their native token from Cardano.</p>
+<h2 id="context-and-purpose-of-this-pallet"><a class="doc-anchor" href="#context-and-purpose-of-this-pallet">§</a>Context and purpose of this pallet</h2>
 <p>Partner Chains Smart Contracts establish a notion of liquid and illiquid supply of the native
 token on Cardano, represented as native tokens being either freely available in user accounts
 or locked under a designated illiquid supply address. Movement of native tokens into the illiquid
@@ -7,10 +8,75 @@ Partner Chain.</p>
 <p>This pallet consumes inherent data containing information on the amount of native tokens newly
 locked on Cardano and produces an inherent extrinsic to handle their movement. The specific
 logic releasing the tokens is left for the Partner Chain developer to implement and is configured
-in the pallet via the <code>TokenTransferHandler</code>.</p>
-<p>IMPORTANT: The mechanism implemented via the pallet in this crate is only concerned with the
-amount of tokens moved and does not attach any metadata to the transfers. In particular
-it is not a fully-featured token bridge and needs to be combined with a separate
-sender-receiver metadata channel to implement one.</p>
+in the pallet via the <a href="trait.TokenTransferHandler.html" title="trait pallet_native_token_management::TokenTransferHandler">TokenTransferHandler</a> trait.</p>
+<p><em>IMPORTANT</em>: The mechanism implemented by this pallet is only concerned with the amount of tokens
+moved and does not attach any metadata to the transfers. In particular it is not a
+fully-featured token bridge and needs to be combined with a separate sender-receiver
+metadata channel to implement one.</p>
+<h2 id="usage"><a class="doc-anchor" href="#usage">§</a>Usage</h2><h3 id="defining-a-transfer-handler"><a class="doc-anchor" href="#defining-a-transfer-handler">§</a>Defining a transfer handler</h3>
+<p>The main purpose of the pallet is to trigger user-defined runtime logic whenever a new batch of
+tokens is observed to have been locked on Cardano. To do that, the Partner Chain builder should
+define a type implementing the <a href="trait.TokenTransferHandler.html" title="trait pallet_native_token_management::TokenTransferHandler">TokenTransferHandler</a> trait, eg.:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>sidechain_domain::NativeTokenAmount;
+<span class="kw">use </span>frame_support::pallet_prelude::DispatchResult;
+
+<span class="kw">pub struct </span>TransferHandler;
+<span class="kw">impl </span>pallet_native_token_management::TokenTransferHandler <span class="kw">for </span>TransferHandler {
+	<span class="kw">fn </span>handle_token_transfer(token_amount: NativeTokenAmount) -&gt; DispatchResult {
+		<span class="macro">log::info!</span>(<span class="string">"💸 Registered transfer of {} native tokens"</span>, token_amount.<span class="number">0</span>);
+		<span class="prelude-val">Ok</span>(())
+	}
+}</code></pre></div>
+<h3 id="adding-to-the-runtime"><a class="doc-anchor" href="#adding-to-the-runtime">§</a>Adding to the runtime</h3>
+<p>Aside from the transfer handler, the pallet requires minimal runtime configuration: the runtime event
+type, origin for governance calls implementing [EnsureOrigin] and weights:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">impl </span>pallet_native_token_management::Config <span class="kw">for </span>Runtime {
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
+	<span class="kw">type </span>TokenTransferHandler = TransferHandler;
+	<span class="kw">type </span>MainChainScriptsOrigin = frame_system::EnsureRoot&lt;<span class="self">Self</span>::AccountId&gt;;
+	<span class="kw">type </span>WeightInfo = pallet_native_token_management::weights::SubstrateWeight&lt;Runtime&gt;;
+}</code></pre></div>
+<p>Keep in mind that if the handler logic has to perform storage operations, the pallet’s benchmarks
+should be rerun. Otherwise default weights are provided in [pallet_native_token_management::weights].</p>
+<h3 id="script-configuration"><a class="doc-anchor" href="#script-configuration">§</a>Script configuration</h3>
+<p>For token transfers to be observed, the pallet must be configured with correct Cardano addresses and
+scripts used to idendify them in the ledger. These scripts can be set in two ways: through genesis
+configuration if the pallet is present in the initial runtime of a chain; or via a governance action
+using the [set_main_chain_scripts] extrinsic.</p>
+<h4 id="genesis-configuratin"><a class="doc-anchor" href="#genesis-configuratin">§</a>Genesis configuratin</h4>
+<p>Initial main chain scripts can be set in the genesis configuration, like so:</p>
+<div class="example-wrap"><pre class="language-json"><code>{
+  &quot;nativeTokenManagement&quot;: {
+    &quot;mainChainScripts&quot;: {
+      &quot;illiquid_supply_validator_address&quot;: &quot;0x616464725f74657374317772687674767833663067397776397278386b66716336306a7661336530376e71756a6b32637370656b76346d717339726a64767a&quot;,
+      &quot;native_token_asset_name&quot;: &quot;0x5043546f6b656e44656d6f&quot;,
+      &quot;native_token_policy_id&quot;: &quot;0xada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4&quot;
+    }
+  }
+}</code></pre></div>
+<p>Note that the <code>mainChainScripts</code> field is optional. If it is left empty, the pallet will stay inactive
+until configuration is set later.</p>
+<h4 id="main-chain-scripts-extrinsic"><a class="doc-anchor" href="#main-chain-scripts-extrinsic">§</a>Main chain scripts extrinsic</h4>
+<p>Once the chain is already started, to set initial main chain scripts to a newly added pallet, or to
+change the existing ones, the [set_main_chain_scripts] extrinsic must be submitted through on-chain
+governance mechanism like <code>sudo</code> or <code>pallet_democracy</code>. Who exactly can submit this extrinsic is
+controlled by the <a href="pallet/trait.Config.html#associatedtype.MainChainScriptsOrigin" title="associated type pallet_native_token_management::pallet::Config::MainChainScriptsOrigin">Config::MainChainScriptsOrigin</a> field of the pallet’s configuration, but for security
+it must be a trusted entity.</p>
+<h5 id="initialization-state-of-the-pallet"><a class="doc-anchor" href="#initialization-state-of-the-pallet">§</a>Initialization state of the pallet</h5>
+<p>The pallet tracks its own initialization state through the <a href="pallet/type.Initialized.html" title="type pallet_native_token_management::pallet::Initialized">Initialized</a> storage flag. This information
+is necessary for it to correctly observe historical data and the state is reset every time main chain
+scripts are changed in the pallet. This allows the Partner Chain governance to switch to new versions
+of the smart contracts. However, some consideration must be taken while changing the scripts:</p>
+<ol>
+<li>This mechanism can not handle changing the main chain scripts to values that were used before.
+Doing so will cause some transfers to be registered again, resulting in potential double-spend.
+This means that a script version roll-back is not possible.</li>
+<li>Moving funds from an old illiquid supply address to a new one requires unlocking them and re-locking
+at the new address, resulting in a new transfer being observed. The logic handling the token movement,
+including the transfer handler, must be able to handle this unlock-relock behaviour if a Partner Chain
+governance wishes to migrate tokens to the new address.</li>
+</ol>
 </div></details><h2 id="reexports" class="section-header">Re-exports<a href="#reexports" class="anchor">§</a></h2><dl class="item-table reexports"><dt id="reexport.WeightInfo"><code>pub use weights::<a class="trait" href="weights/trait.WeightInfo.html" title="trait pallet_native_token_management::weights::WeightInfo">WeightInfo</a>;</code></dt><dt><code>pub use <a class="mod" href="pallet/index.html" title="mod pallet_native_token_management::pallet">pallet</a>::*;</code></dt></dl><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="pallet/index.html" title="mod pallet_native_token_management::pallet">pallet</a></dt><dd>The <code>pallet</code> module in each FRAME pallet hosts the most important items needed
 to construct this pallet.</dd><dt><a class="mod" href="weights/index.html" title="mod pallet_native_token_management::weights">weights</a></dt><dd>Autogenerated weights for pallet_native_token_management</dd></dl><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><dl class="item-table"><dt><a class="trait" href="trait.TokenTransferHandler.html" title="trait pallet_native_token_management::TokenTransferHandler">Token<wbr>Transfer<wbr>Handler</a></dt><dd>Interface for user-provided logic to handle native token transfers into the illiquid supply on the main chain.</dd></dl></section></div></main></body></html>
