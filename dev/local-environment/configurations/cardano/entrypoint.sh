@@ -150,12 +150,15 @@ tx_out4=1000000000 # partner-chains-setup (extra)
 
 # Fund 10 permissioned nodes
 for i in {1..10}; do
-    eval "tx_out${i}_permissioned=1000000000 # permissioned-$i"
+    var_name="tx_out${i}_permissioned"
+    declare "$var_name=1000000000"
 done
 
-# Fund 300 registered nodes
+# Fund 300 registered nodes (These are defined but not used in the *initial* main transaction anymore)
+# They are funded in batches later.
 for i in {1..300}; do
-    eval "tx_out${i}_registered=1000000000 # registered-$i"
+    var_name="tx_out${i}_registered"
+    declare "$var_name=1000000000"
 done
 
 tx_out5_lovelace=10000000
@@ -165,7 +168,8 @@ tx_out6=10000000
 # Calculate total output
 total_output=$((tx_out1 + tx_out2 + tx_out3 + tx_out4))
 for i in {1..10}; do
-    eval "amount_permissioned=\\$tx_out${i}_permissioned"
+    var_name="tx_out${i}_permissioned"
+    amount_permissioned="${!var_name}"
     total_output=$((total_output + amount_permissioned))
 done
 total_output=$((total_output + tx_out5_lovelace + tx_out6))
@@ -187,7 +191,8 @@ tx_out_params_array+=(--tx-out "$new_address+$tx_out4")
 
 # Permissioned nodes outputs (still to $new_address)
 for i in {1..10}; do
-    eval "amount_permissioned=\\$tx_out${i}_permissioned"
+    var_name="tx_out${i}_permissioned"
+    amount_permissioned="${!var_name}"
     tx_out_params_array+=(--tx-out "$new_address+$amount_permissioned")
 done
 
