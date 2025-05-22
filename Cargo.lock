@@ -1503,7 +1503,7 @@ checksum = "fe6d2e5af09e8c8ad56c969f2157a3d4238cebc7c55f0a517728c38f7b200f81"
 dependencies = [
  "serde",
  "termcolor",
- "unicode-width 0.2.0",
+ "unicode-width 0.1.14",
 ]
 
 [[package]]
@@ -6456,6 +6456,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-glutton"
+version = "26.0.0"
+source = "git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-stable2503-2#050919ba3894f96664bbeea61ebd4e1cb8fdb0d3"
+dependencies = [
+ "blake2 0.10.6",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-inherents",
+ "sp-io",
+ "sp-runtime",
+]
+
+[[package]]
 name = "pallet-governed-map"
 version = "1.7.0"
 dependencies = [
@@ -6733,7 +6751,7 @@ checksum = "4e69bf016dc406eff7d53a7d3f7cf1c2e72c82b9088aac1118591e36dd2cd3e9"
 dependencies = [
  "bitcoin_hashes 0.13.0",
  "rand 0.8.5",
- "rand_core 0.6.4",
+ "rand_core 0.4.2",
  "serde",
  "unicode-normalization",
 ]
@@ -7077,6 +7095,7 @@ dependencies = [
  "pallet-block-producer-fees",
  "pallet-block-producer-metadata",
  "pallet-block-production-log",
+ "pallet-glutton",
  "pallet-governed-map",
  "pallet-grandpa",
  "pallet-native-token-management",

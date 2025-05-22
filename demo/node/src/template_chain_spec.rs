@@ -1,10 +1,11 @@
 use crate::chain_spec::*;
 use partner_chains_demo_runtime::{
-	AuraConfig, BalancesConfig, GovernedMapConfig, GrandpaConfig, NativeTokenManagementConfig,
-	RuntimeGenesisConfig, SessionCommitteeManagementConfig, SessionConfig, SidechainConfig,
-	SudoConfig, SystemConfig, TestHelperPalletConfig,
+	AccountId, AuraConfig, BalancesConfig, GovernedMapConfig, GrandpaConfig,
+	NativeTokenManagementConfig, RuntimeGenesisConfig, SessionCommitteeManagementConfig,
+	SessionConfig, SidechainConfig, SudoConfig, SystemConfig, TestHelperPalletConfig,
 };
 use sc_service::ChainType;
+use sp_core::crypto::Ss58Codec;
 
 /// Produces template chain spec for Partner Chains.
 /// This code should be run by `partner-chains-node wizards chain-spec`, to produce JSON chain spec file.
@@ -15,14 +16,21 @@ pub fn chain_spec() -> Result<ChainSpec, envy::Error> {
 		system: SystemConfig { ..Default::default() },
 		balances: BalancesConfig {
 			// Update if any endowed accounts are required.
-			balances: vec![],
+			balances: vec![(
+				AccountId::from_ss58check("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY")
+					.unwrap(),
+				1_000_000_000_000_000_000_000u128,
+			)],
 			dev_accounts: None,
 		},
 		aura: AuraConfig { authorities: vec![] },
 		grandpa: GrandpaConfig { authorities: vec![], ..Default::default() },
 		sudo: SudoConfig {
 			// No sudo account by default, please update with your preferences.
-			key: None,
+			key: Some(
+				AccountId::from_ss58check("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY")
+					.unwrap(),
+			),
 		},
 		transaction_payment: Default::default(),
 		session: SessionConfig {
@@ -47,6 +55,7 @@ pub fn chain_spec() -> Result<ChainSpec, envy::Error> {
 			main_chain_scripts: Some(Default::default()),
 			..Default::default()
 		},
+		glutton: Default::default(),
 		test_helper_pallet: TestHelperPalletConfig {
 			participation_data_release_period: 30,
 			..Default::default()
