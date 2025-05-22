@@ -154,12 +154,40 @@ for i in {1..300}; do
     # Extract keys and generate signatures
     sidechain_signing_key=$(jq -r '.secretKey' /partner-chains-nodes/$node_name/keys/sidechain.json)
     
+    # Define and read the specific registration UTXO for this node
+    NODE_REGISTRATION_UTXO_FILE="/shared/registered-${i}.utxo"
+    if [ ! -f "$NODE_REGISTRATION_UTXO_FILE" ]; then
+        echo "Error: Registration UTXO file $NODE_REGISTRATION_UTXO_FILE not found for $node_name!"
+        exit 1
+    fi
+    NODE_REGISTRATION_UTXO=$(cat "$NODE_REGISTRATION_UTXO_FILE")
+    if [ -z "$NODE_REGISTRATION_UTXO" ]; then
+        echo "Error: Registration UTXO file $NODE_REGISTRATION_UTXO_FILE is empty for $node_name!"
+        exit 1
+    fi
+    echo "Using registration UTXO $NODE_REGISTRATION_UTXO for $node_name"
+
+    # Define and read the specific mainchain cold signing key for this node
+    NODE_MAINCHAIN_SKEY_FILE="/shared/node-keys/registered-${i}/keys/cold.skey"
+    if [ ! -f "$NODE_MAINCHAIN_SKEY_FILE" ]; then
+        echo "Error: Mainchain signing key file $NODE_MAINCHAIN_SKEY_FILE not found for $node_name!"
+        exit 1 # This is a critical failure
+    fi
+    # Extract the raw key (cborHex, stripping the '5820' prefix)
+    MAINCHAIN_SIGNING_KEY_RAW=$(jq -r '.cborHex | .[4:]' "$NODE_MAINCHAIN_SKEY_FILE")
+    if [ -z "$MAINCHAIN_SIGNING_KEY_RAW" ] || [ "${#MAINCHAIN_SIGNING_KEY_RAW}" -ne 64 ]; then # 32 bytes = 64 hex chars
+        echo "Error: Failed to extract raw mainchain signing key or key is invalid for $node_name from $NODE_MAINCHAIN_SKEY_FILE!"
+        jq '.' "$NODE_MAINCHAIN_SKEY_FILE" # Print file content for debugging
+        exit 1 # This is a critical failure
+    fi
+    echo "Using mainchain signing key from $NODE_MAINCHAIN_SKEY_FILE for $node_name"
+
     # Process registration signatures
     registration_output=$(./partner-chains-node registration-signatures \
         --genesis-utxo $GENESIS_UTXO \
-        --mainchain-signing-key /keys/cold.skey \
+        --mainchain-signing-key $MAINCHAIN_SIGNING_KEY_RAW \
         --sidechain-signing-key $sidechain_signing_key \
-        --registration-utxo $GENESIS_UTXO)
+        --registration-utxo $NODE_REGISTRATION_UTXO)
     
     # Extract signatures and keys
     spo_public_key=$(echo "$registration_output" | jq -r ".spo_public_key")
@@ -169,6 +197,13 @@ for i in {1..300}; do
     aura_vkey=$(jq -r '.publicKey' /partner-chains-nodes/$node_name/keys/aura.json)
     grandpa_vkey=$(jq -r '.publicKey' /partner-chains-nodes/$node_name/keys/grandpa.json)
     
+    NODE_PAYMENT_SKEY_FILE="/shared/node-keys/registered-${i}/keys/payment.skey"
+    if [ ! -f "$NODE_PAYMENT_SKEY_FILE" ]; then
+        echo "Error: Payment signing key file $NODE_PAYMENT_SKEY_FILE not found for $node_name!"
+        exit 1 # This is a critical failure
+    fi
+    echo "Using payment key $NODE_PAYMENT_SKEY_FILE for $node_name registration transaction."
+
     # Register the node
     ./partner-chains-node smart-contracts register \
         --ogmios-url http://ogmios:$OGMIOS_PORT \
@@ -177,8 +212,8 @@ for i in {1..300}; do
         --spo-signature $spo_signature \
         --sidechain-public-keys $sidechain_public_key:$aura_vkey:$grandpa_vkey \
         --sidechain-signature $sidechain_signature \
-        --registration-utxo $GENESIS_UTXO \
-        --payment-key-file /keys/funded_address.skey
+        --registration-utxo $NODE_REGISTRATION_UTXO \
+        --payment-key-file $NODE_PAYMENT_SKEY_FILE
 done
 
 echo "Generating chain-spec.json file for Partnerchain Nodes..."
@@ -211,6 +246,77 @@ echo "]" >> initial_validators.json
 
 # Update chain-spec.json with initial validators
 jq --slurpfile validators initial_validators.json '.genesis.runtimeGenesis.config.session.initialValidators = $validators[0]' chain-spec.json > chain-spec.json.tmp
+mv chain-spec.json.tmp chain-spec.json
+
+echo "Configuring Initial Authorities..."
+# Generate initial authorities array (similar to initialValidators)
+echo "[" > initial_authorities.json
+for i in {1..10}; do
+    node_name="permissioned-$i"
+    # Ensure keys are in the correct format (e.g. raw public key, not full JSON path or content)
+    # Assuming sidechain.json contains an ecdsa public key for 'id'
+    # Assuming aura.json and grandpa.json contain sr25519 and ed25519 public keys respectively
+    sidechain_id_key=$(jq -r '.publicKey' "/partner-chains-nodes/$node_name/keys/sidechain.json") # ECDSA public key for ID
+    aura_key=$(jq -r '.publicKey' "/partner-chains-nodes/$node_name/keys/aura.json")
+    grandpa_key=$(jq -r '.publicKey' "/partner-chains-nodes/$node_name/keys/grandpa.json")
+    
+    if [ $i -gt 1 ]; then
+        echo "," >> initial_authorities.json
+    fi
+    
+    # Ensure escaping is correct for JSON within bash heredoc or echo
+    cat <<EOF >> initial_authorities.json
+    {
+        "Permissioned": {
+            "id": "$sidechain_id_key",
+            "keys": {
+                "aura": "$aura_key",
+                "grandpa": "$grandpa_key"
+            }
+        }
+    }
+EOF
+done
+echo "]" >> initial_authorities.json
+
+jq --slurpfile authorities initial_authorities.json '.genesis.runtimeGenesis.config.sessionCommitteeManagement.initialAuthorities = $authorities[0]' chain-spec.json > chain-spec.json.tmp
+mv chain-spec.json.tmp chain-spec.json
+rm initial_authorities.json # Clean up temporary file
+
+echo "Configuring Initial Balances..."
+# Fund each of the 10 permissioned nodes (using their ECDSA sidechain public key)
+initial_balance_amount="1000000000000000"
+echo "[" > initial_balances.json
+for i in {1..10}; do
+    node_name="permissioned-$i"
+    account_id=$(jq -r '.publicKey' "/partner-chains-nodes/$node_name/keys/sidechain.json") # ECDSA public key as account ID
+
+    if [ $i -gt 1 ]; then
+        echo "," >> initial_balances.json
+    fi
+    cat <<EOF >> initial_balances.json
+    [
+        "$account_id",
+        $initial_balance_amount
+    ]
+EOF
+done
+echo "]" >> initial_balances.json
+
+jq --slurpfile balances initial_balances.json '.genesis.runtimeGenesis.config.balances.balances = $balances[0]' chain-spec.json > chain-spec.json.tmp
+mv chain-spec.json.tmp chain-spec.json
+rm initial_balances.json # Clean up temporary file
+
+echo "Configuring Sudo Key..."
+# Use the Aura public key of the first permissioned node as the sudo key
+sudo_account_key=$(jq -r '.publicKey' "/partner-chains-nodes/permissioned-1/keys/aura.json")
+jq --arg sudo_key "$sudo_account_key" '.genesis.runtimeGenesis.config.sudo = { "key": $sudo_key }' chain-spec.json > chain-spec.json.tmp
+mv chain-spec.json.tmp chain-spec.json
+
+echo "Configuring Slots Per Epoch..."
+# Set slotsPerEpoch, assuming it's not in pc-chain-config.json or needs to be overridden
+slots_per_epoch_value=5 # Default from old script
+jq --argjson spe "$slots_per_epoch_value" '.genesis.runtimeGenesis.config.sidechain.slotsPerEpoch = $spe' chain-spec.json > chain-spec.json.tmp
 mv chain-spec.json.tmp chain-spec.json
 
 cp chain-spec.json /shared/chain-spec.json
