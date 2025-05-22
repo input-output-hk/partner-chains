@@ -87,8 +87,14 @@ impl crate::pallet::Config for Test {
 impl mock_pallet::Config for Test {}
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	RuntimeGenesisConfig { system: Default::default(), native_token_management: Default::default() }
-		.build_storage()
-		.unwrap()
-		.into()
+	RuntimeGenesisConfig {
+		system: Default::default(),
+		native_token_management: NativeTokenManagementConfig {
+			main_chain_scripts: Some(Default::default()),
+			..Default::default()
+		},
+	}
+	.build_storage()
+	.unwrap()
+	.into()
 }
