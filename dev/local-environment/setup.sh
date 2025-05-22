@@ -517,19 +517,6 @@ EOF
 EOF
     done
 
-    # Add volumes
-    cat "$script_dir/modules/volumes.txt" >> docker-compose.yml
-    echo "" >> docker-compose.yml
-
-    # Add volume entries for all nodes
-    for i in {1..10}; do
-        echo "  partner-chains-node-permissioned-$i-data:" >> docker-compose.yml
-    done
-
-    for i in {1..300}; do
-        echo "  partner-chains-node-registered-$i-data:" >> docker-compose.yml
-    done
-
     echo "Generated node configurations and docker-compose.yml"
 }
 
@@ -556,6 +543,19 @@ create_docker_compose() {
         echo -e "Including tests.\n"
         cat "$script_dir/modules/tests.txt" >> docker-compose.yml
     fi
+
+    # Add volumes
+    cat "$script_dir/modules/volumes.txt" >> docker-compose.yml
+    echo "" >> docker-compose.yml # Ensure a newline
+
+    # Add volume entries for all nodes
+    for i in {1..10}; do
+        echo "  partner-chains-node-permissioned-$i-data:" >> docker-compose.yml
+    done
+
+    for i in {1..300}; do
+        echo "  partner-chains-node-registered-$i-data:" >> docker-compose.yml
+    done
 
     echo -e "docker-compose.yml file created successfully.\n"
 }
