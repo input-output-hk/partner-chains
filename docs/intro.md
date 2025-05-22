@@ -118,9 +118,8 @@ diagram above:
    deployed and called by the offchain components.
 
 **_Note_**: _It is worth mentioning that the diagram above outlines the full setup which a chain builder
-would need to run in order to operate a chain. Validators won't need to use offchain components and
-thus won't have to run ogmios_.
-
+would need to run in order to operate a chain. Validators only need to have ogmios running during
+the registration process but not during normal operation._
 
 #### db-sync
 [db-sync](https://github.com/IntersectMBO/cardano-db-sync) is a chain-indexer which follows the
