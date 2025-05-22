@@ -1,9 +1,9 @@
 # Partner chains setup
 
 Partner Chains provides text based CLIs, for setting up a partner chain and starting nodes, called wizards.
-In the [chain builder](./chain-builder.md), [permissioned node owner](./permissioned.md), and [registered node owner](./registered.md) guides these wizards are used.
+These wizards are used in the [chain builder](./chain-builder.md), [permissioned node owner](./permissioned.md), and [registered node owner](./registered.md) guides.
 
-This document explains what is performed by those wizards and how to perform such operations manually.
+This document explains what these wizards do and how to perform these operations manually.
 
 For dependency setup please see the respective guide for your desired setup.
 
@@ -15,7 +15,7 @@ These 3 keys are:
 * GRANDPA, ed25519 scheme key, with "key-type" `gran`
 * cross-chain, ecdsa scheme key, with "key-type" `crch`
 
-For each of these key commands that are two commands invoked by wizard.
+For each of these keys, two commands are invoked by the wizard.
 The first one is
 ```bash
 <node-executable> key generate --scheme <scheme> --output-type json
@@ -32,7 +32,7 @@ that stores the generated key in the keystore.
 Commands above serve as instructions for generating and inserting required key in the keystore.
 If there is a need for keys of different schema or type, or in different location, the instructions above should be used to insert it.
 
-The wizard can also generate node network key, using following commands
+The wizard can also generate node network key, using the following commands:
 ```bash
 mkdir -p <base-path>/network
 mkdir key generate-node-key --file <base-path>/network/secret_ed25519
@@ -46,7 +46,7 @@ Please note that running node will require using `--base-path`, `--keystore-path
 
 ### Establishing partner chain on Cardano
 
-Each partner chain is identified by the Genesis UTXO and it has some governance.
+Each partner chain is identified by the Genesis UTXO and has a governance authority.
 Use `<node-executable> smart-contracts governance init -c <GENESIS_UTXO> -g <GOVERNANCE_AUTHORITY> -t <THRESHOLD> -k <PAYMENT_KEY_FILE>`
 command to spend the UTXO that will become the Genesis UTXO of your chain.
 The Genesis UTXO has to be spendable by the payment key.
@@ -56,7 +56,7 @@ Note: for more details please read [smart-contracts commands documentation](../.
 
 ### Discover smart-contracts addresses and script hashes
 
-Use `<node-executable> smart-contracts get-scripts -c <GENESIS_UTXO>` to obtain Cardano addresses and scripts hashes.
+Use `<node-executable> smart-contracts get-scripts -c <GENESIS_UTXO>` to obtain Cardano addresses and scripts hashes used by the partner chain smart contracts.
 This guide assumes that the output is saved to `addresses.json` file.
 
 ### Establish bootnodes
@@ -70,7 +70,7 @@ Partner chains do not add any requirements nor capabilities in regards to bootno
 `<node-executable> wizards create-chain-spec` uses data from the previous step to generate chain-spec file.
 It is important to understand that most of chain-spec file generation is delegated to `<node-exectuable>` itself.
 Specifically, the wizard sets some specific environment variables and assumes that `<node-executable> build-spec` will use and that it will not require any other variables.
-Because what `<node-exectuable> build-spec` uses and requires is finally in control of the chain builder, the following command can only be seens as an example:
+Because what `<node-exectuable> build-spec` uses and requires is ultimately up to the chain builder, the following command can only be seen as an example:
 ```bash
 export COMMITTEE_CANDIDATE_ADDRESS=$(jq -r '.addresses.CommitteeCandidateValidator' addresses.json)
 export D_PARAMETER_POLICY_ID=$(jq -r '.policyIds.DParameter' addresses.json)
@@ -80,7 +80,7 @@ export NATIVE_TOKEN_POLICY_ID='0x00000000000000000000000000000000000000000000000
 export NATIVE_TOKEN_ASSET_NAME=''
 ```
 Native token policy and asset name are out of partner chains control, they should be known by the chain builder.
-For chains that do not intent to use them, it is assumed that `<node-exectuable> build-spec` will not need them.
+For chains that do not intend to use them, it is assumed that `<node-exectuable> build-spec` will not need them.
 
 Run `<node-executable> build-spec --disable-default-bootnode > chain-spec.json`.
 As stated above, the content of the file depends mostly on `<node-executable>`.
@@ -89,7 +89,7 @@ Please consult our [intro doc chain-spec](../intro.md#chain-spec.json) section a
 * `genesisUtxo` and `slotsPerEpoch` of Sidechain Pallet
 * `initialValidators` of Partner Chains Session Pallet
 * `initialAuthorities` of Session Validator Management Pallet
-* all occurrances `mainChainScripts`
+* all occurrances of `mainChainScripts`
 
 ## Setup D-parameter and permissioned Permissioned Candidates
 
@@ -108,7 +108,16 @@ If these transactions were submitted in the epoch N, then committee selection wi
 
 ## Running partner chains node
 
-`<node-executable> wizards start-node` sets up environment variables required for following Cardano and runs `<node-executable> --validator --chain chain-spec.json --base-path <BASE_PATH> --keystore-path <KEYSTORE_PATH> --node-key-file <NODE_KEY_FILE> --port <WSPORT> <BOOTNODES_PARAMETERS>`.
+`<node-executable> wizards start-node` sets up environment variables required for following Cardano and runs:
+```bash
+<node-executable> --validator \
+    --chain chain-spec.json \
+    --base-path <BASE_PATH> \
+    --keystore-path <KEYSTORE_PATH> \
+    --node-key-file <NODE_KEY_FILE> \
+    --port <WSPORT> \
+    <BOOTNODES_PARAMETERS>
+```
 
 For setting the environment variables please consult [the documentation here](../intro.md#environment-variables).
 
@@ -124,7 +133,8 @@ This guide presents commands that could be used instead of `register1`, `registe
 ### Getting signatures
 
 Registration requires posting a message containing signatures to Cardano.
-These signatures prove that an SPO wants to be regarded as committee candidate for given partner chain.
+These signatures prove that an SPO is the owner of the keys being registered,
+and wants to be considered for committee membership for a given partner chain.
 Use:
 ```bash
 <node-executable> registration-signatures \
@@ -137,7 +147,7 @@ Use:
 * STAKE_POOL_OPERATOR_SIGNING_KEY is the `cborHex` without the first 4 characters of _StakePoolSigningKey_ed25519_ key file.
 This is cold key, therefore this command is intented to be used on an offline machine.
 * PARTNER_CHAIN_SIGNING_KEY is hex of the ecdsa key created the first step of this guide, `secretSeed` field of the `key generate` output.
-* REGISTRATION_UTXO is a UTXO that SPO is able to spent when posting the message with signature. It prevents replay attacks.
+* REGISTRATION_UTXO is a UTXO that SPO is able to spend when posting the message with signature. It prevents replay attacks.
 
 The command outputs a JSON with following fields:
 * `spo_public_key` - derived from STAKE_POOL_OPERATOR_SIGNING_KEY
@@ -149,14 +159,14 @@ Note: the _registration message_ is composed of the genesis UTXO, sidechain publ
 
 ### Submitting registration
 
-Having this data obtained on an offline machine, it should be used on an online one to submit registration transaction to Cardano.
+Having this data obtained on an offline machine, it should be used on an online one to submit the registration transaction to Cardano.
 Use the `<node-executable> smart-contracts register` command.
 There are two parameters requiring explanation:
 * `partner-chain-signature` - use `sidechain_signature` field of `registration-signatures`
 * `partner-chain-public-keys` - use `<PARTNER_CHAIN_SIGNING_KEY>:<AURA_KEY>:<GRANDPA_KEY>`,
 where AURA_KEY and GRANDPA_KEY are obtained in same way as PARTNER_CHAIN_SIGNING_KEY was obtained for the `registration-signatures` command.
 
-After this command is executed registration should become "effective" after two Cardano epochs boundaries.
+After this command is executed registration should become "effective" after two Cardano epoch boundaries.
 `<node-executable> registration-status --mainchain-pub-key <SPO_PUBLIC_KEY> --mc-epoch-number <CARDANO_EPOCH_NUMBER> --chain chain-spec.json`
 can be used to see if according to a partner chain the registration is valid.
 Before running this command environment variables required by Cardano observability layer should be set, like when [running partner chains nodes](#running-partner-chains-node).
