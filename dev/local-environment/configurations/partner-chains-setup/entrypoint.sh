@@ -17,6 +17,17 @@ while true; do
     fi
 done
 
+echo "Waiting for Cardano node to complete its setup..."
+while true; do
+    if [ -f "/shared/cardano.ready" ]; then
+        echo "Cardano node setup complete."
+        break
+    else
+        echo "Still waiting for /shared/cardano.ready ..."
+        sleep 2
+    fi
+done
+
 echo "Beginning configuration..."
 
 chmod 644 /shared/shelley/genesis-utxo.skey
