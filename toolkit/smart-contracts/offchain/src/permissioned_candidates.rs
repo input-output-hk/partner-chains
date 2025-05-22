@@ -310,8 +310,10 @@ fn permissioned_candidates_policy_redeemer_data() -> PlutusData {
 	PlutusData::new_integer(&BigInt::zero())
 }
 
+/// Returns all permissioned candidates.
 pub trait GetPermissionedCandidates {
 	#[allow(async_fn_in_trait)]
+	/// Returns all permissioned candidates.
 	async fn get_permissioned_candidates(
 		&self,
 		genesis_utxo: UtxoId,

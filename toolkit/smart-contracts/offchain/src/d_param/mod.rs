@@ -277,8 +277,10 @@ fn update_d_param_tx(
 	Ok(tx_builder.balance_update_and_build(ctx)?.remove_native_script_witnesses())
 }
 
+/// Returns D-parameter.
 pub trait GetDParam {
 	#[allow(async_fn_in_trait)]
+	/// Returns D-parameter.
 	async fn get_d_param(&self, genesis_utxo: UtxoId) -> anyhow::Result<Option<DParameter>>;
 }
 
@@ -288,12 +290,13 @@ impl<C: QueryLedgerState + QueryNetwork> GetDParam for C {
 	}
 }
 
+/// Returns D-parameter.
 pub async fn get_d_param<C: QueryLedgerState + QueryNetwork>(
 	genesis_utxo: UtxoId,
-	ogmios_client: &C,
+	client: &C,
 ) -> anyhow::Result<Option<DParameter>> {
-	let network = ogmios_client.shelley_genesis_configuration().await?.network.to_csl();
+	let network = client.shelley_genesis_configuration().await?.network.to_csl();
 	let scripts = crate::scripts_data::d_parameter_scripts(genesis_utxo, network)?;
-	let validator_utxos = ogmios_client.query_utxos(&[scripts.validator_address.clone()]).await?;
+	let validator_utxos = client.query_utxos(&[scripts.validator_address.clone()]).await?;
 	Ok(get_current_d_parameter(validator_utxos)?.map(|(_, d_parameter)| d_parameter))
 }
