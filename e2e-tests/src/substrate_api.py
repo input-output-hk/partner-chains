@@ -339,6 +339,31 @@ class SubstrateApi(BlockchainApi):
         return self.partner_chain_rpc.partner_chain_get_status().result['sidechain']['epoch']
 
     def get_pc_epoch_blocks(self, epoch):
+        """Returns a range of blocks produced in the given epoch.
+        The algorithm is as follows:
+        1. Find any block in the given epoch.
+            This task is crucial to find the range, especially when there are a lot of empty slots.
+            It works as follows:
+            - calculate the difference between the current epoch and the given epoch
+            - use it to calculate the number of slots (blocks) to go back
+            - check the epoch of the block
+                * if it matches, exit loop
+                * if it doesn't match, and the epoch diff > 1, reduce the number of slots to go back by one epoch
+                * else, reduce the number of slots to go back by one slot
+        2. Find the first block in the given epoch. Once we've found a block in the given epoch,
+            we're iterating over each previous block until the epoch changes.
+        3. Find the last block in the given epoch. Once we've found the first block, we go forward by one epoch,
+            and iterate over each previous block until the epoch matches the searched epoch again.
+
+        Args:
+            epoch (int): epoch to search for
+
+        Raises:
+            ValueError: if the given epoch is greater than or equal to the current epoch
+
+        Returns:
+            range: range of blocks produced in the given epoch
+        """
         current_block = self.get_latest_pc_block_number()
         current_pc_epoch = self.get_pc_epoch()
         if epoch >= current_pc_epoch:
