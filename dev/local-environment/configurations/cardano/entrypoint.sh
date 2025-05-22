@@ -317,7 +317,7 @@ for batch_num in $(seq 1 $num_batches); do
     if [ -z "$current_funding_utxo" ]; then
         echo "[LOG] Batch $batch_num: No funding UTXO available. Attempting to re-query..."
         # Attempt to re-query for a UTXO at $new_address
-        utxo_query_output=$(cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" | awk 'NR>2 {print $1 "#" $2; exit}')
+        utxo_query_output=$(cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" | /busybox awk 'NR>2 {print $1 "#" $2; exit}')
         if [ -n "$utxo_query_output" ]; then
             current_funding_utxo=$utxo_query_output
             echo "[LOG] Batch $batch_num: Found new funding UTXO: $current_funding_utxo"
@@ -331,11 +331,11 @@ for batch_num in $(seq 1 $num_batches); do
     echo "[LOG] Batch $batch_num: Using input UTXO: $current_tx_in"
     
     # Query the input UTXO to get its amount
-    tx_in_detail=$(cardano-cli latest query utxo --testnet-magic 42 --tx-in "$current_tx_in" --out-file /dev/stdout | grep lovelace | awk '{print $NF}')
+    tx_in_detail=$(cardano-cli latest query utxo --testnet-magic 42 --tx-in "$current_tx_in" --out-file /dev/stdout | /busybox grep lovelace | /busybox awk '{print $NF}')
     if ! [[ "$tx_in_detail" =~ ^[0-9]+$ ]]; then # Check if it's a number
         echo "Error: Could not determine amount for input UTXO $current_tx_in. Trying to query all UTXOs at $new_address instead."
         # Fallback: try to get any UTXO's amount if specific one fails
-        tx_in_detail=$(cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" | grep lovelace | head -n1 | awk '{print $NF}')
+        tx_in_detail=$(cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" | /busybox grep lovelace | /busybox head -n1 | /busybox awk '{print $NF}')
         if ! [[ "$tx_in_detail" =~ ^[0-9]+$ ]]; then
              echo "CRITICAL ERROR: Failed to determine input amount for batch $batch_num from $new_address. Aborting."
              break
@@ -402,13 +402,13 @@ for batch_num in $(seq 1 $num_batches); do
     echo "[LOG] Batch $batch_num: Attempting to find new change UTXO for next batch..."
     # Find the new change UTXO at $new_address to use for the next batch
     # This is a simple way; a more robust way would be to parse the txid and find the exact change UTXO
-    new_utxo_query=$(cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" | awk -v old_tx_hash="${current_tx_in%#*}" 'NR>2 && $1 != old_tx_hash {print $1 "#" $2; exit}')
+    new_utxo_query=$(cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" | /busybox awk -v old_tx_hash="${current_tx_in%#*}" 'NR>2 && $1 != old_tx_hash {print $1 "#" $2; exit}')
     if [ -n "$new_utxo_query" ]; then
         current_funding_utxo="$new_utxo_query"
         echo "[LOG] Batch $batch_num: New funding UTXO for next batch: $current_funding_utxo (from specific change)"
     else
         # If specific change UTXO not found, try to get any UTXO from $new_address
-        current_funding_utxo=$(cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" | awk 'NR>2 {print $1 "#" $2; exit}')
+        current_funding_utxo=$(cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" | /busybox awk 'NR>2 {print $1 "#" $2; exit}')
         if [ -z "$current_funding_utxo" ]; then
             echo "[LOG] Batch $batch_num: CRITICAL ERROR - Could not find a new UTXO at $new_address after batch $batch_num. Aborting further batches."
             break
