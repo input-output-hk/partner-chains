@@ -37,7 +37,7 @@
 <a href=#37 id=37 data-nosnippet>37</a>				<span class="kw-2">&amp;</span>payment_key,
 <a href=#38 id=38 data-nosnippet>38</a>				genesis_utxo,
 <a href=#39 id=39 data-nosnippet>39</a>			))
-<a href=#40 id=40 data-nosnippet>40</a>			.map_err(|e| <span class="macro">anyhow::anyhow!</span>(<span class="string">"Governance initalization failed: {e:?}!"</span>))<span class="question-mark">?</span>;
+<a href=#40 id=40 data-nosnippet>40</a>			.map_err(|e| <span class="macro">anyhow::anyhow!</span>(<span class="string">"Governance initialization failed: {e:?}!"</span>))<span class="question-mark">?</span>;
 <a href=#41 id=41 data-nosnippet>41</a>		context.eprint(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"Governance initialized successfully for UTXO: {}"</span>, genesis_utxo));
 <a href=#42 id=42 data-nosnippet>42</a>		<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(tx_id))
 <a href=#43 id=43 data-nosnippet>43</a>	} <span class="kw">else </span>{
@@ -58,14 +58,14 @@
 <a href=#58 id=58 data-nosnippet>58</a>		.prompt_with_default_from_file_parse_and_save(context)
 <a href=#59 id=59 data-nosnippet>59</a>		.map_err(|e| <span class="macro">anyhow!</span>(<span class="string">"Failed to parse governance authorities: {}"</span>, e))<span class="question-mark">?</span>;
 <a href=#60 id=60 data-nosnippet>60</a>
-<a href=#61 id=61 data-nosnippet>61</a>	INITIAL_GOVERNANCE_THRESHOLD.save_if_empty(<span class="number">0</span>, context);
+<a href=#61 id=61 data-nosnippet>61</a>	INITIAL_GOVERNANCE_THRESHOLD.save_if_empty(<span class="number">1</span>, context);
 <a href=#62 id=62 data-nosnippet>62</a>	<span class="kw">let </span>threshold = INITIAL_GOVERNANCE_THRESHOLD
 <a href=#63 id=63 data-nosnippet>63</a>		.prompt_with_default_from_file_parse_and_save(context)
 <a href=#64 id=64 data-nosnippet>64</a>		.map_err(|e| <span class="macro">anyhow!</span>(<span class="string">"Failed do parse threshold: {}"</span>, e))<span class="question-mark">?</span>;
 <a href=#65 id=65 data-nosnippet>65</a>
 <a href=#66 id=66 data-nosnippet>66</a>	MultiSigParameters::new(authorities.<span class="number">0</span>.as_ref(), threshold).map_err(
 <a href=#67 id=67 data-nosnippet>67</a>		|err| <span class="macro">anyhow!</span>(
-<a href=#68 id=68 data-nosnippet>68</a>			<span class="string">"Initial Goveranance data is invalid: '{}'. Please run the wizard again and provide correct value or edit values in '{}' and the run the wizard again. Example: '{}'"</span>,
+<a href=#68 id=68 data-nosnippet>68</a>			<span class="string">"Initial Governance data is invalid: '{}'. Please run the wizard again and provide correct value or edit values in '{}' and the run the wizard again. Example: '{}'"</span>,
 <a href=#69 id=69 data-nosnippet>69</a>			err,
 <a href=#70 id=70 data-nosnippet>70</a>			INITIAL_GOVERNANCE_AUTHORITIES.config_file,
 <a href=#71 id=71 data-nosnippet>71</a>			<span class="kw-2">&amp;</span>example_governance_auth()
@@ -120,7 +120,7 @@
 <a href=#120 id=120 data-nosnippet>120</a>				),
 <a href=#121 id=121 data-nosnippet>121</a>				MockIO::prompt(
 <a href=#122 id=122 data-nosnippet>122</a>					<span class="string">"Initial Multisig Governance Threshold"</span>,
-<a href=#123 id=123 data-nosnippet>123</a>					<span class="prelude-val">Some</span>(<span class="string">"0"</span>),
+<a href=#123 id=123 data-nosnippet>123</a>					<span class="prelude-val">Some</span>(<span class="string">"1"</span>),
 <a href=#124 id=124 data-nosnippet>124</a>					<span class="string">"2"</span>,
 <a href=#125 id=125 data-nosnippet>125</a>				),
 <a href=#126 id=126 data-nosnippet>126</a>				MockIO::prompt_yes_no(
