@@ -1,3 +1,4 @@
+//! Db-Sync data source used by Partner Chain Governed Map feature
 use crate::DataSourceError::ExpectedDataNotFound;
 use crate::Result;
 use crate::block::BlockDataSourceImpl;
@@ -15,14 +16,20 @@ use std::cmp::{max, min};
 use std::sync::{Arc, Mutex};
 
 #[cfg(test)]
-pub mod tests;
+mod tests;
 
+/// Data source for the Governed Map feature of Partner Chains toolkit
+///
+/// See documentation of [sp_governed_map] for a description of the feature
 pub struct GovernedMapDataSourceImpl {
+	/// Postgres connection pool
 	pub pool: PgPool,
+	/// Prometheus metrics client
 	pub metrics_opt: Option<McFollowerMetrics>,
 }
 
 impl GovernedMapDataSourceImpl {
+	/// Creates a new instance of the data source
 	pub async fn new(
 		pool: PgPool,
 		metrics_opt: Option<McFollowerMetrics>,
@@ -105,15 +112,24 @@ async fn get_mappings_entries(
 	Ok(mappings)
 }
 
+/// Cached data source serving the Governed Map feature of Partner Chains toolkit
+///
+/// See documentation of [sp_governed_map] for a description of the feature
 pub struct GovernedMapDataSourceCachedImpl {
+	/// Postgres connection pool
 	pub pool: PgPool,
+	/// Prometheus metrics client
 	pub metrics_opt: Option<McFollowerMetrics>,
+	/// Internal data cache size
 	cache_size: u16,
+	/// Internal cache
 	cache: Arc<Mutex<Cache>>,
+	/// [BlockDataSourceImpl] instance shared with other data sources for cache reuse.
 	blocks: Arc<BlockDataSourceImpl>,
 }
 
 impl GovernedMapDataSourceCachedImpl {
+	/// Constructs a new Governed Map data source
 	pub async fn new(
 		pool: PgPool,
 		metrics_opt: Option<McFollowerMetrics>,

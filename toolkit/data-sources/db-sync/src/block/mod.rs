@@ -1,3 +1,4 @@
+//! Db-Sync data source implementation that queries Cardano block information
 use crate::{
 	DataSourceError::*,
 	data_sources::read_mc_epoch_config,
@@ -20,22 +21,41 @@ use std::{
 #[cfg(test)]
 mod tests;
 
+/// Db-Sync data source that queries Cardano block information
+///
+/// This data source does not implement any data source interface used by one of the
+/// Partner Chain toolkit's features, but is used internally by other data sources
+/// that require access to Cardano block data
 #[allow(clippy::too_many_arguments)]
 #[derive(new)]
 pub struct BlockDataSourceImpl {
+	/// Postgres connection pool
 	pool: PgPool,
+	/// Cardano security parameter
+	///
+	/// This parameter controls how many confirmations (blocks on top) are required by
+	/// the Cardano node to consider a block to be stable. This is a network-wide parameter.
 	security_parameter: u32,
-	/// `security parameter / active slot coefficient` - minimal age of a block to be considered valid stable in relation to some given timestamp
+	/// Minimal age of a block to be considered valid stable in relation to some given timestamp.
+	/// Must be equal to `security parameter / active slot coefficient`.
 	min_slot_boundary_as_seconds: TimeDelta,
 	/// a characteristic of Ouroboros Praos and is equal to `3 * security parameter / active slot coefficient`
 	max_slot_boundary_as_seconds: TimeDelta,
+	/// Cardano main chain epoch configuration
 	mainchain_epoch_config: MainchainEpochConfig,
+	/// Additional offset applied when selecting the latest stable Cardano block
+	///
+	/// This parameter should be 0 by default and should only be increased to 1 in networks
+	/// struggling with frequent block rejections due to Db-Sync or Cardano node lag.
 	block_stability_margin: u32,
+	/// Number of contiguous Cardano blocks to be cached by this data source
 	cache_size: u16,
+	/// Internal block cache
 	stable_blocks_cache: Arc<Mutex<BlocksCache>>,
 }
 
 impl BlockDataSourceImpl {
+	/// Returns the latest _unstable_ Cardano block from the Db-Sync database
 	pub async fn get_latest_block_info(
 		&self,
 	) -> Result<MainchainBlock, Box<dyn std::error::Error + Send + Sync>> {
@@ -45,6 +65,9 @@ impl BlockDataSourceImpl {
 			.ok_or(ExpectedDataNotFound("No latest block on chain.".to_string()).into())
 	}
 
+	/// Returns the latest _stable_ Cardano block from the Db-Sync database that is within
+	/// acceptable bounds from `reference_timestamp`, accounting for the additional stability
+	/// offset configured by [block_stability_margin][Self::block_stability_margin].
 	pub async fn get_latest_stable_block_for(
 		&self,
 		reference_timestamp: Timestamp,
@@ -57,6 +80,8 @@ impl BlockDataSourceImpl {
 		Ok(block.map(From::from))
 	}
 
+	/// Finds a block by its `hash` and verifies that it is stable in reference to `reference_timestamp`
+	/// and returns its info
 	pub async fn get_stable_block_for(
 		&self,
 		hash: McBlockHash,
@@ -66,6 +91,7 @@ impl BlockDataSourceImpl {
 		self.get_stable_block_by_hash(hash, reference_timestamp).await
 	}
 
+	/// Finds a block by its `hash` and returns its info
 	pub async fn get_block_by_hash(
 		&self,
 		hash: McBlockHash,
@@ -83,15 +109,25 @@ impl BlockDataSourceImpl {
 	}
 }
 
+/// Configuration for [BlockDataSourceImpl]
 #[derive(Debug, Clone, Deserialize)]
 pub struct DbSyncBlockDataSourceConfig {
+	/// Cardano security parameter, ie. the number of confirmations needed to stabilize a block
 	pub cardano_security_parameter: u32,
-	//From shelley-genesis.json, example: "activeSlotsCoeff": 0.05,
+	/// Expected fraction of Cardano slots that will have a block produced
+	///
+	/// This value can be found in `shelley-genesis.json` file used by the Cardano node,
+	/// example: `"activeSlotsCoeff": 0.05`.
 	pub cardano_active_slots_coeff: f64,
+	/// Additional offset applied when selecting the latest stable Cardano block
+	///
+	/// This parameter should be 0 by default and should only be increased to 1 in networks
+	/// struggling with frequent block rejections due to Db-Sync or Cardano node lag.
 	pub block_stability_margin: u32,
 }
 
 impl DbSyncBlockDataSourceConfig {
+	/// Reads the config from environment
 	pub fn from_env() -> std::result::Result<Self, Box<dyn Error + Send + Sync + 'static>> {
 		let config: Self = Figment::new()
 			.merge(Env::raw())
@@ -103,6 +139,7 @@ impl DbSyncBlockDataSourceConfig {
 }
 
 impl BlockDataSourceImpl {
+	/// Creates a new instance of [BlockDataSourceImpl], reading configuration from the environment.
 	pub async fn new_from_env(
 		pool: PgPool,
 	) -> std::result::Result<Self, Box<dyn Error + Send + Sync + 'static>> {
@@ -113,6 +150,7 @@ impl BlockDataSourceImpl {
 		))
 	}
 
+	/// Creates a new instance of [BlockDataSourceImpl], using passed configuration.
 	pub fn from_config(
 		pool: PgPool,
 		DbSyncBlockDataSourceConfig {

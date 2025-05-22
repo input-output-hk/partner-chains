@@ -1,10 +1,6 @@
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
 use clap::Parser;
-use partner_chains_db_sync_data_sources::{
-	block::{BlockDataSourceImpl, DbSyncBlockDataSourceConfig},
-	candidates::CandidatesDataSourceImpl,
-	data_sources::{PgPool, read_mc_epoch_config},
-};
+use partner_chains_db_sync_data_sources::{BlockDataSourceImpl, CandidatesDataSourceImpl, PgPool};
 use sidechain_domain::*;
 use sp_timestamp::Timestamp;
 use std::error::Error;
@@ -86,7 +82,7 @@ mod data_source {
 	use super::*;
 
 	async fn pool() -> Result<PgPool> {
-		partner_chains_db_sync_data_sources::data_sources::get_connection_from_env().await
+		partner_chains_db_sync_data_sources::get_connection_from_env().await
 	}
 
 	pub struct BlockDataSourceWrapper {
@@ -118,11 +114,7 @@ mod data_source {
 
 	pub async fn block() -> Result<BlockDataSourceWrapper> {
 		Ok(BlockDataSourceWrapper {
-			inner: BlockDataSourceImpl::from_config(
-				pool().await?,
-				DbSyncBlockDataSourceConfig::from_env()?,
-				&read_mc_epoch_config()?,
-			),
+			inner: BlockDataSourceImpl::new_from_env(pool().await?).await?,
 		})
 	}
 

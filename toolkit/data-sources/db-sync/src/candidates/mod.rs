@@ -1,3 +1,4 @@
+//! Db-Sync data source used by Partner Chain committee selection
 use crate::DataSourceError::*;
 use crate::db_model::{
 	self, Address, Asset, BlockNumber, EpochNumber, MainchainTxOutput, StakePoolEntry,
@@ -17,11 +18,11 @@ use sqlx::PgPool;
 use std::collections::HashMap;
 use std::error::Error;
 
-pub mod cached;
-pub mod datum;
+mod cached;
+mod datum;
 
 #[cfg(test)]
-pub mod tests;
+mod tests;
 
 #[derive(Clone, Debug)]
 struct ParsedCandidate {
@@ -45,8 +46,11 @@ struct RegisteredCandidate {
 	utxo_info: UtxoInfo,
 }
 
+/// Db-Sync data source serving data for Partner Chain committee selection
 pub struct CandidatesDataSourceImpl {
+	/// Postgres connection pool
 	pool: PgPool,
+	/// Prometheus metrics client
 	metrics_opt: Option<McFollowerMetrics>,
 }
 
@@ -121,6 +125,7 @@ impl AuthoritySelectionDataSource for CandidatesDataSourceImpl {
 });
 
 impl CandidatesDataSourceImpl {
+	/// Creates new instance of the data source
 	pub async fn new(
 		pool: PgPool,
 		metrics_opt: Option<McFollowerMetrics>,
@@ -130,6 +135,7 @@ impl CandidatesDataSourceImpl {
 		Ok(Self { pool, metrics_opt })
 	}
 
+	/// Creates a new caching instance of the data source
 	pub fn cached(
 		self,
 		candidates_for_epoch_cache_size: usize,
