@@ -13,7 +13,7 @@
 <a href=#13 id=13 data-nosnippet>13</a><span class="kw">use </span>sidechain_domain::{MainchainKeyHash, McTxHash, UtxoId};
 <a href=#14 id=14 data-nosnippet>14</a>
 <a href=#15 id=15 data-nosnippet>15</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>run_init_governance&lt;C: IOContext&gt;(
-<a href=#16 id=16 data-nosnippet>16</a>	retries: FixedDelayRetries,
+<a href=#16 id=16 data-nosnippet>16</a>	await_tx: FixedDelayRetries,
 <a href=#17 id=17 data-nosnippet>17</a>	genesis_utxo: UtxoId,
 <a href=#18 id=18 data-nosnippet>18</a>	payment_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
 <a href=#19 id=19 data-nosnippet>19</a>	ogmios_config: <span class="kw-2">&amp;</span>ServiceConfig,
@@ -32,7 +32,7 @@
 <a href=#32 id=32 data-nosnippet>32</a>		<span class="kw">let </span>runtime = tokio::runtime::Runtime::new().map_err(|e| <span class="macro">anyhow::anyhow!</span>(e))<span class="question-mark">?</span>;
 <a href=#33 id=33 data-nosnippet>33</a>		<span class="kw">let </span>tx_id = runtime
 <a href=#34 id=34 data-nosnippet>34</a>			.block_on(offchain.init_governance(
-<a href=#35 id=35 data-nosnippet>35</a>				retries,
+<a href=#35 id=35 data-nosnippet>35</a>				await_tx,
 <a href=#36 id=36 data-nosnippet>36</a>				<span class="kw-2">&amp;</span>multisig_parameters,
 <a href=#37 id=37 data-nosnippet>37</a>				<span class="kw-2">&amp;</span>payment_key,
 <a href=#38 id=38 data-nosnippet>38</a>				genesis_utxo,

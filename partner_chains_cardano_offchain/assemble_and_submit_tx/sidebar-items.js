@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["assemble_and_submit_tx"]};
