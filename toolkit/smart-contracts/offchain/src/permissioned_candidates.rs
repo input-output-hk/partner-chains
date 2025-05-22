@@ -8,8 +8,8 @@
 
 use crate::await_tx::{AwaitTx, FixedDelayRetries};
 use crate::csl::{
-	CostStore, Costs, InputsBuilderExt, TransactionBuilderExt, TransactionContext, TransactionExt,
-	empty_asset_name, get_builder_config,
+	CostStore, Costs, InputsBuilderExt, NetworkTypeExt, TransactionBuilderExt, TransactionContext,
+	TransactionExt, empty_asset_name, get_builder_config,
 };
 use crate::governance::GovernanceData;
 use crate::multisig::{MultiSigSmartContractResult, submit_or_create_tx_to_sign};
@@ -295,6 +295,26 @@ fn update_permissioned_candidates_tx(
 
 fn permissioned_candidates_policy_redeemer_data() -> PlutusData {
 	PlutusData::new_integer(&BigInt::zero())
+}
+
+pub trait GetPermissionedCandidates {
+	#[allow(async_fn_in_trait)]
+	async fn get_permissioned_candidates(
+		&self,
+		genesis_utxo: UtxoId,
+	) -> anyhow::Result<Option<Vec<PermissionedCandidateData>>>;
+}
+
+impl<C: QueryLedgerState + QueryNetwork> GetPermissionedCandidates for C {
+	async fn get_permissioned_candidates(
+		&self,
+		genesis_utxo: UtxoId,
+	) -> anyhow::Result<Option<Vec<PermissionedCandidateData>>> {
+		let network = self.shelley_genesis_configuration().await?.network.to_csl();
+		let scripts = scripts_data::permissioned_candidates_scripts(genesis_utxo, network)?;
+		let validator_utxos = self.query_utxos(&[scripts.validator_address]).await?;
+		Ok(get_current_permissioned_candidates(validator_utxos)?.map(|(_, candidates)| candidates))
+	}
 }
 
 #[cfg(test)]

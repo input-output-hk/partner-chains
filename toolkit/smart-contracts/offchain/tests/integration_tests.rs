@@ -24,7 +24,7 @@ use partner_chains_cardano_offchain::{
 	governed_map::{run_get, run_insert, run_insert_with_force, run_list, run_remove, run_update},
 	init_governance,
 	multisig::{MultiSigSmartContractResult, MultiSigTransactionData},
-	permissioned_candidates,
+	permissioned_candidates::{self, GetPermissionedCandidates},
 	register::Register,
 	reserve::{self, release::release_reserve_funds},
 	scripts_data, sign_tx, update_governance,
@@ -146,6 +146,10 @@ async fn upsert_d_param() {
 			.await
 			.is_none()
 	);
+	assert_eq!(
+		d_param::get_d_param(genesis_utxo, &client).await.unwrap().unwrap(),
+		DParameter { num_registered_candidates: 1, num_permissioned_candidates: 0 }
+	);
 	assert!(
 		run_upsert_d_param(genesis_utxo, 1, 1, &governance_authority_payment_key(), &client)
 			.await
@@ -161,6 +165,10 @@ async fn upsert_permissioned_candidates() {
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_goveranance(&client).await;
 	assert!(run_upsert_permissioned_candidates(genesis_utxo, 77, &client).await.is_some());
+	assert_eq!(
+		client.get_permissioned_candidates(genesis_utxo).await.unwrap().unwrap(),
+		vec![make_candidate(77)]
+	);
 	assert!(run_upsert_permissioned_candidates(genesis_utxo, 77, &client).await.is_none());
 	assert!(run_upsert_permissioned_candidates(genesis_utxo, 231, &client).await.is_some())
 }
@@ -535,11 +543,7 @@ async fn run_upsert_permissioned_candidates<
 	candidate: u8,
 	client: &T,
 ) -> Option<MultiSigSmartContractResult> {
-	let candidates = vec![PermissionedCandidateData {
-		sidechain_public_key: SidechainPublicKey([candidate; 33].to_vec()),
-		aura_public_key: AuraPublicKey([candidate; 32].to_vec()),
-		grandpa_public_key: GrandpaPublicKey([candidate; 32].to_vec()),
-	}];
+	let candidates = vec![make_candidate(candidate)];
 	let result = permissioned_candidates::upsert_permissioned_candidates(
 		genesis_utxo,
 		&candidates,
@@ -551,6 +555,14 @@ async fn run_upsert_permissioned_candidates<
 	.unwrap();
 	result.iter().for_each(cleanup_temp_wallet_file);
 	result
+}
+
+fn make_candidate(n: u8) -> PermissionedCandidateData {
+	PermissionedCandidateData {
+		sidechain_public_key: SidechainPublicKey([n; 33].to_vec()),
+		aura_public_key: AuraPublicKey([n; 32].to_vec()),
+		grandpa_public_key: GrandpaPublicKey([n; 32].to_vec()),
+	}
 }
 
 async fn run_init_reserve_management<

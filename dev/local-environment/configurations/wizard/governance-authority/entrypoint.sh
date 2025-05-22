@@ -145,16 +145,14 @@ echo "Setting up main chain state..."
 expect <<EOF
 spawn ./partner-chains-node wizards setup-main-chain-state
 set timeout 300
-expect "DB-Sync Postgres connection string (postgresql://postgres-user:postgres-password@localhost:5432/cexplorer)"
-send "postgresql://postgres:$POSTGRES_PASSWORD@postgres:$POSTGRES_PORT/cexplorer\r"
-expect "Do you want to set/update the permissioned candidates on the main chain with values from configuration file? (y/N)"
-send "y\r"
 expect "Ogmios protocol (http/https)"
 send "\r"
 expect "Ogmios hostname (ogmios)"
 send "\r"
 expect "Ogmios port (1337)"
 send "\r"
+expect "Do you want to set/update the permissioned candidates on the main chain with values from configuration file? (y/N)"
+send "y\r"
 expect "path to the payment signing key file (/keys/funded_address.skey)"
 send "\r"
 expect "Do you want to set/update the D-parameter on the main chain? (y/N)"

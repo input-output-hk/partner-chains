@@ -24,12 +24,12 @@ impl Display for PermissionedCandidateKeys {
 	}
 }
 
-impl From<&ParsedPermissionedCandidatesKeys> for PermissionedCandidateKeys {
-	fn from(value: &ParsedPermissionedCandidatesKeys) -> Self {
+impl From<&sidechain_domain::PermissionedCandidateData> for PermissionedCandidateKeys {
+	fn from(value: &sidechain_domain::PermissionedCandidateData) -> Self {
 		Self {
-			sidechain_pub_key: sp_core::bytes::to_hex(&value.sidechain.0, false),
-			aura_pub_key: sp_core::bytes::to_hex(&value.aura.0, false),
-			grandpa_pub_key: sp_core::bytes::to_hex(&value.grandpa.0, false),
+			sidechain_pub_key: sp_core::bytes::to_hex(&value.sidechain_public_key.0, false),
+			aura_pub_key: sp_core::bytes::to_hex(&value.aura_public_key.0, false),
+			grandpa_pub_key: sp_core::bytes::to_hex(&value.grandpa_public_key.0, false),
 		}
 	}
 }
@@ -69,6 +69,16 @@ impl TryFrom<&PermissionedCandidateKeys> for ParsedPermissionedCandidatesKeys {
 			value.grandpa_pub_key
 		)))?;
 		Ok(Self { sidechain, aura, grandpa })
+	}
+}
+
+impl From<&ParsedPermissionedCandidatesKeys> for sidechain_domain::PermissionedCandidateData {
+	fn from(value: &ParsedPermissionedCandidatesKeys) -> Self {
+		Self {
+			sidechain_public_key: sidechain_domain::SidechainPublicKey(value.sidechain.0.to_vec()),
+			aura_public_key: sidechain_domain::AuraPublicKey(value.aura.0.to_vec()),
+			grandpa_public_key: sidechain_domain::GrandpaPublicKey(value.grandpa.0.to_vec()),
+		}
 	}
 }
 

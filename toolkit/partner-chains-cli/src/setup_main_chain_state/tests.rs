@@ -1,6 +1,6 @@
 use crate::config::CHAIN_CONFIG_FILE_PATH;
+use crate::config::RESOURCES_CONFIG_FILE_PATH;
 use crate::config::config_fields::CARDANO_PAYMENT_SIGNING_KEY_FILE;
-use crate::config::{RESOURCES_CONFIG_FILE_PATH, config_fields};
 use crate::ogmios::config::tests::{
 	default_ogmios_config_json, default_ogmios_service_config, prompt_ogmios_configuration_io,
 };
@@ -11,18 +11,24 @@ use crate::{CmdRun, CommonArguments, verify_json};
 use hex_literal::hex;
 use partner_chains_cardano_offchain::multisig::MultiSigSmartContractResult;
 use serde_json::json;
-use sidechain_domain::{AuraPublicKey, DParameter, GrandpaPublicKey, SidechainPublicKey, UtxoId};
-use sp_core::offchain::Timestamp;
+use sidechain_domain::{
+	AuraPublicKey, DParameter, GrandpaPublicKey, PermissionedCandidateData, SidechainPublicKey,
+	UtxoId,
+};
 
 #[test]
 fn no_ariadne_parameters_on_main_chain_no_updates() {
 	let mock_context = MockIOContext::new()
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
+		.with_offchain_mocks(OffchainMocks::new_with_mock(
+			"http://localhost:1337",
+			mock_with_ariadne_parameters_not_found(),
+		))
 		.with_expected_io(vec![
 			print_info_io(),
-			get_ariadne_parameters_io(ariadne_parameters_not_found_response()),
-			print_ariadne_parameters_not_found_io(),
+			get_ariadne_parameters_io(),
+			print_permissioned_candidates_are_not_set(),
 			prompt_permissioned_candidates_update_io(false),
 			prompt_d_parameter_update_io(false),
 			print_post_update_info_io(),
@@ -30,14 +36,18 @@ fn no_ariadne_parameters_on_main_chain_no_updates() {
 	let result = setup_main_chain_state_cmd().run(&mock_context);
 
 	result.expect("should succeed");
-	verify_json!(mock_context, RESOURCES_CONFIG_FILE_PATH, no_updates_resources_json());
+	verify_json!(
+		mock_context,
+		RESOURCES_CONFIG_FILE_PATH,
+		resources_config_with_default_ogmios_config()
+	);
 }
 
 #[test]
 fn no_ariadne_parameters_on_main_chain_do_updates() {
-	let offchain_mock = OffchainMock::new()
+	let offchain_mock = mock_with_ariadne_parameters_not_found()
 		.with_upsert_d_param(
-			UtxoId::default(),
+			genesis_utxo(),
 			new_d_parameter(),
 			payment_signing_key(),
 			Ok(Some(MultiSigSmartContractResult::tx_submitted([1; 32]))),
@@ -55,8 +65,8 @@ fn no_ariadne_parameters_on_main_chain_do_updates() {
 		.with_offchain_mocks(OffchainMocks::new_with_mock("http://localhost:1337", offchain_mock))
 		.with_expected_io(vec![
 			print_info_io(),
-			get_ariadne_parameters_io(ariadne_parameters_not_found_response()),
-			print_ariadne_parameters_not_found_io(),
+			get_ariadne_parameters_io(),
+			print_permissioned_candidates_are_not_set(),
 			prompt_permissioned_candidates_update_io(true),
 			upsert_permissioned_candidates_io(),
 			prompt_d_parameter_update_io(true),
@@ -73,9 +83,13 @@ fn ariadne_parameters_are_on_main_chain_no_updates() {
 	let mock_context = MockIOContext::new()
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
+		.with_offchain_mocks(OffchainMocks::new_with_mock(
+			"http://localhost:1337",
+			mock_with_ariadne_parameters_found(),
+		))
 		.with_expected_io(vec![
 			print_info_io(),
-			get_ariadne_parameters_io(ariadne_parameters_found_response()),
+			get_ariadne_parameters_io(),
 			print_main_chain_and_configuration_candidates_difference_io(),
 			prompt_permissioned_candidates_update_io(false),
 			print_d_param_from_main_chain_io(),
@@ -84,14 +98,18 @@ fn ariadne_parameters_are_on_main_chain_no_updates() {
 		]);
 	let result = setup_main_chain_state_cmd().run(&mock_context);
 	result.expect("should succeed");
-	verify_json!(mock_context, RESOURCES_CONFIG_FILE_PATH, no_updates_resources_json());
+	verify_json!(
+		mock_context,
+		RESOURCES_CONFIG_FILE_PATH,
+		resources_config_with_default_ogmios_config()
+	);
 }
 
 #[test]
 fn ariadne_parameters_are_on_main_chain_do_update() {
-	let offchain_mock = OffchainMock::new()
+	let offchain_mock = mock_with_ariadne_parameters_found()
 		.with_upsert_d_param(
-			UtxoId::default(),
+			genesis_utxo(),
 			new_d_parameter(),
 			payment_signing_key(),
 			Ok(Some(MultiSigSmartContractResult::tx_submitted([1; 32]))),
@@ -109,7 +127,7 @@ fn ariadne_parameters_are_on_main_chain_do_update() {
 		.with_offchain_mocks(OffchainMocks::new_with_mock("http://localhost:1337", offchain_mock))
 		.with_expected_io(vec![
 			print_info_io(),
-			get_ariadne_parameters_io(ariadne_parameters_found_response()),
+			get_ariadne_parameters_io(),
 			print_main_chain_and_configuration_candidates_difference_io(),
 			prompt_permissioned_candidates_update_io(true),
 			upsert_permissioned_candidates_io(),
@@ -125,7 +143,7 @@ fn ariadne_parameters_are_on_main_chain_do_update() {
 
 #[test]
 fn fails_if_update_permissioned_candidates_fail() {
-	let offchain_mock = OffchainMock::new().with_upsert_permissioned_candidates(
+	let offchain_mock = mock_with_ariadne_parameters_found().with_upsert_permissioned_candidates(
 		genesis_utxo(),
 		&initial_permissioned_candidates(),
 		payment_signing_key(),
@@ -137,7 +155,7 @@ fn fails_if_update_permissioned_candidates_fail() {
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
 		.with_expected_io(vec![
 			print_info_io(),
-			get_ariadne_parameters_io(ariadne_parameters_found_response()),
+			get_ariadne_parameters_io(),
 			print_main_chain_and_configuration_candidates_difference_io(),
 			prompt_permissioned_candidates_update_io(true),
 			upsert_permissioned_candidates_failed_io(),
@@ -150,11 +168,15 @@ fn fails_if_update_permissioned_candidates_fail() {
 #[test]
 fn candidates_on_main_chain_are_same_as_in_config_no_updates() {
 	let mock_context = MockIOContext::new()
+		.with_offchain_mocks(OffchainMocks::new_with_mock(
+			"http://localhost:1337",
+			mock_with_ariadne_parameters_same_as_in_config_response(),
+		))
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
 		.with_expected_io(vec![
 			print_info_io(),
-			get_ariadne_parameters_io(ariadne_parameters_same_as_in_config_response()),
+			get_ariadne_parameters_io(),
 			print_main_chain_and_configuration_candidates_are_equal_io(),
 			print_d_param_from_main_chain_io(),
 			prompt_d_parameter_update_io(false),
@@ -162,7 +184,11 @@ fn candidates_on_main_chain_are_same_as_in_config_no_updates() {
 		]);
 	let result = setup_main_chain_state_cmd().run(&mock_context);
 	result.expect("should succeed");
-	verify_json!(mock_context, RESOURCES_CONFIG_FILE_PATH, no_updates_resources_json());
+	verify_json!(
+		mock_context,
+		RESOURCES_CONFIG_FILE_PATH,
+		resources_config_with_default_ogmios_config()
+	);
 }
 
 fn setup_main_chain_state_cmd() -> SetupMainChainStateCmd {
@@ -177,41 +203,15 @@ fn print_info_io() -> MockIO {
 	)
 }
 
-fn set_env_for_node_io() -> MockIO {
-	MockIO::Group(vec![
-		MockIO::set_env_var(
-			"DB_SYNC_POSTGRES_CONNECTION_STRING",
-			"postgres://postgres:password123@localhost:5432/cexplorer",
-		),
-		MockIO::set_env_var("CARDANO_SECURITY_PARAMETER", "1234"),
-		MockIO::set_env_var("CARDANO_ACTIVE_SLOTS_COEFF", "0.1"),
-		MockIO::set_env_var("BLOCK_STABILITY_MARGIN", "0"),
-		MockIO::set_env_var("MC__FIRST_EPOCH_TIMESTAMP_MILLIS", "1666742400000"),
-		MockIO::set_env_var("MC__FIRST_EPOCH_NUMBER", "1"),
-		MockIO::set_env_var("MC__EPOCH_DURATION_MILLIS", "86400000"),
-		MockIO::set_env_var("MC__FIRST_SLOT_NUMBER", "4320"),
-	])
-}
-
-fn get_ariadne_parameters_io(result: serde_json::Value) -> MockIO {
-	let ariadne_parameters_command_output = serde_json::to_string(&result).unwrap();
-	let timestamp_for_preview_epoch_605 = Timestamp::from_unix_millis(1_718_972_296_000u64);
+fn get_ariadne_parameters_io() -> MockIO {
 	MockIO::Group(vec![
 		MockIO::print(
-			"Will read the current D-Parameter and Permissioned Candidates from the main chain, using 'partner-chains-node ariadne-parameters' command.",
+			"Will read the current D-Parameter and Permissioned Candidates from the main chain using Ogmios client.",
 		),
-		prompt(
-			config_fields::POSTGRES_CONNECTION_STRING,
-			"postgres://postgres:password123@localhost:5432/cexplorer",
+		prompt_ogmios_configuration_io(
+			&default_ogmios_service_config(),
+			&default_ogmios_service_config(),
 		),
-		set_env_for_node_io(),
-		MockIO::current_timestamp(timestamp_for_preview_epoch_605),
-		MockIO::new_tmp_dir(),
-		MockIO::run_command(
-			"<mock executable> ariadne-parameters --base-path /tmp/MockIOContext_tmp_dir --chain chain-spec.json --mc-epoch-number 607",
-			&ariadne_parameters_command_output,
-		),
-		MockIO::print(&ariadne_parameters_command_output),
 	])
 }
 
@@ -239,10 +239,6 @@ fn prompt_permissioned_candidates_update_io(choice: bool) -> MockIO {
 
 fn upsert_permissioned_candidates_io() -> MockIO {
 	MockIO::Group(vec![
-		prompt_ogmios_configuration_io(
-			&default_ogmios_service_config(),
-			&default_ogmios_service_config(),
-		),
 		prompt(CARDANO_PAYMENT_SIGNING_KEY_FILE, "payment.skey"),
 		MockIO::print(
 			"Permissioned candidates updated. The change will be effective in two main chain epochs.",
@@ -251,13 +247,7 @@ fn upsert_permissioned_candidates_io() -> MockIO {
 }
 
 fn upsert_permissioned_candidates_failed_io() -> MockIO {
-	MockIO::Group(vec![
-		prompt_ogmios_configuration_io(
-			&default_ogmios_service_config(),
-			&default_ogmios_service_config(),
-		),
-		prompt(CARDANO_PAYMENT_SIGNING_KEY_FILE, "payment.skey"),
-	])
+	prompt(CARDANO_PAYMENT_SIGNING_KEY_FILE, "payment.skey")
 }
 
 fn new_d_parameter() -> DParameter {
@@ -334,8 +324,8 @@ fn print_d_param_from_main_chain_io() -> MockIO {
 	MockIO::print("D-Parameter on the main chain is: (P=6, R=4)")
 }
 
-fn print_ariadne_parameters_not_found_io() -> MockIO {
-	MockIO::print("Ariadne parameters not found.")
+fn print_permissioned_candidates_are_not_set() -> MockIO {
+	MockIO::print("List of permissioned candidates is not set on Cardano yet.")
 }
 
 fn test_chain_config_content() -> serde_json::Value {
@@ -381,40 +371,58 @@ fn test_chain_config_content() -> serde_json::Value {
 fn post_updates_resources_json() -> serde_json::Value {
 	json!({
 		"cardano_payment_signing_key_file": "payment.skey",
-		"db_sync_postgres_connection_string": "postgres://postgres:password123@localhost:5432/cexplorer",
 		"ogmios": default_ogmios_config_json()
 	})
 }
 
-fn no_updates_resources_json() -> serde_json::Value {
-	json!({"db_sync_postgres_connection_string": "postgres://postgres:password123@localhost:5432/cexplorer"})
+fn resources_config_with_default_ogmios_config() -> serde_json::Value {
+	json!({"ogmios": default_ogmios_config_json()})
 }
 
 fn initial_permissioned_candidates() -> Vec<sidechain_domain::PermissionedCandidateData> {
-	vec![
-		sidechain_domain::PermissionedCandidateData {
-			sidechain_public_key: SidechainPublicKey(
-				hex!("020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1").to_vec(),
-			),
-			aura_public_key: AuraPublicKey(
-				hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d").to_vec(),
-			),
-			grandpa_public_key: GrandpaPublicKey(
-				hex!("88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee").to_vec(),
-			),
-		},
-		sidechain_domain::PermissionedCandidateData {
-			sidechain_public_key: SidechainPublicKey(
-				hex!("0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27").to_vec(),
-			),
-			aura_public_key: AuraPublicKey(
-				hex!("8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48").to_vec(),
-			),
-			grandpa_public_key: GrandpaPublicKey(
-				hex!("d17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69").to_vec(),
-			),
-		},
-	]
+	vec![candidate_data_1(), candidate_data_2()]
+}
+
+fn candidate_data_1() -> PermissionedCandidateData {
+	PermissionedCandidateData {
+		sidechain_public_key: SidechainPublicKey(
+			hex!("020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1").to_vec(),
+		),
+		aura_public_key: AuraPublicKey(
+			hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d").to_vec(),
+		),
+		grandpa_public_key: GrandpaPublicKey(
+			hex!("88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee").to_vec(),
+		),
+	}
+}
+
+fn candidate_data_2() -> PermissionedCandidateData {
+	PermissionedCandidateData {
+		sidechain_public_key: SidechainPublicKey(
+			hex!("0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27").to_vec(),
+		),
+		aura_public_key: AuraPublicKey(
+			hex!("8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48").to_vec(),
+		),
+		grandpa_public_key: GrandpaPublicKey(
+			hex!("d17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69").to_vec(),
+		),
+	}
+}
+
+fn candidate_data_3() -> PermissionedCandidateData {
+	PermissionedCandidateData {
+		sidechain_public_key: SidechainPublicKey::from_hex_unsafe(
+			"0263c9cdabbef76829fe5b35f0bbf3051bd1c41b80f58b5d07c271d0dd04de2a4e",
+		),
+		aura_public_key: AuraPublicKey::from_hex_unsafe(
+			"9cedc9f7b926191f64d68ee77dd90c834f0e73c0f53855d77d3b0517041d5640",
+		),
+		grandpa_public_key: GrandpaPublicKey::from_hex_unsafe(
+			"de21d8171821fc29a43a1ed90ee75623edc3794012010f165b6afc3483a569aa",
+		),
+	}
 }
 
 fn genesis_utxo() -> UtxoId {
@@ -431,67 +439,33 @@ fn test_resources_config_content() -> serde_json::Value {
 	json!({})
 }
 
-fn ariadne_parameters_not_found_response() -> serde_json::Value {
-	json!({
-		"error": "ExpectedDataNotFound(DParameter)"
-	})
+fn mock_with_ariadne_parameters_not_found() -> OffchainMock {
+	OffchainMock::new()
+		.with_get_d_param(genesis_utxo(), Ok(None))
+		.with_get_permissioned_candidates(genesis_utxo(), Ok(None))
 }
 
-fn ariadne_parameters_found_response() -> serde_json::Value {
-	json!(
-	{
-			"dParameter": {
-			  "numPermissionedCandidates": 6,
-			  "numRegisteredCandidates": 4
-			},
-			"permissionedCandidates": [
-			  {
-				"sidechainPublicKey": "0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1",
-				"auraPublicKey": "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d",
-				"grandpaPublicKey": "0x88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee",
-				"isValid": true
-			  },
-			  {
-				"sidechainPublicKey": "0x0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27",
-				"auraPublicKey": "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
-				"grandpaPublicKey": "0xd17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69",
-				"isValid": false
-			  },
-			  {
-				"sidechainPublicKey": "0x0263c9cdabbef76829fe5b35f0bbf3051bd1c41b80f58b5d07c271d0dd04de2a4e",
-				"auraPublicKey": "0x9cedc9f7b926191f64d68ee77dd90c834f0e73c0f53855d77d3b0517041d5640",
-				"grandpaPublicKey": "0xde21d8171821fc29a43a1ed90ee75623edc3794012010f165b6afc3483a569aa",
-				"isValid": true
-			  }
-			],
-			"candidateRegistrations": {}
-		}
-			)
+fn mock_with_ariadne_parameters_found() -> OffchainMock {
+	OffchainMock::new()
+		.with_get_d_param(
+			genesis_utxo(),
+			Ok(Some(DParameter { num_permissioned_candidates: 6, num_registered_candidates: 4 })),
+		)
+		.with_get_permissioned_candidates(
+			genesis_utxo(),
+			Ok(Some(vec![candidate_data_1(), candidate_data_3()])),
+		)
 }
 
-fn ariadne_parameters_same_as_in_config_response() -> serde_json::Value {
-	json!(
-	{
-		"dParameter": {
-		  "numPermissionedCandidates": 6,
-		  "numRegisteredCandidates": 4
-		},
-		"permissionedCandidates": [
-		  {
-			"sidechainPublicKey": "0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1",
-			"auraPublicKey": "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d",
-			"grandpaPublicKey": "0x88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee",
-			"isValid": true
-		  },
-		  {
-			"sidechainPublicKey": "0x0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27",
-			"auraPublicKey": "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
-			"grandpaPublicKey": "0xd17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69",
-			"isValid": true
-		  }
-		],
-		"candidateRegistrations": {}
-	}
+fn mock_with_ariadne_parameters_same_as_in_config_response() -> OffchainMock {
+	OffchainMock::new()
+		.with_get_d_param(
+			genesis_utxo(),
+			Ok(Some(DParameter { num_permissioned_candidates: 6, num_registered_candidates: 4 })),
+		)
+		.with_get_permissioned_candidates(
+			genesis_utxo(),
+			Ok(Some(vec![candidate_data_1(), candidate_data_2()])),
 		)
 }
 
