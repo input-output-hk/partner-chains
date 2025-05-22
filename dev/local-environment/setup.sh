@@ -518,12 +518,8 @@ EOF
     done
 
     # Add volumes
-    cat >> docker-compose.yml <<EOF
-
-volumes:
-  shared-volume:
-  cardano-node-1-data:
-EOF
+    cat "$script_dir/modules/volumes.txt" >> docker-compose.yml
+    echo "" >> docker-compose.yml
 
     # Add volume entries for all nodes
     for i in {1..10}; do
