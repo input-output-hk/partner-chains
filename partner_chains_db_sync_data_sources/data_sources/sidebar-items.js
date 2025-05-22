@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["get_connection","get_connection_from_env","read_mc_epoch_config"],"struct":["ConnectionConfig"],"type":["PgPool"]};

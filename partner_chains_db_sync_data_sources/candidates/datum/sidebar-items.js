@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["raw_permissioned_candidate_data_from","raw_permissioned_candidate_data_vec_from"]};
