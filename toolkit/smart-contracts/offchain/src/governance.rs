@@ -213,8 +213,11 @@ fn parse_simple_at_least_n_native_script(
 }
 
 #[derive(Serialize)]
+/// Summary of the M of N MultiSig governance policy.
 pub struct GovernancePolicySummary {
+	/// List of all key hashes of governance members.
 	pub key_hashes: Vec<ByteString>,
+	/// Minimum amount of governance signatures needed for governance action.
 	pub threshold: u32,
 }
 
@@ -240,6 +243,7 @@ impl From<GovernancePolicyScript> for GovernancePolicySummary {
 	}
 }
 
+/// Returns [GovernancePolicySummary] for partner chain identified by `genesis_utxo`.
 pub async fn get_governance_policy_summary<T: QueryLedgerState + QueryNetwork>(
 	genesis_utxo: UtxoId,
 	client: &T,
@@ -253,12 +257,14 @@ pub async fn get_governance_policy_summary<T: QueryLedgerState + QueryNetwork>(
 }
 
 #[derive(Clone, PartialEq, Eq, Hash)]
+/// Parameters for multisig governance policy.
 pub struct MultiSigParameters {
 	governance_authorities: Vec<MainchainKeyHash>,
 	threshold: u8,
 }
 
 impl MultiSigParameters {
+	/// Constructs [MultiSigParameters] from governance authority member [MainchainKeyHash]es, and `threshold`.
 	pub fn new(governance_authorities: &[MainchainKeyHash], threshold: u8) -> Result<Self, &str> {
 		if governance_authorities.is_empty() {
 			return Err("governance authorities cannot be be empty");
@@ -272,11 +278,12 @@ impl MultiSigParameters {
 		Ok(Self { governance_authorities: governance_authorities.to_vec(), threshold })
 	}
 
+	/// Constructs [MultiSigParameters] with a single governance authority member.
 	pub fn new_one_of_one(governance_authority: &MainchainKeyHash) -> Self {
 		Self { governance_authorities: vec![*governance_authority], threshold: 1 }
 	}
 
-	/// Returns [[SimpleAtLeastN]] for this MultiSig parameters.
+	/// Returns [SimpleAtLeastN] for this [MultiSigParameters].
 	pub(crate) fn as_simple_at_least_n(&self) -> SimpleAtLeastN {
 		SimpleAtLeastN {
 			threshold: self.threshold.into(),

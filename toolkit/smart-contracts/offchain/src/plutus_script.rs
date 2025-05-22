@@ -45,6 +45,11 @@ impl PlutusScript {
 		Ok(Self::from_cbor(&plutus_script_bytes, Language::new_plutus_v2()))
 	}
 
+	/// Applies the [PlutusScript] to the [uplc::PlutusData], binding it to its first argument.
+	/// For example, if the [PlutusScript] has signature:
+	///   `script :: A -> B -> C`
+	/// After application it will be:
+	///   `script' :: B -> C`
 	pub fn apply_data_uplc(self, data: uplc::PlutusData) -> Result<Self, anyhow::Error> {
 		let mut buffer = Vec::new();
 		let mut program = Program::<DeBruijn>::from_cbor(&self.bytes, &mut buffer)
@@ -56,6 +61,9 @@ impl PlutusScript {
 		Ok(Self { bytes, ..self })
 	}
 
+	/// Extracts the last applied argument from a [PlutusScript].
+	/// For example, if a [PlutusScript] `script` has been applied to [uplc::PlutusData] `data`:
+	/// `script' = script data`, then [Self::unapply_data_uplc] called on `script'` will return `data`.
 	pub fn unapply_data_uplc(&self) -> anyhow::Result<uplc::PlutusData> {
 		let mut buffer = Vec::new();
 		let program = Program::<DeBruijn>::from_cbor(&self.bytes, &mut buffer).unwrap();
@@ -68,19 +76,21 @@ impl PlutusScript {
 		}
 	}
 
+	/// Extracts the last applied argument from a [PlutusScript], and returns it as CSL [PlutusData].
+	/// For more details see [Self::unapply_data_uplc].
 	pub fn unapply_data_csl(&self) -> Result<PlutusData, anyhow::Error> {
 		let uplc_pd = self.unapply_data_uplc()?;
 		let cbor_bytes = minicbor::to_vec(uplc_pd).expect("to_vec has Infallible error type");
 		Ok(PlutusData::from_bytes(cbor_bytes).expect("UPLC encoded PlutusData is valid"))
 	}
 
-	/// Builds an CSL `Address` for plutus script from the data obtained from smart contracts.
+	/// Builds an CSL [Address] for plutus script from the data obtained from smart contracts.
 	pub fn address(&self, network: NetworkIdKind) -> Address {
 		script_address(&self.bytes, network, self.language)
 	}
 
-	// Returns PlutusData representation of the given script. It is done in the same way as on-chain code expects.
-	// First, the Address is created, then it is converted to PlutusData.
+	/// Returns [uplc::PlutusData] representation of the given script. It is done in the same way as on-chain code expects.
+	/// First, the [Address] is created, then it is converted to [uplc::PlutusData].
 	pub fn address_data(&self, network: NetworkIdKind) -> anyhow::Result<uplc::PlutusData> {
 		let mut se = cbor_event::se::Serializer::new_vec();
 		cbor_event::se::Serialize::serialize(
@@ -99,22 +109,27 @@ impl PlutusScript {
 			.context("Converting script address to bech32")
 	}
 
+	/// Returns script hash of [PlutusScript] as array of bytes.
 	pub fn script_hash(&self) -> [u8; 28] {
 		plutus_script_hash(&self.bytes, self.language)
 	}
 
+	/// Returns [ScriptHash] of [PlutusScript].
 	pub fn csl_script_hash(&self) -> ScriptHash {
 		ScriptHash::from(self.script_hash())
 	}
 
+	/// Returns [PolicyId] of [PlutusScript].
 	pub fn policy_id(&self) -> PolicyId {
 		PolicyId(self.script_hash())
 	}
 
+	/// Returns [AssetId] of [PlutusScript].
 	pub fn empty_name_asset(&self) -> AssetId {
 		AssetId { policy_id: self.policy_id(), asset_name: AssetName::empty() }
 	}
 
+	/// Constructs [AssetId] with given `asset_name` and taking the [PlutusScript] as a minting policy.
 	pub fn asset(
 		&self,
 		asset_name: cardano_serialization_lib::AssetName,
@@ -122,6 +137,7 @@ impl PlutusScript {
 		Ok(AssetId { policy_id: self.policy_id(), asset_name: AssetName::from_csl(asset_name)? })
 	}
 
+	/// Converts [PlutusScript] to CSL [cardano_serialization_lib::PlutusScript].
 	pub fn to_csl(&self) -> cardano_serialization_lib::PlutusScript {
 		match self.language.kind() {
 			LanguageKind::PlutusV1 => {
@@ -225,7 +241,7 @@ impl<T: ToDatum> From<T> for PlutusDataWrapper<T> {
 
 fn to_plutus_data(datum: plutus::Datum) -> uplc::PlutusData {
 	uplc::plutus_data(&minicbor::to_vec(datum).expect("to_vec is Infallible"))
-		.expect("trasformation from PC Datum to pallas PlutusData can't fail")
+		.expect("transformation from PC Datum to pallas PlutusData can't fail")
 }
 
 #[cfg(test)]

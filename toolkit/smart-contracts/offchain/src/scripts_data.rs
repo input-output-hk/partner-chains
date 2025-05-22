@@ -59,7 +59,7 @@ pub struct PolicyIds {
 	pub governed_map: PolicyId,
 }
 
-/// Trait for [get_scripts_data], to make it mockable.
+/// For the given `genesis_utxo` it returns the [ScriptsData] of the partner chain smart contracts.
 pub trait GetScriptsData {
 	#[allow(async_fn_in_trait)]
 	/// For the given `genesis_utxo` it returns the [ScriptsData] of the partner chain smart contracts.

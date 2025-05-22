@@ -31,6 +31,7 @@ mod test;
 #[cfg(test)]
 mod test_values;
 
+/// Updates governance parameters.
 pub async fn run_update_governance<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 	A: AwaitTx,

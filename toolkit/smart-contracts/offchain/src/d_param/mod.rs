@@ -29,11 +29,18 @@ use sidechain_domain::{DParameter, UtxoId};
 #[cfg(test)]
 mod tests;
 
+/// Upserts D-param.
 pub trait UpsertDParam {
 	#[allow(async_fn_in_trait)]
+	/// This function upserts D-param.
+	/// Arguments:
+	///  - `await_tx`: Configuration for the await logic of the transaction.
+	///  - `genesis_utxo`: UTxO identifying the Partner Chain.
+	///  - `d_parameter`: [DParameter] to be upserted.
+	///  - `payment_signing_key`: Signing key of the party paying fees.
 	async fn upsert_d_param(
 		&self,
-		retries: FixedDelayRetries,
+		await_tx: FixedDelayRetries,
 		genesis_utxo: UtxoId,
 		d_parameter: &DParameter,
 		payment_signing_key: &CardanoPaymentSigningKey,
@@ -43,15 +50,21 @@ pub trait UpsertDParam {
 impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId> UpsertDParam for C {
 	async fn upsert_d_param(
 		&self,
-		retries: FixedDelayRetries,
+		await_tx: FixedDelayRetries,
 		genesis_utxo: UtxoId,
 		d_parameter: &DParameter,
 		payment_signing_key: &CardanoPaymentSigningKey,
 	) -> anyhow::Result<Option<MultiSigSmartContractResult>> {
-		upsert_d_param(genesis_utxo, d_parameter, payment_signing_key, self, &retries).await
+		upsert_d_param(genesis_utxo, d_parameter, payment_signing_key, self, &await_tx).await
 	}
 }
 
+/// This function upserts D-param.
+/// Arguments:
+///  - `genesis_utxo`: UTxO identifying the Partner Chain.
+///  - `d_parameter`: [DParameter] to be upserted.
+///  - `payment_signing_key`: Signing key of the party paying fees.
+///  - `await_tx`: [AwaitTx] strategy.
 pub async fn upsert_d_param<
 	C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,
 	A: AwaitTx,
@@ -59,12 +72,12 @@ pub async fn upsert_d_param<
 	genesis_utxo: UtxoId,
 	d_parameter: &DParameter,
 	payment_signing_key: &CardanoPaymentSigningKey,
-	ogmios_client: &C,
+	client: &C,
 	await_tx: &A,
 ) -> anyhow::Result<Option<MultiSigSmartContractResult>> {
-	let ctx = TransactionContext::for_payment_key(payment_signing_key, ogmios_client).await?;
+	let ctx = TransactionContext::for_payment_key(payment_signing_key, client).await?;
 	let scripts = crate::scripts_data::d_parameter_scripts(genesis_utxo, ctx.network)?;
-	let validator_utxos = ogmios_client.query_utxos(&[scripts.validator_address.clone()]).await?;
+	let validator_utxos = client.query_utxos(&[scripts.validator_address.clone()]).await?;
 
 	let tx_hash_opt = match get_current_d_parameter(validator_utxos)? {
 		Some((_, current_d_param)) if current_d_param == *d_parameter => {
@@ -81,7 +94,7 @@ pub async fn upsert_d_param<
 					&current_utxo,
 					ctx,
 					genesis_utxo,
-					ogmios_client,
+					client,
 					await_tx,
 				)
 				.await?,
@@ -96,7 +109,7 @@ pub async fn upsert_d_param<
 					d_parameter,
 					ctx,
 					genesis_utxo,
-					ogmios_client,
+					client,
 					await_tx,
 				)
 				.await?,
@@ -104,7 +117,7 @@ pub async fn upsert_d_param<
 		},
 	};
 	if let Some(TransactionSubmitted(tx_hash)) = tx_hash_opt {
-		await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_hash.0, 0)).await?;
+		await_tx.await_tx_output(client, UtxoId::new(tx_hash.0, 0)).await?;
 	}
 	Ok(tx_hash_opt)
 }
@@ -264,8 +277,10 @@ fn update_d_param_tx(
 	Ok(tx_builder.balance_update_and_build(ctx)?.remove_native_script_witnesses())
 }
 
+/// Returns D-parameter.
 pub trait GetDParam {
 	#[allow(async_fn_in_trait)]
+	/// Returns D-parameter.
 	async fn get_d_param(&self, genesis_utxo: UtxoId) -> anyhow::Result<Option<DParameter>>;
 }
 
@@ -275,12 +290,13 @@ impl<C: QueryLedgerState + QueryNetwork> GetDParam for C {
 	}
 }
 
+/// Returns D-parameter.
 pub async fn get_d_param<C: QueryLedgerState + QueryNetwork>(
 	genesis_utxo: UtxoId,
-	ogmios_client: &C,
+	client: &C,
 ) -> anyhow::Result<Option<DParameter>> {
-	let network = ogmios_client.shelley_genesis_configuration().await?.network.to_csl();
+	let network = client.shelley_genesis_configuration().await?.network.to_csl();
 	let scripts = crate::scripts_data::d_parameter_scripts(genesis_utxo, network)?;
-	let validator_utxos = ogmios_client.query_utxos(&[scripts.validator_address.clone()]).await?;
+	let validator_utxos = client.query_utxos(&[scripts.validator_address.clone()]).await?;
 	Ok(get_current_d_parameter(validator_utxos)?.map(|(_, d_parameter)| d_parameter))
 }

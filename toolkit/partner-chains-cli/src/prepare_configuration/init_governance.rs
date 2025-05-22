@@ -13,7 +13,7 @@ use partner_chains_cardano_offchain::{
 use sidechain_domain::{MainchainKeyHash, McTxHash, UtxoId};
 
 pub(crate) fn run_init_governance<C: IOContext>(
-	retries: FixedDelayRetries,
+	await_tx: FixedDelayRetries,
 	genesis_utxo: UtxoId,
 	payment_key: &CardanoPaymentSigningKey,
 	ogmios_config: &ServiceConfig,
@@ -32,7 +32,7 @@ pub(crate) fn run_init_governance<C: IOContext>(
 		let runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
 		let tx_id = runtime
 			.block_on(offchain.init_governance(
-				retries,
+				await_tx,
 				&multisig_parameters,
 				&payment_key,
 				genesis_utxo,
