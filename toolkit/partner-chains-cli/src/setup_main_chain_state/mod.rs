@@ -104,7 +104,7 @@ fn initial_permissioned_candidates_from_chain_config<C: IOContext>(
 	// It's easier to read from config than from chain-spec, because parsing is already present.
 	let candidates: Vec<PermissionedCandidateKeys> =
 		load_chain_config_field(context, &config_fields::INITIAL_PERMISSIONED_CANDIDATES)?;
-	// Use ParsedPermissionedCandidatesKeys to validate they are valid
+	// Use ParsedPermissionedCandidatesKeys to validate them
 	let candidates = candidates
 		.iter()
 		.map(ParsedPermissionedCandidatesKeys::try_from)
@@ -120,7 +120,7 @@ fn get_permissioned_candidates<C: IOContext>(
 	let tokio_runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
 	let candidates_opt = tokio_runtime
 		.block_on(offchain.get_permissioned_candidates(chain_config.chain_parameters.genesis_utxo))
-		.context("Failed to Permissioned Candidates from Ogmios")?;
+		.context("Failed to read Permissioned Candidates from Ogmios")?;
 	Ok(candidates_opt.map(|candidates| SortedPermissionedCandidates::new(candidates)))
 }
 
