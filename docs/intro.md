@@ -610,7 +610,7 @@ $ pc-node registration-signatures --genesis-utxo <GENESIS_UTXO>
     --registration-utxo <REGISTRATION_UTXO>
 ```
 #### sign-address-association
-Signs address association
+Outputs signatures of message composed of: public key hash related to signing key, UTXO identifying partner-chain and given partner chain address
 
 ```shell
 $ pc-node sign-address-association
