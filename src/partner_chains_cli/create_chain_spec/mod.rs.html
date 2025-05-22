@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `toolkit/partner-chains-cli/src/create_chain_spec/mod.rs`."><title>mod.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-0ce1a80b.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="partner_chains_cli" data-themes="" data-resource-suffix="" data-rustdoc-version="1.89.0-nightly (bc8215286 2025-05-20)" data-channel="nightly" data-search-js="search-f7877310.js" data-settings-js="settings-5514c975.js" ><script src="../../../static.files/storage-4e99c027.js"></script><script defer src="../../../static.files/src-script-63605ae7.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-7ef8a74a.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">partner_chains_cli/create_chain_spec/</div>mod.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span><span class="kw">crate</span>::config::ConfigFieldDefinition;
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `toolkit/partner-chains-cli/src/create_chain_spec/mod.rs`."><title>mod.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-0ce1a80b.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="partner_chains_cli" data-themes="" data-resource-suffix="" data-rustdoc-version="1.89.0-nightly (bf64d66bd 2025-05-21)" data-channel="nightly" data-search-js="search-f7877310.js" data-settings-js="settings-5514c975.js" ><script src="../../../static.files/storage-4e99c027.js"></script><script defer src="../../../static.files/src-script-63605ae7.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-7ef8a74a.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">partner_chains_cli/create_chain_spec/</div>mod.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span><span class="kw">crate</span>::config::ConfigFieldDefinition;
 <a href=#2 id=2 data-nosnippet>2</a><span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
 <a href=#3 id=3 data-nosnippet>3</a><span class="kw">use </span><span class="kw">crate</span>::permissioned_candidates::{ParsedPermissionedCandidatesKeys, PermissionedCandidateKeys};
 <a href=#4 id=4 data-nosnippet>4</a><span class="kw">use </span><span class="kw">crate</span>::runtime_bindings::PartnerChainRuntime;
@@ -32,208 +32,242 @@
 <a href=#32 id=32 data-nosnippet>32</a>	<span class="string">"/genesis/runtimeGenesis/config/session/initialValidators"</span>;
 <a href=#33 id=33 data-nosnippet>33</a><span class="kw">const </span>SESSION_VALIDATOR_MANAGEMENT_INITIAL_AUTHORITIES_PATH: <span class="kw-2">&amp;</span>str =
 <a href=#34 id=34 data-nosnippet>34</a>	<span class="string">"/genesis/runtimeGenesis/config/sessionCommitteeManagement/initialAuthorities"</span>;
-<a href=#35 id=35 data-nosnippet>35</a>
-<a href=#36 id=36 data-nosnippet>36</a><span class="kw">impl</span>&lt;T: CreateChainSpecRuntimeBindings&gt; CmdRun <span class="kw">for </span>CreateChainSpecCmd&lt;T&gt; {
-<a href=#37 id=37 data-nosnippet>37</a>	<span class="kw">fn </span>run&lt;C: IOContext&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, context: <span class="kw-2">&amp;</span>C) -&gt; anyhow::Result&lt;()&gt; {
-<a href=#38 id=38 data-nosnippet>38</a>		<span class="kw">let </span>config = CreateChainSpecConfig::load(context)<span class="question-mark">?</span>;
-<a href=#39 id=39 data-nosnippet>39</a>		context.print(<span class="string">"This wizard will create a chain spec JSON file according to the provided configuration, using WASM runtime code from the compiled node binary."</span>);
-<a href=#40 id=40 data-nosnippet>40</a>		<span class="self">Self</span>::print_config(context, <span class="kw-2">&amp;</span>config);
-<a href=#41 id=41 data-nosnippet>41</a>		<span class="kw">if </span>context.prompt_yes_no(<span class="string">"Do you want to continue?"</span>, <span class="bool-val">true</span>) {
-<a href=#42 id=42 data-nosnippet>42</a>			<span class="self">Self</span>::run_build_spec_command(context, <span class="kw-2">&amp;</span>config)<span class="question-mark">?</span>;
-<a href=#43 id=43 data-nosnippet>43</a>			<span class="self">Self</span>::update_chain_spec_authorities(context, <span class="kw-2">&amp;</span>config)<span class="question-mark">?</span>;
-<a href=#44 id=44 data-nosnippet>44</a>			context.print(<span class="string">"chain-spec.json file has been created."</span>);
-<a href=#45 id=45 data-nosnippet>45</a>			context.print(
-<a href=#46 id=46 data-nosnippet>46</a>				<span class="string">"If you are the governance authority, you can distribute it to the validators."</span>,
-<a href=#47 id=47 data-nosnippet>47</a>			);
-<a href=#48 id=48 data-nosnippet>48</a>			context.print(<span class="string">"Run 'setup-main-chain-state' command to set D-parameter and permissioned candidates on Cardano."</span>);
-<a href=#49 id=49 data-nosnippet>49</a>			<span class="prelude-val">Ok</span>(())
-<a href=#50 id=50 data-nosnippet>50</a>		} <span class="kw">else </span>{
-<a href=#51 id=51 data-nosnippet>51</a>			context.print(<span class="string">"Aborted."</span>);
-<a href=#52 id=52 data-nosnippet>52</a>			<span class="prelude-val">Ok</span>(())
-<a href=#53 id=53 data-nosnippet>53</a>		}
-<a href=#54 id=54 data-nosnippet>54</a>	}
-<a href=#55 id=55 data-nosnippet>55</a>}
-<a href=#56 id=56 data-nosnippet>56</a>
-<a href=#57 id=57 data-nosnippet>57</a><span class="kw">impl</span>&lt;T: CreateChainSpecRuntimeBindings&gt; CreateChainSpecCmd&lt;T&gt; {
-<a href=#58 id=58 data-nosnippet>58</a>	<span class="kw">fn </span>print_config&lt;C: IOContext&gt;(context: <span class="kw-2">&amp;</span>C, config: <span class="kw-2">&amp;</span>CreateChainSpecConfig) {
-<a href=#59 id=59 data-nosnippet>59</a>		context.print(<span class="string">"Chain parameters:"</span>);
-<a href=#60 id=60 data-nosnippet>60</a>		context.print(<span class="macro">format!</span>(<span class="string">"- Genesis UTXO: {}"</span>, config.genesis_utxo).as_str());
-<a href=#61 id=61 data-nosnippet>61</a>		context.print(<span class="string">"SessionValidatorManagement Main Chain Configuration:"</span>);
-<a href=#62 id=62 data-nosnippet>62</a>		context.print(
-<a href=#63 id=63 data-nosnippet>63</a>			<span class="macro">format!</span>(<span class="string">"- committee_candidate_address: {}"</span>, config.committee_candidate_address)
-<a href=#64 id=64 data-nosnippet>64</a>				.as_str(),
-<a href=#65 id=65 data-nosnippet>65</a>		);
-<a href=#66 id=66 data-nosnippet>66</a>		context
-<a href=#67 id=67 data-nosnippet>67</a>			.print(<span class="macro">format!</span>(<span class="string">"- d_parameter_policy_id: {}"</span>, config.d_parameter_policy_id).as_str());
-<a href=#68 id=68 data-nosnippet>68</a>		context.print(
-<a href=#69 id=69 data-nosnippet>69</a>			<span class="macro">format!</span>(
-<a href=#70 id=70 data-nosnippet>70</a>				<span class="string">"- permissioned_candidates_policy_id: {}"</span>,
-<a href=#71 id=71 data-nosnippet>71</a>				config.permissioned_candidates_policy_id
-<a href=#72 id=72 data-nosnippet>72</a>			)
-<a href=#73 id=73 data-nosnippet>73</a>			.as_str(),
-<a href=#74 id=74 data-nosnippet>74</a>		);
-<a href=#75 id=75 data-nosnippet>75</a>		context.print(<span class="string">"Native Token Management Configuration (unused if empty):"</span>);
-<a href=#76 id=76 data-nosnippet>76</a>		context.print(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"- asset name: {}"</span>, config.native_token_asset_name));
-<a href=#77 id=77 data-nosnippet>77</a>		context.print(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"- asset policy ID: {}"</span>, config.native_token_policy));
-<a href=#78 id=78 data-nosnippet>78</a>		context.print(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"- illiquid supply address: {}"</span>, config.illiquid_supply_address));
-<a href=#79 id=79 data-nosnippet>79</a>		<span class="kw">use </span>colored::Colorize;
-<a href=#80 id=80 data-nosnippet>80</a>		<span class="kw">if </span>config.initial_permissioned_candidates_raw.is_empty() {
-<a href=#81 id=81 data-nosnippet>81</a>			context.print(<span class="string">"WARNING: The list of initial permissioned candidates is empty. Generated chain spec will not allow the chain to start."</span>.red().to_string().as_str());
-<a href=#82 id=82 data-nosnippet>82</a>			<span class="kw">let </span>update_msg = <span class="macro">format!</span>(
-<a href=#83 id=83 data-nosnippet>83</a>				<span class="string">"Update 'initial_permissioned_candidates' field of {} file with keys of initial committee."</span>,
-<a href=#84 id=84 data-nosnippet>84</a>				config_fields::INITIAL_PERMISSIONED_CANDIDATES.config_file
-<a href=#85 id=85 data-nosnippet>85</a>			);
-<a href=#86 id=86 data-nosnippet>86</a>			context.print(update_msg.red().to_string().as_str());
-<a href=#87 id=87 data-nosnippet>87</a>			context.print(INITIAL_PERMISSIONED_CANDIDATES_EXAMPLE.yellow().to_string().as_str());
-<a href=#88 id=88 data-nosnippet>88</a>		} <span class="kw">else </span>{
-<a href=#89 id=89 data-nosnippet>89</a>			context.print(<span class="string">"Initial permissioned candidates:"</span>);
-<a href=#90 id=90 data-nosnippet>90</a>			<span class="kw">for </span>candidate <span class="kw">in </span>config.initial_permissioned_candidates_raw.iter() {
-<a href=#91 id=91 data-nosnippet>91</a>				context.print(<span class="macro">format!</span>(<span class="string">"- {}"</span>, candidate).as_str());
-<a href=#92 id=92 data-nosnippet>92</a>			}
-<a href=#93 id=93 data-nosnippet>93</a>		}
-<a href=#94 id=94 data-nosnippet>94</a>	}
-<a href=#95 id=95 data-nosnippet>95</a>
-<a href=#96 id=96 data-nosnippet>96</a>	<span class="kw">fn </span>run_build_spec_command&lt;C: IOContext&gt;(
-<a href=#97 id=97 data-nosnippet>97</a>		context: <span class="kw-2">&amp;</span>C,
-<a href=#98 id=98 data-nosnippet>98</a>		config: <span class="kw-2">&amp;</span>CreateChainSpecConfig,
-<a href=#99 id=99 data-nosnippet>99</a>	) -&gt; anyhow::Result&lt;String&gt; {
-<a href=#100 id=100 data-nosnippet>100</a>		<span class="kw">let </span>node_executable = context.current_executable()<span class="question-mark">?</span>;
-<a href=#101 id=101 data-nosnippet>101</a>		context.set_env_var(<span class="string">"GENESIS_UTXO"</span>, <span class="kw-2">&amp;</span>config.genesis_utxo.to_string());
-<a href=#102 id=102 data-nosnippet>102</a>		context.set_env_var(
-<a href=#103 id=103 data-nosnippet>103</a>			<span class="string">"COMMITTEE_CANDIDATE_ADDRESS"</span>,
-<a href=#104 id=104 data-nosnippet>104</a>			<span class="kw-2">&amp;</span>config.committee_candidate_address.to_string(),
-<a href=#105 id=105 data-nosnippet>105</a>		);
-<a href=#106 id=106 data-nosnippet>106</a>		context.set_env_var(<span class="string">"D_PARAMETER_POLICY_ID"</span>, <span class="kw-2">&amp;</span>config.d_parameter_policy_id.to_string());
-<a href=#107 id=107 data-nosnippet>107</a>		context.set_env_var(
-<a href=#108 id=108 data-nosnippet>108</a>			<span class="string">"PERMISSIONED_CANDIDATES_POLICY_ID"</span>,
-<a href=#109 id=109 data-nosnippet>109</a>			<span class="kw-2">&amp;</span>config.permissioned_candidates_policy_id.to_string(),
-<a href=#110 id=110 data-nosnippet>110</a>		);
-<a href=#111 id=111 data-nosnippet>111</a>		context.set_env_var(<span class="string">"NATIVE_TOKEN_POLICY_ID"</span>, <span class="kw-2">&amp;</span>config.native_token_policy);
-<a href=#112 id=112 data-nosnippet>112</a>		context.set_env_var(<span class="string">"NATIVE_TOKEN_ASSET_NAME"</span>, <span class="kw-2">&amp;</span>config.native_token_asset_name);
-<a href=#113 id=113 data-nosnippet>113</a>		context.set_env_var(<span class="string">"ILLIQUID_SUPPLY_VALIDATOR_ADDRESS"</span>, <span class="kw-2">&amp;</span>config.illiquid_supply_address);
-<a href=#114 id=114 data-nosnippet>114</a>		context.run_command(
-<a href=#115 id=115 data-nosnippet>115</a>			<span class="macro">format!</span>(<span class="string">"{node_executable} build-spec --disable-default-bootnode &gt; chain-spec.json"</span>)
-<a href=#116 id=116 data-nosnippet>116</a>				.to_string()
-<a href=#117 id=117 data-nosnippet>117</a>				.as_str(),
-<a href=#118 id=118 data-nosnippet>118</a>		)
-<a href=#119 id=119 data-nosnippet>119</a>	}
-<a href=#120 id=120 data-nosnippet>120</a>
-<a href=#121 id=121 data-nosnippet>121</a>	<span class="kw">fn </span>update_chain_spec_authorities&lt;C: IOContext&gt;(
-<a href=#122 id=122 data-nosnippet>122</a>		context: <span class="kw-2">&amp;</span>C,
-<a href=#123 id=123 data-nosnippet>123</a>		config: <span class="kw-2">&amp;</span>CreateChainSpecConfig,
-<a href=#124 id=124 data-nosnippet>124</a>	) -&gt; anyhow::Result&lt;()&gt; {
-<a href=#125 id=125 data-nosnippet>125</a>		<span class="kw">let </span>json = context
-<a href=#126 id=126 data-nosnippet>126</a>			.read_file(<span class="string">"chain-spec.json"</span>)
-<a href=#127 id=127 data-nosnippet>127</a>			.context(<span class="string">"Could not read chain-spec.json file. File is expected to exists."</span>)<span class="question-mark">?</span>;
-<a href=#128 id=128 data-nosnippet>128</a>		<span class="kw">let </span><span class="kw-2">mut </span>chain_spec: serde_json::Value = serde_json::from_str(<span class="kw-2">&amp;</span>json)<span class="question-mark">?</span>;
-<a href=#129 id=129 data-nosnippet>129</a>
-<a href=#130 id=130 data-nosnippet>130</a>		<span class="kw">let </span>initial_validators = config
-<a href=#131 id=131 data-nosnippet>131</a>			.initial_permissioned_candidates_parsed
-<a href=#132 id=132 data-nosnippet>132</a>			.iter()
-<a href=#133 id=133 data-nosnippet>133</a>			.map(|c| {
-<a href=#134 id=134 data-nosnippet>134</a>				serde_json::to_value((c.account_id_32(), c.session_keys::&lt;T::AuthorityKeys&gt;()))
-<a href=#135 id=135 data-nosnippet>135</a>			})
-<a href=#136 id=136 data-nosnippet>136</a>			.collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;serde_json::Value&gt;, <span class="kw">_</span>&gt;&gt;()<span class="question-mark">?</span>;
-<a href=#137 id=137 data-nosnippet>137</a>		<span class="kw">let </span>initial_validators = serde_json::Value::Array(initial_validators);
-<a href=#138 id=138 data-nosnippet>138</a>		<span class="self">Self</span>::update_field(<span class="kw-2">&amp;mut </span>chain_spec, SESSION_INITIAL_VALIDATORS_PATH, initial_validators)<span class="question-mark">?</span>;
-<a href=#139 id=139 data-nosnippet>139</a>
-<a href=#140 id=140 data-nosnippet>140</a>		<span class="kw">let </span>initial_authorities = config
-<a href=#141 id=141 data-nosnippet>141</a>			.initial_permissioned_candidates_parsed
-<a href=#142 id=142 data-nosnippet>142</a>			.iter()
-<a href=#143 id=143 data-nosnippet>143</a>			.map(|c| -&gt; anyhow::Result&lt;serde_json::Value&gt; {
-<a href=#144 id=144 data-nosnippet>144</a>				<span class="kw">let </span>initial_member =
-<a href=#145 id=145 data-nosnippet>145</a>					T::initial_member(c.sidechain.into(), c.session_keys::&lt;T::AuthorityKeys&gt;());
-<a href=#146 id=146 data-nosnippet>146</a>				<span class="prelude-val">Ok</span>(serde_json::to_value(initial_member)<span class="question-mark">?</span>)
-<a href=#147 id=147 data-nosnippet>147</a>			})
-<a href=#148 id=148 data-nosnippet>148</a>			.collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;serde_json::Value&gt;, <span class="kw">_</span>&gt;&gt;()<span class="question-mark">?</span>;
-<a href=#149 id=149 data-nosnippet>149</a>		<span class="kw">let </span>initial_authorities = serde_json::Value::Array(initial_authorities);
-<a href=#150 id=150 data-nosnippet>150</a>		<span class="self">Self</span>::update_field(
-<a href=#151 id=151 data-nosnippet>151</a>			<span class="kw-2">&amp;mut </span>chain_spec,
-<a href=#152 id=152 data-nosnippet>152</a>			SESSION_VALIDATOR_MANAGEMENT_INITIAL_AUTHORITIES_PATH,
-<a href=#153 id=153 data-nosnippet>153</a>			initial_authorities,
-<a href=#154 id=154 data-nosnippet>154</a>		)<span class="question-mark">?</span>;
-<a href=#155 id=155 data-nosnippet>155</a>		context.write_file(<span class="string">"chain-spec.json"</span>, serde_json::to_string_pretty(<span class="kw-2">&amp;</span>chain_spec)<span class="question-mark">?</span>.as_str());
-<a href=#156 id=156 data-nosnippet>156</a>		<span class="prelude-val">Ok</span>(())
-<a href=#157 id=157 data-nosnippet>157</a>	}
-<a href=#158 id=158 data-nosnippet>158</a>
-<a href=#159 id=159 data-nosnippet>159</a>	<span class="kw">fn </span>update_field(
-<a href=#160 id=160 data-nosnippet>160</a>		chain_spec: <span class="kw-2">&amp;mut </span>JValue,
-<a href=#161 id=161 data-nosnippet>161</a>		field_name: <span class="kw-2">&amp;</span>str,
-<a href=#162 id=162 data-nosnippet>162</a>		value: JValue,
-<a href=#163 id=163 data-nosnippet>163</a>	) -&gt; <span class="prelude-ty">Result</span>&lt;(), anyhow::Error&gt; {
-<a href=#164 id=164 data-nosnippet>164</a>		<span class="kw">if let </span><span class="prelude-val">Some</span>(field) = chain_spec.pointer_mut(field_name) {
-<a href=#165 id=165 data-nosnippet>165</a>			<span class="kw-2">*</span>field = value;
-<a href=#166 id=166 data-nosnippet>166</a>			<span class="prelude-val">Ok</span>(())
-<a href=#167 id=167 data-nosnippet>167</a>		} <span class="kw">else </span>{
-<a href=#168 id=168 data-nosnippet>168</a>			<span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(
-<a href=#169 id=169 data-nosnippet>169</a>				<span class="string">"Internal error: Could not find {field_name} in chain spec file! Possibly this wizard does not support the current chain spec version."
-<a href=#170 id=170 data-nosnippet>170</a>			</span>))
-<a href=#171 id=171 data-nosnippet>171</a>		}
-<a href=#172 id=172 data-nosnippet>172</a>	}
-<a href=#173 id=173 data-nosnippet>173</a>}
-<a href=#174 id=174 data-nosnippet>174</a>
-<a href=#175 id=175 data-nosnippet>175</a><span class="attr">#[derive(Debug)]
-<a href=#176 id=176 data-nosnippet>176</a></span><span class="kw">struct </span>CreateChainSpecConfig {
-<a href=#177 id=177 data-nosnippet>177</a>	genesis_utxo: UtxoId,
-<a href=#178 id=178 data-nosnippet>178</a>	initial_permissioned_candidates_raw: Vec&lt;PermissionedCandidateKeys&gt;,
-<a href=#179 id=179 data-nosnippet>179</a>	initial_permissioned_candidates_parsed: Vec&lt;ParsedPermissionedCandidatesKeys&gt;,
-<a href=#180 id=180 data-nosnippet>180</a>	committee_candidate_address: String,
-<a href=#181 id=181 data-nosnippet>181</a>	d_parameter_policy_id: String,
-<a href=#182 id=182 data-nosnippet>182</a>	permissioned_candidates_policy_id: String,
-<a href=#183 id=183 data-nosnippet>183</a>	native_token_policy: String,
-<a href=#184 id=184 data-nosnippet>184</a>	native_token_asset_name: String,
-<a href=#185 id=185 data-nosnippet>185</a>	illiquid_supply_address: String,
-<a href=#186 id=186 data-nosnippet>186</a>}
+<a href=#35 id=35 data-nosnippet>35</a><span class="kw">const </span>GOVERNED_MAP_VALIDATOR_ADDRESS_PATH: <span class="kw-2">&amp;</span>str =
+<a href=#36 id=36 data-nosnippet>36</a>	<span class="string">"/genesis/runtimeGenesis/config/governedMap/mainChainScripts/validator_address"</span>;
+<a href=#37 id=37 data-nosnippet>37</a><span class="kw">const </span>GOVERNED_MAP_ASSET_POLICY_ID_PATH: <span class="kw-2">&amp;</span>str =
+<a href=#38 id=38 data-nosnippet>38</a>	<span class="string">"/genesis/runtimeGenesis/config/governedMap/mainChainScripts/asset_policy_id"</span>;
+<a href=#39 id=39 data-nosnippet>39</a>
+<a href=#40 id=40 data-nosnippet>40</a><span class="kw">impl</span>&lt;T: CreateChainSpecRuntimeBindings&gt; CmdRun <span class="kw">for </span>CreateChainSpecCmd&lt;T&gt; {
+<a href=#41 id=41 data-nosnippet>41</a>	<span class="kw">fn </span>run&lt;C: IOContext&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, context: <span class="kw-2">&amp;</span>C) -&gt; anyhow::Result&lt;()&gt; {
+<a href=#42 id=42 data-nosnippet>42</a>		<span class="kw">let </span>config = CreateChainSpecConfig::load(context)<span class="question-mark">?</span>;
+<a href=#43 id=43 data-nosnippet>43</a>		context.print(<span class="string">"This wizard will create a chain spec JSON file according to the provided configuration, using WASM runtime code from the compiled node binary."</span>);
+<a href=#44 id=44 data-nosnippet>44</a>		<span class="self">Self</span>::print_config(context, <span class="kw-2">&amp;</span>config);
+<a href=#45 id=45 data-nosnippet>45</a>		<span class="kw">if </span>context.prompt_yes_no(<span class="string">"Do you want to continue?"</span>, <span class="bool-val">true</span>) {
+<a href=#46 id=46 data-nosnippet>46</a>			<span class="self">Self</span>::run_build_spec_command(context, <span class="kw-2">&amp;</span>config)<span class="question-mark">?</span>;
+<a href=#47 id=47 data-nosnippet>47</a>			<span class="self">Self</span>::update_chain_spec_field_not_filled_by_the_node(context, <span class="kw-2">&amp;</span>config)<span class="question-mark">?</span>;
+<a href=#48 id=48 data-nosnippet>48</a>			context.print(<span class="string">"chain-spec.json file has been created."</span>);
+<a href=#49 id=49 data-nosnippet>49</a>			context.print(
+<a href=#50 id=50 data-nosnippet>50</a>				<span class="string">"If you are the governance authority, you can distribute it to the validators."</span>,
+<a href=#51 id=51 data-nosnippet>51</a>			);
+<a href=#52 id=52 data-nosnippet>52</a>			context.print(<span class="string">"Run 'setup-main-chain-state' command to set D-parameter and permissioned candidates on Cardano."</span>);
+<a href=#53 id=53 data-nosnippet>53</a>			<span class="prelude-val">Ok</span>(())
+<a href=#54 id=54 data-nosnippet>54</a>		} <span class="kw">else </span>{
+<a href=#55 id=55 data-nosnippet>55</a>			context.print(<span class="string">"Aborted."</span>);
+<a href=#56 id=56 data-nosnippet>56</a>			<span class="prelude-val">Ok</span>(())
+<a href=#57 id=57 data-nosnippet>57</a>		}
+<a href=#58 id=58 data-nosnippet>58</a>	}
+<a href=#59 id=59 data-nosnippet>59</a>}
+<a href=#60 id=60 data-nosnippet>60</a>
+<a href=#61 id=61 data-nosnippet>61</a><span class="kw">impl</span>&lt;T: CreateChainSpecRuntimeBindings&gt; CreateChainSpecCmd&lt;T&gt; {
+<a href=#62 id=62 data-nosnippet>62</a>	<span class="kw">fn </span>print_config&lt;C: IOContext&gt;(context: <span class="kw-2">&amp;</span>C, config: <span class="kw-2">&amp;</span>CreateChainSpecConfig) {
+<a href=#63 id=63 data-nosnippet>63</a>		context.print(<span class="string">"Chain parameters:"</span>);
+<a href=#64 id=64 data-nosnippet>64</a>		context.print(<span class="macro">format!</span>(<span class="string">"- Genesis UTXO: {}"</span>, config.genesis_utxo).as_str());
+<a href=#65 id=65 data-nosnippet>65</a>		context.print(<span class="string">"SessionValidatorManagement Main Chain Configuration:"</span>);
+<a href=#66 id=66 data-nosnippet>66</a>		context.print(
+<a href=#67 id=67 data-nosnippet>67</a>			<span class="macro">format!</span>(<span class="string">"- committee_candidate_address: {}"</span>, config.committee_candidate_address)
+<a href=#68 id=68 data-nosnippet>68</a>				.as_str(),
+<a href=#69 id=69 data-nosnippet>69</a>		);
+<a href=#70 id=70 data-nosnippet>70</a>		context
+<a href=#71 id=71 data-nosnippet>71</a>			.print(<span class="macro">format!</span>(<span class="string">"- d_parameter_policy_id: {}"</span>, config.d_parameter_policy_id).as_str());
+<a href=#72 id=72 data-nosnippet>72</a>		context.print(
+<a href=#73 id=73 data-nosnippet>73</a>			<span class="macro">format!</span>(
+<a href=#74 id=74 data-nosnippet>74</a>				<span class="string">"- permissioned_candidates_policy_id: {}"</span>,
+<a href=#75 id=75 data-nosnippet>75</a>				config.permissioned_candidates_policy_id
+<a href=#76 id=76 data-nosnippet>76</a>			)
+<a href=#77 id=77 data-nosnippet>77</a>			.as_str(),
+<a href=#78 id=78 data-nosnippet>78</a>		);
+<a href=#79 id=79 data-nosnippet>79</a>		context.print(<span class="string">"Native Token Management Configuration (unused if empty):"</span>);
+<a href=#80 id=80 data-nosnippet>80</a>		context.print(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"- asset name: {}"</span>, config.native_token_asset_name));
+<a href=#81 id=81 data-nosnippet>81</a>		context.print(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"- asset policy ID: {}"</span>, config.native_token_policy));
+<a href=#82 id=82 data-nosnippet>82</a>		context.print(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"- illiquid supply address: {}"</span>, config.illiquid_supply_address));
+<a href=#83 id=83 data-nosnippet>83</a>		context.print(<span class="string">"Governed Map Configuration:"</span>);
+<a href=#84 id=84 data-nosnippet>84</a>		context.print(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
+<a href=#85 id=85 data-nosnippet>85</a>			<span class="string">"- validator address: {}"</span>,
+<a href=#86 id=86 data-nosnippet>86</a>			config.governed_map_validator_address.clone().unwrap_or_default()
+<a href=#87 id=87 data-nosnippet>87</a>		));
+<a href=#88 id=88 data-nosnippet>88</a>		context.print(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
+<a href=#89 id=89 data-nosnippet>89</a>			<span class="string">"- asset policy ID: {}"</span>,
+<a href=#90 id=90 data-nosnippet>90</a>			config.governed_map_asset_policy_id.clone().unwrap_or_default()
+<a href=#91 id=91 data-nosnippet>91</a>		));
+<a href=#92 id=92 data-nosnippet>92</a>		<span class="kw">use </span>colored::Colorize;
+<a href=#93 id=93 data-nosnippet>93</a>		<span class="kw">if </span>config.initial_permissioned_candidates_raw.is_empty() {
+<a href=#94 id=94 data-nosnippet>94</a>			context.print(<span class="string">"WARNING: The list of initial permissioned candidates is empty. Generated chain spec will not allow the chain to start."</span>.red().to_string().as_str());
+<a href=#95 id=95 data-nosnippet>95</a>			<span class="kw">let </span>update_msg = <span class="macro">format!</span>(
+<a href=#96 id=96 data-nosnippet>96</a>				<span class="string">"Update 'initial_permissioned_candidates' field of {} file with keys of initial committee."</span>,
+<a href=#97 id=97 data-nosnippet>97</a>				config_fields::INITIAL_PERMISSIONED_CANDIDATES.config_file
+<a href=#98 id=98 data-nosnippet>98</a>			);
+<a href=#99 id=99 data-nosnippet>99</a>			context.print(update_msg.red().to_string().as_str());
+<a href=#100 id=100 data-nosnippet>100</a>			context.print(INITIAL_PERMISSIONED_CANDIDATES_EXAMPLE.yellow().to_string().as_str());
+<a href=#101 id=101 data-nosnippet>101</a>		} <span class="kw">else </span>{
+<a href=#102 id=102 data-nosnippet>102</a>			context.print(<span class="string">"Initial permissioned candidates:"</span>);
+<a href=#103 id=103 data-nosnippet>103</a>			<span class="kw">for </span>candidate <span class="kw">in </span>config.initial_permissioned_candidates_raw.iter() {
+<a href=#104 id=104 data-nosnippet>104</a>				context.print(<span class="macro">format!</span>(<span class="string">"- {}"</span>, candidate).as_str());
+<a href=#105 id=105 data-nosnippet>105</a>			}
+<a href=#106 id=106 data-nosnippet>106</a>		}
+<a href=#107 id=107 data-nosnippet>107</a>	}
+<a href=#108 id=108 data-nosnippet>108</a>
+<a href=#109 id=109 data-nosnippet>109</a>	<span class="kw">fn </span>run_build_spec_command&lt;C: IOContext&gt;(
+<a href=#110 id=110 data-nosnippet>110</a>		context: <span class="kw-2">&amp;</span>C,
+<a href=#111 id=111 data-nosnippet>111</a>		config: <span class="kw-2">&amp;</span>CreateChainSpecConfig,
+<a href=#112 id=112 data-nosnippet>112</a>	) -&gt; anyhow::Result&lt;String&gt; {
+<a href=#113 id=113 data-nosnippet>113</a>		<span class="kw">let </span>node_executable = context.current_executable()<span class="question-mark">?</span>;
+<a href=#114 id=114 data-nosnippet>114</a>		context.set_env_var(<span class="string">"GENESIS_UTXO"</span>, <span class="kw-2">&amp;</span>config.genesis_utxo.to_string());
+<a href=#115 id=115 data-nosnippet>115</a>		context.set_env_var(
+<a href=#116 id=116 data-nosnippet>116</a>			<span class="string">"COMMITTEE_CANDIDATE_ADDRESS"</span>,
+<a href=#117 id=117 data-nosnippet>117</a>			<span class="kw-2">&amp;</span>config.committee_candidate_address.to_string(),
+<a href=#118 id=118 data-nosnippet>118</a>		);
+<a href=#119 id=119 data-nosnippet>119</a>		context.set_env_var(<span class="string">"D_PARAMETER_POLICY_ID"</span>, <span class="kw-2">&amp;</span>config.d_parameter_policy_id.to_string());
+<a href=#120 id=120 data-nosnippet>120</a>		context.set_env_var(
+<a href=#121 id=121 data-nosnippet>121</a>			<span class="string">"PERMISSIONED_CANDIDATES_POLICY_ID"</span>,
+<a href=#122 id=122 data-nosnippet>122</a>			<span class="kw-2">&amp;</span>config.permissioned_candidates_policy_id.to_string(),
+<a href=#123 id=123 data-nosnippet>123</a>		);
+<a href=#124 id=124 data-nosnippet>124</a>		context.set_env_var(<span class="string">"NATIVE_TOKEN_POLICY_ID"</span>, <span class="kw-2">&amp;</span>config.native_token_policy);
+<a href=#125 id=125 data-nosnippet>125</a>		context.set_env_var(<span class="string">"NATIVE_TOKEN_ASSET_NAME"</span>, <span class="kw-2">&amp;</span>config.native_token_asset_name);
+<a href=#126 id=126 data-nosnippet>126</a>		context.set_env_var(<span class="string">"ILLIQUID_SUPPLY_VALIDATOR_ADDRESS"</span>, <span class="kw-2">&amp;</span>config.illiquid_supply_address);
+<a href=#127 id=127 data-nosnippet>127</a>		context.run_command(
+<a href=#128 id=128 data-nosnippet>128</a>			<span class="macro">format!</span>(<span class="string">"{node_executable} build-spec --disable-default-bootnode &gt; chain-spec.json"</span>)
+<a href=#129 id=129 data-nosnippet>129</a>				.to_string()
+<a href=#130 id=130 data-nosnippet>130</a>				.as_str(),
+<a href=#131 id=131 data-nosnippet>131</a>		)
+<a href=#132 id=132 data-nosnippet>132</a>	}
+<a href=#133 id=133 data-nosnippet>133</a>
+<a href=#134 id=134 data-nosnippet>134</a>	<span class="kw">fn </span>update_chain_spec_field_not_filled_by_the_node&lt;C: IOContext&gt;(
+<a href=#135 id=135 data-nosnippet>135</a>		context: <span class="kw-2">&amp;</span>C,
+<a href=#136 id=136 data-nosnippet>136</a>		config: <span class="kw-2">&amp;</span>CreateChainSpecConfig,
+<a href=#137 id=137 data-nosnippet>137</a>	) -&gt; anyhow::Result&lt;()&gt; {
+<a href=#138 id=138 data-nosnippet>138</a>		<span class="kw">let </span>json = context
+<a href=#139 id=139 data-nosnippet>139</a>			.read_file(<span class="string">"chain-spec.json"</span>)
+<a href=#140 id=140 data-nosnippet>140</a>			.context(<span class="string">"Could not read chain-spec.json file. File is expected to exists."</span>)<span class="question-mark">?</span>;
+<a href=#141 id=141 data-nosnippet>141</a>		<span class="kw">let </span><span class="kw-2">mut </span>chain_spec: serde_json::Value = serde_json::from_str(<span class="kw-2">&amp;</span>json)<span class="question-mark">?</span>;
+<a href=#142 id=142 data-nosnippet>142</a>
+<a href=#143 id=143 data-nosnippet>143</a>		<span class="kw">let </span>initial_validators = config
+<a href=#144 id=144 data-nosnippet>144</a>			.initial_permissioned_candidates_parsed
+<a href=#145 id=145 data-nosnippet>145</a>			.iter()
+<a href=#146 id=146 data-nosnippet>146</a>			.map(|c| {
+<a href=#147 id=147 data-nosnippet>147</a>				serde_json::to_value((c.account_id_32(), c.session_keys::&lt;T::AuthorityKeys&gt;()))
+<a href=#148 id=148 data-nosnippet>148</a>			})
+<a href=#149 id=149 data-nosnippet>149</a>			.collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;serde_json::Value&gt;, <span class="kw">_</span>&gt;&gt;()<span class="question-mark">?</span>;
+<a href=#150 id=150 data-nosnippet>150</a>		<span class="kw">let </span>initial_validators = serde_json::Value::Array(initial_validators);
+<a href=#151 id=151 data-nosnippet>151</a>		<span class="self">Self</span>::update_field(<span class="kw-2">&amp;mut </span>chain_spec, SESSION_INITIAL_VALIDATORS_PATH, initial_validators)<span class="question-mark">?</span>;
+<a href=#152 id=152 data-nosnippet>152</a>
+<a href=#153 id=153 data-nosnippet>153</a>		<span class="kw">let </span>initial_authorities = config
+<a href=#154 id=154 data-nosnippet>154</a>			.initial_permissioned_candidates_parsed
+<a href=#155 id=155 data-nosnippet>155</a>			.iter()
+<a href=#156 id=156 data-nosnippet>156</a>			.map(|c| -&gt; anyhow::Result&lt;serde_json::Value&gt; {
+<a href=#157 id=157 data-nosnippet>157</a>				<span class="kw">let </span>initial_member =
+<a href=#158 id=158 data-nosnippet>158</a>					T::initial_member(c.sidechain.into(), c.session_keys::&lt;T::AuthorityKeys&gt;());
+<a href=#159 id=159 data-nosnippet>159</a>				<span class="prelude-val">Ok</span>(serde_json::to_value(initial_member)<span class="question-mark">?</span>)
+<a href=#160 id=160 data-nosnippet>160</a>			})
+<a href=#161 id=161 data-nosnippet>161</a>			.collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;serde_json::Value&gt;, <span class="kw">_</span>&gt;&gt;()<span class="question-mark">?</span>;
+<a href=#162 id=162 data-nosnippet>162</a>		<span class="kw">let </span>initial_authorities = serde_json::Value::Array(initial_authorities);
+<a href=#163 id=163 data-nosnippet>163</a>		<span class="self">Self</span>::update_field(
+<a href=#164 id=164 data-nosnippet>164</a>			<span class="kw-2">&amp;mut </span>chain_spec,
+<a href=#165 id=165 data-nosnippet>165</a>			SESSION_VALIDATOR_MANAGEMENT_INITIAL_AUTHORITIES_PATH,
+<a href=#166 id=166 data-nosnippet>166</a>			initial_authorities,
+<a href=#167 id=167 data-nosnippet>167</a>		)<span class="question-mark">?</span>;
+<a href=#168 id=168 data-nosnippet>168</a>		<span class="kw">match </span>config.governed_map_validator_address.clone() {
+<a href=#169 id=169 data-nosnippet>169</a>			<span class="prelude-val">Some</span>(address) =&gt; <span class="self">Self</span>::update_field(
+<a href=#170 id=170 data-nosnippet>170</a>				<span class="kw-2">&amp;mut </span>chain_spec,
+<a href=#171 id=171 data-nosnippet>171</a>				GOVERNED_MAP_VALIDATOR_ADDRESS_PATH,
+<a href=#172 id=172 data-nosnippet>172</a>				serde_json::Value::String(<span class="macro">format!</span>(<span class="string">"0x{}"</span>, hex::encode(address.as_bytes()))),
+<a href=#173 id=173 data-nosnippet>173</a>			)<span class="question-mark">?</span>,
+<a href=#174 id=174 data-nosnippet>174</a>			<span class="prelude-val">None </span>=&gt; (),
+<a href=#175 id=175 data-nosnippet>175</a>		}
+<a href=#176 id=176 data-nosnippet>176</a>		<span class="kw">match </span>config.governed_map_asset_policy_id.clone() {
+<a href=#177 id=177 data-nosnippet>177</a>			<span class="prelude-val">Some</span>(policy_id) =&gt; <span class="self">Self</span>::update_field(
+<a href=#178 id=178 data-nosnippet>178</a>				<span class="kw-2">&amp;mut </span>chain_spec,
+<a href=#179 id=179 data-nosnippet>179</a>				GOVERNED_MAP_ASSET_POLICY_ID_PATH,
+<a href=#180 id=180 data-nosnippet>180</a>				serde_json::Value::String(<span class="macro">format!</span>(<span class="string">"0x{policy_id}"</span>)),
+<a href=#181 id=181 data-nosnippet>181</a>			)<span class="question-mark">?</span>,
+<a href=#182 id=182 data-nosnippet>182</a>			<span class="prelude-val">None </span>=&gt; (),
+<a href=#183 id=183 data-nosnippet>183</a>		}
+<a href=#184 id=184 data-nosnippet>184</a>		context.write_file(<span class="string">"chain-spec.json"</span>, serde_json::to_string_pretty(<span class="kw-2">&amp;</span>chain_spec)<span class="question-mark">?</span>.as_str());
+<a href=#185 id=185 data-nosnippet>185</a>		<span class="prelude-val">Ok</span>(())
+<a href=#186 id=186 data-nosnippet>186</a>	}
 <a href=#187 id=187 data-nosnippet>187</a>
-<a href=#188 id=188 data-nosnippet>188</a><span class="kw">impl </span>CreateChainSpecConfig {
-<a href=#189 id=189 data-nosnippet>189</a>	<span class="kw">pub fn </span>load&lt;C: IOContext&gt;(c: <span class="kw-2">&amp;</span>C) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, anyhow::Error&gt; {
-<a href=#190 id=190 data-nosnippet>190</a>		<span class="kw">let </span>initial_permissioned_candidates_raw =
-<a href=#191 id=191 data-nosnippet>191</a>			load_config_field(c, <span class="kw-2">&amp;</span>config_fields::INITIAL_PERMISSIONED_CANDIDATES)<span class="question-mark">?</span>;
-<a href=#192 id=192 data-nosnippet>192</a>		<span class="kw">let </span>initial_permissioned_candidates_parsed: Vec&lt;ParsedPermissionedCandidatesKeys&gt; =
-<a href=#193 id=193 data-nosnippet>193</a>			initial_permissioned_candidates_raw
-<a href=#194 id=194 data-nosnippet>194</a>				.iter()
-<a href=#195 id=195 data-nosnippet>195</a>				.map(TryFrom::try_from)
-<a href=#196 id=196 data-nosnippet>196</a>				.collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;ParsedPermissionedCandidatesKeys&gt;, anyhow::Error&gt;&gt;()<span class="question-mark">?</span>;
-<a href=#197 id=197 data-nosnippet>197</a>		<span class="prelude-val">Ok</span>(<span class="self">Self </span>{
-<a href=#198 id=198 data-nosnippet>198</a>			genesis_utxo: load_config_field(c, <span class="kw-2">&amp;</span>config_fields::GENESIS_UTXO)<span class="question-mark">?</span>,
-<a href=#199 id=199 data-nosnippet>199</a>			initial_permissioned_candidates_raw,
-<a href=#200 id=200 data-nosnippet>200</a>			initial_permissioned_candidates_parsed,
-<a href=#201 id=201 data-nosnippet>201</a>			committee_candidate_address: load_config_field(
-<a href=#202 id=202 data-nosnippet>202</a>				c,
-<a href=#203 id=203 data-nosnippet>203</a>				<span class="kw-2">&amp;</span>config_fields::COMMITTEE_CANDIDATES_ADDRESS,
-<a href=#204 id=204 data-nosnippet>204</a>			)<span class="question-mark">?</span>,
-<a href=#205 id=205 data-nosnippet>205</a>			d_parameter_policy_id: load_config_field(c, <span class="kw-2">&amp;</span>config_fields::D_PARAMETER_POLICY_ID)<span class="question-mark">?</span>,
-<a href=#206 id=206 data-nosnippet>206</a>			permissioned_candidates_policy_id: load_config_field(
-<a href=#207 id=207 data-nosnippet>207</a>				c,
-<a href=#208 id=208 data-nosnippet>208</a>				<span class="kw-2">&amp;</span>config_fields::PERMISSIONED_CANDIDATES_POLICY_ID,
-<a href=#209 id=209 data-nosnippet>209</a>			)<span class="question-mark">?</span>,
-<a href=#210 id=210 data-nosnippet>210</a>			native_token_policy: load_config_field(c, <span class="kw-2">&amp;</span>config_fields::NATIVE_TOKEN_POLICY)<span class="question-mark">?</span>,
-<a href=#211 id=211 data-nosnippet>211</a>			native_token_asset_name: load_config_field(c, <span class="kw-2">&amp;</span>config_fields::NATIVE_TOKEN_ASSET_NAME)<span class="question-mark">?</span>,
-<a href=#212 id=212 data-nosnippet>212</a>			illiquid_supply_address: load_config_field(c, <span class="kw-2">&amp;</span>config_fields::ILLIQUID_SUPPLY_ADDRESS)<span class="question-mark">?</span>,
-<a href=#213 id=213 data-nosnippet>213</a>		})
-<a href=#214 id=214 data-nosnippet>214</a>	}
-<a href=#215 id=215 data-nosnippet>215</a>}
-<a href=#216 id=216 data-nosnippet>216</a>
-<a href=#217 id=217 data-nosnippet>217</a><span class="kw">fn </span>load_config_field&lt;C: IOContext, T: DeserializeOwned&gt;(
-<a href=#218 id=218 data-nosnippet>218</a>	context: <span class="kw-2">&amp;</span>C,
-<a href=#219 id=219 data-nosnippet>219</a>	field: <span class="kw-2">&amp;</span>ConfigFieldDefinition&lt;T&gt;,
-<a href=#220 id=220 data-nosnippet>220</a>) -&gt; <span class="prelude-ty">Result</span>&lt;T, anyhow::Error&gt; {
-<a href=#221 id=221 data-nosnippet>221</a>	field.load_from_file(context).ok_or_else(|| {
-<a href=#222 id=222 data-nosnippet>222</a>		context.eprint(<span class="macro">format!</span>(<span class="string">"The '{}' configuration file is missing or invalid.\nIf you are the governance authority, please make sure you have run the `prepare-configuration` command to generate the chain configuration file.\nIf you are a validator, you can obtain the chain configuration file from the governance authority."</span>, field.config_file).as_str());
-<a href=#223 id=223 data-nosnippet>223</a>		<span class="macro">anyhow!</span>(<span class="string">"failed to read '{}'"</span>, field.path.join(<span class="string">"."</span>))
-<a href=#224 id=224 data-nosnippet>224</a>	})
-<a href=#225 id=225 data-nosnippet>225</a>}
-<a href=#226 id=226 data-nosnippet>226</a>
-<a href=#227 id=227 data-nosnippet>227</a><span class="kw">pub const </span>INITIAL_PERMISSIONED_CANDIDATES_EXAMPLE: <span class="kw-2">&amp;</span>str = <span class="string">r#"Example of 'initial_permissioned_candidates' field with 2 permissioned candidates:
-<a href=#228 id=228 data-nosnippet>228</a>"initial_permissioned_candidates": [
-<a href=#229 id=229 data-nosnippet>229</a>	{
-<a href=#230 id=230 data-nosnippet>230</a>	  "aura_pub_key": "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde49a5684e7a56da27d",
-<a href=#231 id=231 data-nosnippet>231</a>	  "grandpa_pub_key": "0x88dc3417d5058ec4b4503e0c12ea1a0a89be200f498922423d4334014fa6b0ee",
-<a href=#232 id=232 data-nosnippet>232</a>	  "sidechain_pub_key": "0x020a1091341fe5664bfa1782d5e0477968906ac916b04cb365ec3153755684d9a1"
-<a href=#233 id=233 data-nosnippet>233</a>	},
-<a href=#234 id=234 data-nosnippet>234</a>	{
-<a href=#235 id=235 data-nosnippet>235</a>	  "aura_pub_key": "0x8eaf04151687736326c9fea17e25fc5287613698c912909cb226aa4794f26a48",
-<a href=#236 id=236 data-nosnippet>236</a>	  "grandpa_pub_key": "0xd17c2d7823ebf260fd138f2d7e27d114cb145d968b5ff5006125f2414fadae69",
-<a href=#237 id=237 data-nosnippet>237</a>	  "sidechain_pub_key": "0x0390084fdbf27d2b79d26a4f13f0cdd982cb755a661969143c37cbc49ef5b91f27"
-<a href=#238 id=238 data-nosnippet>238</a>	}
-<a href=#239 id=239 data-nosnippet>239</a>]"#</span>;</code></pre></div></section></main></body></html>
+<a href=#188 id=188 data-nosnippet>188</a>	<span class="kw">fn </span>update_field(
+<a href=#189 id=189 data-nosnippet>189</a>		chain_spec: <span class="kw-2">&amp;mut </span>JValue,
+<a href=#190 id=190 data-nosnippet>190</a>		field_name: <span class="kw-2">&amp;</span>str,
+<a href=#191 id=191 data-nosnippet>191</a>		value: JValue,
+<a href=#192 id=192 data-nosnippet>192</a>	) -&gt; <span class="prelude-ty">Result</span>&lt;(), anyhow::Error&gt; {
+<a href=#193 id=193 data-nosnippet>193</a>		<span class="kw">if let </span><span class="prelude-val">Some</span>(field) = chain_spec.pointer_mut(field_name) {
+<a href=#194 id=194 data-nosnippet>194</a>			<span class="kw-2">*</span>field = value;
+<a href=#195 id=195 data-nosnippet>195</a>			<span class="prelude-val">Ok</span>(())
+<a href=#196 id=196 data-nosnippet>196</a>		} <span class="kw">else </span>{
+<a href=#197 id=197 data-nosnippet>197</a>			<span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(
+<a href=#198 id=198 data-nosnippet>198</a>				<span class="string">"Internal error: Could not find {field_name} in chain spec file! Possibly this wizard does not support the current chain spec version."
+<a href=#199 id=199 data-nosnippet>199</a>			</span>))
+<a href=#200 id=200 data-nosnippet>200</a>		}
+<a href=#201 id=201 data-nosnippet>201</a>	}
+<a href=#202 id=202 data-nosnippet>202</a>}
+<a href=#203 id=203 data-nosnippet>203</a>
+<a href=#204 id=204 data-nosnippet>204</a><span class="attr">#[derive(Debug)]
+<a href=#205 id=205 data-nosnippet>205</a></span><span class="kw">struct </span>CreateChainSpecConfig {
+<a href=#206 id=206 data-nosnippet>206</a>	genesis_utxo: UtxoId,
+<a href=#207 id=207 data-nosnippet>207</a>	initial_permissioned_candidates_raw: Vec&lt;PermissionedCandidateKeys&gt;,
+<a href=#208 id=208 data-nosnippet>208</a>	initial_permissioned_candidates_parsed: Vec&lt;ParsedPermissionedCandidatesKeys&gt;,
+<a href=#209 id=209 data-nosnippet>209</a>	committee_candidate_address: String,
+<a href=#210 id=210 data-nosnippet>210</a>	d_parameter_policy_id: String,
+<a href=#211 id=211 data-nosnippet>211</a>	permissioned_candidates_policy_id: String,
+<a href=#212 id=212 data-nosnippet>212</a>	native_token_policy: String,
+<a href=#213 id=213 data-nosnippet>213</a>	native_token_asset_name: String,
+<a href=#214 id=214 data-nosnippet>214</a>	illiquid_supply_address: String,
+<a href=#215 id=215 data-nosnippet>215</a>	governed_map_validator_address: <span class="prelude-ty">Option</span>&lt;String&gt;,
+<a href=#216 id=216 data-nosnippet>216</a>	governed_map_asset_policy_id: <span class="prelude-ty">Option</span>&lt;String&gt;,
+<a href=#217 id=217 data-nosnippet>217</a>}
+<a href=#218 id=218 data-nosnippet>218</a>
+<a href=#219 id=219 data-nosnippet>219</a><span class="kw">impl </span>CreateChainSpecConfig {
+<a href=#220 id=220 data-nosnippet>220</a>	<span class="kw">pub fn </span>load&lt;C: IOContext&gt;(c: <span class="kw-2">&amp;</span>C) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, anyhow::Error&gt; {
+<a href=#221 id=221 data-nosnippet>221</a>		<span class="kw">let </span>initial_permissioned_candidates_raw =
+<a href=#222 id=222 data-nosnippet>222</a>			load_config_field(c, <span class="kw-2">&amp;</span>config_fields::INITIAL_PERMISSIONED_CANDIDATES)<span class="question-mark">?</span>;
+<a href=#223 id=223 data-nosnippet>223</a>		<span class="kw">let </span>initial_permissioned_candidates_parsed: Vec&lt;ParsedPermissionedCandidatesKeys&gt; =
+<a href=#224 id=224 data-nosnippet>224</a>			initial_permissioned_candidates_raw
+<a href=#225 id=225 data-nosnippet>225</a>				.iter()
+<a href=#226 id=226 data-nosnippet>226</a>				.map(TryFrom::try_from)
+<a href=#227 id=227 data-nosnippet>227</a>				.collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;ParsedPermissionedCandidatesKeys&gt;, anyhow::Error&gt;&gt;()<span class="question-mark">?</span>;
+<a href=#228 id=228 data-nosnippet>228</a>		<span class="prelude-val">Ok</span>(<span class="self">Self </span>{
+<a href=#229 id=229 data-nosnippet>229</a>			genesis_utxo: load_config_field(c, <span class="kw-2">&amp;</span>config_fields::GENESIS_UTXO)<span class="question-mark">?</span>,
+<a href=#230 id=230 data-nosnippet>230</a>			initial_permissioned_candidates_raw,
+<a href=#231 id=231 data-nosnippet>231</a>			initial_permissioned_candidates_parsed,
+<a href=#232 id=232 data-nosnippet>232</a>			committee_candidate_address: load_config_field(
+<a href=#233 id=233 data-nosnippet>233</a>				c,
+<a href=#234 id=234 data-nosnippet>234</a>				<span class="kw-2">&amp;</span>config_fields::COMMITTEE_CANDIDATES_ADDRESS,
+<a href=#235 id=235 data-nosnippet>235</a>			)<span class="question-mark">?</span>,
+<a href=#236 id=236 data-nosnippet>236</a>			d_parameter_policy_id: load_config_field(c, <span class="kw-2">&amp;</span>config_fields::D_PARAMETER_POLICY_ID)<span class="question-mark">?</span>,
+<a href=#237 id=237 data-nosnippet>237</a>			permissioned_candidates_policy_id: load_config_field(
+<a href=#238 id=238 data-nosnippet>238</a>				c,
+<a href=#239 id=239 data-nosnippet>239</a>				<span class="kw-2">&amp;</span>config_fields::PERMISSIONED_CANDIDATES_POLICY_ID,
+<a href=#240 id=240 data-nosnippet>240</a>			)<span class="question-mark">?</span>,
+<a href=#241 id=241 data-nosnippet>241</a>			native_token_policy: load_config_field(c, <span class="kw-2">&amp;</span>config_fields::NATIVE_TOKEN_POLICY)<span class="question-mark">?</span>,
+<a href=#242 id=242 data-nosnippet>242</a>			native_token_asset_name: load_config_field(c, <span class="kw-2">&amp;</span>config_fields::NATIVE_TOKEN_ASSET_NAME)<span class="question-mark">?</span>,
+<a href=#243 id=243 data-nosnippet>243</a>			illiquid_supply_address: load_config_field(c, <span class="kw-2">&amp;</span>config_fields::ILLIQUID_SUPPLY_ADDRESS)<span class="question-mark">?</span>,
+<a href=#244 id=244 data-nosnippet>244</a>			governed_map_validator_address: config_fields::GOVERNED_MAP_VALIDATOR_ADDRESS
+<a href=#245 id=245 data-nosnippet>245</a>				.load_from_file(c),
+<a href=#246 id=246 data-nosnippet>246</a>			governed_map_asset_policy_id: config_fields::GOVERNED_MAP_POLICY_ID.load_from_file(c),
+<a href=#247 id=247 data-nosnippet>247</a>		})
+<a href=#248 id=248 data-nosnippet>248</a>	}
+<a href=#249 id=249 data-nosnippet>249</a>}
+<a href=#250 id=250 data-nosnippet>250</a>
+<a href=#251 id=251 data-nosnippet>251</a><span class="kw">fn </span>load_config_field&lt;C: IOContext, T: DeserializeOwned&gt;(
+<a href=#252 id=252 data-nosnippet>252</a>	context: <span class="kw-2">&amp;</span>C,
+<a href=#253 id=253 data-nosnippet>253</a>	field: <span class="kw-2">&amp;</span>ConfigFieldDefinition&lt;T&gt;,
+<a href=#254 id=254 data-nosnippet>254</a>) -&gt; <span class="prelude-ty">Result</span>&lt;T, anyhow::Error&gt; {
+<a href=#255 id=255 data-nosnippet>255</a>	field.load_from_file(context).ok_or_else(|| {
+<a href=#256 id=256 data-nosnippet>256</a>		context.eprint(<span class="macro">format!</span>(<span class="string">"The '{}' configuration file is missing or invalid.\nIf you are the governance authority, please make sure you have run the `prepare-configuration` command to generate the chain configuration file.\nIf you are a validator, you can obtain the chain configuration file from the governance authority."</span>, field.config_file).as_str());
+<a href=#257 id=257 data-nosnippet>257</a>		<span class="macro">anyhow!</span>(<span class="string">"failed to read '{}'"</span>, field.path.join(<span class="string">"."</span>))
+<a href=#258 id=258 data-nosnippet>258</a>	})
+<a href=#259 id=259 data-nosnippet>259</a>}
+<a href=#260 id=260 data-nosnippet>260</a>
+<a href=#261 id=261 data-nosnippet>261</a><span class="kw">pub const </span>INITIAL_PERMISSIONED_CANDIDATES_EXAMPLE: <span class="kw-2">&amp;</span>str = <span class="string">r#"Example of 'initial_permissioned_candidates' field with 2 permissioned candidates:
+<a href=#262 id=262 data-nosnippet>262</a>"initial_permissioned_candidates": [
+<a href=#263 id=263 data-nosnippet>263</a>	{
+<a href=#264 id=264 data-nosnippet>264</a>	  "aura_pub_key": "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde49a5684e7a56da27d",
+<a href=#265 id=265 data-nosnippet>265</a>	  "grandpa_pub_key": "0x88dc3417d5058ec4b4503e0c12ea1a0a89be200f498922423d4334014fa6b0ee",
+<a href=#266 id=266 data-nosnippet>266</a>	  "sidechain_pub_key": "0x020a1091341fe5664bfa1782d5e0477968906ac916b04cb365ec3153755684d9a1"
+<a href=#267 id=267 data-nosnippet>267</a>	},
+<a href=#268 id=268 data-nosnippet>268</a>	{
+<a href=#269 id=269 data-nosnippet>269</a>	  "aura_pub_key": "0x8eaf04151687736326c9fea17e25fc5287613698c912909cb226aa4794f26a48",
+<a href=#270 id=270 data-nosnippet>270</a>	  "grandpa_pub_key": "0xd17c2d7823ebf260fd138f2d7e27d114cb145d968b5ff5006125f2414fadae69",
+<a href=#271 id=271 data-nosnippet>271</a>	  "sidechain_pub_key": "0x0390084fdbf27d2b79d26a4f13f0cdd982cb755a661969143c37cbc49ef5b91f27"
+<a href=#272 id=272 data-nosnippet>272</a>	}
+<a href=#273 id=273 data-nosnippet>273</a>]"#</span>;</code></pre></div></section></main></body></html>
