@@ -23,7 +23,7 @@ use partner_chains_plutus_data::registered_candidates::{
 };
 use sidechain_domain::*;
 
-/// Trait for [register], to make it mockable.
+/// Registers a registered candidate.
 pub trait Register {
 	#[allow(async_fn_in_trait)]
 	/// This function submits a transaction to register a registered candidate.
@@ -126,7 +126,7 @@ pub async fn run_register<
 	Ok(Some(McTxHash(result.transaction.id)))
 }
 
-/// Trait for [deregister], to make it mockable.
+/// Deregisters a registered candidate.
 pub trait Deregister {
 	#[allow(async_fn_in_trait)]
 	/// This function submits a transaction to deregister a registered candidate.

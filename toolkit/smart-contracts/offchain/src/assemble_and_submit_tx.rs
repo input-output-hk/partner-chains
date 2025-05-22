@@ -8,7 +8,7 @@ use ogmios_client::{
 use sidechain_domain::{McTxHash, UtxoId};
 
 /// Adds `witnesses` to `transaction` and submits it with `ogmios_client`.
-pub async fn assemble_tx<
+pub async fn assemble_and_submit_tx<
 	C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,
 	A: AwaitTx,
 >(

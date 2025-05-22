@@ -28,7 +28,7 @@ use partner_chains_plutus_data::permissioned_candidates::{
 };
 use sidechain_domain::{PermissionedCandidateData, UtxoId};
 
-/// Trait for [upsert_permissioned_candidates] to make it mockable.
+/// Upserts permissioned candidates list.
 pub trait UpsertPermissionedCandidates {
 	#[allow(async_fn_in_trait)]
 	/// Upserts permissioned candidates list.

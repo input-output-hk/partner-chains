@@ -16,7 +16,7 @@ use ogmios_client::{
 	transactions::Transactions,
 };
 use partner_chains_cardano_offchain::{
-	assemble_tx,
+	assemble_and_submit_tx,
 	await_tx::{AwaitTx, FixedDelayRetries},
 	cardano_keys::CardanoPaymentSigningKey,
 	d_param,
@@ -866,7 +866,9 @@ async fn run_assemble_and_sign<
 			.collect();
 
 		let await_tx = FixedDelayRetries::new(Duration::from_millis(500), 100);
-		assemble_tx::assemble_tx(tx, witnesses, client, &await_tx).await.unwrap()
+		assemble_and_submit_tx::assemble_and_submit_tx(tx, witnesses, client, &await_tx)
+			.await
+			.unwrap()
 	} else {
 		panic!("Expected transaction cbor, because governance policy is not '1 of 1'")
 	}

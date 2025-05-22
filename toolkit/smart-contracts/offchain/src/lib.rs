@@ -2,7 +2,7 @@
 #![deny(missing_docs)]
 
 /// Code for adding signatures to multisig transaction and submitting it.
-pub mod assemble_tx;
+pub mod assemble_and_submit_tx;
 /// Primitives used for awaiting for tx being observed on the blockchain
 pub mod await_tx;
 /// Parsing and wrapping of Cardano keys

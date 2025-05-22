@@ -29,7 +29,7 @@ use sidechain_domain::{DParameter, UtxoId};
 #[cfg(test)]
 mod tests;
 
-/// Trait for [upsert_d_param], to make it mockable.
+/// Upserts D-param.
 pub trait UpsertDParam {
 	#[allow(async_fn_in_trait)]
 	/// This function upserts D-param.

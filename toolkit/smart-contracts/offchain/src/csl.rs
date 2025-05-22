@@ -122,7 +122,7 @@ fn ratio_to_unit_interval(ratio: &fraction::Ratio<u64>) -> UnitInterval {
 /// Extension trait for [OgmiosValue].
 pub trait OgmiosValueExt {
 	/// Converts [OgmiosValue] to CSL [cardano_serialization_lib::Value].
-	/// It could fail if the input contains negative values, for example Ogmios values representing burn.
+	/// It can fail if the input contains negative values, for example Ogmios values representing burn.
 	fn to_csl(&self) -> Result<Value, JsError>;
 }
 
@@ -175,7 +175,7 @@ fn ex_units_from_response(resp: OgmiosEvaluateTransactionResponse) -> ExUnits {
 }
 
 /// Type representing transaction execution costs.
-pub enum Costs {
+pub(crate) enum Costs {
 	/// Zero costs. Used as a dummy value when submitting a transaction for cost calculation.
 	ZeroCosts,
 	/// Variant containing actual costs.
@@ -188,7 +188,7 @@ pub enum Costs {
 }
 
 /// Interface for retrieving execution costs.
-pub trait CostStore {
+pub(crate) trait CostStore {
 	/// Returns [ExUnits] cost of a minting policy for a given [PlutusScript].
 	fn get_mint(&self, script: &PlutusScript) -> ExUnits;
 	/// Returns [ExUnits] cost of a validator script for a given spend index.
@@ -226,7 +226,7 @@ impl CostStore for Costs {
 			Costs::Costs { spends, .. } => match spends.values().collect::<Vec<_>>()[..] {
 				[x] => x.clone(),
 				_ => panic!(
-					"get_one_spend should only be called when exacly one spend is expected to be present"
+					"get_one_spend should only be called when exactly one spend is expected to be present"
 				),
 			},
 		}
@@ -240,8 +240,9 @@ impl CostStore for Costs {
 }
 
 impl Costs {
+	#[cfg(test)]
 	/// Constructs new [Costs] with given `mints` and `spends`.
-	pub fn new(
+	pub(crate) fn new(
 		mints: HashMap<cardano_serialization_lib::ScriptHash, ExUnits>,
 		spends: HashMap<u32, ExUnits>,
 	) -> Costs {
@@ -249,21 +250,19 @@ impl Costs {
 	}
 
 	/// Creates a [Transaction] with correctly set script execution costs.
-	/// It does this by constructing a transaction first with [Costs::ZeroCosts], evaluating it with Ogmios,
-	/// then evaluating it again with the cost values from the first evaluation. This double evaluation is needed
-	/// to correctly set costs in some cases.
 	///
 	/// Arguments:
 	///  - `make_tx`: A function that takes a [Costs] value, and returns a [anyhow::Result<Transaction>].
 	///               This function is meant to describe which execution cost is used where in the transaction.
 	///  - `client`: Ogmios client
-	pub async fn calculate_costs<T: Transactions, F>(
+	pub(crate) async fn calculate_costs<T: Transactions, F>(
 		make_tx: F,
 		client: &T,
 	) -> anyhow::Result<Transaction>
 	where
 		F: Fn(Costs) -> anyhow::Result<Transaction>,
 	{
+		// This double evaluation is needed to correctly set costs in some cases.
 		let tx = make_tx(Costs::ZeroCosts)?;
 		// stage 1
 		let costs = Self::from_ogmios(&tx, client).await?;
@@ -503,7 +502,7 @@ pub(crate) trait TransactionBuilderExt {
 	/// Adds minting of tokens (with empty asset name) for the given script using reference input.
 	/// IMPORTANT: Because CSL doesn't properly calculate transaction fee if the script is Native,
 	/// this function adds reference input and regular native script, that is added to witnesses.
-	/// This native script has to be removed from witnesses, otherwise the transaction is rejectd!
+	/// This native script has to be removed from witnesses, otherwise the transaction is rejected!
 	fn add_mint_script_token_using_reference_script(
 		&mut self,
 		script: &Script,
@@ -515,7 +514,7 @@ pub(crate) trait TransactionBuilderExt {
 	/// Adds minting of 1 token (with empty asset name) for the given script using reference input.
 	/// IMPORTANT: Because CSL doesn't properly calculate transaction fee if the script is Native,
 	/// this function adds reference input and regular native script, that is added to witnesses.
-	/// This native script has to be removed from witnesses, otherwise the transaction is rejectd!
+	/// This native script has to be removed from witnesses, otherwise the transaction is rejected!
 	fn add_mint_one_script_token_using_reference_script(
 		&mut self,
 		script: &Script,

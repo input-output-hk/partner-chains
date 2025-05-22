@@ -2,7 +2,7 @@ use anyhow::anyhow;
 use cardano_serialization_lib::{PrivateKey, PublicKey};
 use sidechain_domain::MainchainKeyHash;
 
-/// Signing (payment) key abstraction layer. Hides internal crypto library details.
+/// Signing (payment) wrapper layer. Hides internal crypto library details.
 /// It is either:
 /// * 32 bytes regular private key
 /// * 64 bytes extended private key

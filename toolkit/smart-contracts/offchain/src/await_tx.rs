@@ -4,11 +4,11 @@ use sidechain_domain::UtxoId;
 use std::time::Duration;
 use tokio_retry::{Retry, strategy::FixedInterval};
 
-/// Trait for [await_tx_output] to allow different awaiting strategies.
+/// Trait for different strategies of waiting for a Cardano transaction to complete.
 pub trait AwaitTx {
 	#[allow(async_fn_in_trait)]
-	/// Keeps querying `utxo_id` transaction output through `client` with some strategy depending on the implementation.
 	/// This is used for waiting until the output of a submitted transaction can be observed.
+	/// TODO: make this take a Transaction ID instead of a UtxoId
 	async fn await_tx_output<C: QueryUtxoByUtxoId>(
 		&self,
 		client: &C,
@@ -16,7 +16,7 @@ pub trait AwaitTx {
 	) -> anyhow::Result<()>;
 }
 
-/// Type representing retries of a maximum number and with a fixed delay.
+/// Transaction awaiting strategy that uses fixed number of retries and a fixed delay.
 pub struct FixedDelayRetries {
 	delay: Duration,
 	retries: usize,

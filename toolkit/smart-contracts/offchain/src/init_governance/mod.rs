@@ -19,7 +19,7 @@ mod tests;
 
 pub(crate) mod transaction;
 
-/// Trait for [init_governance], to make it mockable.
+/// Initializes governance mechanism.
 pub trait InitGovernance {
 	/// Initializes governance mechanism with Cardano Native Script of type `atLeast` parametrized with values from
 	/// `governance_parameters`, for the chain identified by `genesis_utxo_id`.
