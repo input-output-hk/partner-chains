@@ -151,20 +151,13 @@ for i in {1..300}; do
         --output-type json \
         --output-file /partner-chains-nodes/$node_name/keys/grandpa.json
     
-    # Generate cold key for registration
-    ./partner-chains-node key generate \
-        --scheme ed25519 \
-        --output-type json \
-        --output-file /partner-chains-nodes/$node_name/keys/cold.json
-    
     # Extract keys and generate signatures
-    mainchain_signing_key=$(jq -r '.cborHex | .[4:]' /partner-chains-nodes/$node_name/keys/cold.json)
     sidechain_signing_key=$(jq -r '.secretKey' /partner-chains-nodes/$node_name/keys/sidechain.json)
     
     # Process registration signatures
     registration_output=$(./partner-chains-node registration-signatures \
         --genesis-utxo $GENESIS_UTXO \
-        --mainchain-signing-key $mainchain_signing_key \
+        --mainchain-signing-key /keys/cold.skey \
         --sidechain-signing-key $sidechain_signing_key \
         --registration-utxo $GENESIS_UTXO)
     
