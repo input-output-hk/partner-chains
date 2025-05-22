@@ -563,8 +563,8 @@ class SubstrateApi(BlockchainApi):
     def get_validator_set(self, block):
         return self.substrate.query("Session", "ValidatorsAndKeys", block_hash=block["header"]["parentHash"])
 
-    def get_block_author(self, block, validator_set):
-        """Custom implementation of substrate.get_block(include_author=True) to get block author.
+    def get_block_author_and_slot(self, block, validator_set):
+        """Custom implementation of substrate.get_block(include_author=True) to get block author, and block slot.
         py-substrate-interface does not work because it calls "Validators" function from "Session" pallet,
         which in our node is disabled and returns empty list. Here we use "ValidatorsAndKeys".
         The function then iterates over "PreRuntime" logs and once it finds aura engine, it gets the slot
@@ -585,13 +585,14 @@ class SubstrateApi(BlockchainApi):
 
                 block_author = validator_set[rank_validator]
                 block["author"] = block_author.value[1]["aura"]
+                block["slot"] = aura_predigest.value["slot_number"]
                 break
 
         if "author" not in block:
             block_no = block["header"]["number"]
             logger.error(f"Could not find author for block {block_no}. No PreRuntime log found with aura engine.")
             return None
-        return block["author"]
+        return block["author"], block["slot"]
 
     def get_mc_hash_from_pc_block_header(self, block):
         mc_hash_key = "0x6d637368"

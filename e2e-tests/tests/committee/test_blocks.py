@@ -59,12 +59,7 @@ def test_block_producer_can_update_their_metadata(api: BlockchainApi, get_wallet
 @mark.skip_on_new_chain
 @mark.test_key('ETCM-7020')
 def test_block_authors_match_committee_seats(
-    api: BlockchainApi,
-    config: ApiConfig,
-    get_pc_epoch_committee,
-    pc_epoch,
-    get_block_authorship_keys_dict,
-    get_pc_epoch_blocks,
+    api: BlockchainApi, get_pc_epoch_committee, pc_epoch, get_block_authorship_keys_dict, get_pc_epoch_blocks
 ):
     """
     Verifies that a pc epoch's block authors match the committee attendance.
@@ -73,9 +68,11 @@ def test_block_authors_match_committee_seats(
     """
     logger.info(f"Verifying block authors for pc epoch {pc_epoch}...")
     block_range = get_pc_epoch_blocks(pc_epoch)["range"]
-    logger.info(f"Block produced in epoch {pc_epoch}: {block_range}")
+    logger.info(f"Blocks produced in epoch {pc_epoch}: {block_range}")
+
+    # Session committee is rotated on the first block of the epoch, so we need to offset the range by 1
     block_range_with_offset = range(block_range.start + 1, block_range.stop + 1)
-    logger.info(f"Block produced in epoch {pc_epoch} with committee offset: {block_range_with_offset}")
+    logger.info(f"Blocks produced in epoch {pc_epoch} with committee offset: {block_range_with_offset}")
 
     committee = get_pc_epoch_committee(pc_epoch)
     committee_block_auth_pub_keys = []
@@ -84,35 +81,27 @@ def test_block_authors_match_committee_seats(
 
     validator_set = api.get_validator_set(get_pc_epoch_blocks(pc_epoch)[block_range_with_offset.start])
     block_authors = []
+    block_slots = []
     for block_no in get_pc_epoch_blocks(pc_epoch)["range"]:
-        block_author = api.get_block_author(block=get_pc_epoch_blocks(pc_epoch)[block_no], validator_set=validator_set)
+        block_author, block_slot = api.get_block_author_and_slot(
+            block=get_pc_epoch_blocks(pc_epoch)[block_no], validator_set=validator_set
+        )
         assert block_author, f"Could not get author of block {block_no}."
         assert (
             block_author in committee_block_auth_pub_keys
         ), f"Block {block_no} was authored by non-committee member {block_author}"
         block_authors.append(block_author)
+        block_slots.append(block_slot)
 
-    # Synthesize the expected list of block authors from committee to be exactly double in size
-    # so that it contains any other sequence of the same ordered list
-    # i.e. [A,B,C,D,A,B,C,D] contains [C,D,A,B] or [B,C,D,A], etc.
-    expected_authors = committee_block_auth_pub_keys + committee_block_auth_pub_keys
+    expected_block_authors = []
+    for slot in block_slots:
+        rank_validator = slot % len(committee)
+        expected_author = committee_block_auth_pub_keys[rank_validator]
+        expected_block_authors.append(expected_author)
 
-    # Get 1 sequence equal in both lists
-    for offset in range(len(committee_block_auth_pub_keys)):
-        matching_authors = True
-        for i in range(len(committee_block_auth_pub_keys)):
-            matching_authors = expected_authors[i + offset] == block_authors[i]
-            if not matching_authors:
-                break
-        if matching_authors:
-            break
     assert (
-        matching_authors
-    ), f"Could not find the same order of block authors as expected by the committee in epoch {pc_epoch}"
-
-    # Both lists should contain the same elements, i.e. all blocks should be authored by committee members
-    # in the exact number we expect with round robin assignment
-    assert expected_authors.sort() == block_authors.sort(), f"Unexpected block authors for SC epoch {pc_epoch}"
+        expected_block_authors == block_authors
+    ), f"Block authors do not match committee members for pc epoch {pc_epoch}"
 
 
 @mark.test_key('ETCM-7481')
