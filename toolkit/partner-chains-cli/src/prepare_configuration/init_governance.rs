@@ -37,7 +37,7 @@ pub(crate) fn run_init_governance<C: IOContext>(
 				&payment_key,
 				genesis_utxo,
 			))
-			.map_err(|e| anyhow::anyhow!("Governance initalization failed: {e:?}!"))?;
+			.map_err(|e| anyhow::anyhow!("Governance initialization failed: {e:?}!"))?;
 		context.eprint(&format!("Governance initialized successfully for UTXO: {}", genesis_utxo));
 		Ok(Some(tx_id))
 	} else {
@@ -58,14 +58,14 @@ fn prompt_initial_governance<C: IOContext>(
 		.prompt_with_default_from_file_parse_and_save(context)
 		.map_err(|e| anyhow!("Failed to parse governance authorities: {}", e))?;
 
-	INITIAL_GOVERNANCE_THRESHOLD.save_if_empty(0, context);
+	INITIAL_GOVERNANCE_THRESHOLD.save_if_empty(1, context);
 	let threshold = INITIAL_GOVERNANCE_THRESHOLD
 		.prompt_with_default_from_file_parse_and_save(context)
 		.map_err(|e| anyhow!("Failed do parse threshold: {}", e))?;
 
 	MultiSigParameters::new(authorities.0.as_ref(), threshold).map_err(
 		|err| anyhow!(
-			"Initial Goveranance data is invalid: '{}'. Please run the wizard again and provide correct value or edit values in '{}' and the run the wizard again. Example: '{}'",
+			"Initial Governance data is invalid: '{}'. Please run the wizard again and provide correct value or edit values in '{}' and the run the wizard again. Example: '{}'",
 			err,
 			INITIAL_GOVERNANCE_AUTHORITIES.config_file,
 			&example_governance_auth()
