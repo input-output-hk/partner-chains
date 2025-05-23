@@ -91,17 +91,17 @@ for i in {1..10}; do
     ./partner-chains-node key generate \
         --scheme ecdsa \
         --output-type json \
-        --output-file /partner-chains-nodes/$node_name/keys/sidechain.json
+        > /partner-chains-nodes/$node_name/keys/sidechain.json
     
     ./partner-chains-node key generate \
         --scheme sr25519 \
         --output-type json \
-        --output-file /partner-chains-nodes/$node_name/keys/aura.json
+        > /partner-chains-nodes/$node_name/keys/aura.json
     
     ./partner-chains-node key generate \
         --scheme ed25519 \
         --output-type json \
-        --output-file /partner-chains-nodes/$node_name/keys/grandpa.json
+        > /partner-chains-nodes/$node_name/keys/grandpa.json
     
     # Extract public keys
     sidechain_vkey=$(jq -r '.publicKey' /partner-chains-nodes/$node_name/keys/sidechain.json)
@@ -139,17 +139,17 @@ for i in {1..300}; do
     ./partner-chains-node key generate \
         --scheme ecdsa \
         --output-type json \
-        --output-file /partner-chains-nodes/$node_name/keys/sidechain.json
+        > /partner-chains-nodes/$node_name/keys/sidechain.json
     
     ./partner-chains-node key generate \
         --scheme sr25519 \
         --output-type json \
-        --output-file /partner-chains-nodes/$node_name/keys/aura.json
+        > /partner-chains-nodes/$node_name/keys/aura.json
     
     ./partner-chains-node key generate \
         --scheme ed25519 \
         --output-type json \
-        --output-file /partner-chains-nodes/$node_name/keys/grandpa.json
+        > /partner-chains-nodes/$node_name/keys/grandpa.json
     
     # Extract keys and generate signatures
     sidechain_signing_key=$(jq -r '.secretKey' /partner-chains-nodes/$node_name/keys/sidechain.json)

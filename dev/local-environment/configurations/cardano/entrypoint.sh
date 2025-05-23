@@ -143,33 +143,23 @@ tx_in1="781cb948a37c7c38b43872af9b1e22135a94826eafd3740260a6db0a303885d8#0"
 tx_in_amount=29993040000000000
 
 # Define output amounts
-tx_out1=1000000000 # partner-chains-setup
-tx_out2=1000000000 # partner-chains-setup (backup)
-tx_out3=1000000000 # partner-chains-setup (additional)
-tx_out4=1000000000 # partner-chains-setup (extra)
-
-# Fund 10 permissioned nodes
-for i in {1..10}; do
-    var_name="tx_out${i}_permissioned"
-    declare "$var_name=1000000000"
-done
-
-# Fund 300 registered nodes (These are defined but not used in the *initial* main transaction anymore)
-# They are funded in batches later.
-for i in {1..300}; do
-    var_name="tx_out${i}_registered"
-    declare "$var_name=1000000000"
-done
-
-tx_out5_lovelace=10000000
-tx_out5_reward_token="1000000 $reward_token_policy_id.$reward_token_asset_name"
-tx_out6=10000000
+# partner-chains-setup
+tx_out1=1000000000
+# partner-chains-setup (backup)
+tx_out2=1000000000
+# partner-chains-setup (additional)
+tx_out3=1000000000
+# partner-chains-setup (extra)
+tx_out4=1000000000
 
 # Calculate total output
 total_output=$((tx_out1 + tx_out2 + tx_out3 + tx_out4))
 for i in {1..10}; do
     var_name="tx_out${i}_permissioned"
+    echo "[DEBUG] var_name for permissioned loop iteration $i is: $var_name"
+    echo "[DEBUG] Value of variable '$var_name' (which is \$$var_name) before dereference: $(eval echo "\$$var_name")"
     amount_permissioned="${!var_name}"
+    echo "[DEBUG] amount_permissioned for iteration $i after dereference is: '$amount_permissioned'"
     total_output=$((total_output + amount_permissioned))
 done
 total_output=$((total_output + tx_out5_lovelace + tx_out6))
