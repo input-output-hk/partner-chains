@@ -178,7 +178,7 @@ echo "[LOG] Adding permissioned node amounts to total_output."
 for i in {1..10}; do
     var_name="tx_out${i}_permissioned"
     echo "[DEBUG] var_name for permissioned loop iteration $i is: $var_name"
-    echo "[DEBUG] Value of variable '$var_name' (which is \\$$var_name) before dereference: $(eval echo \"\\$$var_name\")"
+    echo "[DEBUG] Value of variable named '$var_name' is: $(eval echo "\$$var_name")"
     amount_permissioned="${!var_name}"
     echo "[DEBUG] amount_permissioned for iteration $i after dereference is: '$amount_permissioned'"
     total_output=$((total_output + amount_permissioned))
@@ -303,19 +303,35 @@ else
     cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}"
 fi
 
-echo "[LOG] Starting batch funding for 300 registered nodes... Batch size: $batch_size, Num batches: $num_batches"
 batch_size=10
 num_batches=$(( (300 + batch_size - 1) / batch_size )) # Calculate number of batches (ceiling division)
+echo "[LOG] Starting batch funding for 300 registered nodes... Batch size: $batch_size, Num batches: $num_batches"
+
 current_funding_utxo="" # Will be populated from $new_address
 
-# Get an initial UTXO from $new_address to start funding batches
-# This expects /shared/genesis.utxo to have been created from a UTXO at $new_address
-if [ -s "/shared/genesis.utxo" ]; then
-    current_funding_utxo=$(cat /shared/genesis.utxo)
-    echo "[LOG] Initial funding UTXO for batches: $current_funding_utxo"
+# Try to find the largest lovelace UTXO at $new_address to start batch funding
+echo "[LOG] Attempting to find the largest UTXO at $new_address for initial batch funding..."
+largest_utxo_details=$(cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" |
+    /busybox awk 'NR>2 {print $1, $2, $3}' | # Print hash, ix, and amount (lovelace is $3)
+    /busybox sort -k3 -n -r | # Sort by amount (numeric, reverse) 
+    /busybox head -n 1) # Take the top one
+
+if [ -n "$largest_utxo_details" ]; then
+    selected_hash=$(echo "$largest_utxo_details" | /busybox awk '{print $1}')
+    selected_ix=$(echo "$largest_utxo_details" | /busybox awk '{print $2}')
+    selected_amount=$(echo "$largest_utxo_details" | /busybox awk '{print $3}')
+    current_funding_utxo="${selected_hash}#${selected_ix}"
+    echo "[LOG] Initial funding UTXO for batches selected: $current_funding_utxo with amount $selected_amount lovelace"
 else
-    echo "[LOG] CRITICAL ERROR: No initial funding UTXO available (genesis.utxo empty and no alternative found). Cannot start batch funding."
-    # Consider exiting if this is fatal: exit 1
+    echo "[LOG] CRITICAL ERROR: No UTXOs found at $new_address to start batch funding. This shouldn't happen if main transaction succeeded."
+    # Fallback to genesis.utxo if it exists, though it might be too small
+    if [ -s "/shared/genesis.utxo" ]; then
+        current_funding_utxo=$(cat /shared/genesis.utxo)
+        echo "[LOG] CRITICAL FALLBACK: Using /shared/genesis.utxo ($current_funding_utxo) for batch funding."
+    else
+        echo "[LOG] CRITICAL ERROR: Fallback /shared/genesis.utxo also not available. Cannot start batch funding."
+        # Consider exiting if this is fatal: exit 1
+    fi
 fi
 
 # Amount to send to each registered node in the batch
