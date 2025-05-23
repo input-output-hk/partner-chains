@@ -1,7 +1,6 @@
 use crate::*;
 use itertools::*;
 use rand_chacha::ChaCha20Rng;
-use selection::ariadne_v2::select_authorities;
 
 /// Select random registered candidate pool from all potential registered candidates
 /// and simulates Ariadne selection. Calculates how man top members (by stake) can
@@ -20,6 +19,8 @@ pub struct Command {
 	repetitions: u32,
 	#[arg(long)]
 	permissioned_pool_size: u32,
+	#[arg(long, default_value = "v2")]
+	ariadne_version: AriadneVersion,
 }
 
 impl Command {
@@ -36,7 +37,11 @@ impl Command {
 		);
 		log::info!("Number of permissioned candidates: {}", permissioned_candidates.len());
 
-		for _ in 0..self.repetitions {
+		println!("safe_offline_members,distinct_members,max_single_member_seats");
+		for i in 0..self.repetitions {
+			if i % 100 == 0 && i > 0 {
+				log::info!("Generation progress: {i}/{}", self.repetitions);
+			}
 			let mut seed = [0u8; 32];
 			rng.fill(&mut seed);
 
@@ -47,14 +52,16 @@ impl Command {
 				.choose_multiple(&mut rng, self.permissioned_pool_size as usize);
 			registered_candidates.shuffle(&mut rng);
 
-			let committee = select_authorities(
-				self.registered_seats.clone(),
-				self.permissioned_seats.clone(),
-				registered_candidates,
-				permissioned_candidates.clone(),
-				seed,
-			)
-			.expect("Selection failed");
+			let committee = self
+				.ariadne_version
+				.select_authorities(
+					self.registered_seats.clone(),
+					self.permissioned_seats.clone(),
+					registered_candidates,
+					permissioned_candidates.clone(),
+					seed,
+				)
+				.expect("Selection failed");
 
 			let mut member_seat_counts: Vec<_> = (committee.clone().iter())
 				.into_group_map_by(|&v| v)
@@ -78,14 +85,9 @@ impl Command {
 			}
 
 			println!(
-				"{}",
-				serde_json::to_string(&serde_json::json!({
-					// how many top committee members can go offline without affecting consensus
-					"safe_offline_members": safe_offline_members,
-					"distinct_members": member_seat_counts.len(),
-					"max_single_member_seats": member_seat_counts[0]
-				}))
-				.unwrap()
+				"{safe_offline_members},{},{}",
+				member_seat_counts.len(),
+				member_seat_counts[0]
 			);
 		}
 	}

@@ -23,6 +23,43 @@ struct Registered {
 	key: String,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, clap::ValueEnum)]
+enum AriadneVersion {
+	V1,
+	V2,
+}
+
+impl AriadneVersion {
+	pub fn select_authorities<SC>(
+		&self,
+		registered_seats: u16,
+		permissioned_seats: u16,
+		registered_candidates: Vec<(SC, selection::Weight)>,
+		permissioned_candidates: Vec<SC>,
+		seed: <ChaCha20Rng as SeedableRng>::Seed,
+	) -> Option<Vec<SC>>
+	where
+		SC: Ord + Clone,
+	{
+		match self {
+			Self::V1 => selection::ariadne::select_authorities(
+				registered_seats,
+				permissioned_seats,
+				registered_candidates,
+				permissioned_candidates,
+				seed,
+			),
+			Self::V2 => selection::ariadne_v2::select_authorities(
+				registered_seats,
+				permissioned_seats,
+				registered_candidates,
+				permissioned_candidates,
+				seed,
+			),
+		}
+	}
+}
+
 fn load_registered(file: String) -> Vec<(String, u128)> {
 	serde_json::from_reader::<_, Vec<SPO>>(
 		std::fs::File::open(file).expect("Registered candidates file can't be opened"),
