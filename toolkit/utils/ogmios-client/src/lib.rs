@@ -1,4 +1,9 @@
 //! This module provides a high-level API for interacting with the Ogmios JSON-RPC API.
+//!
+//! Ogmios is a JSON-RPC server that provides a high-level API for interacting with the Cardano blockchain.
+//! It can be accessed via a HTTP or WebSocket connection.
+//!
+//! More information about Ogmios API can be found at https://ogmios.dev/api/
 
 #[cfg(feature = "jsonrpsee-client")]
 pub mod jsonrpsee;
@@ -15,17 +20,23 @@ use serde::de::DeserializeOwned;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, thiserror::Error)]
+/// Represents an error that can occur when interacting with the Ogmios JSON-RPC API.
 pub enum OgmiosClientError {
 	#[error("Couldn't construct parameters: '{0}'")]
+	/// Represents an error that can occur when incorrect parameters are provided to the Ogmios JSON-RPC API.
 	ParametersError(String),
 	#[error("JsonRPC request failed: '{0}'")]
+	/// Represents an error that can occur when the JSON-RPC request fails.
 	RequestError(String),
 	#[error("Could not parse response: '{0}'")]
+	/// Represents an error that can occur when the response from the Ogmios JSON-RPC API cannot be parsed.
 	ResponseError(String),
 }
 
+/// Trait for interacting with the Ogmios JSON-RPC API.
 pub trait OgmiosClient {
 	#[allow(async_fn_in_trait)]
+	/// Sends a JSON-RPC request to the Ogmios server and returns the response.
 	async fn request<T: DeserializeOwned>(
 		&self,
 		method: &str,
@@ -34,8 +45,11 @@ pub trait OgmiosClient {
 }
 
 #[derive(Clone)]
+/// Enum representing the parameters for a JSON-RPC request to the Ogmios server.
 pub enum OgmiosParams {
+	/// Represents positional parameters.
 	Positional(Vec<serde_json::Value>),
+	/// Represents named parameters.
 	ByName(HashMap<&'static str, serde_json::Value>),
 }
 
@@ -66,7 +80,9 @@ impl ToRpcParams for OgmiosParams {
 	}
 }
 
+/// Builder for named parameters.
 pub struct ByNameParamsBuilder {
+	/// The parameters.
 	params: HashMap<&'static str, serde_json::Value>,
 }
 
@@ -77,10 +93,12 @@ impl Default for ByNameParamsBuilder {
 }
 
 impl ByNameParamsBuilder {
+	/// Creates a new builder for named parameters.
 	pub fn new() -> Self {
 		ByNameParamsBuilder { params: HashMap::new() }
 	}
 
+	/// Inserts a new parameter into the builder.
 	pub fn insert<T: serde::Serialize>(
 		self,
 		key: &'static str,
@@ -93,6 +111,7 @@ impl ByNameParamsBuilder {
 		Ok(Self { params })
 	}
 
+	/// Builds the named parameters.
 	pub fn build(self) -> OgmiosParams {
 		OgmiosParams::ByName(self.params)
 	}
