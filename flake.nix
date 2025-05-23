@@ -62,6 +62,7 @@
               libiconv
               nixfmt-rfc-style
               openssl
+              patchelf
               pkg-config
               protobuf
               python312
@@ -82,7 +83,6 @@
               ]
             }"
 
-            export ROCKSDB_LIB_DIR="${pkgs.rocksdb}/lib/"
             export OPENSSL_NO_VENDOR=1
             export OPENSSL_DIR="${pkgs.openssl.dev}"
             export OPENSSL_INCLUDE_DIR="${pkgs.openssl.dev}/include"
