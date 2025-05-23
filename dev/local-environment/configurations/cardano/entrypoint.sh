@@ -310,7 +310,7 @@ echo "[LOG] Starting batch funding for 300 registered nodes... Batch size: $batc
 current_funding_utxo="" # Will be populated from $new_address
 
 # Try to find the largest lovelace UTXO at $new_address to start batch funding
-echo "[LOG] Attempting to find the largest UTXO at $new_address for initial batch funding..."
+echo "[DEBUG] Attempting to find the largest UTXO at $new_address for initial batch funding..."
 largest_utxo_details=$(cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" |
     /busybox awk 'NR>2 {print $1, $2, $3}' | # Print hash, ix, and amount (lovelace is $3)
     /busybox sort -k3 -n -r | # Sort by amount (numeric, reverse) 
@@ -321,15 +321,15 @@ if [ -n "$largest_utxo_details" ]; then
     selected_ix=$(echo "$largest_utxo_details" | /busybox awk '{print $2}')
     selected_amount=$(echo "$largest_utxo_details" | /busybox awk '{print $3}')
     current_funding_utxo="${selected_hash}#${selected_ix}"
-    echo "[LOG] Initial funding UTXO for batches selected: $current_funding_utxo with amount $selected_amount lovelace"
+    echo "[DEBUG] Initial funding UTXO for batches selected: $current_funding_utxo with amount $selected_amount lovelace"
 else
-    echo "[LOG] CRITICAL ERROR: No UTXOs found at $new_address to start batch funding. This shouldn't happen if main transaction succeeded."
+    echo "[DEBUG] CRITICAL ERROR: No UTXOs found at $new_address to start batch funding. This shouldn't happen if main transaction succeeded."
     # Fallback to genesis.utxo if it exists, though it might be too small
     if [ -s "/shared/genesis.utxo" ]; then
         current_funding_utxo=$(cat /shared/genesis.utxo)
-        echo "[LOG] CRITICAL FALLBACK: Using /shared/genesis.utxo ($current_funding_utxo) for batch funding."
+        echo "[DEBUG] CRITICAL FALLBACK: Using /shared/genesis.utxo ($current_funding_utxo) for batch funding."
     else
-        echo "[LOG] CRITICAL ERROR: Fallback /shared/genesis.utxo also not available. Cannot start batch funding."
+        echo "[DEBUG] CRITICAL ERROR: Fallback /shared/genesis.utxo also not available. Cannot start batch funding."
         # Consider exiting if this is fatal: exit 1
     fi
 fi
@@ -338,44 +338,49 @@ fi
 amount_per_registered_node=1000000000 # Same as defined earlier: tx_out${i}_registered
 
 for batch_num in $(seq 1 $num_batches); do
-    echo "[LOG] Processing Batch $batch_num of $num_batches..."
+    echo "[DEBUG] Processing Batch $batch_num of $num_batches..."
     start_index=$(( (batch_num - 1) * batch_size ))
     end_index=$(( start_index + batch_size - 1 ))
     if [ $end_index -ge 300 ]; then
         end_index=299 # Max index is 299 for 300 nodes (0-299)
     fi
 
-    echo "[LOG] Batch $batch_num: Nodes from index $start_index to $end_index."
+    echo "[DEBUG] Batch $batch_num: Nodes from index $start_index to $end_index."
 
     if [ -z "$current_funding_utxo" ]; then
-        echo "[LOG] Batch $batch_num: No funding UTXO available. Attempting to re-query..."
-        # Attempt to re-query for a UTXO at $new_address
-        utxo_query_output=$(cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" | /busybox awk 'NR>2 {print $1 "#" $2; exit}')
-        if [ -n "$utxo_query_output" ]; then
-            current_funding_utxo=$utxo_query_output
-            echo "[LOG] Batch $batch_num: Found new funding UTXO: $current_funding_utxo"
+        echo "[DEBUG] Batch $batch_num: No funding UTXO available from previous step. Attempting to re-query robustly..."
+        largest_utxo_details_loop=$(cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" |
+            /busybox awk 'NR>2 {print $1, $2, $3}' |
+            /busybox sort -k3 -n -r |
+            /busybox head -n 1)
+        if [ -n "$largest_utxo_details_loop" ]; then
+            selected_hash_loop=$(echo "$largest_utxo_details_loop" | /busybox awk '{print $1}')
+            selected_ix_loop=$(echo "$largest_utxo_details_loop" | /busybox awk '{print $2}')
+            selected_amount_loop=$(echo "$largest_utxo_details_loop" | /busybox awk '{print $3}')
+            current_funding_utxo="${selected_hash_loop}#${selected_ix_loop}"
+            echo "[DEBUG] Batch $batch_num: Found new funding UTXO via robust query: $current_funding_utxo with amount $selected_amount_loop lovelace"
         else
-            echo "[LOG] Batch $batch_num: CRITICAL ERROR - Still no funding UTXO. Aborting further batches."
+            echo "[DEBUG] Batch $batch_num: CRITICAL ERROR - Still no funding UTXO after robust re-query. Aborting further batches."
             break # Exit the batch loop
         fi
     fi
     
     current_tx_in="$current_funding_utxo"
-    echo "[LOG] Batch $batch_num: Using input UTXO: $current_tx_in"
+    echo "[DEBUG] Batch $batch_num: Using input UTXO: $current_tx_in"
     
     # Query the input UTXO to get its amount
     tx_in_detail=$(cardano-cli latest query utxo --testnet-magic 42 --tx-in "$current_tx_in" --out-file /dev/stdout | /busybox grep lovelace | /busybox awk '{print $NF}')
     if ! [[ "$tx_in_detail" =~ ^[0-9]+$ ]]; then # Check if it's a number
-        echo "Error: Could not determine amount for input UTXO $current_tx_in. Trying to query all UTXOs at $new_address instead."
+        echo "[DEBUG] Error: Could not determine amount for input UTXO $current_tx_in. Trying to query all UTXOs at $new_address instead."
         # Fallback: try to get any UTXO's amount if specific one fails
         tx_in_detail=$(cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" | /busybox grep lovelace | /busybox head -n1 | /busybox awk '{print $NF}')
         if ! [[ "$tx_in_detail" =~ ^[0-9]+$ ]]; then
-             echo "CRITICAL ERROR: Failed to determine input amount for batch $batch_num from $new_address. Aborting."
+             echo "[DEBUG] CRITICAL ERROR: Failed to determine input amount for batch $batch_num from $new_address. Aborting."
              break
         fi
-         echo "[LOG] Batch $batch_num: Determined input UTXO amount (fallback): $tx_in_detail"
+         echo "[DEBUG] Batch $batch_num: Determined input UTXO amount (fallback): $tx_in_detail"
     else
-        echo "[LOG] Batch $batch_num: Input UTXO amount: $tx_in_detail"
+        echo "[DEBUG] Batch $batch_num: Input UTXO amount: $tx_in_detail"
     fi
     current_tx_in_amount=$tx_in_detail
 
@@ -390,64 +395,64 @@ for batch_num in $(seq 1 $num_batches); do
         nodes_in_this_batch=$((nodes_in_this_batch + 1))
     done
 
-    echo "[LOG] Batch $batch_num: Processing $nodes_in_this_batch nodes. Total output for nodes: $batch_total_output"
+    echo "[DEBUG] Batch $batch_num: Processing $nodes_in_this_batch nodes. Total output for nodes: $batch_total_output"
 
     if [ $nodes_in_this_batch -eq 0 ]; then
-        echo "[LOG] Batch $batch_num: No nodes in this batch. Skipping."
+        echo "[DEBUG] Batch $batch_num: No nodes in this batch. Skipping."
         continue
     fi
 
     batch_fee=200000 # Estimate fee per batch, can be refined
     batch_change=$((current_tx_in_amount - batch_total_output - batch_fee))
 
-    echo "[LOG] Batch $batch_num: Fee=$batch_fee, Change=$batch_change"
+    echo "[DEBUG] Batch $batch_num: Fee=$batch_fee, Change=$batch_change"
 
     if [ $batch_change -lt 0 ]; then
-        echo "[LOG] Batch $batch_num: ERROR - Not enough funds. Skipping batch. Required: $((batch_total_output + batch_fee)), Available: $current_tx_in_amount"
+        echo "[DEBUG] Batch $batch_num: ERROR - Not enough funds. Skipping batch. Required: $((batch_total_output + batch_fee)), Available: $current_tx_in_amount"
         current_funding_utxo="" 
         continue
     fi
 
     batch_tx_out_params+=(--tx-out "$new_address+$batch_change")
 
-    echo "[LOG] Batch $batch_num: Building transaction..."
+    echo "[DEBUG] Batch $batch_num: Building transaction..."
     cardano-cli latest transaction build-raw \
       --tx-in "$current_tx_in" \
       "${batch_tx_out_params[@]}" \
       --fee "$batch_fee" \
       --out-file "/data/tx_batch_${batch_num}.raw"
 
-    echo "[LOG] Batch $batch_num: Signing transaction..."
+    echo "[DEBUG] Batch $batch_num: Signing transaction..."
     cardano-cli latest transaction sign \
       --tx-body-file "/data/tx_batch_${batch_num}.raw" \
       --signing-key-file /keys/funded_address.skey \
       --testnet-magic 42 \
       --out-file "/data/tx_batch_${batch_num}.signed"
 
-    echo "[LOG] Batch $batch_num: Submitting transaction..."
+    echo "[DEBUG] Batch $batch_num: Submitting transaction..."
     cardano-cli latest transaction submit \
       --tx-file "/data/tx_batch_${batch_num}.signed" \
       --testnet-magic 42
     
-    echo "[LOG] Batch $batch_num: Waiting 15 seconds for processing..."
+    echo "[DEBUG] Batch $batch_num: Waiting 15 seconds for processing..."
     sleep 15
 
-    echo "[LOG] Batch $batch_num: Attempting to find new change UTXO for next batch..."
-    # Find the new change UTXO at $new_address to use for the next batch
-    # This is a simple way; a more robust way would be to parse the txid and find the exact change UTXO
-    new_utxo_query=$(cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" | /busybox awk -v old_tx_hash="${current_tx_in%#*}" 'NR>2 && $1 != old_tx_hash {print $1 "#" $2; exit}')
-    if [ -n "$new_utxo_query" ]; then
-        current_funding_utxo="$new_utxo_query"
-        echo "[LOG] Batch $batch_num: New funding UTXO for next batch: $current_funding_utxo (from specific change)"
+    echo "[DEBUG] Batch $batch_num: Attempting to find largest available UTXO at $new_address for the next batch..."
+    largest_utxo_details=$(cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" |
+        /busybox awk 'NR>2 {print $1, $2, $3}' | # Print hash, ix, and amount (lovelace is $3)
+        /busybox sort -k3 -n -r | # Sort by amount (numeric, reverse)
+        /busybox head -n 1) # Take the top one
+
+    if [ -n "$largest_utxo_details" ]; then
+        selected_hash=$(echo "$largest_utxo_details" | /busybox awk '{print $1}')
+        selected_ix=$(echo "$largest_utxo_details" | /busybox awk '{print $2}')
+        selected_amount=$(echo "$largest_utxo_details" | /busybox awk '{print $3}')
+        current_funding_utxo="${selected_hash}#${selected_ix}"
+        echo "[DEBUG] Batch $batch_num: New funding UTXO for next batch: $current_funding_utxo with amount $selected_amount lovelace"
     else
-        # If specific change UTXO not found, try to get any UTXO from $new_address
-        current_funding_utxo=$(cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" | /busybox awk 'NR>2 {print $1 "#" $2; exit}')
-        if [ -z "$current_funding_utxo" ]; then
-            echo "[LOG] Batch $batch_num: CRITICAL ERROR - Could not find a new UTXO at $new_address after batch $batch_num. Aborting further batches."
-            break
-        else
-            echo "[LOG] Batch $batch_num: Found a fallback UTXO at $new_address for next batch: $current_funding_utxo (from fallback query)"
-        fi
+        echo "[DEBUG] Batch $batch_num: CRITICAL ERROR - Could not find any UTXO at $new_address after batch $batch_num. Aborting further batches."
+        current_funding_utxo="" # Ensure it's empty so next iteration also tries to re-query robustly or fails
+        break # Exit the batch loop as we can't proceed
     fi
 done
 echo "[LOG] Batch funding for registered nodes complete."
