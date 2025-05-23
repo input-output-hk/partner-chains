@@ -152,25 +152,52 @@ tx_out3=1000000000
 # partner-chains-setup (extra)
 tx_out4=1000000000
 
+# Fund 10 permissioned nodes
+for i in {1..10}; do
+    var_name="tx_out${i}_permissioned"
+    declare "$var_name=1000000000"
+done
+
+# Fund 300 registered nodes (These are defined but not used in the *initial* main transaction anymore)
+# They are funded in batches later.
+for i in {1..300}; do
+    var_name="tx_out${i}_registered"
+    declare "$var_name=1000000000"
+done
+
+tx_out5_lovelace=10000000
+tx_out5_reward_token="1000000 $reward_token_policy_id.$reward_token_asset_name"
+tx_out6=10000000
+
 # Calculate total output
+echo "[LOG] Calculating initial total output (tx_out1-4)."
 total_output=$((tx_out1 + tx_out2 + tx_out3 + tx_out4))
+echo "[LOG] Initial total_output = $total_output"
+
+echo "[LOG] Adding permissioned node amounts to total_output."
 for i in {1..10}; do
     var_name="tx_out${i}_permissioned"
     echo "[DEBUG] var_name for permissioned loop iteration $i is: $var_name"
-    echo "[DEBUG] Value of variable '$var_name' (which is \$$var_name) before dereference: $(eval echo "\$$var_name")"
+    echo "[DEBUG] Value of variable '$var_name' (which is \\$$var_name) before dereference: $(eval echo \"\\$$var_name\")"
     amount_permissioned="${!var_name}"
     echo "[DEBUG] amount_permissioned for iteration $i after dereference is: '$amount_permissioned'"
     total_output=$((total_output + amount_permissioned))
 done
-total_output=$((total_output + tx_out5_lovelace + tx_out6))
+echo "[LOG] total_output after permissioned nodes = $total_output"
 
-echo "[LOG] Calculating total output for the main funding transaction."
-echo "[LOG] Main transaction: total_output=$total_output, fee=$fee, change=$change"
+echo "[LOG] Adding tx_out5_lovelace and tx_out6 to total_output."
+total_output=$((total_output + tx_out5_lovelace + tx_out6))
+echo "[LOG] Final total_output before fee = $total_output"
+
+echo "[LOG] Calculating total output for the main funding transaction." # This log might be slightly misplaced now but ok
+echo "[LOG] Main transaction: total_output=$total_output, fee=$fee, change=$change" # Fee and change not yet calculated here
 
 fee=1000000
+echo "[LOG] Fee set to: $fee"
 
 # Calculate remaining balance to return to the genesis address
 change=$((tx_in_amount - total_output - fee))
+echo "[LOG] Change calculated: $change (tx_in_amount=$tx_in_amount - total_output=$total_output - fee=$fee)"
 
 # Assemble all --tx-out parameters
 tx_out_params_array=()
