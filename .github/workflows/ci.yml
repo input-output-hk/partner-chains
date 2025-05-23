@@ -38,4 +38,4 @@ jobs:
         run: |
           cp target/release/partner-chains-demo-node .
           nix develop -c bash -c "patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 partner-chains-demo-node"
-          docker build -t partner-chains-node:local .github/Dockerfile
+          docker build -t partner-chains-node:local .
