@@ -178,7 +178,7 @@ where permissioned_candidates.csv contains sets of keys of each permissioned can
 The first key in a row is partner chain public key, the second one is Aura public key, the last one is GRANDPA public key.
 
 Please note that partner chains committee selection feature will use this data only after two Cardano epoch boundaries.
-If these transactions were submitted in the epoch N, then committee selection will use this data from epoch N+2.
+If these transactions were submitted in the epoch N, then committee selection will use this data starting from epoch N+2.
 
 ## Running partner chains node
 
@@ -196,7 +196,7 @@ pc-node --validator \
 For setting the environment variables please consult [the documentation here](../intro.md#environment-variables).
 
 Other parameters are regular substrate node parameters.
-Use them accordingly to your setup.
+Use them accordingly for your setup.
 
 ## Register as committee candidate
 
@@ -220,7 +220,7 @@ pc-node registration-signatures \
 * GENESIS_UTXO is the UTXO that identifies a partner chain
 * STAKE_POOL_OPERATOR_SIGNING_KEY is the `cborHex` without the first 4 characters of _StakePoolSigningKey_ed25519_ key file.
 This is cold key, therefore this command is intented to be used on an offline machine.
-* PARTNER_CHAIN_SIGNING_KEY is hex of the ecdsa key created the first step of this guide, `secretSeed` field of the `key generate` output.
+* PARTNER_CHAIN_SIGNING_KEY is hex of the ecdsa key created during the first step of this guide (the `secretSeed` field of the `key generate` output).
 * REGISTRATION_UTXO is a UTXO that SPO is able to spend when posting the message with signature. It prevents replay attacks.
 
 The command outputs a JSON with following fields:
