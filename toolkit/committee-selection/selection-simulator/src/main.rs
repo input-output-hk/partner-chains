@@ -4,11 +4,13 @@ use rand_chacha::ChaCha20Rng;
 use rand_chacha::rand_core::SeedableRng;
 use serde::*;
 
+mod inherent_risk;
 mod simple_sim;
 
 #[derive(clap::Parser, Debug)]
 pub enum TopCommand {
 	SimpleSim(simple_sim::Command),
+	InherentRisk(inherent_risk::Command),
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -50,5 +52,6 @@ fn main() {
 
 	match cmd {
 		TopCommand::SimpleSim(cmd) => cmd.execute(rng),
+		TopCommand::InherentRisk(cmd) => cmd.execute(rng),
 	}
 }
