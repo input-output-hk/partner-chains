@@ -5,6 +5,7 @@ use ogmios_client::{
 	types::OgmiosUtxo,
 };
 use sidechain_domain::NetworkType;
+use std::time::Duration;
 
 pub(crate) mod config;
 
@@ -71,7 +72,7 @@ pub struct UtxoValue {
 pub fn ogmios_request(addr: &str, req: OgmiosRequest) -> anyhow::Result<OgmiosResponse> {
 	let tokio_runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
 	tokio_runtime.block_on(async {
-		let client = client_for_url(addr)
+		let client = client_for_url(addr, Some(Duration::from_secs(180)))
 			.await
 			.map_err(|e| anyhow::anyhow!("Failed to connect to Ogmios at {} with: {}", addr, e))?;
 		match req {

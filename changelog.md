@@ -17,6 +17,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Changed
 
+* `smart-contracts` commands can accept parameter to configure Ogmios requests timeout
 * `prepare-configuration` and `create-chain-spec` wizards are updated to setup `governedMap.MainChainScripts` in the chain-spec file.
 * `setup-main-chain-state` wizard uses Ogmios and `offchain` crate for getting the current D-parameter and Permissioned Candidates instead of invoking `<node-executable> ariadne-parameters` command.
 * `prepare-configuration` wizard suggests payment signing key hash as governance authority if there is no value in chain config stored so far.

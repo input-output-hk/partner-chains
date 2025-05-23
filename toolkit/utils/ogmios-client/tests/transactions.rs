@@ -36,7 +36,7 @@ async fn evaluate_transaction() {
 	})
 	.await
 	.unwrap();
-	let client = client_for_url(&format!("ws://{address}")).await.unwrap();
+	let client = client_for_url(&format!("ws://{address}"), None).await.unwrap();
 	let response = client.evaluate_transaction(&hex!("aabbccdd")).await.unwrap();
 	assert_eq!(
 		response[0],
@@ -60,7 +60,7 @@ async fn submit_transaction() {
 	})
 	.await
 	.unwrap();
-	let client = client_for_url(&format!("ws://{address}")).await.unwrap();
+	let client = client_for_url(&format!("ws://{address}"), None).await.unwrap();
 	let response = client.submit_transaction(&hex!("aabbccdd")).await.unwrap();
 	assert_eq!(
 		response,

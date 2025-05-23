@@ -10,11 +10,12 @@ use partner_chains_cardano_offchain::permissioned_candidates::{
 use partner_chains_cardano_offchain::register::{Deregister, Register};
 use partner_chains_cardano_offchain::scripts_data::GetScriptsData;
 use sp_core::offchain::Timestamp;
-use std::path::PathBuf;
 use std::{
 	fs,
 	io::{BufRead, BufReader, Read},
+	path::PathBuf,
 	process::Stdio,
+	time::Duration,
 };
 use tempfile::{TempDir, TempPath};
 
@@ -197,9 +198,11 @@ impl IOContext for DefaultCmdRunContext {
 	fn offchain_impl(&self, ogmios_config: &ServiceConfig) -> anyhow::Result<Self::Offchain> {
 		let ogmios_address = ogmios_config.to_string();
 		let tokio_runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
-		tokio_runtime.block_on(client_for_url(&ogmios_address)).map_err(|_| {
-			anyhow!(format!("Couldn't open connection to Ogmios at {}", ogmios_address))
-		})
+		tokio_runtime
+			.block_on(client_for_url(&ogmios_address, Some(Duration::from_secs(180))))
+			.map_err(|_| {
+				anyhow!(format!("Couldn't open connection to Ogmios at {}", ogmios_address))
+			})
 	}
 }
 
