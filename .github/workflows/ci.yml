@@ -86,7 +86,6 @@ jobs:
             ./to-build/devnet_chain_spec.json
             ./to-build/ci_preview_chain_spec.json
             ./to-build/staging_preview_chain_spec.json
-            ./to-build/staging_preprod_chain_spec.json
 
   local-env:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
@@ -329,7 +328,6 @@ jobs:
             ./to-build/devnet_chain_spec.json
             ./to-build/ci_preview_chain_spec.json
             ./to-build/staging_preview_chain_spec.json
-            ./to-build/staging_preprod_chain_spec.json
 
   build-linux-arm64:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
@@ -600,7 +598,6 @@ jobs:
             ./to-build/devnet_chain_spec.json
             ./to-build/ci_preview_chain_spec.json
             ./to-build/staging_preview_chain_spec.json
-            ./to-build/staging_preprod_chain_spec.json
 
   build-linux-arm64-workflow-dispatch:
     if: github.event_name == 'workflow_dispatch'
