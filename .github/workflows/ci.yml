@@ -33,3 +33,9 @@ jobs:
 
       - name: formatting
         run: nix develop -c bash -c "cargo fmt --check"
+
+      - name: build docker image
+        run: |
+          cp target/release/partner-chains-demo-node .
+          patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 partner-chains-demo-node
+          docker build -f .github/Dockerfile -t partner-chains-node:local
