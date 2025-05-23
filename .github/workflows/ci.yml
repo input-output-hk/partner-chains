@@ -23,7 +23,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: build
-        run: nix develop -c bash -c "cargo build --locked --profile=release
+        run: nix develop -c bash -c "cargo build --locked --profile=release"
 
       - name: test
         run: nix develop -c bash -c "cargo test --locked --profile=release --features=runtime-benchmarks"
