@@ -190,117 +190,180 @@ total_output=$((total_output + tx_out5_lovelace + tx_out6))
 echo "[LOG] Final total_output before fee = $total_output"
 
 echo "[LOG] Calculating total output for the main funding transaction." # This log might be slightly misplaced now but ok
-echo "[LOG] Main transaction: total_output=$total_output, fee=$fee, change=$change" # Fee and change not yet calculated here
 
-fee=1000000
-echo "[LOG] Fee set to: $fee"
-
-# Calculate remaining balance to return to the genesis address
-change=$((tx_in_amount - total_output - fee))
-echo "[LOG] Change calculated: $change (tx_in_amount=$tx_in_amount - total_output=$total_output - fee=$fee)"
-
-# Assemble all --tx-out parameters
-tx_out_params_array=()
-tx_out_params_array+=(--tx-out "$new_address+$tx_out1")
-tx_out_params_array+=(--tx-out "$new_address+$tx_out2")
-tx_out_params_array+=(--tx-out "$new_address+$tx_out3")
-tx_out_params_array+=(--tx-out "$new_address+$tx_out4")
+# --- Main Transaction Dynamic Fee Calculation and Build ---
+echo "[LOG] Assembling parameters for the main funding transaction."
+main_tx_out_params_array=()
+main_tx_out_params_array+=(--tx-out "$new_address+$tx_out1")
+main_tx_out_params_array+=(--tx-out "$new_address+$tx_out2")
+main_tx_out_params_array+=(--tx-out "$new_address+$tx_out3")
+main_tx_out_params_array+=(--tx-out "$new_address+$tx_out4")
 
 # Permissioned nodes outputs (still to $new_address)
 for i in {1..10}; do
     var_name="tx_out${i}_permissioned"
     amount_permissioned="${!var_name}"
-    tx_out_params_array+=(--tx-out "$new_address+$amount_permissioned")
+    main_tx_out_params_array+=(--tx-out "$new_address+$amount_permissioned")
 done
 
 # Output with native token for new_address
-tx_out_params_array+=(--tx-out "$new_address+$tx_out5_lovelace+$tx_out5_reward_token")
+main_tx_out_params_array+=(--tx-out "$new_address+$tx_out5_lovelace+$tx_out5_reward_token")
 
 # Output for vfunction_address (this one sends to a different address)
-tx_out_params_array+=(--tx-out "$vfunction_address+$tx_out6")
+main_tx_out_params_array+=(--tx-out "$vfunction_address+$tx_out6")
 
-# Change output for new_address
-tx_out_params_array+=(--tx-out "$new_address+$change")
+# Calculate number of outputs for fee calculation (excluding change for now)
+num_main_tx_outputs_before_change=$((${#main_tx_out_params_array[@]} / 2)) # Each --tx-out "addr+val" is 2 array elements for params
 
-# Build the raw transaction
-cardano-cli latest transaction build-raw \
-  --tx-in $tx_in1 \
-  "${tx_out_params_array[@]}" \
+echo "[LOG] Querying protocol parameters for main transaction fee..."
+protocol_params_file="/data/protocol.json" # Define it here or ensure it's defined if moved earlier
+if [ ! -f "$protocol_params_file" ]; then # If not already queried by batch logic, or if that logic is moved
+    if ! cardano-cli latest query protocol-parameters --testnet-magic 42 --out-file "$protocol_params_file"; then
+        echo "[DEBUG] CRITICAL ERROR: Failed to query protocol parameters for main transaction. Using fallback fee."
+    fi
+fi
+
+echo "[LOG] Building DUMMY main transaction for fee calculation..."
+dummy_main_tx_file="/data/tx_main_dummy.raw"
+dummy_change_placeholder=1000000 # Placeholder for change in dummy tx
+
+temp_main_tx_out_params_array=("${main_tx_out_params_array[@]}")
+temp_main_tx_out_params_array+=(--tx-out "$new_address+$dummy_change_placeholder")
+
+if ! cardano-cli latest transaction build-raw \
+  --tx-in "$tx_in1" \
+  "${temp_main_tx_out_params_array[@]}" \
   --tx-out-reference-script-file /shared/v-function.script \
   --minting-script-file /shared/reward_token_policy.script \
   --mint "$tx_out5_reward_token" \
-  --fee $fee \
-  --out-file /data/tx.raw
+  --fee 0 \
+  --out-file "$dummy_main_tx_file"; then
+    echo "[DEBUG] Main Tx: ERROR building DUMMY transaction for fee calculation. Using fallback fee."
+    main_tx_fee=300000 # Fallback fee
+else
+    main_tx_num_inputs=1
+    main_tx_num_outputs=$((num_main_tx_outputs_before_change + 1)) # N outputs + 1 change output
+    main_tx_num_witnesses=2 # genesis-utxo.skey and funded_address.skey (for minting)
 
-echo "[LOG] Building the main funding transaction raw file..."
+    echo "[LOG] Main Tx: Calculating min fee. Inputs: $main_tx_num_inputs, Outputs: $main_tx_num_outputs, Witnesses: $main_tx_num_witnesses, Protocol File: $protocol_params_file"
+    calculated_main_fee=$(cardano-cli latest transaction calculate-min-fee \
+        --tx-body-file "$dummy_main_tx_file" \
+        --testnet-magic 42 \
+        --protocol-params-file "$protocol_params_file" \
+        --tx-in-count "$main_tx_num_inputs" \
+        --tx-out-count "$main_tx_num_outputs" \
+        --witness-count "$main_tx_num_witnesses" | /busybox awk '{print $1}')
+
+    if ! [[ "$calculated_main_fee" =~ ^[0-9]+$ ]] || [ -z "$calculated_main_fee" ]; then
+        echo "[DEBUG] Main Tx: ERROR calculating dynamic fee (Raw output: '$calculated_main_fee'). Using fallback static fee 300000."
+        main_tx_fee=300000
+    else
+        main_tx_fee=$calculated_main_fee
+        echo "[LOG] Main Tx: Calculated Min Fee: $main_tx_fee"
+    fi
+    rm -f "$dummy_main_tx_file"
+fi
+
+echo "[LOG] Main transaction: total_output_value=$total_output, fee=$main_tx_fee"
+
+# Calculate remaining balance (change) for the main transaction
+main_tx_change=$((tx_in_amount - total_output - main_tx_fee))
+echo "[LOG] Main Tx: Change calculated: $main_tx_change (tx_in_amount=$tx_in_amount - total_output=$total_output - fee=$main_tx_fee)"
+
+if [ "$main_tx_change" -lt 1000000 ]; then # Minimum change 1 ADA
+    echo "[DEBUG] CRITICAL ERROR: Main transaction change is less than 1 ADA ($main_tx_change). Aborting."
+    exit 1
+fi
+
+# Add the actual change output to the parameters array
+main_tx_out_params_array+=(--tx-out "$new_address+$main_tx_change")
+
+echo "[LOG] Building the FINAL main funding transaction raw file..."
+if ! cardano-cli latest transaction build-raw \
+  --tx-in "$tx_in1" \
+  "${main_tx_out_params_array[@]}" \
+  --tx-out-reference-script-file /shared/v-function.script \
+  --minting-script-file /shared/reward_token_policy.script \
+  --mint "$tx_out5_reward_token" \
+  --fee "$main_tx_fee" \
+  --out-file /data/tx.raw; then
+    echo "[DEBUG] CRITICAL ERROR: Failed to build FINAL main transaction. Aborting."
+    exit 1
+fi
 echo "[LOG] Main funding transaction raw file created at /data/tx.raw."
 
-# Sign the transaction
-cardano-cli latest transaction sign \
+echo "[LOG] Signing the main funding transaction..."
+if ! cardano-cli latest transaction sign \
   --tx-body-file /data/tx.raw \
   --signing-key-file /shared/shelley/genesis-utxo.skey \
   --signing-key-file /keys/funded_address.skey \
   --testnet-magic 42 \
-  --out-file /data/tx.signed
-
-echo "[LOG] Signing the main funding transaction..."
+  --out-file /data/tx.signed; then
+    echo "[DEBUG] CRITICAL ERROR: Failed to sign main transaction. Aborting."
+    exit 1
+fi
 echo "[LOG] Main funding transaction signed at /data/tx.signed."
 
-echo "[LOG] Displaying signed main transaction details:"
-cat /data/tx.signed
+echo "[LOG] Displaying signed main transaction details (first few lines):"
+head -n 5 /data/tx.signed # Display only a few lines to avoid cluttering logs
 
 echo "[LOG] Submitting the main funding transaction..."
-cardano-cli latest transaction submit \
+if ! cardano-cli latest transaction submit \
   --tx-file /data/tx.signed \
-  --testnet-magic 42
-
+  --testnet-magic 42; then
+    echo "[DEBUG] CRITICAL ERROR: Failed to submit main transaction. Aborting."
+    # Add more detailed error querying here if possible, e.g. query UTXO at $tx_in1
+    exit 1
+fi
 echo "[LOG] Main funding transaction submitted."
 
 echo "[LOG] Waiting 20 seconds for the main transaction to process..."
 sleep 20
-echo "Balance:"
 
-# Query UTXOs at new_address
-echo "[LOG] Querying UTXO for new_address:"
-cardano-cli latest query utxo \
-  --testnet-magic 42 \
-  --address $new_address
+echo "[LOG] Verifying main transaction processing and querying UTXOs at $new_address"
+cardano-cli latest query utxo --testnet-magic 42 --address "$new_address"
 
 echo "[LOG] Saving FUNDED_ADDRESS to /shared/FUNDED_ADDRESS: $new_address"
-echo $new_address > /shared/FUNDED_ADDRESS
+echo "$new_address" > /shared/FUNDED_ADDRESS
 echo "Created /shared/FUNDED_ADDRESS with value: $new_address"
 
 # Registered nodes UTXOs - now query each unique address
 echo "[LOG] Saving UTXO details for registered nodes (these will be empty until batch funding completes for each node)..."
 for i in {1..300}; do
     node_unique_address="${registered_node_payment_addresses[$((i-1))]}"
-    echo "[LOG] Querying UTXO for registered-$i at address $node_unique_address..."
-    # Query the specific address for this node. Expecting one UTXO from the funding.
-    # Use awk to get the first UTXO (txhash#txid) after the header lines.
-    # Redirect stderr to /dev/null to suppress "No UTXOs found" if the address isn't funded yet, which would be an error.
+    # echo "[LOG] Querying UTXO for registered-$i at address $node_unique_address..." # Too verbose for 300 nodes
     node_utxo=$(cardano-cli latest query utxo --testnet-magic 42 --address "$node_unique_address" 2>/dev/null | /busybox awk 'NR==3 {print $1 "#" $2}') 
 
     if [ -z "$node_utxo" ]; then
-        echo "Error: No UTXO found for registered-$i at address $node_unique_address. Funding might have failed or transaction not processed."
-        # For now, we'll create an empty file to avoid breaking partner-chains-setup, but it will fail there.
+        # This is expected before batch funding for that node completes.
+        # echo "Info: No UTXO found yet for registered-$i at address $node_unique_address." 
         echo "" > "/shared/registered-${i}.utxo"
     else
         echo "$node_utxo" > "/shared/registered-${i}.utxo"
-        echo "Saved UTXO for registered-$i: $node_utxo to /shared/registered-${i}.utxo"
+        # echo "Saved UTXO for registered-$i: $node_utxo to /shared/registered-${i}.utxo" # Too verbose
     fi
 done
-echo "[LOG] Finished attempting to save UTXOs for registered nodes."
+echo "[LOG] Finished creating (potentially empty) UTXO files for registered nodes."
 
-echo "[LOG] Querying and saving the first UTXO from $new_address to /shared/genesis.utxo..."
+echo "[LOG] Querying and saving the first UTXO from $new_address to /shared/genesis.utxo for partner chain use..."
 cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" | /busybox awk 'NR>2 { print $1 "#" $2; exit }' > /shared/genesis.utxo
-# Check if the file was created and is not empty
 if [ -s "/shared/genesis.utxo" ]; then
     echo "[LOG] Successfully created /shared/genesis.utxo: $(cat /shared/genesis.utxo)"
     cp /shared/genesis.utxo /runtime-values/genesis.utxo
 else
-    echo "[LOG] ERROR: Failed to create or find UTXO for /shared/genesis.utxo from $new_address"
+    echo "[LOG] ERROR: Failed to create or find UTXO for /shared/genesis.utxo from $new_address post main transaction."
     echo "[LOG] Full UTXO query output for $new_address:"
     cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}"
+fi
+# --- End Main Transaction Build ---
+
+# --- Batch Funding Logic (already modified for dynamic fees) ---
+echo "[LOG] Querying protocol parameters for batch funding (if not already done)..." # This line can be kept or removed if protocol_params_file definition is consolidated
+protocol_params_file="/data/protocol.json" # Re-affirm or ensure it's consistently defined
+if [ ! -f "$protocol_params_file" ]; then
+    if ! cardano-cli latest query protocol-parameters --testnet-magic 42 --out-file "$protocol_params_file"; then
+        echo "[DEBUG] CRITICAL ERROR: Failed to extract protocol parameters. Batch funding will use a fallback static fee."
+    fi
 fi
 
 batch_size=10
@@ -336,6 +399,7 @@ fi
 
 # Amount to send to each registered node in the batch
 amount_per_registered_node=1000000000 # Same as defined earlier: tx_out${i}_registered
+echo "[DEBUG] Amount per registered node for batches: $amount_per_registered_node"
 
 for batch_num in $(seq 1 $num_batches); do
     echo "[DEBUG] Processing Batch $batch_num of $num_batches..."
@@ -369,15 +433,17 @@ for batch_num in $(seq 1 $num_batches); do
     echo "[DEBUG] Batch $batch_num: Using input UTXO: $current_tx_in"
     
     # Query the input UTXO to get its amount
-    tx_in_detail=$(cardano-cli latest query utxo --testnet-magic 42 --tx-in "$current_tx_in" --out-file /dev/stdout | /busybox grep lovelace | /busybox awk '{print $NF}')
+    tx_in_detail=$(cardano-cli latest query utxo --testnet-magic 42 --tx-in "$current_tx_in" --out-file /dev/stdout | /busybox grep lovelace | /busybox head -n 1 | /busybox awk '{print $NF}')
     if ! [[ "$tx_in_detail" =~ ^[0-9]+$ ]]; then # Check if it's a number
         echo "[DEBUG] Error: Could not determine amount for input UTXO $current_tx_in. Trying to query all UTXOs at $new_address instead."
         # Fallback: try to get any UTXO's amount if specific one fails
-        tx_in_detail=$(cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" | /busybox grep lovelace | /busybox head -n1 | /busybox awk '{print $NF}')
-        if ! [[ "$tx_in_detail" =~ ^[0-9]+$ ]]; then
+        tx_in_detail_fallback=$(cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" | /busybox grep lovelace | /busybox head -n1 | /busybox awk '{print $NF}')
+        if ! [[ "$tx_in_detail_fallback" =~ ^[0-9]+$ ]]; then
              echo "[DEBUG] CRITICAL ERROR: Failed to determine input amount for batch $batch_num from $new_address. Aborting."
+             current_funding_utxo="" # Reset to attempt re-query in next iteration or fail
              break
         fi
+        tx_in_detail=$tx_in_detail_fallback
          echo "[DEBUG] Batch $batch_num: Determined input UTXO amount (fallback): $tx_in_detail"
     else
         echo "[DEBUG] Batch $batch_num: Input UTXO amount: $tx_in_detail"
@@ -402,37 +468,93 @@ for batch_num in $(seq 1 $num_batches); do
         continue
     fi
 
-    batch_fee=200000 # Estimate fee per batch, can be refined
+    # Dynamic Fee Calculation
+    echo "[DEBUG] Batch $batch_num: Building DUMMY transaction for fee calculation..."
+    dummy_change_placeholder=1000000 # A small positive placeholder for change output
+    temp_batch_tx_out_params=("${batch_tx_out_params[@]}") # Copy existing outputs for nodes
+    temp_batch_tx_out_params+=(--tx-out "$new_address+$dummy_change_placeholder") # Add placeholder change for $new_address
+
+    dummy_tx_file="/data/tx_batch_${batch_num}_dummy.raw"
+    if ! cardano-cli latest transaction build-raw \
+      --tx-in "$current_tx_in" \
+      "${temp_batch_tx_out_params[@]}" \
+      --fee 0 \
+      --out-file "$dummy_tx_file"; then
+        echo "[DEBUG] Batch $batch_num: ERROR building DUMMY transaction for fee calculation. Skipping batch."
+        current_funding_utxo="" 
+        rm -f "$dummy_tx_file"
+        continue
+    fi
+
+    num_inputs=1
+    num_outputs=$((nodes_in_this_batch + 1)) # N outputs to nodes + 1 change output
+    num_witnesses=1 # Signed by funded_address.skey
+
+    echo "[DEBUG] Batch $batch_num: Calculating min fee. Inputs: $num_inputs, Outputs: $num_outputs, Witnesses: $num_witnesses, Protocol File: $protocol_params_file"
+    calculated_fee=$(cardano-cli latest transaction calculate-min-fee \
+        --tx-body-file "$dummy_tx_file" \
+        --testnet-magic 42 \
+        --protocol-params-file "$protocol_params_file" \
+        --tx-in-count "$num_inputs" \
+        --tx-out-count "$num_outputs" \
+        --witness-count "$num_witnesses" | /busybox awk '{print $1}')
+
+    if ! [[ "$calculated_fee" =~ ^[0-9]+$ ]] || [ -z "$calculated_fee" ]; then
+        echo "[DEBUG] Batch $batch_num: ERROR calculating dynamic fee (Raw output: '$calculated_fee'). Using fallback static fee 250000."
+        batch_fee=250000 
+    else
+        batch_fee=$calculated_fee
+        echo "[DEBUG] Batch $batch_num: Calculated Min Fee: $batch_fee"
+    fi
+    rm -f "$dummy_tx_file" # Clean up dummy transaction file
+
     batch_change=$((current_tx_in_amount - batch_total_output - batch_fee))
+    echo "[DEBUG] Batch $batch_num: Fee=$batch_fee, Change=$batch_change (Input: $current_tx_in_amount, NodesOutput: $batch_total_output)"
 
-    echo "[DEBUG] Batch $batch_num: Fee=$batch_fee, Change=$batch_change"
-
-    if [ $batch_change -lt 0 ]; then
-        echo "[DEBUG] Batch $batch_num: ERROR - Not enough funds. Skipping batch. Required: $((batch_total_output + batch_fee)), Available: $current_tx_in_amount"
+    if [ "$batch_change" -lt 1000000 ]; then # Check if change is less than 1 ADA (or some other reasonable minimum)
+        echo "[DEBUG] Batch $batch_num: ERROR - Not enough funds or change too small ($batch_change). Required for nodes+fee: $((batch_total_output + batch_fee)), Available from input: $current_tx_in_amount. Skipping batch."
         current_funding_utxo="" 
         continue
     fi
 
-    batch_tx_out_params+=(--tx-out "$new_address+$batch_change")
+    # Finalize transaction parameters with calculated fee and change
+    final_batch_tx_out_params=("${batch_tx_out_params[@]}") # Outputs to registered nodes
+    final_batch_tx_out_params+=(--tx-out "$new_address+$batch_change") # Actual change output to $new_address
 
-    echo "[DEBUG] Batch $batch_num: Building transaction..."
-    cardano-cli latest transaction build-raw \
+    echo "[DEBUG] Batch $batch_num: Building final transaction..."
+    if ! cardano-cli latest transaction build-raw \
       --tx-in "$current_tx_in" \
-      "${batch_tx_out_params[@]}" \
+      "${final_batch_tx_out_params[@]}" \
       --fee "$batch_fee" \
-      --out-file "/data/tx_batch_${batch_num}.raw"
+      --out-file "/data/tx_batch_${batch_num}.raw"; then
+      echo "[DEBUG] Batch $batch_num: CRITICAL ERROR building FINAL transaction. Skipping batch."
+      current_funding_utxo=""
+      rm -f "/data/tx_batch_${batch_num}.raw" # Clean up potentially incomplete raw file
+      continue
+    fi
 
     echo "[DEBUG] Batch $batch_num: Signing transaction..."
-    cardano-cli latest transaction sign \
+    if ! cardano-cli latest transaction sign \
       --tx-body-file "/data/tx_batch_${batch_num}.raw" \
       --signing-key-file /keys/funded_address.skey \
       --testnet-magic 42 \
-      --out-file "/data/tx_batch_${batch_num}.signed"
+      --out-file "/data/tx_batch_${batch_num}.signed"; then
+      echo "[DEBUG] Batch $batch_num: CRITICAL ERROR signing transaction. Skipping batch."
+      current_funding_utxo=""
+      rm -f "/data/tx_batch_${batch_num}.raw" "/data/tx_batch_${batch_num}.signed"
+      continue
+    fi
 
     echo "[DEBUG] Batch $batch_num: Submitting transaction..."
-    cardano-cli latest transaction submit \
+    if ! cardano-cli latest transaction submit \
       --tx-file "/data/tx_batch_${batch_num}.signed" \
-      --testnet-magic 42
+      --testnet-magic 42; then
+      echo "[DEBUG] Batch $batch_num: ERROR submitting transaction. The input UTXO $current_tx_in might still be available. Will re-evaluate for next batch."
+      # Do not clear current_funding_utxo here, let the outer logic re-evaluate using largest UTXO
+      # The transaction failed, so the input UTXO was not consumed.
+    else
+      echo "[DEBUG] Batch $batch_num: Successfully submitted."
+    fi
     
     echo "[DEBUG] Batch $batch_num: Waiting 15 seconds for processing..."
     sleep 15
