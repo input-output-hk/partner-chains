@@ -15,7 +15,7 @@
 <a href=#15 id=15 data-nosnippet>15</a>) -&gt; anyhow::Result&lt;(UtxoId, CardanoPaymentSigningKey, ServiceConfig)&gt; {
 <a href=#16 id=16 data-nosnippet>16</a>	context.eprint(INTRO);
 <a href=#17 id=17 data-nosnippet>17</a>	<span class="kw">let </span>ogmios_configuration = prompt_ogmios_configuration(context)<span class="question-mark">?</span>;
-<a href=#18 id=18 data-nosnippet>18</a>	<span class="kw">let </span>shelley_config = get_shelley_config(<span class="kw-2">&amp;</span>ogmios_configuration.to_string(), context)<span class="question-mark">?</span>;
+<a href=#18 id=18 data-nosnippet>18</a>	<span class="kw">let </span>shelley_config = get_shelley_config(<span class="kw-2">&amp;</span>ogmios_configuration, context)<span class="question-mark">?</span>;
 <a href=#19 id=19 data-nosnippet>19</a>	<span class="kw">let </span>private_key = get_private_key(context)<span class="question-mark">?</span>;
 <a href=#20 id=20 data-nosnippet>20</a>	<span class="kw">let </span>address = derive_address(<span class="kw-2">&amp;</span>private_key, shelley_config.network)<span class="question-mark">?</span>;
 <a href=#21 id=21 data-nosnippet>21</a>	<span class="kw">let </span>utxo_query_result = query_utxos(context, <span class="kw-2">&amp;</span>ogmios_configuration, <span class="kw-2">&amp;</span>address)<span class="question-mark">?</span>;

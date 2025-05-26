@@ -150,50 +150,51 @@
 <a href=#150 id=150 data-nosnippet>150</a>			hostname: <span class="string">"localhost"</span>.to_string(),
 <a href=#151 id=151 data-nosnippet>151</a>			port: <span class="number">1337</span>,
 <a href=#152 id=152 data-nosnippet>152</a>			protocol: NetworkProtocol::Http,
-<a href=#153 id=153 data-nosnippet>153</a>		}
-<a href=#154 id=154 data-nosnippet>154</a>	}
-<a href=#155 id=155 data-nosnippet>155</a>
-<a href=#156 id=156 data-nosnippet>156</a>	<span class="kw">fn </span>test_private_key() -&gt; CardanoPaymentSigningKey {
-<a href=#157 id=157 data-nosnippet>157</a>		CardanoPaymentSigningKey::from_normal_bytes(<span class="macro">hex!</span>(
-<a href=#158 id=158 data-nosnippet>158</a>			<span class="string">"d0a6c5c921266d15dc8d1ce1e51a01e929a686ed3ec1a9be1145727c224bf386"
-<a href=#159 id=159 data-nosnippet>159</a>		</span>))
-<a href=#160 id=160 data-nosnippet>160</a>		.unwrap()
-<a href=#161 id=161 data-nosnippet>161</a>	}
-<a href=#162 id=162 data-nosnippet>162</a>
-<a href=#163 id=163 data-nosnippet>163</a>	<span class="kw">fn </span>test_private_key_hash() -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str {
-<a href=#164 id=164 data-nosnippet>164</a>		<span class="string">"0xe8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"
-<a href=#165 id=165 data-nosnippet>165</a>	</span>}
-<a href=#166 id=166 data-nosnippet>166</a>
-<a href=#167 id=167 data-nosnippet>167</a>	<span class="kw">fn </span>preprod_offchain_mocks() -&gt; OffchainMocks {
-<a href=#168 id=168 data-nosnippet>168</a>		<span class="kw">let </span>mock = OffchainMock::new().with_init_governance(
-<a href=#169 id=169 data-nosnippet>169</a>			TEST_GENESIS_UTXO,
-<a href=#170 id=170 data-nosnippet>170</a>			MultiSigParameters::new(
-<a href=#171 id=171 data-nosnippet>171</a>				<span class="kw-2">&amp;</span>[
-<a href=#172 id=172 data-nosnippet>172</a>					MainchainKeyHash(<span class="macro">hex!</span>(
-<a href=#173 id=173 data-nosnippet>173</a>						<span class="string">"00000000000000000000000000000000000000000000000000000000"
-<a href=#174 id=174 data-nosnippet>174</a>					</span>)),
-<a href=#175 id=175 data-nosnippet>175</a>					MainchainKeyHash(<span class="macro">hex!</span>(
-<a href=#176 id=176 data-nosnippet>176</a>						<span class="string">"01010101010101010101010101010101010101010101010101010101"
-<a href=#177 id=177 data-nosnippet>177</a>					</span>)),
-<a href=#178 id=178 data-nosnippet>178</a>				],
-<a href=#179 id=179 data-nosnippet>179</a>				<span class="number">2u8</span>,
-<a href=#180 id=180 data-nosnippet>180</a>			)
-<a href=#181 id=181 data-nosnippet>181</a>			.unwrap(),
-<a href=#182 id=182 data-nosnippet>182</a>			<span class="macro">hex!</span>(<span class="string">"d0a6c5c921266d15dc8d1ce1e51a01e929a686ed3ec1a9be1145727c224bf386"</span>).to_vec(),
-<a href=#183 id=183 data-nosnippet>183</a>			<span class="prelude-val">Ok</span>(McTxHash(<span class="macro">hex!</span>(<span class="string">"2222222200000000000000000000000000000000000000000000000000000000"</span>))),
-<a href=#184 id=184 data-nosnippet>184</a>		);
-<a href=#185 id=185 data-nosnippet>185</a>		OffchainMocks::new_with_mock(<span class="string">"http://localhost:1337"</span>, mock)
-<a href=#186 id=186 data-nosnippet>186</a>	}
-<a href=#187 id=187 data-nosnippet>187</a>
-<a href=#188 id=188 data-nosnippet>188</a>	<span class="kw">fn </span>expected_chain_config_content() -&gt; Value {
-<a href=#189 id=189 data-nosnippet>189</a>		<span class="macro">json!</span>({
-<a href=#190 id=190 data-nosnippet>190</a>			<span class="string">"initial_governance"</span>:  {
-<a href=#191 id=191 data-nosnippet>191</a>				<span class="string">"authorities"</span>:  [
-<a href=#192 id=192 data-nosnippet>192</a>					<span class="string">"0x00000000000000000000000000000000000000000000000000000000"</span>,
-<a href=#193 id=193 data-nosnippet>193</a>					<span class="string">"0x01010101010101010101010101010101010101010101010101010101"
-<a href=#194 id=194 data-nosnippet>194</a>				</span>],
-<a href=#195 id=195 data-nosnippet>195</a>				<span class="string">"threshold"</span>: <span class="number">2
-<a href=#196 id=196 data-nosnippet>196</a>			</span>}
-<a href=#197 id=197 data-nosnippet>197</a>		})
-<a href=#198 id=198 data-nosnippet>198</a>	}
-<a href=#199 id=199 data-nosnippet>199</a>}</code></pre></div></section></main></body></html>
+<a href=#153 id=153 data-nosnippet>153</a>			timeout_seconds: <span class="number">180</span>,
+<a href=#154 id=154 data-nosnippet>154</a>		}
+<a href=#155 id=155 data-nosnippet>155</a>	}
+<a href=#156 id=156 data-nosnippet>156</a>
+<a href=#157 id=157 data-nosnippet>157</a>	<span class="kw">fn </span>test_private_key() -&gt; CardanoPaymentSigningKey {
+<a href=#158 id=158 data-nosnippet>158</a>		CardanoPaymentSigningKey::from_normal_bytes(<span class="macro">hex!</span>(
+<a href=#159 id=159 data-nosnippet>159</a>			<span class="string">"d0a6c5c921266d15dc8d1ce1e51a01e929a686ed3ec1a9be1145727c224bf386"
+<a href=#160 id=160 data-nosnippet>160</a>		</span>))
+<a href=#161 id=161 data-nosnippet>161</a>		.unwrap()
+<a href=#162 id=162 data-nosnippet>162</a>	}
+<a href=#163 id=163 data-nosnippet>163</a>
+<a href=#164 id=164 data-nosnippet>164</a>	<span class="kw">fn </span>test_private_key_hash() -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str {
+<a href=#165 id=165 data-nosnippet>165</a>		<span class="string">"0xe8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"
+<a href=#166 id=166 data-nosnippet>166</a>	</span>}
+<a href=#167 id=167 data-nosnippet>167</a>
+<a href=#168 id=168 data-nosnippet>168</a>	<span class="kw">fn </span>preprod_offchain_mocks() -&gt; OffchainMocks {
+<a href=#169 id=169 data-nosnippet>169</a>		<span class="kw">let </span>mock = OffchainMock::new().with_init_governance(
+<a href=#170 id=170 data-nosnippet>170</a>			TEST_GENESIS_UTXO,
+<a href=#171 id=171 data-nosnippet>171</a>			MultiSigParameters::new(
+<a href=#172 id=172 data-nosnippet>172</a>				<span class="kw-2">&amp;</span>[
+<a href=#173 id=173 data-nosnippet>173</a>					MainchainKeyHash(<span class="macro">hex!</span>(
+<a href=#174 id=174 data-nosnippet>174</a>						<span class="string">"00000000000000000000000000000000000000000000000000000000"
+<a href=#175 id=175 data-nosnippet>175</a>					</span>)),
+<a href=#176 id=176 data-nosnippet>176</a>					MainchainKeyHash(<span class="macro">hex!</span>(
+<a href=#177 id=177 data-nosnippet>177</a>						<span class="string">"01010101010101010101010101010101010101010101010101010101"
+<a href=#178 id=178 data-nosnippet>178</a>					</span>)),
+<a href=#179 id=179 data-nosnippet>179</a>				],
+<a href=#180 id=180 data-nosnippet>180</a>				<span class="number">2u8</span>,
+<a href=#181 id=181 data-nosnippet>181</a>			)
+<a href=#182 id=182 data-nosnippet>182</a>			.unwrap(),
+<a href=#183 id=183 data-nosnippet>183</a>			<span class="macro">hex!</span>(<span class="string">"d0a6c5c921266d15dc8d1ce1e51a01e929a686ed3ec1a9be1145727c224bf386"</span>).to_vec(),
+<a href=#184 id=184 data-nosnippet>184</a>			<span class="prelude-val">Ok</span>(McTxHash(<span class="macro">hex!</span>(<span class="string">"2222222200000000000000000000000000000000000000000000000000000000"</span>))),
+<a href=#185 id=185 data-nosnippet>185</a>		);
+<a href=#186 id=186 data-nosnippet>186</a>		OffchainMocks::new_with_mock(<span class="string">"http://localhost:1337"</span>, mock)
+<a href=#187 id=187 data-nosnippet>187</a>	}
+<a href=#188 id=188 data-nosnippet>188</a>
+<a href=#189 id=189 data-nosnippet>189</a>	<span class="kw">fn </span>expected_chain_config_content() -&gt; Value {
+<a href=#190 id=190 data-nosnippet>190</a>		<span class="macro">json!</span>({
+<a href=#191 id=191 data-nosnippet>191</a>			<span class="string">"initial_governance"</span>:  {
+<a href=#192 id=192 data-nosnippet>192</a>				<span class="string">"authorities"</span>:  [
+<a href=#193 id=193 data-nosnippet>193</a>					<span class="string">"0x00000000000000000000000000000000000000000000000000000000"</span>,
+<a href=#194 id=194 data-nosnippet>194</a>					<span class="string">"0x01010101010101010101010101010101010101010101010101010101"
+<a href=#195 id=195 data-nosnippet>195</a>				</span>],
+<a href=#196 id=196 data-nosnippet>196</a>				<span class="string">"threshold"</span>: <span class="number">2
+<a href=#197 id=197 data-nosnippet>197</a>			</span>}
+<a href=#198 id=198 data-nosnippet>198</a>		})
+<a href=#199 id=199 data-nosnippet>199</a>	}
+<a href=#200 id=200 data-nosnippet>200</a>}</code></pre></div></section></main></body></html>

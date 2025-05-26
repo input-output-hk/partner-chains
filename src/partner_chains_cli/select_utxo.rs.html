@@ -24,10 +24,10 @@
 <a href=#24 id=24 data-nosnippet>24</a>	ogmios_config: <span class="kw-2">&amp;</span>ServiceConfig,
 <a href=#25 id=25 data-nosnippet>25</a>	address: <span class="kw-2">&amp;</span>str,
 <a href=#26 id=26 data-nosnippet>26</a>) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;OgmiosUtxo&gt;, anyhow::Error&gt; {
-<a href=#27 id=27 data-nosnippet>27</a>	<span class="kw">let </span>ogmios_addr = ogmios_config.to_string();
+<a href=#27 id=27 data-nosnippet>27</a>	<span class="kw">let </span>ogmios_addr = ogmios_config.url();
 <a href=#28 id=28 data-nosnippet>28</a>	context.print(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"⚙️ Querying UTXOs of {address} from Ogmios at {ogmios_addr}..."</span>));
 <a href=#29 id=29 data-nosnippet>29</a>	<span class="kw">let </span>response = context
-<a href=#30 id=30 data-nosnippet>30</a>		.ogmios_rpc(<span class="kw-2">&amp;</span>ogmios_addr, OgmiosRequest::QueryUtxo { address: address.into() })
+<a href=#30 id=30 data-nosnippet>30</a>		.ogmios_rpc(<span class="kw-2">&amp;</span>ogmios_config, OgmiosRequest::QueryUtxo { address: address.into() })
 <a href=#31 id=31 data-nosnippet>31</a>		.map_err(|e| <span class="macro">anyhow!</span>(e))<span class="question-mark">?</span>;
 <a href=#32 id=32 data-nosnippet>32</a>	<span class="kw">match </span>response {
 <a href=#33 id=33 data-nosnippet>33</a>		OgmiosResponse::QueryUtxo(utxos) =&gt; <span class="prelude-val">Ok</span>(utxos),
