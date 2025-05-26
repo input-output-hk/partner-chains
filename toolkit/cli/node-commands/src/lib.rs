@@ -4,18 +4,6 @@
 //! interacting with Partner Chains nodes. It serves as the primary interface for node
 //! operators, validators, and developers to manage and interact with Partner Chain infrastructure.
 //!
-//! ## Overview
-//!
-//! Partner Chains are application-specific blockchains that leverage Cardano's security and
-//! decentralization while providing enhanced functionality and performance for specific use cases.
-//! This crate provides the essential CLI tooling to:
-//!
-//! - Query sidechain parameters and status
-//! - Manage validator registration and committee membership
-//! - Handle cryptographic signatures for various operations
-//! - Interact with Partner Chain smart contracts on Cardano
-//! - Access setup wizards for chain configuration
-//!
 //! ## Architecture
 //!
 //! The crate is built around the [`PartnerChainsSubcommand`] enum, which defines all available
