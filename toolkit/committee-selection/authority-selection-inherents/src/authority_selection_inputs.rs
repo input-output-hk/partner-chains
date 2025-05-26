@@ -156,7 +156,7 @@ impl AuthoritySelectionInputs {
 				.collect::<Vec<PermissionedCandidateData>>(),
 		};
 
-		let registered_candidates: Vec<CandidateRegistrations> = candidate_data_source
+		let mut registered_candidates: Vec<CandidateRegistrations> = candidate_data_source
 			.get_candidates(for_epoch, scripts.committee_candidate_address.clone())
 			.await
 			.map_err(|err| {
@@ -166,6 +166,8 @@ impl AuthoritySelectionInputs {
 					err,
 				)
 			})?;
+		registered_candidates
+			.sort_by(|a, b| a.stake_pool_public_key.0.cmp(&b.stake_pool_public_key.0));
 		let epoch_nonce_response =
 			candidate_data_source.get_epoch_nonce(for_epoch).await.map_err(|err| {
 				AuthoritySelectionInputsCreationError::GetEpochNonceQuery(for_epoch, err)
@@ -173,5 +175,53 @@ impl AuthoritySelectionInputs {
 		let epoch_nonce = epoch_nonce_response.unwrap_or(EpochNonce(vec![]));
 
 		Ok(Self { d_parameter, permissioned_candidates, registered_candidates, epoch_nonce })
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use crate::{
+		authority_selection_inputs::AuthoritySelectionInputs,
+		mock::MockAuthoritySelectionDataSource,
+	};
+	use sidechain_domain::{
+		CandidateRegistrations, McEpochNumber, StakeDelegation, StakePoolPublicKey,
+	};
+
+	#[tokio::test]
+	/// Because of [sp_session_validator_management::InherentError::InvalidValidatorsHashMismatch] we
+	/// have to provide data with stable sorting, otherwise same set of candidates will yield different
+	/// hash.
+	async fn sorts_registered_candidates() {
+		let inputs = AuthoritySelectionInputs::from_mc_data(
+			// This is the slot that will be used to calculate current_epoch_number
+			&MockAuthoritySelectionDataSource::default().with_candidates_per_epoch(vec![vec![
+				CandidateRegistrations::new(
+					StakePoolPublicKey([3u8; 32]),
+					Some(StakeDelegation(1000)),
+					vec![],
+				),
+				CandidateRegistrations::new(
+					StakePoolPublicKey([1u8; 32]),
+					Some(StakeDelegation(1000)),
+					vec![],
+				),
+				CandidateRegistrations::new(
+					StakePoolPublicKey([2u8; 32]),
+					Some(StakeDelegation(1000)),
+					vec![],
+				),
+			]]),
+			McEpochNumber(0),
+			sp_session_validator_management::MainChainScripts::default(),
+		)
+		.await
+		.unwrap();
+		let keys: Vec<_> = inputs
+			.registered_candidates
+			.into_iter()
+			.map(|c| c.stake_pool_public_key.0)
+			.collect();
+		assert_eq!(keys, vec![[1u8; 32], [2u8; 32], [3u8; 32]])
 	}
 }
