@@ -413,21 +413,10 @@ impl<T: Config> Pallet<T> {
 			(ValidatorsAndKeys::<T>::get(), false)
 		};
 
-		let (queued_validators, _changed) =
-			if let Some(queued_validators) = Self::new_session(session_index + 1) {
-				(queued_validators, true)
-			} else {
-				(ValidatorsAndKeys::<T>::get(), false)
-			};
-
 		T::SessionManager::start_session(session_index);
 		Self::deposit_event(Event::NewSession { session_index });
-
-		T::SessionHandler::on_new_session::<T::Keys>(
-			changed,
-			validators.as_ref(),
-			&queued_validators,
-		);
+		// TODO if possible, remove queued_validators from SessionHandler (both Aura and Grandpa aren't using them anyway)
+		T::SessionHandler::on_new_session::<T::Keys>(changed, validators.as_ref(), &[]);
 	}
 
 	/// Disable the validator of index `i`, returns `false` if the validator was already disabled.
