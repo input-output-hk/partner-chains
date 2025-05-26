@@ -50,6 +50,7 @@ use sp_consensus_beefy::{
 };
 #[cfg(feature = "runtime-benchmarks")]
 use sp_core::ByteArray;
+use sp_core::ecdsa;
 use sp_core::{OpaqueMetadata, crypto::KeyTypeId};
 use sp_governed_map::MainChainScriptsV1;
 use sp_inherents::InherentIdentifier;
@@ -169,12 +170,13 @@ pub mod opaque {
 		#[derive(MaxEncodedLen, PartialOrd, Ord)]
 		pub struct SessionKeys {
 			pub aura: Aura,
+			pub beefy: Beefy,
 			pub grandpa: Grandpa,
 		}
 	}
-	impl From<(sr25519::Public, ed25519::Public)> for SessionKeys {
-		fn from((aura, grandpa): (sr25519::Public, ed25519::Public)) -> Self {
-			Self { aura: aura.into(), grandpa: grandpa.into() }
+	impl From<(sr25519::Public, ecdsa::Public, ed25519::Public)> for SessionKeys {
+		fn from((aura, beefy, grandpa): (sr25519::Public, ecdsa::Public, ed25519::Public)) -> Self {
+			Self { aura: aura.into(), beefy: beefy.into(), grandpa: grandpa.into() }
 		}
 	}
 

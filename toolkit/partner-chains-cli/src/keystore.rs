@@ -12,6 +12,8 @@ impl<'a> KeyDefinition<'a> {
 
 pub const AURA: KeyDefinition<'static> =
 	KeyDefinition { name: "Aura", scheme: "sr25519", key_type: "aura" };
+pub const BEEFY: KeyDefinition<'static> =
+	KeyDefinition { name: "Beefy", scheme: "ecdsa", key_type: "beef" };
 pub const GRANDPA: KeyDefinition<'static> =
 	KeyDefinition { name: "Grandpa", scheme: "ed25519", key_type: "gran" };
 pub const CROSS_CHAIN: KeyDefinition<'static> =

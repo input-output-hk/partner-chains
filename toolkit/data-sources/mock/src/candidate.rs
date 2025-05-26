@@ -18,6 +18,7 @@ pub struct MockRegistration {
 	pub registration_utxo: UtxoId,
 	pub status: MockRegistrationStatus,
 	pub aura_pub_key: ByteString,
+	pub beefy_pub_key: ByteString,
 	pub grandpa_pub_key: ByteString,
 }
 
@@ -68,6 +69,7 @@ impl From<MockRegistration> for CandidateRegistrations {
 			},
 			tx_inputs: vec![mock.registration_utxo],
 			aura_pub_key: AuraPublicKey(mock.aura_pub_key.0),
+			beefy_pub_key: BeefyPublicKey(mock.beefy_pub_key.0),
 			grandpa_pub_key: GrandpaPublicKey(mock.grandpa_pub_key.0),
 		}];
 		let stake_delegation = Some(StakeDelegation(333));
@@ -87,6 +89,7 @@ pub struct MockPermissionedCandidate {
 	name: Option<String>,
 	sidechain_pub_key: ByteString,
 	aura_pub_key: ByteString,
+	beefy_pub_key: ByteString,
 	grandpa_pub_key: ByteString,
 }
 
@@ -106,12 +109,14 @@ impl From<MockPermissionedCandidate> for RawPermissionedCandidateData {
 			name: _,
 			sidechain_pub_key,
 			aura_pub_key,
+			beefy_pub_key,
 			grandpa_pub_key,
 		}: MockPermissionedCandidate,
 	) -> Self {
 		Self {
 			sidechain_public_key: SidechainPublicKey(sidechain_pub_key.0),
 			aura_public_key: AuraPublicKey(aura_pub_key.0),
+			beefy_public_key: BeefyPublicKey(beefy_pub_key.0),
 			grandpa_public_key: GrandpaPublicKey(grandpa_pub_key.0),
 		}
 	}
