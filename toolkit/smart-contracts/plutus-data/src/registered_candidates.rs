@@ -174,8 +174,8 @@ fn decode_legacy_register_validator_datum(datum: &PlutusData) -> Option<Register
 	let registration_utxo = decode_utxo_id_datum(fields.get(3))?;
 	let own_pkh = MainchainKeyHash(fields.get(4).as_bytes()?.try_into().ok()?);
 	let aura_pub_key = fields.get(5).as_bytes().map(AuraPublicKey)?;
-	let beefy_pub_key = fields.get(5).as_bytes().map(BeefyPublicKey)?;
-	let grandpa_pub_key = fields.get(6).as_bytes().map(GrandpaPublicKey)?;
+	let beefy_pub_key = fields.get(6).as_bytes().map(BeefyPublicKey)?;
+	let grandpa_pub_key = fields.get(7).as_bytes().map(GrandpaPublicKey)?;
 	Some(RegisterValidatorDatum::V0 {
 		stake_ownership,
 		sidechain_pub_key,
