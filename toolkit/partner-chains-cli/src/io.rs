@@ -1,6 +1,8 @@
 use crate::config::ServiceConfig;
 use crate::ogmios::{OgmiosRequest, OgmiosResponse, ogmios_request};
 use anyhow::{Context, anyhow};
+use inquire::InquireError;
+use inquire::error::InquireResult;
 use ogmios_client::jsonrpsee::{OgmiosClients, client_for_url};
 use partner_chains_cardano_offchain::d_param::{GetDParam, UpsertDParam};
 use partner_chains_cardano_offchain::init_governance::InitGovernance;
@@ -128,15 +130,15 @@ impl IOContext for DefaultCmdRunContext {
 			prompt = prompt.with_default(default)
 		};
 
-		prompt.prompt().unwrap()
+		handle_inquire_result(prompt.prompt())
 	}
 
 	fn prompt_yes_no(&self, prompt: &str, default: bool) -> bool {
-		inquire::Confirm::new(prompt).with_default(default).prompt().unwrap()
+		handle_inquire_result(inquire::Confirm::new(prompt).with_default(default).prompt())
 	}
 
 	fn prompt_multi_option(&self, msg: &str, options: Vec<String>) -> String {
-		inquire::Select::new(msg, options).prompt().unwrap().to_string()
+		handle_inquire_result(inquire::Select::new(msg, options).prompt()).to_string()
 	}
 
 	fn write_file(&self, path: &str, content: &str) {
@@ -220,4 +222,16 @@ impl IOContext for DefaultCmdRunContext {
 pub fn prompt_can_write<C: IOContext>(name: &str, path: &str, context: &C) -> bool {
 	!context.file_exists(path)
 		|| context.prompt_yes_no(&format!("{name} {path} exists - overwrite it?"), false)
+}
+
+fn handle_inquire_result<T>(result: InquireResult<T>) -> T {
+	match result {
+		Ok(result) => result,
+		Err(InquireError::OperationInterrupted) => {
+			eprintln!("Ctrl-C pressed. Exiting Wizard.");
+			std::process::exit(0)
+		},
+		Err(InquireError::OperationCanceled) => std::process::exit(0),
+		result => result.unwrap(),
+	}
 }
