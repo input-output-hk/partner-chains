@@ -81,10 +81,10 @@ impl CliConfiguration for AriadneParametersCmd {
 	}
 }
 
-/// Command for retrieving fundamental sidechain parameters.
+/// Command for retrieving sidechain parameters.
 ///
-/// This command returns essential sidechain configuration including genesis UTXO
-/// and other foundational parameters required for sidechain operation.
+/// This command returns sidechain configuration including genesis UTXO
+/// and other parameters required for sidechain operation.
 ///
 /// # Example
 ///
@@ -158,7 +158,7 @@ impl CliConfiguration for RegistrationStatusCmd {
 ///
 /// # Commands
 ///
-/// - [`SidechainParams`]: Query fundamental sidechain parameters
+/// - [`SidechainParams`]: Query sidechain parameters
 /// - [`RegistrationStatus`]: Check validator registration status
 /// - [`AriadneParameters`]: Retrieve Ariadne protocol parameters
 /// - [`RegistrationSignatures`]: Generate registration signatures
