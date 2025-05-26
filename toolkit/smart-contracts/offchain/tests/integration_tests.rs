@@ -442,7 +442,7 @@ async fn initialize<'a>(container: &Container<'a, GenericImage>) -> OgmiosClient
 async fn await_ogmios(ogmios_port: u16) -> Result<OgmiosClients, String> {
 	let url = format!("ws://localhost:{}", ogmios_port);
 	Retry::spawn(FixedInterval::new(Duration::from_millis(100)).take(1000), || async {
-		let client = client_for_url(&url).await?;
+		let client = client_for_url(&url, Duration::from_secs(5)).await?;
 		let _ = client.shelley_genesis_configuration().await.map_err(|e| e.to_string())?;
 		Ok(client)
 	})

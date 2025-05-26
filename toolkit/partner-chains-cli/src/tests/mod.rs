@@ -1,3 +1,4 @@
+use crate::config::ServiceConfig;
 use crate::io::IOContext;
 use crate::ogmios::{OgmiosRequest, OgmiosResponse};
 use anyhow::anyhow;
@@ -681,9 +682,10 @@ impl IOContext for MockIOContext {
 
 	fn ogmios_rpc(
 		&self,
-		addr: &str,
+		config: &ServiceConfig,
 		req: crate::ogmios::OgmiosRequest,
 	) -> anyhow::Result<crate::ogmios::OgmiosResponse> {
+		let addr = config.url();
 		let next = self.pop_next_action(&format!("ogmios_rpc(addr = {addr}, req = {req:?})"));
 		next.print_mock_location_on_panic(|next| match next {
 			MockIO::OgmiosRPC { addr: expected_addr, req: expected_req, res } => {
@@ -699,7 +701,7 @@ impl IOContext for MockIOContext {
 		&self,
 		ogmios_config: &crate::config::ServiceConfig,
 	) -> anyhow::Result<Self::Offchain> {
-		let addr: &str = &ogmios_config.to_string();
+		let addr: &str = &ogmios_config.url();
 		let mock = self.offchain_mocks.mocks.get(&addr.into()).ok_or_else(|| {
 			anyhow::anyhow!("No mock for Offchain implementation for {:?}", ogmios_config)
 		})?;

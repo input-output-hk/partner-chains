@@ -9,6 +9,7 @@ use jsonrpsee::{
 };
 use serde::de::DeserializeOwned;
 use serde_json::json;
+use std::time::Duration;
 
 /// Converts the method and parameters to a JSON-RPC request string.
 fn request_to_json(method: &str, params: impl ToRpcParams) -> Result<String, OgmiosClientError> {
@@ -42,9 +43,10 @@ pub enum OgmiosClients {
 
 /// Returns client that works either with HTTP or WebSockets.
 /// HTTP does not return JSON-RPC error body in case of 400 Bad Request.
-pub async fn client_for_url(addr: &str) -> Result<OgmiosClients, String> {
+pub async fn client_for_url(addr: &str, timeout: Duration) -> Result<OgmiosClients, String> {
 	if addr.starts_with("http") || addr.starts_with("https") {
 		let client = HttpClientBuilder::default()
+			.request_timeout(timeout)
 			.build(addr)
 			.map_err(|e| format!("Couldn't create HTTP client: {}", e))?;
 
@@ -59,6 +61,7 @@ pub async fn client_for_url(addr: &str) -> Result<OgmiosClients, String> {
 		Ok(http_client)
 	} else if addr.starts_with("ws") || addr.starts_with("wss") {
 		let client = WsClientBuilder::default()
+			.request_timeout(timeout)
 			.build(addr.to_owned())
 			.await
 			.map_err(|e| format!("Couldn't create WebSockets client: {}", e))?;

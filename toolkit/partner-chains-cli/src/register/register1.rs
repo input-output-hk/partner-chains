@@ -37,8 +37,7 @@ impl CmdRun for Register1Cmd {
 
 		context.print("This wizard will query your UTXOs using address derived from the payment verification key and Ogmios service");
 		let ogmios_configuration = prompt_ogmios_configuration(context)?;
-		let shelley_genesis_config =
-			get_shelley_config(&format!("{ogmios_configuration}"), context)?;
+		let shelley_genesis_config = get_shelley_config(&ogmios_configuration, context)?;
 		let address = derive_address(context, shelley_genesis_config.network)?;
 		let utxo_query_result = query_utxos(context, &ogmios_configuration, &address)?;
 

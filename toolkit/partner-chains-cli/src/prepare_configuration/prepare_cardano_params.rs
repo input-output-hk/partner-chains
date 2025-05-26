@@ -8,14 +8,16 @@ pub fn prepare_cardano_params<C: IOContext>(
 	ogmios_config: &ServiceConfig,
 	context: &C,
 ) -> anyhow::Result<CardanoParameters> {
-	let addr = format!("{}", ogmios_config);
-	let eras_summaries = get_eras_summaries(&addr, context)?;
-	let shelley_config = get_shelley_config(&addr, context)?;
+	let eras_summaries = get_eras_summaries(&ogmios_config, context)?;
+	let shelley_config = get_shelley_config(&ogmios_config, context)?;
 	caradano_parameters(eras_summaries, shelley_config)
 }
 
-fn get_eras_summaries<C: IOContext>(addr: &str, context: &C) -> anyhow::Result<Vec<EraSummary>> {
-	let eras_summaries = context.ogmios_rpc(addr, OgmiosRequest::QueryLedgerStateEraSummaries)?;
+fn get_eras_summaries<C: IOContext>(
+	config: &ServiceConfig,
+	context: &C,
+) -> anyhow::Result<Vec<EraSummary>> {
+	let eras_summaries = context.ogmios_rpc(config, OgmiosRequest::QueryLedgerStateEraSummaries)?;
 	match eras_summaries {
 		OgmiosResponse::QueryLedgerStateEraSummaries(eras_summaries) => Ok(eras_summaries),
 		other => Err(anyhow::anyhow!(format!(
@@ -117,6 +119,7 @@ pub mod tests {
 			protocol: NetworkProtocol::Https,
 			hostname: "ogmios.com".to_string(),
 			port: 7654,
+			timeout_seconds: 180,
 		};
 		let mock_context = MockIOContext::new()
 			.with_json_file(CHAIN_CONFIG_FILE_PATH, serde_json::json!({}))
