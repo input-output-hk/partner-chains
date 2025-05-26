@@ -11,6 +11,7 @@ use serde::de::DeserializeOwned;
 use serde_json::json;
 use std::time::Duration;
 
+/// Converts the method and parameters to a JSON-RPC request string.
 fn request_to_json(method: &str, params: impl ToRpcParams) -> Result<String, OgmiosClientError> {
 	let params = params
 		.to_rpc_params()
@@ -25,6 +26,7 @@ fn request_to_json(method: &str, params: impl ToRpcParams) -> Result<String, Ogm
 	serde_json::to_string(&req).map_err(|err| OgmiosClientError::ParametersError(err.to_string()))
 }
 
+/// Converts the response to a JSON string.
 fn response_to_json(resp: &Result<serde_json::Value, ClientError>) -> String {
 	match &resp {
 		Ok(resp) => serde_json::to_string(&resp).unwrap(),
@@ -33,6 +35,7 @@ fn response_to_json(resp: &Result<serde_json::Value, ClientError>) -> String {
 	}
 }
 
+/// Enum that represents the ogmios client that works either with HTTP or WebSockets.
 pub enum OgmiosClients {
 	HttpClient(HttpClient),
 	WsClient(WsClient),
@@ -69,6 +72,7 @@ pub async fn client_for_url(addr: &str, timeout: Duration) -> Result<OgmiosClien
 }
 
 impl OgmiosClient for OgmiosClients {
+	/// Sends a JSON-RPC request to the Ogmios server and returns the response.
 	async fn request<T: DeserializeOwned>(
 		&self,
 		method: &str,
