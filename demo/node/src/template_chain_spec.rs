@@ -1,8 +1,8 @@
 use crate::chain_spec::*;
 use partner_chains_demo_runtime::{
-	AuraConfig, BalancesConfig, BeefyConfig, GovernedMapConfig, GrandpaConfig,
-	NativeTokenManagementConfig, RuntimeGenesisConfig, SessionCommitteeManagementConfig,
-	SessionConfig, SidechainConfig, SudoConfig, SystemConfig, TestHelperPalletConfig,
+	AuraConfig, BalancesConfig, GovernedMapConfig, GrandpaConfig, NativeTokenManagementConfig,
+	RuntimeGenesisConfig, SessionCommitteeManagementConfig, SessionConfig, SidechainConfig,
+	SudoConfig, SystemConfig, TestHelperPalletConfig,
 };
 use sc_service::ChainType;
 
@@ -19,7 +19,7 @@ pub fn chain_spec() -> Result<ChainSpec, envy::Error> {
 			dev_accounts: None,
 		},
 		aura: AuraConfig { authorities: vec![] },
-		beefy: BeefyConfig { authorities: vec![], genesis_block: Some(42) },
+		beefy: Default::default(),
 		grandpa: GrandpaConfig { authorities: vec![], ..Default::default() },
 		sudo: SudoConfig {
 			// No sudo account by default, please update with your preferences.
