@@ -150,6 +150,7 @@ mod tests {
 			hostname: "localhost".to_string(),
 			port: 1337,
 			protocol: NetworkProtocol::Http,
+			timeout_seconds: 180,
 		}
 	}
 

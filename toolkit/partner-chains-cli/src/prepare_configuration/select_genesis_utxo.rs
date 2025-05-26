@@ -15,7 +15,7 @@ pub fn select_genesis_utxo<C: IOContext>(
 ) -> anyhow::Result<(UtxoId, CardanoPaymentSigningKey, ServiceConfig)> {
 	context.eprint(INTRO);
 	let ogmios_configuration = prompt_ogmios_configuration(context)?;
-	let shelley_config = get_shelley_config(&ogmios_configuration.to_string(), context)?;
+	let shelley_config = get_shelley_config(&ogmios_configuration, context)?;
 	let private_key = get_private_key(context)?;
 	let address = derive_address(&private_key, shelley_config.network)?;
 	let utxo_query_result = query_utxos(context, &ogmios_configuration, &address)?;

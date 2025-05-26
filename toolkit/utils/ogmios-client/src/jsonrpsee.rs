@@ -40,13 +40,10 @@ pub enum OgmiosClients {
 
 /// Returns client that works either with HTTP or WebSockets.
 /// HTTP does not return JSON-RPC error body in case of 400 Bad Request.
-pub async fn client_for_url(
-	addr: &str,
-	timeout: Option<Duration>,
-) -> Result<OgmiosClients, String> {
+pub async fn client_for_url(addr: &str, timeout: Duration) -> Result<OgmiosClients, String> {
 	if addr.starts_with("http") || addr.starts_with("https") {
 		let client = HttpClientBuilder::default()
-			.request_timeout(timeout.unwrap_or(Duration::from_secs(60)))
+			.request_timeout(timeout)
 			.build(addr)
 			.map_err(|e| format!("Couldn't create HTTP client: {}", e))?;
 
@@ -61,7 +58,7 @@ pub async fn client_for_url(
 		Ok(http_client)
 	} else if addr.starts_with("ws") || addr.starts_with("wss") {
 		let client = WsClientBuilder::default()
-			.request_timeout(timeout.unwrap_or(Duration::from_secs(60)))
+			.request_timeout(timeout)
 			.build(addr.to_owned())
 			.await
 			.map_err(|e| format!("Couldn't create WebSockets client: {}", e))?;

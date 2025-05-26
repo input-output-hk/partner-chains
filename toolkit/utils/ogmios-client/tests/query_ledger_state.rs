@@ -11,6 +11,7 @@ use ogmios_client::{
 };
 use serde_json::json;
 use sidechain_domain::UtxoId;
+use std::time::Duration;
 
 mod server;
 
@@ -90,7 +91,9 @@ async fn era_summaries() {
 	})
 	.await
 	.unwrap();
-	let client = client_for_url(&format!("ws://{address}"), None).await.unwrap();
+	let client = client_for_url(&format!("ws://{address}"), Duration::from_secs(5))
+		.await
+		.unwrap();
 	let era_summaries = client.era_summaries().await.unwrap();
 	assert_eq!(era_summaries.len(), 3);
 	assert_eq!(
@@ -167,7 +170,9 @@ async fn protocol_parameters() {
 	})
 	.await
 	.unwrap();
-	let client = client_for_url(&format!("ws://{address}"), None).await.unwrap();
+	let client = client_for_url(&format!("ws://{address}"), Duration::from_secs(5))
+		.await
+		.unwrap();
 	let parameters = client.query_protocol_parameters().await.unwrap();
 
 	assert_eq!(
@@ -232,7 +237,9 @@ async fn query_utxos() {
 	})
 	.await
 	.unwrap();
-	let client = client_for_url(&format!("ws://{address}"), None).await.unwrap();
+	let client = client_for_url(&format!("ws://{address}"), Duration::from_secs(5))
+		.await
+		.unwrap();
 	let utxos = client
 		.query_utxos(&[
 			"addr_test1vqezxrh24ts0775hulcg3ejcwj7hns8792vnn8met6z9gwsxt87zy".into(),
@@ -292,7 +299,9 @@ async fn query_utxos_by_tx_hash() {
 	})
 	.await
 	.unwrap();
-	let client = client_for_url(&format!("ws://{address}"), None).await.unwrap();
+	let client = client_for_url(&format!("ws://{address}"), Duration::from_secs(5))
+		.await
+		.unwrap();
 	let utxo = client
 		.query_utxo_by_id(UtxoId::new(
 			hex!("106b0d7d1544c97941777041699412fb7c8b94855210987327199620c0599580"),

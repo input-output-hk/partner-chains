@@ -49,7 +49,11 @@ pub trait IOContext {
 	fn delete_file(&self, path: &str) -> anyhow::Result<()>;
 	fn set_env_var(&self, key: &str, value: &str);
 	fn current_timestamp(&self) -> Timestamp;
-	fn ogmios_rpc(&self, addr: &str, req: OgmiosRequest) -> anyhow::Result<OgmiosResponse>;
+	fn ogmios_rpc(
+		&self,
+		config: &ServiceConfig,
+		req: OgmiosRequest,
+	) -> anyhow::Result<OgmiosResponse>;
 	fn offchain_impl(&self, ogmios_config: &ServiceConfig) -> anyhow::Result<Self::Offchain>;
 }
 
@@ -191,15 +195,22 @@ impl IOContext for DefaultCmdRunContext {
 		Timestamp::from_unix_millis(duration.as_millis() as u64)
 	}
 
-	fn ogmios_rpc(&self, addr: &str, req: OgmiosRequest) -> anyhow::Result<OgmiosResponse> {
-		ogmios_request(addr, req)
+	fn ogmios_rpc(
+		&self,
+		config: &ServiceConfig,
+		req: OgmiosRequest,
+	) -> anyhow::Result<OgmiosResponse> {
+		ogmios_request(config, req)
 	}
 
 	fn offchain_impl(&self, ogmios_config: &ServiceConfig) -> anyhow::Result<Self::Offchain> {
-		let ogmios_address = ogmios_config.to_string();
+		let ogmios_address = ogmios_config.url();
 		let tokio_runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
 		tokio_runtime
-			.block_on(client_for_url(&ogmios_address, Some(Duration::from_secs(180))))
+			.block_on(client_for_url(
+				&ogmios_address,
+				Duration::from_secs(ogmios_config.timeout_seconds),
+			))
 			.map_err(|_| {
 				anyhow!(format!("Couldn't open connection to Ogmios at {}", ogmios_address))
 			})

@@ -195,11 +195,12 @@ pub struct ServiceConfig {
 	pub protocol: NetworkProtocol,
 	pub hostname: String,
 	pub port: u16,
+	pub timeout_seconds: u64,
 }
 
-impl Display for ServiceConfig {
-	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		f.write_str(&format!("{}://{}:{}", self.protocol, self.hostname, self.port))
+impl ServiceConfig {
+	pub(crate) fn url(&self) -> String {
+		format!("{}://{}:{}", self.protocol, self.hostname, self.port)
 	}
 }
 
@@ -513,6 +514,14 @@ pub mod config_fields {
 		path: &["ogmios", "port"],
 		name: "Ogmios port",
 		default: Some("1337"),
+		_marker: PhantomData,
+	};
+
+	pub const OGMIOS_REQUEST_TIMEOUT: ConfigFieldDefinition<'static, u64> = ConfigFieldDefinition {
+		config_file: RESOURCES_CONFIG_FILE_PATH,
+		path: &["ogmios", "request_timeout"],
+		name: "Ogmios request timeout [seconds]",
+		default: Some("180"),
 		_marker: PhantomData,
 	};
 

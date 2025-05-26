@@ -97,7 +97,7 @@ impl CommonArguments {
 	pub async fn get_ogmios_client(&self) -> crate::CmdResult<OgmiosClients> {
 		Ok(client_for_url(
 			&self.ogmios_url,
-			Some(Duration::from_secs(self.ogmios_requests_timeout_seconds)),
+			Duration::from_secs(self.ogmios_requests_timeout_seconds),
 		)
 		.await
 		.map_err(|e| format!("Failed to connect to Ogmios at {} with: {}", &self.ogmios_url, e))?)
