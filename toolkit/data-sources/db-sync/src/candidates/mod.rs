@@ -8,7 +8,7 @@ use crate::observed_async_trait;
 use authority_selection_inherents::authority_selection_inputs::*;
 use itertools::Itertools;
 use log::error;
-use partner_chains_plutus_data::candidate_keys::{AURA_TYPE_ID, GRANDPA_TYPE_ID, find_or_empty};
+use partner_chains_plutus_data::candidate_keys::{AURA_TYPE_ID, BEEFY_TYPE_ID, GRANDPA_TYPE_ID, find_or_empty};
 use partner_chains_plutus_data::{
 	d_param::DParamDatum, permissioned_candidates::PermissionedCandidateDatums,
 	registered_candidates::RegisterValidatorDatum,
@@ -41,6 +41,7 @@ struct RegisteredCandidate {
 	sidechain_pub_key: SidechainPublicKey,
 	cross_chain_pub_key: CrossChainPublicKey,
 	aura_pub_key: AuraPublicKey,
+	beefy_pub_key: BeefyPublicKey,
 	grandpa_pub_key: GrandpaPublicKey,
 	utxo_info: UtxoInfo,
 }
@@ -177,6 +178,7 @@ impl CandidatesDataSourceImpl {
 			sidechain_pub_key: c.sidechain_pub_key,
 			cross_chain_pub_key: c.cross_chain_pub_key,
 			aura_pub_key: c.aura_pub_key,
+			beefy_pub_key: c.beefy_pub_key,
 			grandpa_pub_key: c.grandpa_pub_key,
 			utxo_info: c.utxo_info,
 			tx_inputs: c.tx_inputs,
@@ -224,6 +226,7 @@ impl CandidatesDataSourceImpl {
 						registration_utxo,
 						own_pkh: _own_pkh,
 						aura_pub_key,
+						beefy_pub_key,
 						grandpa_pub_key,
 					} => Ok(RegisteredCandidate {
 						stake_pool_pub_key: stake_ownership.pub_key,
@@ -234,6 +237,7 @@ impl CandidatesDataSourceImpl {
 						sidechain_signature,
 						sidechain_pub_key,
 						aura_pub_key,
+						beefy_pub_key,
 						grandpa_pub_key,
 						registration_utxo,
 						tx_inputs: c.tx_inputs,
@@ -255,6 +259,7 @@ impl CandidatesDataSourceImpl {
 						sidechain_signature,
 						sidechain_pub_key,
 						aura_pub_key: AuraPublicKey(find_or_empty(&keys, AURA_TYPE_ID)),
+						beefy_pub_key: BeefyPublicKey(find_or_empty(&keys, BEEFY_TYPE_ID)),
 						grandpa_pub_key: GrandpaPublicKey(find_or_empty(&keys, GRANDPA_TYPE_ID)),
 						registration_utxo,
 						tx_inputs: c.tx_inputs,

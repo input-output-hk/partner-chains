@@ -92,6 +92,8 @@ pub(crate) fn generate_spo_keys<C: IOContext>(
 	if prompt_can_write("keys file", KEYS_FILE_PATH, context) {
 		let cross_chain_key = generate_or_load_key(config, context, chain_spec_path, &CROSS_CHAIN)?;
 		context.enewline();
+		let beefy_key = generate_or_load_key(config, context, chain_spec_path, &BEEFY)?;
+		context.enewline();
 		let grandpa_key = generate_or_load_key(config, context, chain_spec_path, &GRANDPA)?;
 		context.enewline();
 		let aura_key = generate_or_load_key(config, context, chain_spec_path, &AURA)?;
@@ -100,6 +102,7 @@ pub(crate) fn generate_spo_keys<C: IOContext>(
 		let public_keys_json = serde_json::to_string_pretty(&PermissionedCandidateKeys {
 			sidechain_pub_key: cross_chain_key,
 			aura_pub_key: aura_key,
+			beefy_pub_key: beefy_key,
 			grandpa_pub_key: grandpa_key,
 		})
 		.expect("Failed to serialize public keys");

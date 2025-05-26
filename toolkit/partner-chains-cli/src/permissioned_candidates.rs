@@ -23,6 +23,8 @@ pub struct PermissionedCandidateKeys {
 	pub sidechain_pub_key: String,
 	/// 0x prefixed hex representation of the sr25519 public key
 	pub aura_pub_key: String,
+	/// 0x prefixed hex representation of the ECDSA public key
+	pub beefy_pub_key: String,
 	/// 0x prefixed hex representation of the Ed25519 public key
 	pub grandpa_pub_key: String,
 }
@@ -31,8 +33,8 @@ impl Display for PermissionedCandidateKeys {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
 		write!(
 			f,
-			"Partner Chains Key: {}, AURA: {}, GRANDPA: {}",
-			self.sidechain_pub_key, self.aura_pub_key, self.grandpa_pub_key
+			"Partner Chains Key: {}, AURA: {}, BEEFY: {}, GRANDPA: {}",
+			self.sidechain_pub_key, self.aura_pub_key, self.beefy_pub_key, self.grandpa_pub_key
 		)
 	}
 }
@@ -42,6 +44,7 @@ impl From<&sidechain_domain::PermissionedCandidateData> for PermissionedCandidat
 		Self {
 			sidechain_pub_key: sp_core::bytes::to_hex(&value.sidechain_public_key.0, false),
 			aura_pub_key: sp_core::bytes::to_hex(&value.aura_public_key.0, false),
+			beefy_pub_key: sp_core::bytes::to_hex(&value.beefy_public_key.0, false),
 			grandpa_pub_key: sp_core::bytes::to_hex(&value.grandpa_public_key.0, false),
 		}
 	}
@@ -54,11 +57,23 @@ pub struct ParsedPermissionedCandidatesKeys {
 	pub sidechain: ecdsa::Public,
 	/// AURA key of the permissioned candidate
 	pub aura: sr25519::Public,
+	/// BEEFY key of the permissioned candidate
+	pub beefy: ecdsa::Public,
 	/// Grandpa key of the permissioned candidate
 	pub grandpa: ed25519::Public,
 }
 
 impl ParsedPermissionedCandidatesKeys {
+	pub fn session_keys<SessionKeys: From<(sr25519::Public, ecdsa::Public, ed25519::Public)>>(
+		&self,
+	) -> SessionKeys {
+		SessionKeys::from((
+			sr25519::Public::from(self.aura),
+			ecdsa::Public::from(self.beefy),
+			ed25519::Public::from(self.grandpa),
+		))
+	}
+
 	/// Permissioned Candidate partner-chain (sidechain) key mapped to AccountId32
 	pub fn account_id_32(&self) -> AccountId32 {
 		sp_runtime::MultiSigner::from(self.sidechain).into_account()
@@ -76,11 +91,15 @@ impl TryFrom<&PermissionedCandidateKeys> for ParsedPermissionedCandidatesKeys {
 			"{} is invalid sr25519 public key",
 			value.aura_pub_key
 		)))?;
+		let beefy = parse_ecdsa(&value.beefy_pub_key).ok_or(anyhow::Error::msg(format!(
+			"{} is invalid ecdsa public key",
+			value.aura_pub_key
+		)))?;
 		let grandpa = parse_ed25519(&value.grandpa_pub_key).ok_or(anyhow::Error::msg(format!(
 			"{} is invalid Ed25519 public key",
 			value.grandpa_pub_key
 		)))?;
-		Ok(Self { sidechain, aura, grandpa })
+		Ok(Self { sidechain, aura, beefy, grandpa })
 	}
 }
 
@@ -89,6 +108,7 @@ impl From<&ParsedPermissionedCandidatesKeys> for sidechain_domain::PermissionedC
 		Self {
 			sidechain_public_key: sidechain_domain::SidechainPublicKey(value.sidechain.0.to_vec()),
 			aura_public_key: sidechain_domain::AuraPublicKey(value.aura.0.to_vec()),
+			beefy_public_key: sidechain_domain::BeefyPublicKey(value.beefy.0.to_vec()),
 			grandpa_public_key: sidechain_domain::GrandpaPublicKey(value.grandpa.0.to_vec()),
 		}
 	}

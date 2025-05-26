@@ -25,10 +25,10 @@ pub struct PermissionedCandidateDatumV0 {
 	pub sidechain_public_key: SidechainPublicKey,
 	/// Aura public key of the trustless candidate
 	pub aura_public_key: AuraPublicKey,
-	/// GRANDPA public key of the trustless candidate
-	pub grandpa_public_key: GrandpaPublicKey,
 	/// BEEFY public key of the trustless candidate
 	pub beefy_public_key: BeefyPublicKey,
+	/// GRANDPA public key of the trustless candidate
+	pub grandpa_public_key: GrandpaPublicKey,
 }
 
 impl From<PermissionedCandidateDatumV1> for PermissionedCandidateData {
@@ -66,6 +66,7 @@ impl From<PermissionedCandidateDatumV0> for PermissionedCandidateData {
 		Self {
 			sidechain_public_key: value.sidechain_public_key,
 			aura_public_key: value.aura_public_key,
+			beefy_public_key: value.beefy_public_key,
 			grandpa_public_key: value.grandpa_public_key,
 			beefy_public_key: value.beefy_public_key,
 		}
@@ -90,11 +91,13 @@ impl From<PermissionedCandidateDatums> for Vec<PermissionedCandidateData> {
 ///     [
 ///       [ candidates[0].sidechain_public_key
 ///       , candidates[0].aura_public_key
+///       , candidates[0].beefy_public_key
 ///       , candidates[0].grandpa_public_key
 ///       ]
 ///     ,
 ///       [ candidates[1].sidechain_public_key
 ///       , candidates[1].aura_public_key
+///       , candidates[1].beefy_public_key
 ///       , candidates[1].grandpa_public_key
 ///       ]
 ///       // etc.
@@ -108,6 +111,7 @@ pub fn permissioned_candidates_to_plutus_data(
 		let mut candidate_datum = PlutusList::new();
 		candidate_datum.add(&PlutusData::new_bytes(candidate.sidechain_public_key.0.clone()));
 		candidate_datum.add(&PlutusData::new_bytes(candidate.aura_public_key.0.clone()));
+		candidate_datum.add(&PlutusData::new_bytes(candidate.beefy_public_key.0.clone()));
 		candidate_datum.add(&PlutusData::new_bytes(candidate.grandpa_public_key.0.clone()));
 		list.add(&PlutusData::new_list(&candidate_datum));
 	}
@@ -175,14 +179,14 @@ fn decode_legacy_candidate_datum(datum: &PlutusData) -> Option<PermissionedCandi
 
 	let sc = datums.get(0).as_bytes()?;
 	let aura = datums.get(1).as_bytes()?;
-	let grandpa = datums.get(2).as_bytes()?;
-	let beefy = datums.get(3).as_bytes()?;
+	let beefy = datums.get(2).as_bytes()?;
+	let grandpa = datums.get(3).as_bytes()?;
 
 	Some(PermissionedCandidateDatumV0 {
 		sidechain_public_key: SidechainPublicKey(sc),
 		aura_public_key: AuraPublicKey(aura),
-		grandpa_public_key: GrandpaPublicKey(grandpa),
 		beefy_public_key: BeefyPublicKey(beefy),
+		grandpa_public_key: GrandpaPublicKey(grandpa),
 	})
 }
 
