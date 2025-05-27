@@ -169,7 +169,7 @@ pub enum PartnerChainsSubcommand<
 	RuntimeBindings: PartnerChainRuntime + PartnerChainRuntimeBindings,
 	PartnerchainAddress: Clone + Sync + Send + FromStr + 'static,
 > {
-	/// Returns sidechain parameters including genesis UTXO and configuration
+	/// Returns partner chain genesis UTXO
 	SidechainParams(SidechainParamsCmd),
 
 	/// Returns registration status for a given mainchain public key and epoch number.
