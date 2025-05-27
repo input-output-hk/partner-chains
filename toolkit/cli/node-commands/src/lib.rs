@@ -333,30 +333,7 @@ where
 	}
 }
 
-/// Configures logging for Partner Chains commands with specialized routing.
-///
-/// This function sets up logging configuration that:
-/// - Routes general logs to stderr to keep stdout clean for JSON outputs
-/// - Creates a dedicated log file for Ogmios client interactions
-/// - Configures appropriate log levels for different components
-///
-/// This separation is crucial for smart contract commands that output JSON
-/// to stdout, ensuring that log messages don't interfere with the structured output.
-///
-/// # Log Configuration
-///
-/// - **stderr**: General application logs at INFO level
-/// - **ogmios_client.log**: Ogmios client interactions at DEBUG level
-///
-/// # Errors
-///
-/// Returns an error if the logging configuration cannot be initialized.
-///
-/// # Example
-///
-/// ```rust,no_run
-/// setup_log4rs().expect("Failed to setup logging");
-/// ```
+/// Configures logging to route general logs to stderr and Ogmios logs to a file.
 fn setup_log4rs() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 	let stderr = log4rs::append::console::ConsoleAppender::builder()
 		.target(log4rs::append::console::Target::Stderr)
