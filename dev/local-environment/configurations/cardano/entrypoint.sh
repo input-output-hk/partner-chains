@@ -600,13 +600,19 @@ for i in {1..300}; do
         #                            TxHash                                 TxIx        Amount
         # ----------------------------------------------------------------------------------------
         # d8d93399a255e0d69781a25a6e0a0f46548c43357c15d0aa9e0a89c219495659     0        10000000 lovelace + ...
-        node_utxo_final=$(cardano-cli latest query utxo --testnet-magic 42 --address "$node_unique_address" --out-file /dev/stdout 2>/dev/null | /busybox awk 'NR==3 {print $1 "#" $2}')
+        node_utxo_final=$(cardano-cli latest query utxo --testnet-magic 42 --address "$node_unique_address" --out-file /dev/stdout 2>/dev/null | /busybox awk 'NR>2 {print $1 "#" $2; exit}')
         
         if [ -n "$node_utxo_final" ]; then
-            echo "$node_utxo_final" > "/shared/registered-${i}.utxo"
-            echo "[LOG] Successfully updated /shared/registered-${i}.utxo with: $node_utxo_final"
-            final_utxo_found=true
-            break
+            # Basic validation that it looks like a TxHash#TxIx
+            if [[ "$node_utxo_final" =~ ^[a-f0-9]{64}#[0-9]+$ ]]; then
+                echo "$node_utxo_final" > "/shared/registered-${i}.utxo"
+                echo "[LOG] Successfully updated /shared/registered-${i}.utxo with: $node_utxo_final"
+                final_utxo_found=true
+                break
+            else
+                echo "[WARN] Attempt $attempt: For registered-$i at $node_unique_address, query output [$node_utxo_final] does not look like TxHash#TxIx. Retrying..."
+                node_utxo_final="" # Clear it so the -n check fails if next attempt also bad
+            fi
         else
             echo "[WARN] Attempt $attempt: No UTXO found yet for registered-$i at $node_unique_address. Sleeping 5s..."
             sleep 5
