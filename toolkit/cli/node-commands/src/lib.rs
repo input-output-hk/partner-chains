@@ -57,9 +57,6 @@ use std::sync::Arc;
 
 /// Command for retrieving Ariadne protocol parameters effective at a specific mainchain epoch.
 ///
-/// These parameters become effective two epochs after the block containing their change
-/// is included in the mainchain.
-///
 /// # Example
 ///
 /// ```bash
@@ -184,7 +181,6 @@ pub enum PartnerChainsSubcommand<
 	RegistrationStatus(RegistrationStatusCmd),
 
 	/// Returns ariadne parameters effective at given mainchain epoch number.
-	/// Parameters are effective two epochs after the block their change is included in.
 	AriadneParameters(AriadneParametersCmd),
 
 	/// Generates registration signatures for partner chains committee candidates
