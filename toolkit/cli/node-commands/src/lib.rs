@@ -57,6 +57,8 @@ use std::sync::Arc;
 
 /// Command for retrieving Ariadne protocol parameters effective at a specific mainchain epoch.
 ///
+/// Ariadne controls committee selection for Partner Chain consensus.
+///
 /// # Example
 ///
 /// ```bash
