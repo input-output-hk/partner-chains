@@ -579,6 +579,39 @@ for batch_num in $(seq 1 $num_batches); do
 done
 echo "[LOG] Batch funding for registered nodes complete."
 
+echo "[LOG] Finalizing UTXO files for registered nodes after all batch funding..."
+for i in {1..300}; do
+    node_unique_address="${registered_node_payment_addresses[$((i-1))]}"
+    # It's critical that the UTXO exists now. Add some retries just in case of chain lag.
+    final_utxo_found=false
+    for attempt in {1..5}; do # Try up to 5 times
+        echo "[LOG] Querying final UTXO for registered-$i at $node_unique_address (Attempt $attempt)..."
+        # Query all UTXOs at the address, take the first one (usually only one after funding)
+        # Output format of cardano-cli query utxo:
+        #                            TxHash                                 TxIx        Amount
+        # ----------------------------------------------------------------------------------------
+        # d8d93399a255e0d69781a25a6e0a0f46548c43357c15d0aa9e0a89c219495659     0        10000000 lovelace + ...
+        node_utxo_final=$(cardano-cli latest query utxo --testnet-magic 42 --address "$node_unique_address" --out-file /dev/stdout 2>/dev/null | /busybox awk 'NR==3 {print $1 "#" $2}')
+        
+        if [ -n "$node_utxo_final" ]; then
+            echo "$node_utxo_final" > "/shared/registered-${i}.utxo"
+            echo "[LOG] Successfully updated /shared/registered-${i}.utxo with: $node_utxo_final"
+            final_utxo_found=true
+            break
+        else
+            echo "[WARN] Attempt $attempt: No UTXO found yet for registered-$i at $node_unique_address. Sleeping 5s..."
+            sleep 5
+        fi
+    done
+
+    if [ "$final_utxo_found" = false ]; then
+        echo "[ERROR] CRITICAL: Failed to find UTXO for registered-$i at $node_unique_address after multiple attempts. /shared/registered-${i}.utxo will be empty. This will likely cause registration to fail for this node."
+        # Ensure the file is empty if no UTXO found, to prevent stale data issues
+        echo "" > "/shared/registered-${i}.utxo"
+    fi
+done
+echo "[LOG] Finished finalizing UTXO files for all registered nodes."
+
 echo "[LOG] Generating Mainchain Cold Keys for Registered Nodes..."
 for i in {1..300}; do
     NODE_KEYS_DIR="/shared/node-keys/registered-${i}/keys"
