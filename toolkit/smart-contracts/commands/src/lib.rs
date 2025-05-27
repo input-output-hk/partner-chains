@@ -79,6 +79,9 @@ pub struct CommonArguments {
 	#[arg(default_value = "ws://localhost:1337", long, short = 'O', env)]
 	/// URL of the Ogmios server
 	ogmios_url: String,
+	#[arg(default_value = "180", long, env)]
+	/// Timeout in seconds for Ogmios requests.
+	ogmios_requests_timeout_seconds: u64,
 	#[arg(default_value = "5", long)]
 	/// Delay between retries in seconds. System will wait this long between
 	/// queries checking if transaction is included in the blockchain.
@@ -92,9 +95,12 @@ pub struct CommonArguments {
 impl CommonArguments {
 	/// Connects to the Ogmios server and returns a client
 	pub async fn get_ogmios_client(&self) -> crate::CmdResult<OgmiosClients> {
-		Ok(client_for_url(&self.ogmios_url).await.map_err(|e| {
-			format!("Failed to connect to Ogmios at {} with: {}", &self.ogmios_url, e)
-		})?)
+		Ok(client_for_url(
+			&self.ogmios_url,
+			Duration::from_secs(self.ogmios_requests_timeout_seconds),
+		)
+		.await
+		.map_err(|e| format!("Failed to connect to Ogmios at {} with: {}", &self.ogmios_url, e))?)
 	}
 
 	/// Builds a `FixedDelayRetries` instance for retrying failed operations

@@ -1,6 +1,8 @@
 use crate::config::ServiceConfig;
 use crate::ogmios::{OgmiosRequest, OgmiosResponse, ogmios_request};
 use anyhow::{Context, anyhow};
+use inquire::InquireError;
+use inquire::error::InquireResult;
 use ogmios_client::jsonrpsee::{OgmiosClients, client_for_url};
 use partner_chains_cardano_offchain::d_param::{GetDParam, UpsertDParam};
 use partner_chains_cardano_offchain::init_governance::InitGovernance;
@@ -10,11 +12,12 @@ use partner_chains_cardano_offchain::permissioned_candidates::{
 use partner_chains_cardano_offchain::register::{Deregister, Register};
 use partner_chains_cardano_offchain::scripts_data::GetScriptsData;
 use sp_core::offchain::Timestamp;
-use std::path::PathBuf;
 use std::{
 	fs,
 	io::{BufRead, BufReader, Read},
+	path::PathBuf,
 	process::Stdio,
+	time::Duration,
 };
 use tempfile::{TempDir, TempPath};
 
@@ -48,7 +51,11 @@ pub trait IOContext {
 	fn delete_file(&self, path: &str) -> anyhow::Result<()>;
 	fn set_env_var(&self, key: &str, value: &str);
 	fn current_timestamp(&self) -> Timestamp;
-	fn ogmios_rpc(&self, addr: &str, req: OgmiosRequest) -> anyhow::Result<OgmiosResponse>;
+	fn ogmios_rpc(
+		&self,
+		config: &ServiceConfig,
+		req: OgmiosRequest,
+	) -> anyhow::Result<OgmiosResponse>;
 	fn offchain_impl(&self, ogmios_config: &ServiceConfig) -> anyhow::Result<Self::Offchain>;
 }
 
@@ -123,15 +130,15 @@ impl IOContext for DefaultCmdRunContext {
 			prompt = prompt.with_default(default)
 		};
 
-		prompt.prompt().unwrap()
+		handle_inquire_result(prompt.prompt())
 	}
 
 	fn prompt_yes_no(&self, prompt: &str, default: bool) -> bool {
-		inquire::Confirm::new(prompt).with_default(default).prompt().unwrap()
+		handle_inquire_result(inquire::Confirm::new(prompt).with_default(default).prompt())
 	}
 
 	fn prompt_multi_option(&self, msg: &str, options: Vec<String>) -> String {
-		inquire::Select::new(msg, options).prompt().unwrap().to_string()
+		handle_inquire_result(inquire::Select::new(msg, options).prompt()).to_string()
 	}
 
 	fn write_file(&self, path: &str, content: &str) {
@@ -190,20 +197,41 @@ impl IOContext for DefaultCmdRunContext {
 		Timestamp::from_unix_millis(duration.as_millis() as u64)
 	}
 
-	fn ogmios_rpc(&self, addr: &str, req: OgmiosRequest) -> anyhow::Result<OgmiosResponse> {
-		ogmios_request(addr, req)
+	fn ogmios_rpc(
+		&self,
+		config: &ServiceConfig,
+		req: OgmiosRequest,
+	) -> anyhow::Result<OgmiosResponse> {
+		ogmios_request(config, req)
 	}
 
 	fn offchain_impl(&self, ogmios_config: &ServiceConfig) -> anyhow::Result<Self::Offchain> {
-		let ogmios_address = ogmios_config.to_string();
+		let ogmios_address = ogmios_config.url();
 		let tokio_runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
-		tokio_runtime.block_on(client_for_url(&ogmios_address)).map_err(|_| {
-			anyhow!(format!("Couldn't open connection to Ogmios at {}", ogmios_address))
-		})
+		tokio_runtime
+			.block_on(client_for_url(
+				&ogmios_address,
+				Duration::from_secs(ogmios_config.timeout_seconds),
+			))
+			.map_err(|_| {
+				anyhow!(format!("Couldn't open connection to Ogmios at {}", ogmios_address))
+			})
 	}
 }
 
 pub fn prompt_can_write<C: IOContext>(name: &str, path: &str, context: &C) -> bool {
 	!context.file_exists(path)
 		|| context.prompt_yes_no(&format!("{name} {path} exists - overwrite it?"), false)
+}
+
+fn handle_inquire_result<T>(result: InquireResult<T>) -> T {
+	match result {
+		Ok(result) => result,
+		Err(InquireError::OperationInterrupted) => {
+			eprintln!("Ctrl-C pressed. Exiting Wizard.");
+			std::process::exit(0)
+		},
+		Err(InquireError::OperationCanceled) => std::process::exit(0),
+		result => result.unwrap(),
+	}
 }

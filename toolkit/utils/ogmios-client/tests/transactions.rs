@@ -11,6 +11,7 @@ use ogmios_client::{
 	types::OgmiosTx,
 };
 use serde_json::json;
+use std::time::Duration;
 
 mod server;
 
@@ -36,7 +37,9 @@ async fn evaluate_transaction() {
 	})
 	.await
 	.unwrap();
-	let client = client_for_url(&format!("ws://{address}")).await.unwrap();
+	let client = client_for_url(&format!("ws://{address}"), Duration::from_secs(5))
+		.await
+		.unwrap();
 	let response = client.evaluate_transaction(&hex!("aabbccdd")).await.unwrap();
 	assert_eq!(
 		response[0],
@@ -60,7 +63,9 @@ async fn submit_transaction() {
 	})
 	.await
 	.unwrap();
-	let client = client_for_url(&format!("ws://{address}")).await.unwrap();
+	let client = client_for_url(&format!("ws://{address}"), Duration::from_secs(5))
+		.await
+		.unwrap();
 	let response = client.submit_transaction(&hex!("aabbccdd")).await.unwrap();
 	assert_eq!(
 		response,
