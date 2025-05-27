@@ -576,6 +576,15 @@ for batch_num in $(seq 1 $num_batches); do
         current_funding_utxo="" # Ensure it's empty so next iteration also tries to re-query robustly or fails
         break # Exit the batch loop as we can't proceed
     fi
+
+    # echo "[LOG] Funding registered node batch $batch_num, transaction $i..." # This line and the one below seemed to be from the misplaced loop
+    # echo "[LOG] Using UTXO $current_funding_utxo for batch $batch_num, transaction $i"
+
+    # The incorrect loop that created UTXO files with --mainnet was here and has been removed.
+    # It was approximately between lines 578 and 594 in the full script.
+    # The .utxo files will be correctly populated by the final loop starting around line 606
+    # after all batches are complete.
+
 done
 echo "[LOG] Batch funding for registered nodes complete."
 
