@@ -82,8 +82,8 @@ impl CliConfiguration for AriadneParametersCmd {
 
 /// Command for retrieving sidechain parameters.
 ///
-/// This command returns sidechain configuration including genesis UTXO
-/// and other parameters required for sidechain operation.
+/// This command returns the sidechain's genesis UTXO, which is the
+/// foundational UTXO that identifies the Partner Chain.
 ///
 /// # Example
 ///
