@@ -258,8 +258,8 @@ else
         echo "[DEBUG] Main Tx: ERROR calculating dynamic fee (Raw output: '$calculated_main_fee'). Using fallback static fee 300000."
         main_tx_fee=300000
     else
-        main_tx_fee=$calculated_main_fee
-        echo "[LOG] Main Tx: Calculated Min Fee: $main_tx_fee"
+        main_tx_fee=$((calculated_main_fee + 1000)) # Add a 1000 lovelace buffer
+        echo "[LOG] Main Tx: Calculated Min Fee: $calculated_main_fee, Using Fee with Buffer: $main_tx_fee"
     fi
     rm -f "$dummy_main_tx_file"
 fi
@@ -503,8 +503,8 @@ for batch_num in $(seq 1 $num_batches); do
         echo "[DEBUG] Batch $batch_num: ERROR calculating dynamic fee (Raw output: '$calculated_fee'). Using fallback static fee 250000."
         batch_fee=250000 
     else
-        batch_fee=$calculated_fee
-        echo "[DEBUG] Batch $batch_num: Calculated Min Fee: $batch_fee"
+        batch_fee=$((calculated_fee + 1000)) # Add a 1000 lovelace buffer
+        echo "[DEBUG] Batch $batch_num: Calculated Min Fee: $calculated_fee, Using Fee with Buffer: $batch_fee"
     fi
     rm -f "$dummy_tx_file" # Clean up dummy transaction file
 
