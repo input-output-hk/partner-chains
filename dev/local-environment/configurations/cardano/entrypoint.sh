@@ -503,7 +503,7 @@ for batch_num in $(seq 1 $num_batches); do
         echo "[DEBUG] Batch $batch_num: ERROR calculating dynamic fee (Raw output: '$calculated_fee'). Using fallback static fee 250000."
         batch_fee=250000 
     else
-        batch_fee=$((calculated_fee + 1000)) # Add a 1000 lovelace buffer
+        batch_fee=$((calculated_fee + 30000)) # Add a 30000 lovelace buffer
         echo "[DEBUG] Batch $batch_num: Calculated Min Fee: $calculated_fee, Using Fee with Buffer: $batch_fee"
     fi
     rm -f "$dummy_tx_file" # Clean up dummy transaction file
