@@ -30,9 +30,7 @@ pub mod pallet {
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 	use log::{info, warn};
-	use sidechain_domain::byte_string::SizedByteString;
 	use sidechain_domain::{MainchainAddress, PolicyId};
-	use sp_core::blake2_256;
 	use sp_runtime::traits::{MaybeSerializeDeserialize, One, Zero};
 	use sp_session_validator_management::*;
 	use sp_std::fmt::Display;
@@ -214,12 +212,12 @@ pub mod pallet {
 				None
 			} else {
 				let for_epoch_number = CurrentCommittee::<T>::get().epoch + One::one();
-				let (authority_selection_inputs, selection_inputs_hash) =
+				let authority_selection_inputs =
 					Self::inherent_data_to_authority_selection_inputs(data);
 				if let Some(validators) =
 					T::select_authorities(authority_selection_inputs, for_epoch_number)
 				{
-					Some(Call::set { validators, for_epoch_number, selection_inputs_hash })
+					Some(Call::set { validators, for_epoch_number })
 				} else {
 					let current_committee = CurrentCommittee::<T>::get();
 					let current_committee_epoch = current_committee.epoch;
@@ -227,22 +225,19 @@ pub mod pallet {
 						"Committee for epoch {for_epoch_number} is the same as for epoch {current_committee_epoch}"
 					);
 					let validators = current_committee.committee;
-					Some(Call::set { validators, for_epoch_number, selection_inputs_hash })
+					Some(Call::set { validators, for_epoch_number })
 				}
 			}
 		}
 
 		// TODO make this call run by every full node, so it can be relied upon for ensuring that the block is correct
 		fn check_inherent(call: &Self::Call, data: &InherentData) -> Result<(), Self::Error> {
-			let (validators_param, for_epoch_number_param, call_selection_inputs_hash) = match call
-			{
-				Call::set { validators, for_epoch_number, selection_inputs_hash } => {
-					(validators, for_epoch_number, selection_inputs_hash)
-				},
+			let (validators_param, for_epoch_number_param) = match call {
+				Call::set { validators, for_epoch_number } => (validators, for_epoch_number),
 				_ => return Ok(()),
 			};
 
-			let (authority_selection_inputs, computed_selection_inputs_hash) =
+			let authority_selection_inputs =
 				Self::inherent_data_to_authority_selection_inputs(data);
 			let validators =
 				T::select_authorities(authority_selection_inputs, *for_epoch_number_param)
@@ -256,16 +251,7 @@ pub mod pallet {
 					});
 
 			if *validators_param != validators {
-				if *call_selection_inputs_hash == computed_selection_inputs_hash {
-					return Err(InherentError::InvalidValidatorsMatchingHash(
-						computed_selection_inputs_hash,
-					));
-				} else {
-					return Err(InherentError::InvalidValidatorsHashMismatch(
-						computed_selection_inputs_hash,
-						call_selection_inputs_hash.clone(),
-					));
-				}
+				return Err(InherentError::InvalidValidators);
 			}
 
 			Ok(())
@@ -300,17 +286,13 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			validators: BoundedVec<T::CommitteeMember, T::MaxValidators>,
 			for_epoch_number: T::ScEpochNumber,
-			selection_inputs_hash: SizedByteString<32>,
 		) -> DispatchResult {
 			ensure_none(origin)?;
 			let expected_epoch_number = CurrentCommittee::<T>::get().epoch + One::one();
 			ensure!(for_epoch_number == expected_epoch_number, Error::<T>::InvalidEpoch);
 			ensure!(!NextCommittee::<T>::exists(), Error::<T>::NextCommitteeAlreadySet);
 			let len = validators.len();
-			info!(
-				"💼 Storing committee of size {len} for epoch {for_epoch_number}, input data hash: {}",
-				selection_inputs_hash.to_hex_string()
-			);
+			info!("💼 Storing committee of size {len} for epoch {for_epoch_number}",);
 			NextCommittee::<T>::put(CommitteeInfo {
 				epoch: for_epoch_number,
 				committee: validators,
@@ -385,14 +367,10 @@ pub mod pallet {
 
 		fn inherent_data_to_authority_selection_inputs(
 			data: &InherentData,
-		) -> (T::AuthoritySelectionInputs, SizedByteString<32>) {
-			let decoded_data = data
-				.get_data::<T::AuthoritySelectionInputs>(&INHERENT_IDENTIFIER)
+		) -> T::AuthoritySelectionInputs {
+			data.get_data::<T::AuthoritySelectionInputs>(&INHERENT_IDENTIFIER)
 				.expect("Validator inherent data not correctly encoded")
-				.expect("Validator inherent data must be provided");
-			let data_hash = SizedByteString(blake2_256(&decoded_data.encode()));
-
-			(decoded_data, data_hash)
+				.expect("Validator inherent data must be provided")
 		}
 
 		/// Calculates committee using configured `select_authorities` function

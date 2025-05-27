@@ -6,8 +6,7 @@ use frame_support::{
 	traits::{ConstU64, UnfilteredDispatchable},
 };
 use frame_system::EnsureRoot;
-use sidechain_domain::byte_string::SizedByteString;
-use sp_core::{H256, blake2_256};
+use sp_core::H256;
 use sp_runtime::{
 	BuildStorage,
 	traits::{BlakeTwo256, IdentityLookup},
@@ -177,16 +176,14 @@ pub fn set_validators_directly(
 ) -> DispatchResult {
 	let expected_validators: Vec<_> =
 		expected_validators.iter().map(MockValidator::ids_and_keys).collect();
-	let data_hash = SizedByteString(blake2_256(&expected_validators.encode()));
 	SessionCommitteeManagement::set(
 		RuntimeOrigin::none(),
 		BoundedVec::truncate_from(expected_validators),
 		for_epoch,
-		data_hash,
 	)
 }
 
-pub fn create_inherent_data(validators: &[MockValidator]) -> (InherentData, SizedByteString<32>) {
+pub fn create_inherent_data(validators: &[MockValidator]) -> InherentData {
 	let mut inherent_data = InherentData::new();
 	let data: BoundedVec<_, ConstU32<32>> =
 		BoundedVec::truncate_from(validators.iter().map(MockValidator::ids_and_keys).collect());
@@ -194,15 +191,14 @@ pub fn create_inherent_data(validators: &[MockValidator]) -> (InherentData, Size
 		.put_data(SessionCommitteeManagement::INHERENT_IDENTIFIER, &data)
 		.unwrap();
 
-	let data_hash = SizedByteString(blake2_256(&data.encode()));
-	(inherent_data, data_hash)
+	inherent_data
 }
 
 pub fn create_inherent_set_validators_call(
 	expected_authorities: &[MockValidator],
 ) -> Option<Call<Test>> {
 	let inherent_data = create_inherent_data(expected_authorities);
-	<SessionCommitteeManagement as ProvideInherent>::create_inherent(&inherent_data.0)
+	<SessionCommitteeManagement as ProvideInherent>::create_inherent(&inherent_data)
 }
 
 pub(crate) fn current_epoch_number() -> u64 {

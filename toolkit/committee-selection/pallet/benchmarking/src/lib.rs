@@ -74,7 +74,7 @@ pub mod benchmarks {
 		set_epoch_number::<T>(for_epoch_number.into());
 
 		#[extrinsic_call]
-		_(RawOrigin::None, validators, for_epoch_number, Default::default());
+		_(RawOrigin::None, validators, for_epoch_number);
 	}
 
 	impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);

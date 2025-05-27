@@ -17,10 +17,6 @@ pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"/ariadne";
 #[cfg_attr(feature = "std", derive(Decode, thiserror::Error))]
 /// Error type used for failing calls of the Committee Selection inherent.
 pub enum InherentError {
-	#[deprecated(
-		since = "1.5.0",
-		note = "Use InvalidValidatorsMatchingHash or InvalidValidatorsHashMismatch"
-	)]
 	#[cfg_attr(
 		feature = "std",
 		error("The validators in the block do not match the calculated validators")
@@ -33,12 +29,14 @@ pub enum InherentError {
 	)]
 	/// Candidates inherent required: committee needs to be stored one epoch in advance
 	CommitteeNeedsToBeStoredOneEpochInAdvance,
+	#[deprecated(since = "1.7.0", note = "Use InvalidValidators")]
 	#[cfg_attr(
 		feature = "std",
 		error("The validators in the block do not match the calculated validators. Input data hash ({}) is valid.", .0.to_hex_string())
 	)]
 	/// The validators in the block do not match the calculated validators, but the input data hash is valid.
 	InvalidValidatorsMatchingHash(SizedByteString<32>),
+	#[deprecated(since = "1.7.0", note = "Use InvalidValidators")]
 	#[cfg_attr(
 		feature = "std",
 		error("The validators and input data hash in the block do not match the calculated values. Expected hash: {}, got: {}",
