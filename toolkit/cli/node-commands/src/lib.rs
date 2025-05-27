@@ -335,7 +335,7 @@ where
 
 /// Configures logging for Partner Chains commands with specialized routing.
 ///
-/// This function sets up a sophisticated logging configuration that:
+/// This function sets up logging configuration that:
 /// - Routes general logs to stderr to keep stdout clean for JSON outputs
 /// - Creates a dedicated log file for Ogmios client interactions
 /// - Configures appropriate log levels for different components
