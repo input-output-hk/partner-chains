@@ -88,11 +88,22 @@ for i in {1..10}; do
     mkdir -p /partner-chains-nodes/$node_name/keys
     
     # Generate keys for each node
+    echo "[DEBUG] Generating sidechain keys for $node_name..."
     ./partner-chains-node key generate \
         --scheme ecdsa \
         --output-type json \
         > /partner-chains-nodes/$node_name/keys/sidechain.json
     
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] partner-chains-node key generate (ecdsa) failed for $node_name!"
+        # Optionally exit or handle error
+    fi
+    if [ "$i" -eq 1 ]; then # Debug for the first node only
+        echo "[DEBUG] Content of /partner-chains-nodes/$node_name/keys/sidechain.json:"
+        cat "/partner-chains-nodes/$node_name/keys/sidechain.json"
+        echo "[DEBUG] End of sidechain.json content for $node_name."
+    fi
+
     ./partner-chains-node key generate \
         --scheme sr25519 \
         --output-type json \
