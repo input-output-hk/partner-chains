@@ -19,6 +19,7 @@ use rand_chacha::ChaCha20Rng;
 /// type. It is because D-parameter is desired not mandatory ratio.
 /// If `registered_seats` and `permissioned_seats` are 0, empty committee is returned.
 /// It is same as for original Ariadne.
+/// This function returns same selection regardless of input vectors ordering.
 pub fn select_authorities<SC>(
 	registered_seats: u16,
 	permissioned_seats: u16,
@@ -36,9 +37,9 @@ where
 
 	let mut selected = if !registered_candidates.is_empty() && !permissioned_candidates.is_empty() {
 		let registered_selected =
-			weighted_with_guaranteed_assignment(&registered_candidates, registered_seats, &mut rng);
+			weighted_with_guaranteed_assignment(registered_candidates, registered_seats, &mut rng);
 		let permissioned_selected = weighted_with_guaranteed_assignment(
-			&permissioned_candidates,
+			permissioned_candidates,
 			permissioned_seats,
 			&mut rng,
 		);
@@ -47,10 +48,10 @@ where
 		selected
 	} else if registered_candidates.is_empty() {
 		// in absence of registered candidates try to fill their seats with permissioned
-		weighted_with_guaranteed_assignment(&permissioned_candidates, seats_total, &mut rng)
+		weighted_with_guaranteed_assignment(permissioned_candidates, seats_total, &mut rng)
 	} else {
 		// in absence of permissioned candidate try to fill their seats with registered
-		weighted_with_guaranteed_assignment(&registered_candidates, seats_total, &mut rng)
+		weighted_with_guaranteed_assignment(registered_candidates, seats_total, &mut rng)
 	};
 	selected.shuffle(&mut rng);
 	if selected.is_empty() && seats_total > 0 { None } else { Some(selected) }
@@ -65,13 +66,14 @@ struct SelectGuaranteedResult<T> {
 /// of seats as P+Q, where P is non-negative integer and Q is in [0, 1), it guarantees at least
 /// P places.
 pub fn weighted_with_guaranteed_assignment<T: Clone + Ord>(
-	candidates: &[(T, Weight)],
+	mut candidates: Vec<(T, Weight)>,
 	n: u16,
 	rng: &mut ChaCha20Rng,
 ) -> Vec<T> {
 	if candidates.is_empty() || n == 0 {
 		return Vec::with_capacity(0);
 	}
+	candidates.sort();
 	let SelectGuaranteedResult { mut selected, remaining } = select_guaranteed(candidates, n);
 	let selected_count: u16 = selected.len().try_into().expect("selected count can not exceed u16");
 	selected.extend(select_remaining(remaining, n - selected_count, rng));
@@ -79,15 +81,15 @@ pub fn weighted_with_guaranteed_assignment<T: Clone + Ord>(
 }
 
 fn select_guaranteed<T: Clone + Ord>(
-	weighted_candidates: &[(T, Weight)],
+	weighted_candidates: Vec<(T, Weight)>,
 	n: u16,
 ) -> SelectGuaranteedResult<T> {
 	let threshold: u128 = weighted_candidates.iter().map(|(_, weight)| weight).sum();
 	let scale: u128 = u128::from(n);
 	let scaled_candidates = weighted_candidates
-		.iter()
+		.into_iter()
 		.filter(|(_, weight)| *weight > 0)
-		.map(|(c, weight)| (c.clone(), weight * scale));
+		.map(|(c, weight)| (c, weight * scale));
 	let mut selected = Vec::with_capacity(n.into());
 	let mut remaining = Vec::with_capacity(n.into());
 	for (c, weight) in scaled_candidates {
@@ -206,7 +208,7 @@ mod tests {
 		let mut p1_count = 0;
 		let mut r1_count = 0;
 		let mut r2_count = 0;
-		for i in 0u32..1000 {
+		for i in 0u32..10000 {
 			let mut seed = [0u8; 32];
 			seed[0..4].copy_from_slice(&i.to_le_bytes());
 
@@ -216,10 +218,10 @@ mod tests {
 			r1_count += committee.iter().filter(|c| **c == "R1").count();
 			r2_count += committee.iter().filter(|c| **c == "R2").count();
 		}
-		let tolerance = 5;
-		assert!(1343 - tolerance <= p1_count && p1_count <= 1343 + tolerance);
-		assert!(1220 - tolerance <= r1_count && r1_count <= 1220 + tolerance);
-		assert!(1780 - tolerance <= r2_count && r2_count <= 1780 + tolerance);
+		let tolerance = 50;
+		assert!(13330 - tolerance <= p1_count && p1_count <= 13330 + tolerance);
+		assert!(12000 - tolerance <= r1_count && r1_count <= 12000 + tolerance);
+		assert!(18000 - tolerance <= r2_count && r2_count <= 18000 + tolerance);
 	}
 
 	#[test]
@@ -245,5 +247,25 @@ mod tests {
 			select_authorities(0, 0, trustless_candidates, permissioned_candidates, seed.0)
 				.unwrap();
 		assert_eq!(committee, Vec::<String>::new());
+	}
+
+	#[quickcheck]
+	fn registered_candidates_order_does_not_matter(seed: TestNonce) {
+		let registered_candidates = vec![("a", 1), ("b", 1), ("c", 1), ("d", 1), ("e", 1)];
+		let mut reversed_candidates = registered_candidates.clone();
+		reversed_candidates.reverse();
+		let committee_1 = select_authorities(4, 0, registered_candidates, vec![], seed.0).unwrap();
+		let committee_2 = select_authorities(4, 0, reversed_candidates, vec![], seed.0).unwrap();
+		assert_eq!(committee_1, committee_2)
+	}
+
+	#[quickcheck]
+	fn permissioned_candidates_order_does_not_matter(seed: TestNonce) {
+		let candidates = vec![("a", 1), ("b", 1), ("c", 1), ("d", 1), ("e", 1)];
+		let mut reversed_candidates = candidates.clone();
+		reversed_candidates.reverse();
+		let committee_1 = select_authorities(0, 4, vec![], candidates, seed.0).unwrap();
+		let committee_2 = select_authorities(0, 4, vec![], reversed_candidates, seed.0).unwrap();
+		assert_eq!(committee_1, committee_2)
 	}
 }
