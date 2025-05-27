@@ -171,12 +171,17 @@ for i in {1..300}; do
         echo "Error: Registration UTXO file $NODE_REGISTRATION_UTXO_FILE not found for $node_name!"
         exit 1
     fi
+    echo "[DEBUG] Content of $NODE_REGISTRATION_UTXO_FILE for $node_name:"
+    cat "$NODE_REGISTRATION_UTXO_FILE"
+    echo "[DEBUG] End content of $NODE_REGISTRATION_UTXO_FILE for $node_name."
+
     NODE_REGISTRATION_UTXO=$(cat "$NODE_REGISTRATION_UTXO_FILE")
     if [ -z "$NODE_REGISTRATION_UTXO" ]; then
         echo "Error: Registration UTXO file $NODE_REGISTRATION_UTXO_FILE is empty for $node_name!"
         exit 1
     fi
     echo "Using registration UTXO $NODE_REGISTRATION_UTXO for $node_name"
+    echo "[DEBUG] Value of NODE_REGISTRATION_UTXO variable: [$NODE_REGISTRATION_UTXO]"
 
     # Define and read the specific mainchain cold signing key for this node
     NODE_MAINCHAIN_SKEY_FILE="/shared/node-keys/registered-${i}/keys/cold.skey"
@@ -192,6 +197,7 @@ for i in {1..300}; do
         exit 1 # This is a critical failure
     fi
     echo "Using mainchain signing key from $NODE_MAINCHAIN_SKEY_FILE for $node_name"
+    echo "[DEBUG] About to call registration-signatures for $node_name with UTXO: [$NODE_REGISTRATION_UTXO]"
 
     # Process registration signatures
     registration_output=$(./partner-chains-node registration-signatures \
@@ -214,6 +220,7 @@ for i in {1..300}; do
         exit 1 # This is a critical failure
     fi
     echo "Using payment key $NODE_PAYMENT_SKEY_FILE for $node_name registration transaction."
+    echo "[DEBUG] About to call smart-contracts register for $node_name with UTXO: [$NODE_REGISTRATION_UTXO]"
 
     # Register the node
     ./partner-chains-node smart-contracts register \
