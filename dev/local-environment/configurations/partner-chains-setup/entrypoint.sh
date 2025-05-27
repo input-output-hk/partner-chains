@@ -163,7 +163,7 @@ for i in {1..300}; do
         > /partner-chains-nodes/$node_name/keys/grandpa.json
     
     # Extract keys and generate signatures
-    sidechain_signing_key=$(jq -r '.secretKey' /partner-chains-nodes/$node_name/keys/sidechain.json)
+    sidechain_signing_key=$(jq -r '.secretSeed' /partner-chains-nodes/$node_name/keys/sidechain.json)
     
     # Define and read the specific registration UTXO for this node
     NODE_REGISTRATION_UTXO_FILE="/shared/registered-${i}.utxo"
