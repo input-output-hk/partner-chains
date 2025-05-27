@@ -87,15 +87,17 @@ echo "Inserting permissioned candidates for Alice and Bob..."
 
 alice_sidechain_vkey=$(cat /partner-chains-nodes/partner-chains-node-1/keys/sidechain.vkey)
 alice_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-1/keys/aura.vkey)
+alice_beefy_vkey=$(cat /partner-chains-nodes/partner-chains-node-1/keys/beefy.vkey)
 alice_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-1/keys/grandpa.vkey)
 
 bob_sidechain_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/sidechain.vkey)
 bob_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/aura.vkey)
+bob_beefy_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/beefy.vkey)
 bob_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/grandpa.vkey)
 
 cat <<EOF > permissioned_candidates.csv
-$alice_sidechain_vkey:$alice_aura_vkey:$alice_grandpa_vkey
-$bob_sidechain_vkey:$bob_aura_vkey:$bob_grandpa_vkey
+$alice_sidechain_vkey:$alice_aura_vkey:$alice_beefy_vkey:$alice_grandpa_vkey
+$bob_sidechain_vkey:$bob_aura_vkey:$bob_beefy_vkey:$bob_grandpa_vkey
 EOF
 
 ./partner-chains-node smart-contracts upsert-permissioned-candidates \
@@ -131,6 +133,7 @@ dave_spo_signature=$(echo "$dave_output" | jq -r ".spo_signature")
 dave_sidechain_public_key=$(echo "$dave_output" | jq -r ".sidechain_public_key")
 dave_sidechain_signature=$(echo "$dave_output" | jq -r ".sidechain_signature")
 dave_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-4/keys/aura.vkey)
+dave_beefy_vkey=$(cat /partner-chains-nodes/partner-chains-node-4/keys/beefy.vkey)
 dave_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-4/keys/grandpa.vkey)
 
 # Register Dave
@@ -139,7 +142,7 @@ dave_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-4/keys/grandpa
     --genesis-utxo $GENESIS_UTXO \
     --spo-public-key $dave_spo_public_key \
     --spo-signature $dave_spo_signature \
-    --sidechain-public-keys $dave_sidechain_public_key:$dave_aura_vkey:$dave_grandpa_vkey \
+    --sidechain-public-keys $dave_sidechain_public_key:$dave_aura_vkey:$dave_beefy_vkey:$dave_grandpa_vkey \
     --sidechain-signature $dave_sidechain_signature \
     --registration-utxo $dave_utxo \
     --payment-key-file /partner-chains-nodes/partner-chains-node-4/keys/payment.skey
@@ -200,6 +203,7 @@ jq '.genesis.runtimeGenesis.config.session.initialValidators = [
          "5C7C2Z5sWbytvHpuLTvzKunnnRwQxft1jiqrLD5rhucQ5S9X",
          {
              "aura": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+             "beefy": "KW39r9CJjAVzmkf9zQ4YDb2hqfAVGdRqn53eRqyruqpxAP5YL",
              "grandpa": "5FA9nQDVg267DEd8m1ZypXLBnvN7SFxYwV7ndqSYGiN9TTpu"
          }
      ],
@@ -207,6 +211,7 @@ jq '.genesis.runtimeGenesis.config.session.initialValidators = [
          "5DVskgSC9ncWQpxFMeUn45NU43RUq93ByEge6ApbnLk6BR9N",
          {
              "aura": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+             "beefy": "KWByAN7WfZABWS5AoWqxriRmF5f2jnDqy3rB5pfHLGkY93ibN",
              "grandpa": "5GoNkf6WdbxCFnPdAnYYQyCjAKPJgLNxXwPjwTh6DGg6gN3E"
          }
      ],
@@ -214,6 +219,7 @@ jq '.genesis.runtimeGenesis.config.session.initialValidators = [
          "5EP2cMaCxLzhfD3aFAqqgu3kfXH7GcwweEv6JXZRP6ysRHkQ",
          {
              "aura": "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y",
+             "beefy": "KWBpGtyJLBkJERdZT1a1uu19c2uPpZm9nFd8SGtCfRUAT3Y4w",
              "grandpa": "5DbKjhNLpqX3zqZdNBc9BGb4fHU1cRBaDhJUskrvkwfraDi6"
          }
      ]
@@ -226,6 +232,7 @@ jq '.genesis.runtimeGenesis.config.sessionCommitteeManagement.initialAuthorities
       "id": "KW39r9CJjAVzmkf9zQ4YDb2hqfAVGdRqn53eRqyruqpxAP5YL",
       "keys": {
         "aura": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+        "beefy": "KW39r9CJjAVzmkf9zQ4YDb2hqfAVGdRqn53eRqyruqpxAP5YL",
         "grandpa": "5FA9nQDVg267DEd8m1ZypXLBnvN7SFxYwV7ndqSYGiN9TTpu"
       }
     }
@@ -235,6 +242,7 @@ jq '.genesis.runtimeGenesis.config.sessionCommitteeManagement.initialAuthorities
       "id": "KWByAN7WfZABWS5AoWqxriRmF5f2jnDqy3rB5pfHLGkY93ibN",
       "keys": {
         "aura": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+        "beefy": "KWByAN7WfZABWS5AoWqxriRmF5f2jnDqy3rB5pfHLGkY93ibN",
         "grandpa": "5GoNkf6WdbxCFnPdAnYYQyCjAKPJgLNxXwPjwTh6DGg6gN3E"
       }
     }
@@ -244,6 +252,7 @@ jq '.genesis.runtimeGenesis.config.sessionCommitteeManagement.initialAuthorities
       "id": "KWBpGtyJLBkJERdZT1a1uu19c2uPpZm9nFd8SGtCfRUAT3Y4w",
       "keys": {
         "aura": "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y",
+        "beefy": "KWBpGtyJLBkJERdZT1a1uu19c2uPpZm9nFd8SGtCfRUAT3Y4w",
         "grandpa": "5DbKjhNLpqX3zqZdNBc9BGb4fHU1cRBaDhJUskrvkwfraDi6"
       }
     }
