@@ -72,7 +72,9 @@ pub fn weighted_with_guaranteed_assignment<T: Clone + Ord>(
 	if candidates.is_empty() || n == 0 {
 		return Vec::with_capacity(0);
 	}
-	let SelectGuaranteedResult { mut selected, remaining } = select_guaranteed(candidates, n);
+	let mut candidates = candidates.to_vec();
+	candidates.sort();
+	let SelectGuaranteedResult { mut selected, remaining } = select_guaranteed(&candidates, n);
 	let selected_count: u16 = selected.len().try_into().expect("selected count can not exceed u16");
 	selected.extend(select_remaining(remaining, n - selected_count, rng));
 	selected
@@ -206,7 +208,7 @@ mod tests {
 		let mut p1_count = 0;
 		let mut r1_count = 0;
 		let mut r2_count = 0;
-		for i in 0u32..1000 {
+		for i in 0u32..10000 {
 			let mut seed = [0u8; 32];
 			seed[0..4].copy_from_slice(&i.to_le_bytes());
 
@@ -216,10 +218,10 @@ mod tests {
 			r1_count += committee.iter().filter(|c| **c == "R1").count();
 			r2_count += committee.iter().filter(|c| **c == "R2").count();
 		}
-		let tolerance = 5;
-		assert!(1343 - tolerance <= p1_count && p1_count <= 1343 + tolerance);
-		assert!(1220 - tolerance <= r1_count && r1_count <= 1220 + tolerance);
-		assert!(1780 - tolerance <= r2_count && r2_count <= 1780 + tolerance);
+		let tolerance = 50;
+		assert!(13333 - tolerance <= p1_count && p1_count <= 13333 + tolerance);
+		assert!(12000 - tolerance <= r1_count && r1_count <= 12000 + tolerance);
+		assert!(18000 - tolerance <= r2_count && r2_count <= 18000 + tolerance);
 	}
 
 	#[test]
@@ -245,5 +247,25 @@ mod tests {
 			select_authorities(0, 0, trustless_candidates, permissioned_candidates, seed.0)
 				.unwrap();
 		assert_eq!(committee, Vec::<String>::new());
+	}
+
+	#[quickcheck]
+	fn registered_candidates_order_does_not_matter(seed: TestNonce) {
+		let registered_candidates = vec![("a", 1), ("b", 1), ("c", 1), ("d", 1), ("e", 1)];
+		let mut reversed_candidates = registered_candidates.clone();
+		reversed_candidates.reverse();
+		let committee_1 = select_authorities(4, 0, registered_candidates, vec![], seed.0).unwrap();
+		let committee_2 = select_authorities(4, 0, reversed_candidates, vec![], seed.0).unwrap();
+		assert_eq!(committee_1, committee_2)
+	}
+
+	#[quickcheck]
+	fn permissioned_candidates_order_does_not_matter(seed: TestNonce) {
+		let candidates = vec![("a", 1), ("b", 1), ("c", 1), ("d", 1), ("e", 1)];
+		let mut reversed_candidates = candidates.clone();
+		reversed_candidates.reverse();
+		let committee_1 = select_authorities(0, 4, vec![], candidates, seed.0).unwrap();
+		let committee_2 = select_authorities(0, 4, vec![], reversed_candidates, seed.0).unwrap();
+		assert_eq!(committee_1, committee_2)
 	}
 }
