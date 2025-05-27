@@ -58,12 +58,6 @@ use std::sync::Arc;
 /// Command for retrieving Ariadne protocol parameters effective at a specific mainchain epoch.
 ///
 /// Ariadne controls committee selection for Partner Chain consensus.
-///
-/// # Example
-///
-/// ```bash
-/// partner-chains-node ariadne-parameters --mc-epoch-number 586
-/// ```
 #[derive(Debug, Clone, Parser)]
 pub struct AriadneParametersCmd {
 	/// The mainchain epoch number for which to retrieve Ariadne parameters
@@ -84,12 +78,6 @@ impl CliConfiguration for AriadneParametersCmd {
 ///
 /// This command returns the sidechain's genesis UTXO, which is the
 /// foundational UTXO that identifies the Partner Chain.
-///
-/// # Example
-///
-/// ```bash
-/// partner-chains-node sidechain-params
-/// ```
 #[derive(Debug, Clone, Parser)]
 pub struct SidechainParamsCmd {
 	/// Shared CLI parameters for configuration
@@ -103,27 +91,12 @@ impl CliConfiguration for SidechainParamsCmd {
 	}
 }
 
-/// Command for checking validator registration status on the Partner Chain.
+/// Command struct for querying validator registration status.
 ///
-/// This command verifies whether a validator's registration has been successfully
-/// processed and is recognized by the Partner Chain. It's essential for validator
-/// operators to confirm their registration before attempting to participate in
-/// committee selection.
-///
-/// # Important Notes
-///
-/// - If registration was included in Cardano block in epoch N, it should be visible
-///   when querying epoch N+1 or later
-/// - If registration doesn't appear after a few minutes, debugging may be required
-/// - The `mainchain-pub-key` alias is provided for backward compatibility
-///
-/// # Example
-///
-/// ```bash
-/// partner-chains-node registration-status \
-///   --stake-pool-pub-key 0x702b81ab2e86cf73a87062af1eb0da666d451976d9d91c63a119ed94e6a33dc0 \
-///   --mc-epoch-number 586
-/// ```
+/// This command queries the Partner Chain runtime to check if a specific
+/// stake pool public key has been registered for validator participation.
+/// The command requires both a stake pool public key and mainchain epoch number
+/// to perform the lookup.
 #[derive(Debug, Clone, Parser)]
 pub struct RegistrationStatusCmd {
 	/// The stake pool public key (mainchain public key) to check registration for
