@@ -320,8 +320,265 @@ echo "[LOG] Main funding transaction submitted."
 echo "[LOG] Waiting 20 seconds for the main transaction to process..."
 sleep 20
 
-echo "[LOG] Verifying main transaction processing and querying UTXOs at $new_address"
-cardano-cli latest query utxo --testnet-magic 42 --address "$new_address"
+# --- START OF NEW BATCH FUNDING LOGIC ---
+echo "[LOG] Main transaction submitted. Determining initial UTXO for batch funding registered nodes."
+
+# Determine the TxId of the main transaction
+# /data/tx.signed was the file submitted for the main transaction.
+main_tx_id=$(cardano-cli latest transaction txid --tx-file /data/tx.signed)
+if [ -z "$main_tx_id" ]; then
+    echo "[DEBUG] CRITICAL ERROR: Failed to get TxId from main signed transaction /data/tx.signed. Aborting batch funding."
+    exit 1
+fi
+echo "[LOG] Main transaction ID for funding: $main_tx_id"
+
+# num_main_tx_outputs_before_change was calculated at line 196 when building the main transaction.
+# It represents the count of outputs before the change output was added.
+# So, the 0-indexed TxIx of the change output is equal to num_main_tx_outputs_before_change.
+initial_funding_utxo_tx_ix="$num_main_tx_outputs_before_change"
+current_batch_input_utxo="${main_tx_id}#${initial_funding_utxo_tx_ix}"
+
+echo "[LOG] Batch funding will start using main transaction's change output: $current_batch_input_utxo"
+echo "[LOG] Querying all UTXOs at $new_address for verification after main transaction:"
+cardano-cli latest query utxo --testnet-magic 42 --address "$new_address" --out-file /data/utxos_at_new_address_after_main.json
+if [ -s /data/utxos_at_new_address_after_main.json ]; then
+    echo "Full list of UTXOs at $new_address (content of /data/utxos_at_new_address_after_main.json):"
+    cat /data/utxos_at_new_address_after_main.json
+else
+    echo "[WARN] Could not retrieve full list of UTXOs at $new_address or file is empty."
+fi
+
+
+# Batch funding loop for registered_node_payment_addresses
+num_registered_nodes=${#registered_node_payment_addresses[@]} # Get actual count from array
+batch_size=10 # Fund 10 nodes per batch
+num_batches=$(( (num_registered_nodes + batch_size - 1) / batch_size )) # Ceiling division
+
+# Ensure protocol_params_file is defined (it's set around line 198: protocol_params_file="/data/protocol.json")
+if [ ! -f "$protocol_params_file" ]; then
+    echo "[DEBUG] CRITICAL ERROR: Protocol parameters file $protocol_params_file not found before batch funding. Re-querying..."
+    if ! cardano-cli latest query protocol-parameters --testnet-magic 42 --out-file "$protocol_params_file"; then
+        echo "[DEBUG] CRITICAL ERROR: Failed to re-query protocol parameters. Aborting."
+        exit 1
+    fi
+fi
+
+
+echo "[LOG] Starting batch funding for $num_registered_nodes registered nodes in $num_batches batches of up to $batch_size nodes each."
+
+for batch_num in $(seq 1 "$num_batches"); do
+    echo "[LOG] Processing Batch $batch_num of $num_batches..."
+    start_node_array_idx=$(( (batch_num - 1) * batch_size )) # 0-indexed for array
+    end_node_array_idx=$(( start_node_array_idx + batch_size - 1 ))
+    if [ "$end_node_array_idx" -ge "$num_registered_nodes" ]; then
+        end_node_array_idx=$((num_registered_nodes - 1))
+    fi
+
+    node_idx_human_start=$((start_node_array_idx + 1))
+    node_idx_human_end=$((end_node_array_idx + 1))
+    echo "[LOG] Batch $batch_num: Funding nodes $node_idx_human_start to $node_idx_human_end."
+
+    batch_tx_out_params_array=()
+    batch_total_output_lovelace=0
+    actual_nodes_in_this_batch=0
+
+    for (( current_array_idx=start_node_array_idx; current_array_idx<=end_node_array_idx; current_array_idx++ )); do
+        node_payment_address="${registered_node_payment_addresses[$current_array_idx]}"
+        node_funding_amount=1000000 # 1 ADA
+        batch_tx_out_params_array+=(--tx-out "$node_payment_address+$node_funding_amount")
+        batch_total_output_lovelace=$((batch_total_output_lovelace + node_funding_amount))
+        actual_nodes_in_this_batch=$((actual_nodes_in_this_batch + 1))
+    done
+
+    if [ "$actual_nodes_in_this_batch" -eq 0 ]; then
+        echo "[LOG] Batch $batch_num: No nodes to fund in this batch. Skipping."
+        continue
+    fi
+
+    echo "[LOG] Batch $batch_num: Building DUMMY transaction for fee calculation. Outputs to fund: $actual_nodes_in_this_batch"
+    dummy_batch_tx_file="/data/tx_batch_${batch_num}_dummy.raw"
+    dummy_batch_change_placeholder=1000000 # Min 1 ADA for dummy change
+
+    temp_batch_tx_out_params_array=("${batch_tx_out_params_array[@]}")
+    temp_batch_tx_out_params_array+=(--tx-out "$new_address+$dummy_batch_change_placeholder") # Dummy change to new_address
+
+    if ! cardano-cli latest transaction build-raw \
+      --tx-in "$current_batch_input_utxo" \
+      "${temp_batch_tx_out_params_array[@]}" \
+      --fee 0 \
+      --out-file "$dummy_batch_tx_file"; then
+        echo "[DEBUG] Batch $batch_num: ERROR building DUMMY transaction for fee calculation. Input UTXO: $current_batch_input_utxo. Using fallback fee."
+        cat "$dummy_batch_tx_file" 2>/dev/null || echo "Dummy file $dummy_batch_tx_file not created or unreadable."
+        batch_tx_fee=200000 # Fallback
+    else
+        batch_tx_num_inputs=1
+        batch_tx_num_outputs=$((actual_nodes_in_this_batch + 1)) # N outputs to nodes + 1 change output
+        batch_tx_num_witnesses=1 # Signed by funded_address.skey
+
+        calculated_batch_fee=$(cardano-cli latest transaction calculate-min-fee \
+            --tx-body-file "$dummy_batch_tx_file" \
+            --testnet-magic 42 \
+            --protocol-params-file "$protocol_params_file" \
+            --tx-in-count "$batch_tx_num_inputs" \
+            --tx-out-count "$batch_tx_num_outputs" \
+            --witness-count "$batch_tx_num_witnesses" | /busybox awk '{print $1}')
+
+        if ! [[ "$calculated_batch_fee" =~ ^[0-9]+$ ]] || [ -z "$calculated_batch_fee" ]; then
+            echo "[DEBUG] Batch $batch_num: ERROR calculating dynamic fee (Raw: '$calculated_batch_fee'). Using fallback 200000."
+            batch_tx_fee=200000
+        else
+            batch_tx_fee=$((calculated_batch_fee + 1000)) # Add a 1000 lovelace buffer
+            echo "[LOG] Batch $batch_num: Calculated Min Fee: $calculated_batch_fee, Using Fee with Buffer: $batch_tx_fee"
+        fi
+        rm -f "$dummy_batch_tx_file"
+    fi
+
+    echo "[LOG] Batch $batch_num: Total output to registered nodes: $batch_total_output_lovelace, Calculated Fee: $batch_tx_fee"
+
+    echo "[LOG] Batch $batch_num: Querying current value of input UTXO $current_batch_input_utxo"
+    input_utxo_details_file="/data/input_utxo_details_batch_${batch_num}.json"
+    # Retry mechanism for querying input UTXO in case of slight delay
+    utxo_queried_successfully=false
+    for query_attempt in {1..3}; do
+        if cardano-cli latest query utxo --testnet-magic 42 --tx-in "$current_batch_input_utxo" --out-file "$input_utxo_details_file"; then
+            if [ -s "$input_utxo_details_file" ]; then
+                utxo_queried_successfully=true
+                break
+            fi
+        fi
+        echo "[WARN] Batch $batch_num: Attempt $query_attempt to query input UTXO $current_batch_input_utxo failed or returned empty. Retrying in 3s..."
+        sleep 3
+    done
+
+    if [ "$utxo_queried_successfully" = false ]; then
+        echo "[DEBUG] CRITICAL ERROR: Batch $batch_num: Failed to query input UTXO $current_batch_input_utxo after multiple attempts. It might be spent or invalid."
+        echo "Attempting to find a new UTXO at $new_address as a fallback..."
+        new_potential_utxo=$(cardano-cli latest query utxo --address "$new_address" --testnet-magic 42 | grep lovelace | sort -k3 -nr | head -n 1 | awk '{print $1"#"$2}')
+        if [ -n "$new_potential_utxo" ] && [ "$new_potential_utxo" != "$current_batch_input_utxo" ]; then
+            echo "[LOG] Found alternative UTXO: $new_potential_utxo. Retrying with this one for batch $batch_num."
+            current_batch_input_utxo="$new_potential_utxo"
+            if ! cardano-cli latest query utxo --testnet-magic 42 --tx-in "$current_batch_input_utxo" --out-file "$input_utxo_details_file"; then
+                 echo "[DEBUG] CRITICAL ERROR: Batch $batch_num: Fallback query for new UTXO $current_batch_input_utxo also failed. Aborting."
+                 exit 1
+            fi
+        else
+            echo "[DEBUG] CRITICAL ERROR: Batch $batch_num: No alternative UTXO found or it's the same problematic one. Aborting."
+            exit 1
+        fi
+    fi
+    
+    if ! jq_output=$(jq -r "."$current_batch_input_utxo".value.lovelace" "$input_utxo_details_file" 2>/dev/null); then
+        echo "[DEBUG] CRITICAL ERROR: Batch $batch_num: Failed to parse lovelace from UTXO $current_batch_input_utxo details or UTXO not found in query result."
+        echo "Contents of $input_utxo_details_file (if any):"
+        cat "$input_utxo_details_file"
+        exit 1
+    fi
+    current_batch_input_utxo_amount=$jq_output
+    rm -f "$input_utxo_details_file"
+
+    if ! [[ "$current_batch_input_utxo_amount" =~ ^[0-9]+$ ]]; then
+        echo "[DEBUG] CRITICAL ERROR: Batch $batch_num: Parsed lovelace amount '$current_batch_input_utxo_amount' for $current_batch_input_utxo is not a number. Aborting."
+        exit 1
+    fi
+    echo "[LOG] Batch $batch_num: Input UTXO $current_batch_input_utxo has amount $current_batch_input_utxo_amount lovelace."
+
+    batch_tx_change=$((current_batch_input_utxo_amount - batch_total_output_lovelace - batch_tx_fee))
+    echo "[LOG] Batch $batch_num: Change calculated: $batch_tx_change (Input: $current_batch_input_utxo_amount - Outputs: $batch_total_output_lovelace - Fee: $batch_tx_fee)"
+
+    final_batch_tx_out_params_array=()
+    if [ "$batch_tx_change" -ge 1000000 ]; then 
+        final_batch_tx_out_params_array+=(--tx-out "$new_address+$batch_tx_change") 
+        final_batch_tx_out_params_array+=("${batch_tx_out_params_array[@]}") 
+    elif [ "$batch_tx_change" -ge 0 ]; then 
+        echo "[WARN] Batch $batch_num: Change is very small or zero ($batch_tx_change lovelace). It will be added to the fee. No separate change UTXO will be created."
+        batch_tx_fee=$((batch_tx_fee + batch_tx_change)) 
+        batch_tx_change=0 
+        final_batch_tx_out_params_array=("${batch_tx_out_params_array[@]}") 
+    else
+        echo "[DEBUG] CRITICAL ERROR: Batch $batch_num: Negative change ($batch_tx_change). Input $current_batch_input_utxo_amount, outputs $batch_total_output_lovelace, fee $batch_tx_fee. Aborting."
+        exit 1
+    fi
+
+    batch_tx_raw_file="/data/tx_batch_${batch_num}.raw"
+    batch_tx_signed_file="/data/tx_batch_${batch_num}.signed"
+
+    echo "[LOG] Batch $batch_num: Building FINAL transaction raw file..."
+    if ! cardano-cli latest transaction build-raw \
+      --tx-in "$current_batch_input_utxo" \
+      "${final_batch_tx_out_params_array[@]}" \
+      --fee "$batch_tx_fee" \
+      --out-file "$batch_tx_raw_file"; then
+        echo "[DEBUG] CRITICAL ERROR: Batch $batch_num: Failed to build FINAL transaction. Aborting."
+        exit 1
+    fi
+
+    echo "[LOG] Batch $batch_num: Signing transaction..."
+    if ! cardano-cli latest transaction sign \
+      --tx-body-file "$batch_tx_raw_file" \
+      --signing-key-file /keys/funded_address.skey \
+      --testnet-magic 42 \
+      --out-file "$batch_tx_signed_file"; then
+        echo "[DEBUG] CRITICAL ERROR: Batch $batch_num: Failed to sign transaction. Aborting."
+        exit 1
+    fi
+
+    batch_tx_id=$(cardano-cli latest transaction txid --tx-file "$batch_tx_signed_file")
+    if [ -z "$batch_tx_id" ]; then
+        echo "[DEBUG] CRITICAL ERROR: Batch $batch_num: Failed to get TxId from signed transaction. Aborting."
+        exit 1
+    fi
+    echo "[LOG] Batch $batch_num: Transaction ID is $batch_tx_id"
+
+    echo "[LOG] Batch $batch_num: Submitting transaction..."
+    # Retry mechanism for submission
+    submitted_successfully=false
+    for submit_attempt in {1..3}; do
+        if cardano-cli latest transaction submit \
+          --tx-file "$batch_tx_signed_file" \
+          --testnet-magic 42; then
+            submitted_successfully=true
+            break
+        fi
+        echo "[WARN] Batch $batch_num: Attempt $submit_attempt to submit transaction $batch_tx_id failed. Retrying in 5s..."
+        sleep 5
+    done
+
+    if [ "$submitted_successfully" = false ]; then
+        echo "[DEBUG] CRITICAL ERROR: Batch $batch_num: Failed to submit transaction $batch_tx_id after multiple attempts. Aborting."
+        echo "Querying input UTXO $current_batch_input_utxo to check if it was spent:"
+        cardano-cli latest query utxo --testnet-magic 42 --tx-in "$current_batch_input_utxo" --out-file /dev/stdout || echo "Query failed or UTXO spent."
+        exit 1
+    fi
+    echo "[LOG] Batch $batch_num: Transaction $batch_tx_id submitted."
+    
+    if [ "$batch_tx_change" -ge 1000000 ]; then 
+        current_batch_input_utxo="${batch_tx_id}#0" 
+        echo "[LOG] Batch $batch_num: Next input UTXO for funding will be the change from this batch: $current_batch_input_utxo"
+    elif [ "$batch_num" -lt "$num_batches" ]; then 
+        echo "[WARN] Batch $batch_num: No usable change output created. Attempting to find a new UTXO at $new_address for the next batch."
+        sleep 5 
+        new_input_utxo_candidate=$(cardano-cli latest query utxo --address "$new_address" --testnet-magic 42 | grep lovelace | sort -k3 -nr | head -n 1 | awk '{print $1"#"$2}')
+        if [ -n "$new_input_utxo_candidate" ]; then
+            current_batch_input_utxo="$new_input_utxo_candidate"
+            echo "[LOG] Batch $batch_num: Found new input UTXO for next batch: $current_batch_input_utxo"
+        else
+            echo "[DEBUG] CRITICAL ERROR: Batch $batch_num: No change output from this batch and no other UTXOs found at $new_address. Cannot continue funding. Aborting."
+            exit 1
+        fi
+    fi
+    
+    rm -f "$batch_tx_raw_file" "$batch_tx_signed_file"
+
+    if [ "$batch_num" -lt "$num_batches" ]; then
+        echo "[LOG] Batch $batch_num: Waiting 15 seconds for transaction to process before next batch..."
+        sleep 15
+    else
+        echo "[LOG] Batch $batch_num: Final batch processed."
+    fi
+done
+
+echo "[LOG] Completed all $num_batches batch funding transactions for registered nodes."
+# --- END OF NEW BATCH FUNDING LOGIC ---
 
 echo "[LOG] Saving FUNDED_ADDRESS to /shared/FUNDED_ADDRESS: $new_address"
 echo "$new_address" > /shared/FUNDED_ADDRESS
@@ -335,15 +592,9 @@ for i in {1..300}; do
     final_utxo_found=false
     for attempt in {1..5}; do # Try up to 5 times
         echo "[LOG] Querying final UTXO for registered-$i at $node_unique_address (Attempt $attempt)..."
-        # Query all UTXOs at the address, take the first one (usually only one after funding)
-        # Output format of cardano-cli query utxo:
-        #                            TxHash                                 TxIx        Amount
-        # ----------------------------------------------------------------------------------------
-        # d8d93399a255e0d69781a25a6e0a0f46548c43357c15d0aa9e0a89c219495659     0        10000000 lovelace + ...
         
-        # DEBUG: Capture raw output
         raw_cli_output_file="/tmp/raw_cli_output_registered_${i}_attempt_${attempt}.txt"
-        echo "[DEBUG] Attempting to run for $node_unique_address (Attempt $attempt): cardano-cli latest query utxo --testnet-magic 42 --address \\"$node_unique_address\\" --out-file /dev/stdout"
+        echo "[DEBUG] Attempting to run for $node_unique_address (Attempt $attempt): cardano-cli latest query utxo --testnet-magic 42 --address \"$node_unique_address\" --out-file /dev/stdout"
         cardano-cli latest query utxo --testnet-magic 42 --address "$node_unique_address" --out-file /dev/stdout > "$raw_cli_output_file" 2>&1
 
         echo "[DEBUG] Raw output from cardano-cli for $node_unique_address (Attempt $attempt) captured in $raw_cli_output_file:"
@@ -353,7 +604,6 @@ for i in {1..300}; do
         echo "[DEBUG] Parsed node_utxo_final by awk: [$node_utxo_final]"
         
         if [ -n "$node_utxo_final" ]; then
-            # Basic validation that it looks like a TxHash#TxIx
             if [[ "$node_utxo_final" =~ ^[a-f0-9]{64}#[0-9]+$ ]]; then
                 echo "$node_utxo_final" > "/shared/registered-${i}.utxo"
                 echo "[LOG] Successfully updated /shared/registered-${i}.utxo with: $node_utxo_final"
@@ -361,7 +611,7 @@ for i in {1..300}; do
                 break
             else
                 echo "[WARN] Attempt $attempt: For registered-$i at $node_unique_address, query output [$node_utxo_final] does not look like TxHash#TxIx. Retrying..."
-                node_utxo_final="" # Clear it so the -n check fails if next attempt also bad
+                node_utxo_final="" 
             fi
         else
             echo "[WARN] Attempt $attempt: No UTXO found yet for registered-$i at $node_unique_address. Sleeping 5s..."
@@ -371,7 +621,6 @@ for i in {1..300}; do
 
     if [ "$final_utxo_found" = false ]; then
         echo "[ERROR] CRITICAL: Failed to find UTXO for registered-$i at $node_unique_address after multiple attempts. /shared/registered-${i}.utxo will be empty. This will likely cause registration to fail for this node."
-        # Ensure the file is empty if no UTXO found, to prevent stale data issues
         echo "" > "/shared/registered-${i}.utxo"
     fi
 done
@@ -390,7 +639,6 @@ for i in {1..300}; do
         echo "[LOG] Successfully generated cold keys for registered-$i."
     else
         echo "Error generating cold keys for registered-$i!"
-        # Optionally exit here if this is critical
     fi
 done
 echo "[LOG] Finished generating mainchain cold keys."
