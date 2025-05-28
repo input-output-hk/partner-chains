@@ -59,7 +59,22 @@ impl Command {
 
 		writeln!(
 			output,
-			"safe_offline_members,distinct_members,max_single_member_seats,ada_to_attack,R,P,registered_file,permissioned_file,registration_number,ariadne_version"
+			"{}",
+			[
+				"ariadne_version",
+				"R",
+				"P",
+				"registered_candidates",
+				"total_registered_stake",
+				"registered_file",
+				"permissioned_file",
+				"total_committee_stake",
+				"distinct_members",
+				"max_single_member_seats",
+				"safe_offline_members",
+				"ada_to_attack",
+			]
+			.join(",")
 		)
 		.unwrap();
 		for i in 0..self.repetitions {
@@ -76,6 +91,8 @@ impl Command {
 					(self.registered_pool_size as usize).min(potential_registered_candidates.len()),
 				);
 			registered_candidates.shuffle(&mut rng);
+
+			let total_registered_stake: u128 = registered_candidates.iter().map(|c| c.1).sum();
 
 			let committee = self
 				.ariadne_version
@@ -105,12 +122,14 @@ impl Command {
 			let mut safe_offline_members = 0;
 			let safety_threshold = (total_seats - 1) / 3;
 			let mut seats = 0;
+			let mut total_committee_stake = 0;
 			let mut lovelace_to_attack = 0;
 			for (power, id, stake) in &member_seat_counts {
 				seats += power;
-				lovelace_to_attack += stake;
+				total_committee_stake += stake;
 				log::debug!("{id} has {stake} stake");
 				if seats <= safety_threshold {
+					lovelace_to_attack += stake;
 					safe_offline_members += 1
 				} else {
 					break;
@@ -120,15 +139,19 @@ impl Command {
 
 			writeln!(
 				output,
-				"{safe_offline_members},{},{},{ada_to_attack},{},{},{},{},{},{}",
-				member_seat_counts.len(),
-				member_seat_counts[0].0,
+				"{},{},{},{},{},{},{},{},{},{},{},{}",
+				self.ariadne_version,
 				self.registered_seats,
 				self.permissioned_seats,
+				self.registered_pool_size,
+				total_registered_stake,
 				self.registered_file.clone().map_or("null".to_string(), |f| format!("{f:?}")),
 				self.permissioned_file.clone().map_or("null".to_string(), |f| format!("{f:?}")),
-				self.registered_pool_size,
-				self.ariadne_version
+				total_committee_stake,
+				member_seat_counts.len(),
+				member_seat_counts[0].0,
+				safe_offline_members,
+				ada_to_attack
 			)
 			.unwrap();
 		}
