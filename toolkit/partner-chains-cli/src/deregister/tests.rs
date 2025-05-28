@@ -6,7 +6,6 @@ use crate::ogmios::config::tests::{
 use crate::tests::{MockIO, MockIOContext, OffchainMock, OffchainMocks};
 use crate::{CmdRun, CommonArguments, verify_json};
 use hex_literal::hex;
-use partner_chains_cardano_offchain::OffchainError;
 use serde_json::json;
 use sidechain_domain::*;
 
@@ -45,7 +44,7 @@ fn errors_if_smart_contracts_dont_output_transaction_id() {
 		genesis_utxo(),
 		payment_signing_key(),
 		stake_ownership_pub_key(),
-		Err(OffchainError::InternalError("test error".to_string())),
+		Err("test error".to_string()),
 	);
 	let mock_context = MockIOContext::new()
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
@@ -61,7 +60,7 @@ fn errors_if_smart_contracts_dont_output_transaction_id() {
 	let result = deregister_cmd().run(&mock_context);
 	assert_eq!(
 		result.err().unwrap().to_string(),
-		r#"Candidate deregistration failed: InternalError("test error")!"#
+		r#"Candidate deregistration failed: "test error"!"#
 	);
 	verify_json!(mock_context, RESOURCES_CONFIG_FILE_PATH, final_resources_config_content());
 }

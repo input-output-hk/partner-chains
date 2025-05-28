@@ -1,3 +1,4 @@
+use super::GetScriptsData;
 use crate::config::ServiceConfig;
 use crate::config::config_fields::{
 	COMMITTEE_CANDIDATES_ADDRESS, D_PARAMETER_POLICY_ID, GOVERNED_MAP_POLICY_ID,
@@ -6,7 +7,6 @@ use crate::config::config_fields::{
 };
 use crate::io::IOContext;
 use crate::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
-use partner_chains_cardano_offchain::scripts_data::GetScriptsData;
 use sidechain_domain::{PolicyId, UtxoId};
 
 pub fn prepare_main_chain_config<C: IOContext>(
@@ -14,8 +14,8 @@ pub fn prepare_main_chain_config<C: IOContext>(
 	ogmios_config: &ServiceConfig,
 	genesis_utxo: UtxoId,
 ) -> anyhow::Result<()> {
-	let cardano_parameteres = prepare_cardano_params(ogmios_config, context)?;
-	cardano_parameteres.save(context);
+	let cardano_params = prepare_cardano_params(ogmios_config, context)?;
+	cardano_params.save(context);
 	set_up_cardano_addresses(context, genesis_utxo, ogmios_config)?;
 
 	if INITIAL_PERMISSIONED_CANDIDATES.load_from_file(context).is_none() {

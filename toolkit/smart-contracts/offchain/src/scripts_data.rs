@@ -1,5 +1,5 @@
 use crate::plutus_script;
-use crate::{OffchainError, csl::NetworkTypeExt, plutus_script::PlutusScript};
+use crate::{csl::NetworkTypeExt, plutus_script::PlutusScript};
 use cardano_serialization_lib::NetworkIdKind;
 use ogmios_client::query_network::QueryNetwork;
 use raw_scripts::{
@@ -57,26 +57,6 @@ pub struct PolicyIds {
 	pub version_oracle: PolicyId,
 	/// PolicyId of governed map minting policy
 	pub governed_map: PolicyId,
-}
-
-/// For the given `genesis_utxo` it returns the [ScriptsData] of the partner chain smart contracts.
-pub trait GetScriptsData {
-	#[allow(async_fn_in_trait)]
-	/// For the given `genesis_utxo` it returns the [ScriptsData] of the partner chain smart contracts.
-	async fn get_scripts_data(&self, genesis_utxo: UtxoId) -> Result<ScriptsData, OffchainError>;
-}
-
-impl<T: QueryNetwork> GetScriptsData for T {
-	async fn get_scripts_data(&self, genesis_utxo: UtxoId) -> Result<ScriptsData, OffchainError> {
-		let network = self
-			.shelley_genesis_configuration()
-			.await
-			.map_err(|e| OffchainError::OgmiosError(e.to_string()))?
-			.network
-			.to_csl();
-		get_scripts_data(genesis_utxo, network)
-			.map_err(|e| OffchainError::InternalError(e.to_string()))
-	}
 }
 
 /// Returns [ScriptsData] of the smart contracts for the partner chain identified by `genesis_utxo`.
