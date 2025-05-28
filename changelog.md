@@ -47,6 +47,7 @@ to provide it in your IDP stack.
 * Updated polkadot-sdk to polkadot-stable2503-2
 * Deprecated the `GetSidechainStatus` runtime API in `sp-sidechain` crate. Code
 that needs data that it served should define its own runtime API instead.
+* Updated polkadot-sdk to polkadot-stable2503-5
 
 ## Removed
 
