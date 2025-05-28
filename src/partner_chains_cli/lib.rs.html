@@ -2,130 +2,131 @@
 <a href=#2 id=2 data-nosnippet>2</a>//! Interacts with Smart Contracts using [`partner_chains_cardano_offchain`] crate.
 <a href=#3 id=3 data-nosnippet>3</a>
 <a href=#4 id=4 data-nosnippet>4</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>cardano_key;
-<a href=#5 id=5 data-nosnippet>5</a><span class="kw">pub mod </span>config;
-<a href=#6 id=6 data-nosnippet>6</a><span class="kw">pub mod </span>create_chain_spec;
-<a href=#7 id=7 data-nosnippet>7</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>data_source;
-<a href=#8 id=8 data-nosnippet>8</a><span class="kw">mod </span>deregister;
-<a href=#9 id=9 data-nosnippet>9</a><span class="kw">pub mod </span>generate_keys;
-<a href=#10 id=10 data-nosnippet>10</a><span class="kw">pub mod </span>io;
-<a href=#11 id=11 data-nosnippet>11</a><span class="kw">pub mod </span>keystore;
-<a href=#12 id=12 data-nosnippet>12</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>ogmios;
-<a href=#13 id=13 data-nosnippet>13</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>permissioned_candidates;
-<a href=#14 id=14 data-nosnippet>14</a><span class="kw">mod </span>prepare_configuration;
-<a href=#15 id=15 data-nosnippet>15</a><span class="kw">pub mod </span>register;
-<a href=#16 id=16 data-nosnippet>16</a><span class="kw">pub mod </span>runtime_bindings;
-<a href=#17 id=17 data-nosnippet>17</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>select_utxo;
-<a href=#18 id=18 data-nosnippet>18</a><span class="kw">mod </span>setup_main_chain_state;
-<a href=#19 id=19 data-nosnippet>19</a><span class="kw">pub mod </span>start_node;
-<a href=#20 id=20 data-nosnippet>20</a>
-<a href=#21 id=21 data-nosnippet>21</a><span class="attr">#[cfg(test)]
-<a href=#22 id=22 data-nosnippet>22</a></span><span class="kw">mod </span>tests;
-<a href=#23 id=23 data-nosnippet>23</a>
-<a href=#24 id=24 data-nosnippet>24</a><span class="kw">use </span>clap::Parser;
-<a href=#25 id=25 data-nosnippet>25</a><span class="kw">use </span>io::<span class="kw-2">*</span>;
-<a href=#26 id=26 data-nosnippet>26</a><span class="kw">use </span>partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
-<a href=#27 id=27 data-nosnippet>27</a><span class="kw">pub use </span>runtime_bindings::{PartnerChainRuntime, PartnerChainRuntimeBindings, RuntimeTypeWrapper};
-<a href=#28 id=28 data-nosnippet>28</a><span class="kw">use </span>std::time::Duration;
-<a href=#29 id=29 data-nosnippet>29</a>
-<a href=#30 id=30 data-nosnippet>30</a><span class="attr">#[derive(Clone, Debug, clap::Parser)]
-<a href=#31 id=31 data-nosnippet>31</a>#[command(author, version, about, long_about = <span class="prelude-val">None</span>)]
-<a href=#32 id=32 data-nosnippet>32</a></span><span class="kw">pub struct </span>CommonArguments {
-<a href=#33 id=33 data-nosnippet>33</a>	<span class="attr">#[arg(default_value = <span class="string">"5"</span>, long)]
-<a href=#34 id=34 data-nosnippet>34</a>	</span>retry_delay_seconds: u64,
-<a href=#35 id=35 data-nosnippet>35</a>	<span class="attr">#[arg(default_value = <span class="string">"59"</span>, long)]
-<a href=#36 id=36 data-nosnippet>36</a>	</span>retry_count: usize,
-<a href=#37 id=37 data-nosnippet>37</a>}
-<a href=#38 id=38 data-nosnippet>38</a>
-<a href=#39 id=39 data-nosnippet>39</a><span class="kw">impl </span>CommonArguments {
-<a href=#40 id=40 data-nosnippet>40</a>	<span class="kw">pub fn </span>retries(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; FixedDelayRetries {
-<a href=#41 id=41 data-nosnippet>41</a>		FixedDelayRetries::new(Duration::from_secs(<span class="self">self</span>.retry_delay_seconds), <span class="self">self</span>.retry_count)
-<a href=#42 id=42 data-nosnippet>42</a>	}
-<a href=#43 id=43 data-nosnippet>43</a>}
-<a href=#44 id=44 data-nosnippet>44</a>
-<a href=#45 id=45 data-nosnippet>45</a><span class="attr">#[derive(Clone, Debug, Parser)]
-<a href=#46 id=46 data-nosnippet>46</a>#[command(
-<a href=#47 id=47 data-nosnippet>47</a>    after_long_help = HELP_EXAMPLES,
-<a href=#48 id=48 data-nosnippet>48</a>)]
-<a href=#49 id=49 data-nosnippet>49</a></span><span class="kw">pub enum </span>Command&lt;T: PartnerChainRuntime + PartnerChainRuntimeBindings&gt; {
-<a href=#50 id=50 data-nosnippet>50</a>	<span class="doccomment">/// This wizard generates the keys required for operating a partner-chains node, stores them in the keystore directory, and prints the public keys and keystore location.
-<a href=#51 id=51 data-nosnippet>51</a>	</span>GenerateKeys(generate_keys::GenerateKeysCmd),
-<a href=#52 id=52 data-nosnippet>52</a>	<span class="doccomment">/// Wizard to obtain the configuration needed for the partner-chain governance authority. This configuration should be shared with chain participants and used to create the chain spec json file.
-<a href=#53 id=53 data-nosnippet>53</a>	</span>PrepareConfiguration(prepare_configuration::PrepareConfigurationCmd),
-<a href=#54 id=54 data-nosnippet>54</a>	<span class="doccomment">/// Wizard for creating a chain spec json file based on the chain configuration (see `prepare-configuration`).
-<a href=#55 id=55 data-nosnippet>55</a>	</span>CreateChainSpec(create_chain_spec::CreateChainSpecCmd&lt;T&gt;),
-<a href=#56 id=56 data-nosnippet>56</a>	<span class="doccomment">/// Wizard for setting D-parameter and Permissioned Candidates list on the main chain.
-<a href=#57 id=57 data-nosnippet>57</a>	/// Uses 'chain config' obtained after running `prepare-configuration`.
-<a href=#58 id=58 data-nosnippet>58</a>	</span>SetupMainChainState(setup_main_chain_state::SetupMainChainStateCmd),
-<a href=#59 id=59 data-nosnippet>59</a>	<span class="doccomment">/// Wizard for starting a substrate node in the environment set up by `generate-keys`,
-<a href=#60 id=60 data-nosnippet>60</a>	/// `prepare-config`, and `create-chain-spec`. It also assits in setting the `resources configuration`.
-<a href=#61 id=61 data-nosnippet>61</a>	</span>StartNode(start_node::StartNodeCmd),
-<a href=#62 id=62 data-nosnippet>62</a>	<span class="doccomment">/// The first step of registering as a committee candidate. Registration is split into three steps to allow the user to use their cold keys on a cold machine.
-<a href=#63 id=63 data-nosnippet>63</a>	</span>Register1(register::register1::Register1Cmd),
-<a href=#64 id=64 data-nosnippet>64</a>	<span class="doccomment">/// The second step of registering as a committee candidate, using cold keys.
-<a href=#65 id=65 data-nosnippet>65</a>	</span>Register2(register::register2::Register2Cmd),
-<a href=#66 id=66 data-nosnippet>66</a>	<span class="doccomment">/// The final step of registering as a committee candidate, not using cold keys.
-<a href=#67 id=67 data-nosnippet>67</a>	</span>Register3(register::register3::Register3Cmd),
-<a href=#68 id=68 data-nosnippet>68</a>	<span class="doccomment">/// Deregister from the candidates set. This command requires chain config file present in the running directory.
-<a href=#69 id=69 data-nosnippet>69</a>	</span>Deregister(deregister::DeregisterCmd),
-<a href=#70 id=70 data-nosnippet>70</a>}
-<a href=#71 id=71 data-nosnippet>71</a>
-<a href=#72 id=72 data-nosnippet>72</a><span class="kw">impl</span>&lt;T: PartnerChainRuntime + PartnerChainRuntimeBindings&gt; Command&lt;T&gt; {
-<a href=#73 id=73 data-nosnippet>73</a>	<span class="kw">pub fn </span>run&lt;C: IOContext&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, context: <span class="kw-2">&amp;</span>C) -&gt; anyhow::Result&lt;()&gt; {
-<a href=#74 id=74 data-nosnippet>74</a>		<span class="kw">match </span><span class="self">self </span>{
-<a href=#75 id=75 data-nosnippet>75</a>			Command::GenerateKeys(cmd) =&gt; cmd.run(context),
-<a href=#76 id=76 data-nosnippet>76</a>			Command::PrepareConfiguration(cmd) =&gt; cmd.run(context),
-<a href=#77 id=77 data-nosnippet>77</a>			Command::CreateChainSpec(cmd) =&gt; cmd.run(context),
-<a href=#78 id=78 data-nosnippet>78</a>			Command::SetupMainChainState(cmd) =&gt; cmd.run(context),
-<a href=#79 id=79 data-nosnippet>79</a>			Command::StartNode(cmd) =&gt; cmd.run(context),
-<a href=#80 id=80 data-nosnippet>80</a>			Command::Register1(cmd) =&gt; cmd.run(context),
-<a href=#81 id=81 data-nosnippet>81</a>			Command::Register2(cmd) =&gt; cmd.run(context),
-<a href=#82 id=82 data-nosnippet>82</a>			Command::Register3(cmd) =&gt; cmd.run(context),
-<a href=#83 id=83 data-nosnippet>83</a>			Command::Deregister(cmd) =&gt; cmd.run(context),
-<a href=#84 id=84 data-nosnippet>84</a>		}
-<a href=#85 id=85 data-nosnippet>85</a>	}
-<a href=#86 id=86 data-nosnippet>86</a>}
-<a href=#87 id=87 data-nosnippet>87</a>
-<a href=#88 id=88 data-nosnippet>88</a><span class="kw">pub trait </span>CmdRun {
-<a href=#89 id=89 data-nosnippet>89</a>	<span class="kw">fn </span>run&lt;C: IOContext&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, context: <span class="kw-2">&amp;</span>C) -&gt; anyhow::Result&lt;()&gt;;
-<a href=#90 id=90 data-nosnippet>90</a>}
-<a href=#91 id=91 data-nosnippet>91</a>
-<a href=#92 id=92 data-nosnippet>92</a><span class="kw">const </span>HELP_EXAMPLES: <span class="kw-2">&amp;</span>str = <span class="string">r#"
-<a href=#93 id=93 data-nosnippet>93</a>╔════════════════════════════════════════════════════════════════════════════════╗
-<a href=#94 id=94 data-nosnippet>94</a>║                           Command groups by role                               ║
-<a href=#95 id=95 data-nosnippet>95</a>╠════════════════════════════════════════════════════════════════════════════════╣
-<a href=#96 id=96 data-nosnippet>96</a>║ The following sections outline the typical sequence of commands for each role. ║
-<a href=#97 id=97 data-nosnippet>97</a>║ The numbering indicates the recommended order of execution. Please note that   ║
-<a href=#98 id=98 data-nosnippet>98</a>║ this order may vary depending on specific deployment scenarios.                ║
-<a href=#99 id=99 data-nosnippet>99</a>╟────────────────────────────────────────────────────────────────────────────────╢
-<a href=#100 id=100 data-nosnippet>100</a>║ Governance Authority:                                                          ║
-<a href=#101 id=101 data-nosnippet>101</a>║   1. generate-keys         : generate necessary cryptographic keys             ║
-<a href=#102 id=102 data-nosnippet>102</a>║   2. prepare-configuration : set up the partner chain configuration            ║
-<a href=#103 id=103 data-nosnippet>103</a>║   3. create-chain-spec     : create the chain specification file               ║
-<a href=#104 id=104 data-nosnippet>104</a>║   4. setup-main-chain-state: configure the main chain parameters               ║
-<a href=#105 id=105 data-nosnippet>105</a>║   5. start-node            : start the validator node                          ║
-<a href=#106 id=106 data-nosnippet>106</a>╟────────────────────────────────────────────────────────────────────────────────╢
-<a href=#107 id=107 data-nosnippet>107</a>║ Registered Validator:                                                          ║
-<a href=#108 id=108 data-nosnippet>108</a>║   1. generate-keys         : generate validator keys                           ║
-<a href=#109 id=109 data-nosnippet>109</a>║   2. register1             : initiate the registration process                 ║
-<a href=#110 id=110 data-nosnippet>110</a>║   3. register2             : complete registration with cold keys              ║
-<a href=#111 id=111 data-nosnippet>111</a>║   4. register3             : finalize registration                             ║
-<a href=#112 id=112 data-nosnippet>112</a>║   5. start-node            : start the validator node                          ║
-<a href=#113 id=113 data-nosnippet>113</a>║   6. deregister            : cancel registration                               ║
-<a href=#114 id=114 data-nosnippet>114</a>║                                                                                ║
-<a href=#115 id=115 data-nosnippet>115</a>║   Note: This sequence assumes that the chain-spec.json and                     ║
-<a href=#116 id=116 data-nosnippet>116</a>║         pc-chain-config.json files have been obtained from                     ║
-<a href=#117 id=117 data-nosnippet>117</a>║         the Governance Authority and are present in the working directory.     ║
-<a href=#118 id=118 data-nosnippet>118</a>╟────────────────────────────────────────────────────────────────────────────────╢
-<a href=#119 id=119 data-nosnippet>119</a>║ Permissioned Validator:                                                        ║
-<a href=#120 id=120 data-nosnippet>120</a>║   1. generate-keys         : generate validator keys                           ║
-<a href=#121 id=121 data-nosnippet>121</a>║   2. start-node            : start the validator node                          ║
-<a href=#122 id=122 data-nosnippet>122</a>║                                                                                ║
-<a href=#123 id=123 data-nosnippet>123</a>║   Note: After executing 'generate-keys', the generated keys must be shared     ║
-<a href=#124 id=124 data-nosnippet>124</a>║         with the Governance Authority. The 'start-node' command can only be    ║
-<a href=#125 id=125 data-nosnippet>125</a>║         executed after the Governance Authority has established the partner    ║
-<a href=#126 id=126 data-nosnippet>126</a>║         chain on the main network. This sequence assumes that the              ║
-<a href=#127 id=127 data-nosnippet>127</a>║         chain-spec.json and pc-chain-config.json files have                    ║
-<a href=#128 id=128 data-nosnippet>128</a>║         been obtained from the Governance Authority and are present in the     ║
-<a href=#129 id=129 data-nosnippet>129</a>║         working directory.                                                     ║
-<a href=#130 id=130 data-nosnippet>130</a>╚════════════════════════════════════════════════════════════════════════════════╝
-<a href=#131 id=131 data-nosnippet>131</a>"#</span>;</code></pre></div></section></main></body></html>
+<a href=#5 id=5 data-nosnippet>5</a><span class="kw">mod </span>cmd_traits;
+<a href=#6 id=6 data-nosnippet>6</a><span class="kw">pub mod </span>config;
+<a href=#7 id=7 data-nosnippet>7</a><span class="kw">pub mod </span>create_chain_spec;
+<a href=#8 id=8 data-nosnippet>8</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>data_source;
+<a href=#9 id=9 data-nosnippet>9</a><span class="kw">mod </span>deregister;
+<a href=#10 id=10 data-nosnippet>10</a><span class="kw">pub mod </span>generate_keys;
+<a href=#11 id=11 data-nosnippet>11</a><span class="kw">pub mod </span>io;
+<a href=#12 id=12 data-nosnippet>12</a><span class="kw">pub mod </span>keystore;
+<a href=#13 id=13 data-nosnippet>13</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>ogmios;
+<a href=#14 id=14 data-nosnippet>14</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>permissioned_candidates;
+<a href=#15 id=15 data-nosnippet>15</a><span class="kw">mod </span>prepare_configuration;
+<a href=#16 id=16 data-nosnippet>16</a><span class="kw">pub mod </span>register;
+<a href=#17 id=17 data-nosnippet>17</a><span class="kw">pub mod </span>runtime_bindings;
+<a href=#18 id=18 data-nosnippet>18</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>select_utxo;
+<a href=#19 id=19 data-nosnippet>19</a><span class="kw">mod </span>setup_main_chain_state;
+<a href=#20 id=20 data-nosnippet>20</a><span class="kw">pub mod </span>start_node;
+<a href=#21 id=21 data-nosnippet>21</a>
+<a href=#22 id=22 data-nosnippet>22</a><span class="attr">#[cfg(test)]
+<a href=#23 id=23 data-nosnippet>23</a></span><span class="kw">mod </span>tests;
+<a href=#24 id=24 data-nosnippet>24</a>
+<a href=#25 id=25 data-nosnippet>25</a><span class="kw">use </span>clap::Parser;
+<a href=#26 id=26 data-nosnippet>26</a><span class="kw">use </span>io::<span class="kw-2">*</span>;
+<a href=#27 id=27 data-nosnippet>27</a><span class="kw">use </span>partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
+<a href=#28 id=28 data-nosnippet>28</a><span class="kw">pub use </span>runtime_bindings::{PartnerChainRuntime, PartnerChainRuntimeBindings, RuntimeTypeWrapper};
+<a href=#29 id=29 data-nosnippet>29</a><span class="kw">use </span>std::time::Duration;
+<a href=#30 id=30 data-nosnippet>30</a>
+<a href=#31 id=31 data-nosnippet>31</a><span class="attr">#[derive(Clone, Debug, clap::Parser)]
+<a href=#32 id=32 data-nosnippet>32</a>#[command(author, version, about, long_about = <span class="prelude-val">None</span>)]
+<a href=#33 id=33 data-nosnippet>33</a></span><span class="kw">pub struct </span>CommonArguments {
+<a href=#34 id=34 data-nosnippet>34</a>	<span class="attr">#[arg(default_value = <span class="string">"5"</span>, long)]
+<a href=#35 id=35 data-nosnippet>35</a>	</span>retry_delay_seconds: u64,
+<a href=#36 id=36 data-nosnippet>36</a>	<span class="attr">#[arg(default_value = <span class="string">"59"</span>, long)]
+<a href=#37 id=37 data-nosnippet>37</a>	</span>retry_count: usize,
+<a href=#38 id=38 data-nosnippet>38</a>}
+<a href=#39 id=39 data-nosnippet>39</a>
+<a href=#40 id=40 data-nosnippet>40</a><span class="kw">impl </span>CommonArguments {
+<a href=#41 id=41 data-nosnippet>41</a>	<span class="kw">pub fn </span>retries(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; FixedDelayRetries {
+<a href=#42 id=42 data-nosnippet>42</a>		FixedDelayRetries::new(Duration::from_secs(<span class="self">self</span>.retry_delay_seconds), <span class="self">self</span>.retry_count)
+<a href=#43 id=43 data-nosnippet>43</a>	}
+<a href=#44 id=44 data-nosnippet>44</a>}
+<a href=#45 id=45 data-nosnippet>45</a>
+<a href=#46 id=46 data-nosnippet>46</a><span class="attr">#[derive(Clone, Debug, Parser)]
+<a href=#47 id=47 data-nosnippet>47</a>#[command(
+<a href=#48 id=48 data-nosnippet>48</a>    after_long_help = HELP_EXAMPLES,
+<a href=#49 id=49 data-nosnippet>49</a>)]
+<a href=#50 id=50 data-nosnippet>50</a></span><span class="kw">pub enum </span>Command&lt;T: PartnerChainRuntime + PartnerChainRuntimeBindings&gt; {
+<a href=#51 id=51 data-nosnippet>51</a>	<span class="doccomment">/// This wizard generates the keys required for operating a partner-chains node, stores them in the keystore directory, and prints the public keys and keystore location.
+<a href=#52 id=52 data-nosnippet>52</a>	</span>GenerateKeys(generate_keys::GenerateKeysCmd),
+<a href=#53 id=53 data-nosnippet>53</a>	<span class="doccomment">/// Wizard to obtain the configuration needed for the partner-chain governance authority. This configuration should be shared with chain participants and used to create the chain spec json file.
+<a href=#54 id=54 data-nosnippet>54</a>	</span>PrepareConfiguration(prepare_configuration::PrepareConfigurationCmd),
+<a href=#55 id=55 data-nosnippet>55</a>	<span class="doccomment">/// Wizard for creating a chain spec json file based on the chain configuration (see `prepare-configuration`).
+<a href=#56 id=56 data-nosnippet>56</a>	</span>CreateChainSpec(create_chain_spec::CreateChainSpecCmd&lt;T&gt;),
+<a href=#57 id=57 data-nosnippet>57</a>	<span class="doccomment">/// Wizard for setting D-parameter and Permissioned Candidates list on the main chain.
+<a href=#58 id=58 data-nosnippet>58</a>	/// Uses 'chain config' obtained after running `prepare-configuration`.
+<a href=#59 id=59 data-nosnippet>59</a>	</span>SetupMainChainState(setup_main_chain_state::SetupMainChainStateCmd),
+<a href=#60 id=60 data-nosnippet>60</a>	<span class="doccomment">/// Wizard for starting a substrate node in the environment set up by `generate-keys`,
+<a href=#61 id=61 data-nosnippet>61</a>	/// `prepare-config`, and `create-chain-spec`. It also assits in setting the `resources configuration`.
+<a href=#62 id=62 data-nosnippet>62</a>	</span>StartNode(start_node::StartNodeCmd),
+<a href=#63 id=63 data-nosnippet>63</a>	<span class="doccomment">/// The first step of registering as a committee candidate. Registration is split into three steps to allow the user to use their cold keys on a cold machine.
+<a href=#64 id=64 data-nosnippet>64</a>	</span>Register1(register::register1::Register1Cmd),
+<a href=#65 id=65 data-nosnippet>65</a>	<span class="doccomment">/// The second step of registering as a committee candidate, using cold keys.
+<a href=#66 id=66 data-nosnippet>66</a>	</span>Register2(register::register2::Register2Cmd),
+<a href=#67 id=67 data-nosnippet>67</a>	<span class="doccomment">/// The final step of registering as a committee candidate, not using cold keys.
+<a href=#68 id=68 data-nosnippet>68</a>	</span>Register3(register::register3::Register3Cmd),
+<a href=#69 id=69 data-nosnippet>69</a>	<span class="doccomment">/// Deregister from the candidates set. This command requires chain config file present in the running directory.
+<a href=#70 id=70 data-nosnippet>70</a>	</span>Deregister(deregister::DeregisterCmd),
+<a href=#71 id=71 data-nosnippet>71</a>}
+<a href=#72 id=72 data-nosnippet>72</a>
+<a href=#73 id=73 data-nosnippet>73</a><span class="kw">impl</span>&lt;T: PartnerChainRuntime + PartnerChainRuntimeBindings&gt; Command&lt;T&gt; {
+<a href=#74 id=74 data-nosnippet>74</a>	<span class="kw">pub fn </span>run&lt;C: IOContext&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, context: <span class="kw-2">&amp;</span>C) -&gt; anyhow::Result&lt;()&gt; {
+<a href=#75 id=75 data-nosnippet>75</a>		<span class="kw">match </span><span class="self">self </span>{
+<a href=#76 id=76 data-nosnippet>76</a>			Command::GenerateKeys(cmd) =&gt; cmd.run(context),
+<a href=#77 id=77 data-nosnippet>77</a>			Command::PrepareConfiguration(cmd) =&gt; cmd.run(context),
+<a href=#78 id=78 data-nosnippet>78</a>			Command::CreateChainSpec(cmd) =&gt; cmd.run(context),
+<a href=#79 id=79 data-nosnippet>79</a>			Command::SetupMainChainState(cmd) =&gt; cmd.run(context),
+<a href=#80 id=80 data-nosnippet>80</a>			Command::StartNode(cmd) =&gt; cmd.run(context),
+<a href=#81 id=81 data-nosnippet>81</a>			Command::Register1(cmd) =&gt; cmd.run(context),
+<a href=#82 id=82 data-nosnippet>82</a>			Command::Register2(cmd) =&gt; cmd.run(context),
+<a href=#83 id=83 data-nosnippet>83</a>			Command::Register3(cmd) =&gt; cmd.run(context),
+<a href=#84 id=84 data-nosnippet>84</a>			Command::Deregister(cmd) =&gt; cmd.run(context),
+<a href=#85 id=85 data-nosnippet>85</a>		}
+<a href=#86 id=86 data-nosnippet>86</a>	}
+<a href=#87 id=87 data-nosnippet>87</a>}
+<a href=#88 id=88 data-nosnippet>88</a>
+<a href=#89 id=89 data-nosnippet>89</a><span class="kw">pub trait </span>CmdRun {
+<a href=#90 id=90 data-nosnippet>90</a>	<span class="kw">fn </span>run&lt;C: IOContext&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, context: <span class="kw-2">&amp;</span>C) -&gt; anyhow::Result&lt;()&gt;;
+<a href=#91 id=91 data-nosnippet>91</a>}
+<a href=#92 id=92 data-nosnippet>92</a>
+<a href=#93 id=93 data-nosnippet>93</a><span class="kw">const </span>HELP_EXAMPLES: <span class="kw-2">&amp;</span>str = <span class="string">r#"
+<a href=#94 id=94 data-nosnippet>94</a>╔════════════════════════════════════════════════════════════════════════════════╗
+<a href=#95 id=95 data-nosnippet>95</a>║                           Command groups by role                               ║
+<a href=#96 id=96 data-nosnippet>96</a>╠════════════════════════════════════════════════════════════════════════════════╣
+<a href=#97 id=97 data-nosnippet>97</a>║ The following sections outline the typical sequence of commands for each role. ║
+<a href=#98 id=98 data-nosnippet>98</a>║ The numbering indicates the recommended order of execution. Please note that   ║
+<a href=#99 id=99 data-nosnippet>99</a>║ this order may vary depending on specific deployment scenarios.                ║
+<a href=#100 id=100 data-nosnippet>100</a>╟────────────────────────────────────────────────────────────────────────────────╢
+<a href=#101 id=101 data-nosnippet>101</a>║ Governance Authority:                                                          ║
+<a href=#102 id=102 data-nosnippet>102</a>║   1. generate-keys         : generate necessary cryptographic keys             ║
+<a href=#103 id=103 data-nosnippet>103</a>║   2. prepare-configuration : set up the partner chain configuration            ║
+<a href=#104 id=104 data-nosnippet>104</a>║   3. create-chain-spec     : create the chain specification file               ║
+<a href=#105 id=105 data-nosnippet>105</a>║   4. setup-main-chain-state: configure the main chain parameters               ║
+<a href=#106 id=106 data-nosnippet>106</a>║   5. start-node            : start the validator node                          ║
+<a href=#107 id=107 data-nosnippet>107</a>╟────────────────────────────────────────────────────────────────────────────────╢
+<a href=#108 id=108 data-nosnippet>108</a>║ Registered Validator:                                                          ║
+<a href=#109 id=109 data-nosnippet>109</a>║   1. generate-keys         : generate validator keys                           ║
+<a href=#110 id=110 data-nosnippet>110</a>║   2. register1             : initiate the registration process                 ║
+<a href=#111 id=111 data-nosnippet>111</a>║   3. register2             : complete registration with cold keys              ║
+<a href=#112 id=112 data-nosnippet>112</a>║   4. register3             : finalize registration                             ║
+<a href=#113 id=113 data-nosnippet>113</a>║   5. start-node            : start the validator node                          ║
+<a href=#114 id=114 data-nosnippet>114</a>║   6. deregister            : cancel registration                               ║
+<a href=#115 id=115 data-nosnippet>115</a>║                                                                                ║
+<a href=#116 id=116 data-nosnippet>116</a>║   Note: This sequence assumes that the chain-spec.json and                     ║
+<a href=#117 id=117 data-nosnippet>117</a>║         pc-chain-config.json files have been obtained from                     ║
+<a href=#118 id=118 data-nosnippet>118</a>║         the Governance Authority and are present in the working directory.     ║
+<a href=#119 id=119 data-nosnippet>119</a>╟────────────────────────────────────────────────────────────────────────────────╢
+<a href=#120 id=120 data-nosnippet>120</a>║ Permissioned Validator:                                                        ║
+<a href=#121 id=121 data-nosnippet>121</a>║   1. generate-keys         : generate validator keys                           ║
+<a href=#122 id=122 data-nosnippet>122</a>║   2. start-node            : start the validator node                          ║
+<a href=#123 id=123 data-nosnippet>123</a>║                                                                                ║
+<a href=#124 id=124 data-nosnippet>124</a>║   Note: After executing 'generate-keys', the generated keys must be shared     ║
+<a href=#125 id=125 data-nosnippet>125</a>║         with the Governance Authority. The 'start-node' command can only be    ║
+<a href=#126 id=126 data-nosnippet>126</a>║         executed after the Governance Authority has established the partner    ║
+<a href=#127 id=127 data-nosnippet>127</a>║         chain on the main network. This sequence assumes that the              ║
+<a href=#128 id=128 data-nosnippet>128</a>║         chain-spec.json and pc-chain-config.json files have                    ║
+<a href=#129 id=129 data-nosnippet>129</a>║         been obtained from the Governance Authority and are present in the     ║
+<a href=#130 id=130 data-nosnippet>130</a>║         working directory.                                                     ║
+<a href=#131 id=131 data-nosnippet>131</a>╚════════════════════════════════════════════════════════════════════════════════╝
+<a href=#132 id=132 data-nosnippet>132</a>"#</span>;</code></pre></div></section></main></body></html>
