@@ -71,12 +71,12 @@ echo "Inserting D parameter..."
 ./partner-chains-node smart-contracts upsert-d-parameter \
     --ogmios-url http://ogmios:$OGMIOS_PORT \
     --genesis-utxo $GENESIS_UTXO \
-    --permissioned-candidates-count 3 \
-    --registered-candidates-count 2 \
+    --permissioned-candidates-count 2 \
+    --registered-candidates-count 0 \
     --payment-key-file /keys/funded_address.skey
 
 if [ $? -eq 0 ]; then
-    echo "Successfully inserted D-parameter (P = 3, R = 2)!"
+    echo "Successfully inserted D-parameter (P = 2, R = 0)!"
 else
     echo "Couldn't insert D-parameter..."
     exit 1
@@ -174,14 +174,6 @@ jq '.genesis.runtimeGenesis.config.session.initialValidators = [
              "beefy": "KWByAN7WfZABWS5AoWqxriRmF5f2jnDqy3rB5pfHLGkY93ibN",
              "grandpa": "5GoNkf6WdbxCFnPdAnYYQyCjAKPJgLNxXwPjwTh6DGg6gN3E"
          }
-     ],
-     [
-         "5EP2cMaCxLzhfD3aFAqqgu3kfXH7GcwweEv6JXZRP6ysRHkQ",
-         {
-             "aura": "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y",
-             "beefy": "KWBpGtyJLBkJERdZT1a1uu19c2uPpZm9nFd8SGtCfRUAT3Y4w",
-             "grandpa": "5DbKjhNLpqX3zqZdNBc9BGb4fHU1cRBaDhJUskrvkwfraDi6"
-         }
      ]
  ]' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
 
@@ -204,16 +196,6 @@ jq '.genesis.runtimeGenesis.config.sessionCommitteeManagement.initialAuthorities
         "aura": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
         "beefy": "KWByAN7WfZABWS5AoWqxriRmF5f2jnDqy3rB5pfHLGkY93ibN",
         "grandpa": "5GoNkf6WdbxCFnPdAnYYQyCjAKPJgLNxXwPjwTh6DGg6gN3E"
-      }
-    }
-  },
-  {
-    "Permissioned": {
-      "id": "KWBpGtyJLBkJERdZT1a1uu19c2uPpZm9nFd8SGtCfRUAT3Y4w",
-      "keys": {
-        "aura": "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y",
-        "beefy": "KWBpGtyJLBkJERdZT1a1uu19c2uPpZm9nFd8SGtCfRUAT3Y4w",
-        "grandpa": "5DbKjhNLpqX3zqZdNBc9BGb4fHU1cRBaDhJUskrvkwfraDi6"
       }
     }
   }
