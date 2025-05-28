@@ -5,6 +5,7 @@ use crate::CmdRun;
 use crate::cardano_key::{
 	get_mc_payment_signing_key_from_file, get_stake_pool_verification_key_from_file,
 };
+use crate::cmd_traits::Deregister;
 use crate::config::CHAIN_CONFIG_FILE_PATH;
 use crate::config::config_fields::{
 	CARDANO_COLD_VERIFICATION_KEY_FILE, CARDANO_PAYMENT_SIGNING_KEY_FILE,
@@ -12,7 +13,13 @@ use crate::config::config_fields::{
 use crate::io::IOContext;
 use crate::ogmios::config::establish_ogmios_configuration;
 use anyhow::anyhow;
-use partner_chains_cardano_offchain::register::Deregister;
+use ogmios_client::query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId};
+use ogmios_client::query_network::QueryNetwork;
+use ogmios_client::transactions::Transactions;
+use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
+use partner_chains_cardano_offchain::cardano_keys::CardanoPaymentSigningKey;
+use partner_chains_cardano_offchain::register::run_deregister;
+use sidechain_domain::{McTxHash, StakePoolPublicKey, UtxoId};
 
 #[derive(Clone, Debug, clap::Parser)]
 pub struct DeregisterCmd {
@@ -62,4 +69,21 @@ fn read_chain_config_file<C: IOContext>(
 		.map_err(|_|anyhow!(
 			"Couldn't parse chain configuration file {}. The chain configuration file that was used for registration is required in the working directory.",
 			CHAIN_CONFIG_FILE_PATH))
+}
+
+impl<T> Deregister for T
+where
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+{
+	async fn deregister(
+		&self,
+		await_tx: FixedDelayRetries,
+		genesis_utxo: UtxoId,
+		payment_signing_key: &CardanoPaymentSigningKey,
+		stake_ownership_pub_key: StakePoolPublicKey,
+	) -> Result<Option<McTxHash>, String> {
+		run_deregister(genesis_utxo, payment_signing_key, stake_ownership_pub_key, self, await_tx)
+			.await
+			.map_err(|e| e.to_string())
+	}
 }

@@ -1,3 +1,4 @@
+use super::InitGovernance;
 use crate::{
 	IOContext,
 	config::{
@@ -8,7 +9,7 @@ use crate::{
 use anyhow::anyhow;
 use partner_chains_cardano_offchain::{
 	await_tx::FixedDelayRetries, cardano_keys::CardanoPaymentSigningKey,
-	governance::MultiSigParameters, init_governance::InitGovernance,
+	governance::MultiSigParameters,
 };
 use sidechain_domain::{MainchainKeyHash, McTxHash, UtxoId};
 

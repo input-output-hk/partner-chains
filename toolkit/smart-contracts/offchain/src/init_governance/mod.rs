@@ -1,9 +1,5 @@
 use crate::{
-	OffchainError,
-	await_tx::{AwaitTx, FixedDelayRetries},
-	cardano_keys::CardanoPaymentSigningKey,
-	csl::Costs,
-	csl::key_hash_address,
+	await_tx::AwaitTx, cardano_keys::CardanoPaymentSigningKey, csl::Costs, csl::key_hash_address,
 	governance::MultiSigParameters,
 };
 use anyhow::anyhow;
@@ -18,44 +14,6 @@ use sidechain_domain::{McTxHash, UtxoId};
 mod tests;
 
 pub(crate) mod transaction;
-
-/// Initializes governance mechanism.
-pub trait InitGovernance {
-	/// Initializes governance mechanism with Cardano Native Script of type `atLeast` parametrized with values from
-	/// `governance_parameters`, for the chain identified by `genesis_utxo_id`.
-	#[allow(async_fn_in_trait)]
-	async fn init_governance(
-		&self,
-		await_tx: FixedDelayRetries,
-		governance_parameters: &MultiSigParameters,
-		payment_key: &CardanoPaymentSigningKey,
-		genesis_utxo_id: UtxoId,
-	) -> Result<McTxHash, OffchainError>;
-}
-
-impl<T> InitGovernance for T
-where
-	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
-{
-	async fn init_governance(
-		&self,
-		await_tx: FixedDelayRetries,
-		governance_parameters: &MultiSigParameters,
-		payment_key: &CardanoPaymentSigningKey,
-		genesis_utxo_id: UtxoId,
-	) -> Result<McTxHash, OffchainError> {
-		run_init_governance(
-			governance_parameters,
-			payment_key,
-			Some(genesis_utxo_id),
-			self,
-			await_tx,
-		)
-		.await
-		.map(|result| result.tx_hash)
-		.map_err(|e| OffchainError::InternalError(e.to_string()))
-	}
-}
 
 #[derive(serde::Serialize)]
 /// Result type of [run_init_governance].

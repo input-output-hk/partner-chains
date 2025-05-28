@@ -1,18 +1,13 @@
+use crate::cmd_traits::*;
 use crate::config::ServiceConfig;
 use crate::io::IOContext;
 use crate::ogmios::{OgmiosRequest, OgmiosResponse};
 use anyhow::anyhow;
 use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
-use partner_chains_cardano_offchain::d_param::{GetDParam, UpsertDParam};
+use partner_chains_cardano_offchain::cardano_keys::CardanoPaymentSigningKey;
 use partner_chains_cardano_offchain::governance::MultiSigParameters;
-use partner_chains_cardano_offchain::init_governance::InitGovernance;
 use partner_chains_cardano_offchain::multisig::MultiSigSmartContractResult;
-use partner_chains_cardano_offchain::permissioned_candidates::{
-	GetPermissionedCandidates, UpsertPermissionedCandidates,
-};
-use partner_chains_cardano_offchain::register::{Deregister, Register};
-use partner_chains_cardano_offchain::scripts_data::{GetScriptsData, ScriptsData};
-use partner_chains_cardano_offchain::{OffchainError, cardano_keys::CardanoPaymentSigningKey};
+use partner_chains_cardano_offchain::scripts_data::ScriptsData;
 use pretty_assertions::assert_eq;
 use sidechain_domain::{
 	CandidateRegistration, DParameter, McTxHash, PermissionedCandidateData, StakePoolPublicKey,
@@ -237,9 +232,9 @@ impl OffchainMocks {
 
 #[derive(Default, Clone)]
 pub struct OffchainMock {
-	pub scripts_data: HashMap<UtxoId, Result<ScriptsData, OffchainError>>,
+	pub scripts_data: HashMap<UtxoId, Result<ScriptsData, String>>,
 	pub init_governance:
-		HashMap<(UtxoId, MultiSigParameters, PrivateKeyBytes), Result<McTxHash, OffchainError>>,
+		HashMap<(UtxoId, MultiSigParameters, PrivateKeyBytes), Result<McTxHash, String>>,
 	pub get_d_param: HashMap<UtxoId, Result<Option<DParameter>, String>>,
 	pub upsert_d_param: HashMap<
 		(UtxoId, DParameter, PrivateKeyBytes),
@@ -251,14 +246,10 @@ pub struct OffchainMock {
 		(UtxoId, Vec<sidechain_domain::PermissionedCandidateData>, PrivateKeyBytes),
 		Result<Option<MultiSigSmartContractResult>, String>,
 	>,
-	pub register: HashMap<
-		(UtxoId, CandidateRegistration, PrivateKeyBytes),
-		Result<Option<McTxHash>, OffchainError>,
-	>,
-	pub deregister: HashMap<
-		(UtxoId, PrivateKeyBytes, StakePoolPublicKey),
-		Result<Option<McTxHash>, OffchainError>,
-	>,
+	pub register:
+		HashMap<(UtxoId, CandidateRegistration, PrivateKeyBytes), Result<Option<McTxHash>, String>>,
+	pub deregister:
+		HashMap<(UtxoId, PrivateKeyBytes, StakePoolPublicKey), Result<Option<McTxHash>, String>>,
 }
 
 type PrivateKeyBytes = Vec<u8>;
@@ -271,7 +262,7 @@ impl OffchainMock {
 	pub(crate) fn with_scripts_data(
 		self,
 		genesis_utxo: UtxoId,
-		scripts_data: Result<ScriptsData, OffchainError>,
+		scripts_data: Result<ScriptsData, String>,
 	) -> Self {
 		Self { scripts_data: vec![(genesis_utxo, scripts_data)].into_iter().collect(), ..self }
 	}
@@ -281,7 +272,7 @@ impl OffchainMock {
 		genesis_utxo: UtxoId,
 		governance: MultiSigParameters,
 		payment_key: PrivateKeyBytes,
-		result: Result<McTxHash, OffchainError>,
+		result: Result<McTxHash, String>,
 	) -> Self {
 		Self {
 			init_governance: vec![((genesis_utxo, governance, payment_key), result)]
@@ -314,7 +305,7 @@ impl OffchainMock {
 		genesis_utxo: UtxoId,
 		candidate_registration: CandidateRegistration,
 		payment_key: PrivateKeyBytes,
-		result: Result<Option<McTxHash>, OffchainError>,
+		result: Result<Option<McTxHash>, String>,
 	) -> Self {
 		Self {
 			register: [((genesis_utxo, candidate_registration, payment_key), result)].into(),
@@ -327,7 +318,7 @@ impl OffchainMock {
 		genesis_utxo: UtxoId,
 		payment_signing_key: PrivateKeyBytes,
 		stake_ownership_pub_key: StakePoolPublicKey,
-		result: Result<Option<McTxHash>, OffchainError>,
+		result: Result<Option<McTxHash>, String>,
 	) -> Self {
 		Self {
 			deregister: [((genesis_utxo, payment_signing_key, stake_ownership_pub_key), result)]
@@ -363,10 +354,11 @@ impl OffchainMock {
 }
 
 impl GetScriptsData for OffchainMock {
-	async fn get_scripts_data(&self, genesis_utxo: UtxoId) -> Result<ScriptsData, OffchainError> {
-		self.scripts_data.get(&genesis_utxo).cloned().unwrap_or_else(|| {
-			Err(OffchainError::InternalError("No mock for shelley_genesis_configuration".into()))
-		})
+	async fn get_scripts_data(&self, genesis_utxo: UtxoId) -> Result<ScriptsData, String> {
+		self.scripts_data
+			.get(&genesis_utxo)
+			.cloned()
+			.unwrap_or_else(|| Err("No mock for shelley_genesis_configuration".into()))
 	}
 }
 
@@ -377,13 +369,11 @@ impl InitGovernance for OffchainMock {
 		governance_authority: &MultiSigParameters,
 		payment_key: &CardanoPaymentSigningKey,
 		genesis_utxo_id: UtxoId,
-	) -> Result<McTxHash, OffchainError> {
+	) -> Result<McTxHash, String> {
 		self.init_governance
 			.get(&(genesis_utxo_id, governance_authority.clone(), payment_key.to_bytes()))
 			.cloned()
-			.unwrap_or_else(|| {
-				Err(OffchainError::InternalError("No mock for init_governance".into()))
-			})
+			.unwrap_or_else(|| Err("No mock for init_governance".into()))
 	}
 }
 
@@ -425,15 +415,15 @@ impl Register for OffchainMock {
 		genesis_utxo: UtxoId,
 		candidate_registration: &CandidateRegistration,
 		payment_signing_key: &CardanoPaymentSigningKey,
-	) -> Result<Option<McTxHash>, OffchainError> {
+	) -> Result<Option<McTxHash>, String> {
 		self.register
 			.get(&(genesis_utxo, candidate_registration.clone(), payment_signing_key.to_bytes()))
 			.cloned()
 			.unwrap_or_else(|| {
-				Err(OffchainError::InternalError(format!(
+				Err(format!(
 					"No mock for register({genesis_utxo}, {candidate_registration:?}, {:?})",
 					hex::encode(payment_signing_key.to_bytes())
-				)))
+				))
 			})
 	}
 }
@@ -445,15 +435,15 @@ impl Deregister for OffchainMock {
 		genesis_utxo: UtxoId,
 		payment_signing_key: &CardanoPaymentSigningKey,
 		stake_ownership_pub_key: StakePoolPublicKey,
-	) -> Result<Option<McTxHash>, OffchainError> {
+	) -> Result<Option<McTxHash>, String> {
 		self.deregister
 			.get(&(genesis_utxo, payment_signing_key.to_bytes(), stake_ownership_pub_key.clone()))
 			.cloned()
 			.unwrap_or_else(|| {
-				Err(OffchainError::InternalError(format!(
+				Err(format!(
 					"No mock for deregister({genesis_utxo}, {:?}, {stake_ownership_pub_key:?})",
 					hex::encode(payment_signing_key.to_bytes())
-				)))
+				))
 			})
 	}
 }
