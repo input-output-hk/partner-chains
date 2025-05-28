@@ -211,7 +211,7 @@ jq '.genesis.runtimeGenesis.config.sessionCommitteeManagement.initialAuthorities
 ]' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
 
 echo "Setting Governed Map scripts..."
-export GOVERNED_MAP_VALIDATOR_ADDRESS_HEX="0x$(echo $GOVERNED_MAP_VALIDATOR_ADDRESS | xxd -p -c 128)"
+export GOVERNED_MAP_VALIDATOR_ADDRESS_HEX="0x$(echo -n $GOVERNED_MAP_VALIDATOR_ADDRESS | xxd -p -c 128)"
 jq --arg address $GOVERNED_MAP_VALIDATOR_ADDRESS_HEX --arg policy_id $GOVERNED_MAP_POLICY_ID '.genesis.runtimeGenesis.config.governedMap.mainChainScripts = {
   "validator_address": $address,
   "asset_policy_id": $policy_id
