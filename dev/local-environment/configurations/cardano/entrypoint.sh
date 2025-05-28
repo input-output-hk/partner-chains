@@ -467,8 +467,9 @@ for batch_num in $(seq 1 "$num_batches"); do
         fi
     fi
     
-    if ! jq_output=$(/busybox jq -r --arg utxo_key "$current_batch_input_utxo" '.[$utxo_key].value.lovelace' "$input_utxo_details_file" 2>/dev/null); then
-        echo "[DEBUG] CRITICAL ERROR: Batch $batch_num: Failed to parse lovelace from UTXO $current_batch_input_utxo details."
+    jq_filter=.\[\"$current_batch_input_utxo\"\].value.lovelace # Construct filter string with shell variable
+    if ! jq_output=$(/busybox jq -r "$jq_filter" "$input_utxo_details_file" 2>/dev/null); then
+        echo "[DEBUG] CRITICAL ERROR: Batch $batch_num: Failed to parse lovelace from UTXO $current_batch_input_utxo details using filter '$jq_filter'."
         echo "[DEBUG_CONTENT] Contents of $input_utxo_details_file (if any):"
         cat "$input_utxo_details_file" | /busybox sed 's/^/[DEBUG_CONTENT] /'
         exit 1
