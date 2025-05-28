@@ -70,6 +70,7 @@
               python312Packages.virtualenv
               rustToolchain
               sops
+              xxd
             ]
             ++ (if isDarwin then [ pkgs.darwin.apple_sdk.frameworks.SystemConfiguration ] else [ pkgs.clang ]);
 
