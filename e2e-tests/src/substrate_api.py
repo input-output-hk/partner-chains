@@ -538,7 +538,7 @@ class SubstrateApi(BlockchainApi):
         for extrinsic in block["extrinsics"]:
             if extrinsic["call"]["call_module"]["name"] == extrinsic_name:
                 # Convert <class 'scalecodec.types.GenericExtrinsic'> to python dict
-                extrinsic_dict = extrinsic.value_serialized
+                extrinsic_dict = json.loads(json.dumps(extrinsic.value))
                 return extrinsic_dict["call"]["call_args"][0]["value"]
         return 0
 
@@ -582,6 +582,11 @@ class SubstrateApi(BlockchainApi):
             logger.error(f"Failed to get block producer fees.")
             raise Exception("Failed to get block producer fees.")
         return result.result
+
+    def get_block_participation_data(self, block_hash=None):
+        result = self.substrate.query("TestHelperPallet", "LatestParticipationData", block_hash=block_hash)
+        logger.debug(f"Block participation data: {result}")
+        return result.value
 
     def get_block_production_log(self, block_hash):
         # Storage key for BlockProductionLog is 0x5f3e4907f716ac89b6347d15ececedcaf7dad0317324aecae8744b87fc47565c
@@ -863,3 +868,43 @@ class SubstrateApi(BlockchainApi):
             logger.error(f"Failed to get committee members for pc_epoch={pc_epoch}.")
             raise Exception("Failed to get committee members.")
         return result["committee"]
+
+    def get_block_header(self, block_no):
+        return self.substrate.get_block_header(block_number=block_no)["header"]
+
+    def get_block(self, block_no=None):
+        return self.substrate.get_block(block_number=block_no)
+
+    def get_validator_set(self, block):
+        return self.substrate.query("Session", "ValidatorsAndKeys", block_hash=block["header"]["parentHash"])
+
+    def get_block_author_and_slot(self, block, validator_set):
+        """Custom implementation of substrate.get_block(include_author=True) to get block author, and block slot.
+        py-substrate-interface does not work because it calls "Validators" function from "Session" pallet,
+        which in our node is disabled and returns empty list. Here we use "ValidatorsAndKeys".
+        The function then iterates over "PreRuntime" logs and once it finds aura engine, it gets the slot
+        number and uses the result of modulo to get the author by index from the validator set.
+        Note: py-substrate-interface was also breaking at this point because we have another "PreRuntime" log
+        for mcsh engine (main chain hash) which is not supported by py-substrate-interface.
+        """
+        for log_data in block["header"]["digest"]["logs"]:
+            engine = bytes(log_data[1][0])
+            if "PreRuntime" in log_data and engine == b'aura':
+                aura_predigest = self.substrate.runtime_config.create_scale_object(
+                    type_string='RawAuraPreDigest', data=ScaleBytes(bytes(log_data[1][1]))
+                )
+
+                aura_predigest.decode(check_remaining=self.substrate.config.get("strict_scale_decode"))
+
+                rank_validator = aura_predigest.value["slot_number"] % len(validator_set.value) # Use .value here
+
+                block_author = validator_set.value[rank_validator] # Use .value here
+                block["author"] = block_author.value[1]["aura"]
+                block["slot"] = aura_predigest.value["slot_number"]
+                break
+
+        if "author" not in block:
+            block_no = block["header"]["number"]
+            logger.error(f"Could not find author for block {block_no}. No PreRuntime log found with aura engine.")
+            return None
+        return block["author"], block["slot"]

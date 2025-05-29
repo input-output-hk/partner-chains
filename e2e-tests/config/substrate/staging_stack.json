@@ -1,7 +1,7 @@
 {
     "stack_config": {
         "ogmios_scheme": "ws",
-        "ogmios_host": "staging-preview-services-service",
+        "ogmios_host": "staging-preview-services-service.staging-preview.svc.cluster.local",
         "ogmios_port": 1337,
         "validator_name": "staging-preview-validator-1",
         "namespace": "staging-preview",

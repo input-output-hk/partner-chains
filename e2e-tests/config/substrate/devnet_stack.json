@@ -1,7 +1,7 @@
 {
     "stack_config": {
         "ogmios_scheme": "ws",
-        "ogmios_host": "devnet-services-service",
+        "ogmios_host": "devnet-services-service.sc.svc.cluster.local",
         "ogmios_port": 1337,
         "validator_name": "alice",
         "namespace": "sc",
