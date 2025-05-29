@@ -77,6 +77,9 @@ class Tool:
     cli: str = MISSING
     ssh: Optional[SSH] = None
     shell: Optional[str] = SI("${...tools_shell}")
+    pod: Optional[str] = None
+    namespace: Optional[str] = None
+    container: Optional[str] = None
 
 
 @dataclass

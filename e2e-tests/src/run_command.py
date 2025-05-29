@@ -3,6 +3,7 @@ import logging
 import paramiko
 import subprocess
 import yaml
+import json
 from abc import ABC, abstractmethod
 from config.api_config import SSH
 from scp import SCPClient
@@ -24,9 +25,10 @@ class Result:
 
 class RunnerFactory:
     @staticmethod
-    def get_runner(ssh: SSH, shell: str):
-        if ssh:
-            return SSHRunner(ssh)
+    def get_runner(shell: str | None = None, pod: str | None = None, namespace: str | None = None, container: str | None = None):
+        if pod and namespace:
+            logging.debug(f"Using KubectlRunner for pod={pod}, namespace={namespace}, container={container}")
+            return KubectlRunner(pod=pod, namespace=namespace, container=container)
         else:
             return LocalRunner(shell)
 
@@ -184,3 +186,50 @@ class SSHRunner(Runner):
     def close(self):
         self.client.close()
         logging.debug(f"SSH: disconnected from {self.host}:{self.port} as {self.user}")
+
+
+class KubectlRunner(Runner):
+    def __init__(self, pod: str, namespace: str, container: str | None = None):
+        self.pod = pod
+        self.namespace = namespace
+        self.container = container
+
+    def run(self, command: str, timeout=120) -> Result:
+        logging.debug(f"KUBECTL EXEC: pod={self.pod}, namespace={self.namespace}, container={self.container}, CMD='{command}', TIMEOUT: {timeout}")
+
+        cmd = [
+            "kubectl",
+            "exec",
+            self.pod,
+            "-n",
+            self.namespace,
+        ]
+        if self.container:
+            cmd.extend(["-c", self.container])
+        cmd.extend(["--", "bash", "-c", command])
+
+        try:
+            completed_process = subprocess.run(
+                cmd,
+                timeout=timeout,
+                capture_output=True,
+                text=True, # Use text=True for Python 3.7+ to decode stdout/stderr
+            )
+            result = Result(
+                returncode=completed_process.returncode,
+                stdout=completed_process.stdout,
+                stderr=completed_process.stderr,
+            )
+            truncated_output = (
+                result.stdout[:STDOUT_MAX_LEN] + "..." if len(result.stdout) > STDOUT_MAX_LEN else result.stdout
+            )
+            logging.debug(f"STDOUT: {truncated_output}")
+            if result.stderr:
+                logging.warning(f"STDERR: {result.stderr}")
+            return result
+        except subprocess.TimeoutExpired as e:
+            logging.error(f"TIMEOUT: {e}")
+            raise e
+        except Exception as e:
+            logging.error(f"UNKNOWN ERROR: {e}")
+            raise e
