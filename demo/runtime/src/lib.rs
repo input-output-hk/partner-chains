@@ -659,8 +659,8 @@ impl pallet_beefy::Config for Runtime {
 	type MaxAuthorities = MaxValidators;
 	type MaxNominators = ConstU32<0>;
 	type MaxSetIdSessionEntries = BeefySetIdSessionEntries;
-	type OnNewValidatorSet = MmrLeaf;
-	type AncestryHelper = MmrLeaf;
+	type OnNewValidatorSet = BeefyMmrLeaf;
+	type AncestryHelper = BeefyMmrLeaf;
 	type WeightInfo = ();
 	type KeyOwnerProof = sp_session::MembershipProof;
 	// TODO: disabled equivocations, they require additional modules like Offences and full Session pallet
@@ -734,7 +734,7 @@ construct_runtime!(
 		Mmr: pallet_mmr,
 		// MMR leaf construction must be after session in order to have a leaf's next_auth_set
 		// refer to block<N>. See issue polkadot-fellows/runtimes#160 for details.
-		MmrLeaf: pallet_beefy_mmr,
+		BeefyMmrLeaf: pallet_beefy_mmr,
 		TestHelperPallet: crate::test_helper_pallet,
 	}
 );
@@ -1048,7 +1048,7 @@ impl_runtime_apis! {
 		) -> Option<sp_runtime::OpaqueValue> {
 			use sp_consensus_beefy::AncestryHelper;
 
-			MmrLeaf::generate_proof(prev_block_number, best_known_block_number)
+			BeefyMmrLeaf::generate_proof(prev_block_number, best_known_block_number)
 				.map(|p| p.encode())
 				.map(sp_runtime::OpaqueValue::new)
 		}
@@ -1101,6 +1101,16 @@ impl_runtime_apis! {
 		) -> Result<(), mmr::Error> {
 			let nodes = leaves.into_iter().map(|leaf|mmr::DataOrHash::Data(leaf.into_opaque_leaf())).collect();
 			pallet_mmr::verify_leaves_proof::<mmr::Hashing, _>(root, nodes, proof)
+		}
+	}
+
+	impl pallet_beefy_mmr::BeefyMmrApi<Block, Hash> for RuntimeApi {
+		fn authority_set_proof() -> sp_consensus_beefy::mmr::BeefyAuthoritySet<Hash> {
+			BeefyMmrLeaf::authority_set_proof()
+		}
+
+		fn next_authority_set_proof() -> sp_consensus_beefy::mmr::BeefyNextAuthoritySet<Hash> {
+			BeefyMmrLeaf::next_authority_set_proof()
 		}
 	}
 
