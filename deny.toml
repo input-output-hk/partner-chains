@@ -95,7 +95,8 @@ allow = [
     "CC0-1.0",
     # Specific GPL license from your Python script
     "GPL-3.0-or-later WITH Classpath-exception-2.0",
-    "Unicode-3.0"
+    "Unicode-3.0",
+    "CDLA-Permissive-2.0"
 ]
 # The confidence threshold for detecting a license from license text.
 # The higher the value, the more closely the license text must be to the
