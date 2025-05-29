@@ -641,9 +641,9 @@ jobs:
 
       - name: Run cargo-deny to check licenses
         uses: EmbarkStudios/cargo-deny-action@v1
-        working-directory: ./to-build
         with:
           command: check licenses
+          working-directory: ./to-build
 
       - name: Build chain specs
         working-directory: ./to-build
