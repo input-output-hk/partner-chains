@@ -102,6 +102,7 @@ allow = [
 # The higher the value, the more closely the license text must be to the
 # canonical license text of a valid SPDX license file.
 confidence-threshold = 0.8 # Default is 0.8, usually sufficient.
+unused-allowed = "allow"
 # Allow 1 or more licenses on a per-crate basis, so that particular licenses
 # aren't accepted for every possible crate as with the normal allow list
 exceptions = [
