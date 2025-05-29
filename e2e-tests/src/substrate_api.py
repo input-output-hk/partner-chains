@@ -16,6 +16,8 @@ from .partner_chains_node.node import PartnerChainsNode
 from .partner_chain_rpc import PartnerChainRpc, PartnerChainRpcResponse, DParam
 import time
 from scalecodec.base import ScaleBytes
+from substrateinterface.utils.ss58 import ss58_decode
+from typing import Optional
 
 
 def _keypair_name_to_type(type_name):
@@ -453,108 +455,73 @@ class SubstrateApi(BlockchainApi):
 
     def get_trustless_candidates(self, mc_epoch, valid_only):
         logger.info(f"Getting trustless candidates for {mc_epoch} MC epoch.")
-        registrations = self.partner_chain_rpc.partner_chain_get_ariadne_parameters(mc_epoch).result[
-            "candidateRegistrations"
-        ]
-        if valid_only:
-            registrations = {
-                spo: [candidate for candidate in candidates if candidate["isValid"]]
-                for spo, candidates in registrations.items()
-                if any(candidate["isValid"] for candidate in candidates)
-            }
-        return registrations
-
-    def get_trustless_rotation_candidates(self, mc_epoch):
-        logger.info(f"Getting trustless rotation candidates for {mc_epoch} MC epoch.")
-
-        # get rotation candidates from config
-        rotation_candidates = [
-            {"name": name, "public_key": node.public_key, "status": "inactive"}
-            for name, node in self.config.nodes_config.nodes.items()
-            if node.rotation_candidate
-        ]
-
-        if not rotation_candidates:
-            logger.warning("No trustless rotation candidates found in config")
-            return None
-
-        # get candidates from chain
-        try:
-            registrations = self.get_trustless_candidates(mc_epoch, valid_only=True)
-        except (KeyError, TypeError) as e:
-            logger.error(f"Couldn't get trustless candidates: {e}")
-            return None
-
-        # update status of rotation candidates
-        for candidates in registrations.values():
-            for candidate in candidates:
-                rotation_candidate = next(
-                    (
-                        rotation_candidate
-                        for rotation_candidate in rotation_candidates
-                        if rotation_candidate["public_key"] == candidate["sidechainPubKey"]
-                    ),
-                    None,
-                )
-                if rotation_candidate:
-                    rotation_candidate["status"] = "active"
-
-        return rotation_candidates
-
-    def get_permissioned_candidates(self, mc_epoch, valid_only):
-        logger.info(f"Getting permissioned candidates for {mc_epoch} MC epoch.")
         response = self.partner_chain_rpc.partner_chain_get_ariadne_parameters(mc_epoch)
         if response.error:
-            logger.error(f"Couldn't get permissioned candidates for {mc_epoch} MC epoch: {response.error}")
+            logger.error(f"Couldn't get trustless candidates for {mc_epoch} MC epoch: {response.error.message}")
             return None
-        candidates = response.result["permissionedCandidates"]
+        candidates = response.result["candidateRegistrations"]
         if valid_only:
             candidates = [candidate for candidate in candidates if candidate["isValid"]]
         return candidates
 
-    def get_permissioned_rotation_candidates(self, mc_epoch):
-        logger.info(f"Getting permissioned rotation candidates for {mc_epoch} MC epoch.")
-        # get rotation candidates from config
-        rotation_candidates = [
-            {"name": name, "public_key": node.public_key, "status": "inactive"}
-            for name, node in self.config.nodes_config.nodes.items()
-            if node.permissioned_candidate
-        ]
-
-        if not rotation_candidates:
-            logger.warning("No permissioned rotation candidates found in config")
+    def get_trustless_rotation_candidates(self, mc_epoch):
+        logger.info(f"Getting trustless rotation candidates for {mc_epoch} MC epoch.")
+        candidates = self.get_trustless_candidates(mc_epoch, valid_only=True)
+        if not candidates:
             return None
 
-        # get candidates from chain
-        registrations = self.get_permissioned_candidates(mc_epoch, valid_only=True)
-        if not registrations:
-            logger.error("Couldn't get permissioned candidates")
-            return None
-
-        # update status of rotation candidates
-        for candidate in registrations:
-            rotation_candidate = next(
-                (
-                    rotation_candidate
-                    for rotation_candidate in rotation_candidates
-                    if rotation_candidate["public_key"] == candidate["sidechainPublicKey"]
-                ),
-                None,
-            )
-            if rotation_candidate:
-                rotation_candidate["status"] = "active"
-
+        rotation_candidates = []
+        for candidate in candidates:
+            if candidate["rotationCandidate"]:
+                rotation_candidates.append(candidate)
         return rotation_candidates
 
-    def get_ariadne_parameters(self, mc_epoch):
-        logger.info(f"Getting ariadne parameters for {mc_epoch} MC epoch.")
-        return self.partner_chain_rpc.partner_chain_get_ariadne_parameters(mc_epoch).result
+    def get_permissioned_candidates(self, mc_epoch, valid_only):
+        response = self.partner_chain_rpc.partner_chain_get_ariadne_parameters(mc_epoch).result
+        if valid_only:
+            return [c for c in response["permissionedCandidates"] if c["isValid"]]
+        return response["permissionedCandidates"]
 
-    def get_registrations(self, mc_epoch, mc_key):
-        logger.info(f"Getting registrations for {mc_epoch} MC epoch and {mc_key} MC key.")
-        return self.partner_chain_rpc.partner_chain_get_registrations(mc_epoch=mc_epoch, mc_key=mc_key).result
+    def get_permissioned_rotation_candidates(self, mc_epoch):
+        logger.info(f"Getting permissioned rotation candidates for {mc_epoch} MC epoch.")
+        candidates = self.get_permissioned_candidates(mc_epoch, valid_only=True)
+        if not candidates:
+            return None
+
+        rotation_candidates = []
+        for candidate in candidates:
+            if candidate["rotationCandidate"]:
+                rotation_candidates.append(candidate)
+        return rotation_candidates
+
+    def get_permissioned_committee_members(self, pc_epoch):
+        """ Get permissioned committee members for epoch. """
+        committee = self.get_committee_members(pc_epoch)
+        permissioned_members = []
+        for member in committee:
+            if member["sidechainPubKey"].startswith("0x02"):
+                permissioned_members.append(member)
+        return permissioned_members
+
+    def get_trustless_committee_members(self, pc_epoch):
+        """ Get trustless committee members for epoch. """
+        committee = self.get_committee_members(pc_epoch)
+        trustless_members = []
+        for member in committee:
+            if member["sidechainPubKey"].startswith("0x03"):
+                trustless_members.append(member)
+        return trustless_members
+
+    def get_p_candidates_seats(self, pc_epoch) -> int:
+        """ Get number of permissioned candidates seats in committee. """
+        return len(self.get_permissioned_committee_members(pc_epoch))
+
+    def get_t_candidates_seats(self, pc_epoch) -> int:
+        """ Get number of trustless candidates seats in committee. """
+        return len(self.get_trustless_committee_members(pc_epoch))
 
     def get_committee_seats(self, mc_epoch=None):
+        """ Get number of committee seats. """
         if not mc_epoch:
             mc_epoch = self.get_mc_epoch()
         d_param = self.get_d_param(mc_epoch)
@@ -563,15 +530,11 @@ class SubstrateApi(BlockchainApi):
     def get_d_param(self, mc_epoch=None) -> DParam:
         if not mc_epoch:
             mc_epoch = self.get_mc_epoch()
-        response = self.partner_chain_rpc.partner_chain_get_ariadne_parameters(mc_epoch).result["dParameter"]
-        d_param = DParam(response["numPermissionedCandidates"], response["numRegisteredCandidates"])
-        return d_param
+        d = self.partner_chain_rpc.partner_chain_get_ariadne_parameters(mc_epoch).result["dParameter"]
+        return DParam(d["numPermissionedCandidates"], d["numRegisteredCandidates"])
 
     def get_block_extrinsic_value(self, extrinsic_name, block_no):
         block = self.get_block(block_no)
-        return self.extract_block_extrinsic_value(extrinsic_name, block)
-
-    def extract_block_extrinsic_value(self, extrinsic_name, block):
         for extrinsic in block["extrinsics"]:
             if extrinsic["call"]["call_module"]["name"] == extrinsic_name:
                 # Convert <class 'scalecodec.types.GenericExtrinsic'> to python dict
@@ -579,206 +542,53 @@ class SubstrateApi(BlockchainApi):
                 return extrinsic_dict["call"]["call_args"][0]["value"]
         return 0
 
-    def get_block_header(self, block_no):
-        return self.substrate.get_block_header(block_number=block_no)["header"]
-
-    def get_block(self, block_no=None):
-        return self.substrate.get_block(block_number=block_no)
-
-    def get_validator_set(self, block):
-        return self.substrate.query("Session", "ValidatorsAndKeys", block_hash=block["header"]["parentHash"])
-
-    def get_block_author_and_slot(self, block, validator_set):
-        """Custom implementation of substrate.get_block(include_author=True) to get block author, and block slot.
-        py-substrate-interface does not work because it calls "Validators" function from "Session" pallet,
-        which in our node is disabled and returns empty list. Here we use "ValidatorsAndKeys".
-        The function then iterates over "PreRuntime" logs and once it finds aura engine, it gets the slot
-        number and uses the result of modulo to get the author by index from the validator set.
-        Note: py-substrate-interface was also breaking at this point because we have another "PreRuntime" log
-        for mcsh engine (main chain hash) which is not supported by py-substrate-interface.
-        """
-        for log_data in block["header"]["digest"]["logs"]:
-            engine = bytes(log_data[1][0])
-            if "PreRuntime" in log_data and engine == b'aura':
-                aura_predigest = self.substrate.runtime_config.create_scale_object(
-                    type_string='RawAuraPreDigest', data=ScaleBytes(bytes(log_data[1][1]))
-                )
-
-                aura_predigest.decode(check_remaining=self.substrate.config.get("strict_scale_decode"))
-
-                rank_validator = aura_predigest.value["slot_number"] % len(validator_set)
-
-                block_author = validator_set[rank_validator]
-                block["author"] = block_author.value[1]["aura"]
-                block["slot"] = aura_predigest.value["slot_number"]
-                break
-
-        if "author" not in block:
-            block_no = block["header"]["number"]
-            logger.error(f"Could not find author for block {block_no}. No PreRuntime log found with aura engine.")
-            return None
-        return block["author"], block["slot"]
-
-    def get_mc_hash_from_pc_block_header(self, block):
-        mc_hash_key = "0x6d637368"
-        header = block["header"]
-        for log in header["digest"]["logs"]:
-            log = log.value_serialized
-            if "PreRuntime" in log.keys() and log["PreRuntime"][0] == mc_hash_key:
-                return log["PreRuntime"][1][2:]
+    def get_block_producer_reward(self, block_no, block_producer_account_id):
+        block = self.get_block(block_no)
+        for event in block["extrinsics"][-1]["events"]:
+            if event["event"]["module_id"] == "BlockProducerFees" and \
+               event["event"]["event_id"] == "FeePaid":
+                account_id, amount = event["event"]["attributes"]
+                if account_id == block_producer_account_id:
+                    return amount
         return None
 
-    def get_mc_block_no_by_tx_hash(self, tx_hash, retries=5, delay=10):
-        query = (
-            select(Block.block_no)
-            .join(Tx, Tx.block_id == Block.id)
-            .where(Tx.hash == func.decode(tx_hash, 'hex'))
-            .order_by(desc(Tx.id))
-            .limit(1)
-        )
-        block_no = self.__get_data_from_db_sync(query, retries=retries, delay=delay)
-        logger.debug(f"Block no for tx: {tx_hash} was found. It's block number is {block_no}")
-        return block_no
+    def get_block_producer_metadata(self, cross_chain_pub_key_hash):
+        result = self.partner_chain_rpc.partner_chain_get_block_producer_metadata(cross_chain_pub_key_hash)
+        if result is None:
+            logger.error(f"Failed to get block producer metadata for cross_chain_pub_key_hash={cross_chain_pub_key_hash}.")
+            raise Exception("Failed to get block producer metadata.")
+        return result.result
 
-    def get_mc_block_by_block_hash(self, block_hash, retries=5, delay=10):
-        query = select(Block).where(Block.hash == f"\\x{block_hash}").order_by(desc(Block.id)).limit(1)
-        block = self.__get_data_from_db_sync(query, retries=retries, delay=delay)
-        logger.debug(f"Block for hash: {block_hash} was found. It's block number is {block}")
-        return block
-
-    def get_mc_block_by_timestamp(self, timestamp, retries=5, delay=10):
-        from datetime import datetime, timezone
-
-        time = datetime.fromtimestamp(timestamp, timezone.utc)
-
-        query = select(Block).where(Block.time <= time).order_by(desc(Block.id)).limit(1)
-        block = self.__get_data_from_db_sync(query, retries, delay)
-        logger.debug(f"Block for timestamp: {timestamp} was found. It's block number is {block}")
-        return block
-
-    def __get_data_from_db_sync(self, query, retries=5, delay=10):
-        for _ in range(retries):
-            try:
-                data = self.db_sync.scalar(query)
-                if data is not None:
-                    return data
-                else:
-                    logger.debug(f"Data was not found for query: {query}. Retrying")
-
-            except SQLAlchemyError as e:
-                logger.exception(f"Query: {query} failed with error {e}. Retrying")
-                self.db_sync.rollback()
-
-            # If the query was not successful, wait for a while before retrying
-            time.sleep(delay)
-
-        # If the query still fails after retrying, raise an exception
-        logger.error(f"Query: {query} failed after {retries} retries")
-        raise Exception(f"Query: {query} failed after {retries} retries")
-
-    def _effective_in_mc_epoch(self):
-        """Calculates main chain epoch in which smart contracts candidates related operation will be effective."""
-        return self.cardano_cli.get_epoch() + 2
-
-    def sign_address_association(self, address, stake_signing_key):
-        return self.partner_chains_node.sign_address_association(address, stake_signing_key)
-
-    def sign_block_producer_metadata(self, metadata, cross_chain_signing_key):
-        return self.partner_chains_node.sign_block_producer_metadata(metadata, cross_chain_signing_key)
-
-    @long_running_function
-    def submit_address_association(self, signature, wallet):
-        tx = Transaction()
-        tx._unsigned = self.substrate.compose_call(
-            call_module="AddressAssociations",
-            call_function="associate_address",
-            call_params={
-                "partnerchain_address": signature.partner_chain_address,
-                "signature": signature.signature,
-                "stake_public_key": signature.stake_public_key,
-            },
-        )
-        logger.debug(f"Transaction built {tx._unsigned}")
-
-        if wallet.crypto_type and wallet.crypto_type == KeypairType.ECDSA:
-            tx._signed = self.__create_signed_ecdsa_extrinsic(call=tx._unsigned, keypair=wallet.raw)
-        else:
-            tx._signed = self.substrate.create_signed_extrinsic(call=tx._unsigned, keypair=wallet.raw)
-        logger.debug(f"Transaction signed {tx._signed}")
-
-        tx._receipt = self.substrate.submit_extrinsic(tx._signed, wait_for_inclusion=True)
-        logger.debug(f"Transaction sent {tx._receipt.extrinsic}")
-        tx.hash = tx._receipt.extrinsic_hash
-        tx.total_fee_amount = tx._receipt.total_fee_amount
-        return tx
-
-    @long_running_function
     def submit_block_producer_metadata(self, metadata, signature, wallet):
-        tx = Transaction()
-        tx._unsigned = self.substrate.compose_call(
-            call_module="BlockProducerMetadata",
-            call_function="upsert_metadata",
-            call_params={
-                "metadata": metadata,
-                "signature": signature.signature,
-                "cross_chain_pub_key": signature.cross_chain_pub_key,
-            },
-        )
-        logger.debug(f"Transaction built {tx._unsigned}")
-
-        if wallet.crypto_type and wallet.crypto_type == KeypairType.ECDSA:
-            tx._signed = self.__create_signed_ecdsa_extrinsic(call=tx._unsigned, keypair=wallet.raw)
-        else:
-            tx._signed = self.substrate.create_signed_extrinsic(call=tx._unsigned, keypair=wallet.raw)
-        logger.debug(f"Transaction signed {tx._signed}")
-
-        tx._receipt = self.substrate.submit_extrinsic(tx._signed, wait_for_inclusion=True)
-        logger.debug(f"Transaction sent {tx._receipt.extrinsic}")
-        tx.hash = tx._receipt.extrinsic_hash
-        tx.total_fee_amount = tx._receipt.total_fee_amount
-        return tx
+        # You would likely use the partner_chains_node CLI tool for this
+        # Example (this is conceptual, the actual implementation would depend on the CLI):
+        # cmd = f"partner-chains-node submit-metadata --metadata {metadata} --signature {signature} --wallet {wallet}"
+        # result = self.run_command(cmd)
+        # return result
+        raise NotImplementedError("Submitting block producer metadata is not implemented via this API.")
 
     def get_address_association(self, stake_key_hash):
-        result = self.substrate.query("AddressAssociations", "AddressAssociations", [f"0x{stake_key_hash}"])
+        # Remove 0x prefix if present
+        if stake_key_hash.startswith('0x'):
+            stake_key_hash = stake_key_hash[2:]
+            
+        result = self.substrate.query("AddressAssociations", "AddressAssociations", [stake_key_hash])
         logger.debug(f"Address association for {stake_key_hash}: {result}")
         return result.value
 
-    def get_block_producer_metadata(self, cross_chain_public_key_hash: str):
-        result = self.substrate.query(
-            "BlockProducerMetadata", "BlockProducerMetadataStorage", [f"0x{cross_chain_public_key_hash}"]
-        )
-        logger.debug(f"Block producer metadata for {cross_chain_public_key_hash}: {result}")
+    def get_block_producer_fees(self):
+        result = self.partner_chain_rpc.partner_chain_get_block_producer_fees()
+        if result is None:
+            logger.error(f"Failed to get block producer fees.")
+            raise Exception("Failed to get block producer fees.")
+        return result.result
+
+    def get_block_production_log(self, block_hash):
+        # Storage key for BlockProductionLog is 0x5f3e4907f716ac89b6347d15ececedcaf7dad0317324aecae8744b87fc47565c
+        storage_key = "0x5f3e4907f716ac89b6347d15ececedcaf7dad0317324aecae8744b87fc47565c"
+        result = self.substrate.query("BlockProductionLog", "BlockProductionLog", [block_hash])
+        logger.debug(f"Block production log for {block_hash}: {result}")
         return result.value
-
-    def get_block_production_log(self, block_hash=None):
-        result = self.substrate.query("BlockProductionLog", "Log", block_hash=block_hash)
-        logger.debug(f"Block production log: {result}")
-        return result.value
-
-    def get_block_participation_data(self, block_hash=None):
-        result = self.substrate.query("TestHelperPallet", "LatestParticipationData", block_hash=block_hash)
-        logger.debug(f"Block participation data: {result}")
-        return result.value
-
-    @long_running_function
-    def set_block_producer_margin_fee(self, margin_fee, wallet):
-        tx = Transaction()
-        tx._unsigned = self.substrate.compose_call(
-            call_module="BlockProducerFees", call_function="set_fee", call_params={"fee_numerator": margin_fee}
-        )
-        logger.debug(f"Transaction built {tx._unsigned}")
-
-        if wallet.crypto_type and wallet.crypto_type == KeypairType.ECDSA:
-            tx._signed = self.__create_signed_ecdsa_extrinsic(call=tx._unsigned, keypair=wallet.raw)
-        else:
-            tx._signed = self.substrate.create_signed_extrinsic(call=tx._unsigned, keypair=wallet.raw)
-        logger.debug(f"Transaction signed {tx._signed}")
-
-        tx._receipt = self.substrate.submit_extrinsic(tx._signed, wait_for_inclusion=True)
-        logger.debug(f"Transaction sent {tx._receipt.extrinsic}")
-        tx.hash = tx._receipt.extrinsic_hash
-        tx.total_fee_amount = tx._receipt.total_fee_amount
-        return tx
 
     def get_initial_pc_epoch(self):
         block = self.get_block()
@@ -932,3 +742,124 @@ class SubstrateApi(BlockchainApi):
 
         result = self.substrate.subscribe_block_headers(subscription_handler)
         return result
+
+    def get_mc_hash_from_pc_block_header(self, block):
+        mc_hash_key = "0x6d637368"
+        header = block["header"]
+        for log in header["digest"]["logs"]:
+            log = log.value_serialized
+            if "PreRuntime" in log.keys() and log["PreRuntime"][0] == mc_hash_key:
+                return log["PreRuntime"][1][2:]
+        return None
+
+    def get_mc_block_no_by_tx_hash(self, tx_hash, retries=5, delay=10):
+        query = (
+            select(Block.block_no)
+            .join(Tx, Tx.block_id == Block.id)
+            .where(Tx.hash == func.decode(tx_hash, 'hex'))
+            .order_by(desc(Tx.id))
+            .limit(1)
+        )
+        block_no = self.__get_data_from_db_sync(query, retries=retries, delay=delay)
+        logger.debug(f"Block no for tx: {tx_hash} was found. It's block number is {block_no}")
+        return block_no
+
+    def get_mc_block_by_block_hash(self, block_hash, retries=5, delay=10):
+        query = select(Block).where(Block.hash == f"\\x{block_hash}").order_by(desc(Block.id)).limit(1)
+        block = self.__get_data_from_db_sync(query, retries=retries, delay=delay)
+        logger.debug(f"Block for hash: {block_hash} was found. It's block number is {block}")
+        return block
+
+    def get_mc_block_by_timestamp(self, timestamp, retries=5, delay=10):
+        from datetime import datetime, timezone
+
+        time = datetime.fromtimestamp(timestamp, timezone.utc)
+
+        query = select(Block).where(Block.time <= time).order_by(desc(Block.id)).limit(1)
+        block = self.__get_data_from_db_sync(query, retries, delay)
+        logger.debug(f"Block for timestamp: {timestamp} was found. It's block number is {block}")
+        return block
+
+    def __get_data_from_db_sync(self, query, retries=5, delay=10):
+        for _ in range(retries):
+            try:
+                data = self.db_sync.scalar(query)
+                if data is not None:
+                    return data
+                else:
+                    logger.debug(f"Data was not found for query: {query}. Retrying")
+
+            except SQLAlchemyError as e:
+                logger.exception(f"Query: {query} failed with error {e}. Retrying")
+                self.db_sync.rollback()
+
+            # If the query was not successful, wait for a while before retrying
+            time.sleep(delay)
+
+        # If the query still fails after retrying, raise an exception
+        logger.error(f"Query: {query} failed after {retries} retries")
+        raise Exception(f"Query: {query} failed after {retries} retries")
+
+    def _effective_in_mc_epoch(self):
+        """Calculates main chain epoch in which smart contracts candidates related operation will be effective."""
+        return self.cardano_cli.get_epoch() + 2
+
+    def sign_address_association(self, address, stake_signing_key):
+        return self.partner_chains_node.sign_address_association(address, stake_signing_key)
+
+    def sign_block_producer_metadata(self, metadata, cross_chain_signing_key):
+        return self.partner_chains_node.sign_block_producer_metadata(metadata, cross_chain_signing_key)
+
+    @long_running_function
+    def submit_address_association(self, signature, wallet):
+        tx = Transaction()
+        tx._unsigned = self.substrate.compose_call(
+            call_module="AddressAssociations",
+            call_function="associate_address",
+            call_params={
+                "partnerchain_address": signature.partner_chain_address,
+                "signature": signature.signature,
+                "stake_public_key": signature.stake_public_key,
+            },
+        )
+        logger.debug(f"Transaction built {tx._unsigned}")
+
+        if wallet.crypto_type and wallet.crypto_type == KeypairType.ECDSA:
+            tx._signed = self.__create_signed_ecdsa_extrinsic(call=tx._unsigned, keypair=wallet.raw)
+        else:
+            tx._signed = self.substrate.create_signed_extrinsic(call=tx._unsigned, keypair=wallet.raw)
+        logger.debug(f"Transaction signed {tx._signed}")
+
+        tx._receipt = self.substrate.submit_extrinsic(tx._signed, wait_for_inclusion=True)
+        logger.debug(f"Transaction sent {tx._receipt.extrinsic}")
+        tx.hash = tx._receipt.extrinsic_hash
+        tx.total_fee_amount = tx._receipt.total_fee_amount
+        return tx
+
+    @long_running_function
+    def set_block_producer_margin_fee(self, margin_fee, wallet):
+        tx = Transaction()
+        tx._unsigned = self.substrate.compose_call(
+            call_module="BlockProducerFees", call_function="set_fee", call_params={"fee_numerator": margin_fee}
+        )
+        logger.debug(f"Transaction built {tx._unsigned}")
+
+        if wallet.crypto_type and wallet.crypto_type == KeypairType.ECDSA:
+            tx._signed = self.__create_signed_ecdsa_extrinsic(call=tx._unsigned, keypair=wallet.raw)
+        else:
+            tx._signed = self.substrate.create_signed_extrinsic(call=tx._unsigned, keypair=wallet.raw)
+        logger.debug(f"Transaction signed {tx._signed}")
+
+        tx._receipt = self.substrate.submit_extrinsic(tx._signed, wait_for_inclusion=True)
+        logger.debug(f"Transaction sent {tx._receipt.extrinsic}")
+        tx.hash = tx._receipt.extrinsic_hash
+        tx.total_fee_amount = tx._receipt.total_fee_amount
+        return tx
+
+    def get_committee_members(self, pc_epoch):
+        """ Get committee members for epoch. """
+        result = self.partner_chain_rpc.partner_chain_get_epoch_committee(pc_epoch).result
+        if result is None:
+            logger.error(f"Failed to get committee members for pc_epoch={pc_epoch}.")
+            raise Exception("Failed to get committee members.")
+        return result["committee"]

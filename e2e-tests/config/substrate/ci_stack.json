@@ -3,22 +3,24 @@
         "ogmios_scheme": "ws",
         "ogmios_host": "devnet-services-service",
         "ogmios_port": 1337,
+        "validator_name": "ci-preview-validator-1",
+        "namespace": "ci-preview",
+        "kubectl": {
+            "pod": "${stack_config[validator_name]}",
+            "namespace": "${stack_config[namespace]}"
+        },
         "tools": {
             "cardano_cli": {
-                "cli": "export CARDANO_NODE_SOCKET_PATH=/ipc/node.socket && /tools/cardano-cli",
-                "pod": "devnet-services",
-                "namespace": "sc",
-                "container": "cardano-node"
+                "cli": "cardano-cli",
+                "shell": ""
             },
             "partner_chains_node": {
-                "cli": "/partner-chains-node",
-                "pod": "ci-preview-validator-1",
-                "namespace": "ci-preview",
-                "container": "substrate-node"
+                "cli": "/usr/local/bin/partner-chains-node",
+                "shell": ""
             },
             "bech32": {
                 "cli": "/tools/bech32",
-                "ssh": "${stack_config[ssh]}"
+                "shell": ""
             }
         }
     }

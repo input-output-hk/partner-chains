@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from omegaconf import MISSING, SI
-from typing import Optional
+from typing import Optional, Any, Dict
 from src.partner_chain_rpc import DParam
 
 
@@ -57,25 +57,14 @@ class MainChainConfig:
 
 @dataclass
 class MainchainAccount:
-    mainchain_address: str
-    mainchain_key: str
-    mainchain_pub_key: str
-    mainchain_pub_key_hash: str
-
-
-@dataclass
-class SSH:
-    username: str = MISSING
-    host: str = MISSING
-    port: int = MISSING
-    host_keys_path: Optional[str] = None
-    private_key_path: Optional[str] = None
+    address: str = MISSING
+    mainchain_pub_key: str = MISSING
+    mainchain_pub_key_hash: str = MISSING
 
 
 @dataclass
 class Tool:
     cli: str = MISSING
-    ssh: Optional[SSH] = None
     shell: Optional[str] = SI("${...tools_shell}")
     pod: Optional[str] = None
     namespace: Optional[str] = None
@@ -114,14 +103,15 @@ class NodesApiConfig:
 
 @dataclass
 class StackApiConfig:
-    ogmios_scheme: str = "http"
+    ogmios_scheme: str = MISSING
     ogmios_host: str = MISSING
     ogmios_port: int = MISSING
     ogmios_url: str = SI("${.ogmios_scheme}://${.ogmios_host}:${.ogmios_port}")
     tools: dict[str, Tool] = MISSING
-    tools_host: str = MISSING
     tools_shell: Optional[str] = None
-    ssh: Optional[SSH] = None
+    validator_name: str = "validator-1"
+    namespace: str = "default"
+    kubectl: Optional[dict] = None
 
 
 @dataclass
