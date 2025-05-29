@@ -65,16 +65,20 @@ jobs:
         run: nix develop -c bash -c "RUSTFLAGS=-Dwarnings cargo clippy --all-targets --all-features"
       - name: formatting
         run: nix develop -c bash -c "cargo fmt --check"
+      - name: Run cargo-deny to check licenses
+        uses: EmbarkStudios/cargo-deny-action@v1
+        with:
+          command: check licenses
       - name: build chain specs
         run: |
             source ./dev/envs/devnet/.envrc
             target/release/partner-chains-demo-node build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json
             nix develop -c bash -c "./dev/update-chain-spec.sh devnet_chain_spec.json"
             source ./dev/envs/ci-preview/.envrc
-            target/release/partner-chains-demo-node build-spec --chain local --disable-default-bootnode > ci_preview_chain_spec.json
+            target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > ci_preview_chain_spec.json
             nix develop -c bash -c "./dev/update-chain-spec.sh ci_preview_chain_spec.json"
             source ./dev/envs/staging-preview/.envrc
-            target/release/partner-chains-demo-node build-spec --chain local --disable-default-bootnode > staging_preview_chain_spec.json
+            target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
             nix develop -c bash -c "./dev/update-chain-spec.sh staging_preview_chain_spec.json"
       - name: build and push docker image
         run: |
@@ -254,16 +258,17 @@ jobs:
 ### Post merge workflow ###############################################################################################################
 
   build-linux-x86_64-post-merge:
-    runs-on: ubuntu-latest
+    runs-on: nixos
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
     outputs:
       sha: ${{ steps.get_sha.outputs.sha }}
     steps:
-      - name: Checkout repository
+      - name: Checkout master branch code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.sha }} 
+          path: ./to-build
       - name: Get current commit SHA
         id: get_sha
         working-directory: ./to-build
@@ -283,29 +288,32 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: cache cargo build
+      - name: Cache cargo build
         uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/registry/
             ~/.cargo/git
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-${{ hashFiles('to-build/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
-      - name: build
+      - name: Build
+        working-directory: ./to-build
         run: nix develop -c bash -c "cargo build --locked --profile=release"
-      - name: build chain specs
+      - name: Build chain specs
+        working-directory: ./to-build
         run: |
             source ./dev/envs/devnet/.envrc
             target/release/partner-chains-demo-node build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json
             nix develop -c bash -c "./dev/update-chain-spec.sh devnet_chain_spec.json"
             source ./dev/envs/ci-preview/.envrc
-            target/release/partner-chains-demo-node build-spec --chain local --disable-default-bootnode > ci_preview_chain_spec.json
+            target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > ci_preview_chain_spec.json
             nix develop -c bash -c "./dev/update-chain-spec.sh ci_preview_chain_spec.json"
             source ./dev/envs/staging-preview/.envrc
-            target/release/partner-chains-demo-node build-spec --chain local --disable-default-bootnode > staging_preview_chain_spec.json
+            target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
             nix develop -c bash -c "./dev/update-chain-spec.sh staging_preview_chain_spec.json"
       - name: Build and push docker image
+        working-directory: ./to-build
         run: |
           cp target/release/partner-chains-demo-node .
           nix develop -c bash -c "patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 partner-chains-demo-node"
@@ -319,7 +327,7 @@ jobs:
           )
 
           for tag in "${tags[@]}"; do
-            for image in "${images[@]}"; do
+            for image in "${images[@]}"; do 
               full_tag="$image:$tag"
               docker tag partner-chains-node:base "$full_tag"
               docker push "$full_tag"
@@ -327,6 +335,7 @@ jobs:
           done
 
       - name: Rename artifact
+        working-directory: ./to-build
         run: |
           cp ./partner-chains-demo-node partner-chains-node-${{ steps.get_sha.outputs.sha }}-x86_64-linux
           chmod +x ./partner-chains-node-${{ steps.get_sha.outputs.sha }}-x86_64-linux
@@ -346,15 +355,15 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: partner-chains-node-linux-artifact
-          path: ./partner-chains-node-${{ steps.get_sha.outputs.sha }}-x86_64-linux
+          path: to-build/partner-chains-node-${{ steps.get_sha.outputs.sha }}-x86_64-linux
       - name: Upload chain spec artifacts
         uses: actions/upload-artifact@v4
         with:
           name: chain-specs
           path: |
-            ./devnet_chain_spec.json
-            ./ci_preview_chain_spec.json
-            ./staging_preview_chain_spec.json
+            to-build/devnet_chain_spec.json
+            to-build/ci_preview_chain_spec.json
+            to-build/staging_preview_chain_spec.json
 
   build-linux-arm64:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
@@ -569,73 +578,116 @@ jobs:
 ### Workflow dispatch flow ###############################################################################################################
 
   build-linux-x86_64-workflow-dispatch:
-    runs-on: ubuntu-latest
+    runs-on: nixos
     if: github.event_name == 'workflow_dispatch'
     steps:
-      - name: Checkout repository
+      - name: Checkout target code to build
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
+          path: to-build
+          ref: ${{ inputs.sha }}
+
+      - name: Overlay flake files from build logic source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          sparse-checkout: |
+            flake.nix
+            flake.lock
+          sparse-checkout-cone-mode: false
+
+      - name: Move flake files to to-build
+        shell: bash
+        run: |
+          if [ -f flake.nix ]; then mv flake.nix to-build/flake.nix; fi
+          if [ -f flake.lock ]; then mv flake.lock to-build/flake.lock; fi
+
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN_SECRET }}
           aws-region: ${{ env.AWS_REGION }}
+
       - name: Login to container registry
         uses: docker/login-action@v3
         with:
           registry: ${{ secrets.ECR_REGISTRY_SECRET }}
-      - name: cache cargo build
+
+      - name: Cache cargo build
         uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/registry/
             ~/.cargo/git
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-${{ hashFiles('to-build/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
-      - name: build
+
+      - name: Build
+        working-directory: ./to-build
         run: nix develop -c bash -c "cargo build --locked --profile=release"
 
-      - name: test
+      - name: Test
+        working-directory: ./to-build
         run: nix develop -c bash -c "cargo test --locked --profile=release --features=runtime-benchmarks"
 
-      - name: lint
+      - name: Lint
+        working-directory: ./to-build
         run: nix develop -c bash -c "RUSTFLAGS=-Dwarnings cargo clippy --all-targets --all-features"
 
-      - name: formatting
+      - name: Formatting
+        working-directory: ./to-build
         run: nix develop -c bash -c "cargo fmt --check"
 
-      - name: build chain specs
+      - name: Run cargo-deny to check licenses
+        uses: EmbarkStudios/cargo-deny-action@v1
+        working-directory: ./to-build
+        with:
+          command: check licenses
+
+      - name: Build chain specs
+        working-directory: ./to-build
         run: |
           source dev/envs/devnet/.envrc
           target/release/partner-chains-demo-node build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json
+          nix develop -c bash -c "./dev/update-chain-spec.sh devnet_chain_spec.json"
           source dev/envs/ci-preview/.envrc
-          target/release/partner-chains-demo-node build-spec --chain local --disable-default-bootnode > ci_preview_chain_spec.json
+          target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > ci_preview_chain_spec.json
+          nix develop -c bash -c "./dev/update-chain-spec.sh ci_preview_chain_spec.json"
           source dev/envs/staging-preview/.envrc
-          target/release/partner-chains-demo-node build-spec --chain local --disable-default-bootnode > staging_preview_chain_spec.json
+          target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
+          nix develop -c bash -c "./dev/update-chain-spec.sh staging_preview_chain_spec.json"
 
-      - name: build and push docker image
+      - name: Build and push docker image
+        working-directory: ./to-build
         run: |
           cp target/release/partner-chains-demo-node .
           nix develop -c bash -c "patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 partner-chains-demo-node"
-          docker build -t ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ steps.get_sha.outputs.sha }} .
-          docker push ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ steps.get_sha.outputs.sha }}
+          docker build -t ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ inputs.sha }} .
+          docker push ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ inputs.sha }}
+
+      - name: Rename and prepare artifact for workflow dispatch
+        working-directory: ./to-build
+        run: |
+          ARTIFACT_NAME="partner-chains-node-${{ inputs.sha }}-x86_64-linux"
+          cp ./partner-chains-demo-node "$ARTIFACT_NAME"
+          chmod +x "$ARTIFACT_NAME"
+        shell: bash
 
       - name: Upload partner-chains-node artifact
         uses: actions/upload-artifact@v4
         with:
-          name: partner-chains-node-artifact
-          path: ./partner-chains-demo-node
+          name: partner-chains-node-linux-artifact
+          path: to-build/partner-chains-node-${{ inputs.sha }}-x86_64-linux
+
       - name: Upload chain spec artifacts
         uses: actions/upload-artifact@v4
         with:
           name: chain-specs
           path: |
-            ./devnet_chain_spec.json
-            ./ci_preview_chain_spec.json
-            ./staging_preview_chain_spec.json
+            to-build/devnet_chain_spec.json
+            to-build/ci_preview_chain_spec.json
+            to-build/staging_preview_chain_spec.json
 
   build-linux-arm64-workflow-dispatch:
     if: github.event_name == 'workflow_dispatch'
