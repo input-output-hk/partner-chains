@@ -81,7 +81,6 @@ ignore = []
 # https://embarkstudios.github.io/cargo-deny/checks/licenses/cfg.html
 [licenses]
 # List of SPDX license expressions considered acceptable.
-# This includes common permissive licenses and the specific GPL exception from your script.
 allow = [
     "MIT",
     "Apache-2.0",
@@ -89,8 +88,8 @@ allow = [
     "BSD-2-Clause",
     "BSD-3-Clause",
     "Zlib",
-    "BSL-1.0", # Boost Software License
-    "MPL-2.0", # Mozilla Public License 2.0
+    "BSL-1.0",
+    "MPL-2.0",
     "Unlicense",
     "CC0-1.0",
     "GPL-3.0-or-later WITH Classpath-exception-2.0",
