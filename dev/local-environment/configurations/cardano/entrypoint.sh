@@ -499,10 +499,9 @@ if ! cardano-cli latest transaction submit \
 fi
 echo "[LOG] Main funding transaction submitted."
 
-echo "[LOG] Waiting 20 seconds for the main transaction to process..."
-sleep 20
+echo "[LOG] Waiting 45 seconds for the main transaction to process and be confirmed..."
+sleep 45
 
-# --- START OF NEW BATCH FUNDING LOGIC ---
 echo "[LOG] Main transaction submitted. Determining initial UTXO for batch funding registered nodes."
 
 # Determine the TxId of the main transaction
@@ -522,9 +521,11 @@ current_batch_input_utxo="${main_tx_id}#${initial_funding_utxo_tx_ix}"
 
 echo "[LOG] Batch funding will start using main transaction's change output: $current_batch_input_utxo"
 echo "[LOG] Querying all UTXOs at $new_address for verification after main transaction:"
-cardano-cli latest query utxo --testnet-magic 42 --address "$new_address" --out-file /data/utxos_at_new_address_after_main.json
+verification_utxos=$(cardano-cli latest query utxo --testnet-magic 42 --address "$new_address" --out-file /data/utxos_at_new_address_after_main.json 2>&1)
+echo "[DEBUG] Verification query exit code: $?"
+echo "[DEBUG] Verification query stderr/stdout: $verification_utxos"
 if [ -s /data/utxos_at_new_address_after_main.json ]; then
-    echo "Full list of UTXOs at $new_address (content of /data/utxos_at_new_address_after_main.json):"
+    echo "[DEBUG] Full list of UTXOs at $new_address (content of /data/utxos_at_new_address_after_main.json):"
     cat /data/utxos_at_new_address_after_main.json
 else
     echo "[WARN] Could not retrieve full list of UTXOs at $new_address or file is empty."
@@ -619,80 +620,82 @@ for batch_num in $(seq 1 "$num_batches"); do
 
     echo "[LOG] Batch $batch_num: Querying current value of input UTXO $current_batch_input_utxo"
     
-    # Use a more robust approach: query UTXOs and parse directly without complex JSON
+    # Use the correct approach: query by address and find the specific UTXO
     utxo_queried_successfully=false
-    for query_attempt in {1..3}; do
-        echo "[LOG] Batch $batch_num: Querying UTXO attempt $query_attempt..."
+    for query_attempt in {1..5}; do # Increased attempts since we need to wait for confirmation
+        echo "[LOG] Batch $batch_num: Querying address UTXOs attempt $query_attempt..."
         
-        # Query UTXO using simpler text output approach
-        echo "[DEBUG] Batch $batch_num: Running: cardano-cli latest query utxo --testnet-magic 42 --tx-in \"$current_batch_input_utxo\""
-        raw_utxo_output=$(cardano-cli latest query utxo --testnet-magic 42 --tx-in "$current_batch_input_utxo" 2>/dev/null)
-        query_exit_code=$?
+        # Query all UTXOs at the address (this is the correct syntax)
+        echo "[DEBUG] Batch $batch_num: Running: cardano-cli latest query utxo --testnet-magic 42 --address \"$new_address\""
+        address_utxos_file="/data/address_utxos_batch_${batch_num}_attempt_${query_attempt}.json"
         
-        echo "[DEBUG] Batch $batch_num: cardano-cli exit code: $query_exit_code"
-        echo "[DEBUG] Batch $batch_num: Raw UTXO output length: ${#raw_utxo_output}"
-        echo "[DEBUG] Batch $batch_num: Raw UTXO output (first 500 chars):"
-        echo "$raw_utxo_output" | head -c 500
-        echo "[DEBUG] Batch $batch_num: --- End raw output ---"
-        
-        if [ $query_exit_code -eq 0 ] && [ -n "$raw_utxo_output" ]; then
-            # Test each step of the parsing
-            echo "[DEBUG] Batch $batch_num: Attempting to grep for '$current_batch_input_utxo'"
-            grep_result=$(echo "$raw_utxo_output" | /busybox grep "$current_batch_input_utxo")
-            echo "[DEBUG] Batch $batch_num: Grep result: '$grep_result'"
+        if cardano-cli latest query utxo --testnet-magic 42 --address "$new_address" --out-file "$address_utxos_file"; then
+            echo "[DEBUG] Batch $batch_num: Address query successful, file size: $(wc -c < "$address_utxos_file" 2>/dev/null || echo "unknown")"
             
-            if [ -n "$grep_result" ]; then
-                echo "[DEBUG] Batch $batch_num: Attempting to extract amount with awk..."
-                current_batch_input_utxo_amount=$(echo "$grep_result" | /busybox awk '{print $3}' | head -1)
-                echo "[DEBUG] Batch $batch_num: Awk result: '$current_batch_input_utxo_amount'"
+            # Show the content for debugging
+            echo "[DEBUG] Batch $batch_num: Address UTXOs content:"
+            cat "$address_utxos_file"
+            echo "[DEBUG] Batch $batch_num: --- End address UTXOs ---"
+            
+            # Check if our specific UTXO exists in the results
+            if /busybox grep -q "$current_batch_input_utxo" "$address_utxos_file"; then
+                echo "[LOG] Batch $batch_num: Found target UTXO $current_batch_input_utxo in address query results"
                 
-                # Also try different column positions in case the format is different
-                awk_col1=$(echo "$grep_result" | /busybox awk '{print $1}')
-                awk_col2=$(echo "$grep_result" | /busybox awk '{print $2}')
-                awk_col3=$(echo "$grep_result" | /busybox awk '{print $3}')
-                awk_col4=$(echo "$grep_result" | /busybox awk '{print $4}')
-                echo "[DEBUG] Batch $batch_num: All awk columns: \$1='$awk_col1' \$2='$awk_col2' \$3='$awk_col3' \$4='$awk_col4'"
+                # Extract the amount using jq (more reliable than awk for JSON)
+                utxo_filter=".[\"$current_batch_input_utxo\"].value.lovelace"
+                current_batch_input_utxo_amount=$(/busybox jq -r "$utxo_filter" "$address_utxos_file" 2>/dev/null)
+                
+                echo "[DEBUG] Batch $batch_num: jq filter: $utxo_filter"
+                echo "[DEBUG] Batch $batch_num: jq result: '$current_batch_input_utxo_amount'"
+                
+                if [[ "$current_batch_input_utxo_amount" =~ ^[0-9]+$ ]] && [ "$current_batch_input_utxo_amount" -gt 0 ]; then
+                    echo "[LOG] Batch $batch_num: Successfully parsed UTXO amount: $current_batch_input_utxo_amount lovelace"
+                    utxo_queried_successfully=true
+                    rm -f "$address_utxos_file"
+                    break
+                else
+                    echo "[WARN] Batch $batch_num: Invalid amount from jq: '$current_batch_input_utxo_amount'"
+                fi
             else
-                echo "[DEBUG] Batch $batch_num: Grep found no matches for '$current_batch_input_utxo'"
+                echo "[WARN] Batch $batch_num: Target UTXO $current_batch_input_utxo not found in address query results"
+                echo "[DEBUG] Batch $batch_num: Available UTXOs in results:"
+                /busybox jq -r 'keys[]' "$address_utxos_file" 2>/dev/null || echo "Failed to parse UTXO keys"
             fi
             
-            # Extract lovelace amount from the raw output (format: TxHash TxIx Address Amount Asset)
-            current_batch_input_utxo_amount=$(echo "$raw_utxo_output" | /busybox grep "$current_batch_input_utxo" | /busybox awk '{print $3}' | head -1)
-            
-            if [[ "$current_batch_input_utxo_amount" =~ ^[0-9]+$ ]] && [ "$current_batch_input_utxo_amount" -gt 0 ]; then
-                echo "[LOG] Batch $batch_num: Successfully parsed UTXO amount: $current_batch_input_utxo_amount lovelace"
-                utxo_queried_successfully=true
-                break
-            else
-                echo "[WARN] Batch $batch_num: Attempt $query_attempt: Invalid amount parsed: '$current_batch_input_utxo_amount'"
-            fi
+            rm -f "$address_utxos_file"
         else
-            echo "[WARN] Batch $batch_num: Attempt $query_attempt: Failed to query UTXO or empty result (exit_code=$query_exit_code)"
+            echo "[WARN] Batch $batch_num: Address query failed on attempt $query_attempt"
         fi
         
-        echo "[WARN] Batch $batch_num: Attempt $query_attempt failed. Retrying in 3s..."
-        sleep 3
+        if [ "$utxo_queried_successfully" = false ]; then
+            echo "[WARN] Batch $batch_num: Attempt $query_attempt failed. Waiting 10 seconds for transaction confirmation..."
+            sleep 10
+        fi
     done
 
     if [ "$utxo_queried_successfully" = false ]; then
-        echo "[DEBUG] CRITICAL ERROR: Batch $batch_num: Failed to query input UTXO $current_batch_input_utxo after multiple attempts."
-        echo "Attempting to find a new UTXO at $new_address as a fallback..."
+        echo "[DEBUG] CRITICAL ERROR: Batch $batch_num: Failed to find UTXO $current_batch_input_utxo after multiple address queries."
+        echo "Attempting to find any large UTXO at $new_address as a fallback..."
         
-        # Fallback: find any UTXO at the address
-        new_potential_utxo_output=$(cardano-cli latest query utxo --address "$new_address" --testnet-magic 42 2>/dev/null)
-        if [ -n "$new_potential_utxo_output" ]; then
-            # Get the largest UTXO available
-            new_potential_utxo=$(echo "$new_potential_utxo_output" | /busybox grep lovelace | /busybox sort -k3 -nr | head -1 | /busybox awk '{print $1"#"$2}')
-            if [ -n "$new_potential_utxo" ] && [ "$new_potential_utxo" != "$current_batch_input_utxo" ]; then
-                echo "[LOG] Found alternative UTXO: $new_potential_utxo. Retrying with this one for batch $batch_num."
-                current_batch_input_utxo="$new_potential_utxo"
+        # Fallback: find the largest available UTXO
+        fallback_utxos_file="/data/fallback_utxos_batch_${batch_num}.json"
+        if cardano-cli latest query utxo --testnet-magic 42 --address "$new_address" --out-file "$fallback_utxos_file"; then
+            echo "[DEBUG] Batch $batch_num: Fallback query successful, analyzing available UTXOs..."
+            cat "$fallback_utxos_file"
+            
+            # Find the UTXO with the largest lovelace amount
+            largest_utxo_info=$(/busybox jq -r 'to_entries | map(select(.value.value.lovelace)) | sort_by(.value.value.lovelace) | reverse | .[0] | "\(.key):\(.value.value.lovelace)"' "$fallback_utxos_file" 2>/dev/null)
+            
+            if [ -n "$largest_utxo_info" ] && [ "$largest_utxo_info" != "null:" ]; then
+                new_potential_utxo=$(echo "$largest_utxo_info" | cut -d: -f1)
+                current_batch_input_utxo_amount=$(echo "$largest_utxo_info" | cut -d: -f2)
                 
-                # Try to get amount for the new UTXO
-                current_batch_input_utxo_amount=$(echo "$new_potential_utxo_output" | /busybox grep "$new_potential_utxo" | /busybox awk '{print $3}' | head -1)
-                if [[ "$current_batch_input_utxo_amount" =~ ^[0-9]+$ ]]; then
-                    utxo_queried_successfully=true
-                fi
+                echo "[LOG] Found alternative UTXO: $new_potential_utxo with amount $current_batch_input_utxo_amount"
+                current_batch_input_utxo="$new_potential_utxo"
+                utxo_queried_successfully=true
             fi
+            
+            rm -f "$fallback_utxos_file"
         fi
         
         if [ "$utxo_queried_successfully" = false ]; then
