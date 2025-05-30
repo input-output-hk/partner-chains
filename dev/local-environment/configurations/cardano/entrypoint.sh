@@ -578,49 +578,9 @@ for batch_num in $(seq 1 "$num_batches"); do
         continue
     fi
 
-    echo "[LOG] Batch $batch_num: Building DUMMY transaction for fee calculation. Outputs to fund: $actual_nodes_in_this_batch"
-    dummy_batch_tx_file="/data/tx_batch_${batch_num}_dummy.raw"
-    dummy_batch_change_placeholder=1000000 # Min 1 ADA for dummy change
-
-    temp_batch_tx_out_params_array=("${batch_tx_out_params_array[@]}")
-    temp_batch_tx_out_params_array+=(--tx-out "$new_address+$dummy_batch_change_placeholder") # Dummy change to new_address
-
-    if ! cardano-cli latest transaction build-raw \
-      --tx-in "$current_batch_input_utxo" \
-      "${temp_batch_tx_out_params_array[@]}" \
-      --fee 0 \
-      --out-file "$dummy_batch_tx_file"; then
-        echo "[DEBUG] Batch $batch_num: ERROR building DUMMY transaction for fee calculation. Input UTXO: $current_batch_input_utxo. Using fallback fee."
-        cat "$dummy_batch_tx_file" 2>/dev/null || echo "Dummy file $dummy_batch_tx_file not created or unreadable."
-        batch_tx_fee=200000 # Fallback
-    else
-        batch_tx_num_inputs=1
-        batch_tx_num_outputs=$((actual_nodes_in_this_batch + 1)) # N outputs to nodes + 1 change output
-        batch_tx_num_witnesses=1 # Signed by funded_address.skey
-
-        calculated_batch_fee=$(cardano-cli latest transaction calculate-min-fee \
-            --tx-body-file "$dummy_batch_tx_file" \
-            --testnet-magic 42 \
-            --protocol-params-file "$protocol_params_file" \
-            --tx-in-count "$batch_tx_num_inputs" \
-            --tx-out-count "$batch_tx_num_outputs" \
-            --witness-count "$batch_tx_num_witnesses" | /busybox awk '{print $1}')
-
-        if ! [[ "$calculated_batch_fee" =~ ^[0-9]+$ ]] || [ -z "$calculated_batch_fee" ]; then
-            echo "[DEBUG] Batch $batch_num: ERROR calculating dynamic fee (Raw: '$calculated_batch_fee'). Using fallback 200000."
-            batch_tx_fee=200000
-        else
-            batch_tx_fee=$((calculated_batch_fee + 1000)) # Add a 1000 lovelace buffer
-            echo "[LOG] Batch $batch_num: Calculated Min Fee: $calculated_batch_fee, Using Fee with Buffer: $batch_tx_fee"
-        fi
-        rm -f "$dummy_batch_tx_file"
-    fi
-
-    echo "[LOG] Batch $batch_num: Total output to registered nodes: $batch_total_output_lovelace, Calculated Fee: $batch_tx_fee"
-
     echo "[LOG] Batch $batch_num: Querying current value of input UTXO $current_batch_input_utxo"
     
-    # Use the correct approach: query by address and find the specific UTXO
+    # First, get the actual UTXO information so we can calculate fees accurately
     utxo_queried_successfully=false
     for query_attempt in {1..5}; do # Increased attempts since we need to wait for confirmation
         echo "[LOG] Batch $batch_num: Querying address UTXOs attempt $query_attempt..."
@@ -632,37 +592,12 @@ for batch_num in $(seq 1 "$num_batches"); do
         if cardano-cli latest query utxo --testnet-magic 42 --address "$new_address" --out-file "$address_utxos_file"; then
             echo "[DEBUG] Batch $batch_num: Address query successful, file size: $(wc -c < "$address_utxos_file" 2>/dev/null || echo "unknown")"
             
-            echo "[DEBUG] Batch $batch_num: Checking if file exists and is readable..."
-            if [ ! -f "$address_utxos_file" ]; then
-                echo "[DEBUG] Batch $batch_num: ERROR - File $address_utxos_file does not exist!"
-            elif [ ! -r "$address_utxos_file" ]; then
-                echo "[DEBUG] Batch $batch_num: ERROR - File $address_utxos_file is not readable!"
-            else
-                echo "[DEBUG] Batch $batch_num: File exists and is readable."
-            fi
-            
-            echo "[DEBUG] Batch $batch_num: Attempting to display raw content using multiple methods..."
-            echo "[DEBUG] === METHOD 1: /busybox head ==="
-            /busybox head -20 "$address_utxos_file" 2>&1 | while IFS= read -r line; do echo "[DEBUG] $line"; done || echo "[DEBUG] busybox head failed"
-            echo "[DEBUG] === METHOD 2: cat with head ==="
-            cat "$address_utxos_file" | head -20 2>&1 | while IFS= read -r line; do echo "[DEBUG] $line"; done || echo "[DEBUG] cat | head failed"
-            echo "[DEBUG] === METHOD 3: first few lines with sed ==="
-            /busybox sed -n '1,20p' "$address_utxos_file" 2>&1 | while IFS= read -r line; do echo "[DEBUG] $line"; done || echo "[DEBUG] sed failed"
-            echo "[DEBUG] === METHOD 4: file type check ==="
-            file "$address_utxos_file" 2>/dev/null | while IFS= read -r line; do echo "[DEBUG] $line"; done || echo "[DEBUG] file command not available"
-            echo "[DEBUG] === METHOD 5: hexdump first 200 bytes ==="
-            /busybox hexdump -C "$address_utxos_file" | /busybox head -10 2>&1 | while IFS= read -r line; do echo "[DEBUG] $line"; done || echo "[DEBUG] hexdump failed"
-            echo "[DEBUG] === END OF RAW CONTENT ATTEMPTS ==="
-            
             # Check if our specific UTXO exists in the results using simple text search
             if /busybox grep -q "$current_batch_input_utxo" "$address_utxos_file"; then
                 echo "[LOG] Batch $batch_num: Found target UTXO $current_batch_input_utxo in output"
                 
                 # Extract the UTXO entry with context lines (get the full JSON object)
-                echo "[DEBUG] Batch $batch_num: Extracting UTXO entry with context..."
                 utxo_context=$(/busybox grep -A 20 "$current_batch_input_utxo" "$address_utxos_file")
-                echo "[DEBUG] Batch $batch_num: UTXO context (20 lines after match):"
-                echo "$utxo_context" | while IFS= read -r line; do echo "[DEBUG] $line"; done
                 
                 # Extract lovelace amount from the context
                 current_batch_input_utxo_amount=$(echo "$utxo_context" | /busybox grep '"lovelace":' | /busybox grep -o '[0-9]\+' | head -1)
@@ -677,8 +612,6 @@ for batch_num in $(seq 1 "$num_batches"); do
                 fi
             else
                 echo "[WARN] Batch $batch_num: Target UTXO $current_batch_input_utxo not found in output"
-                echo "[DEBUG] Batch $batch_num: Showing all UTXOs found:"
-                /busybox grep -o '[a-f0-9]\{64\}#[0-9]\+' "$address_utxos_file" | while IFS= read -r line; do echo "[DEBUG] Found UTXO: $line"; done || echo "[DEBUG] No UTXOs found with expected format"
             fi
             
             rm -f "$address_utxos_file"
@@ -747,6 +680,47 @@ for batch_num in $(seq 1 "$num_batches"); do
     fi
     
     echo "[LOG] Batch $batch_num: Input UTXO $current_batch_input_utxo has amount $current_batch_input_utxo_amount lovelace."
+
+    # Now calculate fee using the actual UTXO (which may have reference scripts)
+    echo "[LOG] Batch $batch_num: Building DUMMY transaction for fee calculation with actual UTXO. Outputs to fund: $actual_nodes_in_this_batch"
+    dummy_batch_tx_file="/data/tx_batch_${batch_num}_dummy.raw"
+    dummy_batch_change_placeholder=1000000 # Min 1 ADA for dummy change
+
+    temp_batch_tx_out_params_array=("${batch_tx_out_params_array[@]}")
+    temp_batch_tx_out_params_array+=(--tx-out "$new_address+$dummy_batch_change_placeholder") # Dummy change to new_address
+
+    if ! cardano-cli latest transaction build-raw \
+      --tx-in "$current_batch_input_utxo" \
+      "${temp_batch_tx_out_params_array[@]}" \
+      --fee 0 \
+      --out-file "$dummy_batch_tx_file"; then
+        echo "[DEBUG] Batch $batch_num: ERROR building DUMMY transaction for fee calculation. Input UTXO: $current_batch_input_utxo. Using fallback fee."
+        cat "$dummy_batch_tx_file" 2>/dev/null || echo "Dummy file $dummy_batch_tx_file not created or unreadable."
+        batch_tx_fee=300000 # Increased fallback for reference scripts
+    else
+        batch_tx_num_inputs=1
+        batch_tx_num_outputs=$((actual_nodes_in_this_batch + 1)) # N outputs to nodes + 1 change output
+        batch_tx_num_witnesses=1 # Signed by funded_address.skey
+
+        calculated_batch_fee=$(cardano-cli latest transaction calculate-min-fee \
+            --tx-body-file "$dummy_batch_tx_file" \
+            --testnet-magic 42 \
+            --protocol-params-file "$protocol_params_file" \
+            --tx-in-count "$batch_tx_num_inputs" \
+            --tx-out-count "$batch_tx_num_outputs" \
+            --witness-count "$batch_tx_num_witnesses" | /busybox awk '{print $1}')
+
+        if ! [[ "$calculated_batch_fee" =~ ^[0-9]+$ ]] || [ -z "$calculated_batch_fee" ]; then
+            echo "[DEBUG] Batch $batch_num: ERROR calculating dynamic fee (Raw: '$calculated_batch_fee'). Using fallback 300000."
+            batch_tx_fee=300000
+        else
+            batch_tx_fee=$((calculated_batch_fee + 5000)) # Add a larger buffer for reference scripts
+            echo "[LOG] Batch $batch_num: Calculated Min Fee: $calculated_batch_fee, Using Fee with Buffer: $batch_tx_fee"
+        fi
+        rm -f "$dummy_batch_tx_file"
+    fi
+
+    echo "[LOG] Batch $batch_num: Total output to registered nodes: $batch_total_output_lovelace, Calculated Fee: $batch_tx_fee"
 
     batch_tx_change=$((current_batch_input_utxo_amount - batch_total_output_lovelace - batch_tx_fee))
     echo "[LOG] Batch $batch_num: Change calculated: $batch_tx_change (Input: $current_batch_input_utxo_amount - Outputs: $batch_total_output_lovelace - Fee: $batch_tx_fee)"
