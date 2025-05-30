@@ -108,7 +108,7 @@ echo "[LOG] New main address created: $new_address"
 registered_node_payment_addresses=() # Array to store payment addresses
 
 # --- New: Generate Payment, Cold, KES, VRF, and Stake Keys for Permissioned Nodes ---
-echo "[LOG] Generating Keys for 10 Permissioned Nodes..."
+echo "[LOG] Generating Keys for $NUM_PERMISSIONED_NODES_TO_PROCESS Permissioned Nodes..."
 # Assume permissioned node key directories are structured like: /shared/node-keys/permissioned-<i>/keys
 # And node names are like partner-chains-node-1, partner-chains-node-2, etc. up to 10.
 # Let's map them to permissioned-1 to permissioned-10 for consistency with registered nodes.
@@ -193,11 +193,11 @@ for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do # Iterate based
     if [ $? -ne 0 ]; then echo "Error generating Stake keys for permissioned-$node_idx!"; fi
 
 done
-echo "[LOG] Completed generation of keys for 10 permissioned nodes."
+echo "[LOG] Completed generation of keys for $NUM_PERMISSIONED_NODES_TO_PROCESS permissioned nodes."
 # --- End of New Permissioned Key Generation ---
 
 # --- New: Generate Stake Addresses for Permissioned Nodes ---
-echo "[LOG] Generating Stake Addresses for 10 Permissioned Nodes..."
+echo "[LOG] Generating Stake Addresses for $NUM_PERMISSIONED_NODES_TO_PROCESS Permissioned Nodes..."
 permissioned_node_stake_addresses=() # Array to store stake addresses
 for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do # Iterate based on the variable
     node_idx=$((i+1)) # 1-indexed for directory name
@@ -215,13 +215,13 @@ for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do # Iterate based
         echo "Generated stake address for permissioned-$node_idx: $node_stake_address"
     fi
 done
-echo "[LOG] Completed generation of stake addresses for 10 permissioned nodes."
+echo "[LOG] Completed generation of stake addresses for $NUM_PERMISSIONED_NODES_TO_PROCESS permissioned nodes."
 # --- End of New Stake Address Generation ---
 
 # --- New: Generate Stake Addresses for Registered Nodes ---
-echo "[LOG] Generating Stake Addresses for 300 Registered Nodes..."
+echo "[LOG] Generating Stake Addresses for $NUM_REGISTERED_NODES_TO_PROCESS Registered Nodes..."
 registered_node_stake_addresses=() # Array to store stake addresses
-echo "[LOG] Generating Payment Keypairs and Addresses for 300 Registered Nodes..."
+echo "[LOG] Generating Payment Keypairs and Addresses for $NUM_REGISTERED_NODES_TO_PROCESS Registered Nodes..."
 for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     NODE_SPECIFIC_KEYS_DIR="/shared/node-keys/registered-${i}/keys"
     mkdir -p "$NODE_SPECIFIC_KEYS_DIR" # Ensure cold key dir also exists if not created yet
@@ -238,13 +238,13 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
         echo "Generated stake address for registered-$i: $node_stake_address"
     fi
 done
-echo "[LOG] Completed generation of stake addresses for 300 registered nodes."
+echo "[LOG] Completed generation of stake addresses for $NUM_REGISTERED_NODES_TO_PROCESS registered nodes."
 # --- End of New Stake Address Generation ---
 
-echo "[LOG] Completed generation of payment keypairs and addresses for 300 registered nodes."
+echo "[LOG] Completed generation of payment keypairs and addresses for $NUM_REGISTERED_NODES_TO_PROCESS registered nodes."
 
-# --- New: Generate KES, VRF, and Stake Keypairs for 300 Registered Nodes ---
-echo "[LOG] Generating KES, VRF, and Stake Keypairs for 300 Registered Nodes..."
+# --- New: Generate KES, VRF, and Stake Keypairs for $NUM_REGISTERED_NODES_TO_PROCESS Registered Nodes ---
+echo "[LOG] Generating KES, VRF, and Stake Keypairs for $NUM_REGISTERED_NODES_TO_PROCESS Registered Nodes..."
 for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     NODE_SPECIFIC_KEYS_DIR="/shared/node-keys/registered-${i}/keys" # Re-using the same key dir
 
@@ -275,7 +275,7 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
         # Decide how to handle error - continue or exit? For now, log and continue.
     fi
 done
-echo "[LOG] Completed generation of KES, VRF, and Stake keypairs for 300 registered nodes."
+echo "[LOG] Completed generation of KES, VRF, and Stake keypairs for $NUM_REGISTERED_NODES_TO_PROCESS registered nodes."
 # --- End of New Key Generation ---
 
 # An address that will keep an UTXO with script of a test V-function, related to the SPO rewards. See v-function.script file.
@@ -295,15 +295,15 @@ tx_out3=1000000000
 # partner-chains-setup (extra)
 tx_out4=1000000000
 
-# Fund 10 permissioned nodes
-for i in {1..10}; do
+# Fund $NUM_PERMISSIONED_NODES_TO_PROCESS permissioned nodes
+for i in $(seq 1 $NUM_PERMISSIONED_NODES_TO_PROCESS); do
     var_name="tx_out${i}_permissioned"
     declare "$var_name=1000000000"
 done
 
-# Fund 300 registered nodes (These are defined but not used in the *initial* main transaction anymore)
+# Fund $NUM_REGISTERED_NODES_TO_PROCESS registered nodes (These are defined but not used in the *initial* main transaction anymore)
 # They are funded in batches later.
-for i in {1..300}; do
+for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     var_name="tx_out${i}_registered"
     declare "$var_name=1000000000"
 done
@@ -318,7 +318,7 @@ total_output=$((tx_out1 + tx_out2 + tx_out3 + tx_out4))
 echo "[LOG] Initial total_output = $total_output"
 
 echo "[LOG] Adding permissioned node amounts to total_output."
-for i in {1..10}; do
+for i in $(seq 1 $NUM_PERMISSIONED_NODES_TO_PROCESS); do
     var_name="tx_out${i}_permissioned"
     echo "[DEBUG] var_name for permissioned loop iteration $i is: $var_name"
     echo "[DEBUG] Value of variable named '$var_name' is: $(eval echo "\$$var_name")"
@@ -343,7 +343,7 @@ main_tx_out_params_array+=(--tx-out "$new_address+$tx_out3")
 main_tx_out_params_array+=(--tx-out "$new_address+$tx_out4")
 
 # Permissioned nodes outputs (still to $new_address)
-for i in {1..10}; do
+for i in $(seq 1 $NUM_PERMISSIONED_NODES_TO_PROCESS); do
     var_name="tx_out${i}_permissioned"
     amount_permissioned="${!var_name}"
     main_tx_out_params_array+=(--tx-out "$new_address+$amount_permissioned")
@@ -616,7 +616,7 @@ for batch_num in $(seq 1 "$num_batches"); do
     # Validate the JSON file before attempting to parse
     if ! /busybox jq . "$input_utxo_details_file" > /dev/null 2>&1; then
         echo "[DEBUG] CRITICAL ERROR: Batch $batch_num: Input UTXO details file '$input_utxo_details_file' is not valid JSON."
-        echo "[DEBUG_CONTENT] Contents of invalid file '$input_utxo_details_file':
+        echo "[DEBUG_CONTENT] Contents of invalid file '$input_utxo_details_file':"
         cat "$input_utxo_details_file" | /busybox sed 's/^/[DEBUG_CONTENT] /'
         exit 1
     fi
