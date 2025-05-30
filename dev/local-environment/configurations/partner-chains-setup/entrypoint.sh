@@ -71,12 +71,12 @@ echo "Inserting D parameter..."
 ./partner-chains-node smart-contracts upsert-d-parameter \
     --ogmios-url http://ogmios:$OGMIOS_PORT \
     --genesis-utxo $GENESIS_UTXO \
-    --permissioned-candidates-count 3 \
-    --registered-candidates-count 2 \
+    --permissioned-candidates-count 6 \
+    --registered-candidates-count 4 \
     --payment-key-file /keys/funded_address.skey
 
 if [ $? -eq 0 ]; then
-    echo "Successfully inserted D-parameter (P = 3, R = 2)!"
+    echo "Successfully inserted D-parameter (P = 6, R = 4)!"
 else
     echo "Couldn't insert D-parameter..."
     exit 1
@@ -148,6 +148,46 @@ if [ $? -eq 0 ]; then
     echo "Registered candidate Dave inserted successfully!"
 else
     echo "Registration for Dave failed."
+    exit 1
+fi
+
+echo "Inserting registered candidate Eve..."
+
+# Prepare eve registration values
+eve_utxo=$(cat /shared/eve.utxo)
+eve_mainchain_signing_key=$(jq -r '.cborHex | .[4:]' /partner-chains-nodes/partner-chains-node-5/keys/cold.skey)
+eve_sidechain_signing_key=$(cat /partner-chains-nodes/partner-chains-node-5/keys/sidechain.skey)
+
+# Process registration signatures for eve
+eve_output=$(./partner-chains-node registration-signatures \
+    --genesis-utxo $GENESIS_UTXO \
+    --mainchain-signing-key $eve_mainchain_signing_key \
+    --sidechain-signing-key $eve_sidechain_signing_key \
+    --registration-utxo $eve_utxo)
+
+# Extract signatures and keys from eve output
+eve_spo_public_key=$(echo "$eve_output" | jq -r ".spo_public_key")
+eve_spo_signature=$(echo "$eve_output" | jq -r ".spo_signature")
+eve_sidechain_public_key=$(echo "$eve_output" | jq -r ".sidechain_public_key")
+eve_sidechain_signature=$(echo "$eve_output" | jq -r ".sidechain_signature")
+eve_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-5/keys/aura.vkey)
+eve_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-5/keys/grandpa.vkey)
+
+# Register eve
+./partner-chains-node smart-contracts register \
+    --ogmios-url http://ogmios:$OGMIOS_PORT \
+    --genesis-utxo $GENESIS_UTXO \
+    --spo-public-key $eve_spo_public_key \
+    --spo-signature $eve_spo_signature \
+    --sidechain-public-keys $eve_sidechain_public_key:$eve_aura_vkey:$eve_grandpa_vkey \
+    --sidechain-signature $eve_sidechain_signature \
+    --registration-utxo $eve_utxo \
+    --payment-key-file /partner-chains-nodes/partner-chains-node-5/keys/payment.skey
+
+if [ $? -eq 0 ]; then
+    echo "Registered candidate eve inserted successfully!"
+else
+    echo "Registration for eve failed."
     exit 1
 fi
 
