@@ -628,7 +628,7 @@ for batch_num in $(seq 1 "$num_batches"); do
         raw_utxo_output=$(cardano-cli latest query utxo --testnet-magic 42 --tx-in "$current_batch_input_utxo" 2>/dev/null)
         if [ $? -eq 0 ] && [ -n "$raw_utxo_output" ]; then
             # Extract lovelace amount from the raw output (format: TxHash TxIx Address Amount Asset)
-            current_batch_input_utxo_amount=$(echo "$raw_utxo_output" | grep "$current_batch_input_utxo" | awk '{print $3}' | head -1)
+            current_batch_input_utxo_amount=$(echo "$raw_utxo_output" | /busybox grep "$current_batch_input_utxo" | /busybox awk '{print $3}' | head -1)
             
             if [[ "$current_batch_input_utxo_amount" =~ ^[0-9]+$ ]] && [ "$current_batch_input_utxo_amount" -gt 0 ]; then
                 echo "[LOG] Batch $batch_num: Successfully parsed UTXO amount: $current_batch_input_utxo_amount lovelace"
@@ -653,13 +653,13 @@ for batch_num in $(seq 1 "$num_batches"); do
         new_potential_utxo_output=$(cardano-cli latest query utxo --address "$new_address" --testnet-magic 42 2>/dev/null)
         if [ -n "$new_potential_utxo_output" ]; then
             # Get the largest UTXO available
-            new_potential_utxo=$(echo "$new_potential_utxo_output" | grep lovelace | sort -k3 -nr | head -n 1 | awk '{print $1"#"$2}')
+            new_potential_utxo=$(echo "$new_potential_utxo_output" | /busybox grep lovelace | /busybox sort -k3 -nr | head -1 | /busybox awk '{print $1"#"$2}')
             if [ -n "$new_potential_utxo" ] && [ "$new_potential_utxo" != "$current_batch_input_utxo" ]; then
                 echo "[LOG] Found alternative UTXO: $new_potential_utxo. Retrying with this one for batch $batch_num."
                 current_batch_input_utxo="$new_potential_utxo"
                 
                 # Try to get amount for the new UTXO
-                current_batch_input_utxo_amount=$(echo "$new_potential_utxo_output" | grep "$new_potential_utxo" | awk '{print $3}' | head -1)
+                current_batch_input_utxo_amount=$(echo "$new_potential_utxo_output" | /busybox grep "$new_potential_utxo" | /busybox awk '{print $3}' | head -1)
                 if [[ "$current_batch_input_utxo_amount" =~ ^[0-9]+$ ]]; then
                     utxo_queried_successfully=true
                 fi
@@ -749,7 +749,7 @@ for batch_num in $(seq 1 "$num_batches"); do
     elif [ "$batch_num" -lt "$num_batches" ]; then 
         echo "[WARN] Batch $batch_num: No usable change output created. Attempting to find a new UTXO at $new_address for the next batch."
         sleep 5 
-        new_input_utxo_candidate=$(cardano-cli latest query utxo --address "$new_address" --testnet-magic 42 | grep lovelace | sort -k3 -nr | head -n 1 | awk '{print $1"#"$2}')
+        new_input_utxo_candidate=$(cardano-cli latest query utxo --address "$new_address" --testnet-magic 42 | /busybox grep lovelace | /busybox sort -k3 -nr | head -1 | /busybox awk '{print $1"#"$2}')
         if [ -n "$new_input_utxo_candidate" ]; then
             current_batch_input_utxo="$new_input_utxo_candidate"
             echo "[LOG] Batch $batch_num: Found new input UTXO for next batch: $current_batch_input_utxo"
