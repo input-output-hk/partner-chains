@@ -671,6 +671,7 @@ main() {
 
     echo "===== SETUP COMPLETE ======"
     echo -e "Run 'docker compose up -d' to deploy local network"
+    echo -e "Use 'docker logs cardano-node-1 -f | grep -E \"DEBUG|LOG|WARN\"' to monitor the mainchain logs"
     echo -e "We recommend using 'lazydocker' or a similar Docker UI to monitor the network logs and performance"
     echo -e "Run 'docker compose down --volumes' when you wish to stop the network and delete all volumes"
 }

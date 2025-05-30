@@ -526,7 +526,7 @@ echo "[DEBUG] Verification query exit code: $?"
 echo "[DEBUG] Verification query stderr/stdout: $verification_utxos"
 if [ -s /data/utxos_at_new_address_after_main.json ]; then
     echo "[DEBUG] Full list of UTXOs at $new_address (content of /data/utxos_at_new_address_after_main.json):"
-    cat /data/utxos_at_new_address_after_main.json
+    cat /data/utxos_at_new_address_after_main.json | while IFS= read -r line; do echo "[DEBUG] $line"; done
 else
     echo "[WARN] Could not retrieve full list of UTXOs at $new_address or file is empty."
 fi
@@ -642,17 +642,17 @@ for batch_num in $(seq 1 "$num_batches"); do
             fi
             
             echo "[DEBUG] Batch $batch_num: Attempting to display raw content using multiple methods..."
-            echo "=== METHOD 1: /busybox head ==="
-            /busybox head -20 "$address_utxos_file" 2>&1 || echo "busybox head failed"
-            echo "=== METHOD 2: cat with head ==="
-            cat "$address_utxos_file" | head -20 2>&1 || echo "cat | head failed"
-            echo "=== METHOD 3: first few lines with sed ==="
-            /busybox sed -n '1,20p' "$address_utxos_file" 2>&1 || echo "sed failed"
-            echo "=== METHOD 4: file type check ==="
-            file "$address_utxos_file" 2>/dev/null || echo "file command not available"
-            echo "=== METHOD 5: hexdump first 200 bytes ==="
-            /busybox hexdump -C "$address_utxos_file" | /busybox head -10 2>&1 || echo "hexdump failed"
-            echo "=== END OF RAW CONTENT ATTEMPTS ==="
+            echo "[DEBUG] === METHOD 1: /busybox head ==="
+            /busybox head -20 "$address_utxos_file" 2>&1 | while IFS= read -r line; do echo "[DEBUG] $line"; done || echo "[DEBUG] busybox head failed"
+            echo "[DEBUG] === METHOD 2: cat with head ==="
+            cat "$address_utxos_file" | head -20 2>&1 | while IFS= read -r line; do echo "[DEBUG] $line"; done || echo "[DEBUG] cat | head failed"
+            echo "[DEBUG] === METHOD 3: first few lines with sed ==="
+            /busybox sed -n '1,20p' "$address_utxos_file" 2>&1 | while IFS= read -r line; do echo "[DEBUG] $line"; done || echo "[DEBUG] sed failed"
+            echo "[DEBUG] === METHOD 4: file type check ==="
+            file "$address_utxos_file" 2>/dev/null | while IFS= read -r line; do echo "[DEBUG] $line"; done || echo "[DEBUG] file command not available"
+            echo "[DEBUG] === METHOD 5: hexdump first 200 bytes ==="
+            /busybox hexdump -C "$address_utxos_file" | /busybox head -10 2>&1 | while IFS= read -r line; do echo "[DEBUG] $line"; done || echo "[DEBUG] hexdump failed"
+            echo "[DEBUG] === END OF RAW CONTENT ATTEMPTS ==="
             
             # First, try JSON parsing since --out-file typically produces JSON
             echo "[DEBUG] Batch $batch_num: Attempting JSON parsing with jq..."
@@ -732,9 +732,9 @@ for batch_num in $(seq 1 "$num_batches"); do
         if cardano-cli latest query utxo --testnet-magic 42 --address "$new_address" --out-file "$fallback_utxos_file"; then
             echo "[DEBUG] Batch $batch_num: Fallback query successful, analyzing available UTXOs..."
             echo "[DEBUG] Batch $batch_num: Fallback output (first 10 lines):"
-            echo "=== START OF FALLBACK OUTPUT ==="
-            head -10 "$fallback_utxos_file" 2>/dev/null || echo "Failed to read file"
-            echo "=== END OF FALLBACK OUTPUT ==="
+            echo "[DEBUG] === START OF FALLBACK OUTPUT ==="
+            head -10 "$fallback_utxos_file" 2>&1 | while IFS= read -r line; do echo "[DEBUG] $line"; done || echo "[DEBUG] Failed to read file"
+            echo "[DEBUG] === END OF FALLBACK OUTPUT ==="
             
             # Try JSON parsing first
             if command -v jq > /dev/null 2>&1 && jq . "$fallback_utxos_file" > /dev/null 2>&1; then
@@ -917,7 +917,7 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
         cardano-cli latest query utxo --testnet-magic 42 --address "$node_unique_address" --out-file /dev/stdout > "$raw_cli_output_file" 2>&1
 
         echo "[DEBUG] Raw output from cardano-cli for $node_unique_address (Attempt $attempt) captured in $raw_cli_output_file:"
-        cat "$raw_cli_output_file"
+        cat "$raw_cli_output_file" | while IFS= read -r line; do echo "[DEBUG] $line"; done
 
         node_utxo_final=$(cat "$raw_cli_output_file" | /busybox awk 'NR>2 {print $1 "#" $2; exit}')
         echo "[LOG] DEBUG: Parsed node_utxo_final by awk: [$node_utxo_final]"
