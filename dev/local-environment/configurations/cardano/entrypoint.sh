@@ -632,73 +632,38 @@ for batch_num in $(seq 1 "$num_batches"); do
         if cardano-cli latest query utxo --testnet-magic 42 --address "$new_address" --out-file "$address_utxos_file"; then
             echo "[DEBUG] Batch $batch_num: Address query successful, file size: $(wc -c < "$address_utxos_file" 2>/dev/null || echo "unknown")"
             
-            # Show the content for debugging
-            echo "[DEBUG] Batch $batch_num: Address UTXOs file analysis:"
-            echo "[DEBUG] Batch $batch_num: File size: $(wc -c < "$address_utxos_file") bytes"
-            echo "[DEBUG] Batch $batch_num: Line count: $(wc -l < "$address_utxos_file")"
-            
-            echo "[DEBUG] Batch $batch_num: First 10 lines of JSON:"
-            head -10 "$address_utxos_file"
-            
-            echo "[DEBUG] Batch $batch_num: Last 10 lines of JSON:"
-            tail -10 "$address_utxos_file"
-            
-            echo "[DEBUG] Batch $batch_num: Middle section (lines 10-30):"
-            /busybox sed -n '10,30p' "$address_utxos_file"
-            
-            echo "[DEBUG] Batch $batch_num: Complete JSON content (might be truncated in logs):"
+            echo "[DEBUG] Batch $batch_num: Raw cardano-cli output (treating as text, not JSON):"
+            echo "=== START OF FULL OUTPUT ==="
             cat "$address_utxos_file"
-            echo "[DEBUG] Batch $batch_num: --- End address UTXOs ---"
+            echo "=== END OF FULL OUTPUT ==="
             
-            # Additional JSON debugging
-            echo "[DEBUG] Batch $batch_num: JSON validation check:"
-            if /busybox jq . "$address_utxos_file" > /dev/null 2>&1; then
-                echo "[DEBUG] Batch $batch_num: JSON is valid"
-            else
-                echo "[DEBUG] Batch $batch_num: JSON is INVALID - attempting to view raw content"
-                echo "[DEBUG] Batch $batch_num: Raw file content (hexdump first 200 bytes):"
-                head -c 200 "$address_utxos_file" | hexdump -C
-            fi
-            
-            echo "[DEBUG] Batch $batch_num: JSON structure analysis:"
-            echo "[DEBUG] Batch $batch_num: Top-level keys:"
-            /busybox jq -r 'keys[]' "$address_utxos_file" 2>/dev/null | head -5
-            echo "[DEBUG] Batch $batch_num: Sample UTXO structure:"
-            /busybox jq -r 'to_entries[0]' "$address_utxos_file" 2>/dev/null
-            
-            # Check if our specific UTXO exists in the results
+            # Check if our specific UTXO exists in the results using simple text search
             if /busybox grep -q "$current_batch_input_utxo" "$address_utxos_file"; then
-                echo "[LOG] Batch $batch_num: Found target UTXO $current_batch_input_utxo in address query results"
+                echo "[LOG] Batch $batch_num: Found target UTXO $current_batch_input_utxo in output"
                 
-                # Try multiple jq parsing approaches since the JSON structure might vary
-                echo "[DEBUG] Batch $batch_num: Attempting different jq parsing methods..."
+                echo "[DEBUG] Batch $batch_num: Extracting line containing our UTXO:"
+                utxo_line=$(/busybox grep "$current_batch_input_utxo" "$address_utxos_file")
+                echo "[DEBUG] Batch $batch_num: UTXO line: '$utxo_line'"
                 
-                # Method 1: Direct key access
-                utxo_filter=".[\"$current_batch_input_utxo\"].value.lovelace"
-                current_batch_input_utxo_amount=$(/busybox jq -r "$utxo_filter" "$address_utxos_file" 2>/dev/null)
-                echo "[DEBUG] Batch $batch_num: Method 1 - Direct key access:"
-                echo "[DEBUG] Batch $batch_num: jq filter: $utxo_filter"
-                echo "[DEBUG] Batch $batch_num: jq result: '$current_batch_input_utxo_amount'"
+                # Try different awk field positions to find the amount
+                echo "[DEBUG] Batch $batch_num: Trying different field positions with awk:"
+                for field_pos in 3 4 5 6 7; do
+                    amount_candidate=$(echo "$utxo_line" | /busybox awk -v pos=$field_pos '{print $pos}')
+                    echo "[DEBUG] Batch $batch_num: Field $field_pos: '$amount_candidate'"
+                    
+                    # Check if this looks like a large lovelace amount
+                    if [[ "$amount_candidate" =~ ^[0-9]{10,}$ ]]; then
+                        echo "[DEBUG] Batch $batch_num: Field $field_pos looks like a large amount: $amount_candidate"
+                        current_batch_input_utxo_amount="$amount_candidate"
+                        break
+                    fi
+                done
                 
-                # Method 2: If Method 1 fails, try different structure
-                if [ -z "$current_batch_input_utxo_amount" ] || [ "$current_batch_input_utxo_amount" = "null" ]; then
-                    echo "[DEBUG] Batch $batch_num: Method 1 failed, trying Method 2 - Alternative structure"
-                    current_batch_input_utxo_amount=$(/busybox jq -r ".\"$current_batch_input_utxo\".value.lovelace" "$address_utxos_file" 2>/dev/null)
-                    echo "[DEBUG] Batch $batch_num: Method 2 result: '$current_batch_input_utxo_amount'"
-                fi
-                
-                # Method 3: If still fails, try to find by iterating entries
-                if [ -z "$current_batch_input_utxo_amount" ] || [ "$current_batch_input_utxo_amount" = "null" ]; then
-                    echo "[DEBUG] Batch $batch_num: Method 2 failed, trying Method 3 - Entry iteration"
-                    current_batch_input_utxo_amount=$(/busybox jq -r "to_entries[] | select(.key == \"$current_batch_input_utxo\") | .value.value.lovelace" "$address_utxos_file" 2>/dev/null)
-                    echo "[DEBUG] Batch $batch_num: Method 3 result: '$current_batch_input_utxo_amount'"
-                fi
-                
-                # Method 4: Try without nested .value if there's a different structure
-                if [ -z "$current_batch_input_utxo_amount" ] || [ "$current_batch_input_utxo_amount" = "null" ]; then
-                    echo "[DEBUG] Batch $batch_num: Method 3 failed, trying Method 4 - Direct lovelace access"
-                    current_batch_input_utxo_amount=$(/busybox jq -r ".\"$current_batch_input_utxo\".lovelace" "$address_utxos_file" 2>/dev/null)
-                    echo "[DEBUG] Batch $batch_num: Method 4 result: '$current_batch_input_utxo_amount'"
+                # If awk parsing fails, fall back to largest number extraction
+                if [ -z "$current_batch_input_utxo_amount" ] || ! [[ "$current_batch_input_utxo_amount" =~ ^[0-9]+$ ]]; then
+                    echo "[DEBUG] Batch $batch_num: Awk parsing failed, extracting largest number from the UTXO line..."
+                    current_batch_input_utxo_amount=$(echo "$utxo_line" | /busybox grep -o '[0-9]\{10,\}' | /busybox sort -nr | head -1)
+                    echo "[DEBUG] Batch $batch_num: Largest number from UTXO line: '$current_batch_input_utxo_amount'"
                 fi
                 
                 if [[ "$current_batch_input_utxo_amount" =~ ^[0-9]+$ ]] && [ "$current_batch_input_utxo_amount" -gt 0 ]; then
@@ -707,25 +672,12 @@ for batch_num in $(seq 1 "$num_batches"); do
                     rm -f "$address_utxos_file"
                     break
                 else
-                    echo "[WARN] Batch $batch_num: All jq methods failed. Final result: '$current_batch_input_utxo_amount'"
-                    echo "[DEBUG] Batch $batch_num: Checking if amount appears as raw text in JSON..."
-                    if /busybox grep -o '[0-9]\{10,\}' "$address_utxos_file" | head -1 > /tmp/potential_amount; then
-                        potential_amount=$(cat /tmp/potential_amount)
-                        echo "[DEBUG] Batch $batch_num: Found large number in JSON: '$potential_amount'"
-                        if [ -n "$potential_amount" ]; then
-                            current_batch_input_utxo_amount="$potential_amount"
-                            echo "[LOG] Batch $batch_num: Using extracted large number as amount: $current_batch_input_utxo_amount"
-                            utxo_queried_successfully=true
-                            rm -f "$address_utxos_file" /tmp/potential_amount
-                            break
-                        fi
-                        rm -f /tmp/potential_amount
-                    fi
+                    echo "[WARN] Batch $batch_num: Failed to extract valid amount from UTXO line"
                 fi
             else
-                echo "[WARN] Batch $batch_num: Target UTXO $current_batch_input_utxo not found in address query results"
-                echo "[DEBUG] Batch $batch_num: Available UTXOs in results:"
-                /busybox jq -r 'keys[]' "$address_utxos_file" 2>/dev/null || echo "Failed to parse UTXO keys"
+                echo "[WARN] Batch $batch_num: Target UTXO $current_batch_input_utxo not found in output"
+                echo "[DEBUG] Batch $batch_num: Showing all UTXOs found in output:"
+                /busybox grep -o '[a-f0-9]\{64\}#[0-9]\+' "$address_utxos_file" || echo "No UTXOs found with expected format"
             fi
             
             rm -f "$address_utxos_file"
