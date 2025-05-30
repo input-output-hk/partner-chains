@@ -670,6 +670,7 @@ main() {
     fi
 
     echo "===== SETUP COMPLETE ======"
+    echo -e "Run 'bash setup.sh --non-interactive' to run the setup in non-interactive mode"
     echo -e "Run 'docker compose up -d' to deploy local network"
     echo -e "Use 'docker logs cardano-node-1 -f | grep -E \"DEBUG|LOG|WARN\"' to monitor the mainchain logs"
     echo -e "We recommend using 'lazydocker' or a similar Docker UI to monitor the network logs and performance"
