@@ -654,62 +654,31 @@ for batch_num in $(seq 1 "$num_batches"); do
             /busybox hexdump -C "$address_utxos_file" | /busybox head -10 2>&1 | while IFS= read -r line; do echo "[DEBUG] $line"; done || echo "[DEBUG] hexdump failed"
             echo "[DEBUG] === END OF RAW CONTENT ATTEMPTS ==="
             
-            # First, try JSON parsing since --out-file typically produces JSON
-            echo "[DEBUG] Batch $batch_num: Attempting JSON parsing with jq..."
-            if command -v /busybox jq > /dev/null 2>&1; then
-                # Check if the file is valid JSON
-                if /busybox jq . "$address_utxos_file" > /dev/null 2>&1; then
-                    echo "[DEBUG] Batch $batch_num: File is valid JSON, parsing with jq..."
-                    current_batch_input_utxo_amount=$(/busybox jq -r ".\"$current_batch_input_utxo\".value.lovelace // .\"$current_batch_input_utxo\".lovelace // empty" "$address_utxos_file" 2>/dev/null)
-                    
-                    if [[ "$current_batch_input_utxo_amount" =~ ^[0-9]+$ ]] && [ "$current_batch_input_utxo_amount" -gt 0 ]; then
-                        echo "[LOG] Batch $batch_num: Successfully parsed UTXO amount with jq: $current_batch_input_utxo_amount lovelace"
-                        utxo_queried_successfully=true
-                        rm -f "$address_utxos_file"
-                        break
-                    else
-                        echo "[DEBUG] Batch $batch_num: jq parsing failed, result: '$current_batch_input_utxo_amount'"
-                    fi
-                else
-                    echo "[DEBUG] Batch $batch_num: File is not valid JSON, treating as table format"
-                fi
-            else
-                echo "[DEBUG] Batch $batch_num: jq not available, skipping JSON parsing"
-            fi
-            
-            # Fallback: text parsing for table format or broken JSON
-            echo "[DEBUG] Batch $batch_num: Attempting text parsing..."
+            # Check if our specific UTXO exists in the results using simple text search
             if /busybox grep -q "$current_batch_input_utxo" "$address_utxos_file"; then
                 echo "[LOG] Batch $batch_num: Found target UTXO $current_batch_input_utxo in output"
                 
-                # For table format: TxHash#TxIx should be on one line with the amount
-                utxo_line=$(/busybox grep "$current_batch_input_utxo" "$address_utxos_file")
-                echo "[DEBUG] Batch $batch_num: UTXO line: '$utxo_line'"
+                # Extract the UTXO entry with context lines (get the full JSON object)
+                echo "[DEBUG] Batch $batch_num: Extracting UTXO entry with context..."
+                utxo_context=$(/busybox grep -A 20 "$current_batch_input_utxo" "$address_utxos_file")
+                echo "[DEBUG] Batch $batch_num: UTXO context (20 lines after match):"
+                echo "$utxo_context" | while IFS= read -r line; do echo "[DEBUG] $line"; done
                 
-                # Extract amount using different patterns
-                # Pattern 1: Standard table format - amount should be in field 3
-                current_batch_input_utxo_amount=$(echo "$utxo_line" | /busybox awk '{print $3}' | /busybox grep -o '^[0-9]\+')
+                # Extract lovelace amount from the context
+                current_batch_input_utxo_amount=$(echo "$utxo_context" | /busybox grep '"lovelace":' | /busybox grep -o '[0-9]\+' | head -1)
+                
                 if [[ "$current_batch_input_utxo_amount" =~ ^[0-9]+$ ]] && [ "$current_batch_input_utxo_amount" -gt 0 ]; then
-                    echo "[LOG] Batch $batch_num: Successfully parsed amount from table format: $current_batch_input_utxo_amount"
+                    echo "[LOG] Batch $batch_num: Successfully extracted UTXO amount: $current_batch_input_utxo_amount lovelace"
                     utxo_queried_successfully=true
                     rm -f "$address_utxos_file"
                     break
+                else
+                    echo "[WARN] Batch $batch_num: Failed to extract valid lovelace amount from context. Got: '$current_batch_input_utxo_amount'"
                 fi
-                
-                # Pattern 2: Extract any large number from the line
-                current_batch_input_utxo_amount=$(echo "$utxo_line" | /busybox grep -o '[0-9]\{10,\}' | /busybox sort -nr | head -1)
-                if [[ "$current_batch_input_utxo_amount" =~ ^[0-9]+$ ]] && [ "$current_batch_input_utxo_amount" -gt 0 ]; then
-                    echo "[LOG] Batch $batch_num: Successfully extracted large number: $current_batch_input_utxo_amount"
-                    utxo_queried_successfully=true
-                    rm -f "$address_utxos_file"
-                    break
-                fi
-                
-                echo "[WARN] Batch $batch_num: Failed to extract valid amount from UTXO line"
             else
                 echo "[WARN] Batch $batch_num: Target UTXO $current_batch_input_utxo not found in output"
                 echo "[DEBUG] Batch $batch_num: Showing all UTXOs found:"
-                /busybox grep -o '[a-f0-9]\{64\}#[0-9]\+' "$address_utxos_file" || echo "No UTXOs found with expected format"
+                /busybox grep -o '[a-f0-9]\{64\}#[0-9]\+' "$address_utxos_file" | while IFS= read -r line; do echo "[DEBUG] Found UTXO: $line"; done || echo "[DEBUG] No UTXOs found with expected format"
             fi
             
             rm -f "$address_utxos_file"
@@ -736,61 +705,39 @@ for batch_num in $(seq 1 "$num_batches"); do
             head -10 "$fallback_utxos_file" 2>&1 | while IFS= read -r line; do echo "[DEBUG] $line"; done || echo "[DEBUG] Failed to read file"
             echo "[DEBUG] === END OF FALLBACK OUTPUT ==="
             
-            # Try JSON parsing first
-            if command -v /busybox jq > /dev/null 2>&1 && /busybox jq . "$fallback_utxos_file" > /dev/null 2>&1; then
-                echo "[DEBUG] Batch $batch_num: Fallback file is valid JSON, finding largest UTXO..."
-                largest_utxo_info=$(/busybox jq -r 'to_entries | map(select(.value.value.lovelace or .value.lovelace)) | sort_by(.value.value.lovelace // .value.lovelace) | reverse | .[0] | "\(.key):\(.value.value.lovelace // .value.lovelace)"' "$fallback_utxos_file" 2>/dev/null)
-                
-                if [ -n "$largest_utxo_info" ] && [ "$largest_utxo_info" != "null:" ] && [ "$largest_utxo_info" != ":" ]; then
-                    largest_utxo=$(echo "$largest_utxo_info" | cut -d: -f1)
-                    largest_amount=$(echo "$largest_utxo_info" | cut -d: -f2-)
+            # Find largest UTXO using grep context approach (no jq)
+            echo "[DEBUG] Batch $batch_num: Finding largest UTXO using text parsing..."
+            largest_amount=0
+            largest_utxo=""
+            
+            # Get all UTXO identifiers first
+            all_utxos=$(/busybox grep -o '[a-f0-9]\{64\}#[0-9]\+' "$fallback_utxos_file")
+            echo "[DEBUG] Batch $batch_num: Found UTXOs in fallback:"
+            echo "$all_utxos" | while IFS= read -r line; do echo "[DEBUG] UTXO: $line"; done
+            
+            # For each UTXO, extract its lovelace amount using context
+            while IFS= read -r utxo_id; do
+                if [ -n "$utxo_id" ]; then
+                    echo "[DEBUG] Batch $batch_num: Checking UTXO $utxo_id..."
+                    utxo_context=$(/busybox grep -A 20 "$utxo_id" "$fallback_utxos_file")
+                    line_amount=$(echo "$utxo_context" | /busybox grep '"lovelace":' | /busybox grep -o '[0-9]\+' | head -1)
                     
-                    if [[ "$largest_amount" =~ ^[0-9]+$ ]] && [ "$largest_amount" -gt 0 ]; then
-                        echo "[LOG] Found alternative UTXO with jq: $largest_utxo with amount $largest_amount"
-                        current_batch_input_utxo="$largest_utxo"
-                        current_batch_input_utxo_amount="$largest_amount"
-                        utxo_queried_successfully=true
+                    if [[ "$line_amount" =~ ^[0-9]+$ ]] && [ "$line_amount" -gt "$largest_amount" ]; then
+                        largest_amount="$line_amount"
+                        largest_utxo="$utxo_id"
+                        echo "[DEBUG] Batch $batch_num: New largest: $largest_utxo with amount $largest_amount"
                     fi
                 fi
-            fi
+            done <<< "$all_utxos"
             
-            # Fallback to text parsing if jq failed
-            if [ "$utxo_queried_successfully" = false ]; then
-                echo "[DEBUG] Batch $batch_num: JSON parsing failed, trying text parsing for fallback..."
-                largest_amount=0
-                largest_utxo=""
-                
-                # Parse each line that looks like a UTXO (contains both hash#index and large numbers)
-                while IFS= read -r line; do
-                    if echo "$line" | /busybox grep -q '[a-f0-9]\{64\}#[0-9]\+'; then
-                        echo "[DEBUG] Batch $batch_num: Processing UTXO line: '$line'"
-                        
-                        # Extract the UTXO identifier
-                        utxo_id=$(echo "$line" | /busybox grep -o '[a-f0-9]\{64\}#[0-9]\+')
-                        
-                        # Extract amount - try field 3 first (table format), then largest number
-                        line_amount=$(echo "$line" | /busybox awk '{print $3}' | /busybox grep -o '^[0-9]\+')
-                        if ! [[ "$line_amount" =~ ^[0-9]+$ ]]; then
-                            line_amount=$(echo "$line" | /busybox grep -o '[0-9]\{10,\}' | /busybox sort -nr | head -1)
-                        fi
-                        
-                        if [ -n "$line_amount" ] && [ "$line_amount" -gt "$largest_amount" ]; then
-                            largest_amount="$line_amount"
-                            largest_utxo="$utxo_id"
-                            echo "[DEBUG] Batch $batch_num: New largest: $largest_utxo with amount $largest_amount"
-                        fi
-                    fi
-                done < "$fallback_utxos_file"
-                
-                if [ -n "$largest_utxo" ] && [ "$largest_amount" -gt 0 ]; then
-                    echo "[LOG] Found alternative UTXO with text parsing: $largest_utxo with amount $largest_amount"
-                    current_batch_input_utxo="$largest_utxo"
-                    current_batch_input_utxo_amount="$largest_amount"
-                    utxo_queried_successfully=true
-                fi
+            if [ -n "$largest_utxo" ] && [ "$largest_amount" -gt 0 ]; then
+                echo "[LOG] Found alternative UTXO: $largest_utxo with amount $largest_amount"
+                current_batch_input_utxo="$largest_utxo"
+                current_batch_input_utxo_amount="$largest_amount"
+                utxo_queried_successfully=true
+            else
+                echo "[DEBUG] Batch $batch_num: No valid UTXO found in fallback parsing"
             fi
-            
-            rm -f "$fallback_utxos_file"
         fi
         
         if [ "$utxo_queried_successfully" = false ]; then
