@@ -138,16 +138,16 @@ for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do # Iterate based
     # Payment Keys (Generate if not exist, assuming they might exist from other configs)
     if [ ! -f "${NODE_SPECIFIC_KEYS_DIR}/payment.vkey" ]; then
         echo "[LOG] Generating payment keys for permissioned-$node_idx..."
-        cardano-cli address key-gen \\
-            --verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/payment.vkey" \\
+        cardano-cli address key-gen \
+            --verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/payment.vkey" \
             --signing-key-file "${NODE_SPECIFIC_KEYS_DIR}/payment.skey"
         if [ $? -ne 0 ]; then echo "Error generating payment keys for permissioned-$node_idx!"; fi
     else
         echo "[LOG] Payment keys already exist for permissioned-$node_idx."
     fi
 
-    node_payment_address=$(cardano-cli address build \\
-        --payment-verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/payment.vkey" \\
+    node_payment_address=$(cardano-cli address build \
+        --payment-verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/payment.vkey" \
         --testnet-magic 42)
     if [ -z "$node_payment_address" ]; then echo "Error building payment address for permissioned-$node_idx!"; fi
     permissioned_node_payment_addresses+=("$node_payment_address")
@@ -157,9 +157,9 @@ for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do # Iterate based
     # Cold Keys (Generate if not exist)
      if [ ! -f "${NODE_SPECIFIC_KEYS_DIR}/cold.vkey" ]; then
         echo "[LOG] Generating cold keys for permissioned-$node_idx..."
-        cardano-cli node key-gen \\
-            --cold-verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/cold.vkey" \\
-            --cold-signing-key-file "${NODE_SPECIFIC_KEYS_DIR}/cold.skey" \\
+        cardano-cli node key-gen \
+            --cold-verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/cold.vkey" \
+            --cold-signing-key-file "${NODE_SPECIFIC_KEYS_DIR}/cold.skey" \
             --operational-certificate-issue-counter-file "${NODE_SPECIFIC_KEYS_DIR}/cold.counter"
          if [ $? -ne 0 ]; then echo "Error generating cold keys for permissioned-$node_idx!"; fi
     else
@@ -173,22 +173,22 @@ for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do # Iterate based
 
     # KES Keys (Generate)
     echo "[LOG] Generating KES keys for permissioned-$node_idx..."
-    cardano-cli node key-gen-KES \\
-        --verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/kes.vkey" \\
+    cardano-cli node key-gen-KES \
+        --verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/kes.vkey" \
         --signing-key-file "${NODE_SPECIFIC_KEYS_DIR}/kes.skey"
     if [ $? -ne 0 ]; then echo "Error generating KES keys for permissioned-$node_idx!"; fi
 
     # VRF Keys (Generate)
     echo "[LOG] Generating VRF keys for permissioned-$node_idx..."
-    cardano-cli node key-gen-VRF \\
-        --verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/vrf.vkey" \\
+    cardano-cli node key-gen-VRF \
+        --verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/vrf.vkey" \
         --signing-key-file "${NODE_SPECIFIC_KEYS_DIR}/vrf.skey"
     if [ $? -ne 0 ]; then echo "Error generating VRF keys for permissioned-$node_idx!"; fi
 
     # Stake Keys (Generate)
     echo "[LOG] Generating Stake keys for permissioned-$node_idx..."
-    cardano-cli stake-address key-gen \\
-        --verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.vkey" \\
+    cardano-cli stake-address key-gen \
+        --verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.vkey" \
         --signing-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.skey"
     if [ $? -ne 0 ]; then echo "Error generating Stake keys for permissioned-$node_idx!"; fi
 
@@ -203,8 +203,8 @@ for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do # Iterate based
     node_idx=$((i+1)) # 1-indexed for directory name
     NODE_SPECIFIC_KEYS_DIR="${permissioned_node_base_dirs[$i]}" # Using the base dirs defined earlier
     echo "[LOG] Generating stake address for permissioned-$node_idx in $NODE_SPECIFIC_KEYS_DIR..."
-    node_stake_address=$(cardano-cli stake-address build \\
-        --stake-verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.vkey" \\
+    node_stake_address=$(cardano-cli stake-address build \
+        --stake-verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.vkey" \
         --testnet-magic 42)
 
     if [ -z "$node_stake_address" ]; then
@@ -226,8 +226,8 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     NODE_SPECIFIC_KEYS_DIR="/shared/node-keys/registered-${i}/keys"
     mkdir -p "$NODE_SPECIFIC_KEYS_DIR" # Ensure cold key dir also exists if not created yet
     echo "[LOG] Generating stake address for registered-$i in $NODE_SPECIFIC_KEYS_DIR..."
-    node_stake_address=$(cardano-cli stake-address build \\
-        --stake-verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.vkey" \\
+    node_stake_address=$(cardano-cli stake-address build \
+        --stake-verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.vkey" \
         --testnet-magic 42)
 
     if [ -z "$node_stake_address" ]; then
@@ -249,8 +249,8 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     NODE_SPECIFIC_KEYS_DIR="/shared/node-keys/registered-${i}/keys" # Re-using the same key dir
 
     echo "[LOG] Generating KES keys for registered-$i in $NODE_SPECIFIC_KEYS_DIR..."
-    cardano-cli node key-gen-KES \\
-        --verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/kes.vkey" \\
+    cardano-cli node key-gen-KES \
+        --verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/kes.vkey" \
         --signing-key-file "${NODE_SPECIFIC_KEYS_DIR}/kes.skey"
     if [ $? -ne 0 ]; then
         echo "Error generating KES keys for registered-$i!"
@@ -258,8 +258,8 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     fi
 
     echo "[LOG] Generating VRF keys for registered-$i in $NODE_SPECIFIC_KEYS_DIR..."
-    cardano-cli node key-gen-VRF \\
-        --verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/vrf.vkey" \\
+    cardano-cli node key-gen-VRF \
+        --verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/vrf.vkey" \
         --signing-key-file "${NODE_SPECIFIC_KEYS_DIR}/vrf.skey"
     if [ $? -ne 0 ]; then
         echo "Error generating VRF keys for registered-$i!"
@@ -267,8 +267,8 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     fi
 
     echo "[LOG] Generating Stake keys for registered-$i in $NODE_SPECIFIC_KEYS_DIR..."
-    cardano-cli stake-address key-gen \\
-        --verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.vkey" \\
+    cardano-cli stake-address key-gen \
+        --verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.vkey" \
         --signing-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.skey"
     if [ $? -ne 0 ]; then
         echo "Error generating Stake keys for registered-$i!"
