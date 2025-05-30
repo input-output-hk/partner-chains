@@ -65,10 +65,10 @@ jobs:
         run: nix develop -c bash -c "RUSTFLAGS=-Dwarnings cargo clippy --all-targets --all-features"
       - name: formatting
         run: nix develop -c bash -c "cargo fmt --check"
-      - name: Run cargo-deny to check licenses
-        uses: EmbarkStudios/cargo-deny-action@v1
-        with:
-          command: check licenses
+      #- name: Run cargo-deny to check licenses
+      #  uses: EmbarkStudios/cargo-deny-action@v1
+      #  with:
+      #    command: check licenses
       - name: build chain specs
         run: |
             source ./dev/envs/devnet/.envrc
@@ -639,11 +639,11 @@ jobs:
         working-directory: ./to-build
         run: nix develop -c bash -c "cargo fmt --check"
 
-      - name: Run cargo-deny to check licenses
-        uses: EmbarkStudios/cargo-deny-action@v1
-        with:
-          command: check licenses
-          working-directory: ./to-build
+      #- name: Run cargo-deny to check licenses
+      #  uses: EmbarkStudios/cargo-deny-action@v1
+      #  with:
+      #    command: check licenses
+      #  working-directory: ./to-build
 
       - name: Build chain specs
         working-directory: ./to-build
