@@ -241,6 +241,7 @@ where
 				sidechain_domain::PermissionedCandidateData {
 					sidechain_public_key: candidate.sidechain_public_key.clone(),
 					aura_public_key: candidate.aura_public_key.clone(),
+					beefy_public_key: candidate.beefy_public_key.clone(),
 					grandpa_public_key: candidate.grandpa_public_key.clone(),
 				},
 			)
