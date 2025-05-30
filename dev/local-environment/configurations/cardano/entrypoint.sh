@@ -632,10 +632,27 @@ for batch_num in $(seq 1 "$num_batches"); do
         if cardano-cli latest query utxo --testnet-magic 42 --address "$new_address" --out-file "$address_utxos_file"; then
             echo "[DEBUG] Batch $batch_num: Address query successful, file size: $(wc -c < "$address_utxos_file" 2>/dev/null || echo "unknown")"
             
-            echo "[DEBUG] Batch $batch_num: Raw cardano-cli output (first 20 lines):"
-            echo "=== START OF OUTPUT SAMPLE ==="
-            head -20 "$address_utxos_file" 2>/dev/null || echo "Failed to read file"
-            echo "=== END OF OUTPUT SAMPLE ==="
+            echo "[DEBUG] Batch $batch_num: Checking if file exists and is readable..."
+            if [ ! -f "$address_utxos_file" ]; then
+                echo "[DEBUG] Batch $batch_num: ERROR - File $address_utxos_file does not exist!"
+            elif [ ! -r "$address_utxos_file" ]; then
+                echo "[DEBUG] Batch $batch_num: ERROR - File $address_utxos_file is not readable!"
+            else
+                echo "[DEBUG] Batch $batch_num: File exists and is readable."
+            fi
+            
+            echo "[DEBUG] Batch $batch_num: Attempting to display raw content using multiple methods..."
+            echo "=== METHOD 1: /busybox head ==="
+            /busybox head -20 "$address_utxos_file" 2>&1 || echo "busybox head failed"
+            echo "=== METHOD 2: cat with head ==="
+            cat "$address_utxos_file" | head -20 2>&1 || echo "cat | head failed"
+            echo "=== METHOD 3: first few lines with sed ==="
+            /busybox sed -n '1,20p' "$address_utxos_file" 2>&1 || echo "sed failed"
+            echo "=== METHOD 4: file type check ==="
+            file "$address_utxos_file" 2>/dev/null || echo "file command not available"
+            echo "=== METHOD 5: hexdump first 200 bytes ==="
+            /busybox hexdump -C "$address_utxos_file" | /busybox head -10 2>&1 || echo "hexdump failed"
+            echo "=== END OF RAW CONTENT ATTEMPTS ==="
             
             # First, try JSON parsing since --out-file typically produces JSON
             echo "[DEBUG] Batch $batch_num: Attempting JSON parsing with jq..."
