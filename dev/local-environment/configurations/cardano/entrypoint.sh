@@ -201,7 +201,7 @@ echo "[LOG] Generating Stake Addresses for $NUM_PERMISSIONED_NODES_TO_PROCESS Pe
 permissioned_node_stake_addresses=() # Array to store stake addresses
 for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do # Iterate based on the variable
     node_idx=$((i+1)) # 1-indexed for directory name
-    NODE_SPECIFIC_KEYS_DIR="${permissioned_node_base_dirs[$i]}" # Using the base dirs defined earlier
+    NODE_SPECIFIC_KEYS_DIR="${permissioned_node_base_dirs[$i]}"
     echo "[LOG] Generating stake address for permissioned-$node_idx in $NODE_SPECIFIC_KEYS_DIR..."
     node_stake_address=$(cardano-cli shelley stake-address build \
         --stake-verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.vkey" \
@@ -218,35 +218,11 @@ done
 echo "[LOG] Completed generation of stake addresses for $NUM_PERMISSIONED_NODES_TO_PROCESS permissioned nodes."
 # --- End of New Stake Address Generation ---
 
-# --- New: Generate Stake Addresses for Registered Nodes ---
-echo "[LOG] Generating Stake Addresses for $NUM_REGISTERED_NODES_TO_PROCESS Registered Nodes..."
-registered_node_stake_addresses=() # Array to store stake addresses
-echo "[LOG] Generating Payment Keypairs and Addresses for $NUM_REGISTERED_NODES_TO_PROCESS Registered Nodes..."
-for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
-    NODE_SPECIFIC_KEYS_DIR="/shared/node-keys/registered-${i}/keys"
-    mkdir -p "$NODE_SPECIFIC_KEYS_DIR" # Ensure cold key dir also exists if not created yet
-    echo "[LOG] Generating stake address for registered-$i in $NODE_SPECIFIC_KEYS_DIR..."
-    node_stake_address=$(cardano-cli shelley stake-address build \
-        --stake-verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.vkey" \
-        --testnet-magic 42)
-
-    if [ -z "$node_stake_address" ]; then
-        echo "Error building stake address for registered-$i!"
-        # Decide how to handle error - log and continue for now.
-    else
-        registered_node_stake_addresses+=("$node_stake_address")
-        echo "Generated stake address for registered-$i: $node_stake_address"
-    fi
-done
-echo "[LOG] Completed generation of stake addresses for $NUM_REGISTERED_NODES_TO_PROCESS registered nodes."
-# --- End of New Stake Address Generation ---
-
-echo "[LOG] Completed generation of payment keypairs and addresses for $NUM_REGISTERED_NODES_TO_PROCESS registered nodes."
-
-# --- New: Generate KES, VRF, and Stake Keypairs for $NUM_REGISTERED_NODES_TO_PROCESS Registered Nodes ---
+# --- New: Generate KES, VRF, and Stake Keypairs for Registered Nodes FIRST ---
 echo "[LOG] Generating KES, VRF, and Stake Keypairs for $NUM_REGISTERED_NODES_TO_PROCESS Registered Nodes..."
 for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
-    NODE_SPECIFIC_KEYS_DIR="/shared/node-keys/registered-${i}/keys" # Re-using the same key dir
+    NODE_SPECIFIC_KEYS_DIR="/shared/node-keys/registered-${i}/keys"
+    mkdir -p "$NODE_SPECIFIC_KEYS_DIR"
 
     echo "[LOG] Generating KES keys for registered-$i in $NODE_SPECIFIC_KEYS_DIR..."
     cardano-cli node key-gen-KES \
@@ -254,7 +230,6 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
         --signing-key-file "${NODE_SPECIFIC_KEYS_DIR}/kes.skey"
     if [ $? -ne 0 ]; then
         echo "Error generating KES keys for registered-$i!"
-        # Decide how to handle error - continue or exit? For now, log and continue.
     fi
 
     echo "[LOG] Generating VRF keys for registered-$i in $NODE_SPECIFIC_KEYS_DIR..."
@@ -263,7 +238,6 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
         --signing-key-file "${NODE_SPECIFIC_KEYS_DIR}/vrf.skey"
     if [ $? -ne 0 ]; then
         echo "Error generating VRF keys for registered-$i!"
-        # Decide how to handle error - continue or exit? For now, log and continue.
     fi
 
     echo "[LOG] Generating Stake keys for registered-$i in $NODE_SPECIFIC_KEYS_DIR..."
@@ -272,11 +246,76 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
         --signing-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.skey"
     if [ $? -ne 0 ]; then
         echo "Error generating Stake keys for registered-$i!"
-        # Decide how to handle error - continue or exit? For now, log and continue.
     fi
 done
 echo "[LOG] Completed generation of KES, VRF, and Stake keypairs for $NUM_REGISTERED_NODES_TO_PROCESS registered nodes."
-# --- End of New Key Generation ---
+# --- End of Key Generation ---
+
+# --- New: Generate Stake Addresses for Registered Nodes (NOW with stake.vkey available) ---
+echo "[LOG] Generating Stake Addresses for $NUM_REGISTERED_NODES_TO_PROCESS Registered Nodes..."
+registered_node_stake_addresses=() # Array to store stake addresses
+for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
+    NODE_SPECIFIC_KEYS_DIR="/shared/node-keys/registered-${i}/keys"
+    echo "[LOG] Generating stake address for registered-$i in $NODE_SPECIFIC_KEYS_DIR..."
+    node_stake_address=$(cardano-cli shelley stake-address build \
+        --stake-verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.vkey" \
+        --testnet-magic 42)
+
+    if [ -z "$node_stake_address" ]; then
+        echo "Error building stake address for registered-$i!"
+    else
+        registered_node_stake_addresses+=("$node_stake_address")
+        echo "[LOG] Generated stake address for registered-$i: $node_stake_address"
+    fi
+done
+echo "[LOG] Completed generation of stake addresses for $NUM_REGISTERED_NODES_TO_PROCESS registered nodes."
+# --- End of Stake Address Generation ---
+
+# --- New: Generate Payment Keys and Addresses for Registered Nodes ---
+echo "[LOG] Generating Payment Keys and Addresses for $NUM_REGISTERED_NODES_TO_PROCESS Registered Nodes..."
+for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
+    NODE_SPECIFIC_KEYS_DIR="/shared/node-keys/registered-${i}/keys"
+    
+    echo "[LOG] Generating payment keys for registered-$i in $NODE_SPECIFIC_KEYS_DIR..."
+    cardano-cli address key-gen \
+        --verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/payment.vkey" \
+        --signing-key-file "${NODE_SPECIFIC_KEYS_DIR}/payment.skey"
+    if [ $? -ne 0 ]; then 
+        echo "Error generating payment keys for registered-$i!"
+        continue
+    fi
+    
+    node_payment_address=$(cardano-cli address build \
+        --payment-verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/payment.vkey" \
+        --testnet-magic 42)
+    if [ -z "$node_payment_address" ]; then 
+        echo "Error building payment address for registered-$i!"
+        continue
+    fi
+    
+    registered_node_payment_addresses+=("$node_payment_address")
+    echo "[LOG] Generated payment address for registered-$i: $node_payment_address"
+done
+echo "[LOG] Completed generation of payment keys and addresses for $NUM_REGISTERED_NODES_TO_PROCESS registered nodes."
+# --- End of Payment Key Generation ---
+
+echo "[LOG] Completed generation of payment keypairs and addresses for $NUM_REGISTERED_NODES_TO_PROCESS registered nodes."
+
+# Debug: Verify that the arrays are populated
+echo "[LOG] DEBUG: Verifying populated arrays..."
+echo "[LOG] DEBUG: Number of permissioned payment addresses: ${#permissioned_node_payment_addresses[@]}"
+echo "[LOG] DEBUG: Number of registered payment addresses: ${#registered_node_payment_addresses[@]}"
+echo "[LOG] DEBUG: Number of registered stake addresses: ${#registered_node_stake_addresses[@]}"
+
+if [ "${#registered_node_payment_addresses[@]}" -eq 0 ]; then
+    echo "[DEBUG] CRITICAL ERROR: registered_node_payment_addresses array is empty! This will cause batch funding to fail."
+    exit 1
+fi
+
+for i in $(seq 0 $((${#registered_node_payment_addresses[@]} - 1))); do
+    echo "[LOG] DEBUG: registered_node_payment_addresses[$i] = ${registered_node_payment_addresses[$i]}"
+done
+# End Debug
 
 # An address that will keep an UTXO with script of a test V-function, related to the SPO rewards. See v-function.script file.
 vfunction_address="addr_test1vzuasm5nqzh7n909f7wang7apjprpg29l2f9sk6shlt84rqep6nyc"
@@ -579,62 +618,60 @@ for batch_num in $(seq 1 "$num_batches"); do
     echo "[LOG] Batch $batch_num: Total output to registered nodes: $batch_total_output_lovelace, Calculated Fee: $batch_tx_fee"
 
     echo "[LOG] Batch $batch_num: Querying current value of input UTXO $current_batch_input_utxo"
-    input_utxo_details_file="/data/input_utxo_details_batch_${batch_num}.json"
-    # Retry mechanism for querying input UTXO in case of slight delay
+    
+    # Use a more robust approach: query UTXOs and parse directly without complex JSON
     utxo_queried_successfully=false
     for query_attempt in {1..3}; do
-        if cardano-cli latest query utxo --testnet-magic 42 --tx-in "$current_batch_input_utxo" --out-file "$input_utxo_details_file"; then
-            if [ -s "$input_utxo_details_file" ]; then
+        echo "[LOG] Batch $batch_num: Querying UTXO attempt $query_attempt..."
+        
+        # Query UTXO using simpler text output approach
+        raw_utxo_output=$(cardano-cli latest query utxo --testnet-magic 42 --tx-in "$current_batch_input_utxo" 2>/dev/null)
+        if [ $? -eq 0 ] && [ -n "$raw_utxo_output" ]; then
+            # Extract lovelace amount from the raw output (format: TxHash TxIx Address Amount Asset)
+            current_batch_input_utxo_amount=$(echo "$raw_utxo_output" | grep "$current_batch_input_utxo" | awk '{print $3}' | head -1)
+            
+            if [[ "$current_batch_input_utxo_amount" =~ ^[0-9]+$ ]] && [ "$current_batch_input_utxo_amount" -gt 0 ]; then
+                echo "[LOG] Batch $batch_num: Successfully parsed UTXO amount: $current_batch_input_utxo_amount lovelace"
                 utxo_queried_successfully=true
                 break
+            else
+                echo "[WARN] Batch $batch_num: Attempt $query_attempt: Invalid amount parsed: '$current_batch_input_utxo_amount'"
             fi
+        else
+            echo "[WARN] Batch $batch_num: Attempt $query_attempt: Failed to query UTXO or empty result"
         fi
-        echo "[WARN] Batch $batch_num: Attempt $query_attempt to query input UTXO $current_batch_input_utxo failed or returned empty. Retrying in 3s..."
+        
+        echo "[WARN] Batch $batch_num: Attempt $query_attempt failed. Retrying in 3s..."
         sleep 3
     done
 
     if [ "$utxo_queried_successfully" = false ]; then
-        echo "[DEBUG] CRITICAL ERROR: Batch $batch_num: Failed to query input UTXO $current_batch_input_utxo after multiple attempts. It might be spent or invalid."
+        echo "[DEBUG] CRITICAL ERROR: Batch $batch_num: Failed to query input UTXO $current_batch_input_utxo after multiple attempts."
         echo "Attempting to find a new UTXO at $new_address as a fallback..."
-        new_potential_utxo=$(cardano-cli latest query utxo --address "$new_address" --testnet-magic 42 | grep lovelace | sort -k3 -nr | head -n 1 | awk '{print $1"#"$2}')
-        if [ -n "$new_potential_utxo" ] && [ "$new_potential_utxo" != "$current_batch_input_utxo" ]; then
-            echo "[LOG] Found alternative UTXO: $new_potential_utxo. Retrying with this one for batch $batch_num."
-            current_batch_input_utxo="$new_potential_utxo"
-            if ! cardano-cli latest query utxo --testnet-magic 42 --tx-in "$current_batch_input_utxo" --out-file "$input_utxo_details_file"; then
-                 echo "[DEBUG] CRITICAL ERROR: Batch $batch_num: Fallback query for new UTXO $current_batch_input_utxo also failed. Aborting."
-                 exit 1
+        
+        # Fallback: find any UTXO at the address
+        new_potential_utxo_output=$(cardano-cli latest query utxo --address "$new_address" --testnet-magic 42 2>/dev/null)
+        if [ -n "$new_potential_utxo_output" ]; then
+            # Get the largest UTXO available
+            new_potential_utxo=$(echo "$new_potential_utxo_output" | grep lovelace | sort -k3 -nr | head -n 1 | awk '{print $1"#"$2}')
+            if [ -n "$new_potential_utxo" ] && [ "$new_potential_utxo" != "$current_batch_input_utxo" ]; then
+                echo "[LOG] Found alternative UTXO: $new_potential_utxo. Retrying with this one for batch $batch_num."
+                current_batch_input_utxo="$new_potential_utxo"
+                
+                # Try to get amount for the new UTXO
+                current_batch_input_utxo_amount=$(echo "$new_potential_utxo_output" | grep "$new_potential_utxo" | awk '{print $3}' | head -1)
+                if [[ "$current_batch_input_utxo_amount" =~ ^[0-9]+$ ]]; then
+                    utxo_queried_successfully=true
+                fi
             fi
-        else
-            echo "[DEBUG] CRITICAL ERROR: Batch $batch_num: No alternative UTXO found or it's the same problematic one. Aborting."
+        fi
+        
+        if [ "$utxo_queried_successfully" = false ]; then
+            echo "[DEBUG] CRITICAL ERROR: Batch $batch_num: No valid UTXO found. Aborting."
             exit 1
         fi
     fi
     
-    # Add a small delay to ensure file is fully written
-    sleep 0.5
-
-    # Validate the JSON file before attempting to parse
-    if ! /busybox jq . "$input_utxo_details_file" > /dev/null 2>&1; then
-        echo "[DEBUG] CRITICAL ERROR: Batch $batch_num: Input UTXO details file '$input_utxo_details_file' is not valid JSON."
-        echo "[DEBUG_CONTENT] Contents of invalid file '$input_utxo_details_file':"
-        cat "$input_utxo_details_file" | /busybox sed 's/^/[DEBUG_CONTENT] /'
-        exit 1
-    fi
-
-    jq_filter=.\[\"$current_batch_input_utxo\"\].value.lovelace # Construct filter string with shell variable
-    if ! jq_output=$(/busybox jq -r "$jq_filter" "$input_utxo_details_file" 2>/dev/null); then
-        echo "[DEBUG] CRITICAL ERROR: Batch $batch_num: Failed to parse lovelace from UTXO $current_batch_input_utxo details using filter '$jq_filter'."
-        echo "[DEBUG_CONTENT] Contents of $input_utxo_details_file (if any):"
-        cat "$input_utxo_details_file" | /busybox sed 's/^/[DEBUG_CONTENT] /'
-        exit 1
-    fi
-    current_batch_input_utxo_amount=$jq_output
-    rm -f "$input_utxo_details_file"
-
-    if ! [[ "$current_batch_input_utxo_amount" =~ ^[0-9]+$ ]]; then
-        echo "[DEBUG] CRITICAL ERROR: Batch $batch_num: Parsed lovelace amount '$current_batch_input_utxo_amount' for $current_batch_input_utxo is not a number. Aborting."
-        exit 1
-    fi
     echo "[LOG] Batch $batch_num: Input UTXO $current_batch_input_utxo has amount $current_batch_input_utxo_amount lovelace."
 
     batch_tx_change=$((current_batch_input_utxo_amount - batch_total_output_lovelace - batch_tx_fee))
