@@ -313,7 +313,7 @@ if [ "${#registered_node_payment_addresses[@]}" -eq 0 ]; then
 fi
 
 for i in $(seq 0 $((${#registered_node_payment_addresses[@]} - 1))); do
-    echo "[LOG] DEBUG: registered_node_payment_addresses[$i] = ${registered_node_payment_addresses[$i]}"
+    echo "[DEBUG]: registered_node_payment_addresses[$i] = ${registered_node_payment_addresses[$i]}"
 done
 # End Debug
 
@@ -920,7 +920,7 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
         cat "$raw_cli_output_file" | while IFS= read -r line; do echo "[DEBUG] $line"; done
 
         node_utxo_final=$(cat "$raw_cli_output_file" | /busybox awk 'NR>2 {print $1 "#" $2; exit}')
-        echo "[LOG] DEBUG: Parsed node_utxo_final by awk: [$node_utxo_final]"
+        echo "[DEBUG] Parsed node_utxo_final by awk: [$node_utxo_final]"
         
         if [ -n "$node_utxo_final" ]; then
             if [[ "$node_utxo_final" =~ ^[a-f0-9]{64}#[0-9]+$ ]]; then
@@ -939,7 +939,7 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     done
 
     if [ "$final_utxo_found" = false ]; then
-        echo "[ERROR] CRITICAL: Failed to find UTXO for registered-$i at $node_unique_address after multiple attempts. /shared/registered-${i}.utxo will be empty. This will likely cause registration to fail for this node."
+        echo "[WARN] CRITICAL: Failed to find UTXO for registered-$i at $node_unique_address after multiple attempts. /shared/registered-${i}.utxo will be empty. This will likely cause registration to fail for this node."
         echo "" > "/shared/registered-${i}.utxo"
     fi
 done
