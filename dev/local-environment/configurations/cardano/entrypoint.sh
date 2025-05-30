@@ -656,11 +656,11 @@ for batch_num in $(seq 1 "$num_batches"); do
             
             # First, try JSON parsing since --out-file typically produces JSON
             echo "[DEBUG] Batch $batch_num: Attempting JSON parsing with jq..."
-            if command -v jq > /dev/null 2>&1; then
+            if command -v /busybox jq > /dev/null 2>&1; then
                 # Check if the file is valid JSON
-                if jq . "$address_utxos_file" > /dev/null 2>&1; then
+                if /busybox jq . "$address_utxos_file" > /dev/null 2>&1; then
                     echo "[DEBUG] Batch $batch_num: File is valid JSON, parsing with jq..."
-                    current_batch_input_utxo_amount=$(jq -r ".\"$current_batch_input_utxo\".value.lovelace // .\"$current_batch_input_utxo\".lovelace // empty" "$address_utxos_file" 2>/dev/null)
+                    current_batch_input_utxo_amount=$(/busybox jq -r ".\"$current_batch_input_utxo\".value.lovelace // .\"$current_batch_input_utxo\".lovelace // empty" "$address_utxos_file" 2>/dev/null)
                     
                     if [[ "$current_batch_input_utxo_amount" =~ ^[0-9]+$ ]] && [ "$current_batch_input_utxo_amount" -gt 0 ]; then
                         echo "[LOG] Batch $batch_num: Successfully parsed UTXO amount with jq: $current_batch_input_utxo_amount lovelace"
@@ -737,9 +737,9 @@ for batch_num in $(seq 1 "$num_batches"); do
             echo "[DEBUG] === END OF FALLBACK OUTPUT ==="
             
             # Try JSON parsing first
-            if command -v jq > /dev/null 2>&1 && jq . "$fallback_utxos_file" > /dev/null 2>&1; then
+            if command -v /busybox jq > /dev/null 2>&1 && /busybox jq . "$fallback_utxos_file" > /dev/null 2>&1; then
                 echo "[DEBUG] Batch $batch_num: Fallback file is valid JSON, finding largest UTXO..."
-                largest_utxo_info=$(jq -r 'to_entries | map(select(.value.value.lovelace or .value.lovelace)) | sort_by(.value.value.lovelace // .value.lovelace) | reverse | .[0] | "\(.key):\(.value.value.lovelace // .value.lovelace)"' "$fallback_utxos_file" 2>/dev/null)
+                largest_utxo_info=$(/busybox jq -r 'to_entries | map(select(.value.value.lovelace or .value.lovelace)) | sort_by(.value.value.lovelace // .value.lovelace) | reverse | .[0] | "\(.key):\(.value.value.lovelace // .value.lovelace)"' "$fallback_utxos_file" 2>/dev/null)
                 
                 if [ -n "$largest_utxo_info" ] && [ "$largest_utxo_info" != "null:" ] && [ "$largest_utxo_info" != ":" ]; then
                     largest_utxo=$(echo "$largest_utxo_info" | cut -d: -f1)
