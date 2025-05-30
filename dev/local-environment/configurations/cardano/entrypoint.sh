@@ -633,20 +633,73 @@ for batch_num in $(seq 1 "$num_batches"); do
             echo "[DEBUG] Batch $batch_num: Address query successful, file size: $(wc -c < "$address_utxos_file" 2>/dev/null || echo "unknown")"
             
             # Show the content for debugging
-            echo "[DEBUG] Batch $batch_num: Address UTXOs content:"
+            echo "[DEBUG] Batch $batch_num: Address UTXOs file analysis:"
+            echo "[DEBUG] Batch $batch_num: File size: $(wc -c < "$address_utxos_file") bytes"
+            echo "[DEBUG] Batch $batch_num: Line count: $(wc -l < "$address_utxos_file")"
+            
+            echo "[DEBUG] Batch $batch_num: First 10 lines of JSON:"
+            head -10 "$address_utxos_file"
+            
+            echo "[DEBUG] Batch $batch_num: Last 10 lines of JSON:"
+            tail -10 "$address_utxos_file"
+            
+            echo "[DEBUG] Batch $batch_num: Middle section (lines 10-30):"
+            /busybox sed -n '10,30p' "$address_utxos_file"
+            
+            echo "[DEBUG] Batch $batch_num: Complete JSON content (might be truncated in logs):"
             cat "$address_utxos_file"
             echo "[DEBUG] Batch $batch_num: --- End address UTXOs ---"
+            
+            # Additional JSON debugging
+            echo "[DEBUG] Batch $batch_num: JSON validation check:"
+            if /busybox jq . "$address_utxos_file" > /dev/null 2>&1; then
+                echo "[DEBUG] Batch $batch_num: JSON is valid"
+            else
+                echo "[DEBUG] Batch $batch_num: JSON is INVALID - attempting to view raw content"
+                echo "[DEBUG] Batch $batch_num: Raw file content (hexdump first 200 bytes):"
+                head -c 200 "$address_utxos_file" | hexdump -C
+            fi
+            
+            echo "[DEBUG] Batch $batch_num: JSON structure analysis:"
+            echo "[DEBUG] Batch $batch_num: Top-level keys:"
+            /busybox jq -r 'keys[]' "$address_utxos_file" 2>/dev/null | head -5
+            echo "[DEBUG] Batch $batch_num: Sample UTXO structure:"
+            /busybox jq -r 'to_entries[0]' "$address_utxos_file" 2>/dev/null
             
             # Check if our specific UTXO exists in the results
             if /busybox grep -q "$current_batch_input_utxo" "$address_utxos_file"; then
                 echo "[LOG] Batch $batch_num: Found target UTXO $current_batch_input_utxo in address query results"
                 
-                # Extract the amount using jq (more reliable than awk for JSON)
+                # Try multiple jq parsing approaches since the JSON structure might vary
+                echo "[DEBUG] Batch $batch_num: Attempting different jq parsing methods..."
+                
+                # Method 1: Direct key access
                 utxo_filter=".[\"$current_batch_input_utxo\"].value.lovelace"
                 current_batch_input_utxo_amount=$(/busybox jq -r "$utxo_filter" "$address_utxos_file" 2>/dev/null)
-                
+                echo "[DEBUG] Batch $batch_num: Method 1 - Direct key access:"
                 echo "[DEBUG] Batch $batch_num: jq filter: $utxo_filter"
                 echo "[DEBUG] Batch $batch_num: jq result: '$current_batch_input_utxo_amount'"
+                
+                # Method 2: If Method 1 fails, try different structure
+                if [ -z "$current_batch_input_utxo_amount" ] || [ "$current_batch_input_utxo_amount" = "null" ]; then
+                    echo "[DEBUG] Batch $batch_num: Method 1 failed, trying Method 2 - Alternative structure"
+                    current_batch_input_utxo_amount=$(/busybox jq -r ".\"$current_batch_input_utxo\".value.lovelace" "$address_utxos_file" 2>/dev/null)
+                    echo "[DEBUG] Batch $batch_num: Method 2 result: '$current_batch_input_utxo_amount'"
+                fi
+                
+                # Method 3: If still fails, try to find by iterating entries
+                if [ -z "$current_batch_input_utxo_amount" ] || [ "$current_batch_input_utxo_amount" = "null" ]; then
+                    echo "[DEBUG] Batch $batch_num: Method 2 failed, trying Method 3 - Entry iteration"
+                    current_batch_input_utxo_amount=$(/busybox jq -r "to_entries[] | select(.key == \"$current_batch_input_utxo\") | .value.value.lovelace" "$address_utxos_file" 2>/dev/null)
+                    echo "[DEBUG] Batch $batch_num: Method 3 result: '$current_batch_input_utxo_amount'"
+                fi
+                
+                # Method 4: Try without nested .value if there's a different structure
+                if [ -z "$current_batch_input_utxo_amount" ] || [ "$current_batch_input_utxo_amount" = "null" ]; then
+                    echo "[DEBUG] Batch $batch_num: Method 3 failed, trying Method 4 - Direct lovelace access"
+                    current_batch_input_utxo_amount=$(/busybox jq -r ".\"$current_batch_input_utxo\".lovelace" "$address_utxos_file" 2>/dev/null)
+                    echo "[DEBUG] Batch $batch_num: Method 4 result: '$current_batch_input_utxo_amount'"
+                fi
                 
                 if [[ "$current_batch_input_utxo_amount" =~ ^[0-9]+$ ]] && [ "$current_batch_input_utxo_amount" -gt 0 ]; then
                     echo "[LOG] Batch $batch_num: Successfully parsed UTXO amount: $current_batch_input_utxo_amount lovelace"
@@ -654,7 +707,20 @@ for batch_num in $(seq 1 "$num_batches"); do
                     rm -f "$address_utxos_file"
                     break
                 else
-                    echo "[WARN] Batch $batch_num: Invalid amount from jq: '$current_batch_input_utxo_amount'"
+                    echo "[WARN] Batch $batch_num: All jq methods failed. Final result: '$current_batch_input_utxo_amount'"
+                    echo "[DEBUG] Batch $batch_num: Checking if amount appears as raw text in JSON..."
+                    if /busybox grep -o '[0-9]\{10,\}' "$address_utxos_file" | head -1 > /tmp/potential_amount; then
+                        potential_amount=$(cat /tmp/potential_amount)
+                        echo "[DEBUG] Batch $batch_num: Found large number in JSON: '$potential_amount'"
+                        if [ -n "$potential_amount" ]; then
+                            current_batch_input_utxo_amount="$potential_amount"
+                            echo "[LOG] Batch $batch_num: Using extracted large number as amount: $current_batch_input_utxo_amount"
+                            utxo_queried_successfully=true
+                            rm -f "$address_utxos_file" /tmp/potential_amount
+                            break
+                        fi
+                        rm -f /tmp/potential_amount
+                    fi
                 fi
             else
                 echo "[WARN] Batch $batch_num: Target UTXO $current_batch_input_utxo not found in address query results"
