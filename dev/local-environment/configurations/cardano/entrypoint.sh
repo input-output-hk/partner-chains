@@ -105,35 +105,178 @@ new_address=$(cardano-cli latest address build \
 echo "[LOG] New main address created: $new_address"
 
 # Array to store payment addresses for registered nodes
-registered_node_payment_addresses=()
+registered_node_payment_addresses=() # Array to store payment addresses
 
+# --- New: Generate Payment, Cold, KES, VRF, and Stake Keys for Permissioned Nodes ---
+echo "[LOG] Generating Keys for 10 Permissioned Nodes..."
+# Assume permissioned node key directories are structured like: /shared/node-keys/permissioned-<i>/keys
+# And node names are like partner-chains-node-1, partner-chains-node-2, etc. up to 10.
+# Let's map them to permissioned-1 to permissioned-10 for consistency with registered nodes.
+# The config maps node-1 to permissioned-1 etc.
+permissioned_node_base_dirs=(
+    "/shared/node-keys/partner-chains-node-1/keys" # Assuming this path based on project structure
+    "/shared/node-keys/partner-chains-node-2/keys"
+    "/shared/node-keys/partner-chains-node-3/keys"
+    "/shared/node-keys/partner-chains-node-4/keys"
+    "/shared/node-keys/partner-chains-node-5/keys"
+    "/shared/node-keys/partner-chains-node-6/keys"
+    "/shared/node-keys/partner-chains-node-7/keys"
+    "/shared/node-keys/partner-chains-node-8/keys"
+    "/shared/node-keys/partner-chains-node-9/keys"
+    "/shared/node-keys/partner-chains-node-10/keys"
+)
+
+permissioned_node_payment_addresses=() # Array to store payment addresses
+
+for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do # Iterate based on the variable
+    node_idx=$((i+1)) # 1-indexed for directory name
+    NODE_SPECIFIC_KEYS_DIR="${permissioned_node_base_dirs[$i]}"
+    mkdir -p "$NODE_SPECIFIC_KEYS_DIR" # Ensure directory exists
+
+    echo "[LOG] Generating/checking keys for permissioned-$node_idx in $NODE_SPECIFIC_KEYS_DIR..."
+
+    # Payment Keys (Generate if not exist, assuming they might exist from other configs)
+    if [ ! -f "${NODE_SPECIFIC_KEYS_DIR}/payment.vkey" ]; then
+        echo "[LOG] Generating payment keys for permissioned-$node_idx..."
+        cardano-cli address key-gen \\
+            --verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/payment.vkey" \\
+            --signing-key-file "${NODE_SPECIFIC_KEYS_DIR}/payment.skey"
+        if [ $? -ne 0 ]; then echo "Error generating payment keys for permissioned-$node_idx!"; fi
+    else
+        echo "[LOG] Payment keys already exist for permissioned-$node_idx."
+    fi
+
+    node_payment_address=$(cardano-cli address build \\
+        --payment-verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/payment.vkey" \\
+        --testnet-magic 42)
+    if [ -z "$node_payment_address" ]; then echo "Error building payment address for permissioned-$node_idx!"; fi
+    permissioned_node_payment_addresses+=("$node_payment_address")
+    echo "Generated payment address for permissioned-$node_idx: $node_payment_address"
+
+
+    # Cold Keys (Generate if not exist)
+     if [ ! -f "${NODE_SPECIFIC_KEYS_DIR}/cold.vkey" ]; then
+        echo "[LOG] Generating cold keys for permissioned-$node_idx..."
+        cardano-cli node key-gen \\
+            --cold-verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/cold.vkey" \\
+            --cold-signing-key-file "${NODE_SPECIFIC_KEYS_DIR}/cold.skey" \\
+            --operational-certificate-issue-counter-file "${NODE_SPECIFIC_KEYS_DIR}/cold.counter"
+         if [ $? -ne 0 ]; then echo "Error generating cold keys for permissioned-$node_idx!"; fi
+    else
+        echo "[LOG] Cold keys already exist for permissioned-$node_idx."
+        # Ensure counter file exists if keys exist
+        if [ ! -f "${NODE_SPECIFIC_KEYS_DIR}/cold.counter" ]; then
+            echo "[WARN] Cold keys exist but counter file missing for permissioned-$node_idx. Generating a new counter file."
+            echo 0 > "${NODE_SPECIFIC_KEYS_DIR}/cold.counter" # Start counter at 0
+        fi
+    fi
+
+    # KES Keys (Generate)
+    echo "[LOG] Generating KES keys for permissioned-$node_idx..."
+    cardano-cli node key-gen-KES \\
+        --verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/kes.vkey" \\
+        --signing-key-file "${NODE_SPECIFIC_KEYS_DIR}/kes.skey"
+    if [ $? -ne 0 ]; then echo "Error generating KES keys for permissioned-$node_idx!"; fi
+
+    # VRF Keys (Generate)
+    echo "[LOG] Generating VRF keys for permissioned-$node_idx..."
+    cardano-cli node key-gen-VRF \\
+        --verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/vrf.vkey" \\
+        --signing-key-file "${NODE_SPECIFIC_KEYS_DIR}/vrf.skey"
+    if [ $? -ne 0 ]; then echo "Error generating VRF keys for permissioned-$node_idx!"; fi
+
+    # Stake Keys (Generate)
+    echo "[LOG] Generating Stake keys for permissioned-$node_idx..."
+    cardano-cli stake-address key-gen \\
+        --verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.vkey" \\
+        --signing-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.skey"
+    if [ $? -ne 0 ]; then echo "Error generating Stake keys for permissioned-$node_idx!"; fi
+
+done
+echo "[LOG] Completed generation of keys for 10 permissioned nodes."
+# --- End of New Permissioned Key Generation ---
+
+# --- New: Generate Stake Addresses for Permissioned Nodes ---
+echo "[LOG] Generating Stake Addresses for 10 Permissioned Nodes..."
+permissioned_node_stake_addresses=() # Array to store stake addresses
+for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do # Iterate based on the variable
+    node_idx=$((i+1)) # 1-indexed for directory name
+    NODE_SPECIFIC_KEYS_DIR="${permissioned_node_base_dirs[$i]}" # Using the base dirs defined earlier
+    echo "[LOG] Generating stake address for permissioned-$node_idx in $NODE_SPECIFIC_KEYS_DIR..."
+    node_stake_address=$(cardano-cli stake-address build \\
+        --stake-verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.vkey" \\
+        --testnet-magic 42)
+
+    if [ -z "$node_stake_address" ]; then
+        echo "Error building stake address for permissioned-$node_idx!"
+        # Decide how to handle error - log and continue for now.
+    else
+        permissioned_node_stake_addresses+=("$node_stake_address")
+        echo "Generated stake address for permissioned-$node_idx: $node_stake_address"
+    fi
+done
+echo "[LOG] Completed generation of stake addresses for 10 permissioned nodes."
+# --- End of New Stake Address Generation ---
+
+# --- New: Generate Stake Addresses for Registered Nodes ---
+echo "[LOG] Generating Stake Addresses for 300 Registered Nodes..."
+registered_node_stake_addresses=() # Array to store stake addresses
 echo "[LOG] Generating Payment Keypairs and Addresses for 300 Registered Nodes..."
-for i in {1..300}; do
+for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     NODE_SPECIFIC_KEYS_DIR="/shared/node-keys/registered-${i}/keys"
     mkdir -p "$NODE_SPECIFIC_KEYS_DIR" # Ensure cold key dir also exists if not created yet
+    echo "[LOG] Generating stake address for registered-$i in $NODE_SPECIFIC_KEYS_DIR..."
+    node_stake_address=$(cardano-cli stake-address build \\
+        --stake-verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.vkey" \\
+        --testnet-magic 42)
 
-    echo "[LOG] Generating payment keys for registered-$i in $NODE_SPECIFIC_KEYS_DIR..."
-    cardano-cli address key-gen \
-        --verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/payment.vkey" \
-        --signing-key-file "${NODE_SPECIFIC_KEYS_DIR}/payment.skey"
-    
-    if [ $? -ne 0 ]; then
-        echo "Error generating payment keys for registered-$i!"
-        exit 1
+    if [ -z "$node_stake_address" ]; then
+        echo "Error building stake address for registered-$i!"
+        # Decide how to handle error - log and continue for now.
+    else
+        registered_node_stake_addresses+=("$node_stake_address")
+        echo "Generated stake address for registered-$i: $node_stake_address"
     fi
-
-    node_payment_address=$(cardano-cli address build \
-        --payment-verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/payment.vkey" \
-        --testnet-magic 42) # Assuming testnet-magic 42 from context
-
-    if [ -z "$node_payment_address" ]; then
-        echo "Error building payment address for registered-$i!"
-        exit 1
-    fi
-    registered_node_payment_addresses+=("$node_payment_address")
-    echo "Generated payment address for registered-$i: $node_payment_address"
 done
+echo "[LOG] Completed generation of stake addresses for 300 registered nodes."
+# --- End of New Stake Address Generation ---
+
 echo "[LOG] Completed generation of payment keypairs and addresses for 300 registered nodes."
+
+# --- New: Generate KES, VRF, and Stake Keypairs for 300 Registered Nodes ---
+echo "[LOG] Generating KES, VRF, and Stake Keypairs for 300 Registered Nodes..."
+for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
+    NODE_SPECIFIC_KEYS_DIR="/shared/node-keys/registered-${i}/keys" # Re-using the same key dir
+
+    echo "[LOG] Generating KES keys for registered-$i in $NODE_SPECIFIC_KEYS_DIR..."
+    cardano-cli node key-gen-KES \\
+        --verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/kes.vkey" \\
+        --signing-key-file "${NODE_SPECIFIC_KEYS_DIR}/kes.skey"
+    if [ $? -ne 0 ]; then
+        echo "Error generating KES keys for registered-$i!"
+        # Decide how to handle error - continue or exit? For now, log and continue.
+    fi
+
+    echo "[LOG] Generating VRF keys for registered-$i in $NODE_SPECIFIC_KEYS_DIR..."
+    cardano-cli node key-gen-VRF \\
+        --verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/vrf.vkey" \\
+        --signing-key-file "${NODE_SPECIFIC_KEYS_DIR}/vrf.skey"
+    if [ $? -ne 0 ]; then
+        echo "Error generating VRF keys for registered-$i!"
+        # Decide how to handle error - continue or exit? For now, log and continue.
+    fi
+
+    echo "[LOG] Generating Stake keys for registered-$i in $NODE_SPECIFIC_KEYS_DIR..."
+    cardano-cli stake-address key-gen \\
+        --verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.vkey" \\
+        --signing-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.skey"
+    if [ $? -ne 0 ]; then
+        echo "Error generating Stake keys for registered-$i!"
+        # Decide how to handle error - continue or exit? For now, log and continue.
+    fi
+done
+echo "[LOG] Completed generation of KES, VRF, and Stake keypairs for 300 registered nodes."
+# --- End of New Key Generation ---
 
 # An address that will keep an UTXO with script of a test V-function, related to the SPO rewards. See v-function.script file.
 vfunction_address="addr_test1vzuasm5nqzh7n909f7wang7apjprpg29l2f9sk6shlt84rqep6nyc"
@@ -350,7 +493,7 @@ fi
 
 
 # Batch funding loop for registered_node_payment_addresses
-num_registered_nodes=${#registered_node_payment_addresses[@]} # Get actual count from array
+num_registered_nodes=$NUM_REGISTERED_NODES_TO_PROCESS # Use the configuration variable
 batch_size=10 # Fund 10 nodes per batch
 num_batches=$(( (num_registered_nodes + batch_size - 1) / batch_size )) # Ceiling division
 
@@ -467,6 +610,17 @@ for batch_num in $(seq 1 "$num_batches"); do
         fi
     fi
     
+    # Add a small delay to ensure file is fully written
+    sleep 0.5
+
+    # Validate the JSON file before attempting to parse
+    if ! /busybox jq . "$input_utxo_details_file" > /dev/null 2>&1; then
+        echo "[DEBUG] CRITICAL ERROR: Batch $batch_num: Input UTXO details file '$input_utxo_details_file' is not valid JSON."
+        echo "[DEBUG_CONTENT] Contents of invalid file '$input_utxo_details_file':
+        cat "$input_utxo_details_file" | /busybox sed 's/^/[DEBUG_CONTENT] /'
+        exit 1
+    fi
+
     jq_filter=.\[\"$current_batch_input_utxo\"\].value.lovelace # Construct filter string with shell variable
     if ! jq_output=$(/busybox jq -r "$jq_filter" "$input_utxo_details_file" 2>/dev/null); then
         echo "[DEBUG] CRITICAL ERROR: Batch $batch_num: Failed to parse lovelace from UTXO $current_batch_input_utxo details using filter '$jq_filter'."
@@ -587,7 +741,7 @@ echo "Created /shared/FUNDED_ADDRESS with value: $new_address"
 
 # Registered nodes UTXOs - now query each unique address
 echo "[LOG] Finalizing UTXO files for registered nodes after all batch funding..."
-for i in {1..300}; do
+for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     node_unique_address="${registered_node_payment_addresses[$((i-1))]}"
     # It's critical that the UTXO exists now. Add some retries just in case of chain lag.
     final_utxo_found=false
@@ -628,7 +782,7 @@ done
 echo "[LOG] Finished finalizing UTXO files for all registered nodes."
 
 echo "[LOG] Generating Mainchain Cold Keys for Registered Nodes..."
-for i in {1..300}; do
+for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     NODE_KEYS_DIR="/shared/node-keys/registered-${i}/keys"
     mkdir -p "$NODE_KEYS_DIR"
     echo "[LOG] Generating cold keys for registered-$i in $NODE_KEYS_DIR..."

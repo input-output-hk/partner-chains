@@ -31,6 +31,8 @@
       - ./runtime-values:/runtime-values
     environment:
       - CARDANO_NODE_SOCKET_PATH=/data/node.socket
+      - NUM_PERMISSIONED_NODES_TO_PROCESS=${NUM_PERMISSIONED_NODES_TO_PROCESS}
+      - NUM_REGISTERED_NODES_TO_PROCESS=${NUM_REGISTERED_NODES_TO_PROCESS}
     entrypoint: ["/bin/bash", "/entrypoint.sh"]
     ports:
       - "32000:32000"

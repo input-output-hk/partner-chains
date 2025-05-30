@@ -7,7 +7,16 @@ cp /usr/local/bin/partner-chains-node /partner-chains-node
 echo "Using Partner Chains node version:"
 ./partner-chains-node --version
 
+echo "Waiting for Cardano node setup to complete..."
+while [ ! -f "/shared/cardano.ready" ]; do
+    echo "Waiting for /shared/cardano.ready signal..."
+    sleep 5
+done
+echo "Cardano node setup completed."
+
 echo "Waiting for the Cardano network to sync and for Ogmios to start..."
+
+
 
 while true; do
     if nc -z ogmios $OGMIOS_PORT; then
@@ -80,7 +89,7 @@ fi
 echo "Generating and inserting permissioned candidates..."
 > permissioned_candidates.csv
 
-for i in {1..10}; do
+for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
     node_name="permissioned-$i"
     echo "Processing $node_name..."
     
@@ -139,7 +148,7 @@ fi
 
 # Generate and register registered nodes (1-300)
 echo "Generating and registering registered candidates..."
-for i in {1..300}; do
+for ((i=1; i<=NUM_REGISTERED_NODES_TO_PROCESS; i++)); do
     node_name="registered-$i"
     echo "Processing $node_name..."
     
@@ -240,7 +249,7 @@ echo "Generating chain-spec.json file for Partnerchain Nodes..."
 echo "Configuring Initial Validators..."
 # Generate initial validators array
 echo "[" > initial_validators.json
-for i in {1..10}; do
+for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
     node_name="permissioned-$i"
     sidechain_vkey=$(jq -r '.publicKey' /partner-chains-nodes/$node_name/keys/sidechain.json)
     aura_vkey=$(jq -r '.publicKey' /partner-chains-nodes/$node_name/keys/aura.json)
@@ -269,7 +278,7 @@ mv chain-spec.json.tmp chain-spec.json
 echo "Configuring Initial Authorities..."
 # Generate initial authorities array (similar to initialValidators)
 echo "[" > initial_authorities.json
-for i in {1..10}; do
+for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
     node_name="permissioned-$i"
     # Ensure keys are in the correct format (e.g. raw public key, not full JSON path or content)
     # Assuming sidechain.json contains an ecdsa public key for 'id'
@@ -305,7 +314,7 @@ echo "Configuring Initial Balances..."
 # Fund each of the 10 permissioned nodes (using their ECDSA sidechain public key)
 initial_balance_amount="1000000000000000"
 echo "[" > initial_balances.json
-for i in {1..10}; do
+for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
     node_name="permissioned-$i"
     account_id=$(jq -r '.publicKey' "/partner-chains-nodes/$node_name/keys/sidechain.json") # ECDSA public key as account ID
 

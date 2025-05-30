@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 
+# --- Configuration Variables ---
+NUM_PERMISSIONED_NODES_TO_PROCESS=5
+NUM_REGISTERED_NODES_TO_PROCESS=5
+# To process only 5 permissioned and 5 registered nodes for testing, uncomment the lines below:
+#NUM_PERMISSIONED_NODES_TO_PROCESS=5
+#NUM_REGISTERED_NODES_TO_PROCESS=5
+# --- End Configuration Variables ---
+
 PARTNER_CHAINS_NODE_IMAGE="ghcr.io/input-output-hk/partner-chains/partner-chains-node-unstable:latest"
 CARDANO_IMAGE="ghcr.io/intersectmbo/cardano-node:10.1.4"
 DBSYNC_IMAGE="ghcr.io/intersectmbo/cardano-db-sync:13.6.0.4"
@@ -283,6 +291,8 @@ OGMIOS_IMAGE=$OGMIOS_IMAGE
 POSTGRES_IMAGE=$POSTGRES_IMAGE
 TESTS_IMAGE=$TESTS_IMAGE
 PARTNER_CHAINS_NODE_IMAGE=${node_image:-$PARTNER_CHAINS_NODE_IMAGE}
+NUM_PERMISSIONED_NODES_TO_PROCESS=$NUM_PERMISSIONED_NODES_TO_PROCESS
+NUM_REGISTERED_NODES_TO_PROCESS=$NUM_REGISTERED_NODES_TO_PROCESS
 EOF
 
     if [ "$mode" == "interactive" ]; then
@@ -352,7 +362,7 @@ EOF
     chmod +x configurations/partner-chains-nodes/$node_name/entrypoint.sh
 
     # Generate remaining permissioned nodes configurations
-    for i in {2..10}; do
+    for ((i=2; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
         node_name="permissioned-$i"
         mkdir -p configurations/partner-chains-nodes/$node_name
         cat > configurations/partner-chains-nodes/$node_name/entrypoint.sh <<EOF
@@ -394,7 +404,7 @@ EOF
         chmod +x configurations/partner-chains-nodes/$node_name/entrypoint.sh
     done
 
-    for i in {1..300}; do
+    for ((i=1; i<=NUM_REGISTERED_NODES_TO_PROCESS; i++)); do
         node_name="registered-$i"
         mkdir -p configurations/partner-chains-nodes/$node_name
         cat > configurations/partner-chains-nodes/$node_name/entrypoint.sh <<EOF
@@ -444,7 +454,7 @@ services:
 EOF
 
     # Add permissioned nodes
-    for i in {1..10}; do
+    for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
         node_name="permissioned-$i"
         rpc_port=$((9933 + i - 1))
         prometheus_port=$((9615 + i - 1))
@@ -481,7 +491,7 @@ EOF
     done
 
     # Add registered nodes
-    for i in {1..300}; do
+    for ((i=1; i<=NUM_REGISTERED_NODES_TO_PROCESS; i++)); do
         node_name="registered-$i"
         rpc_port=$((9943 + i - 1))
         prometheus_port=$((9625 + i - 1))
@@ -549,11 +559,11 @@ create_docker_compose() {
     echo "" >> docker-compose.yml # Ensure a newline
 
     # Add volume entries for all nodes
-    for i in {1..10}; do
+    for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
         echo "  partner-chains-node-permissioned-$i-data:" >> docker-compose.yml
     done
 
-    for i in {1..300}; do
+    for ((i=1; i<=NUM_REGISTERED_NODES_TO_PROCESS; i++)); do
         echo "  partner-chains-node-registered-$i-data:" >> docker-compose.yml
     done
 
