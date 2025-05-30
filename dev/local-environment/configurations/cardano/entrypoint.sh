@@ -699,17 +699,41 @@ for batch_num in $(seq 1 "$num_batches"); do
         fallback_utxos_file="/data/fallback_utxos_batch_${batch_num}.json"
         if cardano-cli latest query utxo --testnet-magic 42 --address "$new_address" --out-file "$fallback_utxos_file"; then
             echo "[DEBUG] Batch $batch_num: Fallback query successful, analyzing available UTXOs..."
+            echo "[DEBUG] Batch $batch_num: Fallback raw output:"
+            echo "=== START OF FALLBACK OUTPUT ==="
             cat "$fallback_utxos_file"
+            echo "=== END OF FALLBACK OUTPUT ==="
             
-            # Find the UTXO with the largest lovelace amount
-            largest_utxo_info=$(/busybox jq -r 'to_entries | map(select(.value.value.lovelace)) | sort_by(.value.value.lovelace) | reverse | .[0] | "\(.key):\(.value.value.lovelace)"' "$fallback_utxos_file" 2>/dev/null)
+            # Extract all UTXOs and their amounts using text parsing
+            echo "[DEBUG] Batch $batch_num: Finding largest UTXO from text output..."
             
-            if [ -n "$largest_utxo_info" ] && [ "$largest_utxo_info" != "null:" ]; then
-                new_potential_utxo=$(echo "$largest_utxo_info" | cut -d: -f1)
-                current_batch_input_utxo_amount=$(echo "$largest_utxo_info" | cut -d: -f2)
-                
-                echo "[LOG] Found alternative UTXO: $new_potential_utxo with amount $current_batch_input_utxo_amount"
-                current_batch_input_utxo="$new_potential_utxo"
+            # Skip header lines and process each UTXO line
+            largest_amount=0
+            largest_utxo=""
+            
+            # Parse each line that looks like a UTXO (contains both hash#index and large numbers)
+            while IFS= read -r line; do
+                if echo "$line" | /busybox grep -q '[a-f0-9]\{64\}#[0-9]\+'; then
+                    echo "[DEBUG] Batch $batch_num: Processing UTXO line: '$line'"
+                    
+                    # Extract the UTXO identifier
+                    utxo_id=$(echo "$line" | /busybox grep -o '[a-f0-9]\{64\}#[0-9]\+')
+                    
+                    # Extract the largest number from this line (should be lovelace amount)
+                    line_amount=$(echo "$line" | /busybox grep -o '[0-9]\{10,\}' | /busybox sort -nr | head -1)
+                    
+                    if [ -n "$line_amount" ] && [ "$line_amount" -gt "$largest_amount" ]; then
+                        largest_amount="$line_amount"
+                        largest_utxo="$utxo_id"
+                        echo "[DEBUG] Batch $batch_num: New largest: $largest_utxo with amount $largest_amount"
+                    fi
+                fi
+            done < "$fallback_utxos_file"
+            
+            if [ -n "$largest_utxo" ] && [ "$largest_amount" -gt 0 ]; then
+                echo "[LOG] Found alternative UTXO: $largest_utxo with amount $largest_amount"
+                current_batch_input_utxo="$largest_utxo"
+                current_batch_input_utxo_amount="$largest_amount"
                 utxo_queried_successfully=true
             fi
             
