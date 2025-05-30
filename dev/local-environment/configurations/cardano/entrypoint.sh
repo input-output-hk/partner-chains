@@ -187,7 +187,7 @@ for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do # Iterate based
 
     # Stake Keys (Generate)
     echo "[LOG] Generating Stake keys for permissioned-$node_idx..."
-    cardano-cli stake-address key-gen \
+    cardano-cli shelley stake-address key-gen \
         --verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.vkey" \
         --signing-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.skey"
     if [ $? -ne 0 ]; then echo "Error generating Stake keys for permissioned-$node_idx!"; fi
@@ -203,7 +203,7 @@ for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do # Iterate based
     node_idx=$((i+1)) # 1-indexed for directory name
     NODE_SPECIFIC_KEYS_DIR="${permissioned_node_base_dirs[$i]}" # Using the base dirs defined earlier
     echo "[LOG] Generating stake address for permissioned-$node_idx in $NODE_SPECIFIC_KEYS_DIR..."
-    node_stake_address=$(cardano-cli stake-address build \
+    node_stake_address=$(cardano-cli shelley stake-address build \
         --stake-verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.vkey" \
         --testnet-magic 42)
 
@@ -226,7 +226,7 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     NODE_SPECIFIC_KEYS_DIR="/shared/node-keys/registered-${i}/keys"
     mkdir -p "$NODE_SPECIFIC_KEYS_DIR" # Ensure cold key dir also exists if not created yet
     echo "[LOG] Generating stake address for registered-$i in $NODE_SPECIFIC_KEYS_DIR..."
-    node_stake_address=$(cardano-cli stake-address build \
+    node_stake_address=$(cardano-cli shelley stake-address build \
         --stake-verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.vkey" \
         --testnet-magic 42)
 
@@ -267,7 +267,7 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     fi
 
     echo "[LOG] Generating Stake keys for registered-$i in $NODE_SPECIFIC_KEYS_DIR..."
-    cardano-cli stake-address key-gen \
+    cardano-cli shelley stake-address key-gen \
         --verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.vkey" \
         --signing-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.skey"
     if [ $? -ne 0 ]; then
