@@ -2,7 +2,7 @@
   "addresses": {
     "CommitteeCandidateValidator": "addr_test1wp4sjcwh2n7qmtmjyzq70ax5sgk32krytkqu9vrg8vxp82g0lkps6",
     "DParameterValidator": "addr_test1wpvtw0r3acskmgrphlz0m4c57djpxdvw9gdcwx0rwter9acadwzzc",
-    "GovernedMapValidator": "addr_test1wpvtw0r3acskmgrphlz0m4c57djpxdvw9gdcwx0rwter9acadwzzc",
+    "GovernedMapValidator": "addr_test1wp79utgtdqmy7pz0g5admhpfu70fmuj3yykv7qfxeawatkctznqt2",
     "IlliquidCirculationSupplyValidator": "addr_test1wzzjx5flq6xj5ydp62vn57v46e8hrspj7q693qtz2m7ya8qekdzlk",
     "PermissionedCandidatesValidator": "addr_test1wpfs2kw8a8ry0svtmdexmqyjz67qxmssgufg688ykw7ruucjj3856",
     "ReserveValidator": "addr_test1wz6tjn546lnvjftl08mw8xhv8n3amr7rze6emn49wjnwn6qwqefww",

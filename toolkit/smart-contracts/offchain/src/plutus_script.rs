@@ -239,6 +239,12 @@ impl<T: ToDatum> From<T> for PlutusDataWrapper<T> {
 	}
 }
 
+impl From<raw_scripts::ScriptId> for PlutusDataWrapper<()> {
+	fn from(value: raw_scripts::ScriptId) -> Self {
+		PlutusDataWrapper::new(to_plutus_data((value as u32).to_datum()))
+	}
+}
+
 fn to_plutus_data(datum: plutus::Datum) -> uplc::PlutusData {
 	uplc::plutus_data(&minicbor::to_vec(datum).expect("to_vec is Infallible"))
 		.expect("transformation from PC Datum to pallas PlutusData can't fail")
