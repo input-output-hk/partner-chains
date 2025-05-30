@@ -302,10 +302,10 @@ echo "[LOG] Completed generation of payment keys and addresses for $NUM_REGISTER
 echo "[LOG] Completed generation of payment keypairs and addresses for $NUM_REGISTERED_NODES_TO_PROCESS registered nodes."
 
 # Debug: Verify that the arrays are populated
-echo "[LOG] DEBUG: Verifying populated arrays..."
-echo "[LOG] DEBUG: Number of permissioned payment addresses: ${#permissioned_node_payment_addresses[@]}"
-echo "[LOG] DEBUG: Number of registered payment addresses: ${#registered_node_payment_addresses[@]}"
-echo "[LOG] DEBUG: Number of registered stake addresses: ${#registered_node_stake_addresses[@]}"
+echo "[DEBUG] Verifying populated arrays..."
+echo "[DEBUG] Number of permissioned payment addresses: ${#permissioned_node_payment_addresses[@]}"
+echo "[DEBUG] Number of registered payment addresses: ${#registered_node_payment_addresses[@]}"
+echo "[DEBUG] Number of registered stake addresses: ${#registered_node_stake_addresses[@]}"
 
 if [ "${#registered_node_payment_addresses[@]}" -eq 0 ]; then
     echo "[DEBUG] CRITICAL ERROR: registered_node_payment_addresses array is empty! This will cause batch funding to fail."
@@ -625,8 +625,37 @@ for batch_num in $(seq 1 "$num_batches"); do
         echo "[LOG] Batch $batch_num: Querying UTXO attempt $query_attempt..."
         
         # Query UTXO using simpler text output approach
+        echo "[DEBUG] Batch $batch_num: Running: cardano-cli latest query utxo --testnet-magic 42 --tx-in \"$current_batch_input_utxo\""
         raw_utxo_output=$(cardano-cli latest query utxo --testnet-magic 42 --tx-in "$current_batch_input_utxo" 2>/dev/null)
-        if [ $? -eq 0 ] && [ -n "$raw_utxo_output" ]; then
+        query_exit_code=$?
+        
+        echo "[DEBUG] Batch $batch_num: cardano-cli exit code: $query_exit_code"
+        echo "[DEBUG] Batch $batch_num: Raw UTXO output length: ${#raw_utxo_output}"
+        echo "[DEBUG] Batch $batch_num: Raw UTXO output (first 500 chars):"
+        echo "$raw_utxo_output" | head -c 500
+        echo "[DEBUG] Batch $batch_num: --- End raw output ---"
+        
+        if [ $query_exit_code -eq 0 ] && [ -n "$raw_utxo_output" ]; then
+            # Test each step of the parsing
+            echo "[DEBUG] Batch $batch_num: Attempting to grep for '$current_batch_input_utxo'"
+            grep_result=$(echo "$raw_utxo_output" | /busybox grep "$current_batch_input_utxo")
+            echo "[DEBUG] Batch $batch_num: Grep result: '$grep_result'"
+            
+            if [ -n "$grep_result" ]; then
+                echo "[DEBUG] Batch $batch_num: Attempting to extract amount with awk..."
+                current_batch_input_utxo_amount=$(echo "$grep_result" | /busybox awk '{print $3}' | head -1)
+                echo "[DEBUG] Batch $batch_num: Awk result: '$current_batch_input_utxo_amount'"
+                
+                # Also try different column positions in case the format is different
+                awk_col1=$(echo "$grep_result" | /busybox awk '{print $1}')
+                awk_col2=$(echo "$grep_result" | /busybox awk '{print $2}')
+                awk_col3=$(echo "$grep_result" | /busybox awk '{print $3}')
+                awk_col4=$(echo "$grep_result" | /busybox awk '{print $4}')
+                echo "[DEBUG] Batch $batch_num: All awk columns: \$1='$awk_col1' \$2='$awk_col2' \$3='$awk_col3' \$4='$awk_col4'"
+            else
+                echo "[DEBUG] Batch $batch_num: Grep found no matches for '$current_batch_input_utxo'"
+            fi
+            
             # Extract lovelace amount from the raw output (format: TxHash TxIx Address Amount Asset)
             current_batch_input_utxo_amount=$(echo "$raw_utxo_output" | /busybox grep "$current_batch_input_utxo" | /busybox awk '{print $3}' | head -1)
             
@@ -638,7 +667,7 @@ for batch_num in $(seq 1 "$num_batches"); do
                 echo "[WARN] Batch $batch_num: Attempt $query_attempt: Invalid amount parsed: '$current_batch_input_utxo_amount'"
             fi
         else
-            echo "[WARN] Batch $batch_num: Attempt $query_attempt: Failed to query UTXO or empty result"
+            echo "[WARN] Batch $batch_num: Attempt $query_attempt: Failed to query UTXO or empty result (exit_code=$query_exit_code)"
         fi
         
         echo "[WARN] Batch $batch_num: Attempt $query_attempt failed. Retrying in 3s..."
@@ -793,7 +822,7 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
         cat "$raw_cli_output_file"
 
         node_utxo_final=$(cat "$raw_cli_output_file" | /busybox awk 'NR>2 {print $1 "#" $2; exit}')
-        echo "[DEBUG] Parsed node_utxo_final by awk: [$node_utxo_final]"
+        echo "[LOG] DEBUG: Parsed node_utxo_final by awk: [$node_utxo_final]"
         
         if [ -n "$node_utxo_final" ]; then
             if [[ "$node_utxo_final" =~ ^[a-f0-9]{64}#[0-9]+$ ]]; then
