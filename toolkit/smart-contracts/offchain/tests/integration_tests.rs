@@ -100,6 +100,8 @@ async fn governance_flow() {
 	let container = cli.run(image);
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_goveranance(&client).await;
+	// Eve is not governece auth!
+	assert!(try_update_governance_with_eve_key(&client, genesis_utxo).await.is_err());
 	let _ = run_update_governance(&client, genesis_utxo).await;
 
 	let upsert_candidates_1_result =
@@ -516,6 +518,22 @@ async fn run_update_governance<
 	.unwrap();
 	cleanup_temp_wallet_file(&result);
 	result
+}
+
+async fn try_update_governance_with_eve_key<
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+>(
+	client: &T,
+	genesis_utxo: UtxoId,
+) -> Result<MultiSigSmartContractResult, anyhow::Error> {
+	update_governance::run_update_governance(
+		&MultiSigParameters::new(&vec![EVE_PUBLIC_KEY_HASH, GOVERNANCE_AUTHORITY], 1).unwrap(),
+		&eve_payment_key(),
+		genesis_utxo,
+		client,
+		FixedDelayRetries::new(Duration::from_millis(500), 100),
+	)
+	.await
 }
 
 async fn run_upsert_d_param<
