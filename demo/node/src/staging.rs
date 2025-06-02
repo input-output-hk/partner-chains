@@ -3,8 +3,9 @@ use crate::chain_spec::*;
 use authority_selection_inherents::CommitteeMember;
 use partner_chains_demo_runtime::{
 	AccountId, AuraConfig, BalancesConfig, GovernedMapConfig, GrandpaConfig,
-	NativeTokenManagementConfig, RuntimeGenesisConfig, SessionCommitteeManagementConfig,
-	SessionConfig, SidechainConfig, SudoConfig, SystemConfig, TestHelperPalletConfig,
+	NativeTokenManagementConfig, PalletSessionConfig, RuntimeGenesisConfig,
+	SessionCommitteeManagementConfig, SidechainConfig, SudoConfig, SystemConfig,
+	TestHelperPalletConfig,
 };
 use sc_service::ChainType;
 use sidechain_domain::*;
@@ -129,19 +130,24 @@ pub fn staging_genesis(
 			key: root_key,
 		},
 		transaction_payment: Default::default(),
-		session: SessionConfig {
-			initial_validators: initial_authorities
-				.iter()
-				.map(|authority_keys| {
-					(authority_keys.cross_chain.clone().into(), authority_keys.session.clone())
-				})
-				.collect(),
-		},
 		sidechain: SidechainConfig {
 			genesis_utxo: sp_sidechain::read_genesis_utxo_from_env_with_defaults()?,
 			..Default::default()
 		},
-		pallet_session: Default::default(),
+		//
+		pallet_session: PalletSessionConfig {
+			keys: initial_authorities
+				.iter()
+				.map(|authority_keys| {
+					(
+						authority_keys.cross_chain.clone().into(),
+						authority_keys.cross_chain.clone().into(),
+						authority_keys.session.clone(),
+					)
+				})
+				.collect(),
+			non_authority_keys: vec![],
+		},
 		session_committee_management: SessionCommitteeManagementConfig {
 			initial_authorities: initial_authorities
 				.into_iter()

@@ -30,7 +30,7 @@ use frame_system::EnsureRoot;
 use opaque::SessionKeys;
 use pallet_block_producer_metadata;
 use pallet_grandpa::AuthorityId as GrandpaId;
-use pallet_session_validator_management::session_manager::ValidatorManagementSessionManager;
+use pallet_session_validator_management::pallet_session_support::PalletSessionSupport;
 use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier};
 use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
@@ -310,7 +310,33 @@ impl pallet_aura::Config for Runtime {
 	type SlotDuration = ConstU64<SLOT_DURATION>;
 }
 
-pallet_partner_chains_session::impl_pallet_session_config!(Runtime);
+impl pallet_session::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type ValidatorId = <Self as frame_system::Config>::AccountId;
+	type ValidatorIdOf = Identity;
+	type ShouldEndSession = PalletSessionSupport<Runtime>; // ???
+	type NextSessionRotation = (); // ???
+	type SessionManager = PalletSessionSupport<Runtime>; // ???
+	type SessionHandler = <opaque::SessionKeys as OpaqueKeys>::KeyTypeIdProviders; // ???
+	type Keys = SessionKeys;
+	type DisablingStrategy = ();
+	type WeightInfo = ();
+}
+
+pub struct Identity;
+
+impl
+	sp_runtime::traits::Convert<
+		<Runtime as frame_system::Config>::AccountId,
+		Option<<Runtime as pallet_session::Config>::ValidatorId>,
+	> for Identity
+{
+	fn convert(
+		a: <Runtime as frame_system::Config>::AccountId,
+	) -> Option<<Runtime as pallet_session::Config>::ValidatorId> {
+		Some(a)
+	}
+}
 
 impl pallet_grandpa::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -372,16 +398,6 @@ impl pallet_sudo::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
 	type WeightInfo = pallet_sudo::weights::SubstrateWeight<Runtime>;
-}
-
-impl pallet_partner_chains_session::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type ValidatorId = <Self as frame_system::Config>::AccountId;
-	type ShouldEndSession = ValidatorManagementSessionManager<Runtime>;
-	type NextSessionRotation = ();
-	type SessionManager = ValidatorManagementSessionManager<Runtime>;
-	type SessionHandler = <opaque::SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
-	type Keys = opaque::SessionKeys;
 }
 
 parameter_types! {
@@ -662,8 +678,6 @@ construct_runtime!(
 		// Partner Chains session_manager ValidatorManagementSessionManager writes to pallet_session::pallet::CurrentIndex.
 		// ValidatorManagementSessionManager is wired in by pallet_partner_chains_session.
 		PalletSession: pallet_session,
-		// The order matters!! pallet_partner_chains_session needs to come last for correct initialization order
-		Session: pallet_partner_chains_session,
 		NativeTokenManagement: pallet_native_token_management,
 		GovernedMap: pallet_governed_map,
 		TestHelperPallet: crate::test_helper_pallet,
