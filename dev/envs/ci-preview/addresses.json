@@ -1,18 +1,18 @@
 {
-    "addresses": {
-        "CommitteeCandidateValidator": "addr_test1wzym4xq7vswxmr37nl6lkj209kk0h3qepanqga3hk993wnsmt4zde",
-        "DParameterValidator": "addr_test1wptew6w754lgfcy34zf3pxrqp4u84r6956txxxtprjzczysd9g5tw",
-        "GovernedMapValidator": "addr_test1wptew6w754lgfcy34zf3pxrqp4u84r6956txxxtprjzczysd9g5tw",
-        "IlliquidCirculationSupplyValidator": "addr_test1wqj0d3vvdgtw7haadaka0v8s4qtf5rpgv8gphcrgprcr37gs3unna",
-        "PermissionedCandidatesValidator": "addr_test1wrt55kuj7dgrhcwl7j6nf7wka4a499xxunhqqpslpu5wx3snzed29",
-        "ReserveValidator": "addr_test1wp0lusafhpdws6ndp9f08r5hxs364pplc55d7g4sr5vkgmg6uvml0",
-        "VersionOracleValidator": "addr_test1wqfu09yhgmywcc6yhg9jn82s3vggn57ltvcxk494y23gl9sp8frq3"
-      },
-    "policyIds": {
-        "DParameter": "0xca2d59b894570f8b613717ecb9122c95ed6ef2944c97a4282489f1de",
-        "GovernedMap": "0x41c74a46233fe30bcd2220ddcfc788d3115375982ad7cb6e715fdcdf",
-        "PermissionedCandidates": "0xda1f8f7586cb2ee1be1ea56f89656891111f85843f0fae021bd97a91",
-        "ReserveAuth": "0xc8a859d2838b552915e7522bf913b6c39ad92e790b9013b4b403f3d6",
-        "VersionOracle": "0xcda9af5fdbee99affd65f0dbdc0faca81e625fb8989a2f67fa945fa2"
-    }
+  "addresses": {
+    "CommitteeCandidateValidator": "addr_test1wzym4xq7vswxmr37nl6lkj209kk0h3qepanqga3hk993wnsmt4zde",
+    "DParameterValidator": "addr_test1wptew6w754lgfcy34zf3pxrqp4u84r6956txxxtprjzczysd9g5tw",
+    "GovernedMapValidator": "addr_test1wqwywy4cr08a95atu2c7sgh3kashv06xfrrs47ce5xeetgc2jru8s",
+    "IlliquidCirculationSupplyValidator": "addr_test1wqj0d3vvdgtw7haadaka0v8s4qtf5rpgv8gphcrgprcr37gs3unna",
+    "PermissionedCandidatesValidator": "addr_test1wrt55kuj7dgrhcwl7j6nf7wka4a499xxunhqqpslpu5wx3snzed29",
+    "ReserveValidator": "addr_test1wp0lusafhpdws6ndp9f08r5hxs364pplc55d7g4sr5vkgmg6uvml0",
+    "VersionOracleValidator": "addr_test1wqfu09yhgmywcc6yhg9jn82s3vggn57ltvcxk494y23gl9sp8frq3"
+  },
+  "policyIds": {
+    "DParameter": "0xca2d59b894570f8b613717ecb9122c95ed6ef2944c97a4282489f1de",
+    "GovernedMap": "0xa02259f6c9ed0d158144706c25575a50fd90937c80532e617eeb32da",
+    "PermissionedCandidates": "0xda1f8f7586cb2ee1be1ea56f89656891111f85843f0fae021bd97a91",
+    "ReserveAuth": "0xc8a859d2838b552915e7522bf913b6c39ad92e790b9013b4b403f3d6",
+    "VersionOracle": "0xcda9af5fdbee99affd65f0dbdc0faca81e625fb8989a2f67fa945fa2"
+  }
 }
