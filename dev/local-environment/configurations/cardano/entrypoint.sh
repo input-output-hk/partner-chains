@@ -509,8 +509,8 @@ STAKE_DEPOSIT=2000000 # 2 ADA for stake address registration
 # Query the UTXO for the funded address (the source of funds for SPO deposits and fees)
 # This needs to be done dynamically as the previous tx_in1 is now spent.
 echo "[LOG] Querying UTXO for funded address: $new_address"
-UTXO_FUNDED_ADDRESS=$(cardano-cli latest query utxo \\\
-  --address "$new_address" \\\
+UTXO_FUNDED_ADDRESS=$(cardano-cli latest query utxo \
+  --address "$new_address" \
   --testnet-magic 42 | /busybox tail -n +3) # Skip header
 
 if [ -z "$UTXO_FUNDED_ADDRESS" ]; then
@@ -520,8 +520,8 @@ fi
 
 # Assuming a single UTXO for simplicity after the main funding transaction
 # If multiple UTXOs exist, more complex logic is needed to select one or sum them.
-TX_IN_SPO=$(echo "$UTXO_FUNDED_ADDRESS" | /busybox awk \'{print $1"\\#"$2}\')
-TX_IN_SPO_AMOUNT=$(echo "$UTXO_FUNDED_ADDRESS" | /busybox awk \'{print $3}\')
+TX_IN_SPO=$(echo "$UTXO_FUNDED_ADDRESS" | /busybox awk '{print $1"#"$2}')
+TX_IN_SPO_AMOUNT=$(echo "$UTXO_FUNDED_ADDRESS" | /busybox awk '{print $3}')
 
 echo "[LOG] Found UTXO for SPO funding: $TX_IN_SPO with amount $TX_IN_SPO_AMOUNT lovelace."
 
@@ -700,8 +700,8 @@ for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do
     fi
 
     # Update TX_IN_SPO and TX_IN_SPO_AMOUNT for the next iteration
-    TX_IN_SPO=$(echo "$UTXO_FUNDED_ADDRESS" | /busybox awk \'{print $1"\\#"$2}\')
-    TX_IN_SPO_AMOUNT=$(echo "$UTXO_FUNDED_ADDRESS" | /busybox awk \'{print $3}\')
+    TX_IN_SPO=$(echo "$UTXO_FUNDED_ADDRESS" | /busybox awk '{print $1"#"$2}')
+    TX_IN_SPO_AMOUNT=$(echo "$UTXO_FUNDED_ADDRESS" | /busybox awk '{print $3}')
     echo "[LOG] Updated UTXO for next SPO funding: $TX_IN_SPO with amount $TX_IN_SPO_AMOUNT lovelace."
 
 done # End of loop for permissioned nodes
@@ -1144,7 +1144,8 @@ for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do
     NODE_FUNDING_UTXO=""
     for attempt in {1..10}; do
         echo "[LOG] Querying address UTXOs for $NODE_LOG_NAME (Attempt $attempt)..."
-        utxo_info=$(cardano-cli latest query utxo --testnet-magic 42 --address "$NODE_PAYMENT_ADDRESS" --out-file /dev/stdout 2>&1)
+        utxo_info=$(cardano-cli latest query utxo \
+            --testnet-magic 42 --address "$NODE_PAYMENT_ADDRESS" --out-file /dev/stdout 2>&1)
         NODE_FUNDING_UTXO=$(echo "$utxo_info" | /busybox grep -o '[a-f0-9]\{64\}#[0-9]\+' | head -1)
         if [ -n "$NODE_FUNDING_UTXO" ]; then
             echo "[LOG] Found funding UTXO for $NODE_LOG_NAME: $NODE_FUNDING_UTXO"
@@ -1314,7 +1315,8 @@ for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do
     NODE_FUNDING_UTXO_DELEG=""
     for attempt in {1..10}; do
         echo "[LOG] Querying address UTXOs for $NODE_LOG_NAME (Delegation Attempt $attempt)..."
-        utxo_info_deleg=$(cardano-cli latest query utxo --testnet-magic 42 --address "$NODE_PAYMENT_ADDRESS" --out-file /dev/stdout 2>&1)
+        utxo_info_deleg=$(cardano-cli latest query utxo \
+            --testnet-magic 42 --address "$NODE_PAYMENT_ADDRESS" --out-file /dev/stdout 2>&1)
         NODE_FUNDING_UTXO_DELEG=$(echo "$utxo_info_deleg" | /busybox grep -o '[a-f0-9]\{64\}#[0-9]\+' | head -1)
         if [ -n "$NODE_FUNDING_UTXO_DELEG" ]; then
             echo "[LOG] Found funding UTXO for $NODE_LOG_NAME delegation: $NODE_FUNDING_UTXO_DELEG"
@@ -1471,7 +1473,8 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     NODE_FUNDING_UTXO=""
     for attempt in {1..10}; do
         echo "[LOG] Querying address UTXOs for $NODE_LOG_NAME (Attempt $attempt)..."
-        utxo_info=$(cardano-cli latest query utxo --testnet-magic 42 --address "$NODE_PAYMENT_ADDRESS" --out-file /dev/stdout 2>&1)
+        utxo_info=$(cardano-cli latest query utxo \
+            --testnet-magic 42 --address "$NODE_PAYMENT_ADDRESS" --out-file /dev/stdout 2>&1)
         NODE_FUNDING_UTXO=$(echo "$utxo_info" | /busybox grep -o '[a-f0-9]\{64\}#[0-9]\+' | head -1)
         if [ -n "$NODE_FUNDING_UTXO" ]; then
             echo "[LOG] Found funding UTXO for $NODE_LOG_NAME: $NODE_FUNDING_UTXO"
@@ -1641,7 +1644,8 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     NODE_FUNDING_UTXO_DELEG=""
     for attempt in {1..10}; do
         echo "[LOG] Querying address UTXOs for $NODE_LOG_NAME (Delegation Attempt $attempt)..."
-        utxo_info_deleg=$(cardano-cli latest query utxo --testnet-magic 42 --address "$NODE_PAYMENT_ADDRESS" --out-file /dev/stdout 2>&1)
+        utxo_info_deleg=$(cardano-cli latest query utxo \
+            --testnet-magic 42 --address "$NODE_PAYMENT_ADDRESS" --out-file /dev/stdout 2>&1)
         NODE_FUNDING_UTXO_DELEG=$(echo "$utxo_info_deleg" | /busybox grep -o '[a-f0-9]\{64\}#[0-9]\+' | head -1)
         if [ -n "$NODE_FUNDING_UTXO_DELEG" ]; then
             echo "[LOG] Found funding UTXO for $NODE_LOG_NAME delegation: $NODE_FUNDING_UTXO_DELEG"
@@ -1654,7 +1658,7 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
 
      if [ -z "$NODE_FUNDING_UTXO_DELEG" ]; then
         echo "[DEBUG] CRITICAL ERROR: Failed to find funding UTXO for $NODE_LOG_NAME delegation. Cannot perform delegation. Skipping this node."
-        continue
+        continue # Skip delegation if funding UTXO not found
     fi
     NODE_FUNDING_UTXO_DELEG_AMOUNT=$(echo "$utxo_info_deleg" | /busybox grep "$NODE_FUNDING_UTXO_DELEG" -A 20 | /busybox grep '"lovelace":' | /busybox grep -o '[0-9]\+' | head -1)
      if ! [[ "$NODE_FUNDING_UTXO_DELEG_AMOUNT" =~ ^[0-9]+$ ]] || [ "$NODE_FUNDING_UTXO_DELEG_AMOUNT" -eq 0 ]; then
