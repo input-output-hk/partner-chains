@@ -7,16 +7,13 @@ cp /usr/local/bin/partner-chains-node /partner-chains-node
 echo "Using Partner Chains node version:"
 ./partner-chains-node --version
 
-echo "Waiting for Cardano node setup to complete..."
+echo "Waiting for /shared/cardano.ready to signal that Cardano node setup is complete..."
 while [ ! -f "/shared/cardano.ready" ]; do
-    echo "Waiting for /shared/cardano.ready signal..."
     sleep 5
 done
 echo "Cardano node setup completed."
 
 echo "Waiting for the Cardano network to sync and for Ogmios to start..."
-
-
 
 while true; do
     if nc -z ogmios $OGMIOS_PORT; then

@@ -317,6 +317,10 @@ for i in $(seq 0 $((${#registered_node_payment_addresses[@]} - 1))); do
 done
 # End Debug
 
+# An address that will keep an UTXO with script of a test V-function, related to the SPO rewards. See v-function.script file.
+vfunction_address="addr_test1vzuasm5nqzh7n909f7wang7apjprpg29l2f9sk6shlt84rqep6nyc"
+
+# Define the UTXO details and amounts
 tx_in1="781cb948a37c7c38b43872af9b1e22135a94826eafd3740260a6db0a303885d8#0"
 tx_in_amount=29993040000000000
 
