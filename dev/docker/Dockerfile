@@ -1,15 +1,13 @@
-FROM partner-chains-node-builder:latest AS builder
+FROM docker.io/library/ubuntu:25.04
+COPY partner-chains-demo-node /usr/local/bin/partner-chains-node
 
-FROM docker.io/library/ubuntu:20.04
-COPY --from=builder /partner-chains-node/docker-build/target/release/partner-chains-demo-node /usr/local/bin/partner-chains-node
-
-RUN useradd -m -u 1000 -U -s /bin/sh -d /substrate substrate && \
-	mkdir -p /data /substrate/.local/share/partner-chains-node && \
-	chown -R substrate:substrate /data && \
-	ln -s /data /substrate/.local/share/partner-chains-node && \
-	# Sanity checks
-	ldd /usr/local/bin/partner-chains-node && \
-	/usr/local/bin/partner-chains-node --version
+RUN useradd -m -u 1001 -U -s /bin/sh -d /substrate substrate
+RUN	mkdir -p /data /substrate/.local/share/partner-chains-node
+RUN	chown -R substrate:substrate /data
+RUN ln -s /data /substrate/.local/share/partner-chains-node
+# Sanity checks
+RUN ldd /usr/local/bin/partner-chains-node
+RUN /usr/local/bin/partner-chains-node --version
 
 USER substrate
 
