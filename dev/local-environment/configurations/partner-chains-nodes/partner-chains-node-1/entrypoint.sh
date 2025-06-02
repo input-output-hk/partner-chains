@@ -15,10 +15,11 @@ echo "Partner Chains smart contracts setup complete. Starting node..."
 export MC__FIRST_EPOCH_TIMESTAMP_MILLIS=$(cat /shared/MC__FIRST_EPOCH_TIMESTAMP_MILLIS)
 
 /usr/local/bin/partner-chains-node \
-  --alice \
+  --validator \
   --chain=/shared/chain-spec.json \
   --node-key=0000000000000000000000000000000000000000000000000000000000000001 \
   --base-path=/data \
+  --keystore-path=/keystore \
   --unsafe-rpc-external \
   --rpc-port=9933 \
   --rpc-cors=all \
