@@ -317,10 +317,6 @@ for i in $(seq 0 $((${#registered_node_payment_addresses[@]} - 1))); do
 done
 # End Debug
 
-# An address that will keep an UTXO with script of a test V-function, related to the SPO rewards. See v-function.script file.
-vfunction_address="addr_test1vzuasm5nqzh7n909f7wang7apjprpg29l2f9sk6shlt84rqep6nyc"
-
-# Define the UTXO details and amounts
 tx_in1="781cb948a37c7c38b43872af9b1e22135a94826eafd3740260a6db0a303885d8#0"
 tx_in_amount=29993040000000000
 
@@ -852,15 +848,10 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
         echo "[LOG] Querying final UTXO for registered-$i at $node_unique_address (Attempt $attempt)..."
         
         raw_cli_output_file="/tmp/raw_cli_output_registered_${i}_attempt_${attempt}.txt"
-        echo "[DEBUG] Attempting to run for $node_unique_address (Attempt $attempt): cardano-cli latest query utxo --testnet-magic 42 --address \"$node_unique_address\" --out-file /dev/stdout"
         cardano-cli latest query utxo --testnet-magic 42 --address "$node_unique_address" --out-file /dev/stdout > "$raw_cli_output_file" 2>&1
-
-        echo "[DEBUG] Raw output from cardano-cli for $node_unique_address (Attempt $attempt) captured in $raw_cli_output_file:"
-        cat "$raw_cli_output_file" | while IFS= read -r line; do echo "[DEBUG] $line"; done
 
         # Parse UTXO from JSON format - extract the key which is the UTXO identifier
         node_utxo_final=$(cat "$raw_cli_output_file" | /busybox grep -o '"[a-f0-9]\{64\}#[0-9]\+":' | head -1 | /busybox sed 's/"//g' | /busybox sed 's/://g')
-        echo "[DEBUG] Parsed node_utxo_final from JSON: [$node_utxo_final]"
         
         if [ -n "$node_utxo_final" ]; then
             if [[ "$node_utxo_final" =~ ^[a-f0-9]{64}#[0-9]+$ ]]; then
@@ -904,6 +895,12 @@ echo "[LOG] Finished generating mainchain cold keys."
 
 echo "[LOG] Creating /shared/cardano.ready signal file."
 touch /shared/cardano.ready
+
+echo "[LOG] Querying and saving the first UTXO details for new address to /shared/genesis.utxo:"
+# Query UTXOs and extract the first UTXO key from JSON format
+cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" --out-file /dev/stdout | /busybox grep -o '"[a-f0-9]\{64\}#[0-9]\+":' | head -1 | /busybox sed 's/"//g' | /busybox sed 's/://g' > /shared/genesis.utxo
+cp /shared/genesis.utxo /runtime-values/genesis.utxo
+echo "[LOG] Created /shared/genesis.utxo with value: $(cat /shared/genesis.utxo)"
 
 echo "[LOG] Cardano node entrypoint script finished. Waiting for node process to terminate (if it does)."
 wait
