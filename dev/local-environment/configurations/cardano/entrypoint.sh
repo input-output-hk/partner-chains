@@ -337,7 +337,7 @@ tx_out4=1000000000
 # Fund $NUM_PERMISSIONED_NODES_TO_PROCESS permissioned nodes
 for i in $(seq 1 $NUM_PERMISSIONED_NODES_TO_PROCESS); do
     var_name="tx_out${i}_permissioned"
-    declare "$var_name=1000000000"
+    declare "$var_name=510000000" # 510 ADA - covers SPO registration (500 ADA pool deposit + 2 ADA stake deposit + buffer for fees)
 done
 
 # Fund $NUM_REGISTERED_NODES_TO_PROCESS registered nodes (These are defined but not used in the *initial* main transaction anymore)
@@ -549,6 +549,19 @@ fi
 
 echo "[LOG] Starting batch funding for $num_registered_nodes registered nodes in $num_batches batches of up to $batch_size nodes each."
 
+# Validate batch funding setup for large numbers
+if [ "$num_registered_nodes" -gt 1000 ]; then
+    echo "[WARN] Large number of registered nodes ($num_registered_nodes). This will create $num_batches batches."
+    echo "[WARN] Each batch will require ~200-300k lovelace in fees (base fee + reference script overhead)."
+    total_estimated_fees=$((num_batches * 250000)) # Rough estimate: 250k lovelace per batch
+    echo "[WARN] Estimated total fees for all batches: ~$total_estimated_fees lovelace"
+fi
+
+# Validate batch size doesn't exceed reasonable limits
+if [ "$batch_size" -gt 50 ]; then
+    echo "[WARN] Batch size of $batch_size is very large. Consider reducing to improve fee estimation accuracy."
+fi
+
 for batch_num in $(seq 1 "$num_batches"); do
     echo "[LOG] Processing Batch $batch_num of $num_batches..."
     start_node_array_idx=$(( (batch_num - 1) * batch_size )) # 0-indexed for array
@@ -567,7 +580,7 @@ for batch_num in $(seq 1 "$num_batches"); do
 
     for (( current_array_idx=start_node_array_idx; current_array_idx<=end_node_array_idx; current_array_idx++ )); do
         node_payment_address="${registered_node_payment_addresses[$current_array_idx]}"
-        node_funding_amount=1000000 # 1 ADA
+        node_funding_amount=510000000 # 510 ADA - covers SPO registration (500 ADA pool deposit + 2 ADA stake deposit + buffer for fees)
         batch_tx_out_params_array+=(--tx-out "$node_payment_address+$node_funding_amount")
         batch_total_output_lovelace=$((batch_total_output_lovelace + node_funding_amount))
         actual_nodes_in_this_batch=$((actual_nodes_in_this_batch + 1))
@@ -714,8 +727,13 @@ for batch_num in $(seq 1 "$num_batches"); do
             echo "[DEBUG] Batch $batch_num: ERROR calculating dynamic fee (Raw: '$calculated_batch_fee'). Using fallback 300000."
             batch_tx_fee=300000
         else
-            batch_tx_fee=$((calculated_batch_fee + 5000)) # Add a larger buffer for reference scripts
-            echo "[LOG] Batch $batch_num: Calculated Min Fee: $calculated_batch_fee, Using Fee with Buffer: $batch_tx_fee"
+            # Base buffer for reference script overhead (fixed ~25k) + scaling buffer for larger batches
+            reference_script_buffer=25000
+            batch_scaling_buffer=$((actual_nodes_in_this_batch * 1000)) # 1k lovelace per output for safety
+            total_buffer=$((reference_script_buffer + batch_scaling_buffer))
+            
+            batch_tx_fee=$((calculated_batch_fee + total_buffer))
+            echo "[LOG] Batch $batch_num: Calculated Min Fee: $calculated_batch_fee, Reference Script Buffer: $reference_script_buffer, Batch Scaling Buffer: $batch_scaling_buffer, Total Fee: $batch_tx_fee"
         fi
         rm -f "$dummy_batch_tx_file"
     fi
