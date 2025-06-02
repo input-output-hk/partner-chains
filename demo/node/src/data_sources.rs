@@ -72,8 +72,12 @@ pub async fn create_cached_db_sync_data_sources(
 	metrics_opt: Option<McFollowerMetrics>,
 ) -> Result<DataSources, Box<dyn Error + Send + Sync + 'static>> {
 	let pool = partner_chains_db_sync_data_sources::get_connection_from_env().await?;
+
+	// Read unified Cardano configuration once at startup
+	let cardano_config = sidechain_domain::cardano_config::CardanoConfig::from_env()?;
+
 	// block data source is reused between mc_hash and sidechain_rpc to share cache
-	let block = Arc::new(BlockDataSourceImpl::new_from_env(pool.clone()).await?);
+	let block = Arc::new(BlockDataSourceImpl::new_from_env(pool.clone(), &cardano_config).await?);
 	Ok(DataSources {
 		sidechain_rpc: Arc::new(SidechainRpcDataSourceImpl::new(
 			block.clone(),
@@ -83,11 +87,15 @@ pub async fn create_cached_db_sync_data_sources(
 		authority_selection: Arc::new(
 			CandidatesDataSourceImpl::new(pool.clone(), metrics_opt.clone())
 				.await?
-				.cached(CANDIDATES_FOR_EPOCH_CACHE_SIZE)?,
+				.cached(CANDIDATES_FOR_EPOCH_CACHE_SIZE, &cardano_config)?,
 		),
 		native_token: Arc::new(
-			NativeTokenManagementDataSourceImpl::new_from_env(pool.clone(), metrics_opt.clone())
-				.await?,
+			NativeTokenManagementDataSourceImpl::new_from_env(
+				pool.clone(),
+				metrics_opt.clone(),
+				&cardano_config,
+			)
+			.await?,
 		),
 		block_participation: Arc::new(StakeDistributionDataSourceImpl::new(
 			pool.clone(),

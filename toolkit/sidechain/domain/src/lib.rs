@@ -6,6 +6,7 @@
 #![deny(missing_docs)]
 
 pub mod byte_string;
+pub mod cardano_config;
 pub mod crypto;
 pub mod mainchain_epoch;
 
