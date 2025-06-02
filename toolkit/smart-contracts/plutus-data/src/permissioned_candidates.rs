@@ -7,6 +7,8 @@ use crate::{
 	VersionedGenericDatum, candidate_keys::*,
 };
 
+const BEEFY_TYPE_ID: [u8; 4] = *b"beef";
+
 #[derive(Clone, Debug, PartialEq)]
 /// Datum representing a list of permissioned candidates.
 pub enum PermissionedCandidateDatums {
@@ -25,6 +27,8 @@ pub struct PermissionedCandidateDatumV0 {
 	pub aura_public_key: AuraPublicKey,
 	/// GRANDPA public key of the trustless candidate
 	pub grandpa_public_key: GrandpaPublicKey,
+	/// BEEFY public key of the trustless candidate
+	pub beefy_public_key: BeefyPublicKey,
 }
 
 impl From<PermissionedCandidateDatumV1> for PermissionedCandidateData {
@@ -35,8 +39,9 @@ impl From<PermissionedCandidateDatumV1> for PermissionedCandidateData {
 		let sidechain_public_key = SidechainPublicKey(partner_chains_key.1);
 		let aura_public_key = AuraPublicKey(find_or_empty(&keys, AURA_TYPE_ID));
 		let grandpa_public_key = GrandpaPublicKey(find_or_empty(&keys, GRANDPA_TYPE_ID));
+		let beefy_public_key = BeefyPublicKey(find_or_empty(&keys, &BEEFY_TYPE_ID));
 
-		PermissionedCandidateData { sidechain_public_key, aura_public_key, grandpa_public_key }
+		PermissionedCandidateData { sidechain_public_key, aura_public_key, grandpa_public_key, beefy_public_key }
 	}
 }
 
@@ -62,6 +67,7 @@ impl From<PermissionedCandidateDatumV0> for PermissionedCandidateData {
 			sidechain_public_key: value.sidechain_public_key,
 			aura_public_key: value.aura_public_key,
 			grandpa_public_key: value.grandpa_public_key,
+			beefy_public_key: value.beefy_public_key,
 		}
 	}
 }
@@ -165,16 +171,18 @@ impl VersionedDatumWithLegacy for PermissionedCandidateDatums {
 
 /// Decodes whatever looks syntactically correct, leaving validation for runtime.
 fn decode_legacy_candidate_datum(datum: &PlutusData) -> Option<PermissionedCandidateDatumV0> {
-	let datums = datum.as_list().filter(|datums| datums.len() == 3)?;
+	let datums = datum.as_list().filter(|datums| datums.len() == 4)?;
 
 	let sc = datums.get(0).as_bytes()?;
 	let aura = datums.get(1).as_bytes()?;
 	let grandpa = datums.get(2).as_bytes()?;
+	let beefy = datums.get(3).as_bytes()?;
 
 	Some(PermissionedCandidateDatumV0 {
 		sidechain_public_key: SidechainPublicKey(sc),
 		aura_public_key: AuraPublicKey(aura),
 		grandpa_public_key: GrandpaPublicKey(grandpa),
+		beefy_public_key: BeefyPublicKey(beefy),
 	})
 }
 

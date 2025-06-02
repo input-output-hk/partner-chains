@@ -1098,6 +1098,25 @@ impl From<ed25519::Public> for GrandpaPublicKey {
 	}
 }
 
+/// ECDSA public key used by the BEEFY consensus gadget. Not validated
+#[derive(
+	Clone, PartialEq, Eq, Encode, Decode, DecodeWithMemTracking, TypeInfo, PartialOrd, Ord, Hash,
+)]
+#[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
+pub struct BeefyPublicKey(pub Vec<u8>);
+impl BeefyPublicKey {
+	/// Attempts to cast this public key to a valid [ecdsa::Public]
+	pub fn try_into_ecdsa(&self) -> Option<ecdsa::Public> {
+		Some(ecdsa::Public::from_raw(self.0.clone().try_into().ok()?))
+	}
+}
+
+impl From<ecdsa::Public> for BeefyPublicKey {
+	fn from(value: ecdsa::Public) -> Self {
+		Self(value.0.to_vec())
+	}
+}
+
 #[derive(
 	Debug,
 	Clone,
@@ -1158,6 +1177,8 @@ pub struct PermissionedCandidateData {
 	pub aura_public_key: AuraPublicKey,
 	/// Grandpa public key of the trustless candidate
 	pub grandpa_public_key: GrandpaPublicKey,
+	/// BEEFY public key of the trustless candidate
+	pub beefy_public_key: BeefyPublicKey,
 }
 
 /// Cardano SPO registration. This is a stripped-down version of [RegistrationData].
