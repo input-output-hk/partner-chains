@@ -858,8 +858,9 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
         echo "[DEBUG] Raw output from cardano-cli for $node_unique_address (Attempt $attempt) captured in $raw_cli_output_file:"
         cat "$raw_cli_output_file" | while IFS= read -r line; do echo "[DEBUG] $line"; done
 
-        node_utxo_final=$(cat "$raw_cli_output_file" | /busybox awk 'NR>2 {print $1 "#" $2; exit}')
-        echo "[DEBUG] Parsed node_utxo_final by awk: [$node_utxo_final]"
+        # Parse UTXO from JSON format - extract the key which is the UTXO identifier
+        node_utxo_final=$(cat "$raw_cli_output_file" | /busybox grep -o '"[a-f0-9]\{64\}#[0-9]\+":' | head -1 | /busybox sed 's/"//g' | /busybox sed 's/://g')
+        echo "[DEBUG] Parsed node_utxo_final from JSON: [$node_utxo_final]"
         
         if [ -n "$node_utxo_final" ]; then
             if [[ "$node_utxo_final" =~ ^[a-f0-9]{64}#[0-9]+$ ]]; then
