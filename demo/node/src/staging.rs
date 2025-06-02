@@ -123,6 +123,7 @@ pub fn staging_genesis(
 			dev_accounts: None,
 		},
 		aura: AuraConfig { authorities: vec![] },
+		beefy: Default::default(),
 		grandpa: GrandpaConfig { authorities: vec![], ..Default::default() },
 		sudo: SudoConfig {
 			// Assign network admin rights.

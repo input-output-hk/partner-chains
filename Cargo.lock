@@ -6496,6 +6496,50 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-beefy"
+version = "42.0.0"
+source = "git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-stable2506#6fd693e6d9cfa46cd2acbcb41cd5b0451a62d67c"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-authorship",
+ "pallet-session",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-consensus-beefy",
+ "sp-runtime",
+ "sp-session",
+ "sp-staking",
+]
+
+[[package]]
+name = "pallet-beefy-mmr"
+version = "42.0.0"
+source = "git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-stable2506#6fd693e6d9cfa46cd2acbcb41cd5b0451a62d67c"
+dependencies = [
+ "array-bytes 6.2.3",
+ "binary-merkle-tree",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-beefy",
+ "pallet-mmr",
+ "pallet-session",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-api",
+ "sp-consensus-beefy",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-state-machine",
+]
+
+[[package]]
 name = "pallet-block-participation"
 version = "1.7.0"
 dependencies = [
@@ -6641,6 +6685,18 @@ dependencies = [
  "sp-runtime",
  "sp-session",
  "sp-staking",
+]
+
+[[package]]
+name = "pallet-mmr"
+version = "41.0.0"
+source = "git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-stable2506#6fd693e6d9cfa46cd2acbcb41cd5b0451a62d67c"
+dependencies = [
+ "log",
+ "parity-scale-codec",
+ "polkadot-sdk-frame",
+ "scale-info",
+ "sp-mmr-primitives",
 ]
 
 [[package]]
@@ -7198,6 +7254,8 @@ dependencies = [
  "sc-client-db",
  "sc-consensus",
  "sc-consensus-aura",
+ "sc-consensus-beefy",
+ "sc-consensus-beefy-rpc",
  "sc-consensus-grandpa",
  "sc-consensus-grandpa-rpc",
  "sc-executor",
@@ -7223,6 +7281,7 @@ dependencies = [
  "sp-blockchain",
  "sp-consensus",
  "sp-consensus-aura",
+ "sp-consensus-beefy",
  "sp-consensus-grandpa",
  "sp-core",
  "sp-governed-map",
@@ -7264,12 +7323,15 @@ dependencies = [
  "pallet-address-associations",
  "pallet-aura",
  "pallet-balances",
+ "pallet-beefy",
+ "pallet-beefy-mmr",
  "pallet-block-participation",
  "pallet-block-producer-fees",
  "pallet-block-producer-metadata",
  "pallet-block-production-log",
  "pallet-governed-map",
  "pallet-grandpa",
+ "pallet-mmr",
  "pallet-native-token-management",
  "pallet-partner-chains-bridge",
  "pallet-partner-chains-session",
@@ -7296,6 +7358,7 @@ dependencies = [
  "sp-block-producer-metadata",
  "sp-block-production-log",
  "sp-consensus-aura",
+ "sp-consensus-beefy",
  "sp-consensus-grandpa",
  "sp-consensus-slots",
  "sp-core",
@@ -7594,6 +7657,51 @@ version = "1.7.0"
 dependencies = [
  "quote",
  "syn 2.0.104",
+]
+
+[[package]]
+name = "polkadot-ckb-merkle-mountain-range"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "221c71b432b38e494a0fdedb5f720e4cb974edf03a0af09e5b2238dbac7e6947"
+dependencies = [
+ "cfg-if",
+ "itertools 0.10.5",
+]
+
+[[package]]
+name = "polkadot-sdk-frame"
+version = "0.10.0"
+source = "git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-stable2506#6fd693e6d9cfa46cd2acbcb41cd5b0451a62d67c"
+dependencies = [
+ "docify",
+ "frame-benchmarking",
+ "frame-executive",
+ "frame-support",
+ "frame-system",
+ "frame-system-benchmarking",
+ "frame-system-rpc-runtime-api",
+ "frame-try-runtime",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-api",
+ "sp-arithmetic",
+ "sp-block-builder",
+ "sp-consensus-aura",
+ "sp-consensus-grandpa",
+ "sp-core",
+ "sp-genesis-builder",
+ "sp-inherents",
+ "sp-io",
+ "sp-keyring",
+ "sp-offchain",
+ "sp-runtime",
+ "sp-session",
+ "sp-storage",
+ "sp-transaction-pool",
+ "sp-version",
 ]
 
 [[package]]
@@ -9055,6 +9163,60 @@ dependencies = [
  "sp-keystore",
  "sp-runtime",
  "substrate-prometheus-endpoint",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "sc-consensus-beefy"
+version = "30.0.0"
+source = "git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-stable2506#6fd693e6d9cfa46cd2acbcb41cd5b0451a62d67c"
+dependencies = [
+ "array-bytes 6.2.3",
+ "async-channel",
+ "async-trait",
+ "futures",
+ "log",
+ "parity-scale-codec",
+ "parking_lot 0.12.4",
+ "sc-client-api",
+ "sc-consensus",
+ "sc-network",
+ "sc-network-gossip",
+ "sc-network-sync",
+ "sc-network-types",
+ "sc-utils",
+ "sp-api",
+ "sp-application-crypto",
+ "sp-arithmetic",
+ "sp-blockchain",
+ "sp-consensus",
+ "sp-consensus-beefy",
+ "sp-core",
+ "sp-keystore",
+ "sp-runtime",
+ "substrate-prometheus-endpoint",
+ "thiserror 1.0.69",
+ "tokio",
+ "wasm-timer",
+]
+
+[[package]]
+name = "sc-consensus-beefy-rpc"
+version = "30.0.0"
+source = "git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-stable2506#6fd693e6d9cfa46cd2acbcb41cd5b0451a62d67c"
+dependencies = [
+ "futures",
+ "jsonrpsee",
+ "log",
+ "parity-scale-codec",
+ "parking_lot 0.12.4",
+ "sc-consensus-beefy",
+ "sc-rpc",
+ "serde",
+ "sp-application-crypto",
+ "sp-consensus-beefy",
+ "sp-core",
+ "sp-runtime",
  "thiserror 1.0.69",
 ]
 
@@ -10779,6 +10941,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "sp-consensus-beefy"
+version = "25.0.0"
+source = "git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-stable2506#6fd693e6d9cfa46cd2acbcb41cd5b0451a62d67c"
+dependencies = [
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-api",
+ "sp-application-crypto",
+ "sp-core",
+ "sp-crypto-hashing",
+ "sp-io",
+ "sp-keystore",
+ "sp-mmr-primitives",
+ "sp-runtime",
+ "sp-weights",
+ "strum 0.26.3",
+]
+
+[[package]]
 name = "sp-consensus-grandpa"
 version = "24.0.0"
 source = "git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-stable2506#6fd693e6d9cfa46cd2acbcb41cd5b0451a62d67c"
@@ -11024,6 +11206,23 @@ dependencies = [
  "scale-info",
  "sp-api",
  "sp-application-crypto",
+]
+
+[[package]]
+name = "sp-mmr-primitives"
+version = "37.0.0"
+source = "git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-stable2506#6fd693e6d9cfa46cd2acbcb41cd5b0451a62d67c"
+dependencies = [
+ "log",
+ "parity-scale-codec",
+ "polkadot-ckb-merkle-mountain-range",
+ "scale-info",
+ "serde",
+ "sp-api",
+ "sp-core",
+ "sp-debug-derive",
+ "sp-runtime",
+ "thiserror 1.0.69",
 ]
 
 [[package]]

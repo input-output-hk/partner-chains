@@ -43,6 +43,7 @@ pub fn pc_create_chain_spec(config: &CreateChainSpecConfig<SessionKeys>) -> serd
 		system: partner_chains_demo_runtime::SystemConfig::default(),
 		balances: partner_chains_demo_runtime::BalancesConfig::default(),
 		aura: partner_chains_demo_runtime::AuraConfig::default(),
+		beefy: partner_chains_demo_runtime::BeefyConfig::default(),
 		grandpa: partner_chains_demo_runtime::GrandpaConfig::default(),
 		sudo: partner_chains_demo_runtime::SudoConfig::default(),
 		transaction_payment: Default::default(),
