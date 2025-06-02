@@ -22,13 +22,15 @@ use crate::{
 use alloc::{vec, vec::Vec};
 use serde_json::Value;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
+use sp_consensus_beefy::ecdsa_crypto::AuthorityId as BeefyId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
+use sp_core::crypto::get_public_from_string_or_panic;
 use sp_genesis_builder::{self, PresetId};
 use sp_keyring::Sr25519Keyring;
 
 // Returns the genesis config presets populated with given parameters.
 fn testnet_genesis(
-	initial_authorities: Vec<(AuraId, GrandpaId)>,
+	initial_authorities: Vec<(AuraId, GrandpaId, BeefyId)>,
 	endowed_accounts: Vec<AccountId>,
 	root: AccountId,
 ) -> Value {
@@ -43,6 +45,10 @@ fn testnet_genesis(
 		},
 		aura: pallet_aura::GenesisConfig {
 			authorities: initial_authorities.iter().map(|x| (x.0.clone())).collect::<Vec<_>>(),
+		},
+		beefy: pallet_beefy::GenesisConfig {
+			authorities: initial_authorities.iter().map(|x| (x.2.clone())).collect::<Vec<_>>(),
+			genesis_block: None,
 		},
 		grandpa: pallet_grandpa::GenesisConfig {
 			authorities: initial_authorities.iter().map(|x| (x.1.clone(), 1)).collect::<Vec<_>>(),
@@ -76,6 +82,7 @@ pub fn development_config_genesis() -> Value {
 		vec![(
 			sp_keyring::Sr25519Keyring::Alice.public().into(),
 			sp_keyring::Ed25519Keyring::Alice.public().into(),
+			get_public_from_string_or_panic::<BeefyId>("Alice"),
 		)],
 		vec![
 			Sr25519Keyring::Alice.to_account_id(),
@@ -94,10 +101,12 @@ pub fn local_config_genesis() -> Value {
 			(
 				sp_keyring::Sr25519Keyring::Alice.public().into(),
 				sp_keyring::Ed25519Keyring::Alice.public().into(),
+				get_public_from_string_or_panic::<BeefyId>("Alice"),
 			),
 			(
 				sp_keyring::Sr25519Keyring::Bob.public().into(),
 				sp_keyring::Ed25519Keyring::Bob.public().into(),
+				get_public_from_string_or_panic::<BeefyId>("Bob"),
 			),
 		],
 		Sr25519Keyring::iter()

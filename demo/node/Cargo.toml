@@ -38,6 +38,9 @@ sp-consensus-aura = { workspace = true }
 sp-partner-chains-consensus-aura = { workspace = true }
 sp-consensus = { workspace = true }
 sc-consensus = { workspace = true }
+sc-consensus-beefy = { workspace = true }
+sc-consensus-beefy-rpc = { workspace = true }
+sp-consensus-beefy = { workspace = true }
 sc-consensus-grandpa = { workspace = true }
 sc-consensus-grandpa-rpc = { workspace = true }
 sp-consensus-grandpa = { workspace = true }
