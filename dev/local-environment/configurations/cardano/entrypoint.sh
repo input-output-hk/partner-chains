@@ -908,3 +908,667 @@ echo "[LOG] Created /shared/genesis.utxo with value: $(cat /shared/genesis.utxo)
 
 echo "[LOG] Cardano node entrypoint script finished. Waiting for node process to terminate (if it does)."
 wait
+
+# --- NEW: Register Nodes as Cardano SPOs and Delegate Stake ---
+echo "[LOG] Starting Cardano SPO Registration and Delegation for all nodes..."
+
+# Combine permissioned and registered node indices and directories
+# Permissioned nodes (1-based index, 0-based array index for directories)
+for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do
+    node_idx=$((i+1)) # 1-indexed for logs
+    NODE_SPECIFIC_KEYS_DIR="${permissioned_node_base_dirs[$i]}"
+    NODE_TYPE="permissioned"
+    NODE_LOG_NAME="${NODE_TYPE}-${node_idx}"
+    NODE_PAYMENT_ADDRESS="${permissioned_node_payment_addresses[$i]}"
+    NODE_STAKE_ADDRESS="${permissioned_node_stake_addresses[$i]}"
+    NODE_COLD_VKEY="${NODE_SPECIFIC_KEYS_DIR}/cold.vkey"
+    NODE_COLD_SKEY="${NODE_SPECIFIC_KEYS_DIR}/cold.skey"
+    NODE_VRF_VKEY="${NODE_SPECIFIC_KEYS_DIR}/vrf.vkey"
+    NODE_KES_VKEY="${NODE_SPECIFIC_KEYS_DIR}/kes.vkey"
+    NODE_STAKE_VKEY="${NODE_SPECIFIC_KEYS_DIR}/stake.vkey"
+    NODE_PAYMENT_SKEY="${NODE_SPECIFIC_KEYS_DIR}/payment.skey"
+    NODE_COLD_COUNTER="${NODE_SPECIFIC_KEYS_DIR}/cold.counter"
+
+    echo "[LOG] Processing $NODE_LOG_NAME for SPO registration..."
+
+    # 1. Query UTXO for transaction funding
+    echo "[LOG] Querying UTXO for $NODE_LOG_NAME..."
+    NODE_FUNDING_UTXO=""
+    for attempt in {1..10}; do
+        echo "[LOG] Querying address UTXOs for $NODE_LOG_NAME (Attempt $attempt)..."
+        utxo_info=$(cardano-cli latest query utxo --testnet-magic 42 --address "$NODE_PAYMENT_ADDRESS" --out-file /dev/stdout 2>&1)
+        NODE_FUNDING_UTXO=$(echo "$utxo_info" | /busybox grep -o '[a-f0-9]\{64\}#[0-9]\+' | head -1)
+        if [ -n "$NODE_FUNDING_UTXO" ]; then
+            echo "[LOG] Found funding UTXO for $NODE_LOG_NAME: $NODE_FUNDING_UTXO"
+            break
+        else
+            echo "[WARN] No UTXO found for $NODE_LOG_NAME at $NODE_PAYMENT_ADDRESS. Waiting 5s... (Attempt $attempt)"
+            sleep 5
+        fi
+    done
+
+    if [ -z "$NODE_FUNDING_UTXO" ]; then
+        echo "[DEBUG] CRITICAL ERROR: Failed to find funding UTXO for $NODE_LOG_NAME. Cannot perform SPO registration/delegation. Skipping this node."
+        continue # Skip to the next node if funding UTXO not found
+    fi
+
+    # Extract UTXO amount for fee calculation
+    NODE_FUNDING_UTXO_AMOUNT=$(echo "$utxo_info" | /busybox grep "$NODE_FUNDING_UTXO" -A 20 | /busybox grep '"lovelace":' | /busybox grep -o '[0-9]\+' | head -1)
+    echo "[LOG] $NODE_LOG_NAME Funding UTXO amount: $NODE_FUNDING_UTXO_AMOUNT lovelace."
+    if ! [[ "$NODE_FUNDING_UTXO_AMOUNT" =~ ^[0-9]+$ ]] || [ "$NODE_FUNDING_UTXO_AMOUNT" -eq 0 ]; then
+         echo "[DEBUG] CRITICAL ERROR: Failed to get valid UTXO amount for $NODE_LOG_NAME. Skipping this node."
+         continue
+    fi
+
+    # 2. Generate Stake Address Registration Certificate
+    echo "[LOG] Generating stake address registration certificate for $NODE_LOG_NAME..."
+    STAKE_REG_CERT="/data/${NODE_LOG_NAME}_stake_reg.cert"
+    if ! cardano-cli latest stake-address registration-certificate \
+        --stake-verification-key-file "$NODE_STAKE_VKEY" \
+        --out-file "$STAKE_REG_CERT"; then
+        echo "[DEBUG] ERROR: Failed to generate stake address registration certificate for $NODE_LOG_NAME. Skipping this node."
+        continue
+    fi
+
+    # 3. Generate Stake Pool Registration Certificate
+    echo "[LOG] Generating stake pool registration certificate for $NODE_LOG_NAME..."
+    POOL_REG_CERT="/data/${NODE_LOG_NAME}_pool_reg.cert"
+    POOL_ID=$(cardano-cli latest stake-pool id --cold-verification-key-file "$NODE_COLD_VKEY" --output-format hex)
+    echo "[LOG] $NODE_LOG_NAME Pool ID: $POOL_ID"
+
+    # Pool parameters (minimal for local env)
+    PLEDGE=0 # No pledge required for this setup
+    POOL_COST=0 # Minimal cost
+    POOL_MARGIN="0/1000" # 0% margin
+
+    if ! cardano-cli latest stake-pool registration-certificate \
+        --cold-verification-key-file "$NODE_COLD_VKEY" \
+        --vrf-verification-key-file "$NODE_VRF_VKEY" \
+        --kes-verification-key-file "$NODE_KES_VKEY" \
+        --reward-account-verification-key-file "$NODE_STAKE_VKEY" \
+        --pool-pledge "$PLEDGE" \
+        --pool-cost "$POOL_COST" \
+        --pool-margin "$POOL_MARGIN" \
+        --pool-relay-ipv4 127.0.0.1 \
+        --pool-relay-port 30000 # Placeholder port
+        --metadata-url "https://example.com/${NODE_LOG_NAME}.json" --metadata-hash 0000000000000000000000000000000000000000000000000000000000000000 \
+        --testnet-magic 42 \
+        --out-file "$POOL_REG_CERT"; then
+        echo "[DEBUG] ERROR: Failed to generate stake pool registration certificate for $NODE_LOG_NAME. Skipping this node."
+        rm -f "$STAKE_REG_CERT"
+        continue
+    fi
+
+    # 4. Build Registration Transaction (Dummy for fee calculation)
+    echo "[LOG] Building dummy registration transaction for $NODE_LOG_NAME fee calculation..."
+    REG_TX_DUMMY="/data/${NODE_LOG_NAME}_reg_tx_dummy.raw"
+    CHANGE_OUTPUT_DUMMY=1000000 # Placeholder for change (1 ADA)
+
+    if ! cardano-cli latest transaction build-raw \
+        --tx-in "$NODE_FUNDING_UTXO" \
+        --tx-out "$NODE_PAYMENT_ADDRESS+$CHANGE_OUTPUT_DUMMY" \
+        --certificate-file "$STAKE_REG_CERT" \
+        --certificate-file "$POOL_REG_CERT" \
+        --fee 0 \
+        --out-file "$REG_TX_DUMMY"; then
+        echo "[DEBUG] ERROR: Failed to build dummy registration transaction for $NODE_LOG_NAME. Skipping this node."
+        rm -f "$STAKE_REG_CERT" "$POOL_REG_CERT"
+        continue
+    fi
+
+    # 5. Calculate Fee
+    echo "[LOG] Calculating registration transaction fee for $NODE_LOG_NAME..."
+    NUM_REG_TX_INPUTS=1
+    NUM_REG_TX_OUTPUTS=1 # Change output
+    NUM_REG_TX_WITNESSES=3 # payment.skey, stake.skey, cold.skey
+
+    CALCULATED_REG_FEE=$(cardano-cli latest transaction calculate-min-fee \
+        --tx-body-file "$REG_TX_DUMMY" \
+        --testnet-magic 42 \
+        --protocol-params-file "$protocol_params_file" \
+        --tx-in-count "$NUM_REG_TX_INPUTS" \
+        --tx-out-count "$NUM_REG_TX_OUTPUTS" \
+        --witness-count "$NUM_REG_TX_WITNESSES" | /busybox awk '{print $1}')
+
+    rm -f "$REG_TX_DUMMY"
+
+    if ! [[ "$CALCULATED_REG_FEE" =~ ^[0-9]+$ ]]; then
+        echo "[DEBUG] ERROR: Failed to calculate registration transaction fee for $NODE_LOG_NAME. Using fallback fee."
+        REG_FEE=500000 # Fallback fee
+    else
+        REG_FEE=$((CALCULATED_REG_FEE + 10000)) # Add buffer
+        echo "[LOG] Calculated registration fee for $NODE_LOG_NAME: $REG_FEE"
+    fi
+
+    # 6. Calculate Change and Build Final Registration Transaction
+    REG_TX_CHANGE=$((NODE_FUNDING_UTXO_AMOUNT - REG_FEE)) # Assuming no pledge for simplicity
+    if [ "$REG_TX_CHANGE" -lt 1000000 ]; then # Ensure minimum change
+        echo "[DEBUG] CRITICAL ERROR: Registration transaction change for $NODE_LOG_NAME is too small ($REG_TX_CHANGE). Skipping."
+        rm -f "$STAKE_REG_CERT" "$POOL_REG_CERT"
+        continue
+    fi
+    echo "[LOG] Registration transaction change for $NODE_LOG_NAME: $REG_TX_CHANGE"
+
+    REG_TX_FINAL="/data/${NODE_LOG_NAME}_reg_tx.raw"
+    if ! cardano-cli latest transaction build-raw \
+        --tx-in "$NODE_FUNDING_UTXO" \
+        --tx-out "$NODE_PAYMENT_ADDRESS+$REG_TX_CHANGE" \
+        --certificate-file "$STAKE_REG_CERT" \
+        --certificate-file "$POOL_REG_CERT" \
+        --fee "$REG_FEE" \
+        --out-file "$REG_TX_FINAL"; then
+        echo "[DEBUG] ERROR: Failed to build final registration transaction for $NODE_LOG_NAME. Skipping this node."
+        rm -f "$STAKE_REG_CERT" "$POOL_REG_CERT"
+        continue
+    fi
+
+    # 7. Sign Registration Transaction
+    echo "[LOG] Signing registration transaction for $NODE_LOG_NAME..."
+    REG_TX_SIGNED="/data/${NODE_LOG_NAME}_reg_tx.signed"
+    if ! cardano-cli latest transaction sign \
+        --tx-body-file "$REG_TX_FINAL" \
+        --signing-key-file "$NODE_PAYMENT_SKEY" \
+        --signing-key-file "$NODE_STAKE_SKEY" \
+        --signing-key-file "$NODE_COLD_SKEY" \
+        --testnet-magic 42 \
+        --out-file "$REG_TX_SIGNED"; then
+        echo "[DEBUG] ERROR: Failed to sign registration transaction for $NODE_LOG_NAME. Skipping this node."
+        rm -f "$STAKE_REG_CERT" "$POOL_REG_CERT" "$REG_TX_FINAL"
+        continue
+    fi
+
+    # 8. Submit Registration Transaction
+    echo "[LOG] Submitting registration transaction for $NODE_LOG_NAME..."
+    SUBMITTED_REG=false
+    for attempt in {1..5}; do
+        if cardano-cli latest transaction submit --tx-file "$REG_TX_SIGNED" --testnet-magic 42; then
+            echo "[LOG] Registration transaction submitted for $NODE_LOG_NAME."
+            SUBMITTED_REG=true
+            break
+        else
+            echo "[WARN] Attempt $attempt to submit registration transaction for $NODE_LOG_NAME failed. Retrying in 5s..."
+            sleep 5
+        fi
+    done
+
+    rm -f "$STAKE_REG_CERT" "$POOL_REG_CERT" "$REG_TX_FINAL" "$REG_TX_SIGNED" # Clean up
+
+    if [ "$SUBMITTED_REG" = false ]; then
+        echo "[DEBUG] CRITICAL ERROR: Failed to submit registration transaction for $NODE_LOG_NAME after multiple attempts. Skipping delegation for this node."
+        continue # Skip delegation if registration failed
+    fi
+
+    # 9. Wait for confirmation and Query UTXO for Delegation Transaction
+    echo "[LOG] Waiting 15 seconds for registration transaction for $NODE_LOG_NAME to confirm..."
+    sleep 15
+
+    echo "[LOG] Querying UTXO for delegation transaction for $NODE_LOG_NAME..."
+    NODE_FUNDING_UTXO_DELEG=""
+    for attempt in {1..10}; do
+        echo "[LOG] Querying address UTXOs for $NODE_LOG_NAME (Delegation Attempt $attempt)..."
+        utxo_info_deleg=$(cardano-cli latest query utxo --testnet-magic 42 --address "$NODE_PAYMENT_ADDRESS" --out-file /dev/stdout 2>&1)
+        NODE_FUNDING_UTXO_DELEG=$(echo "$utxo_info_deleg" | /busybox grep -o '[a-f0-9]\{64\}#[0-9]\+' | head -1)
+        if [ -n "$NODE_FUNDING_UTXO_DELEG" ]; then
+            echo "[LOG] Found funding UTXO for $NODE_LOG_NAME delegation: $NODE_FUNDING_UTXO_DELEG"
+            break
+        else
+            echo "[WARN] No UTXO found for $NODE_LOG_NAME delegation at $NODE_PAYMENT_ADDRESS. Waiting 5s... (Attempt $attempt)"
+            sleep 5
+        fi
+    done
+
+     if [ -z "$NODE_FUNDING_UTXO_DELEG" ]; then
+        echo "[DEBUG] CRITICAL ERROR: Failed to find funding UTXO for $NODE_LOG_NAME delegation. Cannot perform delegation. Skipping this node."
+        continue # Skip delegation if funding UTXO not found
+    fi
+    NODE_FUNDING_UTXO_DELEG_AMOUNT=$(echo "$utxo_info_deleg" | /busybox grep "$NODE_FUNDING_UTXO_DELEG" -A 20 | /busybox grep '"lovelace":' | /busybox grep -o '[0-9]\+' | head -1)
+    if ! [[ "$NODE_FUNDING_UTXO_DELEG_AMOUNT" =~ ^[0-9]+$ ]] || [ "$NODE_FUNDING_UTXO_DELEG_AMOUNT" -eq 0 ]; then
+         echo "[DEBUG] CRITICAL ERROR: Failed to get valid UTXO amount for $NODE_LOG_NAME delegation. Skipping this node."
+         continue
+    fi
+    echo "[LOG] $NODE_LOG_NAME Delegation Funding UTXO amount: $NODE_FUNDING_UTXO_DELEG_AMOUNT lovelace."
+
+
+    # 10. Generate Delegation Certificate
+    echo "[LOG] Generating delegation certificate for $NODE_LOG_NAME to pool $POOL_ID..."
+    DELEG_CERT="/data/${NODE_LOG_NAME}_deleg.cert"
+     if ! cardano-cli latest stake-address delegation-certificate \
+        --stake-verification-key-file "$NODE_STAKE_VKEY" \
+        --cold-verification-key-hash "$POOL_ID" \
+        --out-file "$DELEG_CERT"; then
+        echo "[DEBUG] ERROR: Failed to generate delegation certificate for $NODE_LOG_NAME. Skipping this node."
+        continue
+    fi
+
+    # 11. Build Delegation Transaction (Dummy for fee calculation)
+    echo "[LOG] Building dummy delegation transaction for $NODE_LOG_NAME fee calculation..."
+    DELEG_TX_DUMMY="/data/${NODE_LOG_NAME}_deleg_tx_dummy.raw"
+    CHANGE_OUTPUT_DELEG_DUMMY=1000000 # Placeholder for change (1 ADA)
+
+    if ! cardano-cli latest transaction build-raw \
+        --tx-in "$NODE_FUNDING_UTXO_DELEG" \
+        --tx-out "$NODE_PAYMENT_ADDRESS+$CHANGE_OUTPUT_DELEG_DUMMY" \
+        --certificate-file "$DELEG_CERT" \
+        --fee 0 \
+        --out-file "$DELEG_TX_DUMMY"; then
+        echo "[DEBUG] ERROR: Failed to build dummy delegation transaction for $NODE_LOG_NAME. Skipping this node."
+        rm -f "$DELEG_CERT"
+        continue
+    fi
+
+    # 12. Calculate Fee
+    echo "[LOG] Calculating delegation transaction fee for $NODE_LOG_NAME..."
+    NUM_DELEG_TX_INPUTS=1
+    NUM_DELEG_TX_OUTPUTS=1 # Change output
+    NUM_DELEG_TX_WITNESSES=2 # payment.skey, stake.skey
+
+    CALCULATED_DELEG_FEE=$(cardano-cli latest transaction calculate-min-fee \
+        --tx-body-file "$DELEG_TX_DUMMY" \
+        --testnet-magic 42 \
+        --protocol-params-file "$protocol_params_file" \
+        --tx-in-count "$NUM_DELEG_TX_INPUTS" \
+        --tx-out-count "$NUM_DELEG_TX_OUTPUTS" \
+        --witness-count "$NUM_DELEG_TX_WITNESSES" | /busybox awk '{print $1}')
+
+    rm -f "$DELEG_TX_DUMMY"
+
+    if ! [[ "$CALCULATED_DELEG_FEE" =~ ^[0-9]+$ ]]; then
+        echo "[DEBUG] ERROR: Failed to calculate delegation transaction fee for $NODE_LOG_NAME. Using fallback fee."
+        DELEG_FEE=300000 # Fallback fee
+    else
+        DELEG_FEE=$((CALCULATED_DELEG_FEE + 10000)) # Add buffer
+        echo "[LOG] Calculated delegation fee for $NODE_LOG_NAME: $DELEG_FEE"
+    fi
+
+    # 13. Calculate Change and Build Final Delegation Transaction
+    DELEG_TX_CHANGE=$((NODE_FUNDING_UTXO_DELEG_AMOUNT - DELEG_FEE))
+     if [ "$DELEG_TX_CHANGE" -lt 1000000 ]; then # Ensure minimum change
+        echo "[DEBUG] CRITICAL ERROR: Delegation transaction change for $NODE_LOG_NAME is too small ($DELEG_TX_CHANGE). Skipping."
+        rm -f "$DELEG_CERT"
+        continue
+    fi
+    echo "[LOG] Delegation transaction change for $NODE_LOG_NAME: $DELEG_TX_CHANGE"
+
+
+    DELEG_TX_FINAL="/data/${NODE_LOG_NAME}_deleg_tx.raw"
+    if ! cardano-cli latest transaction build-raw \
+        --tx-in "$NODE_FUNDING_UTXO_DELEG" \
+        --tx-out "$NODE_PAYMENT_ADDRESS+$DELEG_TX_CHANGE" \
+        --certificate-file "$DELEG_CERT" \
+        --fee "$DELEG_FEE" \
+        --out-file "$DELEG_TX_FINAL"; then
+        echo "[DEBUG] ERROR: Failed to build final delegation transaction for $NODE_LOG_NAME. Skipping this node."
+        rm -f "$DELEG_CERT"
+        continue
+    fi
+
+    # 14. Sign Delegation Transaction
+    echo "[LOG] Signing delegation transaction for $NODE_LOG_NAME..."
+    DELEG_TX_SIGNED="/data/${NODE_LOG_NAME}_deleg_tx.signed"
+     if ! cardano-cli latest transaction sign \
+        --tx-body-file "$DELEG_TX_FINAL" \
+        --signing-key-file "$NODE_PAYMENT_SKEY" \
+        --signing-key-file "$NODE_STAKE_SKEY" \
+        --testnet-magic 42 \
+        --out-file "$DELEG_TX_SIGNED"; then
+        echo "[DEBUG] ERROR: Failed to sign delegation transaction for $NODE_LOG_NAME. Skipping this node."
+        rm -f "$DELEG_CERT" "$DELEG_TX_FINAL"
+        continue
+    fi
+
+    # 15. Submit Delegation Transaction
+    echo "[LOG] Submitting delegation transaction for $NODE_LOG_NAME..."
+    SUBMITTED_DELEG=false
+    for attempt in {1..5}; do
+        if cardano-cli latest transaction submit --tx-file "$DELEG_TX_SIGNED" --testnet-magic 42; then
+            echo "[LOG] Delegation transaction submitted for $NODE_LOG_NAME."
+            SUBMITTED_DELEG=true
+            break
+        else
+            echo "[WARN] Attempt $attempt to submit delegation transaction for $NODE_LOG_NAME failed. Retrying in 5s..."
+            sleep 5
+        fi
+    done
+
+    rm -f "$DELEG_CERT" "$DELEG_TX_FINAL" "$DELEG_TX_SIGNED" # Clean up
+
+    if [ "$SUBMITTED_DELEG" = false ]; then
+        echo "[DEBUG] CRITICAL ERROR: Failed to submit delegation transaction for $NODE_LOG_NAME after multiple attempts."
+    fi
+
+    echo "[LOG] Completed SPO registration and delegation process for $NODE_LOG_NAME."
+    echo "---" # Separator for logs
+
+done # End loop for permissioned nodes
+
+# Registered nodes (1-based index)
+for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
+    NODE_SPECIFIC_KEYS_DIR="/shared/node-keys/registered-${i}/keys"
+    NODE_TYPE="registered"
+    NODE_LOG_NAME="${NODE_TYPE}-${i}"
+    NODE_PAYMENT_ADDRESS="${registered_node_payment_addresses[$((i-1))]}" # Use 0-based index for array
+    NODE_STAKE_ADDRESS="${registered_node_stake_addresses[$((i-1))]}" # Use 0-based index for array
+    NODE_COLD_VKEY="${NODE_SPECIFIC_KEYS_DIR}/cold.vkey"
+    NODE_COLD_SKEY="${NODE_SPECIFIC_KEYS_DIR}/cold.skey"
+    NODE_VRF_VKEY="${NODE_SPECIFIC_KEYS_DIR}/vrf.vkey"
+    NODE_KES_VKEY="${NODE_SPECIFIC_KEYS_DIR}/kes.vkey"
+    NODE_STAKE_VKEY="${NODE_SPECIFIC_KEYS_DIR}/stake.vkey"
+    NODE_PAYMENT_SKEY="${NODE_SPECIFIC_KEYS_DIR}/payment.skey"
+    NODE_COLD_COUNTER="${NODE_SPECIFIC_KEYS_DIR}/cold.counter"
+
+    echo "[LOG] Processing $NODE_LOG_NAME for SPO registration..."
+
+    # 1. Query UTXO for transaction funding
+    echo "[LOG] Querying UTXO for $NODE_LOG_NAME..."
+    NODE_FUNDING_UTXO=""
+    for attempt in {1..10}; do
+        echo "[LOG] Querying address UTXOs for $NODE_LOG_NAME (Attempt $attempt)..."
+        utxo_info=$(cardano-cli latest query utxo --testnet-magic 42 --address "$NODE_PAYMENT_ADDRESS" --out-file /dev/stdout 2>&1)
+        NODE_FUNDING_UTXO=$(echo "$utxo_info" | /busybox grep -o '[a-f0-9]\{64\}#[0-9]\+' | head -1)
+        if [ -n "$NODE_FUNDING_UTXO" ]; then
+            echo "[LOG] Found funding UTXO for $NODE_LOG_NAME: $NODE_FUNDING_UTXO"
+            break
+        else
+            echo "[WARN] No UTXO found for $NODE_LOG_NAME at $NODE_PAYMENT_ADDRESS. Waiting 5s... (Attempt $attempt)"
+            sleep 5
+        fi
+    done
+
+    if [ -z "$NODE_FUNDING_UTXO" ]; then
+        echo "[DEBUG] CRITICAL ERROR: Failed to find funding UTXO for $NODE_LOG_NAME. Cannot perform SPO registration/delegation. Skipping this node."
+        continue # Skip to the next node if funding UTXO not found
+    fi
+
+    # Extract UTXO amount for fee calculation
+    NODE_FUNDING_UTXO_AMOUNT=$(echo "$utxo_info" | /busybox grep "$NODE_FUNDING_UTXO" -A 20 | /busybox grep '"lovelace":' | /busybox grep -o '[0-9]\+' | head -1)
+     if ! [[ "$NODE_FUNDING_UTXO_AMOUNT" =~ ^[0-9]+$ ]] || [ "$NODE_FUNDING_UTXO_AMOUNT" -eq 0 ]; then
+         echo "[DEBUG] CRITICAL ERROR: Failed to get valid UTXO amount for $NODE_LOG_NAME. Skipping this node."
+         continue
+    fi
+    echo "[LOG] $NODE_LOG_NAME Funding UTXO amount: $NODE_FUNDING_UTXO_AMOUNT lovelace."
+
+    # 2. Generate Stake Address Registration Certificate
+    echo "[LOG] Generating stake address registration certificate for $NODE_LOG_NAME..."
+    STAKE_REG_CERT="/data/${NODE_LOG_NAME}_stake_reg.cert"
+     if ! cardano-cli latest stake-address registration-certificate \
+        --stake-verification-key-file "$NODE_STAKE_VKEY" \
+        --out-file "$STAKE_REG_CERT"; then
+        echo "[DEBUG] ERROR: Failed to generate stake address registration certificate for $NODE_LOG_NAME. Skipping this node."
+        continue
+    fi
+
+    # 3. Generate Stake Pool Registration Certificate
+    echo "[LOG] Generating stake pool registration certificate for $NODE_LOG_NAME..."
+    POOL_REG_CERT="/data/${NODE_LOG_NAME}_pool_reg.cert"
+    POOL_ID=$(cardano-cli latest stake-pool id --cold-verification-key-file "$NODE_COLD_VKEY" --output-format hex)
+    echo "[LOG] $NODE_LOG_NAME Pool ID: $POOL_ID"
+
+    # Pool parameters (minimal for local env)
+    PLEDGE=0 # No pledge required for this setup
+    POOL_COST=0 # Minimal cost
+    POOL_MARGIN="0/1000" # 0% margin
+
+    if ! cardano-cli latest stake-pool registration-certificate \
+        --cold-verification-key-file "$NODE_COLD_VKEY" \
+        --vrf-verification-key-file "$NODE_VRF_VKEY" \
+        --kes-verification-key-file "$NODE_KES_VKEY" \
+        --reward-account-verification-key-file "$NODE_STAKE_VKEY" \
+        --pool-pledge "$PLEDGE" \
+        --pool-cost "$POOL_COST" \
+        --pool-margin "$POOL_MARGIN" \
+        --pool-relay-ipv4 127.0.0.1 \
+        --pool-relay-port 30000 \
+        --metadata-url "https://example.com/${NODE_LOG_NAME}.json" --metadata-hash 0000000000000000000000000000000000000000000000000000000000000000 \
+        --testnet-magic 42 \
+        --out-file "$POOL_REG_CERT"; then
+        echo "[DEBUG] ERROR: Failed to generate stake pool registration certificate for $NODE_LOG_NAME. Skipping this node."
+        rm -f "$STAKE_REG_CERT"
+        continue
+    fi
+
+    # 4. Build Registration Transaction (Dummy for fee calculation)
+    echo "[LOG] Building dummy registration transaction for $NODE_LOG_NAME fee calculation..."
+    REG_TX_DUMMY="/data/${NODE_LOG_NAME}_reg_tx_dummy.raw"
+    CHANGE_OUTPUT_DUMMY=1000000 # Placeholder for change (1 ADA)
+
+    if ! cardano-cli latest transaction build-raw \
+        --tx-in "$NODE_FUNDING_UTXO" \
+        --tx-out "$NODE_PAYMENT_ADDRESS+$CHANGE_OUTPUT_DUMMY" \
+        --certificate-file "$STAKE_REG_CERT" \
+        --certificate-file "$POOL_REG_CERT" \
+        --fee 0 \
+        --out-file "$REG_TX_DUMMY"; then
+        echo "[DEBUG] ERROR: Failed to build dummy registration transaction for $NODE_LOG_NAME. Skipping this node."
+        rm -f "$STAKE_REG_CERT" "$POOL_REG_CERT"
+        continue
+    fi
+
+    # 5. Calculate Fee
+    echo "[LOG] Calculating registration transaction fee for $NODE_LOG_NAME..."
+    NUM_REG_TX_INPUTS=1
+    NUM_REG_TX_OUTPUTS=1 # Change output
+    NUM_REG_TX_WITNESSES=3 # payment.skey, stake.skey, cold.skey
+
+    CALCULATED_REG_FEE=$(cardano-cli latest transaction calculate-min-fee \
+        --tx-body-file "$REG_TX_DUMMY" \
+        --testnet-magic 42 \
+        --protocol-params-file "$protocol_params_file" \
+        --tx-in-count "$NUM_REG_TX_INPUTS" \
+        --tx-out-count "$NUM_REG_TX_OUTPUTS" \
+        --witness-count "$NUM_REG_TX_WITNESSES" | /busybox awk '{print $1}')
+
+    rm -f "$REG_TX_DUMMY"
+
+    if ! [[ "$CALCULATED_REG_FEE" =~ ^[0-9]+$ ]]; then
+        echo "[DEBUG] ERROR: Failed to calculate registration transaction fee for $NODE_LOG_NAME. Using fallback fee."
+        REG_FEE=500000 # Fallback fee
+    else
+        REG_FEE=$((CALCULATED_REG_FEE + 10000)) # Add buffer
+        echo "[LOG] Calculated registration fee for $NODE_LOG_NAME: $REG_FEE"
+    fi
+
+    # 6. Calculate Change and Build Final Registration Transaction
+    REG_TX_CHANGE=$((NODE_FUNDING_UTXO_AMOUNT - REG_FEE)) # Assuming no pledge for simplicity
+     if [ "$REG_TX_CHANGE" -lt 1000000 ]; then # Ensure minimum change
+        echo "[DEBUG] CRITICAL ERROR: Registration transaction change for $NODE_LOG_NAME is too small ($REG_TX_CHANGE). Skipping."
+        rm -f "$STAKE_REG_CERT" "$POOL_REG_CERT"
+        continue
+    fi
+    echo "[LOG] Registration transaction change for $NODE_LOG_NAME: $REG_TX_CHANGE"
+
+    REG_TX_FINAL="/data/${NODE_LOG_NAME}_reg_tx.raw"
+    if ! cardano-cli latest transaction build-raw \
+        --tx-in "$NODE_FUNDING_UTXO" \
+        --tx-out "$NODE_PAYMENT_ADDRESS+$REG_TX_CHANGE" \
+        --certificate-file "$STAKE_REG_CERT" \
+        --certificate-file "$POOL_REG_CERT" \
+        --fee "$REG_FEE" \
+        --out-file "$REG_TX_FINAL"; then
+        echo "[DEBUG] ERROR: Failed to build final registration transaction for $NODE_LOG_NAME. Skipping this node."
+        rm -f "$STAKE_REG_CERT" "$POOL_REG_CERT"
+        continue
+    fi
+
+    # 7. Sign Registration Transaction
+    echo "[LOG] Signing registration transaction for $NODE_LOG_NAME..."
+    REG_TX_SIGNED="/data/${NODE_LOG_NAME}_reg_tx.signed"
+     if ! cardano-cli latest transaction sign \
+        --tx-body-file "$REG_TX_FINAL" \
+        --signing-key-file "$NODE_PAYMENT_SKEY" \
+        --signing-key-file "$NODE_STAKE_SKEY" \
+        --signing-key-file "$NODE_COLD_SKEY" \
+        --testnet-magic 42 \
+        --out-file "$REG_TX_SIGNED"; then
+        echo "[DEBUG] ERROR: Failed to sign registration transaction for $NODE_LOG_NAME. Skipping this node."
+        rm -f "$STAKE_REG_CERT" "$POOL_REG_CERT" "$REG_TX_FINAL"
+        continue
+    fi
+
+    # 8. Submit Registration Transaction
+    echo "[LOG] Submitting registration transaction for $NODE_LOG_NAME..."
+    SUBMITTED_REG=false
+    for attempt in {1..5}; do
+        if cardano-cli latest transaction submit --tx-file "$REG_TX_SIGNED" --testnet-magic 42; then
+            echo "[LOG] Registration transaction submitted for $NODE_LOG_NAME."
+            SUBMITTED_REG=true
+            break
+        else
+            echo "[WARN] Attempt $attempt to submit registration transaction for $NODE_LOG_NAME failed. Retrying in 5s..."
+            sleep 5
+        fi
+    done
+
+    rm -f "$STAKE_REG_CERT" "$POOL_REG_CERT" "$REG_TX_FINAL" "$REG_TX_SIGNED" # Clean up
+
+    if [ "$SUBMITTED_REG" = false ]; then
+        echo "[DEBUG] CRITICAL ERROR: Failed to submit registration transaction for $NODE_LOG_NAME after multiple attempts. Skipping delegation for this node."
+        continue # Skip delegation if registration failed
+    fi
+
+    # 9. Wait for confirmation and Query UTXO for Delegation Transaction
+    echo "[LOG] Waiting 15 seconds for registration transaction for $NODE_LOG_NAME to confirm..."
+    sleep 15
+
+    echo "[LOG] Querying UTXO for delegation transaction for $NODE_LOG_NAME..."
+    NODE_FUNDING_UTXO_DELEG=""
+    for attempt in {1..10}; do
+        echo "[LOG] Querying address UTXOs for $NODE_LOG_NAME (Delegation Attempt $attempt)..."
+        utxo_info_deleg=$(cardano-cli latest query utxo --testnet-magic 42 --address "$NODE_PAYMENT_ADDRESS" --out-file /dev/stdout 2>&1)
+        NODE_FUNDING_UTXO_DELEG=$(echo "$utxo_info_deleg" | /busybox grep -o '[a-f0-9]\{64\}#[0-9]\+' | head -1)
+        if [ -n "$NODE_FUNDING_UTXO_DELEG" ]; then
+            echo "[LOG] Found funding UTXO for $NODE_LOG_NAME delegation: $NODE_FUNDING_UTXO_DELEG"
+            break
+        else
+            echo "[WARN] No UTXO found for $NODE_LOG_NAME delegation at $NODE_PAYMENT_ADDRESS. Waiting 5s... (Attempt $attempt)"
+            sleep 5
+        fi
+    done
+
+     if [ -z "$NODE_FUNDING_UTXO_DELEG" ]; then
+        echo "[DEBUG] CRITICAL ERROR: Failed to find funding UTXO for $NODE_LOG_NAME delegation. Cannot perform delegation. Skipping this node."
+        continue
+    fi
+    NODE_FUNDING_UTXO_DELEG_AMOUNT=$(echo "$utxo_info_deleg" | /busybox grep "$NODE_FUNDING_UTXO_DELEG" -A 20 | /busybox grep '"lovelace":' | /busybox grep -o '[0-9]\+' | head -1)
+     if ! [[ "$NODE_FUNDING_UTXO_DELEG_AMOUNT" =~ ^[0-9]+$ ]] || [ "$NODE_FUNDING_UTXO_DELEG_AMOUNT" -eq 0 ]; then
+         echo "[DEBUG] CRITICAL ERROR: Failed to get valid UTXO amount for $NODE_LOG_NAME delegation. Skipping this node."
+         continue
+    fi
+    echo "[LOG] $NODE_LOG_NAME Delegation Funding UTXO amount: $NODE_FUNDING_UTXO_DELEG_AMOUNT lovelace."
+
+    # 10. Generate Delegation Certificate
+    echo "[LOG] Generating delegation certificate for $NODE_LOG_NAME to pool $POOL_ID..."
+    DELEG_CERT="/data/${NODE_LOG_NAME}_deleg.cert"
+     if ! cardano-cli latest stake-address delegation-certificate \
+        --stake-verification-key-file "$NODE_STAKE_VKEY" \
+        --cold-verification-key-hash "$POOL_ID" \
+        --out-file "$DELEG_CERT"; then
+        echo "[DEBUG] ERROR: Failed to generate delegation certificate for $NODE_LOG_NAME. Skipping this node."
+        continue
+    fi
+
+    # 11. Build Delegation Transaction (Dummy for fee calculation)
+    echo "[LOG] Building dummy delegation transaction for $NODE_LOG_NAME fee calculation..."
+    DELEG_TX_DUMMY="/data/${NODE_LOG_NAME}_deleg_tx_dummy.raw"
+    CHANGE_OUTPUT_DELEG_DUMMY=1000000 # Placeholder for change (1 ADA)
+
+    if ! cardano-cli latest transaction build-raw \
+        --tx-in "$NODE_FUNDING_UTXO_DELEG" \
+        --tx-out "$NODE_PAYMENT_ADDRESS+$CHANGE_OUTPUT_DELEG_DUMMY" \
+        --certificate-file "$DELEG_CERT" \
+        --fee 0 \
+        --out-file "$DELEG_TX_DUMMY"; then
+        echo "[DEBUG] ERROR: Failed to build dummy delegation transaction for $NODE_LOG_NAME. Skipping this node."
+        rm -f "$DELEG_CERT"
+        continue
+    fi
+
+    # 12. Calculate Fee
+    echo "[LOG] Calculating delegation transaction fee for $NODE_LOG_NAME..."
+    NUM_DELEG_TX_INPUTS=1
+    NUM_DELEG_TX_OUTPUTS=1 # Change output
+    NUM_DELEG_TX_WITNESSES=2 # payment.skey, stake.skey
+
+    CALCULATED_DELEG_FEE=$(cardano-cli latest transaction calculate-min-fee \
+        --tx-body-file "$DELEG_TX_DUMMY" \
+        --testnet-magic 42 \
+        --protocol-params-file "$protocol_params_file" \
+        --tx-in-count "$NUM_DELEG_TX_INPUTS" \
+        --tx-out-count "$NUM_DELEG_TX_OUTPUTS" \
+        --witness-count "$NUM_DELEG_TX_WITNESSES" | /busybox awk '{print $1}')
+
+    rm -f "$DELEG_TX_DUMMY"
+
+    if ! [[ "$CALCULATED_DELEG_FEE" =~ ^[0-9]+$ ]]; then
+        echo "[DEBUG] ERROR: Failed to calculate delegation transaction fee for $NODE_LOG_NAME. Using fallback fee."
+        DELEG_FEE=300000 # Fallback fee
+    else
+        DELEG_FEE=$((CALCULATED_DELEG_FEE + 10000)) # Add buffer
+        echo "[LOG] Calculated delegation fee for $NODE_LOG_NAME: $DELEG_FEE"
+    fi
+
+    # 13. Calculate Change and Build Final Delegation Transaction
+    DELEG_TX_CHANGE=$((NODE_FUNDING_UTXO_DELEG_AMOUNT - DELEG_FEE))
+     if [ "$DELEG_TX_CHANGE" -lt 1000000 ]; then # Ensure minimum change
+        echo "[DEBUG] CRITICAL ERROR: Delegation transaction change for $NODE_LOG_NAME is too small ($DELEG_TX_CHANGE). Skipping."
+        rm -f "$DELEG_CERT"
+        continue
+    fi
+    echo "[LOG] Delegation transaction change for $NODE_LOG_NAME: $DELEG_TX_CHANGE"
+
+
+    DELEG_TX_FINAL="/data/${NODE_LOG_NAME}_deleg_tx.raw"
+    if ! cardano-cli latest transaction build-raw \
+        --tx-in "$NODE_FUNDING_UTXO_DELEG" \
+        --tx-out "$NODE_PAYMENT_ADDRESS+$DELEG_TX_CHANGE" \
+        --certificate-file "$DELEG_CERT" \
+        --fee "$DELEG_FEE" \
+        --out-file "$DELEG_TX_FINAL"; then
+        echo "[DEBUG] ERROR: Failed to build final delegation transaction for $NODE_LOG_NAME. Skipping this node."
+        rm -f "$DELEG_CERT"
+        continue
+    fi
+
+    # 14. Sign Delegation Transaction
+    echo "[LOG] Signing delegation transaction for $NODE_LOG_NAME..."
+    DELEG_TX_SIGNED="/data/${NODE_LOG_NAME}_deleg_tx.signed"
+     if ! cardano-cli latest transaction sign \
+        --tx-body-file "$DELEG_TX_FINAL" \
+        --signing-key-file "$NODE_PAYMENT_SKEY" \
+        --signing-key-file "$NODE_STAKE_SKEY" \
+        --testnet-magic 42 \
+        --out-file "$DELEG_TX_SIGNED"; then
+        echo "[DEBUG] ERROR: Failed to sign delegation transaction for $NODE_LOG_NAME. Skipping this node."
+        rm -f "$DELEG_CERT" "$DELEG_TX_FINAL"
+        continue
+    fi
+
+    # 15. Submit Delegation Transaction
+    echo "[LOG] Submitting delegation transaction for $NODE_LOG_NAME..."
+    SUBMITTED_DELEG=false
+    for attempt in {1..5}; do
+        if cardano-cli latest transaction submit --tx-file "$DELEG_TX_SIGNED" --testnet-magic 42; then
+            echo "[LOG] Delegation transaction submitted for $NODE_LOG_NAME."
+            SUBMITTED_DELEG=true
+            break
+        else
+            echo "[WARN] Attempt $attempt to submit delegation transaction for $NODE_LOG_NAME failed. Retrying in 5s..."
+            sleep 5
+        fi
+    done
+
+    rm -f "$DELEG_CERT" "$DELEG_TX_FINAL" "$DELEG_TX_SIGNED" # Clean up
+
+    if [ "$SUBMITTED_DELEG" = false ]; then
+        echo "[DEBUG] CRITICAL ERROR: Failed to submit delegation transaction for $NODE_LOG_NAME after multiple attempts."
+    fi
+
+    echo "[LOG] Completed SPO registration and delegation process for $NODE_LOG_NAME."
+    echo "---" # Separator for logs
+
+done # End loop for registered nodes
+
+echo "[LOG] Completed SPO Registration and Delegation for all nodes."
+# --- END NEW: Register Nodes as Cardano SPOs and Delegate Stake ---
+
+echo "[LOG] Creating /shared/cardano.ready signal file."
+touch /shared/cardano.ready
