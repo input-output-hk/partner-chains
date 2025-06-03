@@ -983,20 +983,7 @@ for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do
     POOL_COST=0 # Minimal cost
     POOL_MARGIN="0/1000" # 0% margin
 
-    echo "[DEBUG] Attempting to run command:"
-    echo "cardano-cli latest stake-pool registration-certificate \
-        --cold-verification-key-file "$NODE_COLD_VKEY" \
-        --vrf-verification-key-file "$NODE_VRF_VKEY" \
-        --reward-account-verification-key-file "$NODE_STAKE_VKEY" \
-        --pool-owner-stake-verification-key-file "$NODE_STAKE_VKEY" \
-        --pool-pledge "$PLEDGE" \
-        --pool-cost "$POOL_COST" \
-        --pool-margin "$POOL_MARGIN" \
-        --pool-relay-ipv4 127.0.0.1 \
-        --pool-relay-port 30000 \
-        --metadata-url "https://example.com/${NODE_LOG_NAME}.json" --metadata-hash 0000000000000000000000000000000000000000000000000000000000000000 \
-        --testnet-magic 42 \
-        --out-file "$POOL_REG_CERT""
+    echo "[DEBUG] Attempting to run stake-pool registration-certificate command..."
 
     if ! cardano-cli latest stake-pool registration-certificate \
         --cold-verification-key-file "$NODE_COLD_VKEY" \
