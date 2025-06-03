@@ -931,6 +931,16 @@ for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do
 
     echo "[LOG] Processing $NODE_LOG_NAME for SPO registration..."
 
+    # Add this check
+    if [ ! -f "$NODE_STAKE_VKEY" ]; then
+        echo "[DEBUG] CRITICAL ERROR: Stake verification key file NOT FOUND for $NODE_LOG_NAME at path: $NODE_STAKE_VKEY. Cannot generate pool reg cert."
+        # We might have created a stake registration cert already, ensure we clean up if we skip.
+        if [ -f "/data/${NODE_LOG_NAME}_stake_reg.cert" ]; then rm -f "/data/${NODE_LOG_NAME}_stake_reg.cert"; fi
+        continue
+    else
+        echo "[LOG] Stake verification key file FOUND for $NODE_LOG_NAME at path: $NODE_STAKE_VKEY."
+    fi
+
     # 1. Query UTXO for transaction funding
     echo "[LOG] Querying UTXO for $NODE_LOG_NAME..."
     NODE_FUNDING_UTXO=""
@@ -987,6 +997,7 @@ for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do
         --cold-verification-key-file "$NODE_COLD_VKEY" \
         --vrf-verification-key-file "$NODE_VRF_VKEY" \
         --reward-account-verification-key-file "$NODE_STAKE_VKEY" \
+        --pool-owner-stake-verification-key-file "$NODE_STAKE_VKEY" \
         --pool-pledge "$PLEDGE" \
         --pool-cost "$POOL_COST" \
         --pool-margin "$POOL_MARGIN" \
@@ -1260,6 +1271,15 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
 
     echo "[LOG] Processing $NODE_LOG_NAME for SPO registration..."
 
+    # Add this check
+    if [ ! -f "$NODE_STAKE_VKEY" ]; then
+        echo "[DEBUG] CRITICAL ERROR: Stake verification key file NOT FOUND for $NODE_LOG_NAME at path: $NODE_STAKE_VKEY. Cannot generate pool reg cert."
+        if [ -f "/data/${NODE_LOG_NAME}_stake_reg.cert" ]; then rm -f "/data/${NODE_LOG_NAME}_stake_reg.cert"; fi
+        continue
+    else
+        echo "[LOG] Stake verification key file FOUND for $NODE_LOG_NAME at path: $NODE_STAKE_VKEY."
+    fi
+
     # 1. Query UTXO for transaction funding
     echo "[LOG] Querying UTXO for $NODE_LOG_NAME..."
     NODE_FUNDING_UTXO=""
@@ -1316,6 +1336,7 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
         --cold-verification-key-file "$NODE_COLD_VKEY" \
         --vrf-verification-key-file "$NODE_VRF_VKEY" \
         --reward-account-verification-key-file "$NODE_STAKE_VKEY" \
+        --pool-owner-stake-verification-key-file "$NODE_STAKE_VKEY" \
         --pool-pledge "$PLEDGE" \
         --pool-cost "$POOL_COST" \
         --pool-margin "$POOL_MARGIN" \
