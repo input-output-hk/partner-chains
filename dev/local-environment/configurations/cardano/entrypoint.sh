@@ -1,4 +1,5 @@
 #! /bin/bash
+set -e
 
 echo "[LOG] Script start. Setting permissions and initial variables."
 chmod 600 /keys/*
@@ -898,6 +899,7 @@ echo "[LOG] Created /shared/genesis.utxo with value: $(cat /shared/genesis.utxo)
 echo "[LOG] Starting Cardano SPO Registration and Delegation for all nodes..."
 
 STAKE_ADDRESS_DEPOSIT_AMT=2000000 # 2 ADA in lovelace for stake address registration
+POOL_REG_DEPOSIT_AMT=500000000    # 500 ADA in lovelace for pool registration deposit
 
 # Combine permissioned and registered node indices and directories
 # Permissioned nodes (1-based index, 0-based array index for directories)
@@ -913,7 +915,7 @@ for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do
     NODE_VRF_VKEY="${NODE_SPECIFIC_KEYS_DIR}/vrf.vkey"
     NODE_KES_VKEY="${NODE_SPECIFIC_KEYS_DIR}/kes.vkey"
     NODE_STAKE_VKEY="${NODE_SPECIFIC_KEYS_DIR}/stake.vkey"
-    NODE_STAKE_SKEY="${NODE_SPECIFIC_KEYS_DIR}/stake.skey" # Add this line
+    NODE_STAKE_SKEY="${NODE_SPECIFIC_KEYS_DIR}/stake.skey"
     NODE_PAYMENT_SKEY="${NODE_SPECIFIC_KEYS_DIR}/payment.skey"
     NODE_COLD_COUNTER="${NODE_SPECIFIC_KEYS_DIR}/cold.counter"
 
@@ -1041,9 +1043,9 @@ for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do
     fi
 
     # 6. Calculate Change and Build Final Registration Transaction
-    REG_TX_CHANGE=$((NODE_FUNDING_UTXO_AMOUNT - REG_FEE)) # Assuming no pledge for simplicity
-    if [ "$REG_TX_CHANGE" -lt 1000000 ]; then # Ensure minimum change
-        echo "[DEBUG] CRITICAL ERROR: Registration transaction change for $NODE_LOG_NAME is too small ($REG_TX_CHANGE). Skipping."
+    REG_TX_CHANGE=$((NODE_FUNDING_UTXO_AMOUNT - REG_FEE - STAKE_ADDRESS_DEPOSIT_AMT - POOL_REG_DEPOSIT_AMT))
+    if [ "$REG_TX_CHANGE" -lt 1000000 ]; then # Ensure minimum change of 1 ADA
+        echo "[DEBUG] CRITICAL ERROR: Registration transaction change for $NODE_LOG_NAME is too small ($REG_TX_CHANGE) after accounting for fee and deposits. Input: $NODE_FUNDING_UTXO_AMOUNT, Fee: $REG_FEE, StakeDeposit: $STAKE_ADDRESS_DEPOSIT_AMT, PoolDeposit: $POOL_REG_DEPOSIT_AMT. Skipping."
         rm -f "$STAKE_REG_CERT" "$POOL_REG_CERT"
         continue
     fi
@@ -1294,7 +1296,7 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     NODE_VRF_VKEY="${NODE_SPECIFIC_KEYS_DIR}/vrf.vkey"
     NODE_KES_VKEY="${NODE_SPECIFIC_KEYS_DIR}/kes.vkey"
     NODE_STAKE_VKEY="${NODE_SPECIFIC_KEYS_DIR}/stake.vkey"
-    NODE_STAKE_SKEY="${NODE_SPECIFIC_KEYS_DIR}/stake.skey" # Add this line
+    NODE_STAKE_SKEY="${NODE_SPECIFIC_KEYS_DIR}/stake.skey"
     NODE_PAYMENT_SKEY="${NODE_SPECIFIC_KEYS_DIR}/payment.skey"
     NODE_COLD_COUNTER="${NODE_SPECIFIC_KEYS_DIR}/cold.counter"
 
@@ -1421,9 +1423,9 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     fi
 
     # 6. Calculate Change and Build Final Registration Transaction
-    REG_TX_CHANGE=$((NODE_FUNDING_UTXO_AMOUNT - REG_FEE)) # Assuming no pledge for simplicity
+    REG_TX_CHANGE=$((NODE_FUNDING_UTXO_AMOUNT - REG_FEE - STAKE_ADDRESS_DEPOSIT_AMT - POOL_REG_DEPOSIT_AMT))
      if [ "$REG_TX_CHANGE" -lt 1000000 ]; then # Ensure minimum change
-        echo "[DEBUG] CRITICAL ERROR: Registration transaction change for $NODE_LOG_NAME is too small ($REG_TX_CHANGE). Skipping."
+        echo "[DEBUG] CRITICAL ERROR: Registration transaction change for $NODE_LOG_NAME is too small ($REG_TX_CHANGE) after accounting for fee and deposits. Input: $NODE_FUNDING_UTXO_AMOUNT, Fee: $REG_FEE, StakeDeposit: $STAKE_ADDRESS_DEPOSIT_AMT, PoolDeposit: $POOL_REG_DEPOSIT_AMT. Skipping."
         rm -f "$STAKE_REG_CERT" "$POOL_REG_CERT"
         continue
     fi
