@@ -898,7 +898,7 @@ echo "[LOG] Created /shared/genesis.utxo with value: $(cat /shared/genesis.utxo)
 # --- NEW: Register Nodes as Cardano SPOs and Delegate Stake ---
 echo "[LOG] Starting Cardano SPO Registration and Delegation for all nodes..."
 
-STAKE_ADDRESS_DEPOSIT_AMT=2000000 # 2 ADA in lovelace for stake address registration
+STAKE_ADDRESS_DEPOSIT_AMT=400000 # 2 ADA in lovelace for stake address registration. MODIFIED TO 0.4 ADA based on error analysis.
 POOL_REG_DEPOSIT_AMT=500000000    # 500 ADA in lovelace for pool registration deposit
 
 # Combine permissioned and registered node indices and directories
@@ -982,6 +982,21 @@ for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do
     PLEDGE=0 # No pledge required for this setup
     POOL_COST=0 # Minimal cost
     POOL_MARGIN="0/1000" # 0% margin
+
+    echo "[DEBUG] Attempting to run command:"
+    echo "cardano-cli latest stake-pool registration-certificate \
+        --cold-verification-key-file "$NODE_COLD_VKEY" \
+        --vrf-verification-key-file "$NODE_VRF_VKEY" \
+        --reward-account-verification-key-file "$NODE_STAKE_VKEY" \
+        --pool-owner-stake-verification-key-file "$NODE_STAKE_VKEY" \
+        --pool-pledge "$PLEDGE" \
+        --pool-cost "$POOL_COST" \
+        --pool-margin "$POOL_MARGIN" \
+        --pool-relay-ipv4 127.0.0.1 \
+        --pool-relay-port 30000 \
+        --metadata-url "https://example.com/${NODE_LOG_NAME}.json" --metadata-hash 0000000000000000000000000000000000000000000000000000000000000000 \
+        --testnet-magic 42 \
+        --out-file "$POOL_REG_CERT""
 
     if ! cardano-cli latest stake-pool registration-certificate \
         --cold-verification-key-file "$NODE_COLD_VKEY" \
@@ -1362,6 +1377,21 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     PLEDGE=0 # No pledge required for this setup
     POOL_COST=0 # Minimal cost
     POOL_MARGIN="0/1000" # 0% margin
+
+    echo "[DEBUG] Attempting to run command:"
+    echo "cardano-cli latest stake-pool registration-certificate \
+        --cold-verification-key-file "$NODE_COLD_VKEY" \
+        --vrf-verification-key-file "$NODE_VRF_VKEY" \
+        --reward-account-verification-key-file "$NODE_STAKE_VKEY" \
+        --pool-owner-stake-verification-key-file "$NODE_STAKE_VKEY" \
+        --pool-pledge "$PLEDGE" \
+        --pool-cost "$POOL_COST" \
+        --pool-margin "$POOL_MARGIN" \
+        --pool-relay-ipv4 127.0.0.1 \
+        --pool-relay-port 30000 \
+        --metadata-url "https://example.com/${NODE_LOG_NAME}.json" --metadata-hash 0000000000000000000000000000000000000000000000000000000000000000 \
+        --testnet-magic 42 \
+        --out-file "$POOL_REG_CERT""
 
     if ! cardano-cli latest stake-pool registration-certificate \
         --cold-verification-key-file "$NODE_COLD_VKEY" \
