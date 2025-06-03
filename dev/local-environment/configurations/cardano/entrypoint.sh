@@ -526,8 +526,7 @@ verification_utxos=$(cardano-cli latest query utxo --testnet-magic 42 --address 
 echo "[DEBUG] Verification query exit code: $?"
 echo "[DEBUG] Verification query stderr/stdout: $verification_utxos"
 if [ -s /data/utxos_at_new_address_after_main.json ]; then
-    echo "[DEBUG] Full list of UTXOs at $new_address (content of /data/utxos_at_new_address_after_main.json):"
-    cat /data/utxos_at_new_address_after_main.json | while IFS= read -r line; do echo "[DEBUG] $line"; done
+    echo "[LOG] Full list of UTXOs at $new_address saved to /data/utxos_at_new_address_after_main.json"
 else
     echo "[WARN] Could not retrieve full list of UTXOs at $new_address or file is empty."
 fi
