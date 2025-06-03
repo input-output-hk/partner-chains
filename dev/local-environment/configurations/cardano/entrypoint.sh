@@ -1251,8 +1251,6 @@ for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do
     echo "[DEBUG]   Stake SKey:   $NODE_STAKE_SKEY"
     echo "[DEBUG]   Payment SKey exists: $([ -f "$NODE_PAYMENT_SKEY" ] && echo true || echo false)"
     echo "[DEBUG]   Stake SKey exists:   $([ -f "$NODE_STAKE_SKEY" ] && echo true || echo false)"
-    echo "[DEBUG] File details before signing delegation for $NODE_LOG_NAME:"
-    ls -l "$DELEG_TX_FINAL" "$NODE_PAYMENT_SKEY" "$NODE_STAKE_SKEY" || echo "[WARN] ls -l failed for one or more files during delegation signing prep for $NODE_LOG_NAME"
 
     if [ ! -f "$NODE_PAYMENT_SKEY" ] || [ ! -f "$NODE_STAKE_SKEY" ]; then
         echo "[DEBUG] CRITICAL ERROR: One or more signing key files NOT FOUND for $NODE_LOG_NAME (delegation)."
@@ -1393,20 +1391,7 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     POOL_COST=0 # Minimal cost
     POOL_MARGIN="0/1000" # 0% margin
 
-    echo "[DEBUG] Attempting to run command:"
-    echo "cardano-cli latest stake-pool registration-certificate \
-        --cold-verification-key-file "$NODE_COLD_VKEY" \
-        --vrf-verification-key-file "$NODE_VRF_VKEY" \
-        --reward-account-verification-key-file "$NODE_STAKE_VKEY" \
-        --pool-owner-stake-verification-key-file "$NODE_STAKE_VKEY" \
-        --pool-pledge "$PLEDGE" \
-        --pool-cost "$POOL_COST" \
-        --pool-margin "$POOL_MARGIN" \
-        --pool-relay-ipv4 127.0.0.1 \
-        --pool-relay-port 30000 \
-        --metadata-url "https://example.com/${NODE_LOG_NAME}.json" --metadata-hash 0000000000000000000000000000000000000000000000000000000000000000 \
-        --testnet-magic 42 \
-        --out-file "$POOL_REG_CERT""
+    echo "[DEBUG] Attempting to run stake-pool registration-certificate command..."
 
     if ! cardano-cli latest stake-pool registration-certificate \
         --cold-verification-key-file "$NODE_COLD_VKEY" \
