@@ -381,11 +381,12 @@ main_tx_out_params_array+=(--tx-out "$new_address+$tx_out2")
 main_tx_out_params_array+=(--tx-out "$new_address+$tx_out3")
 main_tx_out_params_array+=(--tx-out "$new_address+$tx_out4")
 
-# Permissioned nodes outputs (still to $new_address)
+# Permissioned nodes outputs (to their individual addresses)
 for i in $(seq 1 $NUM_PERMISSIONED_NODES_TO_PROCESS); do
     var_name="tx_out${i}_permissioned"
     amount_permissioned="${!var_name}"
-    main_tx_out_params_array+=(--tx-out "$new_address+$amount_permissioned")
+    permissioned_node_address="${permissioned_node_payment_addresses[$((i-1))]}" # Use 0-based index for array
+    main_tx_out_params_array+=(--tx-out "$permissioned_node_address+$amount_permissioned")
 done
 
 # Output with native token for new_address
