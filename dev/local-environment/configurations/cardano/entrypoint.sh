@@ -910,6 +910,8 @@ echo "[LOG] Created /shared/genesis.utxo with value: $(cat /shared/genesis.utxo)
 # --- NEW: Register Nodes as Cardano SPOs and Delegate Stake ---
 echo "[LOG] Starting Cardano SPO Registration and Delegation for all nodes..."
 
+STAKE_ADDRESS_DEPOSIT_AMT=2000000 # 2 ADA in lovelace for stake address registration
+
 # Combine permissioned and registered node indices and directories
 # Permissioned nodes (1-based index, 0-based array index for directories)
 for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do
@@ -964,6 +966,7 @@ for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do
     STAKE_REG_CERT="/data/${NODE_LOG_NAME}_stake_reg.cert"
     if ! cardano-cli latest stake-address registration-certificate \
         --stake-verification-key-file "$NODE_STAKE_VKEY" \
+        --key-reg-deposit-amt "$STAKE_ADDRESS_DEPOSIT_AMT" \
         --out-file "$STAKE_REG_CERT"; then
         echo "[DEBUG] ERROR: Failed to generate stake address registration certificate for $NODE_LOG_NAME. Skipping this node."
         continue
@@ -1293,6 +1296,7 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     STAKE_REG_CERT="/data/${NODE_LOG_NAME}_stake_reg.cert"
      if ! cardano-cli latest stake-address registration-certificate \
         --stake-verification-key-file "$NODE_STAKE_VKEY" \
+        --key-reg-deposit-amt "$STAKE_ADDRESS_DEPOSIT_AMT" \
         --out-file "$STAKE_REG_CERT"; then
         echo "[DEBUG] ERROR: Failed to generate stake address registration certificate for $NODE_LOG_NAME. Skipping this node."
         continue
