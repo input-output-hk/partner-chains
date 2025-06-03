@@ -71,12 +71,12 @@ echo "Inserting D parameter..."
 ./partner-chains-node smart-contracts upsert-d-parameter \
     --ogmios-url http://ogmios:$OGMIOS_PORT \
     --genesis-utxo $GENESIS_UTXO \
-    --permissioned-candidates-count 10 \
-    --registered-candidates-count 300 \
+    --permissioned-candidates-count "$NUM_PERMISSIONED_NODES_TO_PROCESS" \
+    --registered-candidates-count "$NUM_REGISTERED_NODES_TO_PROCESS" \
     --payment-key-file /keys/funded_address.skey
 
 if [ $? -eq 0 ]; then
-    echo "Successfully inserted D-parameter (P = 10, R = 300)!"
+    echo "Successfully inserted D-parameter (P = $NUM_PERMISSIONED_NODES_TO_PROCESS, R = $NUM_REGISTERED_NODES_TO_PROCESS)!"
 else
     echo "Couldn't insert D-parameter..."
     exit 1
