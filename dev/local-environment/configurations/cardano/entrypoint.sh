@@ -1632,8 +1632,6 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     echo "[DEBUG]   Stake SKey:   $NODE_STAKE_SKEY"
     echo "[DEBUG]   Payment SKey exists: $([ -f "$NODE_PAYMENT_SKEY" ] && echo true || echo false)"
     echo "[DEBUG]   Stake SKey exists:   $([ -f "$NODE_STAKE_SKEY" ] && echo true || echo false)"
-    echo "[DEBUG] File details before signing delegation for $NODE_LOG_NAME:"
-    ls -l "$DELEG_TX_FINAL" "$NODE_PAYMENT_SKEY" "$NODE_STAKE_SKEY" || echo "[WARN] ls -l failed for one or more files during delegation signing prep for $NODE_LOG_NAME"
 
     if [ ! -f "$NODE_PAYMENT_SKEY" ] || [ ! -f "$NODE_STAKE_SKEY" ]; then
         echo "[DEBUG] CRITICAL ERROR: One or more signing key files NOT FOUND for $NODE_LOG_NAME (delegation)."
