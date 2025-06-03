@@ -986,13 +986,12 @@ for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do
     if ! cardano-cli latest stake-pool registration-certificate \
         --cold-verification-key-file "$NODE_COLD_VKEY" \
         --vrf-verification-key-file "$NODE_VRF_VKEY" \
-        --kes-verification-key-file "$NODE_KES_VKEY" \
         --reward-account-verification-key-file "$NODE_STAKE_VKEY" \
         --pool-pledge "$PLEDGE" \
         --pool-cost "$POOL_COST" \
         --pool-margin "$POOL_MARGIN" \
         --pool-relay-ipv4 127.0.0.1 \
-        --pool-relay-port 30000 # Placeholder port
+        --pool-relay-port 30000 \
         --metadata-url "https://example.com/${NODE_LOG_NAME}.json" --metadata-hash 0000000000000000000000000000000000000000000000000000000000000000 \
         --testnet-magic 42 \
         --out-file "$POOL_REG_CERT"; then
@@ -1316,7 +1315,6 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     if ! cardano-cli latest stake-pool registration-certificate \
         --cold-verification-key-file "$NODE_COLD_VKEY" \
         --vrf-verification-key-file "$NODE_VRF_VKEY" \
-        --kes-verification-key-file "$NODE_KES_VKEY" \
         --reward-account-verification-key-file "$NODE_STAKE_VKEY" \
         --pool-pledge "$PLEDGE" \
         --pool-cost "$POOL_COST" \
