@@ -2,6 +2,7 @@
 //! Interacts with Smart Contracts using [`partner_chains_cardano_offchain`] crate.
 
 pub(crate) mod cardano_key;
+mod cmd_traits;
 pub mod config;
 pub mod create_chain_spec;
 pub(crate) mod data_source;

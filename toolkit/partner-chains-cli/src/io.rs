@@ -1,16 +1,10 @@
+use crate::cmd_traits::*;
 use crate::config::ServiceConfig;
 use crate::ogmios::{OgmiosRequest, OgmiosResponse, ogmios_request};
 use anyhow::{Context, anyhow};
 use inquire::InquireError;
 use inquire::error::InquireResult;
 use ogmios_client::jsonrpsee::{OgmiosClients, client_for_url};
-use partner_chains_cardano_offchain::d_param::{GetDParam, UpsertDParam};
-use partner_chains_cardano_offchain::init_governance::InitGovernance;
-use partner_chains_cardano_offchain::permissioned_candidates::{
-	GetPermissionedCandidates, UpsertPermissionedCandidates,
-};
-use partner_chains_cardano_offchain::register::{Deregister, Register};
-use partner_chains_cardano_offchain::scripts_data::GetScriptsData;
 use sp_core::offchain::Timestamp;
 use std::{
 	fs,

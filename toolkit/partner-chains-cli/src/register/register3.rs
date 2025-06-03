@@ -6,10 +6,11 @@ use crate::config::config_fields;
 use crate::data_source::set_data_sources_env;
 use crate::io::IOContext;
 use crate::ogmios::config::establish_ogmios_configuration;
+use crate::register::Register;
 use clap::Parser;
-use partner_chains_cardano_offchain::register::Register;
 use sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
 use sidechain_domain::*;
+use sidechain_domain::{CandidateRegistration, UtxoId};
 
 #[derive(Clone, Debug, Parser)]
 #[command(author, version, about, long_about = None)]
@@ -164,7 +165,6 @@ mod tests {
 		verify_json,
 	};
 	use hex_literal::hex;
-	use partner_chains_cardano_offchain::OffchainError;
 	use serde_json::json;
 	use sp_core::offchain::Timestamp;
 
@@ -209,7 +209,7 @@ mod tests {
 			genesis_utxo(),
 			new_candidate_registration(),
 			payment_signing_key(),
-			Err(OffchainError::InternalError("test error".to_string())),
+			Err("test error".to_string()),
 		);
 		let mock_context = MockIOContext::new()
 			.with_json_file("/path/to/payment.skey", payment_skey_content())

@@ -6,10 +6,10 @@
 //! in the `datum` field of it. Field should contain list of list, where each inner list is a triple of byte strings
 //! `[sidechain_public_key, aura_public_key, grandpa_publicKey]`.
 
-use crate::await_tx::{AwaitTx, FixedDelayRetries};
+use crate::await_tx::AwaitTx;
 use crate::csl::{
-	CostStore, Costs, InputsBuilderExt, NetworkTypeExt, TransactionBuilderExt, TransactionContext,
-	TransactionExt, empty_asset_name, get_builder_config,
+	CostStore, Costs, InputsBuilderExt, TransactionBuilderExt, TransactionContext, TransactionExt,
+	empty_asset_name, get_builder_config,
 };
 use crate::governance::GovernanceData;
 use crate::multisig::{MultiSigSmartContractResult, submit_or_create_tx_to_sign};
@@ -17,7 +17,7 @@ use crate::plutus_script::PlutusScript;
 use crate::{cardano_keys::CardanoPaymentSigningKey, scripts_data};
 use anyhow::anyhow;
 use cardano_serialization_lib::{
-	BigInt, PlutusData, Transaction, TransactionBuilder, TxInputsBuilder,
+	BigInt, NetworkIdKind, PlutusData, Transaction, TransactionBuilder, TxInputsBuilder,
 };
 use ogmios_client::query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId};
 use ogmios_client::query_network::QueryNetwork;
@@ -27,45 +27,6 @@ use partner_chains_plutus_data::permissioned_candidates::{
 	PermissionedCandidateDatums, permissioned_candidates_to_plutus_data,
 };
 use sidechain_domain::{PermissionedCandidateData, UtxoId};
-
-/// Upserts permissioned candidates list.
-pub trait UpsertPermissionedCandidates {
-	#[allow(async_fn_in_trait)]
-	/// Upserts permissioned candidates list.
-	/// Arguments:
-	///  - `await_tx`: [FixedDelayRetries] configuration.
-	///  - `genesis_utxo`: Genesis UTxO identifying the Partner Chain.
-	///  - `candidates`: List of permissioned candidates. The current list (if exists) will be overwritten by this list.
-	///  - `payment_signing_key`: Signing key of the party paying fees.
-	async fn upsert_permissioned_candidates(
-		&self,
-		await_tx: FixedDelayRetries,
-		genesis_utxo: UtxoId,
-		candidates: &[PermissionedCandidateData],
-		payment_signing_key: &CardanoPaymentSigningKey,
-	) -> anyhow::Result<Option<MultiSigSmartContractResult>>;
-}
-
-impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId>
-	UpsertPermissionedCandidates for C
-{
-	async fn upsert_permissioned_candidates(
-		&self,
-		await_tx: FixedDelayRetries,
-		genesis_utxo: UtxoId,
-		candidates: &[PermissionedCandidateData],
-		payment_signing_key: &CardanoPaymentSigningKey,
-	) -> anyhow::Result<Option<MultiSigSmartContractResult>> {
-		upsert_permissioned_candidates(
-			genesis_utxo,
-			candidates,
-			payment_signing_key,
-			self,
-			&await_tx,
-		)
-		.await
-	}
-}
 
 /// Upserts permissioned candidates list.
 /// Arguments:
@@ -311,25 +272,17 @@ fn permissioned_candidates_policy_redeemer_data() -> PlutusData {
 }
 
 /// Returns all permissioned candidates.
-pub trait GetPermissionedCandidates {
-	#[allow(async_fn_in_trait)]
-	/// Returns all permissioned candidates.
-	async fn get_permissioned_candidates(
-		&self,
-		genesis_utxo: UtxoId,
-	) -> anyhow::Result<Option<Vec<PermissionedCandidateData>>>;
-}
-
-impl<C: QueryLedgerState + QueryNetwork> GetPermissionedCandidates for C {
-	async fn get_permissioned_candidates(
-		&self,
-		genesis_utxo: UtxoId,
-	) -> anyhow::Result<Option<Vec<PermissionedCandidateData>>> {
-		let network = self.shelley_genesis_configuration().await?.network.to_csl();
-		let scripts = scripts_data::permissioned_candidates_scripts(genesis_utxo, network)?;
-		let validator_utxos = self.query_utxos(&[scripts.validator_address]).await?;
-		Ok(get_current_permissioned_candidates(validator_utxos)?.map(|(_, candidates)| candidates))
-	}
+pub async fn get_permissioned_candidates<C>(
+	genesis_utxo: UtxoId,
+	network: NetworkIdKind,
+	client: &C,
+) -> anyhow::Result<Option<Vec<PermissionedCandidateData>>>
+where
+	C: QueryNetwork + QueryLedgerState,
+{
+	let scripts = scripts_data::permissioned_candidates_scripts(genesis_utxo, network)?;
+	let validator_utxos = client.query_utxos(&[scripts.validator_address]).await?;
+	Ok(get_current_permissioned_candidates(validator_utxos)?.map(|(_, candidates)| candidates))
 }
 
 #[cfg(test)]

@@ -1,7 +1,8 @@
 use crate::plutus_script;
-use crate::{OffchainError, csl::NetworkTypeExt, plutus_script::PlutusScript};
+use crate::{csl::NetworkTypeExt, plutus_script::PlutusScript};
 use cardano_serialization_lib::NetworkIdKind;
 use ogmios_client::query_network::QueryNetwork;
+use raw_scripts::ScriptId;
 use raw_scripts::{
 	COMMITTEE_CANDIDATE_VALIDATOR, D_PARAMETER_POLICY, D_PARAMETER_VALIDATOR, GOVERNED_MAP_POLICY,
 	GOVERNED_MAP_VALIDATOR, ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR, PERMISSIONED_CANDIDATES_POLICY,
@@ -57,26 +58,6 @@ pub struct PolicyIds {
 	pub version_oracle: PolicyId,
 	/// PolicyId of governed map minting policy
 	pub governed_map: PolicyId,
-}
-
-/// For the given `genesis_utxo` it returns the [ScriptsData] of the partner chain smart contracts.
-pub trait GetScriptsData {
-	#[allow(async_fn_in_trait)]
-	/// For the given `genesis_utxo` it returns the [ScriptsData] of the partner chain smart contracts.
-	async fn get_scripts_data(&self, genesis_utxo: UtxoId) -> Result<ScriptsData, OffchainError>;
-}
-
-impl<T: QueryNetwork> GetScriptsData for T {
-	async fn get_scripts_data(&self, genesis_utxo: UtxoId) -> Result<ScriptsData, OffchainError> {
-		let network = self
-			.shelley_genesis_configuration()
-			.await
-			.map_err(|e| OffchainError::OgmiosError(e.to_string()))?
-			.network
-			.to_csl();
-		get_scripts_data(genesis_utxo, network)
-			.map_err(|e| OffchainError::InternalError(e.to_string()))
-	}
 }
 
 /// Returns [ScriptsData] of the smart contracts for the partner chain identified by `genesis_utxo`.
@@ -167,11 +148,19 @@ pub(crate) fn governed_map_scripts(
 	network: NetworkIdKind,
 ) -> Result<PlutusScriptData, anyhow::Error> {
 	let version_oracle_data = version_oracle(genesis_utxo, network)?;
-	let validator =
-		plutus_script![GOVERNED_MAP_VALIDATOR, genesis_utxo, version_oracle_data.policy_id()]?;
+	let validator = plutus_script![
+		GOVERNED_MAP_VALIDATOR,
+		ScriptId::GovernedMapValidator,
+		genesis_utxo,
+		version_oracle_data.policy_id()
+	]?;
 	let validator_address = validator.address_bech32(network)?;
-	let policy =
-		plutus_script![GOVERNED_MAP_POLICY, genesis_utxo, version_oracle_data.policy_id()]?;
+	let policy = plutus_script![
+		GOVERNED_MAP_POLICY,
+		ScriptId::GovernedMapPolicy,
+		genesis_utxo,
+		version_oracle_data.policy_id()
+	]?;
 	Ok(PlutusScriptData { validator, validator_address, policy })
 }
 
@@ -271,7 +260,7 @@ mod tests {
 				version_oracle_validator:
 					"addr_test1wqxm9e576k5ew7g7ctuqx77p9u7zytesnjsx54q2etck00gqplk0l".into(),
 				governed_map_validator:
-					"addr_test1wppqfuvptxq3rwv2qwke2dkh8vd0mmc8k4r6a44k86tpckss2zg4v".into(),
+					"addr_test1wpyjqa4deje4c9jsjzt3djv28zszvatzup60vvjvn5cdqeggfmj6v".into(),
 			},
 			policy_ids: PolicyIds {
 				d_parameter: PolicyId(hex!(
@@ -287,7 +276,7 @@ mod tests {
 					"aa7f601aa9f441a26823d872f052d52767229f3301567c86475dfcfb"
 				)),
 				governed_map: PolicyId(hex!(
-					"9eb40bc81d93331ec485cc0a7a0eea8d06ff42cd776db8808b2f8980"
+					"951a84ca81e42b464934b100de79a3c1e4cbaa81ec68602b625add54"
 				)),
 			},
 		}

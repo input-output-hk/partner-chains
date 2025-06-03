@@ -1,3 +1,6 @@
+use crate::cmd_traits::{
+	GetDParam, GetPermissionedCandidates, UpsertDParam, UpsertPermissionedCandidates,
+};
 use crate::config::config_fields::CARDANO_PAYMENT_SIGNING_KEY_FILE;
 use crate::config::{CHAIN_CONFIG_FILE_PATH, ChainConfig, ConfigFieldDefinition, config_fields};
 use crate::io::IOContext;
@@ -6,13 +9,14 @@ use crate::permissioned_candidates::{ParsedPermissionedCandidatesKeys, Permissio
 use crate::{CmdRun, cardano_key};
 use anyhow::Context;
 use anyhow::anyhow;
+use ogmios_client::query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId};
+use ogmios_client::query_network::QueryNetwork;
+use ogmios_client::transactions::Transactions;
 use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
-use partner_chains_cardano_offchain::d_param::{GetDParam, UpsertDParam};
+use partner_chains_cardano_offchain::cardano_keys::CardanoPaymentSigningKey;
+use partner_chains_cardano_offchain::d_param::{get_d_param, upsert_d_param};
 use partner_chains_cardano_offchain::multisig::{
 	MultiSigSmartContractResult, MultiSigTransactionData,
-};
-use partner_chains_cardano_offchain::permissioned_candidates::{
-	GetPermissionedCandidates, UpsertPermissionedCandidates,
 };
 use serde::de::DeserializeOwned;
 use sidechain_domain::{DParameter, PermissionedCandidateData, UtxoId};
@@ -278,4 +282,22 @@ fn print_tx_to_sign_and_instruction<C: IOContext>(
 	context.print(&json);
 	context.print("Please find the instructions at: https://github.com/input-output-hk/partner-chains/blob/master/docs/user-guides/governance/governance.md#multi-signature-governance");
 	Ok(())
+}
+
+impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId> UpsertDParam for C {
+	async fn upsert_d_param(
+		&self,
+		await_tx: FixedDelayRetries,
+		genesis_utxo: UtxoId,
+		d_parameter: &DParameter,
+		payment_signing_key: &CardanoPaymentSigningKey,
+	) -> anyhow::Result<Option<MultiSigSmartContractResult>> {
+		upsert_d_param(genesis_utxo, d_parameter, payment_signing_key, self, &await_tx).await
+	}
+}
+
+impl<C: QueryLedgerState + QueryNetwork> GetDParam for C {
+	async fn get_d_param(&self, genesis_utxo: UtxoId) -> anyhow::Result<Option<DParameter>> {
+		get_d_param(genesis_utxo, self).await
+	}
 }
