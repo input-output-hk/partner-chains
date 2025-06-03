@@ -1172,9 +1172,9 @@ for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do
     # 10. Generate Delegation Certificate
     echo "[LOG] Generating delegation certificate for $NODE_LOG_NAME to pool $POOL_ID..."
     DELEG_CERT="/data/${NODE_LOG_NAME}_deleg.cert"
-     if ! cardano-cli latest stake-address delegation-certificate \
+     if ! cardano-cli latest stake-address stake-delegation-certificate \
         --stake-verification-key-file "$NODE_STAKE_VKEY" \
-        --cold-verification-key-hash "$POOL_ID" \
+        --stake-pool-id "$POOL_ID" \
         --out-file "$DELEG_CERT"; then
         echo "[DEBUG] ERROR: Failed to generate delegation certificate for $NODE_LOG_NAME. Skipping this node."
         continue
@@ -1249,10 +1249,16 @@ for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do
     echo "[DEBUG] Checking for signing keys for $NODE_LOG_NAME (delegation):"
     echo "[DEBUG]   Payment SKey: $NODE_PAYMENT_SKEY"
     echo "[DEBUG]   Stake SKey:   $NODE_STAKE_SKEY"
+    echo "[DEBUG]   Payment SKey exists: $([ -f "$NODE_PAYMENT_SKEY" ] && echo true || echo false)"
+    echo "[DEBUG]   Stake SKey exists:   $([ -f "$NODE_STAKE_SKEY" ] && echo true || echo false)"
+    echo "[DEBUG] File details before signing delegation for $NODE_LOG_NAME:"
+    ls -l "$DELEG_TX_FINAL" "$NODE_PAYMENT_SKEY" "$NODE_STAKE_SKEY" || echo "[WARN] ls -l failed for one or more files during delegation signing prep for $NODE_LOG_NAME"
+
     if [ ! -f "$NODE_PAYMENT_SKEY" ] || [ ! -f "$NODE_STAKE_SKEY" ]; then
         echo "[DEBUG] CRITICAL ERROR: One or more signing key files NOT FOUND for $NODE_LOG_NAME (delegation)."
         echo "[DEBUG]   Payment SKey exists: $([ -f "$NODE_PAYMENT_SKEY" ] && echo true || echo false)"
         echo "[DEBUG]   Stake SKey exists:   $([ -f "$NODE_STAKE_SKEY" ] && echo true || echo false)"
+        echo "[DEBUG]   Cold SKey exists:    $([ -f "$NODE_COLD_SKEY" ] && echo true || echo false)"
         # Clean up certs if they were created
         if [ -f "$DELEG_CERT" ]; then rm -f "$DELEG_CERT"; fi
         if [ -f "$DELEG_TX_FINAL" ]; then rm -f "$DELEG_TX_FINAL"; fi
@@ -1260,6 +1266,15 @@ for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do
     fi
 
     DELEG_TX_SIGNED="/data/${NODE_LOG_NAME}_deleg_tx.signed"
+
+    echo "[DEBUG] Attempting to run delegation sign command for $NODE_LOG_NAME:"
+    echo "cardano-cli latest transaction sign \\
+        --tx-body-file \"$DELEG_TX_FINAL\" \\
+        --signing-key-file \"$NODE_PAYMENT_SKEY\" \\
+        --signing-key-file \"$NODE_STAKE_SKEY\" \\
+        --testnet-magic 42 \\
+        --out-file \"$DELEG_TX_SIGNED\""
+
      if ! cardano-cli latest transaction sign \
         --tx-body-file "$DELEG_TX_FINAL" \
         --signing-key-file "$NODE_PAYMENT_SKEY" \
@@ -1566,9 +1581,9 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     # 10. Generate Delegation Certificate
     echo "[LOG] Generating delegation certificate for $NODE_LOG_NAME to pool $POOL_ID..."
     DELEG_CERT="/data/${NODE_LOG_NAME}_deleg.cert"
-     if ! cardano-cli latest stake-address delegation-certificate \
+     if ! cardano-cli latest stake-address stake-delegation-certificate \
         --stake-verification-key-file "$NODE_STAKE_VKEY" \
-        --cold-verification-key-hash "$POOL_ID" \
+        --stake-pool-id "$POOL_ID" \
         --out-file "$DELEG_CERT"; then
         echo "[DEBUG] ERROR: Failed to generate delegation certificate for $NODE_LOG_NAME. Skipping this node."
         continue
@@ -1643,10 +1658,16 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     echo "[DEBUG] Checking for signing keys for $NODE_LOG_NAME (delegation):"
     echo "[DEBUG]   Payment SKey: $NODE_PAYMENT_SKEY"
     echo "[DEBUG]   Stake SKey:   $NODE_STAKE_SKEY"
+    echo "[DEBUG]   Payment SKey exists: $([ -f "$NODE_PAYMENT_SKEY" ] && echo true || echo false)"
+    echo "[DEBUG]   Stake SKey exists:   $([ -f "$NODE_STAKE_SKEY" ] && echo true || echo false)"
+    echo "[DEBUG] File details before signing delegation for $NODE_LOG_NAME:"
+    ls -l "$DELEG_TX_FINAL" "$NODE_PAYMENT_SKEY" "$NODE_STAKE_SKEY" || echo "[WARN] ls -l failed for one or more files during delegation signing prep for $NODE_LOG_NAME"
+
     if [ ! -f "$NODE_PAYMENT_SKEY" ] || [ ! -f "$NODE_STAKE_SKEY" ]; then
         echo "[DEBUG] CRITICAL ERROR: One or more signing key files NOT FOUND for $NODE_LOG_NAME (delegation)."
         echo "[DEBUG]   Payment SKey exists: $([ -f "$NODE_PAYMENT_SKEY" ] && echo true || echo false)"
         echo "[DEBUG]   Stake SKey exists:   $([ -f "$NODE_STAKE_SKEY" ] && echo true || echo false)"
+        echo "[DEBUG]   Cold SKey exists:    $([ -f "$NODE_COLD_SKEY" ] && echo true || echo false)"
         # Clean up certs if they were created
         if [ -f "$DELEG_CERT" ]; then rm -f "$DELEG_CERT"; fi
         if [ -f "$DELEG_TX_FINAL" ]; then rm -f "$DELEG_TX_FINAL"; fi
@@ -1654,6 +1675,15 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     fi
 
     DELEG_TX_SIGNED="/data/${NODE_LOG_NAME}_deleg_tx.signed"
+
+    echo "[DEBUG] Attempting to run delegation sign command for $NODE_LOG_NAME:"
+    echo "cardano-cli latest transaction sign \\
+        --tx-body-file \"$DELEG_TX_FINAL\" \\
+        --signing-key-file \"$NODE_PAYMENT_SKEY\" \\
+        --signing-key-file \"$NODE_STAKE_SKEY\" \\
+        --testnet-magic 42 \\
+        --out-file \"$DELEG_TX_SIGNED\""
+
      if ! cardano-cli latest transaction sign \
         --tx-body-file "$DELEG_TX_FINAL" \
         --signing-key-file "$NODE_PAYMENT_SKEY" \
