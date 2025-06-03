@@ -1252,14 +1252,6 @@ for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do
 
     DELEG_TX_SIGNED="/data/${NODE_LOG_NAME}_deleg_tx.signed"
 
-    echo "[DEBUG] Attempting to run delegation sign command for $NODE_LOG_NAME:"
-    echo "cardano-cli latest transaction sign \\
-        --tx-body-file \"$DELEG_TX_FINAL\" \\
-        --signing-key-file \"$NODE_PAYMENT_SKEY\" \\
-        --signing-key-file \"$NODE_STAKE_SKEY\" \\
-        --testnet-magic 42 \\
-        --out-file \"$DELEG_TX_SIGNED\""
-
      if ! cardano-cli latest transaction sign \
         --tx-body-file "$DELEG_TX_FINAL" \
         --signing-key-file "$NODE_PAYMENT_SKEY" \
@@ -1645,14 +1637,6 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     fi
 
     DELEG_TX_SIGNED="/data/${NODE_LOG_NAME}_deleg_tx.signed"
-
-    echo "[DEBUG] Attempting to run delegation sign command for $NODE_LOG_NAME:"
-    echo "cardano-cli latest transaction sign \\
-        --tx-body-file \"$DELEG_TX_FINAL\" \\
-        --signing-key-file \"$NODE_PAYMENT_SKEY\" \\
-        --signing-key-file \"$NODE_STAKE_SKEY\" \\
-        --testnet-magic 42 \\
-        --out-file \"$DELEG_TX_SIGNED\""
 
      if ! cardano-cli latest transaction sign \
         --tx-body-file "$DELEG_TX_FINAL" \
