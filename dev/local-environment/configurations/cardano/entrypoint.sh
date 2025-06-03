@@ -113,24 +113,11 @@ echo "[LOG] Generating Keys for $NUM_PERMISSIONED_NODES_TO_PROCESS Permissioned 
 # And node names are like partner-chains-node-1, partner-chains-node-2, etc. up to 10.
 # Let's map them to permissioned-1 to permissioned-10 for consistency with registered nodes.
 # The config maps node-1 to permissioned-1 etc.
-permissioned_node_base_dirs=(
-    "/shared/node-keys/partner-chains-node-1/keys" # Assuming this path based on project structure
-    "/shared/node-keys/partner-chains-node-2/keys"
-    "/shared/node-keys/partner-chains-node-3/keys"
-    "/shared/node-keys/partner-chains-node-4/keys"
-    "/shared/node-keys/partner-chains-node-5/keys"
-    "/shared/node-keys/partner-chains-node-6/keys"
-    "/shared/node-keys/partner-chains-node-7/keys"
-    "/shared/node-keys/partner-chains-node-8/keys"
-    "/shared/node-keys/partner-chains-node-9/keys"
-    "/shared/node-keys/partner-chains-node-10/keys"
-)
-
 permissioned_node_payment_addresses=() # Array to store payment addresses
 
 for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do # Iterate based on the variable
     node_idx=$((i+1)) # 1-indexed for directory name
-    NODE_SPECIFIC_KEYS_DIR="${permissioned_node_base_dirs[$i]}"
+    NODE_SPECIFIC_KEYS_DIR="/shared/node-keys/permissioned-${node_idx}/keys" # Dynamic path
     mkdir -p "$NODE_SPECIFIC_KEYS_DIR" # Ensure directory exists
 
     echo "[LOG] Generating/checking keys for permissioned-$node_idx in $NODE_SPECIFIC_KEYS_DIR..."
@@ -201,7 +188,7 @@ echo "[LOG] Generating Stake Addresses for $NUM_PERMISSIONED_NODES_TO_PROCESS Pe
 permissioned_node_stake_addresses=() # Array to store stake addresses
 for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do # Iterate based on the variable
     node_idx=$((i+1)) # 1-indexed for directory name
-    NODE_SPECIFIC_KEYS_DIR="${permissioned_node_base_dirs[$i]}"
+    NODE_SPECIFIC_KEYS_DIR="/shared/node-keys/permissioned-${node_idx}/keys" # Dynamic path
     echo "[LOG] Generating stake address for permissioned-$node_idx in $NODE_SPECIFIC_KEYS_DIR..."
     node_stake_address=$(cardano-cli shelley stake-address build \
         --stake-verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.vkey" \
@@ -916,7 +903,7 @@ STAKE_ADDRESS_DEPOSIT_AMT=2000000 # 2 ADA in lovelace for stake address registra
 # Permissioned nodes (1-based index, 0-based array index for directories)
 for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do
     node_idx=$((i+1)) # 1-indexed for logs
-    NODE_SPECIFIC_KEYS_DIR="${permissioned_node_base_dirs[$i]}"
+    NODE_SPECIFIC_KEYS_DIR="/shared/node-keys/permissioned-${node_idx}/keys" # Dynamic path
     NODE_TYPE="permissioned"
     NODE_LOG_NAME="${NODE_TYPE}-${node_idx}"
     NODE_PAYMENT_ADDRESS="${permissioned_node_payment_addresses[$i]}"
