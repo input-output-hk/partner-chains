@@ -61,10 +61,15 @@ echo "D parameter policy ID: $D_PARAMETER_POLICY_ID"
 export PERMISSIONED_CANDIDATES_POLICY_ID=$(jq -r '.policyIds.PermissionedCandidates' addresses.json)
 echo "Permissioned candidates policy ID: $PERMISSIONED_CANDIDATES_POLICY_ID"
 
+export GOVERNED_MAP_VALIDATOR_ADDRESS=$(jq -r '.addresses.GovernedMapValidator' addresses.json)
+echo "Governed Map Validator Address: $GOVERNED_MAP_VALIDATOR_ADDRESS"
+export GOVERNED_MAP_POLICY_ID=$(jq -r '.policyIds.GovernedMap' addresses.json)
+echo "Governed Map Policy ID: $GOVERNED_MAP_POLICY_ID"
+
 echo "Setting values for NATIVE_TOKEN_POLICY_ID, NATIVE_TOKEN_ASSET_NAME, and ILLIQUID_SUPPLY_VALIDATOR_ADDRESS for chain-spec creation"
 export NATIVE_TOKEN_POLICY_ID="1fab25f376bc49a181d03a869ee8eaa3157a3a3d242a619ca7995b2b"
 export NATIVE_TOKEN_ASSET_NAME="52657761726420746f6b656e"
-export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS="addr_test1wpy8ewg646rg4ce78nl3aassmkquf4wlxcaugqlxwzcylkca0q8v3"
+export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS=$(jq -r '.addresses.IlliquidCirculationSupplyValidator' addresses.json)
 
 echo "Inserting D parameter..."
 
@@ -91,39 +96,39 @@ for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
     echo "Processing $node_name..."
     
     # Create directory for node keys
-    mkdir -p /partner-chains-nodes/$node_name/keys
+    mkdir -p /shared/node-keys/$node_name/keys
     
     # Generate keys for each node
     echo "[DEBUG] Generating sidechain keys for $node_name..."
     ./partner-chains-node key generate \
         --scheme ecdsa \
         --output-type json \
-        > /partner-chains-nodes/$node_name/keys/sidechain.json
+        > /shared/node-keys/$node_name/keys/sidechain.json
     
     if [ $? -ne 0 ]; then
         echo "[ERROR] partner-chains-node key generate (ecdsa) failed for $node_name!"
         # Optionally exit or handle error
     fi
     if [ "$i" -eq 1 ]; then # Debug for the first node only
-        echo "[DEBUG] Content of /partner-chains-nodes/$node_name/keys/sidechain.json:"
-        cat "/partner-chains-nodes/$node_name/keys/sidechain.json"
+        echo "[DEBUG] Content of /shared/node-keys/$node_name/keys/sidechain.json:"
+        cat "/shared/node-keys/$node_name/keys/sidechain.json"
         echo "[DEBUG] End of sidechain.json content for $node_name."
     fi
 
     ./partner-chains-node key generate \
         --scheme sr25519 \
         --output-type json \
-        > /partner-chains-nodes/$node_name/keys/aura.json
+        > /shared/node-keys/$node_name/keys/aura.json
     
     ./partner-chains-node key generate \
         --scheme ed25519 \
         --output-type json \
-        > /partner-chains-nodes/$node_name/keys/grandpa.json
+        > /shared/node-keys/$node_name/keys/grandpa.json
     
     # Extract public keys
-    sidechain_vkey=$(jq -r '.publicKey' /partner-chains-nodes/$node_name/keys/sidechain.json)
-    aura_vkey=$(jq -r '.publicKey' /partner-chains-nodes/$node_name/keys/aura.json)
-    grandpa_vkey=$(jq -r '.publicKey' /partner-chains-nodes/$node_name/keys/grandpa.json)
+    sidechain_vkey=$(jq -r '.publicKey' /shared/node-keys/$node_name/keys/sidechain.json)
+    aura_vkey=$(jq -r '.publicKey' /shared/node-keys/$node_name/keys/aura.json)
+    grandpa_vkey=$(jq -r '.publicKey' /shared/node-keys/$node_name/keys/grandpa.json)
     
     # Add to permissioned candidates list
     echo "$sidechain_vkey:$aura_vkey:$grandpa_vkey" >> permissioned_candidates.csv
@@ -150,26 +155,26 @@ for ((i=1; i<=NUM_REGISTERED_NODES_TO_PROCESS; i++)); do
     echo "Processing $node_name..."
     
     # Create directory for node keys
-    mkdir -p /partner-chains-nodes/$node_name/keys
+    mkdir -p /shared/node-keys/$node_name/keys
     
     # Generate keys for each node
     ./partner-chains-node key generate \
         --scheme ecdsa \
         --output-type json \
-        > /partner-chains-nodes/$node_name/keys/sidechain.json
+        > /shared/node-keys/$node_name/keys/sidechain.json
     
     ./partner-chains-node key generate \
         --scheme sr25519 \
         --output-type json \
-        > /partner-chains-nodes/$node_name/keys/aura.json
+        > /shared/node-keys/$node_name/keys/aura.json
     
     ./partner-chains-node key generate \
         --scheme ed25519 \
         --output-type json \
-        > /partner-chains-nodes/$node_name/keys/grandpa.json
+        > /shared/node-keys/$node_name/keys/grandpa.json
     
     # Extract keys and generate signatures
-    sidechain_signing_key=$(jq -r '.secretSeed' /partner-chains-nodes/$node_name/keys/sidechain.json)
+    sidechain_signing_key=$(jq -r '.secretSeed' /shared/node-keys/$node_name/keys/sidechain.json)
     
     # Define and read the specific registration UTXO for this node
     NODE_REGISTRATION_UTXO_FILE="/shared/registered-${i}.utxo"
@@ -217,8 +222,8 @@ for ((i=1; i<=NUM_REGISTERED_NODES_TO_PROCESS; i++)); do
     spo_signature=$(echo "$registration_output" | jq -r ".spo_signature")
     sidechain_public_key=$(echo "$registration_output" | jq -r ".sidechain_public_key")
     sidechain_signature=$(echo "$registration_output" | jq -r ".sidechain_signature")
-    aura_vkey=$(jq -r '.publicKey' /partner-chains-nodes/$node_name/keys/aura.json)
-    grandpa_vkey=$(jq -r '.publicKey' /partner-chains-nodes/$node_name/keys/grandpa.json)
+    aura_vkey=$(jq -r '.publicKey' /shared/node-keys/$node_name/keys/aura.json)
+    grandpa_vkey=$(jq -r '.publicKey' /shared/node-keys/$node_name/keys/grandpa.json)
     
     NODE_PAYMENT_SKEY_FILE="/shared/node-keys/registered-${i}/keys/payment.skey"
     if [ ! -f "$NODE_PAYMENT_SKEY_FILE" ]; then
@@ -243,14 +248,22 @@ done
 echo "Generating chain-spec.json file for Partnerchain Nodes..."
 ./partner-chains-node build-spec --disable-default-bootnode > chain-spec.json
 
+echo "Setting Governed Map scripts..."
+export GOVERNED_MAP_VALIDATOR_ADDRESS_HEX="0x$(echo -n $GOVERNED_MAP_VALIDATOR_ADDRESS | xxd -p -c 128)"
+jq --arg address "$GOVERNED_MAP_VALIDATOR_ADDRESS_HEX" --arg policy_id "$GOVERNED_MAP_POLICY_ID" \
+   '.genesis.runtimeGenesis.config.governedMap.mainChainScripts = {
+     "validator_address": $address,
+     "asset_policy_id": $policy_id
+   }' chain-spec.json > chain-spec.json.tmp && mv chain-spec.json.tmp chain-spec.json
+
 echo "Configuring Initial Validators..."
 # Generate initial validators array
 echo "[" > initial_validators.json
 for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
     node_name="permissioned-$i"
-    sidechain_account_id=$(jq -r '.ss58Address' /partner-chains-nodes/$node_name/keys/sidechain.json) # Use ss58Address for the AccountID
-    aura_vkey=$(jq -r '.publicKey' /partner-chains-nodes/$node_name/keys/aura.json)
-    grandpa_vkey=$(jq -r '.publicKey' /partner-chains-nodes/$node_name/keys/grandpa.json)
+    sidechain_account_id=$(jq -r '.ss58Address' /shared/node-keys/$node_name/keys/sidechain.json) # MODIFIED PATH
+    aura_vkey=$(jq -r '.publicKey' /shared/node-keys/$node_name/keys/aura.json) # MODIFIED PATH
+    grandpa_vkey=$(jq -r '.publicKey' /shared/node-keys/$node_name/keys/grandpa.json) # MODIFIED PATH
     
     if [ $i -gt 1 ]; then
         echo "," >> initial_validators.json
@@ -277,9 +290,9 @@ echo "Configuring Initial Authorities..."
 echo "[" > initial_authorities.json
 for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
     node_name="permissioned-$i"
-    sidechain_id_ss58=$(jq -r '.ss58Address' "/partner-chains-nodes/$node_name/keys/sidechain.json") # ECDSA ss58Address for ID
-    aura_key=$(jq -r '.publicKey' "/partner-chains-nodes/$node_name/keys/aura.json")
-    grandpa_key=$(jq -r '.publicKey' "/partner-chains-nodes/$node_name/keys/grandpa.json")
+    sidechain_id_ss58=$(jq -r '.ss58Address' "/shared/node-keys/$node_name/keys/sidechain.json") # MODIFIED PATH
+    aura_key=$(jq -r '.publicKey' "/shared/node-keys/$node_name/keys/aura.json") # MODIFIED PATH
+    grandpa_key=$(jq -r '.publicKey' "/shared/node-keys/$node_name/keys/grandpa.json") # MODIFIED PATH
     
     if [ $i -gt 1 ]; then
         echo "," >> initial_authorities.json
@@ -309,7 +322,7 @@ initial_balance_amount="1000000000000000"
 echo "[" > initial_balances.json
 for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
     node_name="permissioned-$i"
-    account_id=$(jq -r '.ss58Address' "/partner-chains-nodes/$node_name/keys/sidechain.json") # ECDSA ss58Address as account ID
+    account_id=$(jq -r '.ss58Address' "/shared/node-keys/$node_name/keys/sidechain.json") # MODIFIED PATH
 
     if [ $i -gt 1 ]; then
         echo "," >> initial_balances.json
@@ -329,7 +342,7 @@ rm initial_balances.json # Clean up temporary file
 
 echo "Configuring Sudo Key..."
 # Use the Aura ss58Address of the first permissioned node as the sudo key
-sudo_account_key=$(jq -r '.ss58Address' "/partner-chains-nodes/permissioned-1/keys/aura.json")
+sudo_account_key=$(jq -r '.ss58Address' "/shared/node-keys/permissioned-1/keys/aura.json") # MODIFIED PATH
 jq --arg sudo_key "$sudo_account_key" '.genesis.runtimeGenesis.config.sudo = { "key": $sudo_key }' chain-spec.json > chain-spec.json.tmp
 mv chain-spec.json.tmp chain-spec.json
 
