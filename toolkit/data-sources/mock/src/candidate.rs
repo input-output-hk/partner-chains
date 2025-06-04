@@ -210,7 +210,7 @@ impl MockRegistrationsConfig {
 /// let data_source = AuthoritySelectionDataSourceMock::new_from_env();
 /// ```
 ///
-/// The file name fill be then sources from the `MOCK_REGISTRATIONS_FILE` environment variable.
+/// The file name fill be then sourced from the `MOCK_REGISTRATIONS_FILE` environment variable.
 ///
 pub struct AuthoritySelectionDataSourceMock {
 	/// Data source configuration containing the mock data to be served
