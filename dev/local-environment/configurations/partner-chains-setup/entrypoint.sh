@@ -271,8 +271,8 @@ echo "[" > initial_validators.json
 for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
     node_name="permissioned-$i"
     sidechain_account_id=$(jq -r '.ss58Address' /shared/node-keys/$node_name/keys/sidechain.json)
-    aura_vkey_ss58=$(jq -r '.ss58Address' /shared/node-keys/$node_name/keys/aura.json)
-    grandpa_vkey_ss58=$(jq -r '.ss58Address' /shared/node-keys/$node_name/keys/grandpa.json)
+    aura_key_ss58_address=$(jq -r '.ss58Address' /shared/node-keys/$node_name/keys/aura.json)
+    grandpa_key_ss58_address=$(jq -r '.ss58Address' /shared/node-keys/$node_name/keys/grandpa.json)
     
     if [ $i -gt 1 ]; then
         echo "," >> initial_validators.json
@@ -282,8 +282,8 @@ for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
     [
         "$sidechain_account_id",
         {
-            "aura": "$aura_vkey_ss58",
-            "grandpa": "$grandpa_vkey_ss58"
+            "aura": "$aura_key_ss58_address",
+            "grandpa": "$grandpa_key_ss58_address"
         }
     ]
 EOF
@@ -300,8 +300,8 @@ echo "[" > initial_authorities.json
 for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
     node_name="permissioned-$i"
     sidechain_id_ss58=$(jq -r '.ss58Address' "/shared/node-keys/$node_name/keys/sidechain.json")
-    aura_key_ss58=$(jq -r '.ss58Address' "/shared/node-keys/$node_name/keys/aura.json")
-    grandpa_key_ss58=$(jq -r '.ss58Address' "/shared/node-keys/$node_name/keys/grandpa.json")
+    aura_key_ss58_address=$(jq -r '.ss58Address' "/shared/node-keys/$node_name/keys/aura.json")
+    grandpa_key_ss58_address=$(jq -r '.ss58Address' "/shared/node-keys/$node_name/keys/grandpa.json")
     
     if [ $i -gt 1 ]; then
         echo "," >> initial_authorities.json
@@ -312,8 +312,8 @@ for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
         "Permissioned": {
             "id": "$sidechain_id_ss58",
             "keys": {
-                "aura": "$aura_key_ss58",
-                "grandpa": "$grandpa_key_ss58"
+                "aura": "$aura_key_ss58_address",
+                "grandpa": "$grandpa_key_ss58_address"
             }
         }
     }
