@@ -26,7 +26,7 @@ def hex_to_bech32(hex_string: str, prefix: str) -> str:
 
 class CardanoCli:
     def __init__(self, config: MainChainConfig, cardano_cli: Tool):
-        self.cli = cardano_cli.cli
+        self.cli = cardano_cli.executable
         self.network = config.network
         self.run_command = RunnerFactory.get_runner(cardano_cli.ssh, cardano_cli.shell)
 

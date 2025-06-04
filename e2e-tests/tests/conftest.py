@@ -591,18 +591,24 @@ def governance_skey_with_cli(config: ApiConfig):
 
     This fixture is executed only if:
     - you call it directly in test or other fixture
-    - SSH is configured in `<env>_stack.json` for given tool
+    - `copy_secrets is set to true in `<env>_stack.json` for node tool
 
     WARNING: This fixture copies secret file to a remote host and should be used with caution.
 
     :param config: The API configuration object.
     """
-    if config.stack_config.ssh:
-        runner = RunnerFactory.get_runner(config.stack_config.ssh, "/bin/bash")
-        temp_dir = runner.run("mktemp -d").stdout.strip()
+    if config.stack_config.tools.node.copy_secrets:
+        runner = RunnerFactory.get_runner(config.stack_config.tools.node.ssh, config.stack_config.tools.node.shell)
+        make_tmp_dir_command = "mktemp -d"
+        if config.stack_config.tools.node.secrets_dir:
+            make_tmp_dir_command = f"{make_tmp_dir_command} -p {config.stack_config.tools.node.secrets_dir}"
+        temp_dir = runner.run(make_tmp_dir_command).stdout.strip()
         path = config.nodes_config.governance_authority.mainchain_key
         filename = path.split("/")[-1]
-        runner.scp(path, temp_dir)
+        if config.stack_config.tools.node.ssh:
+            runner.scp(path, temp_dir)
+        else:
+            runner.run(f"cp {path} {temp_dir}/{filename}")
         config.nodes_config.governance_authority.mainchain_key = f"{temp_dir}/{filename}"
         yield
         logging.info("Cleaning up governance skey file on remote host...")

@@ -44,7 +44,7 @@ class SubstrateApi(BlockchainApi):
         self.db_sync = db_sync
         self.url = config.nodes_config.node.url
         self._substrate = None
-        self.cardano_cli = CardanoCli(config.main_chain, config.stack_config.tools["cardano_cli"])
+        self.cardano_cli = CardanoCli(config.main_chain, config.stack_config.tools.cardano_cli)
         self.partner_chains_node = PartnerChainsNode(config)
         self.partner_chain_rpc = PartnerChainRpc(config.nodes_config.node.rpc_url)
         self.partner_chain_epoch_calculator = PartnerChainEpochCalculator(config)

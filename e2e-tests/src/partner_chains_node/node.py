@@ -17,8 +17,8 @@ class PartnerChainsNodeException(Exception):
 class PartnerChainsNode:
     def __init__(self, config: ApiConfig):
         self.config = config
-        cli_config = config.stack_config.tools["partner_chains_node"]
-        self.cli = cli_config.cli
+        cli_config = config.stack_config.tools.node
+        self.cli = cli_config.executable
         self.run_command = RunnerFactory.get_runner(cli_config.ssh, cli_config.shell)
         self.smart_contracts = SmartContracts(self.cli, self.run_command, config)
 

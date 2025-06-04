@@ -56,6 +56,46 @@ class Runner(ABC):
         pass
 
 
+class DockerRunner(Runner):
+    def __init__(self, container: str, command: str):
+        self.container = container
+        self.command = command
+
+    def _cmd(self, cli, cmd) -> str:
+        return f"{cli} exec {self.container} {cmd}"
+
+    def run(self, command: str, timeout=120) -> Result:
+        full_cmd = self._cmd(self.command, command)
+        logging.debug(f"CMD: '{full_cmd}' TIMEOUT: {timeout}")
+
+        try:
+            completed_process = subprocess.run(
+                full_cmd,
+                timeout=timeout,
+                capture_output=True,
+                shell=True,
+                encoding="utf-8",
+            )
+            result = Result(
+                returncode=completed_process.returncode,
+                stdout=completed_process.stdout,
+                stderr=completed_process.stderr,
+            )
+            truncated_output = (
+                result.stdout[:STDOUT_MAX_LEN] + "..." if len(result.stdout) > STDOUT_MAX_LEN else result.stdout
+            )
+            logging.debug(f"STDOUT: {truncated_output}")
+            if result.stderr:
+                logging.warning(f"STDERR: {result.stderr}")
+            return result
+        except subprocess.TimeoutExpired as e:
+            logging.error(f"TIMEOUT: {e}")
+            raise e
+        except Exception as e:
+            logging.error(f"UNKNOWN ERROR: {e}")
+            raise e
+
+
 class LocalRunner(Runner):
     def __init__(self, shell: str = None):
         self.shell = shell

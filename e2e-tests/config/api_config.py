@@ -64,19 +64,39 @@ class MainchainAccount:
 
 
 @dataclass
-class SSH:
-    username: str = MISSING
-    host: str = MISSING
-    port: int = MISSING
-    host_keys_path: Optional[str] = None
-    private_key_path: Optional[str] = None
+class KubernetesConfig:
+    pod: Optional[str] = None
+    namespace: Optional[str] = None
+    container: Optional[str] = None
+
+
+@dataclass
+class DockerConfig:
+    container: str = MISSING
+
+
+@dataclass
+class SecretsConfig:
+    copy_to: Optional[str] = None
+
+
+@dataclass
+class ExecutorConfig:
+    docker: Optional[DockerConfig] = None
+    kubernetes: Optional[KubernetesConfig] = None
+    secrets: Optional[SecretsConfig] = None
 
 
 @dataclass
 class Tool:
-    cli: str = MISSING
-    ssh: Optional[SSH] = None
-    shell: Optional[str] = SI("${...tools_shell}")
+    path: str = MISSING
+    executor: Optional[ExecutorConfig] = None
+
+
+@dataclass
+class Tools:
+    cardano_cli: Optional[Tool] = None
+    node: Optional[Tool] = None
 
 
 @dataclass
@@ -115,10 +135,7 @@ class StackApiConfig:
     ogmios_host: str = MISSING
     ogmios_port: int = MISSING
     ogmios_url: str = SI("${.ogmios_scheme}://${.ogmios_host}:${.ogmios_port}")
-    tools: dict[str, Tool] = MISSING
-    tools_host: str = MISSING
-    tools_shell: Optional[str] = None
-    ssh: Optional[SSH] = None
+    tools: Tools = MISSING
 
 
 @dataclass
