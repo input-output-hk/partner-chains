@@ -8,9 +8,7 @@ use cli_commands::registration_signatures::RegistrationSignaturesCmd;
 use frame_support::sp_runtime::traits::NumberFor;
 use parity_scale_codec::{Decode, Encode};
 use partner_chains_cli::io::DefaultCmdRunContext;
-pub use partner_chains_cli::{
-	PartnerChainRuntime, PartnerChainRuntimeBindings, RuntimeTypeWrapper,
-};
+pub use partner_chains_cli::{PartnerChainRuntime, RuntimeTypeWrapper};
 use partner_chains_smart_contracts_commands::SmartContractsCmd;
 use sc_cli::{CliConfiguration, SharedParams, SubstrateCli};
 use sc_service::TaskManager;
@@ -79,7 +77,7 @@ impl CliConfiguration for RegistrationStatusCmd {
 #[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
 pub enum PartnerChainsSubcommand<
-	RuntimeBindings: PartnerChainRuntime + PartnerChainRuntimeBindings,
+	RuntimeBindings: PartnerChainRuntime,
 	PartnerchainAddress: Clone + Sync + Send + FromStr + 'static,
 > {
 	/// Returns sidechain parameters
@@ -122,7 +120,7 @@ pub fn run<
 	CommitteeMember,
 	Client,
 	BlockProducerMetadata,
-	RuntimeBindings: PartnerChainRuntime + PartnerChainRuntimeBindings,
+	RuntimeBindings: PartnerChainRuntime,
 	PartnerchainAddress,
 >(
 	cli: &Cli,

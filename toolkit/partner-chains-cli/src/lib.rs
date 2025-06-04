@@ -25,7 +25,7 @@ mod tests;
 use clap::Parser;
 use io::*;
 use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
-pub use runtime_bindings::{PartnerChainRuntime, PartnerChainRuntimeBindings, RuntimeTypeWrapper};
+pub use runtime_bindings::{PartnerChainRuntime, RuntimeTypeWrapper};
 use std::time::Duration;
 
 #[derive(Clone, Debug, clap::Parser)]
@@ -47,7 +47,7 @@ impl CommonArguments {
 #[command(
     after_long_help = HELP_EXAMPLES,
 )]
-pub enum Command<T: PartnerChainRuntime + PartnerChainRuntimeBindings> {
+pub enum Command<T: PartnerChainRuntime> {
 	/// This wizard generates the keys required for operating a partner-chains node, stores them in the keystore directory, and prints the public keys and keystore location.
 	GenerateKeys(generate_keys::GenerateKeysCmd),
 	/// Wizard to obtain the configuration needed for the partner-chain governance authority. This configuration should be shared with chain participants and used to create the chain spec json file.
@@ -58,7 +58,7 @@ pub enum Command<T: PartnerChainRuntime + PartnerChainRuntimeBindings> {
 	/// Uses 'chain config' obtained after running `prepare-configuration`.
 	SetupMainChainState(setup_main_chain_state::SetupMainChainStateCmd),
 	/// Wizard for starting a substrate node in the environment set up by `generate-keys`,
-	/// `prepare-config`, and `create-chain-spec`. It also assits in setting the `resources configuration`.
+	/// `prepare-config`, and `create-chain-spec`. It also assists in setting the `resources configuration`.
 	StartNode(start_node::StartNodeCmd),
 	/// The first step of registering as a committee candidate. Registration is split into three steps to allow the user to use their cold keys on a cold machine.
 	Register1(register::register1::Register1Cmd),
@@ -70,7 +70,7 @@ pub enum Command<T: PartnerChainRuntime + PartnerChainRuntimeBindings> {
 	Deregister(deregister::DeregisterCmd),
 }
 
-impl<T: PartnerChainRuntime + PartnerChainRuntimeBindings> Command<T> {
+impl<T: PartnerChainRuntime> Command<T> {
 	pub fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
 		match self {
 			Command::GenerateKeys(cmd) => cmd.run(context),
