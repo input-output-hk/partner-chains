@@ -341,6 +341,9 @@ mv chain-spec.json.tmp chain-spec.json
 cp chain-spec.json /shared/chain-spec.json
 echo "chain-spec.json generation complete."
 
+echo "Cat chain-spec.json"
+cat chain-spec.json
+
 touch /shared/chain-spec.ready
 touch /shared/partner-chains-setup.ready
 
