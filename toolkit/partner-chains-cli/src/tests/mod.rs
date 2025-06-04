@@ -727,8 +727,6 @@ fn verify_cli() {
 		type AuthorityKeys = (sr25519::Public, ed25519::Public);
 		type AuthorityId = ecdsa::Public;
 		type CommitteeMember = (Self::AuthorityId, Self::AuthorityKeys);
-	}
-	impl PartnerChainRuntimeBindings for MockRuntime {
 		fn initial_member(
 			id: Self::AuthorityId,
 			keys: Self::AuthorityKeys,

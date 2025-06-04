@@ -1,7 +1,8 @@
 use authority_selection_inherents::CommitteeMember;
 use clap::command;
+use pallet_session_validator_management::Config as CommitteePalletConfig;
 use partner_chains_node_commands::{
-	PartnerChainRuntimeBindings, PartnerChainsSubcommand, RuntimeTypeWrapper,
+	PartnerChainRuntime, PartnerChainsSubcommand, RuntimeTypeWrapper,
 };
 use sc_cli::RunCmd;
 use sp_runtime::AccountId32;
@@ -20,7 +21,13 @@ pub struct WizardBindings;
 impl RuntimeTypeWrapper for WizardBindings {
 	type Runtime = partner_chains_demo_runtime::Runtime;
 }
-impl PartnerChainRuntimeBindings for WizardBindings {
+impl PartnerChainRuntime for WizardBindings {
+	type AuthorityId =
+		<<Self as RuntimeTypeWrapper>::Runtime as CommitteePalletConfig>::AuthorityId;
+	type AuthorityKeys =
+		<<Self as RuntimeTypeWrapper>::Runtime as CommitteePalletConfig>::AuthorityKeys;
+	type CommitteeMember =
+		<<Self as RuntimeTypeWrapper>::Runtime as CommitteePalletConfig>::CommitteeMember;
 	fn initial_member(id: Self::AuthorityId, keys: Self::AuthorityKeys) -> Self::CommitteeMember {
 		CommitteeMember::permissioned(id, keys)
 	}

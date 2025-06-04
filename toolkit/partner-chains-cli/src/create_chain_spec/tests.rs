@@ -1,4 +1,4 @@
-use super::{CreateChainSpecRuntimeBindings, PartnerChainRuntime};
+use super::PartnerChainRuntime;
 use crate::config::CHAIN_CONFIG_FILE_PATH;
 use crate::create_chain_spec::{CreateChainSpecCmd, INITIAL_PERMISSIONED_CANDIDATES_EXAMPLE};
 use crate::tests::{MockIO, MockIOContext};
@@ -44,8 +44,6 @@ impl PartnerChainRuntime for MockRuntime {
 	type AuthorityKeys = TestSessionKeys;
 	type AuthorityId = ecdsa::Public;
 	type CommitteeMember = TestMember;
-}
-impl CreateChainSpecRuntimeBindings for MockRuntime {
 	fn initial_member(id: Self::AuthorityId, keys: Self::AuthorityKeys) -> Self::CommitteeMember {
 		TestMember::Permissioned { id, keys }
 	}
