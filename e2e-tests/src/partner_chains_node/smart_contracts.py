@@ -93,7 +93,7 @@ class SmartContracts:
             f"--genesis-utxo {self.config.genesis_utxo} "
             f"--ogmios-url {self.config.stack_config.ogmios_url}"
         )
-        response = self.run_command.run(cmd)
+        response = self.run_command.exec(cmd)
         return parse_json_response(response)
 
     def update_d_param(self, permissioned_candidates_count, registered_candidates_count, payment_key):
@@ -106,7 +106,7 @@ class SmartContracts:
             f"--ogmios-url {self.config.stack_config.ogmios_url} "
         )
 
-        response = self.run_command.run(cmd)
+        response = self.run_command.exec(cmd)
         parsed_response = parse_json_response(response)
         return handle_governance_signature(parsed_response, self)
 
@@ -123,7 +123,7 @@ class SmartContracts:
             f"--ogmios-url {self.config.stack_config.ogmios_url} "
         )
 
-        response = self.run_command.run(cmd, timeout=self.config.timeouts.register_cmd)
+        response = self.run_command.exec(cmd, timeout=self.config.timeouts.register_cmd)
         return parse_json_response(response)
 
     def deregister(self, payment_key, spo_public_key):
@@ -135,19 +135,10 @@ class SmartContracts:
             f"--ogmios-url {self.config.stack_config.ogmios_url} "
         )
 
-        response = self.run_command.run(cmd, timeout=self.config.timeouts.deregister_cmd)
+        response = self.run_command.exec(cmd, timeout=self.config.timeouts.deregister_cmd)
         return parse_json_response(response)
 
-    def upsert_permissioned_candidates(self, governance_key, new_candidates_list: dict[str, Node]):
-        logging.debug("Creating permissioned candidates file...")
-        candidates_file_content = "\n".join(
-            f"{candidate.public_key}:{candidate.aura_public_key}:{candidate.grandpa_public_key}"
-            for candidate in new_candidates_list.values()
-        )
-        permissioned_candidates_file = f"/data/permissioned_candidates_{uuid.uuid4().hex}.csv"
-        save_file_cmd = f"echo '{candidates_file_content}' > {permissioned_candidates_file}"
-        self.run_command.run(save_file_cmd)
-
+    def upsert_permissioned_candidates(self, governance_key, permissioned_candidates_file: str):
         cmd = (
             f"{self.cli} smart-contracts upsert-permissioned-candidates "
             f"--payment-key-file {governance_key} "
@@ -156,7 +147,7 @@ class SmartContracts:
             f"--ogmios-url {self.config.stack_config.ogmios_url} "
         )
 
-        response = self.run_command.run(cmd, timeout=self.config.timeouts.register_cmd)
+        response = self.run_command.exec(cmd, timeout=self.config.timeouts.register_cmd)
         parsed_response = parse_json_response(response)
         return handle_governance_signature(parsed_response, self)
 
@@ -167,7 +158,7 @@ class SmartContracts:
             f"--payment-key-file {payment_key} "
         )
 
-        response = self.run_command.run(cmd)
+        response = self.run_command.exec(cmd)
         return parse_json_response(response)
 
     def assemble_and_submit_tx(self, transaction_cbor, witnesses):
@@ -179,7 +170,7 @@ class SmartContracts:
             f"--ogmios-url {self.config.stack_config.ogmios_url} "
         )
 
-        response = self.run_command.run(cmd)
+        response = self.run_command.exec(cmd)
         return parse_json_response(response)
 
     class Reserve:
@@ -196,7 +187,7 @@ class SmartContracts:
                 f"--genesis-utxo {self.config.genesis_utxo} "
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
-            response = self.run_command.run(cmd)
+            response = self.run_command.exec(cmd)
             parsed_response = parse_json_response(response)
             return handle_governance_signature(parsed_response, self.parent)
 
@@ -210,7 +201,7 @@ class SmartContracts:
                 f"--genesis-utxo {self.config.genesis_utxo} "
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
-            response = self.run_command.run(cmd, timeout=self.config.timeouts.main_chain_tx)
+            response = self.run_command.exec(cmd, timeout=self.config.timeouts.main_chain_tx)
             parsed_response = parse_json_response(response)
             return handle_governance_signature(parsed_response, self.parent)
 
@@ -223,7 +214,7 @@ class SmartContracts:
                 f"--genesis-utxo {self.config.genesis_utxo} "
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
-            response = self.run_command.run(cmd)
+            response = self.run_command.exec(cmd)
             return parse_json_response(response)
 
         def deposit(self, amount, payment_key):
@@ -234,7 +225,7 @@ class SmartContracts:
                 f"--genesis-utxo {self.config.genesis_utxo} "
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
-            response = self.run_command.run(cmd)
+            response = self.run_command.exec(cmd)
             parsed_response = parse_json_response(response)
             return handle_governance_signature(parsed_response, self.parent)
 
@@ -246,7 +237,7 @@ class SmartContracts:
                 f"--genesis-utxo {self.config.genesis_utxo} "
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
-            response = self.run_command.run(cmd)
+            response = self.run_command.exec(cmd)
             parsed_response = parse_json_response(response)
             return handle_governance_signature(parsed_response, self.parent)
 
@@ -257,7 +248,7 @@ class SmartContracts:
                 f"--genesis-utxo {self.config.genesis_utxo} "
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
-            response = self.run_command.run(cmd)
+            response = self.run_command.exec(cmd)
             parsed_response = parse_json_response(response)
             return handle_governance_signature(parsed_response, self.parent)
 
@@ -278,7 +269,7 @@ class SmartContracts:
                 f"--threshold {new_governance_threshold} "
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
-            response = self.run_command.run(cmd)
+            response = self.run_command.exec(cmd)
             parsed_response = parse_json_response(response)
             return handle_governance_signature(parsed_response, self.parent)
 
@@ -288,7 +279,7 @@ class SmartContracts:
                 f"--genesis-utxo {self.config.genesis_utxo} "
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
-            response = self.run_command.run(cmd)
+            response = self.run_command.exec(cmd)
             return parse_json_response(response)
 
     class GovernedMap:
@@ -307,7 +298,7 @@ class SmartContracts:
                 f"--genesis-utxo {self.config.genesis_utxo} "
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
-            response = self.run_command.run(cmd)
+            response = self.run_command.exec(cmd)
             parsed_response = parse_json_response(response)
             return handle_governance_signature(parsed_response, self.parent)
 
@@ -317,7 +308,7 @@ class SmartContracts:
                 f"--genesis-utxo {self.config.genesis_utxo} "
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
-            response = self.run_command.run(cmd)
+            response = self.run_command.exec(cmd)
             return parse_json_response(response)
 
         def remove(self, key, payment_key):
@@ -328,7 +319,7 @@ class SmartContracts:
                 f"--genesis-utxo {self.config.genesis_utxo} "
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
-            response = self.run_command.run(cmd)
+            response = self.run_command.exec(cmd)
             parsed_response = parse_json_response(response)
             return handle_governance_signature(parsed_response, self.parent)
 
@@ -339,7 +330,7 @@ class SmartContracts:
                 f"--genesis-utxo {self.config.genesis_utxo} "
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
-            response = self.run_command.run(cmd)
+            response = self.run_command.exec(cmd)
             return parse_json_response(response)
 
         def update(self, key, value, payment_key, current_value=None):
@@ -353,6 +344,6 @@ class SmartContracts:
             )
             if current_value:
                 cmd += f" --current-value {current_value}"
-            response = self.run_command.run(cmd)
+            response = self.run_command.exec(cmd)
             parsed_response = parse_json_response(response)
             return handle_governance_signature(parsed_response, self.parent)

@@ -21,7 +21,7 @@
                 "path": "/usr/local/bin/partner-chains-node",
                 "runner": {
                     "kubernetes": {
-                        "container": "partner-chains-node"
+                        "container": "substrate-node"
                     },
                     "secrets": {
                         "copy": true,

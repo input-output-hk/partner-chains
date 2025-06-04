@@ -75,11 +75,11 @@ class KubernetesRunner(Runner):
             raise e
 
     def exec(self, command: str, timeout=120) -> Result:
-        cmd = f"kubectl exec {self.pod} -n {self.namespace} -c {self.container} -- bash -c \"{command}\""
-        self._run(cmd, timeout)
+        cmd = f"kubectl exec {self.pod} -c {self.container} -n {self.namespace} -- bash -c \"{command}\""
+        return self._run(cmd, timeout)
 
     def copy(self, src: str, dest: str) -> Result:
-        cmd = f"kubectl cp {src} {self.pod}:{dest} -n {self.namespace}"
+        cmd = f"kubectl cp {src} {self.pod}:{dest} -c {self.container} -n {self.namespace}"
         return self._run(cmd)
 
 
@@ -90,7 +90,7 @@ class DockerRunner(Runner):
     def _cmd(self, cli, cmd) -> str:
         return f"docker exec {self.container} {cli} {cmd}"
 
-    def run(self, command: str, timeout=120) -> Result:
+    def exec(self, command: str, timeout=120) -> Result:
         logging.debug(f"CMD: '{command}' TIMEOUT: {timeout} CONTAINER: {self.container}")
 
         full_cmd = self._cmd("bash", command)
@@ -132,7 +132,7 @@ class LocalRunner(Runner):
             full_cmd = "{shell} \"{cli} {cmd}\"".format(shell=self.shell, cli=cli, cmd=cmd)
         return full_cmd
 
-    def run(self, command: str, timeout=120) -> Result:
+    def exec(self, command: str, timeout=120) -> Result:
         logging.debug(f"CMD: '{command}' TIMEOUT: {timeout} SHELL: {self.shell}")
 
         executable = self.shell

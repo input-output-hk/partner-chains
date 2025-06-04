@@ -4,7 +4,6 @@ from .smart_contracts import SmartContracts
 from .models import AddressAssociationSignature, RegistrationSignatures, BlockProducerMetadataSignature
 import json
 import logging
-import uuid
 
 
 class PartnerChainsNodeException(Exception):
@@ -30,7 +29,7 @@ class PartnerChainsNode:
             f"--signing-key {stake_signing_key}"
         )
 
-        result = self.run_command.run(sign_address_association_cmd)
+        result = self.run_command.exec(sign_address_association_cmd)
         try:
             response = json.loads(result.stdout)
             return AddressAssociationSignature(
@@ -42,21 +41,17 @@ class PartnerChainsNode:
             logging.error(f"Could not parse response of sign-address-association cmd: {result}")
             raise e
 
-    def sign_block_producer_metadata(self, metadata, cross_chain_signing_key):
+    def sign_block_producer_metadata(self, metadata_file, cross_chain_signing_key):
         cross_chain_signing_key = cross_chain_signing_key.to_string().hex()
-        metadata_str = json.dumps(metadata)
-        metadata_file_name = f"/tmp/metadata_{uuid.uuid4().hex}.json"
-        save_file_cmd = f"echo '{metadata_str}' > {metadata_file_name}"
-        self.run_command.run(save_file_cmd)
 
         sign_block_producer_metadata_cmd = (
             f"{self.cli} sign-block-producer-metadata "
             f"--genesis-utxo {self.config.genesis_utxo} "
-            f"--metadata-file {metadata_file_name} "
+            f"--metadata-file {metadata_file} "
             f"--cross-chain-signing-key {cross_chain_signing_key}"
         )
 
-        result = self.run_command.run(sign_block_producer_metadata_cmd)
+        result = self.run_command.exec(sign_block_producer_metadata_cmd)
         try:
             response = json.loads(result.stdout)
 
@@ -87,7 +82,7 @@ class PartnerChainsNode:
             f"--registration-utxo {sidechain_registration_utxo}"
         )
 
-        result = self.run_command.run(get_signatures_cmd)
+        result = self.run_command.exec(get_signatures_cmd)
 
         try:
             registration_signatures = json.loads(result.stdout)

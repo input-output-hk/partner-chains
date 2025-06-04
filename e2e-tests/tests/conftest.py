@@ -567,7 +567,7 @@ def write_file():
     def _write_file(runner: Runner, content: str):
         filepath = f"/tmp/{uuid.uuid4().hex}"
         content_json = json.dumps(content)
-        runner.run(f"echo '{content_json}' > {filepath}")
+        runner.exec(f"echo '{content_json}' > {filepath}")
 
         if runner not in saved_files:
             saved_files[runner] = []
@@ -602,18 +602,15 @@ def governance_skey_with_cli(config: ApiConfig):
         make_tmp_dir_command = "mktemp -d"
         if config.stack_config.tools.node.runner.secrets.copy_to:
             make_tmp_dir_command = f"{make_tmp_dir_command} -p {config.stack_config.tools.node.runner.secrets.copy_to}"
-        temp_dir = runner.run(make_tmp_dir_command).stdout.strip()
+        temp_dir = runner.exec(make_tmp_dir_command).stdout.strip()
         path = config.nodes_config.governance_authority.mainchain_key
         filename = path.split("/")[-1]
-        if config.stack_config.tools.node.ssh:
-            runner.scp(path, temp_dir)
-        else:
-            runner.run(f"cp {path} {temp_dir}/{filename}")
+        runner.copy(src=path, dest=f"{temp_dir}/{filename}")
         config.nodes_config.governance_authority.mainchain_key = f"{temp_dir}/{filename}"
         yield
         logging.info("Cleaning up governance skey file on remote host...")
         config.nodes_config.governance_authority.mainchain_key = path
-        runner.run(f"rm -rf {temp_dir}")
+        runner.exec(f"rm -rf {temp_dir}")
     else:
         yield
 

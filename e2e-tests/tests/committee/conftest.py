@@ -549,13 +549,13 @@ def candidate_skey_with_cli(config: ApiConfig, candidate: Candidates):
         make_tmp_dir_command = "mktemp -d"
         if config.stack_config.tools.node.runner.secrets.copy_to:
             make_tmp_dir_command = f"{make_tmp_dir_command} -p {config.stack_config.tools.node.runner.secrets.copy_to}"
-        temp_dir = runner.run(make_tmp_dir_command).stdout.strip()
+        temp_dir = runner.exec(make_tmp_dir_command).stdout.strip()
         path = config.nodes_config.nodes[candidate.name].keys_files.cardano_payment_key
         filename = path.split("/")[-1]
         runner.scp(path, temp_dir)
         config.nodes_config.nodes[candidate.name].keys_files.cardano_payment_key = f"{temp_dir}/{filename}"
         yield
         config.nodes_config.nodes[candidate.name].keys_files.cardano_payment_key = path
-        runner.run(f"rm -rf {temp_dir}")
+        runner.exec(f"rm -rf {temp_dir}")
     else:
         yield

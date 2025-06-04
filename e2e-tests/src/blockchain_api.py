@@ -151,7 +151,7 @@ class BlockchainApi(ABC):
         pass
 
     @abstractmethod
-    def upsert_permissioned_candidates(self, new_candidates_list: dict[str, Node]) -> (bool, int):
+    def upsert_permissioned_candidates(self, permissioned_candidates_file: str) -> (bool, int):
         pass
 
     @abstractmethod
@@ -407,13 +407,13 @@ class BlockchainApi(ABC):
 
     @abstractmethod
     def sign_block_producer_metadata(
-        self, metadata: dict, cross_chain_signing_key: str
+        self, metadata_file: str, cross_chain_signing_key: str
     ) -> BlockProducerMetadataSignature:
         """
         Creates a signature for block producer metadata.
 
         Arguments:
-            metadata {dict} -- block producer metadata
+            metadata {str} -- block producer metadata file path
             cross_chain_signing_key {str} -- Cross Chain Signing key in hex format
 
         Returns:

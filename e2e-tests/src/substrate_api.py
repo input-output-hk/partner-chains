@@ -262,9 +262,9 @@ class SubstrateApi(BlockchainApi):
             logger.error(f"Update of D Param failed, STDOUT: {response.stdout}, STDERR: {response.stderr}")
             return False, None
 
-    def upsert_permissioned_candidates(self, new_candidates_list):
+    def upsert_permissioned_candidates(self, permissioned_candidates_file):
         response = self.partner_chains_node.smart_contracts.upsert_permissioned_candidates(
-            self.config.nodes_config.governance_authority.mainchain_key, new_candidates_list
+            self.config.nodes_config.governance_authority.mainchain_key, permissioned_candidates_file
         )
         tx_id = response.json["transaction_submitted"]
         effective_in_mc_epoch = self._effective_in_mc_epoch()
@@ -683,8 +683,8 @@ class SubstrateApi(BlockchainApi):
     def sign_address_association(self, address, stake_signing_key):
         return self.partner_chains_node.sign_address_association(address, stake_signing_key)
 
-    def sign_block_producer_metadata(self, metadata, cross_chain_signing_key):
-        return self.partner_chains_node.sign_block_producer_metadata(metadata, cross_chain_signing_key)
+    def sign_block_producer_metadata(self, metadata_file, cross_chain_signing_key):
+        return self.partner_chains_node.sign_block_producer_metadata(metadata_file, cross_chain_signing_key)
 
     @long_running_function
     def submit_address_association(self, signature, wallet):
