@@ -6,14 +6,18 @@
         "tools": {
             "cardano_cli": {
                 "path": "cardano-cli",
-                "docker": {
-                    "container": "cardano-node-1"
+                "runner": {
+                    "docker": {
+                        "container": "cardano-node-1"
+                    }
                 }
             },
             "node": {
                 "path": "./partner-chains-node",
-                "docker": {
-                    "container": "partner-chains-node"
+                "runner": {
+                    "docker": {
+                        "container": "partner-chains-node"
+                    }
                 }
             }
         }

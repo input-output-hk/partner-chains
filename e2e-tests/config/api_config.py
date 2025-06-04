@@ -65,9 +65,9 @@ class MainchainAccount:
 
 @dataclass
 class KubernetesConfig:
-    pod: Optional[str] = None
-    namespace: Optional[str] = None
-    container: Optional[str] = None
+    pod: str = MISSING
+    namespace: str = MISSING
+    container: str = MISSING
 
 
 @dataclass
@@ -77,26 +77,28 @@ class DockerConfig:
 
 @dataclass
 class SecretsConfig:
+    copy: bool = False
     copy_to: Optional[str] = None
 
 
 @dataclass
-class ExecutorConfig:
+class RunnerConfig:
     docker: Optional[DockerConfig] = None
     kubernetes: Optional[KubernetesConfig] = None
-    secrets: Optional[SecretsConfig] = None
+    secrets: SecretsConfig = MISSING
 
 
 @dataclass
 class Tool:
     path: str = MISSING
-    executor: Optional[ExecutorConfig] = None
+    runner: RunnerConfig = SI("${..runner}")
 
 
 @dataclass
 class Tools:
-    cardano_cli: Optional[Tool] = None
-    node: Optional[Tool] = None
+    runner: RunnerConfig = MISSING
+    cardano_cli: Tool = MISSING
+    node: Tool = MISSING
 
 
 @dataclass

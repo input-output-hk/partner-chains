@@ -18,8 +18,8 @@ class PartnerChainsNode:
     def __init__(self, config: ApiConfig):
         self.config = config
         cli_config = config.stack_config.tools.node
-        self.cli = cli_config.executable
-        self.run_command = RunnerFactory.get_runner(cli_config.ssh, cli_config.shell)
+        self.cli = cli_config.path
+        self.run_command = RunnerFactory.get_runner(cli_config.runner)
         self.smart_contracts = SmartContracts(self.cli, self.run_command, config)
 
     def sign_address_association(self, partner_chain_address, stake_signing_key):

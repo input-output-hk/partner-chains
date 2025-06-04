@@ -26,9 +26,9 @@ def hex_to_bech32(hex_string: str, prefix: str) -> str:
 
 class CardanoCli:
     def __init__(self, config: MainChainConfig, cardano_cli: Tool):
-        self.cli = cardano_cli.executable
+        self.cli = cardano_cli.path
         self.network = config.network
-        self.run_command = RunnerFactory.get_runner(cardano_cli.ssh, cardano_cli.shell)
+        self.run_command = RunnerFactory.get_runner(cardano_cli.runner)
 
     def query_tip(self) -> int:
         cmd = f"{self.cli} latest query tip {self.network}"

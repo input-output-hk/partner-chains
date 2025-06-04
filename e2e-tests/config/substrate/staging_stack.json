@@ -2,16 +2,16 @@
     "stack_config": {
         "ogmios_host": "staging-preview-services-service.staging-preview.svc.cluster.local",
         "ogmios_port": 1337,
-        "executor": {
-            "kubernetes": {
-                "pod": "staging-preview-validator-1",
-                "namespace": "staging-preview"
-            }            
-        },
         "tools": {
-            "cardano-cli": {
+            "runner": {
+                "kubernetes": {
+                    "pod": "staging-preview-validator-1",
+                    "namespace": "staging-preview"
+                }
+            },
+            "cardano_cli": {
                 "path": "cardano-cli",
-                "executor": {
+                "runner": {
                     "kubernetes": {
                         "container": "cardano-node"
                     }
@@ -19,11 +19,12 @@
             },
             "node": {
                 "path": "/usr/local/bin/partner-chains-node",
-                "executor": {
+                "runner": {
                     "kubernetes": {
                         "container": "partner-chains-node"
                     },
                     "secrets": {
+                        "copy": true,
                         "copy_to": "/data"
                     }
                 }

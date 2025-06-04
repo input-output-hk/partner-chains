@@ -1,13 +1,7 @@
-import io
 import logging
-import paramiko
 import subprocess
-import yaml
 from abc import ABC, abstractmethod
-from config.api_config import SSH
-from scp import SCPClient
-import time
-
+from config.api_config import RunnerConfig, DockerConfig, KubernetesConfig
 
 STDOUT_MAX_LEN = 2000
 
@@ -24,50 +18,82 @@ class Result:
 
 class RunnerFactory:
     @staticmethod
-    def get_runner(ssh: SSH, shell: str):
-        if ssh:
-            return SSHRunner(ssh)
+    def get_runner(cfg: RunnerConfig) -> 'Runner':
+        if cfg.kubernetes:
+            return KubernetesRunner(cfg.kubernetes)
+        elif cfg.docker:
+            return DockerRunner(cfg.docker)
         else:
-            return LocalRunner(shell)
+            return LocalRunner()
 
 
 class Runner(ABC):
     @abstractmethod
-    def run(self, command: str, timeout=120) -> Result:
-        """Run any command.
+    def exec(self, command: str, timeout=120) -> Result:
+        """Execute a command in the runner environment."""
+        raise NotImplementedError("exec method must be implemented in subclasses")
 
-        Currently supports two types of runners: LocalRunner and SSHRunner.
+    @abstractmethod
+    def copy(self, src: str, dest: str) -> Result:
+        """Copy a file from local to remote."""
+        raise NotImplementedError("copy method must be implemented in subclasses")
 
-        LocalRunner is used when no SSH configuration is provided.
-        It uses subprocess.run to execute the command with shell=True.
 
-        SSHRunner is used when SSH configuration is provided.
-        It uses paramiko.SSHClient to establish an SSH connection and execute the command.
+class KubernetesRunner(Runner):
+    def __init__(self, config: KubernetesConfig):
+        self.pod = config.pod
+        self.namespace = config.namespace
+        self.container = config.container
 
-        Arguments:
-            command {str} -- command to run
+    def _run(self, cmd: str, timeout=120) -> str:
+        logging.debug(f"CMD: '{cmd}' TIMEOUT: {timeout}")
+        try:
+            completed_process = subprocess.run(
+                cmd,
+                timeout=timeout,
+                capture_output=True,
+                shell=True,
+                encoding="utf-8",
+            )
+            result = Result(
+                returncode=completed_process.returncode,
+                stdout=completed_process.stdout,
+                stderr=completed_process.stderr,
+            )
+            truncated_output = (
+                result.stdout[:STDOUT_MAX_LEN] + "..." if len(result.stdout) > STDOUT_MAX_LEN else result.stdout
+            )
+            logging.debug(f"STDOUT: {truncated_output}")
+            if result.stderr:
+                logging.warning(f"STDERR: {result.stderr}")
+            return result
+        except subprocess.TimeoutExpired as e:
+            logging.error(f"TIMEOUT: {e}")
+            raise e
+        except Exception as e:
+            logging.error(f"UNKNOWN ERROR: {e}")
+            raise e
 
-        Keyword Arguments:
-            timeout {int} -- default: 120s
+    def exec(self, command: str, timeout=120) -> Result:
+        cmd = f"kubectl exec {self.pod} -n {self.namespace} -c {self.container} -- bash -c \"{command}\""
+        self._run(cmd, timeout)
 
-        Returns:
-            Result -- object containing returncode, stdout and stderr
-        """
-        pass
+    def copy(self, src: str, dest: str) -> Result:
+        cmd = f"kubectl cp {src} {self.pod}:{dest} -n {self.namespace}"
+        return self._run(cmd)
 
 
 class DockerRunner(Runner):
-    def __init__(self, container: str, command: str):
-        self.container = container
-        self.command = command
+    def __init__(self, config: DockerConfig):
+        self.container = config.container
 
     def _cmd(self, cli, cmd) -> str:
-        return f"{cli} exec {self.container} {cmd}"
+        return f"docker exec {self.container} {cli} {cmd}"
 
     def run(self, command: str, timeout=120) -> Result:
-        full_cmd = self._cmd(self.command, command)
-        logging.debug(f"CMD: '{full_cmd}' TIMEOUT: {timeout}")
+        logging.debug(f"CMD: '{command}' TIMEOUT: {timeout} CONTAINER: {self.container}")
 
+        full_cmd = self._cmd("bash", command)
         try:
             completed_process = subprocess.run(
                 full_cmd,
@@ -97,8 +123,8 @@ class DockerRunner(Runner):
 
 
 class LocalRunner(Runner):
-    def __init__(self, shell: str = None):
-        self.shell = shell
+    def __init__(self):
+        self.shell = "/bin/bash"
 
     def _cmd(self, cli, cmd) -> str:
         full_cmd = "{cli} {cmd}".format(cli=cli, cmd=cmd)
@@ -142,85 +168,3 @@ class LocalRunner(Runner):
         except Exception as e:
             logging.error(f"UNKNOWN ERROR: {e}")
             raise e
-
-
-class SSHRunner(Runner):
-    def __init__(self, ssh_config: SSH):
-        self.host = ssh_config.host
-        self.port = ssh_config.port
-        self.user = ssh_config.username
-        self.key_path = ssh_config.private_key_path
-        self.client = paramiko.SSHClient()
-        if ssh_config.host_keys_path:
-            self.client.load_host_keys(ssh_config.host_keys_path)
-
-    def load_key_from_yaml(self, path):
-        with open(path, "r") as file:
-            key = yaml.safe_load(file)["ssh_key"]
-            return key
-
-    def connect(self):
-        logging.debug(f"SSH: Connecting to {self.host}:{self.port} as {self.user}")
-        try:
-            private_key_str = self.load_key_from_yaml(self.key_path)
-            private_key = paramiko.RSAKey.from_private_key(io.StringIO(private_key_str))
-            self.client.connect(self.host, self.port, self.user, pkey=private_key)
-        except paramiko.AuthenticationException as auth_err:
-            logging.error(f"Authentication failed: {auth_err}")
-            raise auth_err
-        except paramiko.SSHException as ssh_err:
-            logging.error(f"Unable to establish SSH connection: {ssh_err}")
-            raise ssh_err
-        except Exception as e:
-            logging.error(f"An error occurred: {e}")
-            raise e
-
-        return None
-
-    def run(self, command: str, timeout=120) -> Result:
-        self.connect()
-        logging.debug(f"CMD: '{command}' TIMEOUT: {timeout}")
-        try:
-            _, stdout, stderr = self.client.exec_command(command, timeout=timeout)
-
-            # Wait until we can read the channel.
-            end_time = time.time() + timeout
-            while not stdout.channel.exit_status_ready() and not stderr.channel.exit_status_ready():
-                time.sleep(1)
-                if time.time() > end_time:
-                    raise TimeoutError(f"Command '{command}' timed out after {timeout}s")
-            output = stdout.read().decode()
-
-            # this blocks execution until the command finishes, but it should be merged already into stdout
-            returncode = stderr.channel.recv_exit_status()
-            error = stderr.read().decode()
-
-            result = Result(returncode=returncode, stdout=output, stderr=error)
-            truncated_output = (
-                result.stdout[:STDOUT_MAX_LEN] + "..." if len(result.stdout) > STDOUT_MAX_LEN else result.stdout
-            )
-            logging.debug(f"STDOUT: {truncated_output}")
-            if result.stderr:
-                logging.warning(f"STDERR: {result.stderr}")
-            return result
-        except TimeoutError as e:
-            logging.error(f"TIMEOUT: {e}")
-            raise e
-        except Exception as e:
-            logging.error(f"UNKNOWN ERROR: {e}")
-            raise e
-        finally:
-            self.close()
-
-    def scp(self, path, remote_path):
-        self.connect()
-        logging.debug(f"SCP: '{path}' INTO: {remote_path}")
-        try:
-            with SCPClient(self.client.get_transport()) as scp:
-                scp.put(path, remote_path=remote_path)
-        finally:
-            self.close()
-
-    def close(self):
-        self.client.close()
-        logging.debug(f"SSH: disconnected from {self.host}:{self.port} as {self.user}")
