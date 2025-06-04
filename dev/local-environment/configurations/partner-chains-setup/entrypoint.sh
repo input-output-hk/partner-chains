@@ -52,6 +52,10 @@ echo "Generating addresses.json file..."
     --genesis-utxo $GENESIS_UTXO \
 > addresses.json
 
+echo "[DEBUG] Content of generated addresses.json:"
+cat addresses.json
+echo "[DEBUG] End of addresses.json content."
+
 export COMMITTEE_CANDIDATE_ADDRESS=$(jq -r '.addresses.CommitteeCandidateValidator' addresses.json)
 echo "Committee candidate address: $COMMITTEE_CANDIDATE_ADDRESS"
 
@@ -70,6 +74,11 @@ echo "Setting values for NATIVE_TOKEN_POLICY_ID, NATIVE_TOKEN_ASSET_NAME, and IL
 export NATIVE_TOKEN_POLICY_ID="1fab25f376bc49a181d03a869ee8eaa3157a3a3d242a619ca7995b2b"
 export NATIVE_TOKEN_ASSET_NAME="52657761726420746f6b656e"
 export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS=$(jq -r '.addresses.IlliquidCirculationSupplyValidator' addresses.json)
+
+echo "[DEBUG] Values for build-spec regarding native token management:"
+echo "[DEBUG]   NATIVE_TOKEN_POLICY_ID=$NATIVE_TOKEN_POLICY_ID"
+echo "[DEBUG]   NATIVE_TOKEN_ASSET_NAME=$NATIVE_TOKEN_ASSET_NAME"
+echo "[DEBUG]   ILLIQUID_SUPPLY_VALIDATOR_ADDRESS=$ILLIQUID_SUPPLY_VALIDATOR_ADDRESS"
 
 echo "Inserting D parameter..."
 
@@ -261,9 +270,9 @@ echo "Configuring Initial Validators..."
 echo "[" > initial_validators.json
 for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
     node_name="permissioned-$i"
-    sidechain_account_id=$(jq -r '.ss58Address' /shared/node-keys/$node_name/keys/sidechain.json) # MODIFIED PATH
-    aura_vkey=$(jq -r '.publicKey' /shared/node-keys/$node_name/keys/aura.json) # MODIFIED PATH
-    grandpa_vkey=$(jq -r '.publicKey' /shared/node-keys/$node_name/keys/grandpa.json) # MODIFIED PATH
+    sidechain_account_id=$(jq -r '.ss58Address' /shared/node-keys/$node_name/keys/sidechain.json)
+    aura_vkey_ss58=$(jq -r '.ss58Address' /shared/node-keys/$node_name/keys/aura.json)
+    grandpa_vkey_ss58=$(jq -r '.ss58Address' /shared/node-keys/$node_name/keys/grandpa.json)
     
     if [ $i -gt 1 ]; then
         echo "," >> initial_validators.json
@@ -273,8 +282,8 @@ for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
     [
         "$sidechain_account_id",
         {
-            "aura": "$aura_vkey",
-            "grandpa": "$grandpa_vkey"
+            "aura": "$aura_vkey_ss58",
+            "grandpa": "$grandpa_vkey_ss58"
         }
     ]
 EOF
@@ -290,9 +299,9 @@ echo "Configuring Initial Authorities..."
 echo "[" > initial_authorities.json
 for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
     node_name="permissioned-$i"
-    sidechain_id_ss58=$(jq -r '.ss58Address' "/shared/node-keys/$node_name/keys/sidechain.json") # MODIFIED PATH
-    aura_key=$(jq -r '.publicKey' "/shared/node-keys/$node_name/keys/aura.json") # MODIFIED PATH
-    grandpa_key=$(jq -r '.publicKey' "/shared/node-keys/$node_name/keys/grandpa.json") # MODIFIED PATH
+    sidechain_id_ss58=$(jq -r '.ss58Address' "/shared/node-keys/$node_name/keys/sidechain.json")
+    aura_key_ss58=$(jq -r '.ss58Address' "/shared/node-keys/$node_name/keys/aura.json")
+    grandpa_key_ss58=$(jq -r '.ss58Address' "/shared/node-keys/$node_name/keys/grandpa.json")
     
     if [ $i -gt 1 ]; then
         echo "," >> initial_authorities.json
@@ -303,8 +312,8 @@ for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
         "Permissioned": {
             "id": "$sidechain_id_ss58",
             "keys": {
-                "aura": "$aura_key",
-                "grandpa": "$grandpa_key"
+                "aura": "$aura_key_ss58",
+                "grandpa": "$grandpa_key_ss58"
             }
         }
     }
