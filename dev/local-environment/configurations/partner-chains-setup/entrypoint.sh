@@ -129,11 +129,23 @@ for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
         --output-type json \
         > /shared/node-keys/$node_name/keys/aura.json
     
+    if [ "$i" -eq 1 ]; then # Debug for the first node only
+        echo "[DEBUG] Content of /shared/node-keys/$node_name/keys/aura.json:"
+        cat "/shared/node-keys/$node_name/keys/aura.json"
+        echo "[DEBUG] End of aura.json content for $node_name."
+    fi
+
     ./partner-chains-node key generate \
         --scheme ed25519 \
         --output-type json \
         > /shared/node-keys/$node_name/keys/grandpa.json
     
+    if [ "$i" -eq 1 ]; then # Debug for the first node only
+        echo "[DEBUG] Content of /shared/node-keys/$node_name/keys/grandpa.json:"
+        cat "/shared/node-keys/$node_name/keys/grandpa.json"
+        echo "[DEBUG] End of grandpa.json content for $node_name."
+    fi
+
     # Extract public keys
     sidechain_vkey=$(jq -r '.publicKey' /shared/node-keys/$node_name/keys/sidechain.json)
     aura_vkey=$(jq -r '.publicKey' /shared/node-keys/$node_name/keys/aura.json)
