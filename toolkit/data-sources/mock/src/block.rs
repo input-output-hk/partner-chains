@@ -2,13 +2,16 @@ use crate::Result;
 use sidechain_domain::*;
 use sp_timestamp::Timestamp;
 
+/// Mock block data data source, for internal use by other mock data sources
+///
+/// This data source serves synthetic block data generated deterministically from the inputs.
 pub struct BlockDataSourceMock {
 	/// Duration of a mainchain epoch in milliseconds
 	mc_epoch_duration_millis: u32,
 }
 
 impl BlockDataSourceMock {
-	pub async fn get_latest_block_info(&self) -> Result<MainchainBlock> {
+	pub(crate) async fn get_latest_block_info(&self) -> Result<MainchainBlock> {
 		Ok(self
 			.get_latest_stable_block_for(Timestamp::new(BlockDataSourceMock::millis_now()))
 			.await
@@ -16,7 +19,7 @@ impl BlockDataSourceMock {
 			.unwrap())
 	}
 
-	pub async fn get_latest_stable_block_for(
+	pub(crate) async fn get_latest_stable_block_for(
 		&self,
 		reference_timestamp: Timestamp,
 	) -> Result<Option<MainchainBlock>> {
@@ -33,7 +36,7 @@ impl BlockDataSourceMock {
 		}))
 	}
 
-	pub async fn get_stable_block_for(
+	pub(crate) async fn get_stable_block_for(
 		&self,
 		_hash: McBlockHash,
 		reference_timestamp: Timestamp,
@@ -41,7 +44,10 @@ impl BlockDataSourceMock {
 		self.get_latest_stable_block_for(reference_timestamp).await
 	}
 
-	pub async fn get_block_by_hash(&self, hash: McBlockHash) -> Result<Option<MainchainBlock>> {
+	pub(crate) async fn get_block_by_hash(
+		&self,
+		hash: McBlockHash,
+	) -> Result<Option<MainchainBlock>> {
 		// reverse of computation in `get_latest_stable_block_for`
 		let block_number = u32::from_be_bytes(hash.0[..4].try_into().unwrap());
 		let timestamp = block_number * 20000;
@@ -57,10 +63,12 @@ impl BlockDataSourceMock {
 }
 
 impl BlockDataSourceMock {
+	/// Creates new data source
 	pub fn new(mc_epoch_duration_millis: u32) -> Self {
 		Self { mc_epoch_duration_millis }
 	}
 
+	/// Creates new data source, reading configuration from environment
 	pub fn new_from_env() -> Result<Self> {
 		let mc_epoch_duration_millis: u32 =
 			std::env::var("MC__EPOCH_DURATION_MILLIS")?.parse::<u32>()?;

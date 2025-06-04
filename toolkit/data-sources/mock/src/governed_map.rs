@@ -4,18 +4,16 @@ use sidechain_domain::byte_string::ByteString;
 use sidechain_domain::*;
 use sp_governed_map::{GovernedMapDataSource, MainChainScriptsV1};
 
+/// Mocked governed map data source that serves constant data
 #[derive(Debug, Default)]
 pub struct GovernedMapDataSourceMock {
-	changes: Vec<(String, Option<ByteString>)>,
 	data: BTreeMap<String, ByteString>,
 }
 
 impl GovernedMapDataSourceMock {
-	pub fn new(
-		changes: Vec<(String, Option<ByteString>)>,
-		data: BTreeMap<String, ByteString>,
-	) -> Self {
-		Self { changes, data }
+	/// Creates new mock data source
+	pub fn new(data: BTreeMap<String, ByteString>) -> Self {
+		Self { data }
 	}
 }
 
@@ -27,7 +25,7 @@ impl GovernedMapDataSource for GovernedMapDataSourceMock {
 		_up_to_mc_block: McBlockHash,
 		_scripts: MainChainScriptsV1,
 	) -> Result<Vec<(String, Option<ByteString>)>> {
-		Ok(self.changes.clone())
+		Ok(self.data.iter().map(|(k, v)| (k.clone(), Some(v.clone()))).collect())
 	}
 
 	async fn get_state_at_block(
