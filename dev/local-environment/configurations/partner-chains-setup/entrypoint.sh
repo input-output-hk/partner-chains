@@ -248,7 +248,7 @@ echo "Configuring Initial Validators..."
 echo "[" > initial_validators.json
 for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
     node_name="permissioned-$i"
-    sidechain_vkey=$(jq -r '.publicKey' /partner-chains-nodes/$node_name/keys/sidechain.json)
+    sidechain_account_id=$(jq -r '.ss58Address' /partner-chains-nodes/$node_name/keys/sidechain.json) # Use ss58Address for the AccountID
     aura_vkey=$(jq -r '.publicKey' /partner-chains-nodes/$node_name/keys/aura.json)
     grandpa_vkey=$(jq -r '.publicKey' /partner-chains-nodes/$node_name/keys/grandpa.json)
     
@@ -258,7 +258,7 @@ for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
     
     cat <<EOF >> initial_validators.json
     [
-        "$sidechain_vkey",
+        "$sidechain_account_id",
         {
             "aura": "$aura_vkey",
             "grandpa": "$grandpa_vkey"
@@ -277,10 +277,7 @@ echo "Configuring Initial Authorities..."
 echo "[" > initial_authorities.json
 for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
     node_name="permissioned-$i"
-    # Ensure keys are in the correct format (e.g. raw public key, not full JSON path or content)
-    # Assuming sidechain.json contains an ecdsa public key for 'id'
-    # Assuming aura.json and grandpa.json contain sr25519 and ed25519 public keys respectively
-    sidechain_id_key=$(jq -r '.publicKey' "/partner-chains-nodes/$node_name/keys/sidechain.json") # ECDSA public key for ID
+    sidechain_id_ss58=$(jq -r '.ss58Address' "/partner-chains-nodes/$node_name/keys/sidechain.json") # ECDSA ss58Address for ID
     aura_key=$(jq -r '.publicKey' "/partner-chains-nodes/$node_name/keys/aura.json")
     grandpa_key=$(jq -r '.publicKey' "/partner-chains-nodes/$node_name/keys/grandpa.json")
     
@@ -288,11 +285,10 @@ for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
         echo "," >> initial_authorities.json
     fi
     
-    # Ensure escaping is correct for JSON within bash heredoc or echo
     cat <<EOF >> initial_authorities.json
     {
         "Permissioned": {
-            "id": "$sidechain_id_key",
+            "id": "$sidechain_id_ss58",
             "keys": {
                 "aura": "$aura_key",
                 "grandpa": "$grandpa_key"
@@ -313,7 +309,7 @@ initial_balance_amount="1000000000000000"
 echo "[" > initial_balances.json
 for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
     node_name="permissioned-$i"
-    account_id=$(jq -r '.publicKey' "/partner-chains-nodes/$node_name/keys/sidechain.json") # ECDSA public key as account ID
+    account_id=$(jq -r '.ss58Address' "/partner-chains-nodes/$node_name/keys/sidechain.json") # ECDSA ss58Address as account ID
 
     if [ $i -gt 1 ]; then
         echo "," >> initial_balances.json
@@ -332,8 +328,8 @@ mv chain-spec.json.tmp chain-spec.json
 rm initial_balances.json # Clean up temporary file
 
 echo "Configuring Sudo Key..."
-# Use the Aura public key of the first permissioned node as the sudo key
-sudo_account_key=$(jq -r '.publicKey' "/partner-chains-nodes/permissioned-1/keys/aura.json")
+# Use the Aura ss58Address of the first permissioned node as the sudo key
+sudo_account_key=$(jq -r '.ss58Address' "/partner-chains-nodes/permissioned-1/keys/aura.json")
 jq --arg sudo_key "$sudo_account_key" '.genesis.runtimeGenesis.config.sudo = { "key": $sudo_key }' chain-spec.json > chain-spec.json.tmp
 mv chain-spec.json.tmp chain-spec.json
 
