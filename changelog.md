@@ -8,6 +8,8 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 * `partner-chains-db-sync-data-sources` crate now exports all its public members from the root
 
 ## Removed
+* Trait `PartnerChainRuntimeBindings` and merged into `PartnerChainRuntime` trait.
+* Trait `CreateChainSpecRuntimeBindings` from `partner-chains-cli`, and substituted with `PartnerChainRuntime` trait.
 
 ## Fixed
 
