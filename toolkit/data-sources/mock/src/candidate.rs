@@ -201,6 +201,17 @@ impl MockRegistrationsConfig {
 ///
 /// let data_source = AuthoritySelectionDataSourceMock { registrations_data };
 /// ```
+///
+/// Alternatively the data source can be created using `AuthoritySelectionDataSourceMock::new_from_env`:
+///
+/// ```rust,no_run
+/// use partner_chains_mock_data_sources::AuthoritySelectionDataSourceMock;
+///
+/// let data_source = AuthoritySelectionDataSourceMock::new_from_env();
+/// ```
+///
+/// The file name fill be then sources from the `MOCK_REGISTRATIONS_FILE` environment variable.
+///
 pub struct AuthoritySelectionDataSourceMock {
 	/// Data source configuration containing the mock data to be served
 	pub registrations_data: MockRegistrationsConfig,
