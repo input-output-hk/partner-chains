@@ -338,16 +338,12 @@ jq --arg sudo_key "$sudo_account_key" '.genesis.runtimeGenesis.config.sudo = { "
 mv chain-spec.json.tmp chain-spec.json
 
 echo "Configuring Slots Per Epoch..."
-# Set slotsPerEpoch, assuming it's not in pc-chain-config.json or needs to be overridden
 slots_per_epoch_value=5 # Default from old script
 jq --argjson spe "$slots_per_epoch_value" '.genesis.runtimeGenesis.config.sidechain.slotsPerEpoch = $spe' chain-spec.json > chain-spec.json.tmp
 mv chain-spec.json.tmp chain-spec.json
 
 cp chain-spec.json /shared/chain-spec.json
 echo "chain-spec.json generation complete."
-
-echo "Copying pc-chain-config.json file to /shared/pc-chain-config.json..."
-cp pc-chain-config.json /shared/pc-chain-config.json
 
 touch /shared/chain-spec.ready
 touch /shared/partner-chains-setup.ready
