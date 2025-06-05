@@ -65,32 +65,16 @@ echo "D parameter policy ID: $D_PARAMETER_POLICY_ID"
 export PERMISSIONED_CANDIDATES_POLICY_ID=$(jq -r '.policyIds.PermissionedCandidates' addresses.json)
 echo "Permissioned candidates policy ID: $PERMISSIONED_CANDIDATES_POLICY_ID"
 
-export GOVERNED_MAP_VALIDATOR_ADDRESS=$(jq -r '.addresses.GovernedMapValidator' addresses.json)
-echo "Governed Map Validator Address: $GOVERNED_MAP_VALIDATOR_ADDRESS"
-
-export GOVERNED_MAP_POLICY_ID=$(jq -r '.policyIds.GovernedMap' addresses.json)
-echo "Governed Map Policy ID: $GOVERNED_MAP_POLICY_ID"
-
+echo "Setting values for NATIVE_TOKEN_POLICY_ID, NATIVE_TOKEN_ASSET_NAME, and ILLIQUID_SUPPLY_VALIDATOR_ADDRESS for chain-spec creation"
 export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS=$(jq -r '.addresses.IlliquidCirculationSupplyValidator' addresses.json)
 echo "Illiquid Circulation Supply Validator address: $ILLIQUID_SUPPLY_VALIDATOR_ADDRESS"
-
-# ✅ Hash Cardano addresses to valid 32-byte values
-export GOVERNED_MAP_VALIDATOR_ADDRESS_HEX="0x$(echo -n "$GOVERNED_MAP_VALIDATOR_ADDRESS" | openssl dgst -blake2b256 -binary | xxd -p -c 64)"
-export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS_HEX="0x$(echo -n "$ILLIQUID_SUPPLY_VALIDATOR_ADDRESS" | openssl dgst -blake2b256 -binary | xxd -p -c 64)"
-export COMMITTEE_CANDIDATE_ADDRESS_HEX="0x$(echo -n "$COMMITTEE_CANDIDATE_ADDRESS" | openssl dgst -blake2b256 -binary | xxd -p -c 64)"
-
-echo "[DEBUG] Hex versions of HASHED Cardano Addresses:"
-echo "[DEBUG]   GOVERNED_MAP_VALIDATOR_ADDRESS_HEX=$GOVERNED_MAP_VALIDATOR_ADDRESS_HEX"
-echo "[DEBUG]   ILLIQUID_SUPPLY_VALIDATOR_ADDRESS_HEX=$ILLIQUID_SUPPLY_VALIDATOR_ADDRESS_HEX"
-echo "[DEBUG]   COMMITTEE_CANDIDATE_ADDRESS_HEX=$COMMITTEE_CANDIDATE_ADDRESS_HEX"
-
-echo "Setting values for NATIVE_TOKEN_POLICY_ID, NATIVE_TOKEN_ASSET_NAME for chain-spec creation"
 export NATIVE_TOKEN_POLICY_ID="1fab25f376bc49a181d03a869ee8eaa3157a3a3d242a619ca7995b2b"
 export NATIVE_TOKEN_ASSET_NAME="52657761726420746f6b656e"
 
-echo "[DEBUG] Values for build-spec regarding native token management:"
-echo "[DEBUG]   NATIVE_TOKEN_POLICY_ID=$NATIVE_TOKEN_POLICY_ID"
-echo "[DEBUG]   NATIVE_TOKEN_ASSET_NAME=$NATIVE_TOKEN_ASSET_NAME"
+export GOVERNED_MAP_VALIDATOR_ADDRESS=$(jq -r '.addresses.GovernedMapValidator' addresses.json)
+echo "Governed Map Validator Address: $GOVERNED_MAP_VALIDATOR_ADDRESS"
+export GOVERNED_MAP_POLICY_ID=$(jq -r '.policyIds.GovernedMap' addresses.json)
+echo "Governed Map Policy ID: $GOVERNED_MAP_POLICY_ID"
 
 echo "Inserting D parameter..."
 
