@@ -93,7 +93,7 @@ jobs:
         XRAY_CLIENT_SECRET: ${{ secrets.XRAY_CLIENT_SECRET }}
         XRAY_API_BASE_URL: ${{ secrets.XRAY_API_BASE_URL }}
         JIRA_URL: ${{ secrets.JIRA_URL }}
-        kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+        KUBECONFIG_BASE64: ${{ secrets.KUBECONFIG_BASE64 }}
         K8S_SERVER: ${{ secrets.K8S_SERVER }}
         K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
       run: |
@@ -102,7 +102,7 @@ jobs:
           --secret AWS_SESSION_TOKEN="$AWS_SESSION_TOKEN" \
           --secret AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
           --secret AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
-          --secret kubeconfig_base64="$kubeconfig_base64" \
+          --secret KUBECONFIG_BASE64="$KUBECONFIG_BASE64" \
           --secret K8S_SERVER="$K8S_SERVER" \
           --secret K8S_SA_TOKEN="$K8S_SA_TOKEN" \
           --secret SLACK_WEBHOOK_URL="$SLACK_WEBHOOK_URL" \

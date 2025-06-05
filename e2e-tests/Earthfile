@@ -54,7 +54,7 @@ test:
   FROM +build
   ARG CI_RUN
   IF [ "$CI_RUN" = "true" ]
-    RUN --secret AWS_SECRET_ACCESS_KEY --secret AWS_ACCESS_KEY_ID --secret AWS_SESSION_TOKEN --secret kubeconfig_base64 --secret K8S_SERVER --secret K8S_SA_TOKEN --no-cache eval $pytest_cmd --ci-run || true
+    RUN --secret AWS_SECRET_ACCESS_KEY --secret AWS_ACCESS_KEY_ID --secret AWS_SESSION_TOKEN --secret KUBECONFIG_BASE64 --secret K8S_SERVER --secret K8S_SA_TOKEN --no-cache eval $pytest_cmd --ci-run || true
   ELSE
     RUN --mount=type=secret,target=/root/.aws/credentials,id=aws --mount=type=secret,target=/root/.kube/config,id=kube --no-cache eval $pytest_cmd || true
   END
