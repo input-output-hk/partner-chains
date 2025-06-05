@@ -134,7 +134,7 @@ for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
         cat "/shared/node-keys/$node_name/keys/aura.json"
         echo "[DEBUG] End of aura.json content for $node_name."
     fi
-
+    
     ./partner-chains-node key generate \
         --scheme ed25519 \
         --output-type json \
@@ -145,7 +145,7 @@ for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
         cat "/shared/node-keys/$node_name/keys/grandpa.json"
         echo "[DEBUG] End of grandpa.json content for $node_name."
     fi
-
+    
     # Extract public keys
     sidechain_vkey=$(jq -r '.publicKey' /shared/node-keys/$node_name/keys/sidechain.json)
     aura_vkey=$(jq -r '.publicKey' /shared/node-keys/$node_name/keys/aura.json)
@@ -371,6 +371,13 @@ echo "Configuring Slots Per Epoch..."
 slots_per_epoch_value=5 # Default from old script
 jq --argjson spe "$slots_per_epoch_value" '.genesis.runtimeGenesis.config.sidechain.slotsPerEpoch = $spe' chain-spec.json > chain-spec.json.tmp
 mv chain-spec.json.tmp chain-spec.json
+
+echo "[PATCH] Overriding sessionCommitteeManagement.mainChainScripts.committee_candidate_address with a dummy ss58 address (Alice) as a workaround for BadBase58 error."
+DUMMY_SS58_ALICE_ADDRESS="5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+jq --arg addr "$DUMMY_SS58_ALICE_ADDRESS" \
+   '.genesis.runtimeGenesis.config.sessionCommitteeManagement.mainChainScripts.committee_candidate_address = $addr' \
+   chain-spec.json > chain-spec.json.tmp && mv chain-spec.json.tmp chain-spec.json
+echo "[PATCH] committee_candidate_address patched in chain-spec.json."
 
 cp chain-spec.json /shared/chain-spec.json
 echo "chain-spec.json generation complete."
