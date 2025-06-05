@@ -577,31 +577,49 @@ to manage your node keys.
 
 ### Partner Chain Commands
 The Partner Chain toolkit provides a range of commands to interact with the chain or carry out
-administrative tasks. Note that all commands also accept a set of general options which can be
-listed by passing `--help` to the respective command.
+administrative tasks. These commands are provided by the `partner-chains-node-commands` crate
+and need to be properly wired into a Partner Chain node to be available to the users. For
+instructions on how to add them to your node, consult the crate's documentation and the reference
+node implementation in `demo/node` directory.
+
+Below is a description of each command provided by the toolkit.
+All parameters can be listed by passing `--help` to the respective command.
 
 #### registration-status
-Returns registration status for a given mainchain public key and epoch number. If registration
-has been included in Cardano block in epoch N, then it should be returned by this command if
-epoch greater than N+1 is provided. If this command won't show your registration after a few
-minutes after it has been included in a cardano block, you can start debugging for unsuccessful
-registration.
+Returns registration status for a given Cardano main chain public key and epoch number.
 
 ```shell
 $ pc-node registration-status
     --stake-pool-pub-key <STAKE_POOL_PUB_KEY>
     --mc-epoch-number <MC_EPOCH_NUMBER>
+    --chain <CHAIN_SPEC>
 ```
+
+An SPO registration performed in epoch N becomes active starting from epoch N+2, provided
+that it is valid. The `registration-status` command can be used to check:
+- whether the registration is considered valid, ie. if all signatures match the declared public
+- whether the registration is active, or in case it is not, when it will become active
+If this command doesn't show your registration after a few minutes after it has been included in
+a Cardano block, it can mean that the registration was not submitted correctly. A common mistake
+is using either the wrong smart contracts version (determined by the CLI/node version) or using
+a wrong genesis UTXO.
+
 #### ariadne-parameters
-Returns ariadne parameters effective at given mainchain epoch number. Parameters are effective
-two epochs after the block their change is included in.
+Returns ariadne parameters effective at given mainchain epoch number.
 
 ```shell
-$ pc-node ariadne-parameter --mc-epoch-number <MC_EPOCH_NUMBER>
+$ pc-node ariadne-parameters
+    --mc-epoch-number <MC_EPOCH_NUMBER>
+    --chain <CHAIN_SPEC>
 ```
 
+Parameters are effective two epochs after the block their change is included in.
+Running this command for epoch N+2 after changing the Ariadne parameters is a good way to confirm
+that the parameters have been changed correctly.
+
 #### registration-signatures
-Generates registration signatures for partner chains committee candidates.
+Creates signatures required for Cardano SPOs to register themselves as Partner Chain block
+producer candidates.
 
 ```shell
 $ pc-node registration-signatures --genesis-utxo <GENESIS_UTXO>
@@ -609,8 +627,14 @@ $ pc-node registration-signatures --genesis-utxo <GENESIS_UTXO>
     --sidechain-signing-key <SIDECHAIN_SIGNING_KEY>
     --registration-utxo <REGISTRATION_UTXO>
 ```
+
+`MAINCHAIN_SIGNING_KEY` should be the signing key associated with the stake pool address being
+registered. `REGISTRATION_UTXO` should be a UTXO in the wallet associated with that signing key
+available to be spent by the subsequent registration transaction.
+
 #### sign-address-association
-Outputs signatures of message composed of: public key hash related to signing key, UTXO identifying partner-chain and given partner chain address
+Creates signatures required for Cardano delegators to associate their Cardano addresses with their
+Partner Chain address.
 
 ```shell
 $ pc-node sign-address-association
@@ -618,6 +642,9 @@ $ pc-node sign-address-association
     --partnerchain-address <PARTNERCHAIN_ADDRESS>
     --signing-key <SIGNING_KEY>
 ```
+
+The generated signatures can be later submitted to the Partner Chain ledger via an extrinsic.
+
 #### sign-block-producer-metadata
 Signs block producer metadata for submitting to the runtime.
 
@@ -627,19 +654,37 @@ $ pc-node sign-block-producer-metadata
     --metadata-file <METADATA_FILE>
     --cross-chain-signing-key <CROSS_CHAIN_SIGNING_KEY>
 ```
+
+The `METADATA_FILE` should be a Json file containing data compatible with the metadata format used.
+As each Partner Chain can define its own format, users should consult their Partner Chain's documentation.
+
 #### smart-contracts
 The smart contracts command provides multiple sub-commands for interacting with Partner Chain smart
-contracts on Cardano. Note that all of the smart-contract commands require the `ogmios` service to
-be running locally.
+contracts on Cardano.
+
+Note that all of the smart-contract commands require access to [Ogmios](https://ogmios.dev). The address
+is assumed to be `ws://localhost:1337` and can be overriden by the `--ogmios-url` parameter.
+
+The commands in this section are either:
+- user actions, which can be performed by any Partner Chain user provided that they pass the requirements
+- governance actions that can be performed only by the governance authority of the Partner Chain
+
+Partner Chain governance authority can be either a single Cardano key or a multi-sig. If the governance
+is a multisig with at least two required signatures, all governance commands described below will
+output a CBOR-encoded transaction instead of immediately submitting one on-chain. To submit this transaction
+multisig members should use the `sign-tx` command to gather signatures and finally submit it using
+`assemble-and-submit-tx` command.
+
 ##### get-scripts
-Prints validator addresses and policy IDs of smart contracts of Partner Chain identified by given UTXO
+Prints validator addresses and policy IDs of smart contracts of Partner Chain identified by given UTXO.
 
 ```shell
 $ pc-node smart-contracts get-scripts --genesis-utxo <GENESIS_UTXO>
 ```
 
 ##### upsert-d-parameter
-Upsert D-parameter
+Updates the value of the D-parameter (the number of permissioned and registered seats on the Partner
+Chain's committee).
 
 ```shell
 $ pc-node smart-contracts upsert-d-parameter
@@ -648,8 +693,12 @@ $ pc-node smart-contracts upsert-d-parameter
     --payment-key-file <PAYMENT_KEY_FILE>
     --genesis-utxo <GENESIS_UTXO>
 ```
+
+This is a governance action.
+
 ##### upsert-permissioned-candidates
-Upsert Permissioned Candidates
+Updates the list of permissioned block producer candidates (trusted block producers that don't need
+to be Cardano SPOs to participate in committees).
 
 ```shell
 $ pc-node smart-contracts upsert-permissioned-candidates
@@ -657,8 +706,12 @@ $ pc-node smart-contracts upsert-permissioned-candidates
     --payment-key-file <PAYMENT_KEY_FILE>
     --genesis-utxo <GENESIS_UTXO>
 ```
+
+This is a governance action.
+
 ##### register
-Register candidate
+
+Registers an SPO as a block producer candidate.
 
 ```shell
 $ pc-node smart-contracts register
@@ -670,8 +723,14 @@ $ pc-node smart-contracts register
     --spo-public-key <SPO_PUBLIC_KEY>
     --spo-signature <SPO_SIGNATURE>
 ```
+
+The inputs to this command should be taken from the output of `registration-signatures`.
+After this action, it takes 2 Cardano epochs for the registration to become active.
+
+
 ##### deregister
-Deregister candidate
+
+Deregisters an SPO.
 
 ```shell
 $ pc-node smart-contracts deregister
@@ -679,17 +738,31 @@ $ pc-node smart-contracts deregister
     --payment-key-file <PAYMENT_KEY_FILE>
     --spo-public-key <SPO_PUBLIC_KEY>
 ```
+
+After this action, it takes 2 Cardano epochs for the registration to deactivate.
+
 ##### reserve
-Commands for management of rewards reserve
+
+Set of subcommands for management of the native token rewards reserve.
+All of the subcommands except for `release` are governance actions.
+
 ###### init
+
 Initializes the reserve management.
+
 ```shell
 pc-node smart-contracts reserve init
     --payment-key-file <PAYMENT_KEY_FILE>
     --genesis-utxo <GENESIS_UTXO>
 ```
+
+This command only sets up governance scripts that are required by the reserve mechanism and don't
+move any funds yet.
+
 ###### create
-Creates the reserve management.
+
+Creates the native token reserve.
+
 ```shell
 $ pc-node smart-contracts reserve create
     --payment-key-file <PAYMENT_KEY_FILE>
@@ -699,31 +772,54 @@ $ pc-node smart-contracts reserve create
     --token <TOKEN>
 ```
 
+This command sets up the on-chain token reserve and transfers initial tokens into it.
+`TOKEN` should be of the format `<policy id>.<asset name>` and point to the native token of the Partner Chain.
+`TOTAL_ACCRUED_FUNCTION_SCRIPT_HASH` should be the script hash of the function used to determine
+the number of releasable tokens. Consult the smart contracts documentation for details.
+
 ###### deposit
-Deposits tokens from payment key wallt to the reserve
+
+Deposits tokens from payment key wallet to the reserve
+
 ```shell
 $ pc-node smart-contracts deposit
     --payment-key-file <PAYMENT_KEY_FILE>
     --genesis-utxo <GENESIS_UTXO>
     --amount <AMOUNT>
 ```
+
+This transaction can be submitted by any wallet to transfer more tokens into the reserve.
+
 ###### update-settings
-Update reserve management
+
+Update the reserve settings.
+
 ```shell
 $ pc-node smart-contracts reserve update-settings
     --payment-key-file <PAYMENT_KEY_FILE>
     --genesis-utxo <GENESIS_UTXO>
     --total-accrued-function-script-hash <TOTAL_ACCRUED_FUNCTION_SCRIPT_HASH>
 ```
+
+Currently only the `total-accrued` function can be changed.
+
 ###### handover
-Releases all the remaining funds from the reserve to the illiquid supply
+
+Releases all the remaining funds from the reserve to the illiquid supply.
+
 ```shell
 $ pc-node smart-contracts reserve
     --payment-key-file <PAYMENT_KEY_FILE>
     --genesis-utxo <GENESIS_UTXO>
 ```
+ 
+This action is meant to be performed at the end of the reserve's lifecycle to move all remaining
+funds to the Partner Chain.
+
 ###### release
-Releases funds from the reserve to the illiquid supply
+
+Releases funds from the reserve to the illiquid supply.
+
 ```shell
 $ pc-node smart-contracts reserve release
     --payment-key-file <PAYMENT_KEY_FILE>
@@ -731,48 +827,89 @@ $ pc-node smart-contracts reserve release
     --reference-utxo <REFERENCE_UTXO>
     --amount <AMOUNT>
 ```
+
+This action can be called by any Cardano chain participant. `REFERENCE_UTXO` should be the UTXO containing
+the `total-accrued` function matching the hash stored by the reserve smart contract. The number of tokens
+released from the reserve - `AMOUNT` - must be equal or less than the number indicated by that function.
+
 ##### governance
-Managing on-chain governance.
+
+A set of subcommands for managing on-chain governance of a Partner Chain.
+
 ###### init
-Initialize Partner Chain governance
+
+Initializes a new Partner Chain on Cardano and sets up its initial authorities.
+
 ```shell
 $ pc-node smart-contracts governance init
     --threshold <THRESHOLD>
+    --governance-authority <GOVERNANCE_AUTHORITY>*
     --payment-key-file <PAYMENT_KEY_FILE>
 ```
+
+This transaction creates a new Partner Chain by burning the _genesis UTXO_ that becomes its identifier,
+and establishes an M-of-N multisig as its governance, where `THRESHOLD` determines how many signatures
+are required by the multisig. Multiple Cardano public keys are passed by repeating the `--governance-authority`
+argument.
+
 ###### update
-Update Partner Chain governance
+
+Updates a Partner Chain's governance.
+
 ```shell
 $ pc-node smart-contracts governance update
     --threshold <THRESHOLD>
+    --governance-authority <GOVERNANCE_AUTHORITY>*
     --payment-key-file <PAYMENT_KEY_FILE>
     --genesis-utxo <GENESIS_UTXO>
 ```
+
+This command replaces the existing governance with an M-of-N multisig of keys passed as `GOVERNANCE_AUTHORITY`
+with threshold `THRESHOLD`.
+
 ###### get-policy
-Prints JSON summary of the current governance policy of a chain. Prints null if governance
-policy has not been set for given genesis utxo.
+
+Prints JSON summary of the current governance policy of a chain.
+Prints `null` if governance policy has not been set for given genesis utxo.
+
 ```shell
 $ pc-node smart-contracts get-policy --genesis-utxo <GENESIS_UTXO>
 ```
 
 ##### assemble-and-submit-tx
-Assemble and submit a transaction
+
+Assembles and submits a transaction.
 
 ```shell
-$ pc-node smart-contracts assemble-and-submit-tx --transaction <TRANSACTION>
+$ pc-node smart-contracts assemble-and-submit-tx
+    --transaction <TRANSACTION>
+    --witnesses <WITNESS>
 ```
+
+`TRANSACTION` should be CBOR-encoded transaction, and `WITNESS` should be CBOR-encoded witness
+(this argument can be repeated for multiple witnesses).
+
 ##### sign-tx
-Sign a transaction CBOR using a payment signing key
+
+Sign a transaction using a payment signing key.
+
 ```shell
 $ pc-node sign-tx
     --transaction <TRANSACTION>
     --payment-key-file <PAYMENT_KEY_FILE>
 ```
+
+`TRANSACTION` should be a CBOR-encoded transaction. The command will output a CBOR-encoded
+witness that can be passed to `assemble-and-submit-tx`.
+
 ##### governed-map
-Manage the Governed Map key-value store on Cardano
+
+Set of subcommands for managing the Governed Map key-value store on Cardano
+
 ###### insert
-Insert a key-value pair into the Governed Map. If the value for the key already exists it won't be
-updated.
+
+Inserts a key-value pair into the Governed Map.
+
 ```shell
 $ pc-node governed-map insert
     --key <KEY>
@@ -780,8 +917,13 @@ $ pc-node governed-map insert
     --payment-key-file <PAYMENT_KEY_FILE>
     --genesis-utxo <GENESIS_UTXO>
 ```
+
+If the value for the key already exists it won't be updated.
+
 ###### update
-Updates a key-value pair in the Governed Map. If the key is missing it won't be inserted.
+
+Updates a key-value pair in the Governed Map.
+
 ```shell
 $ pc-node governed-map update
     --key <KEY>
@@ -789,21 +931,32 @@ $ pc-node governed-map update
     --payment-key-file <PAYMENT_KEY_FILE>
     --genesis-utxo <GENESIS_UTXO>
 ```
+
+If the key does not already exist it won't be inserted.
+
 ###### remove
+
 Removes a key-value pair from the Governed Map.
+
 ```shell
 $ pc-node governed-map remove
     --key <KEY>
     --payment-key-file <PAYMENT_KEY_FILE>
     --genesis-utxo <GENESIS_UTXO>
 ```
+
 ###### list
-Lists all key-value pairs currently stored in the Governed Map
+
+Lists all key-value pairs currently stored in the Governed Map.
+
 ```shell
 $ pc-node governed-map list --genesis-utxo <GENESIS_UTXO>
 ```
+
 ###### get
+
 Retrieves the value stored in the Governed Map for the given key
+
 ```shell
 $ pc-node governed-map get
     --key <KEY>
