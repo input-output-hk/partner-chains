@@ -537,22 +537,20 @@ def candidate_skey_with_cli(config: ApiConfig, candidate: Candidates):
 
     This fixture is executed only if:
     - you call it directly in test or other fixture
-    - tools.node.runner.secrets.copy is set to true in the config file `<env>_stack.json`
+    - tools.node.runner.files.copy_secrets is set to true in the config file `<env>_stack.json`
 
     WARNING: This fixture copies secret file to a remote host and should be used with caution.
 
     :param config: The API configuration object.
     :param candidate: The candidate to register/deregister.
     """
-    if config.stack_config.tools.node.runner.secrets.copy:
+    if config.stack_config.tools.node.runner.files.copy_secrets:
         runner = RunnerFactory.get_runner(config.stack_config.tools.node.runner)
-        make_tmp_dir_command = "mktemp -d"
-        if config.stack_config.tools.node.runner.secrets.copy_to:
-            make_tmp_dir_command = f"{make_tmp_dir_command} -p {config.stack_config.tools.node.runner.secrets.copy_to}"
-        temp_dir = runner.exec(make_tmp_dir_command).stdout.strip()
+        make_tmp_dir_cmd = f"mktemp -d -p {config.stack_config.tools.node.runner.files.copy_to}"
+        temp_dir = runner.exec(make_tmp_dir_cmd).stdout.strip()
         path = config.nodes_config.nodes[candidate.name].keys_files.cardano_payment_key
         filename = path.split("/")[-1]
-        runner.scp(path, temp_dir)
+        runner.copy(path, temp_dir)
         config.nodes_config.nodes[candidate.name].keys_files.cardano_payment_key = f"{temp_dir}/{filename}"
         yield
         config.nodes_config.nodes[candidate.name].keys_files.cardano_payment_key = path

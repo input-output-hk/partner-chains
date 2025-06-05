@@ -21,11 +21,12 @@
                 "path": "/usr/local/bin/partner-chains-node",
                 "runner": {
                     "kubernetes": {
-                        "container": "substrate-node"
+                        "container": "substrate-node",
+                        "workdir": "/data/e2e-tests"
                     },
-                    "secrets": {
-                        "copy": true,
-                        "copy_to": "/data"
+                    "files": {
+                        "copy_secrets": true,
+                        "copy_to": "/data/e2e-tests/tmp"
                     }
                 }
             }

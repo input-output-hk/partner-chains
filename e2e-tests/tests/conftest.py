@@ -564,8 +564,8 @@ def write_file():
     """
     saved_files = {}
 
-    def _write_file(runner: Runner, content: str):
-        filepath = f"/tmp/{uuid.uuid4().hex}"
+    def _write_file(runner: Runner, content: str) -> str:
+        filepath = f"{runner.files_config.copy_to}/{uuid.uuid4().hex}"
         content_json = json.dumps(content)
         runner.exec(f"echo '{content_json}' > {filepath}")
 
@@ -579,7 +579,7 @@ def write_file():
     for runner, filepaths in saved_files.items():
         logging.info("Cleaning up temporary cli files on remote host...")
         cmd = f"rm {' '.join(filepaths)}"
-        runner.run(cmd)
+        runner.exec(cmd)
 
 
 @fixture(scope="session")
@@ -591,18 +591,16 @@ def governance_skey_with_cli(config: ApiConfig):
 
     This fixture is executed only if:
     - you call it directly in test or other fixture
-    - tools.node.runner.secrets.copy is set to true in the config file `<env>_stack.json`
+    - tools.node.runner.files.copy_secrets is set to true in the config file `<env>_stack.json`
 
     WARNING: This fixture copies secret file to a remote host and should be used with caution.
 
     :param config: The API configuration object.
     """
-    if config.stack_config.tools.node.runner.secrets.copy:
+    if config.stack_config.tools.node.runner.files.copy_secrets:
         runner = RunnerFactory.get_runner(config.stack_config.tools.node.runner)
-        make_tmp_dir_command = "mktemp -d"
-        if config.stack_config.tools.node.runner.secrets.copy_to:
-            make_tmp_dir_command = f"{make_tmp_dir_command} -p {config.stack_config.tools.node.runner.secrets.copy_to}"
-        temp_dir = runner.exec(make_tmp_dir_command).stdout.strip()
+        make_tmp_dir_cmd = f"mktemp -d -p {config.stack_config.tools.node.runner.files.copy_to}"
+        temp_dir = runner.exec(make_tmp_dir_cmd).stdout.strip()
         path = config.nodes_config.governance_authority.mainchain_key
         filename = path.split("/")[-1]
         runner.copy(src=path, dest=f"{temp_dir}/{filename}")
