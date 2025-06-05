@@ -37,7 +37,7 @@ pub struct RegistrationSignaturesCmd {
 	/// ECDSA private key for the Partner Chain validator
 	#[arg(long)]
 	pub sidechain_signing_key: SidechainSigningKeyParam,
-	/// UTXO that will be consumed during the registration transaction
+	/// UTXO to be spend during validator registration transaction
 	#[arg(long)]
 	pub registration_utxo: UtxoId,
 }
