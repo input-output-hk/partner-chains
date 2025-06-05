@@ -67,18 +67,30 @@ echo "Permissioned candidates policy ID: $PERMISSIONED_CANDIDATES_POLICY_ID"
 
 export GOVERNED_MAP_VALIDATOR_ADDRESS=$(jq -r '.addresses.GovernedMapValidator' addresses.json)
 echo "Governed Map Validator Address: $GOVERNED_MAP_VALIDATOR_ADDRESS"
+
 export GOVERNED_MAP_POLICY_ID=$(jq -r '.policyIds.GovernedMap' addresses.json)
 echo "Governed Map Policy ID: $GOVERNED_MAP_POLICY_ID"
 
-echo "Setting values for NATIVE_TOKEN_POLICY_ID, NATIVE_TOKEN_ASSET_NAME, and ILLIQUID_SUPPLY_VALIDATOR_ADDRESS for chain-spec creation"
+export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS=$(jq -r '.addresses.IlliquidCirculationSupplyValidator' addresses.json)
+echo "Illiquid Circulation Supply Validator address: $ILLIQUID_SUPPLY_VALIDATOR_ADDRESS"
+
+# ✅ Hash Cardano addresses to valid 32-byte values
+export GOVERNED_MAP_VALIDATOR_ADDRESS_HEX="0x$(echo -n "$GOVERNED_MAP_VALIDATOR_ADDRESS" | openssl dgst -blake2b256 -binary | xxd -p -c 64)"
+export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS_HEX="0x$(echo -n "$ILLIQUID_SUPPLY_VALIDATOR_ADDRESS" | openssl dgst -blake2b256 -binary | xxd -p -c 64)"
+export COMMITTEE_CANDIDATE_ADDRESS_HEX="0x$(echo -n "$COMMITTEE_CANDIDATE_ADDRESS" | openssl dgst -blake2b256 -binary | xxd -p -c 64)"
+
+echo "[DEBUG] Hex versions of HASHED Cardano Addresses:"
+echo "[DEBUG]   GOVERNED_MAP_VALIDATOR_ADDRESS_HEX=$GOVERNED_MAP_VALIDATOR_ADDRESS_HEX"
+echo "[DEBUG]   ILLIQUID_SUPPLY_VALIDATOR_ADDRESS_HEX=$ILLIQUID_SUPPLY_VALIDATOR_ADDRESS_HEX"
+echo "[DEBUG]   COMMITTEE_CANDIDATE_ADDRESS_HEX=$COMMITTEE_CANDIDATE_ADDRESS_HEX"
+
+echo "Setting values for NATIVE_TOKEN_POLICY_ID, NATIVE_TOKEN_ASSET_NAME for chain-spec creation"
 export NATIVE_TOKEN_POLICY_ID="1fab25f376bc49a181d03a869ee8eaa3157a3a3d242a619ca7995b2b"
 export NATIVE_TOKEN_ASSET_NAME="52657761726420746f6b656e"
-export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS=$(jq -r '.addresses.IlliquidCirculationSupplyValidator' addresses.json)
 
 echo "[DEBUG] Values for build-spec regarding native token management:"
 echo "[DEBUG]   NATIVE_TOKEN_POLICY_ID=$NATIVE_TOKEN_POLICY_ID"
 echo "[DEBUG]   NATIVE_TOKEN_ASSET_NAME=$NATIVE_TOKEN_ASSET_NAME"
-echo "[DEBUG]   ILLIQUID_SUPPLY_VALIDATOR_ADDRESS=$ILLIQUID_SUPPLY_VALIDATOR_ADDRESS"
 
 echo "Inserting D parameter..."
 
@@ -270,13 +282,41 @@ echo "Generating chain-spec.json file for Partnerchain Nodes..."
 ./partner-chains-node build-spec --disable-default-bootnode > chain-spec.json
 
 echo "Setting Governed Map scripts..."
-export GOVERNED_MAP_VALIDATOR_ADDRESS_HEX="0x$(echo -n "$GOVERNED_MAP_VALIDATOR_ADDRESS" | xxd -p -c 128)"
-jq --arg val_addr_hex "$GOVERNED_MAP_VALIDATOR_ADDRESS_HEX" --arg asset_pol_id "$GOVERNED_MAP_POLICY_ID" \
+jq --arg val_addr_hash "$GOVERNED_MAP_VALIDATOR_ADDRESS_HEX" --arg asset_pol_id "$GOVERNED_MAP_POLICY_ID" \
    '.genesis.runtimeGenesis.config.governedMap.mainChainScripts = {
-     "validator_address": $val_addr_hex,
+     "validator_address": $val_addr_hash,
      "asset_policy_id": $asset_pol_id
    }' \
    chain-spec.json > chain-spec.json.tmp && mv chain-spec.json.tmp chain-spec.json
+
+echo "[PATCH] Setting nativeTokenManagement.mainChainScripts..."
+jq --arg illiquid_hash "$ILLIQUID_SUPPLY_VALIDATOR_ADDRESS_HEX" \
+   --arg native_token_pol "0x$NATIVE_TOKEN_POLICY_ID" \
+   --arg native_token_name "0x$NATIVE_TOKEN_ASSET_NAME" \
+   '.genesis.runtimeGenesis.config.nativeTokenManagement.mainChainScripts = {
+     "illiquid_supply_validator_address": $illiquid_hash,
+     "native_token_policy_id": $native_token_pol,
+     "native_token_asset_name": $native_token_name
+   }' \
+   chain-spec.json > chain-spec.json.tmp && mv chain-spec.json.tmp chain-spec.json
+echo "[PATCH] nativeTokenManagement.mainChainScripts patched."
+
+echo "[PATCH] Setting sessionCommitteeManagement.mainChainScripts..."
+# Note: D_PARAMETER_POLICY_ID and PERMISSIONED_CANDIDATES_POLICY_ID already include 0x from addresses.json
+# NATIVE_TOKEN_POLICY_ID and NATIVE_TOKEN_ASSET_NAME are raw hex, so we add 0x.
+# For D_PARAMETER_POLICY_ID, we also need to pad it to 30 bytes as per previous findings.
+PADDED_D_PARAM_POLICY_ID_HEX="$(if [ "${D_PARAMETER_POLICY_ID#0x}" = "$D_PARAMETER_POLICY_ID" ]; then echo "0x${D_PARAMETER_POLICY_ID}0000"; else echo "${D_PARAMETER_POLICY_ID}0000"; fi)"
+
+jq --arg cc_addr_hash "$COMMITTEE_CANDIDATE_ADDRESS_HEX" \
+   --arg d_param_pol "$PADDED_D_PARAM_POLICY_ID_HEX" \
+   --arg pc_pol "$PERMISSIONED_CANDIDATES_POLICY_ID" \
+   '.genesis.runtimeGenesis.config.sessionCommitteeManagement.mainChainScripts = {
+     "committee_candidate_address": $cc_addr_hash,
+     "d_parameter_policy_id": $d_param_pol,
+     "permissioned_candidates_policy_id": $pc_pol
+   }' \
+   chain-spec.json > chain-spec.json.tmp && mv chain-spec.json.tmp chain-spec.json
+echo "[PATCH] sessionCommitteeManagement.mainChainScripts patched."
 
 echo "Configuring Initial Validators..."
 # Generate initial validators array
