@@ -68,7 +68,6 @@ class KubernetesConfig:
     pod: str = MISSING
     namespace: str = MISSING
     container: str = MISSING
-    workdir: Optional[str] = None
 
 
 @dataclass
@@ -77,16 +76,11 @@ class DockerConfig:
 
 
 @dataclass
-class FilesConfig:
-    copy_secrets: bool = False
-    copy_to: str = "/tmp"
-
-
-@dataclass
 class RunnerConfig:
+    copy_secrets: bool = False
+    workdir: Optional[str] = None
     docker: Optional[DockerConfig] = None
     kubernetes: Optional[KubernetesConfig] = None
-    files: Optional[FilesConfig] = None
 
 
 @dataclass

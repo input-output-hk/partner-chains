@@ -20,13 +20,10 @@
             "node": {
                 "path": "/usr/local/bin/partner-chains-node",
                 "runner": {
+                    "workdir": "/data/e2e-tests",
+                    "copy_secrets": true,
                     "kubernetes": {
-                        "container": "substrate-node",
-                        "workdir": "/data/e2e-tests"
-                    },
-                    "files": {
-                        "copy_secrets": true,
-                        "copy_to": "/data/e2e-tests/tmp"
+                        "container": "substrate-node"
                     }
                 }
             }

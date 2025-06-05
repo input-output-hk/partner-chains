@@ -15,8 +15,13 @@ class SensitiveDataFilter(logging.Filter):
         return True
 
 
-mc_vkey_pattern = (r"mc_vkey='([^']*)'", "mc_vkey='[REDACTED]'")
-signing_key_arg_pattern = (re.compile(r"(--signing-key\s+|--mainchain-signing-key\s+|--sidechain-signing-key\s+)[^\s]+", re.IGNORECASE), r"\1[REDACTED]") 
-signing_key_file_pattern = (re.compile(r"(SigningKey.*?cborHex.: .)([0-9a-fA-F]+)(.)", re.IGNORECASE | re.DOTALL), r"\1[REDACTED]\3")
+signing_key_arg_pattern = (
+    re.compile(r"(--signing-key\s+|--mainchain-signing-key\s+|--sidechain-signing-key\s+)[^\s]+", re.IGNORECASE),
+    r"\1[REDACTED]",
+)
+signing_key_file_pattern = (
+    re.compile(r'(SigningKey.*?cborHex\\?"?:\s*\\?")([0-9a-fA-F]+)(.)', re.IGNORECASE | re.DOTALL),
+    r"\1[REDACTED]\3",
+)
 
-sensitive_filter = SensitiveDataFilter([mc_vkey_pattern, signing_key_arg_pattern, signing_key_file_pattern])
+sensitive_filter = SensitiveDataFilter([signing_key_arg_pattern, signing_key_file_pattern])

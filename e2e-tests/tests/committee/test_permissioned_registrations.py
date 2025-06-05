@@ -25,7 +25,7 @@ def test_upsert_permissioned_candidates(
         f"{candidate.public_key}:{candidate.aura_public_key}:{candidate.grandpa_public_key}"
         for candidate in new_candidates_list.values()
     )
-    candidates_filepath = write_file(api.partner_chains_node.run_command, candidates_file_content)
+    candidates_filepath = write_file(api.partner_chains_node.run_command, candidates_file_content, is_json=False)
     result, next_status_epoch = api.upsert_permissioned_candidates(candidates_filepath)
     assert result, f"Addition of permissioned candidate {new_candidates_list} failed."
 

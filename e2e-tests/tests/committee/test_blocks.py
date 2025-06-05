@@ -18,7 +18,7 @@ def test_block_producer_can_update_their_metadata(api: BlockchainApi, get_wallet
     }
     metadata_filepath = write_file(api.partner_chains_node.run_command, metadata)
 
-    signature = api.sign_block_producer_metadata(metadata, skey)
+    signature = api.sign_block_producer_metadata(metadata_filepath, skey)
     assert signature.signature, "Signature is empty"
     assert signature.cross_chain_pub_key == f"0x{vkey_hex}"
 
@@ -40,7 +40,8 @@ def test_block_producer_can_update_their_metadata(api: BlockchainApi, get_wallet
         "url": "http://test.example",
         "hash": "0x0000000000000000000000000000000000000000000000000000000000000002",
     }
-    signature = api.sign_block_producer_metadata(metadata, skey)
+    metadata_filepath = write_file(api.partner_chains_node.run_command, metadata)
+    signature = api.sign_block_producer_metadata(metadata_filepath, skey)
     assert signature.signature, "Signature is empty"
     assert signature.cross_chain_pub_key == f"0x{vkey_hex}"
 

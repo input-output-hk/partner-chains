@@ -539,7 +539,7 @@ def wait_until():
 
 @fixture(scope="session")
 def write_file():
-    """Writes a file in location that is available by CLI being in use in tests.
+    """Write a file in a location that is available by tools used in tests, e.g. node.
 
     Example usage:
     ```python
@@ -550,7 +550,9 @@ def write_file():
         assert policy_id
     ```
 
-    The file is created in `/tmp` directory with a random name.
+    The file is created using `mktemp` command, which creates a temporary file under /tmp/tmp.XXXXXXX, unless
+    the tool.runner.workdir is set in the `<env>_stack.json` file, in which case it creates a temporary file in that
+    directory.
     The content is passed as a string and is converted to JSON format.
     The file is created on the same host that is configured in the `<env>_stack.json` for given tool.
     The file is removed after the test completes.
@@ -562,32 +564,32 @@ def write_file():
     Yields:
         function: write_file callable function that takes runner and content as arguments
     """
-    saved_files = {}
+    runners: list[Runner] = []
 
-    def _write_file(runner: Runner, content: str) -> str:
-        filepath = f"{runner.files_config.copy_to}/{uuid.uuid4().hex}"
-        content_json = json.dumps(content)
-        runner.exec(f"echo '{content_json}' > {filepath}")
+    def _write_file(runner: Runner, content: str, is_json: bool = True) -> str:
+        temp_file = runner.mktemp()
+        if is_json:
+            content = json.dumps(content)
+            content = content.replace('"', '\\"')
+        runner.exec(f"echo '{content}' > {temp_file}")
 
-        if runner not in saved_files:
-            saved_files[runner] = []
-        saved_files[runner].append(filepath)
-        return filepath
+        if runner not in runners:
+            runners.append(runner)
+        return temp_file
 
     yield _write_file
 
-    for runner, filepaths in saved_files.items():
-        logging.info("Cleaning up temporary cli files on remote host...")
-        cmd = f"rm {' '.join(filepaths)}"
-        runner.exec(cmd)
+    for runner in runners:
+        logging.info(f"Cleaning up temporary files created by {runner.__class__.__name__}...")
+        runner.cleanup()
 
 
 @fixture(scope="session")
-def governance_skey_with_cli(config: ApiConfig):
+def governance_skey_with_cli(config: ApiConfig, api: BlockchainApi, write_file):
     """
     Securely copy the governance authority's init skey (a secret key used by the smart-contracts to authorize admin
-    operations) to a temporary directory on the remote machine and update the path in the configuration.
-    The temporary directory is deleted after the test completes.
+    operations) to a temporary file on the remote machine and update the path in the configuration.
+    The temporary file is deleted after the test completes.
 
     This fixture is executed only if:
     - you call it directly in test or other fixture
@@ -597,18 +599,15 @@ def governance_skey_with_cli(config: ApiConfig):
 
     :param config: The API configuration object.
     """
-    if config.stack_config.tools.node.runner.files.copy_secrets:
-        runner = RunnerFactory.get_runner(config.stack_config.tools.node.runner)
-        make_tmp_dir_cmd = f"mktemp -d -p {config.stack_config.tools.node.runner.files.copy_to}"
-        temp_dir = runner.exec(make_tmp_dir_cmd).stdout.strip()
+    if config.stack_config.tools.node.runner.copy_secrets:
+        runner = api.partner_chains_node.run_command
         path = config.nodes_config.governance_authority.mainchain_key
-        filename = path.split("/")[-1]
-        runner.copy(src=path, dest=f"{temp_dir}/{filename}")
-        config.nodes_config.governance_authority.mainchain_key = f"{temp_dir}/{filename}"
+        with open(path, "r") as f:
+            content = json.load(f)
+            filepath = write_file(runner, content)
+        config.nodes_config.governance_authority.mainchain_key = filepath
         yield
-        logging.info("Cleaning up governance skey file on remote host...")
         config.nodes_config.governance_authority.mainchain_key = path
-        runner.exec(f"rm -rf {temp_dir}")
     else:
         yield
 
