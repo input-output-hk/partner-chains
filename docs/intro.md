@@ -930,9 +930,12 @@ $ pc-node governed-map update
     --value <VALUE>
     --payment-key-file <PAYMENT_KEY_FILE>
     --genesis-utxo <GENESIS_UTXO>
+    [ --current-value <CURRENT_VALUE> ]
 ```
 
 If the key does not already exist it won't be inserted.
+If the optional `--current-value` argument is passed, the transaction will fail if the current
+value doesn't match the argument.
 
 ###### remove
 
