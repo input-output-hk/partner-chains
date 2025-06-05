@@ -102,6 +102,9 @@ jobs:
           --secret AWS_SESSION_TOKEN="$AWS_SESSION_TOKEN" \
           --secret AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
           --secret AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
+          --secret kubeconfig_base64="$kubeconfig_base64" \
+          --secret K8S_SERVER="$K8S_SERVER" \
+          --secret K8S_SA_TOKEN="$K8S_SA_TOKEN" \
           --secret SLACK_WEBHOOK_URL="$SLACK_WEBHOOK_URL" \
           --secret XRAY_CLIENT_ID="$XRAY_CLIENT_ID" \
           --secret XRAY_CLIENT_SECRET="$XRAY_CLIENT_SECRET" \

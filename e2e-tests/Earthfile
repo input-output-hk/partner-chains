@@ -33,6 +33,14 @@ ARG --global pytest_cmd=pytest --blockchain $blockchain --env $env --log-cli-lev
 
 build:
   ARG USERARCH
+  IF [ "$USERARCH" = "arm64" ]
+    RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip"
+  ELSE
+    RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+  END
+  RUN unzip awscliv2.zip
+  RUN ./aws/install
+  RUN aws --version
   RUN curl -LO --silent https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/${USERARCH}/kubectl
   RUN install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
   RUN kubectl version --client
@@ -46,9 +54,9 @@ test:
   FROM +build
   ARG CI_RUN
   IF [ "$CI_RUN" = "true" ]
-    RUN --secret AWS_SECRET_ACCESS_KEY --secret AWS_ACCESS_KEY_ID --secret AWS_SESSION_TOKEN --no-cache eval $pytest_cmd --ci-run || true
+    RUN --secret AWS_SECRET_ACCESS_KEY --secret AWS_ACCESS_KEY_ID --secret AWS_SESSION_TOKEN --secret kubeconfig_base64 --secret K8S_SERVER --secret K8S_SA_TOKEN --no-cache eval $pytest_cmd --ci-run || true
   ELSE
-    RUN --mount=type=secret,target=/root/.aws/credentials,id=aws --no-cache eval $pytest_cmd || true
+    RUN --mount=type=secret,target=/root/.aws/credentials,id=aws --mount=type=secret,target=/root/.kube/config,id=kube --no-cache eval $pytest_cmd || true
   END
 
 test-artifacts:
