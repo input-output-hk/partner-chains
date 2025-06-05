@@ -38,7 +38,7 @@ build:
   ELSE
     RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
   END
-  RUN unzip awscliv2.zip
+  RUN unzip -q awscliv2.zip
   RUN ./aws/install
   RUN aws --version
   RUN curl -LO --silent https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/${USERARCH}/kubectl
