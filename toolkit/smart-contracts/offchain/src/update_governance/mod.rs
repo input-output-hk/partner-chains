@@ -86,11 +86,11 @@ fn update_governance_tx(
 	let config = crate::csl::get_builder_config(ctx)?;
 	let mut tx_builder = TransactionBuilder::new(&config);
 
-	tx_builder.add_mint_one_script_token_using_reference_script(
-		&governance_data.policy.script(),
-		&governance_data.utxo_id_as_tx_input(),
-		&costs,
-	)?;
+	// tx_builder.add_mint_one_script_token_using_reference_script(
+	// 	&governance_data.policy.script(),
+	// 	&governance_data.utxo_id_as_tx_input(),
+	// 	&costs,
+	// )?;
 
 	tx_builder.add_output(&version_oracle_datum_output(
 		version_oracle_validator.clone(),
