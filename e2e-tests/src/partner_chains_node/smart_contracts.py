@@ -1,9 +1,8 @@
 import logging
 import json
-import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from config.api_config import ApiConfig, Node
+from config.api_config import ApiConfig
 from .models import RegistrationSignatures
 from ..run_command import Runner, Result
 

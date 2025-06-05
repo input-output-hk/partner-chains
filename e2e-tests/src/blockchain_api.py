@@ -3,7 +3,6 @@ from src.cardano_cli import CardanoCli
 from src.partner_chain_rpc import PartnerChainRpc, PartnerChainRpcResponse, DParam
 from src.partner_chains_node.node import PartnerChainsNode
 from src.partner_chains_node.models import AddressAssociationSignature, BlockProducerMetadataSignature
-from config.api_config import Node
 
 
 class Transaction:
@@ -413,7 +412,7 @@ class BlockchainApi(ABC):
         Creates a signature for block producer metadata.
 
         Arguments:
-            metadata {str} -- block producer metadata file path
+            metadata_file {str} -- block producer metadata file path
             cross_chain_signing_key {str} -- Cross Chain Signing key in hex format
 
         Returns:

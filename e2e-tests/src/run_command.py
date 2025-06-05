@@ -1,6 +1,6 @@
 import logging
 import subprocess
-from abc import ABC, abstractmethod
+from abc import ABC
 from config.api_config import RunnerConfig
 
 STDOUT_MAX_LEN = 2000

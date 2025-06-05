@@ -9,7 +9,7 @@ from src.blockchain_api import BlockchainApi, Wallet
 from src.blockchain_types import BlockchainTypes
 from src.pc_epoch_calculator import PartnerChainEpochCalculator
 from src.partner_chain_rpc import PartnerChainRpc
-from src.run_command import Runner, RunnerFactory
+from src.run_command import Runner
 from config.api_config import ApiConfig
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
@@ -17,7 +17,6 @@ from src.db.models import Base
 from filelock import FileLock
 from typing import Generator
 import time
-import uuid
 
 _config: ApiConfig = None
 partner_chain_rpc_api: PartnerChainRpc = None
