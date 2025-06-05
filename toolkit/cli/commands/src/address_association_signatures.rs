@@ -9,22 +9,54 @@ use serde_json::json;
 use sidechain_domain::*;
 use std::str::FromStr;
 
+/// Command structure for generating address association signatures.
+///
+/// This struct represents the parameters required to create cryptographic signatures
+/// that establish an association between a Cardano stake address and a Partner Chain address.
+/// Address associations enable cross-chain operations by linking identities between
+/// the mainchain (Cardano) and sidechain (Partner Chain) networks.
+///
+/// ## Address Association Process
+///
+/// The command generates an Ed25519 signature over a structured message that includes:
+/// - The Cardano stake public key (derived from the signing key)
+/// - The Partner Chain address to be associated
+/// - The genesis UTXO identifying the specific Partner Chain instance
+///
+/// This signature proves that the holder of the Cardano stake signing key authorizes
+/// the association with the specified Partner Chain address.
+///
+/// ## Generic Address Type
+///
+/// The struct is generic over `PartnerchainAddress` to support different address
+/// formats used by various Partner Chain implementations (e.g., AccountId32, H160).
 #[derive(Clone, Debug, Parser)]
 #[command(author, version, about, long_about = None)]
 pub struct AddressAssociationSignaturesCmd<
 	PartnerchainAddress: Clone + Sync + Send + FromStr + 'static,
 > {
-	/// Genesis UTXO of the target Partner Chain
+	/// Genesis UTXO that uniquely identifies the target Partner Chain
 	#[arg(long)]
 	pub genesis_utxo: UtxoId,
-	/// Partner Chain address to be associated with the Cardano address
+	/// Partner Chain address to be associated with the Cardano stake address
 	#[arg(long, value_parser=parse_pc_address::<PartnerchainAddress>)]
 	pub partnerchain_address: PartnerchainAddress,
-	/// Cardano Stake Signing Key bytes in hex format. Its public key will be associated with partnerchain_address.
+	/// Ed25519 signing key for the Cardano stake address
 	#[arg(long)]
 	pub signing_key: StakeSigningKeyParam,
 }
 
+/// Parses a Partner Chain address from string format.
+///
+/// This function provides error handling for address parsing, converting
+/// parse failures into descriptive error messages suitable for CLI output.
+///
+/// # Arguments
+/// * `s` - String representation of the Partner Chain address
+///
+/// # Returns
+/// * `Ok(T)` - Successfully parsed address of the specified type
+/// * `Err(String)` - Error message describing the parse failure
 fn parse_pc_address<T: FromStr>(s: &str) -> Result<T, String> {
 	T::from_str(s).map_err(|_| "Failed to parse Partner Chain address".to_owned())
 }
@@ -33,6 +65,22 @@ impl<PartnerchainAddress> AddressAssociationSignaturesCmd<PartnerchainAddress>
 where
 	PartnerchainAddress: Serialize + Clone + Sync + Send + FromStr + Encode + 'static,
 {
+	/// Executes the address association signature generation process.
+	///
+	/// This method performs the complete workflow for creating an address association:
+	/// 1. Generates the cryptographic signature over the association message
+	/// 2. Constructs JSON output containing the signature and related data
+	/// 3. Outputs the result to stdout for consumption by external tools
+	///
+	/// # Returns
+	/// * `Ok(())` - Successful execution with output printed to stdout
+	/// * `Err(anyhow::Error)` - JSON serialization or other processing error
+	///
+	/// # Output Format
+	/// The command outputs JSON containing:
+	/// - `partnerchain_address`: The Partner Chain address being associated
+	/// - `signature`: Ed25519 signature authorizing the association
+	/// - `stake_public_key`: Cardano stake public key being associated
 	pub fn execute(&self) -> anyhow::Result<()> {
 		let signature = self.sign();
 		let output = json!({
@@ -45,6 +93,23 @@ where
 		Ok(())
 	}
 
+	/// Generates an Ed25519 signature over the address association message.
+	///
+	/// This method creates the canonical signed message structure used for
+	/// address associations and generates a cryptographic signature that
+	/// proves authorization from the Cardano stake key holder.
+	///
+	/// # Returns
+	/// A `ByteString` containing the Ed25519 signature bytes
+	///
+	/// # Message Structure
+	/// The signed message includes:
+	/// - Stake public key (derived from the signing key)
+	/// - Partner Chain address to be associated
+	/// - Genesis UTXO identifying the Partner Chain instance
+	///
+	/// The message is SCALE-encoded before signing to ensure deterministic
+	/// serialization across different environments.
 	fn sign(&self) -> ByteString {
 		let msg = AddressAssociationSignedMessage {
 			stake_public_key: self.signing_key.vkey(),
