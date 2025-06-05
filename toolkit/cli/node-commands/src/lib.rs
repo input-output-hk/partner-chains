@@ -7,7 +7,7 @@ use cli_commands::block_producer_metadata_signatures::BlockProducerMetadataSigna
 use cli_commands::registration_signatures::RegistrationSignaturesCmd;
 use frame_support::sp_runtime::traits::NumberFor;
 use parity_scale_codec::{Decode, Encode};
-use partner_chains_cli::io::DefaultCmdRunContext;
+use partner_chains_cli::DefaultCmdRunContext;
 pub use partner_chains_cli::{PartnerChainRuntime, RuntimeTypeWrapper};
 use partner_chains_smart_contracts_commands::SmartContractsCmd;
 use sc_cli::{CliConfiguration, SharedParams, SubstrateCli};
@@ -87,7 +87,7 @@ pub enum PartnerChainsSubcommand<
 	/// If registration has been included in Cardano block in epoch N, then it should be returned by this command if epoch greater than N+1 is provided.
 	/// If this command won't show your registration after a few minutes after it has been included in a cardano block, you can start debugging for unsuccessful registration.
 	#[clap(
-		after_help = "Example: partner-chains-node -- registration-status --stake-pool-pub-key 0x702b81ab2e86cf73a87062af1eb0da666d451976d9d91c63a119ed94e6a33dc0 --mc-epoch-number 586"
+		after_help = "Example: partner-chains-demo-node -- registration-status --stake-pool-pub-key 0x702b81ab2e86cf73a87062af1eb0da666d451976d9d91c63a119ed94e6a33dc0 --mc-epoch-number 586"
 	)]
 	RegistrationStatus(RegistrationStatusCmd),
 

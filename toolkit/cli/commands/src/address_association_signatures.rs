@@ -77,7 +77,7 @@ mod test {
 		}
 	}
 
-	// This test is specifically kept in sync with the pallet siganture verification test
+	// This test is specifically kept in sync with the pallet signature verification test
 	#[test]
 	fn signature_test() {
 		let cmd = AddressAssociationSignaturesCmd {
