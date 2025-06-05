@@ -8,7 +8,7 @@ The runtime WebAssembly (WASM) binary compiled by default may not be determinist
 
 Utilizing a Docker image for the build process ensures a consistent build environment and deterministic WASM builds.
 
-## Do I need to run it everytime?
+## Do I need to run it every time?
 
 It is not necessary to use this Docker image for every build. For local development and testing, using the hardcoded chain spec is sufficient. However, a deterministic chain spec becomes crucial when initiating a new partner chain:
 

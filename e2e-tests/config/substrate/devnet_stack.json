@@ -2,26 +2,30 @@
     "stack_config": {
         "ogmios_host": "devnet-services-service",
         "ogmios_port": 1337,
-        "tools_host": "10.0.12.65",
-        "ssh": {
-            "username": "root",
-            "host": "${stack_config[tools_host]}",
-            "port": 22,
-            "host_keys_path": "config/substrate/known_hosts",
-            "private_key_path": "secrets/substrate/devnet/keys/ssh-key.yaml.decrypted"
-        },
         "tools": {
+            "runner": {
+                "kubernetes": {
+                    "pod": "dave",
+                    "namespace": "sc"
+                }
+            },
             "cardano_cli": {
-                "cli": "export CARDANO_NODE_SOCKET_PATH=/ipc/node.socket && /tools/cardano-cli",
-                "ssh": "${stack_config[ssh]}"
+                "path": "cardano-cli",
+                "runner": {
+                    "kubernetes": {
+                        "container": "cardano-node"
+                    }
+                }
             },
-            "partner_chains_node": {
-                "cli": "/tools/devnet/partner-chains-node",
-                "ssh": "${stack_config[ssh]}"
-            },
-            "bech32": {
-                "cli": "/tools/bech32",
-                "ssh": "${stack_config[ssh]}"
+            "node": {
+                "path": "/usr/local/bin/partner-chains-node",
+                "runner": {
+                    "workdir": "/data/e2e-tests",
+                    "copy_secrets": true,
+                    "kubernetes": {
+                        "container": "substrate-node"
+                    }
+                }
             }
         }
     }

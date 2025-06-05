@@ -44,11 +44,6 @@ jobs:
       contents: read
     runs-on: eks
     steps:
-    - name: set ssh-agent to binary host
-      uses: webfactory/ssh-agent@v0.8.0
-      with:
-        ssh-private-key: ${{ secrets.SSH_KEY_BINARY_HOST }}
-
     - name: Acquire AWS Credentials
       uses: aws-actions/configure-aws-credentials@v2
       with:
@@ -109,7 +104,6 @@ jobs:
           --secret XRAY_CLIENT_SECRET="$XRAY_CLIENT_SECRET" \
           --secret XRAY_API_BASE_URL="$XRAY_API_BASE_URL" \
           --secret JIRA_URL="$JIRA_URL" \
-          --ssh-auth-sock="$SSH_AUTH_SOCK" \
           +report \
           --log_level="${LOG_LEVEL:-"info"}" \
           --env=${{ inputs.env }} \
