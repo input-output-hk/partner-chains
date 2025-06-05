@@ -578,7 +578,7 @@ to manage your node keys.
 ### Partner Chain Commands
 The Partner Chain toolkit provides a range of commands to interact with the chain or carry out
 administrative tasks. Note that all commands also accept a set of general options which can be
-listed by passing `--help` to the respectvie command.
+listed by passing `--help` to the respective command.
 
 #### registration-status
 Returns registration status for a given mainchain public key and epoch number. If registration
