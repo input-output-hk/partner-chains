@@ -15,13 +15,13 @@ use std::{marker::PhantomData, process::exit};
 /// Definition of a field in a config JSON with optional default value.
 pub(crate) struct ConfigFieldDefinition<'a, T> {
 	/// Config field name
-	pub name: &'a str,
+	pub(crate) name: &'a str,
 	/// Config file name
-	pub config_file: &'a str,
+	pub(crate) config_file: &'a str,
 	/// Path to config field in config file
-	pub path: &'a [&'a str],
+	pub(crate) path: &'a [&'a str],
 	/// Optional default value for config field
-	pub default: Option<&'a str>,
+	pub(crate) default: Option<&'a str>,
 	_marker: PhantomData<T>,
 }
 
@@ -261,8 +261,11 @@ impl SelectOptions for NetworkProtocol {
 #[allow(dead_code)]
 pub(crate) struct MainChainAddresses {
 	pub(crate) committee_candidates_address: String,
+	/// unused
 	pub(crate) d_parameter_policy_id: String,
+	/// unused
 	pub(crate) permissioned_candidates_policy_id: String,
+	/// unused
 	pub(crate) native_token: NativeTokenConfig,
 }
 
