@@ -269,31 +269,14 @@ done
 echo "Generating chain-spec.json file for Partnerchain Nodes..."
 ./partner-chains-node build-spec --disable-default-bootnode > chain-spec.json
 
-echo "[PATCH] Setting sessionCommitteeManagement.mainChainScripts.committee_candidate_address to 28-byte policy ID."
-jq --arg policy_id "0x$COMMITTEE_CANDIDATE_POLICY_ID" \\
-   '.genesis.runtimeGenesis.config.sessionCommitteeManagement.mainChainScripts.committee_candidate_address = $policy_id' \\
-   chain-spec.json > chain-spec.json.tmp && mv chain-spec.json.tmp chain-spec.json
-echo "[PATCH] committee_candidate_address in chain-spec patched."
-
-echo "[PATCH] Setting sessionCommitteeManagement.mainChainScripts.d_parameter_policy_id to 28-byte policy ID."
-jq --arg policy_id "0x$D_PARAMETER_POLICY_ID" \\
-   '.genesis.runtimeGenesis.config.sessionCommitteeManagement.mainChainScripts.d_parameter_policy_id = $policy_id' \\
-   chain-spec.json > chain-spec.json.tmp && mv chain-spec.json.tmp chain-spec.json
-echo "[PATCH] d_parameter_policy_id in chain-spec patched."
-
-echo "[PATCH] Setting nativeTokenManagement.mainChainScripts.illiquid_supply_validator_address to 28-byte NATIVE_TOKEN_POLICY_ID."
-jq --arg policy_id "0x$NATIVE_TOKEN_POLICY_ID" \\
-   '.genesis.runtimeGenesis.config.nativeTokenManagement.mainChainScripts.illiquid_supply_validator_address = $policy_id' \\
-   chain-spec.json > chain-spec.json.tmp && mv chain-spec.json.tmp chain-spec.json
-echo "[PATCH] illiquid_supply_validator_address in chain-spec patched."
-
 echo "Setting Governed Map scripts..."
-export GOVERNED_MAP_VALIDATOR_ADDRESS_HEX="0x$(echo -n "$GOVERNED_MAP_VALIDATOR_ADDRESS" | openssl dgst -blake2b256 -binary | xxd -p -c 64)"
-jq --arg address "$GOVERNED_MAP_VALIDATOR_ADDRESS_HEX" --arg policy_id "$GOVERNED_MAP_POLICY_ID" \
+export GOVERNED_MAP_VALIDATOR_ADDRESS_HEX="0x$(echo -n "$GOVERNED_MAP_VALIDATOR_ADDRESS" | xxd -p -c 128)"
+jq --arg val_addr_hex "$GOVERNED_MAP_VALIDATOR_ADDRESS_HEX" --arg asset_pol_id "$GOVERNED_MAP_POLICY_ID" \
    '.genesis.runtimeGenesis.config.governedMap.mainChainScripts = {
-     "validator_address": $address,
-     "asset_policy_id": $policy_id
-   }' chain-spec.json > chain-spec.json.tmp && mv chain-spec.json.tmp chain-spec.json
+     "validator_address": $val_addr_hex,
+     "asset_policy_id": $asset_pol_id
+   }' \
+   chain-spec.json > chain-spec.json.tmp && mv chain-spec.json.tmp chain-spec.json
 
 echo "Configuring Initial Validators..."
 # Generate initial validators array
