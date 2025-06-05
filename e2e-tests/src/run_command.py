@@ -30,35 +30,8 @@ class RunnerFactory:
 
 
 class Runner(ABC):
-    workdir: str
-    copy_secrets: bool
 
-    @abstractmethod
-    def exec(self, command: str, timeout=120) -> Result:
-        """Execute a command in the runner environment."""
-        raise NotImplementedError("exec method must be implemented in subclasses")
-
-    @abstractmethod
-    def copy(self, src: str, dest: str) -> Result:
-        """Copy a file from local to remote."""
-        raise NotImplementedError("copy method must be implemented in subclasses")
-
-    @abstractmethod
-    def mktemp(self) -> str:
-        """Create a temporary file in the runner environment."""
-        raise NotImplementedError("mktemp method must be implemented in subclasses")
-
-    @abstractmethod
-    def cleanup(self) -> None:
-        """Cleanup any resources or temporary files created by the runner."""
-        raise NotImplementedError("cleanup method must be implemented in subclasses")
-
-
-class KubernetesRunner(Runner):
     def __init__(self, config: RunnerConfig):
-        self.pod = config.kubernetes.pod
-        self.namespace = config.kubernetes.namespace
-        self.container = config.kubernetes.container
         self.copy_secrets = config.copy_secrets
         self.workdir = config.workdir
         self.workdir_created = False
@@ -66,11 +39,52 @@ class KubernetesRunner(Runner):
         if self.workdir:
             self.create_working_directory()
 
+    def exec(self, command: str, timeout=120) -> Result:
+        if self.workdir:
+            command = f"cd {self.workdir} && {command}"
+        return self._run(command, timeout)
+
+    def mktemp(self) -> str:
+        command = "mktemp"
+        if self.workdir:
+            command = f"{command} -p {self.workdir}"
+        result = self._run(command)
+        if result.returncode != 0:
+            raise RuntimeError(f"Failed to create temporary directory: {result.stderr}")
+        temp_file = result.stdout.strip()
+        self.files_created.append(temp_file)
+        logging.debug(f"Temporary file created: {temp_file}")
+        return temp_file
+
+    def cleanup(self) -> None:
+        if not self.files_created:
+            logging.info("No temporary files to remove.")
+            return
+        logging.info(f"Removing temporary files: {self.files_created}")
+        cmd = f"rm {' '.join(self.files_created)}"
+        self._run(cmd)
+
+    def create_working_directory(self) -> str:
+        if not self.workdir or self.workdir_created:
+            return
+
+        result = self._run(f"test -d {self.workdir}", suppress_stderr_logs=True)
+        if result.returncode == 0:
+            self.workdir_created = True
+            return
+
+        logging.info(f"Creating working directory {self.workdir} in container {self.container}")
+        result = self._run(f"mkdir -p {self.workdir}")
+        if result.returncode != 0:
+            raise RuntimeError(f"Failed to create working directory: {result.stderr}")
+        self.workdir_created = True
+
     def _run(self, cmd: str, timeout=120, suppress_stderr_logs=False) -> Result:
-        logging.debug(f"CMD: '{cmd}' TIMEOUT: {timeout}")
+        full_cmd = self._full_cmd(cmd)
+        logging.debug(f"CMD: '{full_cmd}' TIMEOUT: {timeout}")
         try:
             completed_process = subprocess.run(
-                cmd,
+                full_cmd,
                 timeout=timeout,
                 capture_output=True,
                 shell=True,
@@ -95,52 +109,22 @@ class KubernetesRunner(Runner):
             logging.error(f"UNKNOWN ERROR: {e}")
             raise e
 
-    def exec(self, command: str, timeout=120) -> Result:
-        if self.workdir:
-            command = f"cd {self.workdir} && {command}"
-        cmd = f"kubectl exec {self.pod} -c {self.container} -n {self.namespace} -- bash -c \"{command}\""
-        return self._run(cmd, timeout)
 
-    def copy(self, src: str, dest: str) -> Result:
-        cmd = f"kubectl cp {src} {self.pod}:{dest} -c {self.container} -n {self.namespace}"
-        return self._run(cmd)
+class KubernetesRunner(Runner):
+    def __init__(self, config: RunnerConfig):
+        self.pod = config.kubernetes.pod
+        self.namespace = config.kubernetes.namespace
+        self.container = config.kubernetes.container
+        super().__init__(config)
 
-    def mktemp(self) -> str:
-        command = "mktemp"
-        if self.workdir:
-            command = f"{command} -p {self.workdir}"
-        full_command = f"kubectl exec {self.pod} -c {self.container} -n {self.namespace} -- bash -c \"{command}\""
-        result = self._run(full_command)
-        if result.returncode != 0:
-            raise RuntimeError(f"Failed to create temporary directory: {result.stderr}")
-        temp_file = result.stdout.strip()
-        self.files_created.append(temp_file)
-        logging.debug(f"Temporary file created: {temp_file}")
-        return temp_file
-
-    def cleanup(self) -> None:
-        if not self.files_created:
-            logging.info("No temporary files to remove.")
-            return
-        logging.info(f"Removing temporary files: {self.files_created}")
-        cmd = f"rm {' '.join(self.files_created)}"
-        full_cmd = f"kubectl exec {self.pod} -c {self.container} -n {self.namespace} -- {cmd}"
-        self._run(full_cmd)
-
-    def create_working_directory(self) -> str:
-        if not self.workdir or self.workdir_created:
-            return
-        exists_cmd = f"kubectl exec {self.pod} -c {self.container} -n {self.namespace} -- test -d {self.workdir}"
-        result = self._run(exists_cmd, suppress_stderr_logs=True)
-        if result.returncode == 0:
-            return
-        logging.info(f"Creating working directory {self.workdir} in kubernetes container {self.container}")
-        create_cmd = f"kubectl exec {self.pod} -c {self.container} -n {self.namespace} -- mkdir -p {self.workdir}"
-        result = self._run(create_cmd)
-        if result.returncode != 0:
-            raise RuntimeError(f"Failed to create working directory: {result.stderr}")
-        self.workdir_created = True
+    def _full_cmd(self, command: str) -> str:
+        return f"kubectl exec {self.pod} -c {self.container} -n {self.namespace} -- bash -c \"{command}\""
 
 
 class DockerRunner(Runner):
-    pass
+    def __init__(self, config: RunnerConfig):
+        self.container = config.docker.container
+        super().__init__(config)
+
+    def _full_cmd(self, command: str) -> str:
+        return f"docker exec {self.container} bash -c \"{command}\""

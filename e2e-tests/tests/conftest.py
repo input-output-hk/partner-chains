@@ -553,7 +553,7 @@ def write_file():
     The file is created using `mktemp` command, which creates a temporary file under /tmp/tmp.XXXXXXX, unless
     the tool.runner.workdir is set in the `<env>_stack.json` file, in which case it creates a temporary file in that
     directory.
-    The content is passed as a string and is converted to JSON format.
+    The content is passed as a string and is converted to JSON format, unless `is_json` is set to False.
     The file is created on the same host that is configured in the `<env>_stack.json` for given tool.
     The file is removed after the test completes.
 

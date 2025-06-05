@@ -16,7 +16,7 @@
                 "path": "./partner-chains-node",
                 "runner": {
                     "docker": {
-                        "container": "partner-chains-node"
+                        "container": "partner-chains-setup"
                     }
                 }
             }
