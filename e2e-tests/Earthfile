@@ -33,7 +33,7 @@ ARG --global pytest_cmd=pytest --blockchain $blockchain --env $env --log-cli-lev
 
 build:
   ARG USERARCH
-  RUN curl -L --silent https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/${USERARCH}/kubectl
+  RUN curl -LO --silent https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/${USERARCH}/kubectl
   RUN install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
   RUN kubectl version --client
   RUN curl -L --silent https://github.com/getsops/sops/releases/download/v3.7.3/sops_3.7.3_${USERARCH}.deb > sops.deb && dpkg -i sops.deb && rm sops.deb
