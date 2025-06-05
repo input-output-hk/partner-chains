@@ -93,6 +93,9 @@ jobs:
         XRAY_CLIENT_SECRET: ${{ secrets.XRAY_CLIENT_SECRET }}
         XRAY_API_BASE_URL: ${{ secrets.XRAY_API_BASE_URL }}
         JIRA_URL: ${{ secrets.JIRA_URL }}
+        kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+        K8S_SERVER: ${{ secrets.K8S_SERVER }}
+        K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
       run: |
         cd e2e-tests
         earthly \

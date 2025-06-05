@@ -9,9 +9,7 @@ filelock==3.17.0
 pytest-json-report==1.5.0
 pydantic==2.10.6
 scalecodec==1.2.11
-paramiko==3.5.1
 pytest-json-ctrf==0.3.5
 numpy==2.2.3
-scp==0.15.0
 ecdsa==0.19.1
 bech32==1.2.0
