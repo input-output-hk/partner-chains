@@ -52,10 +52,6 @@ echo "Generating addresses.json file..."
     --genesis-utxo $GENESIS_UTXO \
 > addresses.json
 
-echo "[DEBUG] Content of generated addresses.json:"
-cat addresses.json
-echo "[DEBUG] End of addresses.json content."
-
 export COMMITTEE_CANDIDATE_ADDRESS=$(jq -r '.addresses.CommitteeCandidateValidator' addresses.json)
 echo "Committee candidate address: $COMMITTEE_CANDIDATE_ADDRESS"
 
@@ -91,6 +87,12 @@ else
     echo "Couldn't insert D-parameter..."
     exit 1
 fi
+
+
+
+
+
+
 
 # Generate and insert permissioned candidates (1-10)
 echo "Generating and inserting permissioned candidates..."
@@ -262,45 +264,34 @@ for ((i=1; i<=NUM_REGISTERED_NODES_TO_PROCESS; i++)); do
         --payment-key-file $NODE_PAYMENT_SKEY_FILE
 done
 
+
+
+
+
+
 echo "Generating chain-spec.json file for Partnerchain Nodes..."
 ./partner-chains-node build-spec --disable-default-bootnode > chain-spec.json
 
 echo "Setting Governed Map scripts..."
-jq --arg val_addr_hash "$GOVERNED_MAP_VALIDATOR_ADDRESS_HEX" --arg asset_pol_id "$GOVERNED_MAP_POLICY_ID" \
-   '.genesis.runtimeGenesis.config.governedMap.mainChainScripts = {
-     "validator_address": $val_addr_hash,
-     "asset_policy_id": $asset_pol_id
-   }' \
-   chain-spec.json > chain-spec.json.tmp && mv chain-spec.json.tmp chain-spec.json
+export GOVERNED_MAP_VALIDATOR_ADDRESS_HEX="0x$(echo -n $GOVERNED_MAP_VALIDATOR_ADDRESS | xxd -p -c 128)"
+jq --arg address $GOVERNED_MAP_VALIDATOR_ADDRESS_HEX --arg policy_id $GOVERNED_MAP_POLICY_ID '.genesis.runtimeGenesis.config.governedMap.mainChainScripts = {
+  "validator_address": $address,
+  "asset_policy_id": $policy_id
+}' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
 
-echo "[PATCH] Setting nativeTokenManagement.mainChainScripts..."
-jq --arg illiquid_hash "$ILLIQUID_SUPPLY_VALIDATOR_ADDRESS_HEX" \
-   --arg native_token_pol "0x$NATIVE_TOKEN_POLICY_ID" \
-   --arg native_token_name "0x$NATIVE_TOKEN_ASSET_NAME" \
-   '.genesis.runtimeGenesis.config.nativeTokenManagement.mainChainScripts = {
-     "illiquid_supply_validator_address": $illiquid_hash,
-     "native_token_policy_id": $native_token_pol,
-     "native_token_asset_name": $native_token_name
-   }' \
-   chain-spec.json > chain-spec.json.tmp && mv chain-spec.json.tmp chain-spec.json
-echo "[PATCH] nativeTokenManagement.mainChainScripts patched."
 
-echo "[PATCH] Setting sessionCommitteeManagement.mainChainScripts..."
-# Note: D_PARAMETER_POLICY_ID and PERMISSIONED_CANDIDATES_POLICY_ID already include 0x from addresses.json
-# NATIVE_TOKEN_POLICY_ID and NATIVE_TOKEN_ASSET_NAME are raw hex, so we add 0x.
-# For D_PARAMETER_POLICY_ID, we also need to pad it to 30 bytes as per previous findings.
-PADDED_D_PARAM_POLICY_ID_HEX="$(if [ "${D_PARAMETER_POLICY_ID#0x}" = "$D_PARAMETER_POLICY_ID" ]; then echo "0x${D_PARAMETER_POLICY_ID}0000"; else echo "${D_PARAMETER_POLICY_ID}0000"; fi)"
 
-jq --arg cc_addr_hash "$COMMITTEE_CANDIDATE_ADDRESS_HEX" \
-   --arg d_param_pol "$PADDED_D_PARAM_POLICY_ID_HEX" \
-   --arg pc_pol "$PERMISSIONED_CANDIDATES_POLICY_ID" \
-   '.genesis.runtimeGenesis.config.sessionCommitteeManagement.mainChainScripts = {
-     "committee_candidate_address": $cc_addr_hash,
-     "d_parameter_policy_id": $d_param_pol,
-     "permissioned_candidates_policy_id": $pc_pol
-   }' \
-   chain-spec.json > chain-spec.json.tmp && mv chain-spec.json.tmp chain-spec.json
-echo "[PATCH] sessionCommitteeManagement.mainChainScripts patched."
+
+
+
+
+
+
+
+
+
+
+
 
 echo "Configuring Initial Validators..."
 # Generate initial validators array
@@ -362,6 +353,22 @@ jq --slurpfile authorities initial_authorities.json '.genesis.runtimeGenesis.con
 mv chain-spec.json.tmp chain-spec.json
 rm initial_authorities.json # Clean up temporary file
 
+
+
+echo "Setting Governed Map scripts..."
+export GOVERNED_MAP_VALIDATOR_ADDRESS_HEX="0x$(echo -n $GOVERNED_MAP_VALIDATOR_ADDRESS | xxd -p -c 128)"
+jq --arg address $GOVERNED_MAP_VALIDATOR_ADDRESS_HEX --arg policy_id $GOVERNED_MAP_POLICY_ID '.genesis.runtimeGenesis.config.governedMap.mainChainScripts = {
+  "validator_address": $address,
+  "asset_policy_id": $policy_id
+}' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
+
+
+
+
+
+
+
+
 echo "Configuring Initial Balances..."
 # Fund each of the 10 permissioned nodes (using their ECDSA sidechain public key)
 initial_balance_amount="1000000000000000"
@@ -381,10 +388,13 @@ for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
 EOF
 done
 echo "]" >> initial_balances.json
-
 jq --slurpfile balances initial_balances.json '.genesis.runtimeGenesis.config.balances.balances = $balances[0]' chain-spec.json > chain-spec.json.tmp
 mv chain-spec.json.tmp chain-spec.json
 rm initial_balances.json # Clean up temporary file
+
+
+
+
 
 echo "Configuring Sudo Key..."
 # Use the Aura ss58Address of the first permissioned node as the sudo key
@@ -392,16 +402,17 @@ sudo_account_key=$(jq -r '.ss58Address' "/shared/node-keys/permissioned-1/keys/a
 jq --arg sudo_key "$sudo_account_key" '.genesis.runtimeGenesis.config.sudo = { "key": $sudo_key }' chain-spec.json > chain-spec.json.tmp
 mv chain-spec.json.tmp chain-spec.json
 
-echo "Configuring Slots Per Epoch..."
-slots_per_epoch_value=5 # Default from old script
-jq --argjson spe "$slots_per_epoch_value" '.genesis.runtimeGenesis.config.sidechain.slotsPerEpoch = $spe' chain-spec.json > chain-spec.json.tmp
-mv chain-spec.json.tmp chain-spec.json
+
+
+
+echo "Configuring Epoch Length..."
+jq '.genesis.runtimeGenesis.config.sidechain.slotsPerEpoch = 5' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
+
+
+
 
 cp chain-spec.json /shared/chain-spec.json
 echo "chain-spec.json generation complete."
-
-echo "Cat chain-spec.json"
-cat chain-spec.json
 
 touch /shared/chain-spec.ready
 touch /shared/partner-chains-setup.ready
