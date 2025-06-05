@@ -13,7 +13,7 @@ use std::str::FromStr;
 use std::{marker::PhantomData, process::exit};
 
 /// Definition of a field in a config JSON with optional default value.
-pub struct ConfigFieldDefinition<'a, T> {
+pub(crate) struct ConfigFieldDefinition<'a, T> {
 	/// Config field name
 	pub name: &'a str,
 	/// Config file name
@@ -27,7 +27,7 @@ pub struct ConfigFieldDefinition<'a, T> {
 
 #[cfg(test)]
 impl<'a, T> ConfigFieldDefinition<'a, T> {
-	pub fn new(
+	pub(crate) fn new(
 		name: &'a str,
 		config_file: &'a str,
 		path: &'a [&'a str],
@@ -40,7 +40,7 @@ impl<'a, T> ConfigFieldDefinition<'a, T> {
 impl<'a> ConfigFieldDefinition<'a, String> {
 	/// Tries to load the config field value, as a string, from its expected location, and
 	/// if not found it prompts the user for it.
-	pub fn load_or_prompt_and_save<C: IOContext>(&self, context: &C) -> String {
+	pub(crate) fn load_or_prompt_and_save<C: IOContext>(&self, context: &C) -> String {
 		if let Some(value) = self.load_from_file_and_print(context) {
 			value
 		} else {
@@ -51,7 +51,10 @@ impl<'a> ConfigFieldDefinition<'a, String> {
 	}
 
 	/// Prompts for the config field value, as a string, with a default if it is set in [ConfigFieldDefinition].
-	pub fn prompt_with_default_from_file_and_save<C: IOContext>(&self, context: &C) -> String {
+	pub(crate) fn prompt_with_default_from_file_and_save<C: IOContext>(
+		&self,
+		context: &C,
+	) -> String {
 		let value =
 			context.prompt(self.name, self.load_from_file(context).as_deref().or(self.default));
 		self.save_to_file(&value, context);
@@ -60,7 +63,7 @@ impl<'a> ConfigFieldDefinition<'a, String> {
 }
 
 impl<'a, T> ConfigFieldDefinition<'a, T> {
-	pub fn prompt_with_default_from_file_parse_and_save<C: IOContext>(
+	pub(crate) fn prompt_with_default_from_file_parse_and_save<C: IOContext>(
 		&self,
 		context: &C,
 	) -> Result<T, <T as FromStr>::Err>
@@ -75,7 +78,7 @@ impl<'a, T> ConfigFieldDefinition<'a, T> {
 		Ok(parsed_value)
 	}
 
-	pub fn select_options_with_default_from_file_and_save<C: IOContext>(
+	pub(crate) fn select_options_with_default_from_file_and_save<C: IOContext>(
 		&self,
 		prompt: &str,
 		context: &C,
@@ -93,7 +96,7 @@ impl<'a, T> ConfigFieldDefinition<'a, T> {
 	}
 
 	/// Loads and parses the config field value.
-	pub fn load_from_file<C: IOContext>(&self, context: &C) -> Option<T>
+	pub(crate) fn load_from_file<C: IOContext>(&self, context: &C) -> Option<T>
 	where
 		T: DeserializeOwned,
 	{
@@ -110,7 +113,7 @@ impl<'a, T> ConfigFieldDefinition<'a, T> {
 	}
 
 	/// Updates the config field value in the file.
-	pub fn save_to_file<C: IOContext>(&self, value: &T, context: &C)
+	pub(crate) fn save_to_file<C: IOContext>(&self, value: &T, context: &C)
 	where
 		T: Serialize,
 	{
@@ -129,7 +132,7 @@ impl<'a, T> ConfigFieldDefinition<'a, T> {
 		context.write_file(self.config_file, &serde_json::to_string_pretty(&json).unwrap());
 	}
 
-	pub fn save_if_empty<C: IOContext>(&self, value: T, context: &C) -> T
+	pub(crate) fn save_if_empty<C: IOContext>(&self, value: T, context: &C) -> T
 	where
 		T: DeserializeOwned + serde::Serialize,
 	{
@@ -142,7 +145,7 @@ impl<'a, T> ConfigFieldDefinition<'a, T> {
 	}
 
 	/// parses the config field's type from a json value
-	pub fn extract_from_json_object(&self, json: &serde_json::Value) -> Option<T>
+	pub(crate) fn extract_from_json_object(&self, json: &serde_json::Value) -> Option<T>
 	where
 		T: DeserializeOwned,
 	{
@@ -158,7 +161,7 @@ impl<'a, T> ConfigFieldDefinition<'a, T> {
 	}
 
 	/// loads the whole content of the config fields relevant config file
-	pub fn load_file<C: IOContext>(&self, context: &C) -> Option<serde_json::Value> {
+	pub(crate) fn load_file<C: IOContext>(&self, context: &C) -> Option<serde_json::Value> {
 		if !context.file_exists(self.config_file) {
 			return None;
 		}
@@ -203,7 +206,7 @@ impl ServiceConfig {
 	}
 }
 
-pub trait SelectOptions {
+pub(crate) trait SelectOptions {
 	fn select_options() -> Vec<String>;
 	fn select_options_with_default(default_value_opt: Option<&str>) -> Vec<String> {
 		let mut options = Self::select_options();
@@ -264,15 +267,15 @@ pub(crate) struct MainChainAddresses {
 }
 
 #[derive(Deserialize, PartialEq, Clone, Debug)]
-pub struct CardanoParameters {
-	pub security_parameter: u64,
-	pub active_slots_coeff: f64,
-	pub first_epoch_number: u32,
-	pub first_slot_number: u64,
-	pub epoch_duration_millis: u64,
-	pub first_epoch_timestamp_millis: u64,
+pub(crate) struct CardanoParameters {
+	pub(crate) security_parameter: u64,
+	pub(crate) active_slots_coeff: f64,
+	pub(crate) first_epoch_number: u32,
+	pub(crate) first_slot_number: u64,
+	pub(crate) epoch_duration_millis: u64,
+	pub(crate) first_epoch_timestamp_millis: u64,
 	#[serde(default = "default_slot_duration_millis")]
-	pub slot_duration_millis: u64,
+	pub(crate) slot_duration_millis: u64,
 }
 
 fn default_slot_duration_millis() -> u64 {
@@ -280,7 +283,7 @@ fn default_slot_duration_millis() -> u64 {
 }
 
 impl CardanoParameters {
-	pub fn save(&self, context: &impl IOContext) {
+	pub(crate) fn save(&self, context: &impl IOContext) {
 		CARDANO_SECURITY_PARAMETER.save_to_file(&self.security_parameter, context);
 		CARDANO_ACTIVE_SLOTS_COEFF.save_to_file(&self.active_slots_coeff, context);
 		CARDANO_FIRST_EPOCH_NUMBER.save_to_file(&self.first_epoch_number, context);
@@ -307,9 +310,9 @@ impl From<CardanoParameters> for sidechain_domain::mainchain_epoch::MainchainEpo
 }
 
 #[derive(Deserialize, Serialize, Parser, Clone, Debug)]
-pub struct SidechainParams {
+pub(crate) struct SidechainParams {
 	#[arg(long)]
-	pub genesis_utxo: UtxoId,
+	pub(crate) genesis_utxo: UtxoId,
 }
 
 impl Display for SidechainParams {
@@ -320,19 +323,19 @@ impl Display for SidechainParams {
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
-pub struct AssetConfig {
+pub(crate) struct AssetConfig {
 	policy_id: String,
 	asset_name: String,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
-pub struct NativeTokenConfig {
-	pub asset: AssetConfig,
-	pub illiquid_supply_address: String,
+pub(crate) struct NativeTokenConfig {
+	pub(crate) asset: AssetConfig,
+	pub(crate) illiquid_supply_address: String,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
-pub struct GovernanceAuthoritiesKeyHashes(pub(crate) Vec<MainchainKeyHash>);
+pub(crate) struct GovernanceAuthoritiesKeyHashes(pub(crate) Vec<MainchainKeyHash>);
 
 impl FromStr for GovernanceAuthoritiesKeyHashes {
 	type Err = String;
@@ -377,7 +380,7 @@ pub(crate) const CHAIN_CONFIG_FILE_PATH: &str = "pc-chain-config.json";
 pub(crate) const RESOURCES_CONFIG_FILE_PATH: &str = "pc-resources-config.json";
 pub(crate) const CHAIN_SPEC_PATH: &str = "chain-spec.json";
 
-pub fn load_chain_config(context: &impl IOContext) -> anyhow::Result<ChainConfig> {
+pub(crate) fn load_chain_config(context: &impl IOContext) -> anyhow::Result<ChainConfig> {
 	if let Some(chain_config_file) = context.read_file(CHAIN_CONFIG_FILE_PATH) {
 		serde_json::from_str::<ChainConfig>(&chain_config_file)
 			.map_err(|err| anyhow::anyhow!(format!("⚠️ Chain config file {CHAIN_CONFIG_FILE_PATH} is invalid: {err}. Run prepare-configuration wizard or fix errors manually.")))
