@@ -279,7 +279,7 @@ for initializing configurations.
 
 #### Chain spec
 
-The chain spec file contains basic chain ifnormation, initial operational parameters of the network,
+The chain spec file contains basic chain information, initial operational parameters of the network,
 and genesis configuration for all pallets present in the initial runtime.
 Read the [official documentation](https://docs.polkadot.com/develop/parachains/deployment/generate-chain-specs/)
 for more information about the chain spec file itself. For the sake of configuring the Partner Chain
@@ -296,7 +296,7 @@ the runtime, resulting in the config field `governedMap` etc.
 
 Some of the pallets need to be configured with _main chain scripts_, that is Cardano script addresses
 and hashes that are needed for Cardano observability components to correctly locate data in the Cardano
-ledger. These parameters can be obtained using the genesis UTXO of the Partner Chain by executing the
+ledger. These parameters can be obtained using the genesis UTxO of the Partner Chain by executing the
 `get-scripts` command provided together with other Partner Chain smart contracts offchain commands:
 ```shell
 partner-chains-demo-node smart-contracts get-scripts --genesis-utxo $GENESIS_UTXO
@@ -329,7 +329,7 @@ The sidechain pallet is especially important due to all other Partner Chains too
 on it and the fact that the values in its genesis config are immutable throughout the lifetime of a
 single Partner Chain. These values are:
 - `genesisUtxo`:
-  the genesis UTXO of the Partner Chain, which is used as its idenifier in the Partner Chains ecosystem
+  the genesis UTxO of the Partner Chain, which is used as its identifier in the Partner Chains ecosystem
   and has various other uses in the chain's operation
 - `slotsPerEpoch`:
   the number of slots per Partner Chain epoch. This value can be arbitrarily chosen, provided that the
@@ -545,11 +545,11 @@ Db-Sync lag. Values higher than `1` should not be used in general.
 Some Partner Chains may choose to read genesis configuration for some pallets from
 the environment when running a node without a chain spec, or generating a new spec.
 The list of these pallets and their environment variables is presented below. The
-names of the enviroment variables correspond directly to the names of genesis
+names of the environment variables correspond directly to the names of genesis
 config fields.
 
 ###### Sidechain
-- `GENESIS_UTXO`: genesis UTXO of the Partner Chain
+- `GENESIS_UTXO`: genesis UTxO of the Partner Chain
 - `SLOTS_PER_EPOCH`: number of slots per Partner Chain epoch
 
 ###### Committee selection
@@ -571,7 +571,7 @@ by the partner chain node.
 1. `aura_pub_key`: The aura public key (sr25519)
 1. `grandpa_pub_key`: The grandpa public key (Ed25519)
 
-By default the partner chain node process will look for key stores in the base path directory. Refer to the [official Polkadot  guide](https://docs.polkadot.com/infrastructure/running-a-validator/onboarding-and-offboarding/key-management/)
+By default the partner chain node process will look for key stores in the base path directory. Refer to the [official Polkadot guide](https://docs.polkadot.com/infrastructure/running-a-validator/onboarding-and-offboarding/key-management/)
 or your particular Partner Chain's documentation for information on how
 to manage your node keys.
 
@@ -597,15 +597,15 @@ $ pc-node registration-status
 
 An SPO registration performed in epoch N becomes active starting from epoch N+2, provided
 that it is valid. The `registration-status` command can be used to check:
-- whether the registration is considered valid, ie. if all signatures match the declared public
+- whether the registration is considered valid, i.e. if all signatures match the declared public key
 - whether the registration is active, or in case it is not, when it will become active
 If this command doesn't show your registration after a few minutes after it has been included in
 a Cardano block, it can mean that the registration was not submitted correctly. A common mistake
 is using either the wrong smart contracts version (determined by the CLI/node version) or using
-a wrong genesis UTXO.
+the wrong genesis UTxO.
 
 #### ariadne-parameters
-Returns ariadne parameters effective at given mainchain epoch number.
+Returns Ariadne parameters effective at given mainchain epoch number.
 
 ```shell
 $ pc-node ariadne-parameters
@@ -613,7 +613,7 @@ $ pc-node ariadne-parameters
     --chain <CHAIN_SPEC>
 ```
 
-Parameters are effective two epochs after the block their change is included in.
+Parameters are effective two epochs after the block in which their change is included.
 Running this command for epoch N+2 after changing the Ariadne parameters is a good way to confirm
 that the parameters have been changed correctly.
 
@@ -629,7 +629,7 @@ $ pc-node registration-signatures --genesis-utxo <GENESIS_UTXO>
 ```
 
 `MAINCHAIN_SIGNING_KEY` should be the signing key associated with the stake pool address being
-registered. `REGISTRATION_UTXO` should be a UTXO in the wallet associated with that signing key
+registered. `REGISTRATION_UTXO` should be a UTxO in the wallet associated with that signing key
 available to be spent by the subsequent registration transaction.
 
 #### sign-address-association
@@ -663,7 +663,7 @@ The smart contracts command provides multiple sub-commands for interacting with 
 contracts on Cardano.
 
 Note that all of the smart-contract commands require access to [Ogmios](https://ogmios.dev). The address
-is assumed to be `ws://localhost:1337` and can be overriden by the `--ogmios-url` parameter.
+is assumed to be `ws://localhost:1337` and can be overridden by the `--ogmios-url` parameter.
 
 The commands in this section are either:
 - user actions, which can be performed by any Partner Chain user provided that they pass the requirements
@@ -676,7 +676,7 @@ multisig members should use the `sign-tx` command to gather signatures and final
 `assemble-and-submit-tx` command.
 
 ##### get-scripts
-Prints validator addresses and policy IDs of smart contracts of Partner Chain identified by given UTXO.
+Prints validator addresses and policy IDs of smart contracts of Partner Chain identified by given UTxO.
 
 ```shell
 $ pc-node smart-contracts get-scripts --genesis-utxo <GENESIS_UTXO>
@@ -726,7 +726,6 @@ $ pc-node smart-contracts register
 
 The inputs to this command should be taken from the output of `registration-signatures`.
 After this action, it takes 2 Cardano epochs for the registration to become active.
-
 
 ##### deregister
 
@@ -812,7 +811,7 @@ $ pc-node smart-contracts reserve
     --payment-key-file <PAYMENT_KEY_FILE>
     --genesis-utxo <GENESIS_UTXO>
 ```
- 
+
 This action is meant to be performed at the end of the reserve's lifecycle to move all remaining
 funds to the Partner Chain.
 
@@ -828,7 +827,7 @@ $ pc-node smart-contracts reserve release
     --amount <AMOUNT>
 ```
 
-This action can be called by any Cardano chain participant. `REFERENCE_UTXO` should be the UTXO containing
+This action can be called by any Cardano chain participant. `REFERENCE_UTXO` should be the UTxO containing
 the `total-accrued` function matching the hash stored by the reserve smart contract. The number of tokens
 released from the reserve - `AMOUNT` - must be equal or less than the number indicated by that function.
 
@@ -958,7 +957,7 @@ $ pc-node governed-map list --genesis-utxo <GENESIS_UTXO>
 
 ###### get
 
-Retrieves the value stored in the Governed Map for the given key
+Retrieves the value stored in the Governed Map for the given key.
 
 ```shell
 $ pc-node governed-map get
@@ -1080,17 +1079,17 @@ $ pc-node wizards start-node
 
 #### registration wizards
 The wizard splits the SPO registration process into three separate steps, each performed as a separate command to allow operations requiring use of cold keys to be performed on a separate machine. These steps are:
-- `register1`: Selects the UTXO to be used for registration and creates the command for the next step
+- `register1`: Selects the UTxO to be used for registration and creates the command for the next step
 - `register2`: Creates and signs the register message. This command needs access to a cold key.
 - `register3`: Submits the registration transaction using signed message obtained from previous step.
 
 ##### register1
 
 The `register1` wizard is the first out of three steps in registering a node as committee
-candidate. The wizard will prompt users to select a UTXO which is going to be consumed in the
+candidate. The wizard will prompt users to select a UTxO which is going to be consumed in the
 registration process that follows.
 
-After selecting a UTXO the wizard will print a `register2` wizard command for generating
+After selecting a UTxO the wizard will print a `register2` wizard command for generating
 signatures. This command should be executed on an offline machine to ensure that the Cardano
 `cold.skey` (which will be required) is not exposed to the internet.
 
