@@ -40,8 +40,6 @@ use std::time::Duration;
 use testcontainers::{Container, GenericImage, clients::Cli};
 use tokio_retry::{Retry, strategy::FixedInterval};
 
-mod legacy_governance_tx;
-
 const TEST_IMAGE: &str = "ghcr.io/input-output-hk/smart-contracts-tests-cardano-node-ogmios";
 
 const TEST_IMAGE_TAG: &str = "v10.1.4-v6.11.0";
@@ -261,34 +259,6 @@ async fn register() {
 	assert!(run_register(genesis_utxo, signature.clone(), &client).await.is_some());
 	assert!(run_register(genesis_utxo, signature, &client).await.is_none());
 	assert!(run_register(genesis_utxo, other_signature, &client).await.is_some());
-}
-
-// Proves that offchain code can still understand Plutus Script MultiSig from PCSC
-#[tokio::test]
-async fn update_legacy_governance() {
-	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
-	let client = Cli::default();
-	let container = client.run(image);
-	let client = initialize(&container).await;
-
-	let genesis_utxo =
-		UtxoId::new(hex!("f8fbe7316561e57de9ecd1c86ee8f8b512a314ba86499ba9a584bfa8fe2edc8d"), 0);
-	let legacy_init_governance_tx = legacy_governance_tx::legacy_governance_init_transaction(
-		genesis_utxo,
-		GOVERNANCE_AUTHORITY_KEY,
-	);
-	let result = client.submit_transaction(&legacy_init_governance_tx).await.unwrap();
-
-	FixedDelayRetries::new(Duration::from_millis(500), 100)
-		.await_tx_output(&client, UtxoId::new(result.transaction.id, 0))
-		.await
-		.unwrap();
-	// This proves current code was able to understand legacy MultiSig implementation
-	assert!(
-		run_upsert_d_param(genesis_utxo, 0, 1, &governance_authority_payment_key(), &client)
-			.await
-			.is_some()
-	);
 }
 
 #[tokio::test]

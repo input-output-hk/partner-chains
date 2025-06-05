@@ -5,20 +5,8 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 # Unreleased
 
 ## Changed
+
 * `partner-chains-db-sync-data-sources` crate now exports all its public members from the root
-
-## Removed
-* Trait `PartnerChainRuntimeBindings` and merged into `PartnerChainRuntime` trait.
-* Trait `CreateChainSpecRuntimeBindings` from `partner-chains-cli`, and substituted with `PartnerChainRuntime` trait.
-
-## Fixed
-
-## Added
-
-# v1.7.0
-
-## Changed
-
 * `smart-contracts` commands can accept parameter to configure Ogmios requests timeout
 * `prepare-configuration` and `create-chain-spec` wizards are updated to setup `governedMap.MainChainScripts` in the chain-spec file.
 * `setup-main-chain-state` wizard uses Ogmios and `offchain` crate for getting the current D-parameter and Permissioned Candidates instead of invoking `<node-executable> ariadne-parameters` command.
@@ -50,6 +38,8 @@ to provide it in your IDP stack.
 * Deprecated the `GetSidechainStatus` runtime API in `sp-sidechain` crate. Code
 that needs data that it served should define its own runtime API instead.
 * Updated polkadot-sdk to polkadot-stable2503-5
+* Updated partner-chains-smart-contracts (raw-scripts) dependency to v7.2.2.
+This new version changes Version Oracle Validator script and is not compatible with the previous version.
 
 ## Removed
 
@@ -63,6 +53,8 @@ the feature `pallet-session-compat`.
 * `ATMSPlainAggregatePubKey`, `ValidatorHash` and `SidechainPublicKeysSorted` types from `domain`.
 * `SidechainApi` trait from `sp-sidechain` and its return type `SidechainStatus`. Code that uses it should directly use
 the APIs that were grouped into this trait or ideally define its own runtime API instead (see deprecation of `GetSidechainStatus`).
+* Trait `PartnerChainRuntimeBindings` and merged into `PartnerChainRuntime` trait.
+* Trait `CreateChainSpecRuntimeBindings` from `partner-chains-cli`, and substituted with `PartnerChainRuntime` trait.
 
 ## Fixed
 
