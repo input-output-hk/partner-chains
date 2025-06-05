@@ -7158,6 +7158,7 @@ dependencies = [
  "frame-support",
  "log",
  "log4rs",
+ "once_cell",
  "parity-scale-codec",
  "partner-chains-cli",
  "partner-chains-smart-contracts-commands",
