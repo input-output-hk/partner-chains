@@ -5,7 +5,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 # Unreleased
 
 ## Changed
-* `partner-chains-db-sync-data-sources` and  `partner-chains-mock-data-sources` crates now exports all its public members from the root
+* `partner-chains-db-sync-data-sources` and `partner-chains-mock-data-sources` crates now exports all its public members from the root
 
 ## Removed
 * Trait `PartnerChainRuntimeBindings` and merged into `PartnerChainRuntime` trait.
