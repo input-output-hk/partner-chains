@@ -36,6 +36,8 @@ use {
 	serde::{Deserialize, Deserializer, Serialize, Serializer},
 };
 
+use schnorr_jubjub;
+
 /// The number of main chain epochs back a Partner Chain queries for committee selection inputs.
 /// This offset is necessary to ensure that data is present and stable.
 const DATA_MC_EPOCH_OFFSET: u32 = 2;
@@ -984,7 +986,7 @@ pub struct RegistrationData {
 	/// Registering SPO's Aura public key
 	pub aura_pub_key: AuraPublicKey,
 	/// Registering SPO's Beefy public key
-	pub beefy_pub_key: BeefyPublicKey,
+	pub beefy_pub_key: schnorr_jubjub::Public,
 	/// Registering SPO's Grandpa public key
 	pub grandpa_pub_key: GrandpaPublicKey,
 }
@@ -1137,7 +1139,7 @@ pub struct PermissionedCandidateData {
 	/// Aura public key of the trustless candidate
 	pub aura_public_key: AuraPublicKey,
 	/// BEEFY public key of the trustless candidate
-	pub beefy_public_key: BeefyPublicKey,
+	pub beefy_public_key: schnorr_jubjub::Public,
 	/// Grandpa public key of the trustless candidate
 	pub grandpa_public_key: GrandpaPublicKey,
 }

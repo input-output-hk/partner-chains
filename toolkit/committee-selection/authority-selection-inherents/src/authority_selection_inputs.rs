@@ -4,6 +4,8 @@ use plutus::*;
 use scale_info::TypeInfo;
 use sidechain_domain::*;
 
+use schnorr_jubjub;
+
 /// The part of data for selection of authorities that comes from the main chain.
 /// It is unfiltered, so the selection algorithm should filter out invalid candidates.
 #[derive(Clone, Debug, Encode, Decode, DecodeWithMemTracking, TypeInfo, PartialEq, Eq)]
@@ -56,7 +58,7 @@ pub struct RawPermissionedCandidateData {
 	/// Unvalidated Aura public key of permissioned candidate
 	pub aura_public_key: AuraPublicKey,
 	/// Unvalidated Beefy public key of permissioned candidate
-	pub beefy_public_key: BeefyPublicKey,
+	pub beefy_public_key: schnorr_jubjub::Public,
 	/// Unvalidated Grandpa public key of permissioned candidate
 	pub grandpa_public_key: GrandpaPublicKey,
 }

@@ -98,8 +98,10 @@ sp-governed-map = { workspace = true }
 sp-block-producer-fees = { workspace = true }
 pallet-block-producer-fees = { workspace = true }
 
-[dev-dependencies]
 sp-io = { workspace = true }
+schnorr_jubjub = { workspace = true }
+
+[dev-dependencies]
 sp-keyring = { workspace = true }
 # we actually don't need it, cause in dev we can use full sp-keyring, but its usage gives a good example of how to create accountIds in WASM
 hex = { workspace = true }

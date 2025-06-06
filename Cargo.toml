@@ -54,6 +54,7 @@ members = [
 	"toolkit/block-producer-metadata/primitives",
 	"toolkit/block-producer-metadata/rpc",
 	"toolkit/utils/db-sync-sqlx",
+	"toolkit/utils/schnorr_jubjub",
 	"toolkit/governed-map/primitives",
 	"toolkit/governed-map/pallet",
 ]
@@ -239,6 +240,7 @@ sp-consensus-grandpa = { default-features = false, git = "https://github.com/par
 sp-consensus-slots = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", rev = "56dac31b63dbc8b639922003233522da573b9a66" }
 sp-core = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", rev = "56dac31b63dbc8b639922003233522da573b9a66" }
 sp-crypto-hashing = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", rev = "56dac31b63dbc8b639922003233522da573b9a66" }
+sp-externalities = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", rev = "56dac31b63dbc8b639922003233522da573b9a66" }
 sp-genesis-builder = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", rev = "56dac31b63dbc8b639922003233522da573b9a66" }
 sp-inherents = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", rev = "56dac31b63dbc8b639922003233522da573b9a66" }
 sp-io = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", rev = "56dac31b63dbc8b639922003233522da573b9a66" }
@@ -246,6 +248,7 @@ sp-keyring = { default-features = false, git = "https://github.com/paritytech/po
 sp-keystore = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", rev = "56dac31b63dbc8b639922003233522da573b9a66" }
 sp-offchain = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", rev = "56dac31b63dbc8b639922003233522da573b9a66" }
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", rev = "56dac31b63dbc8b639922003233522da573b9a66" }
+sp-runtime-interface = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", rev = "56dac31b63dbc8b639922003233522da573b9a66" }
 sp-session = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", rev = "56dac31b63dbc8b639922003233522da573b9a66" }
 sp-tracing = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", rev = "56dac31b63dbc8b639922003233522da573b9a66" }
 sp-staking = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", rev = "56dac31b63dbc8b639922003233522da573b9a66" }
@@ -336,3 +339,6 @@ pallet-governed-map = { path = "toolkit/governed-map/pallet", default-features =
 
 # demo node
 partner-chains-demo-runtime = { path = "demo/runtime" }
+
+# Schnorr experiments
+schnorr_jubjub = { path = "toolkit/utils/schnorr_jubjub", default-features = false }
