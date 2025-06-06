@@ -11,9 +11,9 @@ description = "Executable tool for simulating committee selection using the Aria
 [dependencies]
 selection = { workspace = true, default-features = true }
 serde = { workspace = true }
-serde_json = { workspace = true }
+serde_json = { workspace = true, features = ["std"] }
 clap = { workspace = true }
-rand_chacha = { workspace = true }
+rand_chacha = { workspace = true, features = ["os_rng"] }
 rand = { workspace = true }
 log = { workspace = true }
 env_logger = { workspace = true }
