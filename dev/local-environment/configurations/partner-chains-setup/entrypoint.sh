@@ -292,9 +292,9 @@ echo "Configuring Initial Validators..."
 echo "[" > initial_validators.json
 for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
     node_name="permissioned-$i"
-    sidechain_account_id=$(jq -r '.ss58Address' /shared/node-keys/$node_name/keys/sidechain.json)
-    aura_vkey_ss58=$(jq -r '.ss58Address' /shared/node-keys/$node_name/keys/aura.json)
-    grandpa_vkey_ss58=$(jq -r '.ss58Address' /shared/node-keys/$node_name/keys/grandpa.json)
+    validator_id=$(jq -r '.ss58Address' /shared/node-keys/$node_name/keys/sidechain.json)
+    aura_ss58=$(jq -r '.ss58Address' /shared/node-keys/$node_name/keys/aura.json)
+    grandpa_ss58=$(jq -r '.ss58Address' /shared/node-keys/$node_name/keys/grandpa.json)
     
     if [ $i -gt 1 ]; then
         echo "," >> initial_validators.json
@@ -302,10 +302,10 @@ for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
     
     cat <<EOF >> initial_validators.json
     [
-        "$sidechain_account_id",
+        "$validator_id",
         {
-            "aura": "$aura_vkey_ss58",
-            "grandpa": "$grandpa_vkey_ss58"
+            "aura": "$aura_ss58",
+            "grandpa": "$grandpa_ss58"
         }
     ]
 EOF
@@ -321,9 +321,9 @@ echo "Configuring Initial Authorities..."
 echo "[" > initial_authorities.json
 for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
     node_name="permissioned-$i"
-    sidechain_id_ss58=$(jq -r '.ss58PublicKey' "/shared/node-keys/$node_name/keys/sidechain.json")
-    aura_key_ss58=$(jq -r '.ss58Address' "/shared/node-keys/$node_name/keys/aura.json")
-    grandpa_key_ss58=$(jq -r '.ss58Address' "/shared/node-keys/$node_name/keys/grandpa.json")
+    validator_id=$(jq -r '.ss58PublicKey' "/shared/node-keys/$node_name/keys/sidechain.json")
+    aura_ss58=$(jq -r '.ss58Address' "/shared/node-keys/$node_name/keys/aura.json")
+    grandpa_ss58=$(jq -r '.ss58Address' "/shared/node-keys/$node_name/keys/grandpa.json")
     
     if [ $i -gt 1 ]; then
         echo "," >> initial_authorities.json
@@ -332,10 +332,10 @@ for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
     cat <<EOF >> initial_authorities.json
     {
         "Permissioned": {
-            "id": "$sidechain_id_ss58",
+            "id": "$validator_id",
             "keys": {
-                "aura": "$aura_key_ss58",
-                "grandpa": "$grandpa_key_ss58"
+                "aura": "$aura_ss58",
+                "grandpa": "$grandpa_ss58"
             }
         }
     }
