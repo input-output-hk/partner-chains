@@ -106,7 +106,27 @@ runs:
             $pytest_cmd
           "
         else
-          echo "Running tests locally"
+          echo "Running tests in Kubernetes environment"
+          export USE_KUBECTL_RPC="true"
+          case "${{ inputs.env }}" in
+            "ci-preview")
+              export KUBECTL_EXEC_POD="ci-preview-validator-1"
+              export K8S_NAMESPACE="ci-preview"
+              ;;
+            "devnet")
+              export KUBECTL_EXEC_POD="alice"
+              export K8S_NAMESPACE="sc"
+              ;;
+            "staging-preview")
+              export KUBECTL_EXEC_POD="staging-preview-validator-1"
+              export K8S_NAMESPACE="staging-preview"
+              ;;
+            *)
+              echo "Unknown environment: ${{ inputs.env }}". RPC calls might fail.
+              export KUBECTL_EXEC_POD=""
+              export K8S_NAMESPACE=""
+              ;;
+          esac
           cd e2e-tests
           source venv/bin/activate
           eval "$pytest_cmd"
