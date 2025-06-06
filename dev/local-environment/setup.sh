@@ -428,9 +428,9 @@ export MC__FIRST_EPOCH_TIMESTAMP_MILLIS=\$(cat /shared/MC__FIRST_EPOCH_TIMESTAMP
   --chain=/shared/chain-spec.json \\
   --validator \\
   --node-key=0000000000000000000000000000000000000000000000000000000000000$(printf "%03d" $i) \\
-  --bootnodes="/dns/partner-chains-node-permissioned-1/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp" \\
   --base-path=/data \\
   --keystore-path=/keystore \\
+  --bootnodes="/dns/partner-chains-node-permissioned-1/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp" \\
   --unsafe-rpc-external \\
   --rpc-port=9933 \\
   --rpc-cors=all \\
@@ -466,6 +466,7 @@ EOF
       - shared-volume:/shared
       - partner-chains-node-$node_name-data:/data
       - ./configurations/partner-chains-nodes/$node_name/entrypoint.sh:/entrypoint.sh
+      - shared-volume:/shared/node-keys/$node_name/keys:/keystore
     environment:
       DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:\${POSTGRES_PASSWORD}@postgres:\${POSTGRES_PORT}/cexplorer"
       CARDANO_SECURITY_PARAMETER: "5"
@@ -503,6 +504,7 @@ EOF
       - shared-volume:/shared
       - partner-chains-node-$node_name-data:/data
       - ./configurations/partner-chains-nodes/$node_name/entrypoint.sh:/entrypoint.sh
+      - shared-volume:/shared/node-keys/$node_name/keys:/keystore
     environment:
       DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:\${POSTGRES_PASSWORD}@postgres:\${POSTGRES_PORT}/cexplorer"
       CARDANO_SECURITY_PARAMETER: "5"

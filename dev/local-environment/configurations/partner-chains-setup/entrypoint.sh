@@ -138,6 +138,9 @@ for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
         --output-type json \
         > /shared/node-keys/$node_name/keys/grandpa.json
     
+    # Allow node process to write to its directory (for keystore etc.)
+    chmod -R 777 "/shared/node-keys/$node_name"
+    
     if [ "$i" -eq 1 ]; then # Debug for the first node only
         echo "[DEBUG] Content of /shared/node-keys/$node_name/keys/grandpa.json:"
         cat "/shared/node-keys/$node_name/keys/grandpa.json"
@@ -192,6 +195,9 @@ for ((i=1; i<=NUM_REGISTERED_NODES_TO_PROCESS; i++)); do
         --output-type json \
         > /shared/node-keys/$node_name/keys/grandpa.json
     
+    # Allow node process to write to its directory (for keystore etc.)
+    chmod -R 777 "/shared/node-keys/$node_name"
+
     # Extract keys and generate signatures
     sidechain_signing_key=$(jq -r '.secretSeed' /shared/node-keys/$node_name/keys/sidechain.json)
     
