@@ -272,12 +272,6 @@ done
 echo "Generating chain-spec.json file for Partnerchain Nodes..."
 ./partner-chains-node build-spec --disable-default-bootnode > chain-spec.json
 
-echo "Setting Governed Map scripts..."
-export GOVERNED_MAP_VALIDATOR_ADDRESS_HEX="0x$(echo -n $GOVERNED_MAP_VALIDATOR_ADDRESS | xxd -p -c 128)"
-jq --arg address $GOVERNED_MAP_VALIDATOR_ADDRESS_HEX --arg policy_id $GOVERNED_MAP_POLICY_ID '.genesis.runtimeGenesis.config.governedMap.mainChainScripts = {
-  "validator_address": $address,
-  "asset_policy_id": $policy_id
-}' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
 
 
 
@@ -327,7 +321,7 @@ echo "Configuring Initial Authorities..."
 echo "[" > initial_authorities.json
 for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
     node_name="permissioned-$i"
-    sidechain_id_ss58=$(jq -r '.ss58Address' "/shared/node-keys/$node_name/keys/sidechain.json")
+    sidechain_id_ss58=$(jq -r '.ss58PublicKey' "/shared/node-keys/$node_name/keys/sidechain.json")
     aura_key_ss58=$(jq -r '.ss58Address' "/shared/node-keys/$node_name/keys/aura.json")
     grandpa_key_ss58=$(jq -r '.ss58Address' "/shared/node-keys/$node_name/keys/grandpa.json")
     
@@ -352,6 +346,16 @@ echo "]" >> initial_authorities.json
 jq --slurpfile authorities initial_authorities.json '.genesis.runtimeGenesis.config.sessionCommitteeManagement.initialAuthorities = $authorities[0]' chain-spec.json > chain-spec.json.tmp
 mv chain-spec.json.tmp chain-spec.json
 rm initial_authorities.json # Clean up temporary file
+
+
+
+
+
+
+
+
+
+
 
 
 
