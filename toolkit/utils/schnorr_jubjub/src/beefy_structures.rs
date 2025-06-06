@@ -7,14 +7,14 @@
 //! infrastructure.
 
 use core::fmt::{Debug, Formatter};
-use std::{convert::TryInto, hash::Hash};
+use std::{convert::TryInto, hash::Hash, fmt::Display};
 
 use blstrs::{Fr, JubjubSubgroup};
 use group::{Group, GroupEncoding};
 use rand_core::OsRng;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use sha2::Digest;
-use sp_consensus_beefy::{BeefyAuthorityId, BeefySignatureHasher};
+use sp_consensus_beefy::{BeefyAuthorityId, BeefySignatureHasher, AuthorityIdBound};
 use sp_core::{
     ByteArray, Decode, DecodeWithMemTracking, DeriveJunction, Encode, MaxEncodedLen,
     Pair as TraitPair,
@@ -67,6 +67,12 @@ pub type InnerPublicBytes = PublicBytes<PUBLIC_SERIALIZED_SIZE, SchnorrJubJubTag
 )]
 pub struct Public(pub InnerPublicBytes);
 
+impl Display for Public {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "0x{}", hex::encode(self.as_slice()))
+    }
+}
+
 impl Convert<Public, Vec<u8>> for Public {
     fn convert(beefy_id: Public) -> Vec<u8> {
         beefy_id.as_slice().to_vec()
@@ -98,6 +104,10 @@ impl Debug for Public {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         write!(f, "Public({:?})", self.as_slice())
     }
+}
+
+impl AuthorityIdBound for Public {
+    type BoundedSignature = Signature;
 }
 
 impl<'a> TryFrom<&'a [u8]> for Public {

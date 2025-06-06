@@ -254,7 +254,9 @@ pub fn validate_permissioned_candidate_data<AccountId: TryFrom<SidechainPublicKe
 			.try_into_sr25519()
 			.ok_or(PermissionedCandidateDataError::InvalidAuraKey)?,
 		candidate
-			.beefy_public_key,
+			.beefy_public_key
+			.try_into_schnorr()
+			.ok_or(PermissionedCandidateDataError::InvalidBeefyKey)?,
 		candidate
 			.grandpa_public_key
 			.try_into_ed25519()
@@ -280,7 +282,9 @@ pub fn validate_registration_data(
 		.try_into_sr25519()
 		.ok_or(RegistrationDataError::InvalidAuraKey)?;
 	let beefy_pub_key = registration_data
-		.beefy_pub_key.clone();
+		.beefy_pub_key
+		.try_into_schnorr()
+		.ok_or(RegistrationDataError::InvalidBeefyKey)?;
 	let grandpa_pub_key = registration_data
 		.grandpa_pub_key
 		.try_into_ed25519()

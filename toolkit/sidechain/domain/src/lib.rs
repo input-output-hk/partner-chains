@@ -986,7 +986,7 @@ pub struct RegistrationData {
 	/// Registering SPO's Aura public key
 	pub aura_pub_key: AuraPublicKey,
 	/// Registering SPO's Beefy public key
-	pub beefy_pub_key: schnorr_jubjub::Public,
+	pub beefy_pub_key: BeefyPublicKey,
 	/// Registering SPO's Grandpa public key
 	pub grandpa_pub_key: GrandpaPublicKey,
 }
@@ -1051,8 +1051,8 @@ impl From<sr25519::Public> for AuraPublicKey {
 pub struct BeefyPublicKey(pub Vec<u8>);
 impl BeefyPublicKey {
 	/// Attempts to cast this public key to a valid [ecdsa::Public]
-	pub fn try_into_ecdsa(&self) -> Option<ecdsa::Public> {
-		Some(ecdsa::Public::from_raw(self.0.clone().try_into().ok()?))
+	pub fn try_into_schnorr(&self) -> Option<schnorr_jubjub::Public> {
+		Some(schnorr_jubjub::Public::try_from(self.0.as_slice()).ok()?)
 	}
 }
 
@@ -1139,7 +1139,7 @@ pub struct PermissionedCandidateData {
 	/// Aura public key of the trustless candidate
 	pub aura_public_key: AuraPublicKey,
 	/// BEEFY public key of the trustless candidate
-	pub beefy_public_key: schnorr_jubjub::Public,
+	pub beefy_public_key: BeefyPublicKey,
 	/// Grandpa public key of the trustless candidate
 	pub grandpa_public_key: GrandpaPublicKey,
 }

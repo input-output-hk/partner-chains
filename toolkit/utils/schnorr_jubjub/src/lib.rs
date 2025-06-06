@@ -8,4 +8,4 @@ mod keystore;
 mod primitive;
 mod runtime;
 
-pub use beefy_structures::{Public, Signature};
+pub use beefy_structures::{Public, InnerPublicBytes, Signature};
