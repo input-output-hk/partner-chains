@@ -7,6 +7,11 @@
 //!
 //! # Usage
 //!
+//! *Important*: The mock data sources completely replace any interaction of the Partner
+//!              Chain with its Cardano main chain, making them suitable only for local
+//!              development and early exploration. They should not be used in production
+//!              of public testnets.
+//!
 //! The mock data sources defined in this crate are meant to make it possible to run
 //! a Partner Chain node with as little additional work as possible. Because of that,
 //! most of them return either empty or constant data. The important exception is the

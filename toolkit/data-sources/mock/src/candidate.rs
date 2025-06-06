@@ -175,10 +175,10 @@ impl MockRegistrationsConfig {
 
 /// Mock authority selection data source that serves registration data in a round-robin fashion
 ///
-/// # Creatin the data source
+/// # Creating the data source
 ///
 /// This data source can be created by wrapping a manually created [MockRegistrationsConfig].
-/// However, the preferred way to do it is by loading the registrations data from a Json file
+/// However, the preferred way to do it is by loading the registrations data from a JSON file
 /// using the [MockRegistrationsConfig::read_registrations] method.
 ///
 /// An example configuration file can look like this:
