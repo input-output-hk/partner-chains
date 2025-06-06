@@ -79,6 +79,7 @@
               pkgs.lib.makeLibraryPath [
                 rustToolchain
                 pkgs.libz
+                pkgs.stdenv.cc.cc
               ]
             }"
 
@@ -87,6 +88,7 @@
             export OPENSSL_INCLUDE_DIR="${pkgs.openssl.dev}/include"
             export OPENSSL_LIB_DIR="${pkgs.openssl.out}/lib"
 
+            export PYTHONNOUSERSITE=1
             export CRATE_CC_NO_DEFAULTS=1
             ${if isLinux then "export CFLAGS=-DJEMALLOC_STRERROR_R_RETURNS_CHAR_WITH_GNU_SOURCE" else ""}
           '';
