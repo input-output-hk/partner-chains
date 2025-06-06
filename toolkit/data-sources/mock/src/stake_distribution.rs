@@ -1,9 +1,11 @@
 use sidechain_domain::*;
 use sp_block_participation::inherent_data::BlockParticipationDataSource;
 
+/// Mocked stake distribution data source that returns empty data
 pub struct StakeDistributionDataSourceMock;
 
 impl StakeDistributionDataSourceMock {
+	/// Creates new data source
 	pub fn new() -> Self {
 		Self
 	}

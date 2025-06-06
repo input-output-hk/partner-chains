@@ -3,17 +3,14 @@ use async_trait::async_trait;
 use sidechain_domain::*;
 use sp_native_token_management::{MainChainScripts, NativeTokenManagementDataSource};
 
+/// Mock native token data source that serves constant data
+#[derive(Default)]
 pub struct NativeTokenDataSourceMock;
 
 impl NativeTokenDataSourceMock {
+	/// Creates new mocked native token data source
 	pub fn new() -> Self {
 		Self
-	}
-}
-
-impl Default for NativeTokenDataSourceMock {
-	fn default() -> Self {
-		Self::new()
 	}
 }
 
