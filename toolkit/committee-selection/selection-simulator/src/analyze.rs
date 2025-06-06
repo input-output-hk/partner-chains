@@ -117,8 +117,8 @@ impl Command {
 			let committee = self
 				.ariadne_version
 				.select_authorities(
-					self.registered_seats.clone(),
-					self.permissioned_seats.clone(),
+					self.registered_seats,
+					self.permissioned_seats,
 					registered_candidates.clone(),
 					permissioned_candidates.clone(),
 					&mut rng,
