@@ -1,4 +1,49 @@
-//! Executable crate for simulating committee selection with the Ariadne algorithm
+//! Executable crate for simulating committee selection with the Ariadne algorithm.
+//!
+//! This tool is meant for Partner Chain builders and governance authorities to run
+//! simulation of Ariadne commitee selection in order to select best-performing values
+//! of the D-Parameter for their actual set of permissioned and registered candidates,
+//! as well as predict general security of the algorithm.
+//!
+//! # Usage
+//!
+//! The tool exposes two commands that simulate Ariadne:
+//! - [simulate]: outputs selected committees as JSON arrays
+//! - [analyze]: calculates various statistics for each selected committee and outputs
+//!              them as CSV data
+//!
+//! See the documentation of each command for details.
+//!
+//! Both commands expect to receive as arguments JSON files containing information about
+//! committee member candidates. For registered candidates the format is a list of objects
+//! containing fields `key` and `stake`, eg.:
+//! ```json
+//! [
+//!   {
+//!      "key": "registered-1",
+//!      "stake": 134664494512628
+//!   },
+//!   {
+//!      "key": "registered-2",
+//!      "stake": 76499924001653
+//!   },
+//!   {
+//!      "key": "registered-3",
+//!      "stake": 75953756970290
+//!   }
+//! ]
+//! ```
+//! For permissioned candidates only the `key` field is expected, eg.:
+//! ```json
+//! [
+//!   { "key": "permissioned-0" },
+//!   { "key": "permissioned-1" },
+//!   { "key": "permissioned-2" }
+//! ]
+//! ```
+//!
+//! [simulate]: simple_sim::Command
+//! [analyze]: analyze::Command
 #![deny(missing_docs)]
 
 use clap::*;
