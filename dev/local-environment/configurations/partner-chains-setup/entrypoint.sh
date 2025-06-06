@@ -287,8 +287,7 @@ echo "Generating chain-spec.json file for Partnerchain Nodes..."
 
 
 
-echo "Configuring Initial Validators..."
-# Generate initial validators array
+echo "Configuring Initial Validators with SS58 Address ID..."
 echo "[" > initial_validators.json
 for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
     node_name="permissioned-$i"
@@ -316,8 +315,7 @@ echo "]" >> initial_validators.json
 jq --slurpfile validators initial_validators.json '.genesis.runtimeGenesis.config.session.initialValidators = $validators[0]' chain-spec.json > chain-spec.json.tmp
 mv chain-spec.json.tmp chain-spec.json
 
-echo "Configuring Initial Authorities..."
-# Generate initial authorities array (similar to initialValidators)
+echo "Configuring Initial Authorities with SS58 Public Key ID..."
 echo "[" > initial_authorities.json
 for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
     node_name="permissioned-$i"
