@@ -16,6 +16,7 @@ use midnight_circuits::{
     ecc::curves::CircuitCurve, hash::poseidon::PoseidonChip, instructions::SpongeCPU,
 };
 use rand_core::{CryptoRng, RngCore};
+use crate::poseidon::PoseidonError;
 
 /// Poseidon hash function
 pub type Poseidon = PoseidonChip<Scalar>;
@@ -48,6 +49,14 @@ pub enum SchnorrError {
     InvalidPkFormat,
     /// Error verifying a signature.
     InvalidSignature,
+}
+
+impl From<PoseidonError> for SchnorrError {
+    fn from(value: PoseidonError) -> Self {
+        match value {
+            PoseidonError::NotCanonical => Self::InvalidMsgFormat
+        }
+    }
 }
 
 impl KeyPair {
@@ -113,38 +122,6 @@ impl SchnorrSignature {
         } else {
             Err(SchnorrError::InvalidSignature)
         }
-    }
-}
-
-impl SchnorrSignature {
-    /// Converts a byte slice into a vector of `Scalar` field elements suitable
-    /// for Poseidon hashing.
-    ///
-    /// Poseidon operates over field elements, so this function transforms raw
-    /// bytes into `Scalar`s.
-    ///
-    /// - If `format_scalars` is `true`, the input is assumed to already contain
-    ///   valid field elements. Each 32-byte chunk is interpreted as a canonical
-    ///   `Scalar`.
-    ///
-    /// - If `format_scalars` is `false`, the input is processed in 31-byte
-    ///   chunks to ensure that each resulting value falls within the canonical
-    ///   range of the field.
-    ///
-    /// Returns a `Vec<Scalar>` on success, or an `Error` if canonical
-    /// conversion fails.
-    pub fn msg_from_bytes(msg: &[u8], format_scalars: bool) -> Result<Vec<Scalar>, SchnorrError> {
-        let chunk_len = if format_scalars { 32 } else { 31 };
-
-        msg.chunks(chunk_len)
-            .map(|scalar| {
-                let mut bytes = [0u8; 32];
-                bytes[..scalar.len()].copy_from_slice(scalar);
-                Scalar::from_bytes_le(&bytes)
-                    .into_option()
-                    .ok_or(SchnorrError::InvalidMsgFormat)
-            })
-            .collect::<Result<Vec<_>, SchnorrError>>()
     }
 }
 

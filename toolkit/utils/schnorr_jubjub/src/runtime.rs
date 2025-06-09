@@ -23,6 +23,7 @@ use crate::{
     beefy_structures::{CRYPTO_ID, InnerPublicBytes, Public, Signature},
     primitive::{SchnorrSignature, VerifyingKey},
 };
+use crate::poseidon::PoseidonJubjub;
 
 #[runtime_interface]
 pub trait GenericKeyInterface {
@@ -98,7 +99,7 @@ impl RuntimePublic for Public {
     }
 
     fn verify<M: AsRef<[u8]>>(&self, msg: &M, signature: &Self::Signature) -> bool {
-        let msg = SchnorrSignature::msg_from_bytes(msg.as_ref(), false)
+        let msg = PoseidonJubjub::msg_from_bytes(msg.as_ref(), false)
             .expect("With flag set to false, this should not fail. Report a bug.");
 
         let sig = SchnorrSignature::from_bytes(signature.as_ref());

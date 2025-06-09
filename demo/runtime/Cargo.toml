@@ -100,6 +100,11 @@ pallet-block-producer-fees = { workspace = true }
 
 sp-io = { workspace = true }
 schnorr_jubjub = { workspace = true }
+midnight-circuits = { git = "https://github.com/midnightntwrk/midnight-circuits", branch = "iquerejeta/committee_proof"}
+halo2curves = { version = "0.7.0", features = ["derive_serde"] }
+blstrs = { git = "https://github.com/davidnevadoc/blstrs", rev = "3dfe5bf" }
+group = "0.13"
+ff = "0.13"
 
 [dev-dependencies]
 sp-keyring = { workspace = true }

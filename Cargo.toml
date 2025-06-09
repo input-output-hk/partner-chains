@@ -251,6 +251,7 @@ sp-runtime = { default-features = false, git = "https://github.com/paritytech/po
 sp-runtime-interface = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", rev = "56dac31b63dbc8b639922003233522da573b9a66" }
 sp-session = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", rev = "56dac31b63dbc8b639922003233522da573b9a66" }
 sp-tracing = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", rev = "56dac31b63dbc8b639922003233522da573b9a66" }
+sp-trie = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", rev = "56dac31b63dbc8b639922003233522da573b9a66" }
 sp-staking = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", rev = "56dac31b63dbc8b639922003233522da573b9a66" }
 sp-std = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", rev = "56dac31b63dbc8b639922003233522da573b9a66" }
 sp-timestamp = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", rev = "56dac31b63dbc8b639922003233522da573b9a66" }
@@ -342,3 +343,4 @@ partner-chains-demo-runtime = { path = "demo/runtime" }
 
 # Schnorr experiments
 schnorr_jubjub = { path = "toolkit/utils/schnorr_jubjub", default-features = false }
+hash256-std-hasher = { version = "0.15.2", default-features = false }

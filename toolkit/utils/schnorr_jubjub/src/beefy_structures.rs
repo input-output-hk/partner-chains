@@ -28,8 +28,9 @@ use sp_runtime::{
     app_crypto::{AppCrypto, AppPair, AppPublic, AppSignature},
     traits::Convert,
 };
+use crate::poseidon::PoseidonJubjub;
 
-use crate::primitive::{KeyPair as Pair, SchnorrSignature, VerifyingKey};
+use crate::primitive::{SchnorrSignature, VerifyingKey};
 
 /// Constant to represent the primitive of Schnorr over JubJub
 pub const CRYPTO_ID: CryptoTypeId = CryptoTypeId(*b"jubP");
@@ -281,7 +282,7 @@ impl TraitPair for crate::primitive::KeyPair {
     }
 
     fn sign(&self, message: &[u8]) -> Self::Signature {
-        let msg = SchnorrSignature::msg_from_bytes(message, false)
+        let msg = PoseidonJubjub::msg_from_bytes(message, false)
             .expect("With flag set to false, this should not fail. Report a bug.");
         let shcnorr_sig = self.sign(&msg, &mut OsRng);
 
@@ -291,7 +292,7 @@ impl TraitPair for crate::primitive::KeyPair {
     }
 
     fn verify<M: AsRef<[u8]>>(sig: &Self::Signature, message: M, pubkey: &Self::Public) -> bool {
-        let msg = SchnorrSignature::msg_from_bytes(message.as_ref(), false)
+        let msg = PoseidonJubjub::msg_from_bytes(message.as_ref(), false)
             .expect("With flag set to false, this should not fail. Report a bug.");
 
         let sig = SchnorrSignature::from_bytes(sig.as_ref());

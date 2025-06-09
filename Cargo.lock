@@ -7364,7 +7364,9 @@ name = "partner-chains-demo-runtime"
 version = "1.7.0"
 dependencies = [
  "authority-selection-inherents",
+ "blstrs",
  "derive-new",
+ "ff",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -7372,9 +7374,12 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
+ "group",
+ "halo2curves",
  "hex",
  "hex-literal 1.0.0",
  "log",
+ "midnight-circuits",
  "minicbor",
  "pallet-address-associations",
  "pallet-aura",
@@ -10185,6 +10190,7 @@ dependencies = [
  "frame-support",
  "group",
  "halo2curves",
+ "hash256-std-hasher",
  "hex",
  "midnight-circuits",
  "pallet-beefy-mmr",
@@ -10202,6 +10208,7 @@ dependencies = [
  "sp-keystore",
  "sp-runtime",
  "sp-runtime-interface",
+ "sp-trie",
 ]
 
 [[package]]

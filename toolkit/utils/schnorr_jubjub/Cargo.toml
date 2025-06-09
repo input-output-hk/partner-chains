@@ -29,6 +29,8 @@ sp-externalities = { workspace = true }
 sha2 = "0.10.9"
 serde = {workspace = true }
 hex = {workspace = true }
+hash256-std-hasher = { workspace = true }
+sp-trie = { workspace = true }
 
 [lints]
 workspace = true
