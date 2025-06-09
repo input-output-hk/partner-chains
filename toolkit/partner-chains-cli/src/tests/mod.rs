@@ -16,9 +16,8 @@ use sidechain_domain::{
 use sp_core::offchain::Timestamp;
 use std::collections::HashMap;
 use std::panic::{UnwindSafe, catch_unwind, resume_unwind};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
-use tempfile::TempPath;
 
 mod config;
 
@@ -644,21 +643,6 @@ impl IOContext for MockIOContext {
 			other => panic!("Unexpected system time request, expected: {other:?}"),
 		})
 	}
-	fn new_tmp_file(&self, content: &str) -> TempPath {
-		let next = self.pop_next_action(&format!("new_tmp_file(content = {content})"));
-		next.print_mock_location_on_panic(|next| match next {
-			MockIO::NewTmpFile { content: expected_content } => {
-				assert_eq!(
-					content, expected_content,
-					"Unexpected file write: {content}, expected content: {expected_content}"
-				);
-				let path = format!("/tmp/dummy{}", self.files.lock().unwrap().len());
-				self.files.lock().unwrap().insert(path.clone(), content.into());
-				TempPath::from_path(Path::new(&path))
-			},
-			other => panic!("Unexpected new tmp file action, expected: {other:?}"),
-		})
-	}
 
 	fn new_tmp_dir(&self) -> PathBuf {
 		let next = self.pop_next_action("new_tmp_dir()");
@@ -700,6 +684,12 @@ impl IOContext for MockIOContext {
 }
 
 #[macro_export]
+/// Macro for verifying that an output JSON file matches an expected value.
+///
+/// Arguments:
+///  - `ctx` context of a type implementing [IOContext]
+///  - `path` path to actual JSON file
+///  - `expected` expected JSON value
 macro_rules! verify_json {
 	($ctx:ident, $path:expr, $expected:expr) => {{
 		let actual = $ctx

@@ -7,8 +7,8 @@ use authority_selection_inherents::{
 };
 use hex_literal::hex;
 use partner_chains_demo_runtime::BlockAuthor;
-use partner_chains_mock_data_sources::governed_map::GovernedMapDataSourceMock;
-use partner_chains_mock_data_sources::stake_distribution::StakeDistributionDataSourceMock;
+use partner_chains_mock_data_sources::GovernedMapDataSourceMock;
+use partner_chains_mock_data_sources::StakeDistributionDataSourceMock;
 use sidechain_domain::{
 	DelegatorKey, MainchainBlock, McBlockHash, McBlockNumber, McEpochNumber, McSlotNumber,
 	NativeTokenAmount, ScEpochNumber,

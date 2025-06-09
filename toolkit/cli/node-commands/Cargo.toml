@@ -31,6 +31,7 @@ sp-runtime = { workspace = true, features = ["std"] }
 sp-sidechain = { workspace = true, features = ["std"] }
 sp-session-validator-management = { workspace = true }
 sp-session-validator-management-query = { workspace = true }
+once_cell = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true }
