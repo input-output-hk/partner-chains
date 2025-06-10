@@ -93,11 +93,6 @@ impl RegistrationSignaturesCmd {
 /// - `spo_signature`: Ed25519 signature over the registration message using the stake pool key
 /// - `sidechain_public_key`: ECDSA public key for the Partner Chain validator
 /// - `sidechain_signature`: ECDSA signature over the registration message using the validator key
-///
-/// ## Serialization
-///
-/// The struct implements `Serialize` and `Display` traits to output JSON-formatted results
-/// suitable for consumption by registration workflows and smart contracts.
 #[derive(Clone, Debug, Serialize)]
 pub struct RegistrationCmdOutput {
 	/// Ed25519 public key of the Cardano stake pool operator
