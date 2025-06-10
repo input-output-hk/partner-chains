@@ -138,7 +138,6 @@
               libiconv
               nixfmt-rfc-style
               openssl
-              patchelf
               pkg-config
               protobuf
               python312
@@ -146,7 +145,6 @@
               python312Packages.virtualenv
               rustToolchain
               sops
-              xxd
             ]
             ++ (if isDarwin then [ pkgs.darwin.apple_sdk.frameworks.SystemConfiguration ] else [ pkgs.clang ]);
 
