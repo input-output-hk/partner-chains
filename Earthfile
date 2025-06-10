@@ -96,9 +96,9 @@ build:
 test:
   FROM +build
   DO github.com/earthly/lib:3.0.2+INSTALL_DIND
-  RUN ls
+  RUN cargo test --no-run --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks
   WITH DOCKER
-    RUN ls
+    RUN cargo test --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks
   END
 
 licenses:
@@ -115,7 +115,7 @@ fmt:
 clippy:
   FROM +source
   ENV RUSTFLAGS="-Dwarnings"
-  RUN ls
+  RUN cargo clippy --all-targets --all-features
 
 docker:
     FROM ubuntu:24.04
