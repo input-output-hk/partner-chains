@@ -1,8 +1,8 @@
 //! # CLI Commands for Partner Chains
 //!
 //! This crate provides command structures and execution logic for Partner Chains operations.
-//! These commands are integrated into the `partner-chains-demo-node` binary to provide
-//! cryptographic operations, signature generation, and blockchain interaction capabilities.
+//! These commands provide cryptographic operations, signature generation, and blockchain
+//! interaction capabilities.
 //!
 //! ## Core Functionality
 //!
