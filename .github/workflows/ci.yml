@@ -521,20 +521,21 @@ jobs:
           path: to-build
           ref: ${{ inputs.sha }}
 
-      - name: Overlay flake files from build logic source
+      - name: Checkout current flake files (build logic)
         uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
+          path: flake-overlay
           sparse-checkout: |
             flake.nix
             flake.lock
           sparse-checkout-cone-mode: false
 
-      - name: Move flake files to to-build
+      - name: Overwrite flake files in to-build
         shell: bash
         run: |
-          if [ -f flake.nix ]; then mv flake.nix to-build/flake.nix; fi
-          if [ -f flake.lock ]; then mv flake.lock to-build/flake.lock; fi
+          cp flake-overlay/flake.nix to-build/flake.nix
+          cp flake-overlay/flake.lock to-build/flake.lock
 
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
