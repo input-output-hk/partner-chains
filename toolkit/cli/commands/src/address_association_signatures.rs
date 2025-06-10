@@ -48,9 +48,6 @@ pub struct AddressAssociationSignaturesCmd<
 
 /// Parses a Partner Chain address from string format.
 ///
-/// This function provides error handling for address parsing, converting
-/// parse failures into descriptive error messages suitable for CLI output.
-///
 /// # Arguments
 /// * `s` - String representation of the Partner Chain address
 ///
