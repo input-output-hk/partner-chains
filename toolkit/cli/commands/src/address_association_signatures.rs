@@ -41,7 +41,7 @@ pub struct AddressAssociationSignaturesCmd<
 	/// Partner Chain address to be associated with the Cardano stake address
 	#[arg(long, value_parser=parse_pc_address::<PartnerchainAddress>)]
 	pub partnerchain_address: PartnerchainAddress,
-	/// Ed25519 signing key for the Cardano stake address
+	/// Ed25519 signing key for the Cardano stake address. Its public key will be associated with partnerchain_address.
 	#[arg(long)]
 	pub signing_key: StakeSigningKeyParam,
 }
