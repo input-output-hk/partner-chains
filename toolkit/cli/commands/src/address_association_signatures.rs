@@ -35,7 +35,7 @@ use std::str::FromStr;
 pub struct AddressAssociationSignaturesCmd<
 	PartnerchainAddress: Clone + Sync + Send + FromStr + 'static,
 > {
-	/// Genesis UTXO that uniquely identifies the target Partner Chain
+	/// Genesis UTXO that identifies the target Partner Chain
 	#[arg(long)]
 	pub genesis_utxo: UtxoId,
 	/// Partner Chain address to be associated with the Cardano stake address
