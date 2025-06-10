@@ -121,19 +121,6 @@ impl Display for RegistrationCmdOutput {
 
 /// Message structure that gets signed during validator registration.
 ///
-/// This struct represents the canonical message format that both mainchain and sidechain
-/// keys must sign to prove validator authorization. The message includes identifiers
-/// that prevent replay attacks and ensure the registration is valid for a specific
-/// Partner Chain instance.
-///
-/// ## Plutus Integration
-///
-/// The struct derives `ToDatum` to enable conversion to Plutus datum format for
-/// on-chain verification in Cardano smart contracts. The datum structure follows
-/// the expected format for Partner Chain registration validators.
-///
-/// ## Security Properties
-///
 /// - **Genesis UTXO**: Binds the registration to a specific Partner Chain instance
 /// - **Sidechain Public Key**: Establishes the validator's identity on the Partner Chain
 /// - **Registration UTXO**: Prevents replay attacks by including a unique transaction identifier
