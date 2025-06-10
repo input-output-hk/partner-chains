@@ -136,17 +136,6 @@ pub struct RegisterValidatorMessage {
 
 impl RegisterValidatorMessage {
 	/// Constructs a new RegisterValidatorMessage with the specified parameters.
-	///
-	/// This method creates the canonical message structure that will be signed
-	/// by both mainchain and sidechain keys during validator registration.
-	///
-	/// # Arguments
-	/// * `genesis_utxo` - The genesis UTXO identifying the Partner Chain instance
-	/// * `pub_key` - The ECDSA public key for the Partner Chain validator
-	/// * `registration_utxo` - The UTXO consumed in the registration transaction
-	///
-	/// # Returns
-	/// A new `RegisterValidatorMessage` instance ready for signature generation
 	pub fn new(
 		genesis_utxo: UtxoId,
 		pub_key: secp256k1::PublicKey,
