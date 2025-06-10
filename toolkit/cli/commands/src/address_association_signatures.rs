@@ -93,23 +93,7 @@ where
 		Ok(())
 	}
 
-	/// Generates an Ed25519 signature over the address association message.
-	///
-	/// This method creates the canonical signed message structure used for
-	/// address associations and generates a cryptographic signature that
-	/// proves authorization from the Cardano stake key holder.
-	///
-	/// # Returns
-	/// A `ByteString` containing the Ed25519 signature bytes
-	///
-	/// # Message Structure
-	/// The signed message includes:
-	/// - Stake public key (derived from the signing key)
-	/// - Partner Chain address to be associated
-	/// - Genesis UTXO identifying the Partner Chain instance
-	///
-	/// The message is SCALE-encoded before signing to ensure deterministic
-	/// serialization across different environments.
+	/// Returns ByteString of Ed25519 signature over the SCALE encoded address association message.
 	fn sign(&self) -> ByteString {
 		let msg = AddressAssociationSignedMessage {
 			stake_public_key: self.signing_key.vkey(),
