@@ -143,7 +143,7 @@ impl RegisterValidatorMessage {
 		}
 	}
 
-	/// Generates dual signatures and prepares the complete registration output.
+	/// Generates dual signatures and prepares the registration output.
 	///
 	/// This method performs the cryptographic signing operations required for
 	/// validator registration, generating both Ed25519 and ECDSA signatures
@@ -156,12 +156,6 @@ impl RegisterValidatorMessage {
 	/// # Returns
 	/// A `RegistrationCmdOutput` containing all signatures and public keys
 	/// required for validator registration
-	///
-	/// # Cryptographic Process
-	/// 1. Generates Ed25519 signature using the mainchain key
-	/// 2. Generates ECDSA signature using the sidechain key
-	/// 3. Derives public keys from both signing keys
-	/// 4. Packages results into structured output format
 	pub fn sign_and_prepare_registration_cmd_output(
 		&self,
 		mainchain_key: ed25519_zebra::SigningKey,
