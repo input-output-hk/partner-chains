@@ -5,11 +5,15 @@ use sidechain_domain::*;
 use sp_timestamp::Timestamp;
 use std::sync::Arc;
 
+/// Mock MC reference hash data source
+///
+/// This source serves synthetic data generated based on inputs
 pub struct McHashDataSourceMock {
 	block_source: Arc<BlockDataSourceMock>,
 }
 
 impl McHashDataSourceMock {
+	/// Creates a new mock MC reference hash data source
 	pub fn new(inner: Arc<BlockDataSourceMock>) -> Self {
 		Self { block_source: inner }
 	}

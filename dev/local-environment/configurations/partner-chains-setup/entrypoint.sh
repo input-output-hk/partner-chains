@@ -83,19 +83,19 @@ else
 fi
 
 # sidechain.vkey:aura.vkey:grandpa.vkey
-echo "Inserting permissioned candidates for Alice and Bob..."
+echo "Inserting permissioned candidates for 'node-1' and 'node-2'..."
 
-alice_sidechain_vkey=$(cat /partner-chains-nodes/partner-chains-node-1/keys/sidechain.vkey)
-alice_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-1/keys/aura.vkey)
-alice_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-1/keys/grandpa.vkey)
+node1_sidechain_vkey=$(cat /partner-chains-nodes/partner-chains-node-1/keys/sidechain.vkey)
+node1_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-1/keys/aura.vkey)
+node1_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-1/keys/grandpa.vkey)
 
-bob_sidechain_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/sidechain.vkey)
-bob_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/aura.vkey)
-bob_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/grandpa.vkey)
+node2_sidechain_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/sidechain.vkey)
+node2_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/aura.vkey)
+node2_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/grandpa.vkey)
 
 cat <<EOF > permissioned_candidates.csv
-$alice_sidechain_vkey:$alice_aura_vkey:$alice_grandpa_vkey
-$bob_sidechain_vkey:$bob_aura_vkey:$bob_grandpa_vkey
+$node1_sidechain_vkey:$node1_aura_vkey:$node1_grandpa_vkey
+$node2_sidechain_vkey:$node2_aura_vkey:$node2_grandpa_vkey
 EOF
 
 ./partner-chains-node smart-contracts upsert-permissioned-candidates \
@@ -105,49 +105,89 @@ EOF
     --payment-key-file /keys/funded_address.skey
 
 if [ $? -eq 0 ]; then
-    echo "Permissioned candidates Alice and Bob inserted successfully!"
+    echo "Permissioned candidates 'node-1' and 'node-2' inserted successfully!"
 else
-    echo "Permission candidates Alice and Bob failed to be added..."
+    echo "Permission candidates 'node-1' and 'node-2' failed to be added..."
     exit 1
 fi
 
-echo "Inserting registered candidate Dave..."
+echo "Inserting registered candidate 'node-4'..."
 
-# Prepare Dave registration values
-dave_utxo=$(cat /shared/dave.utxo)
-dave_mainchain_signing_key=$(jq -r '.cborHex | .[4:]' /partner-chains-nodes/partner-chains-node-4/keys/cold.skey)
-dave_sidechain_signing_key=$(cat /partner-chains-nodes/partner-chains-node-4/keys/sidechain.skey)
+# Prepare 'node-4' registration values
+node4_utxo=$(cat /shared/node4.utxo)
+node4_mainchain_signing_key=$(jq -r '.cborHex | .[4:]' /partner-chains-nodes/partner-chains-node-4/keys/cold.skey)
+node4_sidechain_signing_key=$(cat /partner-chains-nodes/partner-chains-node-4/keys/sidechain.skey)
 
-# Process registration signatures for Dave
-dave_output=$(./partner-chains-node registration-signatures \
+# Process registration signatures for node-4
+node4_output=$(./partner-chains-node registration-signatures \
     --genesis-utxo $GENESIS_UTXO \
-    --mainchain-signing-key $dave_mainchain_signing_key \
-    --sidechain-signing-key $dave_sidechain_signing_key \
-    --registration-utxo $dave_utxo)
+    --mainchain-signing-key $node4_mainchain_signing_key \
+    --sidechain-signing-key $node4_sidechain_signing_key \
+    --registration-utxo $node4_utxo)
 
-# Extract signatures and keys from Dave output
-dave_spo_public_key=$(echo "$dave_output" | jq -r ".spo_public_key")
-dave_spo_signature=$(echo "$dave_output" | jq -r ".spo_signature")
-dave_sidechain_public_key=$(echo "$dave_output" | jq -r ".sidechain_public_key")
-dave_sidechain_signature=$(echo "$dave_output" | jq -r ".sidechain_signature")
-dave_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-4/keys/aura.vkey)
-dave_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-4/keys/grandpa.vkey)
+# Extract signatures and keys from 'node-4' output
+node4_spo_public_key=$(echo "$node4_output" | jq -r ".spo_public_key")
+node4_spo_signature=$(echo "$node4_output" | jq -r ".spo_signature")
+node4_sidechain_public_key=$(echo "$node4_output" | jq -r ".sidechain_public_key")
+node4_sidechain_signature=$(echo "$node4_output" | jq -r ".sidechain_signature")
+node4_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-4/keys/aura.vkey)
+node4_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-4/keys/grandpa.vkey)
 
-# Register Dave
+# Register 'node-4'
 ./partner-chains-node smart-contracts register \
     --ogmios-url http://ogmios:$OGMIOS_PORT \
     --genesis-utxo $GENESIS_UTXO \
-    --spo-public-key $dave_spo_public_key \
-    --spo-signature $dave_spo_signature \
-    --sidechain-public-keys $dave_sidechain_public_key:$dave_aura_vkey:$dave_grandpa_vkey \
-    --sidechain-signature $dave_sidechain_signature \
-    --registration-utxo $dave_utxo \
+    --spo-public-key $node4_spo_public_key \
+    --spo-signature $node4_spo_signature \
+    --sidechain-public-keys $node4_sidechain_public_key:$node4_aura_vkey:$node4_grandpa_vkey \
+    --sidechain-signature $node4_sidechain_signature \
+    --registration-utxo $node4_utxo \
     --payment-key-file /partner-chains-nodes/partner-chains-node-4/keys/payment.skey
 
 if [ $? -eq 0 ]; then
-    echo "Registered candidate Dave inserted successfully!"
+    echo "Registered candidate 'node-4' inserted successfully!"
 else
-    echo "Registration for Dave failed."
+    echo "Registration for 'node-4' failed."
+    exit 1
+fi
+
+echo "Inserting registered candidate 'node-5'..."
+
+# Prepare 'node-5' registration values
+node5_utxo=$(cat /shared/node5.utxo)
+node5_mainchain_signing_key=$(jq -r '.cborHex | .[4:]' /partner-chains-nodes/partner-chains-node-5/keys/cold.skey)
+node5_sidechain_signing_key=$(cat /partner-chains-nodes/partner-chains-node-5/keys/sidechain.skey)
+
+# Process registration signatures for node-5
+node5_output=$(./partner-chains-node registration-signatures \
+    --genesis-utxo $GENESIS_UTXO \
+    --mainchain-signing-key $node5_mainchain_signing_key \
+    --sidechain-signing-key $node5_sidechain_signing_key \
+    --registration-utxo $node5_utxo)
+
+# Extract signatures and keys from node-5 output
+node5_spo_public_key=$(echo "$node5_output" | jq -r ".spo_public_key")
+node5_spo_signature=$(echo "$node5_output" | jq -r ".spo_signature")
+node5_sidechain_public_key=$(echo "$node5_output" | jq -r ".sidechain_public_key")
+node5_sidechain_signature=$(echo "$node5_output" | jq -r ".sidechain_signature")
+node5_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-5/keys/aura.vkey)
+node5_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-5/keys/grandpa.vkey)
+
+# Register 'node-5'
+./partner-chains-node smart-contracts register \
+    --ogmios-url http://ogmios:$OGMIOS_PORT \
+    --genesis-utxo $GENESIS_UTXO \
+    --spo-public-key $node5_spo_public_key \
+    --spo-signature $node5_spo_signature \
+    --sidechain-public-keys $node5_sidechain_public_key:$node5_aura_vkey:$node5_grandpa_vkey \
+    --sidechain-signature $node5_sidechain_signature \
+    --registration-utxo $node5_utxo \
+    --payment-key-file /partner-chains-nodes/partner-chains-node-5/keys/payment.skey
+
+if [ $? -eq 0 ]; then
+    echo "Registered candidate 'node-5' inserted successfully!"
+else
+    echo "Registration for 'node-5' failed."
     exit 1
 fi
 
@@ -157,24 +197,17 @@ echo "Generating chain-spec.json file for Partner chain Nodes..."
 echo "Configuring Initial Validators..."
 jq '.genesis.runtimeGenesis.config.session.initialValidators = [
      [
-         "5C7C2Z5sWbytvHpuLTvzKunnnRwQxft1jiqrLD5rhucQ5S9X",
+         "5FnXTMg8UnfeGsMaGg24o3NY21VRFRDRdgxuLGmXuYLeZmin",
          {
-             "aura": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
-             "grandpa": "5FA9nQDVg267DEd8m1ZypXLBnvN7SFxYwV7ndqSYGiN9TTpu"
+             "aura": "5Cyx94iyji8namhRxvs4mAbURtPsvwjWCb68ZihNzfRysGLZ",
+             "grandpa": "5Cc5eQhbPw4CjwZpWqZkWWumMiuZywfWRK2Rh9guXUJ3U89s"
          }
      ],
      [
-         "5DVskgSC9ncWQpxFMeUn45NU43RUq93ByEge6ApbnLk6BR9N",
+         "5FJMH4MeZgd4fpiiAVLnr4uRop2EDFgzAFcvLmcduQ2cofCi",
          {
-             "aura": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
-             "grandpa": "5GoNkf6WdbxCFnPdAnYYQyCjAKPJgLNxXwPjwTh6DGg6gN3E"
-         }
-     ],
-     [
-         "5EP2cMaCxLzhfD3aFAqqgu3kfXH7GcwweEv6JXZRP6ysRHkQ",
-         {
-             "aura": "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y",
-             "grandpa": "5DbKjhNLpqX3zqZdNBc9BGb4fHU1cRBaDhJUskrvkwfraDi6"
+             "aura": "5E4op92Z2Di1GoVS9KqnoGVKQXG2R9x1vdh3RW892YLFsLrc",
+             "grandpa": "5Ha53RXoJjXtcTThFA5XNW7H6f5L39HnTuVSXimxAyhoYLeL"
          }
      ]
  ]' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
@@ -183,50 +216,42 @@ echo "Configuring Initial Authorities..."
 jq '.genesis.runtimeGenesis.config.sessionCommitteeManagement.initialAuthorities = [
   {
     "Permissioned": {
-      "id": "KW39r9CJjAVzmkf9zQ4YDb2hqfAVGdRqn53eRqyruqpxAP5YL",
+      "id": "KW4wALva83fvah66ufXSxg6r84tTpJmDXna8A1PCYdbZdVL95",
       "keys": {
-        "aura": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
-        "grandpa": "5FA9nQDVg267DEd8m1ZypXLBnvN7SFxYwV7ndqSYGiN9TTpu"
+        "aura": "5Cyx94iyji8namhRxvs4mAbURtPsvwjWCb68ZihNzfRysGLZ",
+        "grandpa": "5Cc5eQhbPw4CjwZpWqZkWWumMiuZywfWRK2Rh9guXUJ3U89s"
       }
     }
   },
   {
     "Permissioned": {
-      "id": "KWByAN7WfZABWS5AoWqxriRmF5f2jnDqy3rB5pfHLGkY93ibN",
+      "id": "KW92jBDRydnbyojCVF3USNFgEsrEvDGV3gvdgDvpfnbXvC13q",
       "keys": {
-        "aura": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
-        "grandpa": "5GoNkf6WdbxCFnPdAnYYQyCjAKPJgLNxXwPjwTh6DGg6gN3E"
-      }
-    }
-  },
-  {
-    "Permissioned": {
-      "id": "KWBpGtyJLBkJERdZT1a1uu19c2uPpZm9nFd8SGtCfRUAT3Y4w",
-      "keys": {
-        "aura": "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y",
-        "grandpa": "5DbKjhNLpqX3zqZdNBc9BGb4fHU1cRBaDhJUskrvkwfraDi6"
+        "aura": "5E4op92Z2Di1GoVS9KqnoGVKQXG2R9x1vdh3RW892YLFsLrc",
+        "grandpa": "5Ha53RXoJjXtcTThFA5XNW7H6f5L39HnTuVSXimxAyhoYLeL"
       }
     }
   }
 ]' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
 
 echo "Setting Governed Map scripts..."
-export GOVERNED_MAP_VALIDATOR_ADDRESS_HEX="0x$(echo $GOVERNED_MAP_VALIDATOR_ADDRESS | xxd -p -c 128)"
+export GOVERNED_MAP_VALIDATOR_ADDRESS_HEX="0x$(echo -n $GOVERNED_MAP_VALIDATOR_ADDRESS | xxd -p -c 128)"
 jq --arg address $GOVERNED_MAP_VALIDATOR_ADDRESS_HEX --arg policy_id $GOVERNED_MAP_POLICY_ID '.genesis.runtimeGenesis.config.governedMap.mainChainScripts = {
   "validator_address": $address,
   "asset_policy_id": $policy_id
 }' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
 
-echo "Set initial funds to Alice (ecdsa), ?, and Alice (sr25519)"
+echo "Set initial funds to node-1 (ECDSA), node-1 (sr25519), node-4 (ECDSA) and node-4 (sr25519)"
 jq '.genesis.runtimeGenesis.config.balances.balances = [
-    ["5C7C2Z5sWbytvHpuLTvzKunnnRwQxft1jiqrLD5rhucQ5S9X", 1000000000000000],
-    ["5D9eDKbFt4JKaEndQvMmbJYnpX9ENUj8U9UUg1AxSa64FJxE", 1000000000000000],
-    ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY", 1000000000000000]
+    ["5FnXTMg8UnfeGsMaGg24o3NY21VRFRDRdgxuLGmXuYLeZmin", 1000000000000000],
+    ["5Cyx94iyji8namhRxvs4mAbURtPsvwjWCb68ZihNzfRysGLZ", 1000000000000000],
+    ["5GaTC1bjMYLxXo2DqnxxdCWLEdGZK86mWmSYtzkG6BKHzT2H", 1000000000000000],
+    ["5HKLH5ErLMNHReWGFGtrDPRdNqdKP56ArQA6DFmgANzunK7A", 1000000000000000]
 ]' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
 
-echo "Configuring Alice as sudo..."
+echo "Configuring node-1 (sr25519) as sudo..."
 jq '.genesis.runtimeGenesis.config.sudo = {
-    "key": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+    "key": "5Cyx94iyji8namhRxvs4mAbURtPsvwjWCb68ZihNzfRysGLZ"
 }' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
 
 echo "Configuring Epoch Length..."

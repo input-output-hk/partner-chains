@@ -70,6 +70,7 @@
 //! - `insert_options.multi_asset`: must be `true` (default).
 //! - `insert_options.governance`: must `"enable"` (default).
 //! - `insert_options.remove_jsonb_from_schema`: must be `"disable"` (default).
+//! - `insert_options.plutus`: must be `"enable"` (default).
 //!
 //! The default Cardano DB Sync configuration meets these requirements, so Partner Chain node
 //! operators that do not wish to use any custom configuration can use the defaults, otherwise

@@ -2,7 +2,6 @@ use crate::config::ConfigFieldDefinition;
 use crate::io::IOContext;
 use crate::permissioned_candidates::{ParsedPermissionedCandidatesKeys, PermissionedCandidateKeys};
 use crate::runtime_bindings::PartnerChainRuntime;
-use crate::runtime_bindings::PartnerChainRuntimeBindings;
 use crate::{CmdRun, config::config_fields};
 use anyhow::{Context, anyhow};
 use serde_json::Value as JValue;
@@ -13,17 +12,8 @@ use std::marker::PhantomData;
 #[cfg(test)]
 mod tests;
 
-pub trait CreateChainSpecRuntimeBindings: PartnerChainRuntime {
-	fn initial_member(id: Self::AuthorityId, keys: Self::AuthorityKeys) -> Self::CommitteeMember;
-}
-impl<T: PartnerChainRuntimeBindings> CreateChainSpecRuntimeBindings for T {
-	fn initial_member(id: Self::AuthorityId, keys: Self::AuthorityKeys) -> Self::CommitteeMember {
-		<T as PartnerChainRuntimeBindings>::initial_member(id, keys)
-	}
-}
-
 #[derive(Clone, Debug, Default, clap::Parser)]
-pub struct CreateChainSpecCmd<T: CreateChainSpecRuntimeBindings> {
+pub struct CreateChainSpecCmd<T: PartnerChainRuntime> {
 	#[clap(skip)]
 	_phantom: PhantomData<T>,
 }
@@ -37,7 +27,7 @@ const GOVERNED_MAP_VALIDATOR_ADDRESS_PATH: &str =
 const GOVERNED_MAP_ASSET_POLICY_ID_PATH: &str =
 	"/genesis/runtimeGenesis/config/governedMap/mainChainScripts/asset_policy_id";
 
-impl<T: CreateChainSpecRuntimeBindings> CmdRun for CreateChainSpecCmd<T> {
+impl<T: PartnerChainRuntime> CmdRun for CreateChainSpecCmd<T> {
 	fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
 		let config = CreateChainSpecConfig::load(context)?;
 		context.print("This wizard will create a chain spec JSON file according to the provided configuration, using WASM runtime code from the compiled node binary.");
@@ -58,7 +48,7 @@ impl<T: CreateChainSpecRuntimeBindings> CmdRun for CreateChainSpecCmd<T> {
 	}
 }
 
-impl<T: CreateChainSpecRuntimeBindings> CreateChainSpecCmd<T> {
+impl<T: PartnerChainRuntime> CreateChainSpecCmd<T> {
 	fn print_config<C: IOContext>(context: &C, config: &CreateChainSpecConfig) {
 		context.print("Chain parameters:");
 		context.print(format!("- Genesis UTXO: {}", config.genesis_utxo).as_str());

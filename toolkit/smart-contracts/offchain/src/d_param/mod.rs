@@ -4,7 +4,7 @@
 //! The datum encodes D-parameter using VersionedGenericDatum envelope with the D-parameter being
 //! `datum` field being `[num_permissioned_candidates, num_registered_candidates]`.
 
-use crate::await_tx::{AwaitTx, FixedDelayRetries};
+use crate::await_tx::AwaitTx;
 use crate::cardano_keys::CardanoPaymentSigningKey;
 use crate::csl::{
 	CostStore, Costs, InputsBuilderExt, NetworkTypeExt, TransactionBuilderExt, TransactionContext,
@@ -28,36 +28,6 @@ use sidechain_domain::{DParameter, UtxoId};
 
 #[cfg(test)]
 mod tests;
-
-/// Upserts D-param.
-pub trait UpsertDParam {
-	#[allow(async_fn_in_trait)]
-	/// This function upserts D-param.
-	/// Arguments:
-	///  - `await_tx`: Configuration for the await logic of the transaction.
-	///  - `genesis_utxo`: UTxO identifying the Partner Chain.
-	///  - `d_parameter`: [DParameter] to be upserted.
-	///  - `payment_signing_key`: Signing key of the party paying fees.
-	async fn upsert_d_param(
-		&self,
-		await_tx: FixedDelayRetries,
-		genesis_utxo: UtxoId,
-		d_parameter: &DParameter,
-		payment_signing_key: &CardanoPaymentSigningKey,
-	) -> anyhow::Result<Option<MultiSigSmartContractResult>>;
-}
-
-impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId> UpsertDParam for C {
-	async fn upsert_d_param(
-		&self,
-		await_tx: FixedDelayRetries,
-		genesis_utxo: UtxoId,
-		d_parameter: &DParameter,
-		payment_signing_key: &CardanoPaymentSigningKey,
-	) -> anyhow::Result<Option<MultiSigSmartContractResult>> {
-		upsert_d_param(genesis_utxo, d_parameter, payment_signing_key, self, &await_tx).await
-	}
-}
 
 /// This function upserts D-param.
 /// Arguments:
@@ -275,19 +245,6 @@ fn update_d_param_tx(
 	)?;
 
 	Ok(tx_builder.balance_update_and_build(ctx)?.remove_native_script_witnesses())
-}
-
-/// Returns D-parameter.
-pub trait GetDParam {
-	#[allow(async_fn_in_trait)]
-	/// Returns D-parameter.
-	async fn get_d_param(&self, genesis_utxo: UtxoId) -> anyhow::Result<Option<DParameter>>;
-}
-
-impl<C: QueryLedgerState + QueryNetwork> GetDParam for C {
-	async fn get_d_param(&self, genesis_utxo: UtxoId) -> anyhow::Result<Option<DParameter>> {
-		get_d_param(genesis_utxo, self).await
-	}
 }
 
 /// Returns D-parameter.

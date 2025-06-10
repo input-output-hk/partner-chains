@@ -36,12 +36,3 @@ pub mod sign_tx;
 mod test_values;
 /// Supports governance updates
 pub mod update_governance;
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-/// Error type representing errors in offchain code.
-pub enum OffchainError {
-	/// Error coming from a call to Ogmios
-	OgmiosError(String),
-	/// Generic internal error
-	InternalError(String),
-}

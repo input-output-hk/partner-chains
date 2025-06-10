@@ -7,10 +7,8 @@ use cli_commands::block_producer_metadata_signatures::BlockProducerMetadataSigna
 use cli_commands::registration_signatures::RegistrationSignaturesCmd;
 use frame_support::sp_runtime::traits::NumberFor;
 use parity_scale_codec::{Decode, Encode};
-use partner_chains_cli::io::DefaultCmdRunContext;
-pub use partner_chains_cli::{
-	PartnerChainRuntime, PartnerChainRuntimeBindings, RuntimeTypeWrapper,
-};
+use partner_chains_cli::DefaultCmdRunContext;
+pub use partner_chains_cli::{PartnerChainRuntime, RuntimeTypeWrapper};
 use partner_chains_smart_contracts_commands::SmartContractsCmd;
 use sc_cli::{CliConfiguration, SharedParams, SubstrateCli};
 use sc_service::TaskManager;
@@ -76,10 +74,24 @@ impl CliConfiguration for RegistrationStatusCmd {
 	}
 }
 
+static REGISTRATION_STATUS_AFTER_HELP: once_cell::sync::Lazy<String> = once_cell::sync::Lazy::new(
+	|| {
+		fn get_node_exe_name() -> Option<String> {
+			let exe_path = std::env::current_exe().ok()?;
+			let exe_name_osstr = exe_path.file_name()?.to_os_string();
+			Some(exe_name_osstr.to_str()?.to_string())
+		}
+		format!(
+			"Example: {} registration-status --stake-pool-pub-key 0x702b81ab2e86cf73a87062af1eb0da666d451976d9d91c63a119ed94e6a33dc0 --mc-epoch-number 586",
+			get_node_exe_name().unwrap_or("node-bin".to_string())
+		)
+	},
+);
+
 #[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
 pub enum PartnerChainsSubcommand<
-	RuntimeBindings: PartnerChainRuntime + PartnerChainRuntimeBindings,
+	RuntimeBindings: PartnerChainRuntime,
 	PartnerchainAddress: Clone + Sync + Send + FromStr + 'static,
 > {
 	/// Returns sidechain parameters
@@ -89,7 +101,7 @@ pub enum PartnerChainsSubcommand<
 	/// If registration has been included in Cardano block in epoch N, then it should be returned by this command if epoch greater than N+1 is provided.
 	/// If this command won't show your registration after a few minutes after it has been included in a cardano block, you can start debugging for unsuccessful registration.
 	#[clap(
-		after_help = "Example: partner-chains-node -- registration-status --stake-pool-pub-key 0x702b81ab2e86cf73a87062af1eb0da666d451976d9d91c63a119ed94e6a33dc0 --mc-epoch-number 586"
+		after_help = &*REGISTRATION_STATUS_AFTER_HELP
 	)]
 	RegistrationStatus(RegistrationStatusCmd),
 
@@ -122,7 +134,7 @@ pub fn run<
 	CommitteeMember,
 	Client,
 	BlockProducerMetadata,
-	RuntimeBindings: PartnerChainRuntime + PartnerChainRuntimeBindings,
+	RuntimeBindings: PartnerChainRuntime,
 	PartnerchainAddress,
 >(
 	cli: &Cli,

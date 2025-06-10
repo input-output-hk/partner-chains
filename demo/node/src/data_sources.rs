@@ -6,10 +6,9 @@ use partner_chains_db_sync_data_sources::{
 	SidechainRpcDataSourceImpl, StakeDistributionDataSourceImpl,
 };
 use partner_chains_mock_data_sources::{
-	block::BlockDataSourceMock, candidate::AuthoritySelectionDataSourceMock,
-	governed_map::GovernedMapDataSourceMock, mc_hash::McHashDataSourceMock,
-	native_token::NativeTokenDataSourceMock, sidechain_rpc::SidechainRpcDataSourceMock,
-	stake_distribution::StakeDistributionDataSourceMock,
+	AuthoritySelectionDataSourceMock, BlockDataSourceMock, GovernedMapDataSourceMock,
+	McHashDataSourceMock, NativeTokenDataSourceMock, SidechainRpcDataSourceMock,
+	StakeDistributionDataSourceMock,
 };
 use sc_service::error::Error as ServiceError;
 use sidechain_mc_hash::McHashDataSource;
