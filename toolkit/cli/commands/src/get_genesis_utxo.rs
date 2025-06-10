@@ -5,8 +5,7 @@ use sp_runtime::traits::Block as BlockT;
 use sp_sidechain::GetGenesisUtxo;
 use std::sync::Arc;
 
-/// Retrieves the genesis UTXO from the on-chain storage.
-/// This function should be used by a CLI command.
+/// Queries the genesis UTXO from Partner Chain storage via runtime API.
 pub async fn execute<B, C>(client: Arc<C>) -> Result<String, String>
 where
 	B: BlockT,
@@ -22,7 +21,9 @@ where
 	Ok(output)
 }
 
+/// Output structure for genesis UTXO query results.
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Debug)]
 struct Output {
+	/// The genesis UTXO that uniquely identifies this Partner Chain instance
 	pub genesis_utxo: UtxoId,
 }
