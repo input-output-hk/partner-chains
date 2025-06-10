@@ -41,6 +41,7 @@ that needs data that it served should define its own runtime API instead.
 * Updated polkadot-sdk to polkadot-stable2503-5
 * Updated partner-chains-smart-contracts (raw-scripts) dependency to v7.2.2.
 This new version changes Version Oracle Validator script and is not compatible with the previous version.
+* Updated polkadot-sdk to polkadot-stable2506-rc1 - security fix
 
 ## Removed
 
