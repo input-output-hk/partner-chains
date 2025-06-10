@@ -200,13 +200,7 @@ impl From<[u8; 32]> for StakePoolSigningKeyParam {
 }
 
 impl StakePoolSigningKeyParam {
-	/// Derives the corresponding Ed25519 public key for stake pool operations.
-	///
-	/// This method generates the verification key that corresponds to this
-	/// signing key, which is used in stake pool registration and validation.
-	///
-	/// # Returns
-	/// The `StakePoolPublicKey` corresponding to this private key
+	/// Returns the `StakePoolPublicKey` corresponding to this private key
 	pub fn vkey(&self) -> StakePoolPublicKey {
 		StakePoolPublicKey(ed25519_zebra::VerificationKey::from(&self.0).into())
 	}
