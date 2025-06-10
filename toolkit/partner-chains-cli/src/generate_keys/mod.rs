@@ -18,7 +18,7 @@ pub struct GenerateKeysConfig {
 	pub substrate_node_base_path: String,
 }
 impl GenerateKeysConfig {
-	pub fn load<C: IOContext>(context: &C) -> Self {
+	pub(crate) fn load<C: IOContext>(context: &C) -> Self {
 		Self {
 			substrate_node_base_path: config_fields::SUBSTRATE_NODE_DATA_BASE_PATH
 				.load_or_prompt_and_save(context),
@@ -38,7 +38,7 @@ fn network_key_directory(substrate_node_base_path: &str) -> String {
 	format!("{substrate_node_base_path}/network")
 }
 
-pub fn network_key_path(substrate_node_base_path: &str) -> String {
+pub(crate) fn network_key_path(substrate_node_base_path: &str) -> String {
 	format!("{}/secret_ed25519", network_key_directory(substrate_node_base_path))
 }
 
@@ -70,7 +70,7 @@ impl CmdRun for GenerateKeysCmd {
 	}
 }
 
-pub fn set_dummy_env_vars<C: IOContext>(context: &C) {
+fn set_dummy_env_vars<C: IOContext>(context: &C) {
 	context.set_env_var(
 		"GENESIS_UTXO",
 		"0000000000000000000000000000000000000000000000000000000000000000#0",
@@ -98,7 +98,7 @@ pub fn set_dummy_env_vars<C: IOContext>(context: &C) {
 	);
 }
 
-pub fn generate_spo_keys<C: IOContext>(
+pub(crate) fn generate_spo_keys<C: IOContext>(
 	config: &GenerateKeysConfig,
 	context: &C,
 ) -> anyhow::Result<()> {
@@ -134,7 +134,7 @@ pub fn generate_spo_keys<C: IOContext>(
 	Ok(())
 }
 
-pub fn generate_network_key<C: IOContext>(
+pub(crate) fn generate_network_key<C: IOContext>(
 	config: &GenerateKeysConfig,
 	context: &C,
 ) -> anyhow::Result<()> {
@@ -177,7 +177,7 @@ fn run_generate_network_key<C: IOContext>(
 	Ok(())
 }
 
-pub fn decode_network_key(key_str: &str) -> anyhow::Result<ed25519::Pair> {
+fn decode_network_key(key_str: &str) -> anyhow::Result<ed25519::Pair> {
 	hex::decode(key_str)
 		.context("Invalid hex")
 		.and_then(|slice| ed25519::Pair::from_seed_slice(&slice).context("Invalid ed25519 bytes"))
@@ -185,12 +185,12 @@ pub fn decode_network_key(key_str: &str) -> anyhow::Result<ed25519::Pair> {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct KeyGenerationOutput {
+struct KeyGenerationOutput {
 	public_key: String,
 	secret_phrase: String,
 }
 
-pub fn generate_keys<C: IOContext>(
+fn generate_keys<C: IOContext>(
 	context: &C,
 	KeyDefinition { scheme, name, .. }: &KeyDefinition,
 ) -> anyhow::Result<KeyGenerationOutput> {
@@ -203,7 +203,7 @@ pub fn generate_keys<C: IOContext>(
 		.map_err(|_| anyhow!("Failed to parse generated keys json: {output}"))
 }
 
-pub fn store_keys<C: IOContext>(
+fn store_keys<C: IOContext>(
 	context: &C,
 	GenerateKeysConfig { substrate_node_base_path: base_path }: &GenerateKeysConfig,
 	key_def: &KeyDefinition,
@@ -222,7 +222,7 @@ pub fn store_keys<C: IOContext>(
 	Ok(())
 }
 
-pub fn generate_or_load_key<C: IOContext>(
+fn generate_or_load_key<C: IOContext>(
 	config: &GenerateKeysConfig,
 	context: &C,
 	key_def: &KeyDefinition,

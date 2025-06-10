@@ -5,7 +5,6 @@ use hex_literal::hex;
 use log::{debug, info};
 use serde::*;
 use sidechain_domain::byte_string::*;
-use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 use sidechain_domain::*;
 
 #[derive(Deserialize, Debug, Clone)]
@@ -140,14 +139,20 @@ impl From<MockDParam> for DParameter {
 	}
 }
 
+/// Mock authority selection data for a single epoch
 #[derive(Deserialize, Clone, Debug)]
 pub struct MockEpochCandidates {
+	/// Permissioned candidates
 	pub permissioned: Vec<MockPermissionedCandidate>,
+	/// Active registrations (including invalid ones)
 	pub registrations: Vec<MockRegistration>,
+	/// Epoch nonce
 	pub nonce: ByteString,
+	/// Ariadne D-Parameter
 	pub d_parameter: MockDParam,
 }
 
+/// Configuration of the mocked authority selection data source
 pub struct MockRegistrationsConfig {
 	/// List of epoch configurations
 	/// These are returned for each epoch in a round-robin fashion
@@ -155,12 +160,16 @@ pub struct MockRegistrationsConfig {
 }
 
 impl MockRegistrationsConfig {
+	/// Reads the mocked authority selection data from the file indicated by the
+	/// `MOCK_REGISTRATIONS_FILE` environment variable.
 	pub fn read() -> Result<MockRegistrationsConfig> {
 		let registrations_file_path = std::env::var("MOCK_REGISTRATIONS_FILE")?;
-		let registrations_config = Self::read_registrations(registrations_file_path)?;
+		let registrations_config = Self::read_registrations(&registrations_file_path)?;
 		Ok(registrations_config)
 	}
-	pub fn read_registrations(path: String) -> Result<MockRegistrationsConfig> {
+
+	/// Reads the mocked authority selection data from file.
+	pub fn read_registrations(path: &str) -> Result<MockRegistrationsConfig> {
 		info!("Reading registrations from: {path}");
 		let file = std::fs::File::open(path)?;
 		let epoch_rotation: Vec<MockEpochCandidates> = serde_json::from_reader(file)?;
@@ -169,22 +178,62 @@ impl MockRegistrationsConfig {
 	}
 }
 
+/// Mock authority selection data source that serves registration data in a round-robin fashion
+///
+/// # Creating the data source
+///
+/// This data source can be created by wrapping a manually created [MockRegistrationsConfig].
+/// However, the preferred way to do it is by loading the registrations data from a JSON file
+/// using the [MockRegistrationsConfig::read_registrations] method.
+///
+/// An example configuration file can look like this:
+/// ```json
+#[doc = include_str!("../examples/registrations.json")]
+/// ```
+///
+/// See the structure and documentation of [MockEpochCandidates] for more information.
+///
+/// This file can be loaded and used to create a data source like this:
+///
+/// ```rust
+/// # use std::io::Write;
+/// # use std::fs::File;
+/// # write!(File::create("registrations.json").unwrap(), "{}", include_str!("../examples/registrations.json"));
+///
+/// use partner_chains_mock_data_sources::*;
+///
+/// let registrations_data = MockRegistrationsConfig::read_registrations("registrations.json").unwrap();
+///
+/// let data_source = AuthoritySelectionDataSourceMock { registrations_data };
+/// ```
+///
+/// Alternatively the data source can be created using `AuthoritySelectionDataSourceMock::new_from_env`:
+///
+/// ```rust,no_run
+/// use partner_chains_mock_data_sources::AuthoritySelectionDataSourceMock;
+///
+/// let data_source = AuthoritySelectionDataSourceMock::new_from_env();
+/// ```
+///
+/// The file name fill be then sourced from the `MOCK_REGISTRATIONS_FILE` environment variable.
+///
 pub struct AuthoritySelectionDataSourceMock {
+	/// Data source configuration containing the mock data to be served
 	pub registrations_data: MockRegistrationsConfig,
-	pub mc_epoch_config: MainchainEpochConfig,
 }
 
 impl AuthoritySelectionDataSourceMock {
-	pub fn epoch_data(&self, epoch_number: u32) -> MockEpochCandidates {
+	pub(crate) fn epoch_data(&self, epoch_number: u32) -> MockEpochCandidates {
 		let rotation_no: usize =
 			epoch_number as usize % (self.registrations_data.epoch_rotation.len());
 		self.registrations_data.epoch_rotation[rotation_no].clone()
 	}
 
+	/// Creates a new mocked authority selection data source using configuration from th
+	/// file pointed to by the `MOCK_REGISTRATIONS_FILE` environment variable.
 	pub fn new_from_env() -> Result<Self> {
 		let registrations_data = MockRegistrationsConfig::read()?;
-		let mc_epoch_config = MainchainEpochConfig::read_from_env()?;
-		Ok(AuthoritySelectionDataSourceMock { registrations_data, mc_epoch_config })
+		Ok(AuthoritySelectionDataSourceMock { registrations_data })
 	}
 }
 

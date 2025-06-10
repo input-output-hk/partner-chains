@@ -13,7 +13,7 @@ use std::{
 	process::Stdio,
 	time::Duration,
 };
-use tempfile::{TempDir, TempPath};
+use tempfile::TempDir;
 
 pub trait IOContext {
 	/// It should implement all the required traits for offchain operations
@@ -36,7 +36,6 @@ pub trait IOContext {
 	// TODO: 	fn prompt_multi_option<T: ToString>(&self, msg: &str, options: Vec<T>) -> T;
 	fn prompt_multi_option(&self, msg: &str, options: Vec<String>) -> String;
 	fn write_file(&self, path: &str, content: &str);
-	fn new_tmp_file(&self, content: &str) -> TempPath;
 
 	fn new_tmp_dir(&self) -> PathBuf;
 	fn read_file(&self, path: &str) -> Option<String>;
@@ -53,6 +52,7 @@ pub trait IOContext {
 	fn offchain_impl(&self, ogmios_config: &ServiceConfig) -> anyhow::Result<Self::Offchain>;
 }
 
+/// Default context implementation using standard IO.
 pub struct DefaultCmdRunContext;
 
 impl IOContext for DefaultCmdRunContext {
@@ -139,15 +139,6 @@ impl IOContext for DefaultCmdRunContext {
 		fs::write(path, content).unwrap_or_else(|_| panic!("Failed to write file: {path}"))
 	}
 
-	fn new_tmp_file(&self, content: &str) -> TempPath {
-		let file = tempfile::NamedTempFile::new().expect("Failed to create temp file");
-		self.write_file(
-			file.path().to_str().expect("temporary file paths are expected to be unicode"),
-			content,
-		);
-		file.into_temp_path()
-	}
-
 	fn new_tmp_dir(&self) -> PathBuf {
 		TempDir::new().expect("Failed to create temporary directory").keep()
 	}
@@ -213,7 +204,7 @@ impl IOContext for DefaultCmdRunContext {
 	}
 }
 
-pub fn prompt_can_write<C: IOContext>(name: &str, path: &str, context: &C) -> bool {
+pub(crate) fn prompt_can_write<C: IOContext>(name: &str, path: &str, context: &C) -> bool {
 	!context.file_exists(path)
 		|| context.prompt_yes_no(&format!("{name} {path} exists - overwrite it?"), false)
 }

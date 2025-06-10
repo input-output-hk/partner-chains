@@ -10,13 +10,12 @@ mod config_field {
 	fn saves_to_new_file() {
 		let config_file_path = "/path/to/test-config.json";
 
-		let config_field: ConfigFieldDefinition<String> = ConfigFieldDefinition {
-			name: "test config field",
-			config_file: config_file_path,
-			path: &["path", "to", "field"],
-			default: None,
-			_marker: Default::default(),
-		};
+		let config_field: ConfigFieldDefinition<String> = ConfigFieldDefinition::new(
+			"test config field",
+			config_file_path,
+			&["path", "to", "field"],
+			None,
+		);
 
 		let expected_file_content = serde_json::json!({
 			"path": {
@@ -44,13 +43,12 @@ mod config_field {
 			}
 		});
 
-		let config_field: ConfigFieldDefinition<String> = ConfigFieldDefinition {
-			name: "test config field",
-			config_file: config_file_path,
-			path: &["path", "to", "field"],
-			default: None,
-			_marker: Default::default(),
-		};
+		let config_field: ConfigFieldDefinition<String> = ConfigFieldDefinition::new(
+			"test config field",
+			config_file_path,
+			&["path", "to", "field"],
+			None,
+		);
 
 		let expected_file_content = serde_json::json!({
 			"path": {
@@ -83,13 +81,12 @@ mod config_field {
 			}
 		});
 
-		let config_field: ConfigFieldDefinition<String> = ConfigFieldDefinition {
-			name: "test config field",
-			config_file: config_file_path,
-			path: &["path", "to", "field"],
-			default: None,
-			_marker: Default::default(),
-		};
+		let config_field: ConfigFieldDefinition<String> = ConfigFieldDefinition::new(
+			"test config field",
+			config_file_path,
+			&["path", "to", "field"],
+			None,
+		);
 
 		let mock_context =
 			MockIOContext::new().with_json_file(config_file_path, json_content.clone());
@@ -101,13 +98,12 @@ mod config_field {
 
 	#[test]
 	fn extracts_from_json() {
-		let config_field: ConfigFieldDefinition<String> = ConfigFieldDefinition {
-			name: "test config field",
-			config_file: "not used",
-			path: &["path", "to", "field"],
-			default: None,
-			_marker: Default::default(),
-		};
+		let config_field: ConfigFieldDefinition<String> = ConfigFieldDefinition::new(
+			"test config field",
+			"not used",
+			&["path", "to", "field"],
+			None,
+		);
 
 		let json_object = serde_json::json!({
 			"path": {

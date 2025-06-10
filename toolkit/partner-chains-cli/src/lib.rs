@@ -1,36 +1,38 @@
 //! Provides wizard style CLI for Partner Chains setup and user operations.
 //! Interacts with Smart Contracts using [`partner_chains_cardano_offchain`] crate.
+#![deny(missing_docs)]
 
-pub(crate) mod cardano_key;
+mod cardano_key;
 mod cmd_traits;
-pub mod config;
-pub mod create_chain_spec;
-pub(crate) mod data_source;
+mod config;
+mod create_chain_spec;
+mod data_source;
 mod deregister;
-pub mod generate_keys;
-pub mod io;
-pub mod keystore;
-pub(crate) mod ogmios;
-pub(crate) mod permissioned_candidates;
+mod generate_keys;
+mod io;
+mod keystore;
+mod ogmios;
+mod permissioned_candidates;
 mod prepare_configuration;
-pub mod register;
-pub mod runtime_bindings;
-pub(crate) mod select_utxo;
+mod register;
+mod runtime_bindings;
+mod select_utxo;
 mod setup_main_chain_state;
-pub mod start_node;
+mod start_node;
 
 #[cfg(test)]
 mod tests;
 
 use clap::Parser;
+pub use io::DefaultCmdRunContext;
 use io::*;
 use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
-pub use runtime_bindings::{PartnerChainRuntime, PartnerChainRuntimeBindings, RuntimeTypeWrapper};
+pub use runtime_bindings::{PartnerChainRuntime, RuntimeTypeWrapper};
 use std::time::Duration;
 
 #[derive(Clone, Debug, clap::Parser)]
 #[command(author, version, about, long_about = None)]
-pub struct CommonArguments {
+pub(crate) struct CommonArguments {
 	#[arg(default_value = "5", long)]
 	retry_delay_seconds: u64,
 	#[arg(default_value = "59", long)]
@@ -38,7 +40,7 @@ pub struct CommonArguments {
 }
 
 impl CommonArguments {
-	pub fn retries(&self) -> FixedDelayRetries {
+	pub(crate) fn retries(&self) -> FixedDelayRetries {
 		FixedDelayRetries::new(Duration::from_secs(self.retry_delay_seconds), self.retry_count)
 	}
 }
@@ -47,7 +49,8 @@ impl CommonArguments {
 #[command(
     after_long_help = HELP_EXAMPLES,
 )]
-pub enum Command<T: PartnerChainRuntime + PartnerChainRuntimeBindings> {
+/// Partner Chains text "wizards" for setting up a chain.
+pub enum Command<T: PartnerChainRuntime> {
 	/// This wizard generates the keys required for operating a partner-chains node, stores them in the keystore directory, and prints the public keys and keystore location.
 	GenerateKeys(generate_keys::GenerateKeysCmd),
 	/// Wizard to obtain the configuration needed for the partner-chain governance authority. This configuration should be shared with chain participants and used to create the chain spec json file.
@@ -58,7 +61,7 @@ pub enum Command<T: PartnerChainRuntime + PartnerChainRuntimeBindings> {
 	/// Uses 'chain config' obtained after running `prepare-configuration`.
 	SetupMainChainState(setup_main_chain_state::SetupMainChainStateCmd),
 	/// Wizard for starting a substrate node in the environment set up by `generate-keys`,
-	/// `prepare-config`, and `create-chain-spec`. It also assits in setting the `resources configuration`.
+	/// `prepare-config`, and `create-chain-spec`. It also assists in setting the `resources configuration`.
 	StartNode(start_node::StartNodeCmd),
 	/// The first step of registering as a committee candidate. Registration is split into three steps to allow the user to use their cold keys on a cold machine.
 	Register1(register::register1::Register1Cmd),
@@ -70,7 +73,8 @@ pub enum Command<T: PartnerChainRuntime + PartnerChainRuntimeBindings> {
 	Deregister(deregister::DeregisterCmd),
 }
 
-impl<T: PartnerChainRuntime + PartnerChainRuntimeBindings> Command<T> {
+impl<T: PartnerChainRuntime> Command<T> {
+	/// Runs a Partner Chain wizard command.
 	pub fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
 		match self {
 			Command::GenerateKeys(cmd) => cmd.run(context),
@@ -86,7 +90,9 @@ impl<T: PartnerChainRuntime + PartnerChainRuntimeBindings> Command<T> {
 	}
 }
 
+/// Trait representing a runnable command.
 pub trait CmdRun {
+	/// Runs command. The implemented command should do IO through the passed in `context` object.
 	fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()>;
 }
 

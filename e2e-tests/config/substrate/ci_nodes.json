@@ -1,5 +1,5 @@
 {
-  "deployment_mc_epoch": 925,
+  "deployment_mc_epoch": 958,
   "genesis_utxo": "d334afbb10b16d9b8bc1537d1da0d7c1b6b46ac71666a3a38161a39a0223db01#1",
   "deployment_version": "master",
   "test_environment": "ci",

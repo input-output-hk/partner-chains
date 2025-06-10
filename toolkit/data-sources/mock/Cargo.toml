@@ -37,7 +37,9 @@ std = [
 	"sidechain-domain/std",
 	"rand/std",
 	"sp-native-token-management?/std",
-	"sp-block-participation?/std"
+	"sp-block-participation?/std",
+	"sp-governed-map/std",
+	"authority-selection-inherents?/std"
 ]
 block-source = []
 candidate-source = ["authority-selection-inherents"]

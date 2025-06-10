@@ -203,7 +203,7 @@ class SubstrateApi(BlockchainApi):
     def get_wallet(self, address, public_key, secret, scheme):
         scheme_type = _keypair_name_to_type(scheme)
 
-        if secret.startswith("//"):
+        if secret.startswith("//") or secret.count(" ") >= 11:
             keypair = Keypair.create_from_uri(secret)
         else:
             keypair = Keypair(

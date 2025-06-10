@@ -183,6 +183,7 @@ sqlx = { version = "0.8.5", default-features = false, features = [
 	"bigdecimal",
 ] }
 derive-where = { version = "1.2.7", default-features = false }
+once_cell = { version = "1.21.3", default-features = false }
 
 # substrate dependencies
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", rev = "56dac31b63dbc8b639922003233522da573b9a66" }
@@ -261,7 +262,7 @@ substrate-prometheus-endpoint = { package = "substrate-prometheus-endpoint", git
 substrate-test-runtime-client = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", rev = "56dac31b63dbc8b639922003233522da573b9a66" }
 substrate-wasm-builder = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", rev = "56dac31b63dbc8b639922003233522da573b9a66" }
 
-raw-scripts = { git = "https://github.com/input-output-hk/partner-chains-smart-contracts.git", tag = "v7.2.1" }
+raw-scripts = { git = "https://github.com/input-output-hk/partner-chains-smart-contracts.git", tag = "v7.2.2" }
 # local dependencies
 
 # utils
