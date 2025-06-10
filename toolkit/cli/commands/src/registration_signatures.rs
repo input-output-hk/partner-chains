@@ -154,8 +154,7 @@ impl RegisterValidatorMessage {
 	/// * `sidechain_key` - ECDSA signing key for the Partner Chain validator
 	///
 	/// # Returns
-	/// A `RegistrationCmdOutput` containing all signatures and public keys
-	/// required for validator registration
+	/// A `RegistrationCmdOutput` containing spo and sidechain signatures and public keys
 	pub fn sign_and_prepare_registration_cmd_output(
 		&self,
 		mainchain_key: ed25519_zebra::SigningKey,
