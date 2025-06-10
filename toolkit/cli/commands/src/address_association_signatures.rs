@@ -49,7 +49,7 @@ pub struct AddressAssociationSignaturesCmd<
 /// Parses a Partner Chain address from string format.
 ///
 /// # Arguments
-/// * `s` - String representation of the Partner Chain address
+/// * `s` - textual representation of the Partner Chain address
 ///
 /// # Returns
 /// * `Ok(T)` - Successfully parsed address of the specified type
