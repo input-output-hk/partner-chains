@@ -67,11 +67,6 @@ where
 {
 	/// Executes the address association signature generation process.
 	///
-	/// This method performs the complete workflow for creating an address association:
-	/// 1. Generates the cryptographic signature over the association message
-	/// 2. Constructs JSON output containing the signature and related data
-	/// 3. Outputs the result to stdout for consumption by external tools
-	///
 	/// # Returns
 	/// * `Ok(())` - Successful execution with output printed to stdout
 	/// * `Err(anyhow::Error)` - JSON serialization or other processing error
