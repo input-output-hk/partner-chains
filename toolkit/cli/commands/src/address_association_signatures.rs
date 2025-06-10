@@ -9,27 +9,8 @@ use serde_json::json;
 use sidechain_domain::*;
 use std::str::FromStr;
 
-/// Command structure for generating address association signatures.
-///
-/// This struct represents the parameters required to create cryptographic signatures
-/// that establish an association between a Cardano stake address and a Partner Chain address.
-/// Address associations enable cross-chain operations by linking identities between
-/// the mainchain (Cardano) and sidechain (Partner Chain) networks.
-///
-/// ## Address Association Process
-///
-/// The command generates an Ed25519 signature over a structured message that includes:
-/// - The Cardano stake public key (derived from the signing key)
-/// - The Partner Chain address to be associated
-/// - The genesis UTXO identifying the specific Partner Chain instance
-///
-/// This signature proves that the holder of the Cardano stake signing key authorizes
-/// the association with the specified Partner Chain address.
-///
-/// ## Generic Address Type
-///
-/// The struct is generic over `PartnerchainAddress` to support different address
-/// formats used by various Partner Chain implementations.
+/// Generates Ed25519 signatures to associate Cardano stake addresses with Partner Chain addresses.
+/// Generic over address type to support different Partner Chain implementations.
 #[derive(Clone, Debug, Parser)]
 #[command(author, version, about, long_about = None)]
 pub struct AddressAssociationSignaturesCmd<
@@ -46,14 +27,7 @@ pub struct AddressAssociationSignaturesCmd<
 	pub signing_key: StakeSigningKeyParam,
 }
 
-/// Parses a Partner Chain address from string format.
-///
-/// # Arguments
-/// * `s` - textual representation of the Partner Chain address
-///
-/// # Returns
-/// * `Ok(T)` - Successfully parsed address of the specified type
-/// * `Err(String)` - Error message describing the parse failure
+/// Parses Partner Chain address from string format.
 fn parse_pc_address<T: FromStr>(s: &str) -> Result<T, String> {
 	T::from_str(s).map_err(|_| "Failed to parse Partner Chain address".to_owned())
 }
@@ -62,11 +36,7 @@ impl<PartnerchainAddress> AddressAssociationSignaturesCmd<PartnerchainAddress>
 where
 	PartnerchainAddress: Serialize + Clone + Sync + Send + FromStr + Encode + 'static,
 {
-	/// Executes the address association signature generation process.
-	///
-	/// # Returns
-	/// * `Ok(())` - Successful execution with output printed to stdout
-	/// * `Err(anyhow::Error)` - JSON serialization or other processing error
+	/// Generates signature and outputs JSON to stdout.
 	pub fn execute(&self) -> anyhow::Result<()> {
 		let signature = self.sign();
 		let output = json!({
@@ -79,7 +49,7 @@ where
 		Ok(())
 	}
 
-	/// Returns ByteString of Ed25519 signature over the SCALE encoded address association message.
+	/// Signs SCALE-encoded address association message with Ed25519.
 	fn sign(&self) -> ByteString {
 		let msg = AddressAssociationSignedMessage {
 			stake_public_key: self.signing_key.vkey(),
