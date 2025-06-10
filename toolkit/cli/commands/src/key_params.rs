@@ -118,10 +118,6 @@ impl FromStr for PlainPublicKeyParam {
 }
 
 /// Error types that can occur during Ed25519 signing key parsing.
-///
-/// This enum represents the possible failure modes when parsing Ed25519 keys
-/// from hexadecimal string inputs, including both hex decoding errors and
-/// cryptographic validation errors.
 #[derive(Debug, thiserror::Error)]
 pub enum Ed25519SigningKeyError {
 	/// Hexadecimal decoding error
