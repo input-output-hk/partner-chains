@@ -75,12 +75,6 @@ where
 	/// # Returns
 	/// * `Ok(())` - Successful execution with output printed to stdout
 	/// * `Err(anyhow::Error)` - JSON serialization or other processing error
-	///
-	/// # Output Format
-	/// The command outputs JSON containing:
-	/// - `partnerchain_address`: The Partner Chain address being associated
-	/// - `signature`: Ed25519 signature authorizing the association
-	/// - `stake_public_key`: Cardano stake public key being associated
 	pub fn execute(&self) -> anyhow::Result<()> {
 		let signature = self.sign();
 		let output = json!({
