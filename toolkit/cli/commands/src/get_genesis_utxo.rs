@@ -53,17 +53,6 @@ where
 }
 
 /// Output structure for genesis UTXO query results.
-///
-/// This struct represents the structured output format returned by the
-/// genesis UTXO query operation. It provides a consistent JSON format
-/// for external tools and scripts that need to obtain the Partner Chain's
-/// genesis UTXO identifier.
-///
-/// ## Serialization
-///
-/// The struct implements both `Serialize` and `Deserialize` to support
-/// bidirectional JSON conversion, enabling both output generation and
-/// result parsing by consuming applications.
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Debug)]
 struct Output {
 	/// The genesis UTXO that uniquely identifies this Partner Chain instance
