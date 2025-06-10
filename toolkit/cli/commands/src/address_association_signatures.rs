@@ -29,7 +29,7 @@ use std::str::FromStr;
 /// ## Generic Address Type
 ///
 /// The struct is generic over `PartnerchainAddress` to support different address
-/// formats used by various Partner Chain implementations (e.g., AccountId32, H160).
+/// formats used by various Partner Chain implementations.
 #[derive(Clone, Debug, Parser)]
 #[command(author, version, about, long_about = None)]
 pub struct AddressAssociationSignaturesCmd<
