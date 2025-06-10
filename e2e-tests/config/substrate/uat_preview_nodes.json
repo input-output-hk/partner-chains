@@ -1,7 +1,6 @@
 {
     "deployment_mc_epoch": 890,
     "initial_pc_epoch": 4843200,
-    "genesis_utxo": "3b715a225582eae835c87d13d28fc4ea0366db8acecd13d9d80d1623d5aefd5e#1",
     "deployment_version": "v1.6.0",
     "test_environment": "uat_preview",
     "nodes_config": {
