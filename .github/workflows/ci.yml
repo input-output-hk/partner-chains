@@ -263,6 +263,8 @@ jobs:
     outputs:
       sha: ${{ steps.get_sha.outputs.sha }}
     steps:
+      - name: Create to-build directory
+        run: mkdir to-build
       - name: Checkout master branch code
         uses: actions/checkout@v4
         with:
@@ -365,81 +367,10 @@ jobs:
             to-build/ci_preview_chain_spec.json
             to-build/staging_preview_chain_spec.json
 
-  build-linux-arm64:
-    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
-    permissions:
-      id-token: write
-      contents: write
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout master
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: master
-      - name: Get current commit SHA
-        id: get_sha
-        run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-      - name: Build and Upload for linux arm64
-        uses: ./.github/actions/artifacts/build-pc-artifacts
-        with:
-          sha: ${{ steps.get_sha.outputs.sha }}
-          tag: ${{ steps.get_sha.outputs.sha }}
-          os: linux-arm64
-
-  build-macos-x86_64:
-    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
-    permissions:
-      id-token: write
-      contents: write
-    runs-on: macos-latest
-    steps:
-      - name: Checkout master
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: master
-      - name: Get current commit SHA
-        id: get_sha
-        run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
-      - name: Build and Upload for macOS x86_64
-        uses: ./.github/actions/artifacts/build-pc-artifacts
-        with:
-          sha: ${{ steps.get_sha.outputs.sha }}
-          tag: ${{ steps.get_sha.outputs.sha }}
-          os: macos-x86_64
-
-  build-macos-arm64:
-    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
-    permissions:
-      id-token: write
-      contents: write
-    runs-on: macos-latest
-    steps:
-      - name: Checkout master
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: master
-      - name: Get current commit SHA
-        id: get_sha
-        run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
-      - name: Build and Upload for macOS arm64
-        uses: ./.github/actions/artifacts/build-pc-artifacts
-        with:
-          sha: ${{ steps.get_sha.outputs.sha }}
-          tag: ${{ steps.get_sha.outputs.sha }}
-          os: macos-arm64
-
   upload-to-s3:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
     needs:
       - build-linux-x86_64-post-merge
-      - build-linux-arm64
-      - build-macos-x86_64
-      - build-macos-arm64
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -581,6 +512,9 @@ jobs:
     runs-on: nixos
     if: github.event_name == 'workflow_dispatch'
     steps:
+      - name: Create to-build directory
+        run: mkdir to-build
+        
       - name: Checkout target code to build
         uses: actions/checkout@v4
         with:
@@ -689,72 +623,10 @@ jobs:
             to-build/ci_preview_chain_spec.json
             to-build/staging_preview_chain_spec.json
 
-  build-linux-arm64-workflow-dispatch:
-    if: github.event_name == 'workflow_dispatch'
-    permissions:
-      id-token: write
-      contents: write
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout specific SHA
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.sha }}
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-      - name: Build and Upload for linux arm64
-        uses: ./.github/actions/artifacts/build-pc-artifacts
-        with:
-          sha: ${{ inputs.sha }}
-          tag: ${{ inputs.sha }}
-          os: linux-arm64
-
-  build-macos-x86_64-workflow-dispatch:
-    if: github.event_name == 'workflow_dispatch'
-    permissions:
-      id-token: write
-      contents: write
-    runs-on: macos-latest
-    steps:
-      - name: Checkout specific SHA
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.sha }}
-      - name: Build and Upload for macOS x86_64
-        uses: ./.github/actions/artifacts/build-pc-artifacts
-        with:
-          sha: ${{ inputs.sha }}
-          tag: ${{ inputs.sha }}
-          os: macos-x86_64
-
-  build-macos-arm64-workflow-dispatch:
-    if: github.event_name == 'workflow_dispatch'
-    permissions:
-      id-token: write
-      contents: write
-    runs-on: macos-latest
-    steps:
-      - name: Checkout specific SHA
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.sha }}
-      - name: Build and Upload for macOS arm64
-        uses: ./.github/actions/artifacts/build-pc-artifacts
-        with:
-          sha: ${{ inputs.sha }}
-          tag: ${{ inputs.sha }}
-          os: macos-arm64
-
   upload-to-s3-workflow-dispatch:
     if: github.event_name == 'workflow_dispatch'
     needs:
       - build-linux-x86_64-workflow-dispatch
-      - build-linux-arm64-workflow-dispatch
-      - build-macos-x86_64-workflow-dispatch
-      - build-macos-arm64-workflow-dispatch
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -795,15 +667,12 @@ jobs:
 
   workflow-dispatch-flow-complete:
     if: ${{ always() && github.event_name == 'workflow_dispatch' }}
-    needs: [build-linux-x86_64-workflow-dispatch, build-linux-arm64-workflow-dispatch, build-macos-x86_64-workflow-dispatch, build-macos-arm64-workflow-dispatch, upload-to-s3-workflow-dispatch, upload-chain-specs-workflow-dispatch]
+    needs: [build-linux-x86_64-workflow-dispatch, upload-to-s3-workflow-dispatch, upload-chain-specs-workflow-dispatch]
     runs-on: ubuntu-latest
     steps:
       - name: Check if any needed job failed
         run: |
           if [[ "${{ needs.build-linux-x86_64-workflow-dispatch.result }}" != "success" ||
-                "${{ needs.build-linux-arm64-workflow-dispatch.result }}" != "success" ||
-                "${{ needs.build-macos-x86_64-workflow-dispatch.result }}" != "success" ||
-                "${{ needs.build-macos-arm64-workflow-dispatch.result }}" != "success" ||
                 "${{ needs.upload-to-s3-workflow-dispatch.result }}" != "success" ||
                 "${{ needs.upload-chain-specs-workflow-dispatch.result }}" != "success" ]]; then
             echo "One or more needed jobs failed."
