@@ -1,5 +1,4 @@
 {
-    "atms_kind": "plain-ecdsa-secp256k1",
     "committee_epoch_slippage": 0,
     "committee_participation_tolerance": 0.05,
     "max_validators": 32,

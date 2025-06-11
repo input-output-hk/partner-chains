@@ -1,3 +1,5 @@
+//! CLI parameter wrappers for cryptographic keys with secure parsing and validation.
+
 use sidechain_domain::*;
 use std::convert::Infallible;
 use std::fmt::Display;
@@ -5,10 +7,12 @@ use std::io;
 use std::io::ErrorKind;
 use std::str::FromStr;
 
+/// ECDSA private key wrapper for Partner Chain validator operations.
 #[derive(Clone, Debug)]
 pub struct SidechainSigningKeyParam(pub secp256k1::SecretKey);
 
 impl SidechainSigningKeyParam {
+	/// Derives the corresponding ECDSA public key.
 	pub fn to_pub_key(&self) -> secp256k1::PublicKey {
 		secp256k1::PublicKey::from_secret_key_global(&self.0)
 	}
@@ -24,6 +28,7 @@ impl FromStr for SidechainSigningKeyParam {
 	}
 }
 
+/// ECDSA public key wrapper for Partner Chain operations.
 #[derive(Clone, Debug)]
 pub struct SidechainPublicKeyParam(pub SidechainPublicKey);
 
@@ -43,6 +48,7 @@ impl FromStr for SidechainPublicKeyParam {
 	}
 }
 
+/// Generic string wrapper for public keys without cryptographic validation.
 #[derive(Clone, Debug)]
 pub struct PlainPublicKeyParam(pub String);
 
@@ -60,10 +66,13 @@ impl FromStr for PlainPublicKeyParam {
 	}
 }
 
+/// Error types that can occur during Ed25519 signing key parsing.
 #[derive(Debug, thiserror::Error)]
 pub enum Ed25519SigningKeyError {
+	/// Hexadecimal decoding error
 	#[error("{0}")]
 	HexError(#[from] hex::FromHexError),
+	/// Ed25519 key validation error
 	#[error("{0}")]
 	Ed25519Error(#[from] ed25519_zebra::Error),
 }
@@ -74,6 +83,7 @@ impl From<Ed25519SigningKeyError> for io::Error {
 	}
 }
 
+/// Parses hex string into Ed25519 signing key with validation.
 pub(crate) fn parse_zebra_signing_key(
 	s: &str,
 ) -> Result<ed25519_zebra::SigningKey, Ed25519SigningKeyError> {
@@ -81,6 +91,7 @@ pub(crate) fn parse_zebra_signing_key(
 	Ok(ed25519_zebra::SigningKey::try_from(hex::decode(trimmed)?.as_slice())?)
 }
 
+/// Ed25519 private key wrapper for Cardano stake pool operations.
 #[derive(Clone, Debug)]
 pub struct StakePoolSigningKeyParam(pub ed25519_zebra::SigningKey);
 
@@ -93,17 +104,20 @@ impl FromStr for StakePoolSigningKeyParam {
 }
 
 impl From<[u8; 32]> for StakePoolSigningKeyParam {
+	/// Creates signing key from 32-byte array.
 	fn from(key: [u8; 32]) -> Self {
 		Self(ed25519_zebra::SigningKey::from(key))
 	}
 }
 
 impl StakePoolSigningKeyParam {
+	/// Derives the corresponding public key.
 	pub fn vkey(&self) -> StakePoolPublicKey {
 		StakePoolPublicKey(ed25519_zebra::VerificationKey::from(&self.0).into())
 	}
 }
 
+/// Ed25519 private key wrapper for Cardano staking operations.
 #[derive(Clone, Debug)]
 pub struct StakeSigningKeyParam(pub ed25519_zebra::SigningKey);
 
@@ -116,11 +130,13 @@ impl FromStr for StakeSigningKeyParam {
 }
 
 impl StakeSigningKeyParam {
+	/// Derives the corresponding public key.
 	pub fn vkey(&self) -> StakePublicKey {
 		StakePublicKey(ed25519_zebra::VerificationKey::from(&self.0).into())
 	}
 }
 
+/// ECDSA private key wrapper for cross-chain operations.
 #[derive(Clone, Debug)]
 pub struct CrossChainSigningKeyParam(pub k256::SecretKey);
 
@@ -133,6 +149,7 @@ impl FromStr for CrossChainSigningKeyParam {
 }
 
 impl CrossChainSigningKeyParam {
+	/// Derives the corresponding ECDSA public key.
 	pub fn vkey(&self) -> CrossChainPublicKey {
 		CrossChainPublicKey(self.0.public_key().to_sec1_bytes().to_vec())
 	}
