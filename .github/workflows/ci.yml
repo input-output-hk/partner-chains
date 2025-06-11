@@ -28,22 +28,13 @@ jobs:
   build-linux-x86_64-pre-merge:
     runs-on: nixos
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
-    outputs:
-      sha: ${{ steps.get_sha.outputs.sha }}
     steps:
-      - name: ls -l before checkout
-        run: ls -l
-      - name: remove all files
+      - name: Clean runner environment
         run: rm -rf *
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: ls -l after checkout
-        run: ls -l
-      - name: Get current commit SHA
-        id: get_sha
-        run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -85,12 +76,12 @@ jobs:
             source ./dev/envs/staging-preview/.envrc
             target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
             nix develop -c bash -c "./dev/update-chain-spec.sh staging_preview_chain_spec.json"
-      - name: build and push docker image
+      - name: Build and push docker image
         run: |
           cp target/release/partner-chains-demo-node .
           nix develop -c bash -c "patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 partner-chains-demo-node"
-          docker build -t ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ steps.get_sha.outputs.sha }} .
-          docker push ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ steps.get_sha.outputs.sha }}
+          docker build -t ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ github.sha }} .
+          docker push ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ github.sha }}
       - name: Upload partner-chains-node artifact
         uses: actions/upload-artifact@v4
         with:
@@ -284,22 +275,10 @@ jobs:
         run: |
           cp target/release/partner-chains-demo-node .
           nix develop -c bash -c "patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 partner-chains-demo-node"
-
-          docker build -t partner-chains-node:base .
-
-          tags=("${{ steps.get_sha.outputs.sha }}" "latest")
-          images=(
-            "${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node"
-            "ghcr.io/${{ github.repository }}/partner-chains-node-unstable"
-          )
-
-          for tag in "${tags[@]}"; do
-            for image in "${images[@]}"; do 
-              full_tag="$image:$tag"
-              docker tag partner-chains-node:base "$full_tag"
-              docker push "$full_tag"
-            done
-          done
+          docker build -t ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:latest .
+          docker push ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:latest
+          docker push ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ steps.get_sha.outputs.sha }}
+          docker push ghcr.io/${{ github.repository }}/partner-chains-node-unstable:latest
 
       - name: Rename artifact
         run: |
