@@ -22,6 +22,16 @@ impl<T> pallet_session::SessionManager<T> for PalletSessionStubImpls {
 	fn start_session(_: SessionIndex) {}
 }
 
+impl<T> pallet_session::historical::SessionManager<T, ()> for PalletSessionStubImpls {
+	fn new_session(_: SessionIndex) -> Option<Vec<(T, ())>> {
+		None
+	}
+
+	fn end_session(_: SessionIndex) {}
+
+	fn start_session(_: SessionIndex) {}
+}
+
 impl<T> sp_runtime::traits::Convert<T, Option<T>> for PalletSessionStubImpls {
 	fn convert(t: T) -> Option<T> {
 		Some(t)
@@ -44,8 +54,10 @@ macro_rules! impl_pallet_session_config {
 			type ShouldEndSession =
 				pallet_partner_chains_session::pallet_session_compat::PalletSessionStubImpls;
 			type NextSessionRotation = ();
-			type SessionManager =
-				pallet_partner_chains_session::pallet_session_compat::PalletSessionStubImpls;
+			type SessionManager = pallet_session::historical::NoteHistoricalRoot<
+				Self,
+				pallet_partner_chains_session::pallet_session_compat::PalletSessionStubImpls,
+			>;
 			type SessionHandler = <$type as pallet_partner_chains_session::Config>::SessionHandler;
 			type Keys = <$type as pallet_partner_chains_session::Config>::Keys;
 			type DisablingStrategy = ();

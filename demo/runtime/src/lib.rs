@@ -20,6 +20,7 @@ use authority_selection_inherents::filter_invalid_candidates::{
 use authority_selection_inherents::select_authorities::select_authorities;
 use frame_support::genesis_builder_helper::{build_state, get_preset};
 use frame_support::inherent::ProvideInherent;
+use frame_support::traits::KeyOwnerProofSystem;
 use frame_support::weights::constants::RocksDbWeight as RuntimeDbWeight;
 use frame_support::{
 	BoundedVec, construct_runtime, parameter_types,
@@ -318,6 +319,12 @@ impl pallet_aura::Config for Runtime {
 }
 
 pallet_partner_chains_session::impl_pallet_session_config!(Runtime);
+
+impl pallet_session::historical::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type FullIdentification = ();
+	type FullIdentificationOf = ();
+}
 
 impl pallet_grandpa::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -726,6 +733,7 @@ construct_runtime!(
 		// Partner Chains session_manager ValidatorManagementSessionManager writes to pallet_session::pallet::CurrentIndex.
 		// ValidatorManagementSessionManager is wired in by pallet_partner_chains_session.
 		PalletSession: pallet_session,
+		Historical: pallet_session::historical,
 		// The order matters!! pallet_partner_chains_session needs to come last for correct initialization order
 		Session: pallet_partner_chains_session,
 		NativeTokenManagement: pallet_native_token_management,
@@ -1033,13 +1041,11 @@ impl_runtime_apis! {
 
 		fn generate_key_ownership_proof(
 			_set_id: sp_consensus_beefy::ValidatorSetId,
-			_authority_id: BeefyId,
+			authority_id: BeefyId,
 		) -> Option<sp_consensus_beefy::OpaqueKeyOwnershipProof> {
-			// TODO: right now we don't have historical module of session pallet
-			None
-			// Historical::prove((sp_consensus_beefy::KEY_TYPE, authority_id))
-			// 	.map(|p| p.encode())
-			// 	.map(sp_consensus_beefy::OpaqueKeyOwnershipProof::new)
+			Historical::prove((sp_consensus_beefy::KEY_TYPE, authority_id))
+				.map(|p| p.encode())
+				.map(sp_consensus_beefy::OpaqueKeyOwnershipProof::new)
 		}
 
 		fn generate_ancestry_proof(
