@@ -46,6 +46,7 @@ use sp_core::ByteArray;
 use sp_core::{OpaqueMetadata, crypto::KeyTypeId};
 use sp_governed_map::MainChainScriptsV1;
 use sp_inherents::InherentIdentifier;
+use sp_runtime::traits::ConvertInto;
 use sp_runtime::{
 	ApplyExtrinsicResult, MultiSignature, Perbill, generic, impl_opaque_keys,
 	traits::{
@@ -309,7 +310,24 @@ impl pallet_aura::Config for Runtime {
 	type SlotDuration = ConstU64<SLOT_DURATION>;
 }
 
-pallet_partner_chains_session::impl_pallet_session_config!(Runtime);
+impl pallet_session::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type ValidatorId = AccountId;
+	type ValidatorIdOf = ConvertInto;
+	type ShouldEndSession = ValidatorManagementSessionManager<Runtime>;
+	type NextSessionRotation = ();
+	type SessionManager = ValidatorManagementSessionManager<Runtime>;
+	type SessionHandler = <SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
+	type Keys = SessionKeys;
+	type DisablingStrategy = pallet_session::disabling::UpToLimitWithReEnablingDisablingStrategy;
+
+	type WeightInfo = pallet_session::weights::SubstrateWeight<Runtime>;
+}
+
+// impl pallet_session::historical::Config for Runtime {
+// 	type FullIdentification = ();
+// 	type FullIdentificationOf = ();
+// }
 
 impl pallet_grandpa::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -371,15 +389,6 @@ impl pallet_sudo::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
 	type WeightInfo = pallet_sudo::weights::SubstrateWeight<Runtime>;
-}
-
-impl pallet_partner_chains_session::Config for Runtime {
-	type ValidatorId = <Self as frame_system::Config>::AccountId;
-	type ShouldEndSession = ValidatorManagementSessionManager<Runtime>;
-	type NextSessionRotation = ();
-	type SessionManager = ValidatorManagementSessionManager<Runtime>;
-	type SessionHandler = <opaque::SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
-	type Keys = opaque::SessionKeys;
 }
 
 parameter_types! {
@@ -693,13 +702,8 @@ construct_runtime!(
 		BlockProducerMetadata: pallet_block_producer_metadata,
 		BlockProductionLog: pallet_block_production_log,
 		BlockParticipation: pallet_block_participation,
-		// pallet_grandpa reads pallet_session::pallet::CurrentIndex storage.
-		// Only stub implementation of pallet_session should be wired.
-		// Partner Chains session_manager ValidatorManagementSessionManager writes to pallet_session::pallet::CurrentIndex.
-		// ValidatorManagementSessionManager is wired in by pallet_partner_chains_session.
-		PalletSession: pallet_session,
-		// The order matters!! pallet_partner_chains_session needs to come last for correct initialization order
-		Session: pallet_partner_chains_session,
+		Session: pallet_session,
+		// Historical: pallet_session::historical,
 		NativeTokenManagement: pallet_native_token_management,
 		GovernedMap: pallet_governed_map,
 		TestHelperPallet: crate::test_helper_pallet,
@@ -894,7 +898,6 @@ impl_runtime_apis! {
 			None
 		}
 	}
-
 
 	impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Nonce> for Runtime {
 		fn account_nonce(account: AccountId) -> Nonce {
