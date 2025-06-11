@@ -11,7 +11,7 @@ from typing import Tuple
 @mark.xdist_group(name="governance_action")
 @mark.usefixtures("governance_skey_with_cli")
 def test_upsert_permissioned_candidates(
-    permissioned_candidates: Tuple[dict[str, Node], str], api: BlockchainApi, db: Session
+    permissioned_candidates: Tuple[dict[str, Node], str], genesis_utxo, api: BlockchainApi, db: Session
 ):
     """Test addition of the permissioned candidate
 
@@ -20,8 +20,8 @@ def test_upsert_permissioned_candidates(
     """
     new_candidates_list, candidate_to_remove = permissioned_candidates
 
-    logging.info(f"Setting permissioned candidates {list(new_candidates_list.keys())}")
-    result, next_status_epoch = api.upsert_permissioned_candidates(new_candidates_list)
+    logging.info(f"Setting permissioned candidates {list(new_candidates_list.keys())}, genesis utxo: {genesis_utxo}")
+    result, next_status_epoch = api.upsert_permissioned_candidates(genesis_utxo, new_candidates_list)
     assert result, f"Addition of permissioned candidate {new_candidates_list} failed."
 
     for candidate in new_candidates_list.keys():

@@ -41,9 +41,9 @@ class TestInitializeMap:
         logging.info(f"Governed Map initialized: {observe_governed_map_initialization}")
         assert observe_governed_map_initialization
 
-    def test_map_is_equal_to_main_chain_data(self, api: BlockchainApi, wait_until, config: ApiConfig):
+    def test_map_is_equal_to_main_chain_data(self, api: BlockchainApi, genesis_utxo, wait_until, config: ApiConfig):
         current_mc_block = api.get_mc_block()
-        result = api.partner_chains_node.smart_contracts.governed_map.list()
+        result = api.partner_chains_node.smart_contracts.governed_map.list(genesis_utxo)
         # wait for any changes in the map to become observable, i.e. teardown phase from smart-contracts tests
         wait_until(
             lambda: api.get_mc_block() > current_mc_block + config.main_chain.security_param,
@@ -63,16 +63,16 @@ class TestObserveMapChanges:
         assert random_value == actual_value
 
     def test_updated_data_is_observed(
-        self, insert_data, api: BlockchainApi, random_key, new_value_hex_bytes, payment_key, new_value
+        self, insert_data, api: BlockchainApi, genesis_utxo, random_key, new_value_hex_bytes, payment_key, new_value
     ):
-        api.partner_chains_node.smart_contracts.governed_map.update(random_key, new_value_hex_bytes, payment_key)
+        api.partner_chains_node.smart_contracts.governed_map.update(genesis_utxo, random_key, new_value_hex_bytes, payment_key)
         registered_change = api.subscribe_governed_map_change(key_value=(random_key, new_value))
         logging.info(f"Registered change: {registered_change}")
         actual_value = api.get_governed_map_key(random_key)
         assert new_value == actual_value
 
-    def test_removed_data_is_observed(self, insert_data, api: BlockchainApi, random_key, payment_key):
-        api.partner_chains_node.smart_contracts.governed_map.remove(random_key, payment_key)
+    def test_removed_data_is_observed(self, insert_data, api: BlockchainApi, genesis_utxo, random_key, payment_key):
+        api.partner_chains_node.smart_contracts.governed_map.remove(genesis_utxo, random_key, payment_key)
         registered_change = api.subscribe_governed_map_change(key_value=(random_key, None))
         logging.info(f"Registered change: {registered_change}")
         actual_value = api.get_governed_map_key(random_key)

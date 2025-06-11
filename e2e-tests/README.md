@@ -142,7 +142,7 @@ All test layers upload full logs, metrics, and test reports to GitHub Artifacts 
 | Block Production Advances | `test_block_producing` | Validate that node produces new blocks over time | Block height increases after 1.5x block duration sleep | Ensures block authoring is active and chain is progressing | Python SDK call to `get_latest_pc_block_number()` with timing validation |
 | Basic Transaction Execution | `test_transaction` | Send transaction and verify state change | Receiver balance increases; sender balance decreases by amount + fee | Verifies signing, submission, and state application of transactions | SDK with internal signing + submit logic, validates balance changes |
 | Chain Status Matches Cardano Tip | `test_get_status` | Validate that `getStatus()` aligns with Cardano CLI tip | Epoch/slot data close to Cardano tip; timestamps and sidechain data present | Confirms sync between mainchain and sidechain | `curl -d '{"jsonrpc":"2.0","method":"sidechain_getStatus","params":[],"id":1}' http://localhost:9933` with Cardano CLI comparison |
-| Genesis Params Returned | `test_get_params` | Confirm genesis config is available via RPC | `genesis_utxo` returned and correct | Ensures sidechain is initialized with correct bootstrap parameters | `curl -d '{"jsonrpc":"2.0","method":"partner_chain_getParams","params":[],"id":1}' http://localhost:9933` with genesis validation |
+| Genesis Params Returned | `test_get_params` | Confirm genesis config is available via RPC | `genesis_utxo` returned and correct | Ensures chain genesis_utxo can be retreived | `curl -d '{"jsonrpc":"2.0","method":"partner_chain_getParams","params":[],"id":1}' http://localhost:9933` with genesis validation |
 
 #### **RPC Interface Tests**
 
@@ -197,4 +197,3 @@ test_categories:
 ```
 
 Each category is run with appropriate test markers and configurations to ensure comprehensive coverage of the Partner Chain functionality.
-
