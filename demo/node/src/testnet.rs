@@ -181,19 +181,23 @@ pub fn testnet_genesis(
 		},
 		transaction_payment: Default::default(),
 		session: SessionConfig {
-			initial_validators: initial_authorities
+			keys: initial_authorities
 				.iter()
 				.map(|authority_keys| {
-					(authority_keys.cross_chain.clone().into(), authority_keys.session.clone())
+					(
+						authority_keys.cross_chain.clone().into(),
+						authority_keys.cross_chain.clone().into(),
+						authority_keys.session.clone(),
+					)
 				})
 				.collect(),
+			non_authority_keys: Default::default(),
 		},
 		sidechain: SidechainConfig {
 			genesis_utxo: sp_sidechain::read_genesis_utxo_from_env_with_defaults()?,
 			slots_per_epoch: SlotsPerEpoch::read_from_env()?,
 			..Default::default()
 		},
-		pallet_session: Default::default(),
 		session_committee_management: SessionCommitteeManagementConfig {
 			initial_authorities: initial_authorities
 				.into_iter()
