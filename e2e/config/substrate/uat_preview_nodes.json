@@ -1,0 +1,128 @@
+{
+    "deployment_mc_epoch": 890,
+    "initial_pc_epoch": 4843200,
+    "genesis_utxo": "3b715a225582eae835c87d13d28fc4ea0366db8acecd13d9d80d1623d5aefd5e#1",
+    "deployment_version": "v1.6.0",
+    "test_environment": "uat_preview",
+    "nodes_config": {
+        "nodes": {
+            "alice": {
+                "host": "alice.node.sc.iog.io",
+                "port": "9944",
+                "aura_ss58_address": "5DU2xsSHPigU2md6r3rSU9kKAuQvHyJLS5Xsq2pVt18K9AK8",
+                "pool_id": "da74fc8256d15c7ab3370a6ca28398986cb97c32e9ef66026ac61e99",
+                "public_key": "0x03046279673f9e241478a577b91c798ebee4c6087f9d9ddd22cee7e059166dbf4a",
+                "aura_public_key": "0x3e073288910089cd56e725e478b616ed753b694e8bcca3a2a5ba1b40eb72ca4e",
+                "grandpa_public_key": "0xd9d0a86780aeefecb026e1bef06c85fc8609fb833cc62de3df03fdb43e7e4b2a",
+                "rotation_candidate": true,
+                "cardano_payment_addr": "addr_test1vq6ywn0f007x32j47jrk5qy9hy3gknsvszrcpdqkeaye7pshu2w2t",
+                "keys_files": {
+                    "cardano_payment_key": "./secrets/substrate/uat/keys/validator-1/payment.skey.json.decrypted",
+                    "spo_signing_key": "./secrets/substrate/uat/keys/validator-1/cold.skey.json.decrypted",
+                    "spo_public_key": "./secrets/substrate/uat/keys/validator-1/cold.vkey.json.decrypted",
+                    "partner_chain_signing_key": "./secrets/substrate/uat/keys/validator-1/partner_chain.skey.json.decrypted"
+                }
+            },
+            "bob": {
+                "host": "bob.node.sc.iog.io",
+                "port": "9944",
+                "aura_ss58_address": "5CAWrgrjdwURGdRManWLgun2oLtyC6LtRwRCvVe4zh8ap3Cw",
+                "pool_id": "eaed153a8b046770cfd094ee72d080ea682188e63ac11937e3f7f827",
+                "public_key": "0x034f94750f274bbfb38f38d931f009d321acd56c8bcbe5c17eff34ee186a0277cf",
+                "aura_public_key": "0x046e71b9ef1631574426c173d5f8b2ba4bbc6a3680c9cf3502710fe84891301a",
+                "grandpa_public_key": "0x98853817df07cb4be9f3f76429d09e01eac35b18c3d777e663ccc89e3012dd64",
+                "permissioned_candidate": true,
+                "cardano_payment_addr": "addr_test1vz80jkz5d2kdaykfrqlqryr6lt46tunk4ldfjqv88hevrpsrdfmm5",
+                "keys_files": {
+                    "cardano_payment_key": "./secrets/substrate/uat/keys/validator-2/payment.skey.json.decrypted",
+                    "spo_signing_key": "./secrets/substrate/uat/keys/validator-2/cold.skey.json.decrypted",
+                    "spo_public_key": "./secrets/substrate/uat/keys/validator-2/cold.vkey.json.decrypted",
+                    "partner_chain_signing_key": "./secrets/substrate/uat/keys/validator-2/partner_chain.skey.json.decrypted"
+                }
+            },
+            "charlie": {
+                "host": "charlie.node.sc.iog.io",
+                "port": "9944",
+                "aura_ss58_address": "5H986Epy9e8MHL3617TthaoRfvANu9uLvfKjp3g3e4Aajj4M",
+                "pool_id": "7dfba85597a867fffa59037df7f6adcd50e745dcceac2b48eda94b20",
+                "public_key": "0x024f0ff7822ddd402cb1da57af91d6e5d7ca70fa3d89d96e31a465e8078ace764f",
+                "aura_public_key": "0xe08bba4b24e9f986ab06e51d9bb9e4ab767eddc27aa25a86bc7a9edc438c517b",
+                "grandpa_public_key": "0x8b99d6737bd58e06b61bdd07d71abc235101b3c8860f6ad5cc7f27d4ce5b3a58",
+                "permissioned_candidate": true,
+                "cardano_payment_addr": "addr_test1vrxc6wvtmqrqx4n9e89sqf9u0w0jcp8a96s7gkddfsr0ppcdvzcf6",
+                "keys_files": {
+                    "cardano_payment_key": "./secrets/substrate/uat/keys/validator-3/payment.skey.json.decrypted",
+                    "spo_signing_key": "./secrets/substrate/uat/keys/validator-3/cold.skey.json.decrypted",
+                    "spo_public_key": "./secrets/substrate/uat/keys/validator-3/cold.vkey.json.decrypted",
+                    "partner_chain_signing_key": "./secrets/substrate/uat/keys/validator-3/partner_chain.skey.json.decrypted"
+                }
+            },
+            "dave": {
+                "host": "dave.node.sc.iog.io",
+                "port": "9944",
+                "aura_ss58_address": "5GVpqdtqjxqUjuVKMkmh8ehSwcs2nXjpvzHqjouZXMJAyC4b",
+                "pool_id": "2a3f5dd02da1310e081f2367412e02b72baad3e2a5045f62df2c78c5",
+                "public_key": "0x025e19f82c5e2bac5e8869d49ff26359e442628bc5cfa38eeb5275f43d04015da8",
+                "aura_public_key": "0xc41992b8eb2f3a8a6c46211df584827f9eeb0175e2c75e1242392262b55b6874",
+                "grandpa_public_key": "0x34b71fdad96431bf115350d8ad21eec07a2b154ff32dc31125f988e308bebea8",
+                "cardano_payment_addr": "addr_test1vq65mgmcpd6rq6ndy22kwxzdc9u0tmrpr7s30037qdhlalg3f5ax0",
+                "keys_files": {
+                    "cardano_payment_key": "./secrets/substrate/uat/keys/validator-4/payment.skey.json.decrypted",
+                    "spo_signing_key": "./secrets/substrate/uat/keys/validator-4/cold.skey.json.decrypted",
+                    "spo_public_key": "./secrets/substrate/uat/keys/validator-4/cold.vkey.json.decrypted",
+                    "partner_chain_signing_key": "./secrets/substrate/uat/keys/validator-4/partner_chain.skey.json.decrypted"
+                }
+            },
+            "eve": {
+                "host": "eve.node.sc.iog.io",
+                "port": "9944",
+                "aura_ss58_address": "5DsfhT7HJe6i5LYeKBzefrXijW5UgPsn2Cuyw5WMa4uEktTn",
+                "pool_id": "ae81beee7a6c3fa13bba811f91f63ebdd7eb25dd8a62476d4996de10",
+                "public_key": "0x03f38a062a4b372c045c1dddc4fe98a2c9cb1d6eec8bf02f973fd29b1096cd8155",
+                "aura_public_key": "0x500d7ff6d903c85db5ee5624df9510c2a085cf30da260166bd370010d0bdc97a",
+                "grandpa_public_key": "0xa04d74c1539550876d04e4d2de4e0531087c3b6810ce96ddc16d78ccf4ac4f11",
+                "cardano_payment_addr": "addr_test1vqqm36dcg5xeeqgc29r8gu6wujlmr4fyrdrvuzq4qnem2vs7g2kvj",
+                "keys_files": {
+                    "cardano_payment_key": "./secrets/substrate/uat/keys/validator-5/payment.skey.json.decrypted",
+                    "spo_signing_key": "./secrets/substrate/uat/keys/validator-5/cold.skey.json.decrypted",
+                    "spo_public_key": "./secrets/substrate/uat/keys/validator-5/cold.vkey.json.decrypted",
+                    "partner_chain_signing_key": "./secrets/substrate/uat/keys/validator-5/partner_chain.skey.json.decrypted"
+                }
+            },
+            "ferdie": {
+                "host": "ferdie.node.sc.iog.io",
+                "port": "9944",
+                "aura_ss58_address": "5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL",
+                "pool_id": "9ad70551d17317e44866850f9827f6464f0867e50bff5a87b1f9e3c0",
+                "public_key": "0x0291f1217d5a04cb83312ee3d88a6e6b33284e053e6ccfc3a90339a0299d12967c",
+                "aura_public_key": "0x1cbd2d43530a44705ad088af313e18f80b53ef16b36177cd4b77b846f2a5f07c",
+                "grandpa_public_key": "0x568cb4a574c6d178feb39c27dfc8b3f789e5f5423e19c71633c748b9acf086b5",
+                "cardano_payment_addr": "addr_test1vrkp4j33xcysqfancc7fttdrwf86ztgpaqhhzu98vahnevqfng7r9",
+                "keys_files": {
+                    "cardano_payment_key": "./secrets/substrate/devnet/keys/ferdie/payment.skey.json.decrypted",
+                    "spo_signing_key": "./secrets/substrate/devnet/keys/ferdie/cold.skey.json.decrypted",
+                    "spo_public_key": "./secrets/substrate/devnet/keys/ferdie/cold.vkey.json.decrypted",
+                    "partner_chain_signing_key": "./secrets/substrate/devnet/keys/ferdie/partner_chain.skey.json.decrypted"
+                }
+            }
+        },
+        "governance_authority": {
+            "mainchain_address": "addr_test1vq0sjaaupatuvl9x6aefdsd4whlqtfku93068qzkhf3u2rqt9cnuq",
+            "mainchain_key": "./secrets/substrate/uat/keys/governance_authority/init.skey.json.decrypted"
+        },
+        "selected_node": "dave",
+        "node": "${nodes_config[nodes][${nodes_config[selected_node]}]}",
+        "token_conversion_rate": 9,
+        "block_duration": 6,
+        "slots_in_epoch": 60,
+        "token_policy_id": "",
+        "d_param_min": {
+            "permissioned_candidates_number": 2,
+            "trustless_candidates_number": 1
+        },
+        "d_param_max": {
+            "permissioned_candidates_number": 2,
+            "trustless_candidates_number": 1
+        }
+    }
+}

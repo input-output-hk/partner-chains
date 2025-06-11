@@ -1,0 +1,7 @@
+# Sample configuration for multisig governance testing
+nodes_config:
+  # Existing single governance authority configuration
+  governance_authority:
+    mainchain_address: "addr_test1vryefctfmmruwnqh287q053narzqn5duh53kk2hxw8jjswsuqfveh"
+    mainchain_key: "secrets/substrate/devnet/keys/governance_authority/payment.skey"
+    mainchain_pub_key_hash: "c994e169dec7c74c1751fc07d233e8c409d1bcbd236b2ae671e5283a"

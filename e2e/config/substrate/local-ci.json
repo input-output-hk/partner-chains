@@ -1,0 +1,21 @@
+{
+    "nodes_config": {
+        "nodes": {
+            "alice": {
+                "host": "partner-chains-node-1"
+            },
+            "bob": {
+                "host": "partner-chains-node-2"
+            },
+            "charlie": {
+                "host": "partner-chains-node-3"
+            },
+            "dave": {
+                "host": "partner-chains-node-4"
+            },
+            "eve": {
+                "host": "partner-chains-node-5"
+            }
+        }
+    }
+}
