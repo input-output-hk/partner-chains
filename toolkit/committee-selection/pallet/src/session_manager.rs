@@ -98,9 +98,66 @@ impl<T: crate::Config + pallet_session::Config>
 	}
 }
 
+impl<T: crate::Config + pallet_session::Config> pallet_session::SessionManager<T::AccountId>
+	for ValidatorManagementSessionManager<T>
+{
+	fn new_session_genesis(_new_index: SessionIndex) -> Option<Vec<T::AccountId>> {
+		Some(
+			crate::Pallet::<T>::current_committee_storage()
+				.committee
+				.into_iter()
+				.map(|member| member.authority_id().into())
+				.collect::<Vec<_>>(),
+		)
+	}
+
+	// Instead of Some((*).expect) we could just use (*). However, we rather panic in presence of
+	// important programming errors.
+	fn new_session(new_index: SessionIndex) -> Option<Vec<T::AccountId>> {
+		info!("New session {new_index}");
+		pallet_session::pallet::CurrentIndex::<T>::put(new_index);
+		Some(
+			crate::Pallet::<T>::rotate_committee_to_next_epoch()
+				.expect(
+					"Session should never end without current epoch validators defined. \
+				Check ShouldEndSession implementation or if it is used before starting new session",
+				)
+				.into_iter()
+				.map(|member| member.authority_id().into())
+				.collect(),
+		)
+	}
+
+	fn end_session(end_index: SessionIndex) {
+		info!("End session {end_index}");
+	}
+
+	// Session is expected to be at least 1 block behind sidechain epoch.
+	fn start_session(start_index: SessionIndex) {
+		let epoch_number = T::current_epoch_number();
+		info!("Start session {start_index}, epoch {epoch_number}");
+	}
+}
+
 /// This implementation tries to end each session in the first block of each sidechain epoch in which
 /// the committee for the epoch is defined.
 impl<T, ScEpochNumber> pallet_partner_chains_session::ShouldEndSession<BlockNumberFor<T>>
+	for ValidatorManagementSessionManager<T>
+where
+	T: crate::Config<ScEpochNumber = ScEpochNumber>,
+	ScEpochNumber: Clone + PartialOrd,
+{
+	fn should_end_session(_n: BlockNumberFor<T>) -> bool {
+		let current_epoch_number = T::current_epoch_number();
+
+		current_epoch_number > crate::Pallet::<T>::current_committee_storage().epoch
+			&& crate::Pallet::<T>::next_committee().is_some()
+	}
+}
+
+/// This implementation tries to end each session in the first block of each sidechain epoch in which
+/// the committee for the epoch is defined.
+impl<T, ScEpochNumber> pallet_session::ShouldEndSession<BlockNumberFor<T>>
 	for ValidatorManagementSessionManager<T>
 where
 	T: crate::Config<ScEpochNumber = ScEpochNumber>,

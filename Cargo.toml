@@ -57,6 +57,7 @@ members = [
 	"toolkit/committee-selection/selection-simulator",
 	"toolkit/bridge/pallet",
 	"toolkit/bridge/primitives",
+	"toolkit/session_keys_registration",
 ]
 resolver = "2"
 
@@ -331,6 +332,8 @@ pallet-governed-map = { path = "toolkit/governed-map/pallet", default-features =
 # Bridge
 sp-partner-chains-bridge = { path = "toolkit/bridge/primitives", default-features = false }
 pallet-partner-chains-bridge = { path = "toolkit/bridge/pallet", default-features = false }
+# Session Keys Registration
+pallet-session-keys-registration = { path = "toolkit/session_keys_registration", default-features = false }
 
 # demo node
 partner-chains-demo-runtime = { path = "demo/runtime" }

@@ -12,16 +12,17 @@ extern crate alloc;
 use alloc::collections::BTreeMap;
 use alloc::string::String;
 use authority_selection_inherents::{
-	AuthoritySelectionInputs, CommitteeMember, PermissionedCandidateDataError,
-	RegistrationDataError, StakeError, select_authorities, validate_permissioned_candidate_data,
+	select_authorities, validate_permissioned_candidate_data, AuthoritySelectionInputs,
+	CommitteeMember, PermissionedCandidateDataError, RegistrationDataError, StakeError,
 };
 use frame_support::genesis_builder_helper::{build_state, get_preset};
 use frame_support::inherent::ProvideInherent;
 use frame_support::weights::constants::RocksDbWeight as RuntimeDbWeight;
 use frame_support::{
-	BoundedVec, construct_runtime, parameter_types,
-	traits::{ConstBool, ConstU8, ConstU16, ConstU32, ConstU64, ConstU128},
-	weights::{IdentityFee, constants::WEIGHT_REF_TIME_PER_SECOND},
+	construct_runtime, parameter_types,
+	traits::{ConstBool, ConstU128, ConstU16, ConstU32, ConstU64, ConstU8},
+	weights::{constants::WEIGHT_REF_TIME_PER_SECOND, IdentityFee},
+	BoundedVec,
 };
 use frame_system::EnsureRoot;
 use opaque::SessionKeys;
@@ -43,17 +44,19 @@ use sp_block_participation::AsCardanoSPO;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 #[cfg(feature = "runtime-benchmarks")]
 use sp_core::ByteArray;
-use sp_core::{OpaqueMetadata, crypto::KeyTypeId};
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_governed_map::MainChainScriptsV1;
 use sp_inherents::InherentIdentifier;
 use sp_partner_chains_bridge::{BridgeDataCheckpoint, MainChainScripts as BridgeMainChainScripts};
+use sp_runtime::traits::ConvertInto;
 use sp_runtime::{
-	ApplyExtrinsicResult, MultiSignature, Perbill, generic, impl_opaque_keys,
+	generic, impl_opaque_keys,
 	traits::{
 		AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, NumberFor, One, OpaqueKeys,
 		Verify,
 	},
 	transaction_validity::{TransactionSource, TransactionValidity},
+	ApplyExtrinsicResult, MultiSignature, Perbill,
 };
 use sp_sidechain::SidechainStatus;
 use sp_std::prelude::*;
@@ -119,9 +122,9 @@ pub mod opaque {
 		use parity_scale_codec::MaxEncodedLen;
 		use sidechain_domain::SidechainPublicKey;
 		use sp_core::crypto::AccountId32;
-		use sp_runtime::MultiSigner;
 		use sp_runtime::app_crypto::{app_crypto, ecdsa};
 		use sp_runtime::traits::IdentifyAccount;
+		use sp_runtime::MultiSigner;
 		use sp_std::vec::Vec;
 
 		app_crypto!(ecdsa, CROSS_CHAIN);
@@ -304,7 +307,24 @@ impl pallet_aura::Config for Runtime {
 	type SlotDuration = ConstU64<SLOT_DURATION>;
 }
 
-pallet_partner_chains_session::impl_pallet_session_config!(Runtime);
+impl pallet_session::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type ValidatorId = AccountId;
+	type ValidatorIdOf = ConvertInto;
+	type ShouldEndSession = ValidatorManagementSessionManager<Runtime>;
+	type NextSessionRotation = ();
+	type SessionManager = ValidatorManagementSessionManager<Runtime>;
+	type SessionHandler = <SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
+	type Keys = SessionKeys;
+	type DisablingStrategy = pallet_session::disabling::UpToLimitWithReEnablingDisablingStrategy;
+
+	type WeightInfo = pallet_session::weights::SubstrateWeight<Runtime>;
+}
+
+// impl pallet_session::historical::Config for Runtime {
+// 	type FullIdentification = ();
+// 	type FullIdentificationOf = ();
+// }
 
 impl pallet_grandpa::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -366,15 +386,6 @@ impl pallet_sudo::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
 	type WeightInfo = pallet_sudo::weights::SubstrateWeight<Runtime>;
-}
-
-impl pallet_partner_chains_session::Config for Runtime {
-	type ValidatorId = <Self as frame_system::Config>::AccountId;
-	type ShouldEndSession = ValidatorManagementSessionManager<Runtime>;
-	type NextSessionRotation = ();
-	type SessionManager = ValidatorManagementSessionManager<Runtime>;
-	type SessionHandler = <opaque::SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
-	type Keys = opaque::SessionKeys;
 }
 
 parameter_types! {
@@ -689,6 +700,10 @@ impl pallet_partner_chains_bridge::Config for Runtime {
 	type BenchmarkHelper = ();
 }
 
+impl pallet_session_keys_registration::Config for Runtime {
+	type PalletsOrigin = OriginCaller;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub struct Runtime {
@@ -708,13 +723,9 @@ construct_runtime!(
 		BlockProducerMetadata: pallet_block_producer_metadata,
 		BlockProductionLog: pallet_block_production_log,
 		BlockParticipation: pallet_block_participation,
-		// pallet_grandpa reads pallet_session::pallet::CurrentIndex storage.
-		// Only stub implementation of pallet_session should be wired.
-		// Partner Chains session_manager ValidatorManagementSessionManager writes to pallet_session::pallet::CurrentIndex.
-		// ValidatorManagementSessionManager is wired in by pallet_partner_chains_session.
-		PalletSession: pallet_session,
-		// The order matters!! pallet_partner_chains_session needs to come last for correct initialization order
-		Session: pallet_partner_chains_session,
+		Session: pallet_session exclude_parts { Call },
+		SessionKeysRegistration: pallet_session_keys_registration,
+		// Historical: pallet_session::historical,
 		GovernedMap: pallet_governed_map,
 		Bridge: pallet_partner_chains_bridge,
 		TestHelperPallet: crate::test_helper_pallet,
@@ -909,7 +920,6 @@ impl_runtime_apis! {
 			None
 		}
 	}
-
 
 	impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Nonce> for Runtime {
 		fn account_nonce(account: AccountId) -> Nonce {
@@ -1160,7 +1170,7 @@ mod tests {
 		inherent::ProvideInherent,
 		traits::{UnfilteredDispatchable, WhitelistedStorageKeys},
 	};
-	use sp_core::{Pair, hexdisplay::HexDisplay};
+	use sp_core::{hexdisplay::HexDisplay, Pair};
 	use sp_inherents::InherentData;
 	use std::collections::HashSet;
 
