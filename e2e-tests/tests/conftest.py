@@ -477,10 +477,13 @@ def get_wallet(api: BlockchainApi, secrets) -> Wallet:
     scheme = faucet["scheme"]
     return api.get_wallet(address=address, public_key=public_key, secret=secret, scheme=scheme)
 
+@fixture(scope="session")
+def genesis_utxo(api: BlockchainApi):
+	return api.get_params()["genesis_utxo"]
 
 @fixture(scope="session")
-def get_scripts(api: BlockchainApi):
-    return api.partner_chains_node.smart_contracts.get_scripts().json
+def get_scripts(genesis_utxo, api: BlockchainApi):
+    return api.partner_chains_node.smart_contracts.get_scripts(genesis_utxo).json
 
 
 @fixture(scope="session")
@@ -623,7 +626,7 @@ def additional_governance_authorities(config: ApiConfig):
 
 
 @fixture(scope="session", autouse=True)
-def set_governance_to_multisig(multisig, api: BlockchainApi, governance_authority, additional_governance_authorities):
+def set_governance_to_multisig(multisig, api: BlockchainApi, genesis_utxo, governance_authority, additional_governance_authorities):
     if not multisig:
         yield
         return
@@ -638,6 +641,7 @@ def set_governance_to_multisig(multisig, api: BlockchainApi, governance_authorit
     threshold = 2
 
     response = api.partner_chains_node.smart_contracts.governance.update(
+        genesis_utxo,
         payment_key=governance_authority.mainchain_key,
         new_governance_authorities=all_authorities,
         new_governance_threshold=threshold,
@@ -646,6 +650,7 @@ def set_governance_to_multisig(multisig, api: BlockchainApi, governance_authorit
     yield response
 
     response = api.partner_chains_node.smart_contracts.governance.update(
+        genesis_utxo,
         payment_key=governance_authority.mainchain_key,
         new_governance_authorities=[governance_authority.mainchain_pub_key_hash],
         new_governance_threshold=1,

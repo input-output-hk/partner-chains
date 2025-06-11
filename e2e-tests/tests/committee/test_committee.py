@@ -81,6 +81,7 @@ class TestCommitteeDistribution:
     @mark.usefixtures("governance_skey_with_cli")
     def test_update_d_param(
         self,
+        genesis_utxo,
         api: BlockchainApi,
         config: ApiConfig,
         current_mc_epoch,
@@ -112,7 +113,9 @@ class TestCommitteeDistribution:
 
         logging.info(f"Updating d-param to {new_d_param}")
         result, mc_epoch = api.update_d_param(
-            new_d_param.permissioned_candidates_number, new_d_param.trustless_candidates_number
+            genesis_utxo,
+            new_d_param.permissioned_candidates_number,
+            new_d_param.trustless_candidates_number
         )
         assert result, "D-param transaction id is empty. Check command output for errors."
 

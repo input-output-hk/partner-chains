@@ -1,6 +1,5 @@
 {
   "deployment_mc_epoch": 2,
-  "genesis_utxo": "f8fbe7316561e57de9ecd1c86ee8f8b512a314ba86499ba9a584bfa8fe2edc8d#0",
   "main_chain": {
     "network": "--testnet-magic 42",
     "epoch_length": 120,
