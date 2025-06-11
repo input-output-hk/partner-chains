@@ -1,0 +1,106 @@
+{
+  "deployment_mc_epoch": 2,
+  "genesis_utxo": "f8fbe7316561e57de9ecd1c86ee8f8b512a314ba86499ba9a584bfa8fe2edc8d#0",
+  "main_chain": {
+    "network": "--testnet-magic 42",
+    "epoch_length": 120,
+    "slot_length": 1,
+    "active_slots_coeff": 0.4,
+    "security_param": 5,
+    "init_timestamp": 1742993000,
+    "block_stability_margin": 0
+  },
+  "nodes_config": {
+    "nodes": {
+      "alice": {
+        "host": "127.0.0.1",
+        "port": "9933",
+        "aura_ss58_address": "5Cyx94iyji8namhRxvs4mAbURtPsvwjWCb68ZihNzfRysGLZ",
+        "public_key": "0x0258dc1e341e42ba85b393804c1e8a531485ec3b73b2d5cd2b0bf56cbcaf102a7e",
+        "aura_public_key": "0x289c161586d774dda981fdb184d061a28e04bdf81322c545b9c37549e7412f2f",
+        "grandpa_public_key": "0x17edf4615819dbe1de4ed887ba0b438190923e14e25de9c6ff25320abcfe7d29",
+        "permissioned_candidate": true
+      },
+      "bob": {
+        "host": "127.0.0.1",
+        "port": "9934",
+        "aura_ss58_address": "5E4op92Z2Di1GoVS9KqnoGVKQXG2R9x1vdh3RW892YLFsLrc",
+        "public_key": "0x030e0bcd9e16d770ade1fb5a5a50f2da012f1ea53713a9ba8aed5f009bc451404d",
+        "aura_public_key": "0x588c84949c703058577df51caaf82ca81cb1df43928600763a0050d16d2c210f",
+        "grandpa_public_key": "0xf39299bb0a1d6fab19b4990edaf435edb70f5755983bf63fce3ecd13a6be8ea5",
+        "permissioned_candidate": true
+      },
+      "charlie": {
+        "host": "127.0.0.1",
+        "port": "9935",
+        "aura_ss58_address": "5CPCXHsSVaSRBMe8Ljs1HPrsuB8pJYuceoMT7TVKksM6uuj3",
+        "public_key": "0x03425892d705436ccfd24e0613ca7410e18eb142461579e3c908f4c5e4d429a90d",
+        "aura_public_key": "0x0e1aea53d513c3785ec8d02c2fb43eb98b14169f56194690cf1c8cb2d1639f3a",
+        "grandpa_public_key": "0xbfd485365f3765c31aa70502261868e79ca045d4d0f16db70865280e3a741f88",
+        "permissioned_candidate": true
+      },
+      "dave": {
+        "host": "127.0.0.1",
+        "port": "9936",
+        "public_key": "0x039799ff93d184146deacaa455dade51b13ed16f23cdad11d1ad6af20103391180",
+        "aura_public_key": "0xe85534c93315d60f808568d1dce5cb9e8ba6ed0b204209c5cc8f3bec56c10b73",
+        "grandpa_public_key": "0xcdf3e5b33f53c8b541bbaea383225c45654f24de38c585725f3cff25b2802f55",
+        "rotation_candidate": true,
+        "cardano_payment_addr": "addr_test1vphpcf32drhhznv6rqmrmgpuwq06kug0lkg22ux777rtlqst2er0r",
+        "aura_ss58_address": "5HKLH5ErLMNHReWGFGtrDPRdNqdKP56ArQA6DFmgANzunK7A",
+        "keys_files": {
+          "cardano_payment_key": "/partner-chains-nodes/partner-chains-node-4/keys/payment.skey",
+          "spo_signing_key": "./secrets/substrate/local/keys/dave/cold.skey",
+          "spo_public_key": "./secrets/substrate/local/keys/dave/cold.vkey",
+          "partner_chain_signing_key": "./secrets/substrate/local/keys/dave/sidechain.skey"
+        }
+      },
+      "eve": {
+        "host": "127.0.0.1",
+        "port": "9937",
+        "public_key": "0x0364b1f01f6e803be10abc6dd6fe08ced61cf3eaaef2dbdc72b4e774c4b6a564af",
+        "aura_ss58_address": "5G4gFEZJaCDQfXjef24P8oR6hpD7FKi3GNaHwtRL7hmTBxPC",
+        "aura_public_key": "0xb0eb82cbdf9f92c384d88ea14de34aa38f7d05b0131b7b9bc21bb3f395920c22",
+        "grandpa_public_key": "0x83c5eea08f80a64d7abf4c15a8a19d9f186aa62fc14389a7c6d6042bcc971daf",
+        "rotation_candidate": true,
+        "cardano_payment_addr": "addr_test1vzzt5pwz3pum9xdgxalxyy52m3aqur0n43pcl727l37ggscl8h7v8",
+        "keys_files": {
+          "cardano_payment_key": "/partner-chains-nodes/partner-chains-node-5/keys/payment.skey",
+          "spo_signing_key": "./secrets/substrate/local/keys/eve/cold.skey",
+          "spo_public_key": "./secrets/substrate/local/keys/eve/cold.vkey",
+          "partner_chain_signing_key": "./secrets/substrate/local/keys/eve/sidechain.skey"
+        }
+      }
+    },
+    "governance_authority": {
+      "mainchain_address": "addr_test1vr5vxqpnpl3325cu4zw55tnapjqzzx78pdrnk8k5j7wl72c6y08nd",
+      "mainchain_key": "/keys/funded_address.skey",
+      "mainchain_pub_key": "fc014cb5f071f5d6a36cb5a7e5f168c86555989445a23d4abec33d280f71aca4",
+      "mainchain_pub_key_hash": "0xe8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"
+    },
+    "additional_governance_authorities": [
+      {
+        "mainchain_address": "addr_test1vphpcf32drhhznv6rqmrmgpuwq06kug0lkg22ux777rtlqst2er0r",
+        "mainchain_key": "/keys/owner-utxo.skey",
+        "mainchain_pub_key_hash": "6e1c262a68ef714d9a18363da03c701fab710ffd90a570def786bf82"
+      }
+    ],
+    "selected_node": "alice",
+    "node": "${nodes_config[nodes][${nodes_config[selected_node]}]}",
+    "token_conversion_rate": 9,
+    "block_duration": 6,
+    "slots_in_epoch": 5,
+    "token_policy_id": "ba8b181cdf7fb639fa3d67e9b514cc685e7603ee19c72baf5b1f6d2a.4655454c",
+    "d_param_min": {
+      "permissioned_candidates_number": 1,
+      "trustless_candidates_number": 1
+    },
+    "d_param_max": {
+      "permissioned_candidates_number": 3,
+      "trustless_candidates_number": 2
+    }
+  },
+  "timeouts": {
+    "main_chain_tx": 20
+  }
+}
