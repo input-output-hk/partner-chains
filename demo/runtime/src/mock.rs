@@ -10,6 +10,7 @@ use frame_support::{
 };
 use frame_system::EnsureRoot;
 use hex_literal::hex;
+use pallet_session_validator_management::pallet_session_support::PalletSessionSupport;
 use plutus::ToDatum;
 use sidechain_domain::*;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -17,11 +18,10 @@ use sp_consensus_grandpa::AuthorityId as GrandpaId;
 use sp_core::crypto::CryptoType;
 use sp_core::sr25519;
 use sp_core::{ByteArray, ConstU128, H256, Pair, crypto::AccountId32, ed25519};
-use sp_runtime::KeyTypeId;
 use sp_runtime::key_types::{AURA, GRANDPA};
 use sp_runtime::{
-	BuildStorage, Digest, DigestItem, MultiSigner, impl_opaque_keys,
-	traits::{BlakeTwo256, IdentifyAccount, IdentityLookup, OpaqueKeys},
+	BuildStorage, Digest, DigestItem, KeyTypeId, MultiSigner, impl_opaque_keys,
+	traits::{BlakeTwo256, ConvertInto, IdentifyAccount, IdentityLookup, OpaqueKeys},
 };
 use sp_std::vec::Vec;
 use std::cmp::max;
@@ -45,8 +45,7 @@ frame_support::construct_runtime!(
 		Aura: pallet_aura,
 		Grandpa: pallet_grandpa,
 		Balances: pallet_balances,
-		PolkadotSessionStubForGrandpa: pallet_session,
-		Session: pallet_partner_chains_session,
+		Session: pallet_session,
 	}
 );
 
@@ -140,15 +139,17 @@ impl TryFrom<CandidateKeys> for TestSessionKeys {
 	}
 }
 
-pallet_partner_chains_session::impl_pallet_session_config!(Test);
-
-impl pallet_partner_chains_session::Config for Test {
+impl pallet_session::Config for Test {
+	type RuntimeEvent = RuntimeEvent;
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
-	type ShouldEndSession = ValidatorManagementSessionManager<Test>;
+	type ValidatorIdOf = ConvertInto;
+	type ShouldEndSession = PalletSessionSupport<Test>;
 	type NextSessionRotation = ();
-	type SessionManager = ValidatorManagementSessionManager<Test>;
+	type SessionManager = PalletSessionSupport<Test>;
 	type SessionHandler = <TestSessionKeys as OpaqueKeys>::KeyTypeIdProviders;
 	type Keys = TestSessionKeys;
+	type DisablingStrategy = pallet_session::disabling::UpToLimitWithReEnablingDisablingStrategy;
+	type WeightInfo = pallet_session::weights::SubstrateWeight<Test>;
 }
 
 impl pallet_sidechain::Config for Test {
@@ -236,9 +237,15 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	.assimilate_storage(&mut t)
 	.unwrap();
 
-	pallet_partner_chains_session::GenesisConfig::<Test> { initial_validators: session_keys }
-		.assimilate_storage(&mut t)
-		.unwrap();
+	pallet_session::GenesisConfig::<Test> {
+		keys: session_keys
+			.into_iter()
+			.map(|(cross_chain, session)| (cross_chain.clone().into(), cross_chain.into(), session))
+			.collect(),
+		non_authority_keys: Default::default(),
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
 
 	pallet_sidechain::GenesisConfig::<Test> {
 		genesis_utxo: UtxoId::new(
@@ -471,7 +478,6 @@ macro_rules! assert_aura_authorities {
 	}};
 }
 pub(crate) use assert_aura_authorities;
-use pallet_session_validator_management::session_manager::ValidatorManagementSessionManager;
 use sidechain_slots::SlotsPerEpoch;
 use sp_session_validator_management::MainChainScripts;
 
