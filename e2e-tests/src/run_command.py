@@ -60,12 +60,6 @@ class LocalRunner(Runner):
     def __init__(self, shell: str = None):
         self.shell = shell
 
-    def _cmd(self, cli, cmd) -> str:
-        full_cmd = "{cli} {cmd}".format(cli=cli, cmd=cmd)
-        if self.shell:
-            full_cmd = "{shell} \"{cli} {cmd}\"".format(shell=self.shell, cli=cli, cmd=cmd)
-        return full_cmd
-
     def run(self, command: str, timeout=120) -> Result:
         logging.debug(f"CMD: '{command}' TIMEOUT: {timeout} SHELL: {self.shell}")
 

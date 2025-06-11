@@ -1,0 +1,3 @@
+binary-host-service.sc.svc.cluster.local ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINevlKvq/nBitkudwLWGB2mzuCWfsZGcBOhGLg/JvsLT
+10.0.12.163 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINevlKvq/nBitkudwLWGB2mzuCWfsZGcBOhGLg/JvsLT
+dave.node.sc.iog.io ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHsbZIlBE5vO7DcpSZvSpcwyGiEPVbIgwm8WJXteUgLG

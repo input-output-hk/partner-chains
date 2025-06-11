@@ -1,0 +1,29 @@
+{
+    "nodes_config": {
+        "nodes": {
+            "validator-1": {
+                "host": "staging-preview-validator-1-service.staging-preview.svc.cluster.local",
+                "port": "${nodes_config[default_port]}"
+            },
+            "validator-2": {
+                "host": "staging-preview-validator-2-service.staging-preview.svc.cluster.local",
+                "port": "${nodes_config[default_port]}"
+            },
+            "validator-3": {
+                "host": "staging-preview-validator-3-service.staging-preview.svc.cluster.local",
+                "port": "${nodes_config[default_port]}"
+            },
+            "validator-4": {
+                "host": "staging-preview-validator-4-service.staging-preview.svc.cluster.local",
+                "port": "${nodes_config[default_port]}"
+            },
+            "validator-5": {
+                "host": "staging-preview-validator-5-service.staging-preview.svc.cluster.local",
+                "port": "${nodes_config[default_port]}"
+            }
+        }
+    },
+    "stack_config": {
+        "tools_host": "binary-host-service.sc.svc.cluster.local"
+    }
+}
