@@ -14,7 +14,7 @@
 4. Set postgres passwords
    - If you used a pre-configured password, skip this step
    - If you used a generated password - update db and dbSync password values in `secrets/substrate/local/local.json` with the POSTGRES_PASSWORD env variable value from the `.env` file
-5. Update `main_chain.init_timestamp` at `config/substrate/local_nodes.json` to the resulting value of `docker exec cardano-node-1 cat /shared/cardano.start` or alteratively pass it directly to `pytest` with `--init-timestamp=1234567890`
+5. Update `main_chain.init_timestamp` at `config/substrate/local_nodes.json` to the resulting value of `docker exec cardano-node-1 cat /shared/cardano.start` or alteratively pass it directly to `pytest` with `--init-timestamp=$(docker exec cardano-node-1 cat /shared/cardano.start)`
 6. Create and activate virtual environment
 
 ```bash
@@ -27,7 +27,7 @@
 2. Run partner-chains tests on partner-chains local environment
 
 ```bash
-pytest -rP -v --blockchain substrate --env local --log-cli-level debug -vv -s -m "not probability"
+pytest -rP -v --blockchain substrate --env local --init-timestamp=$(docker exec cardano-node-1 cat /shared/cardano.start) --log-cli-level debug -vv -s -m "not probability"
 ```
 
 ## Substrate Portal

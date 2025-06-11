@@ -1,6 +1,5 @@
 {
     "deployment_mc_epoch": 958,
-    "genesis_utxo": "f9321b197b0995c5f40e30425b1f3c5a797c4cb2678e1ed44934bc50858a9278#1",
     "deployment_version": "v1.7.0-rc2",
     "test_environment": "devnet",
     "committee_participation_tolerance": 0.21,
