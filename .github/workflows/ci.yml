@@ -113,8 +113,8 @@ jobs:
         uses: ./.github/actions/tests/local-environment-tests
         with:
           tag: CI
-          image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
-          sha: ${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
+          image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ github.sha }}
+          sha: ${{ github.sha }}
           markers: ${{ matrix.markers }}
         env:
           SUBSTRATE_REPO_SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
