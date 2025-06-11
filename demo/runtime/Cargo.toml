@@ -32,7 +32,7 @@ pallet-grandpa = { workspace = true }
 pallet-partner-chains-session = { workspace = true, features = [
 	"pallet-session-compat",
 ] }
-pallet-session = { workspace = true }
+pallet-session = { workspace = true, features = ["historical"] }
 pallet-sudo = { workspace = true }
 frame-system = { workspace = true }
 frame-try-runtime = { workspace = true, optional = true }
