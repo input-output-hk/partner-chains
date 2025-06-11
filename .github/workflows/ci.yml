@@ -33,6 +33,8 @@ jobs:
     steps:
       - name: ls -l before checkout
         run: ls -l
+      - name: remove all files
+        run: rm -rf *
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
