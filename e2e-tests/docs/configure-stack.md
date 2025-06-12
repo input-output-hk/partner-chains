@@ -1,62 +1,128 @@
-# How to configure remote host for testing
+# Stack configuration
 
 ## What is stack?
 
-Partner chains tests require a set of binaries for test execution:
-- [partner-chains-node](https://github.com/input-output-hk/partner-chains) to generate signatures
-- [cardano-cli](https://github.com/IntersectMBO/cardano-node?tab=readme-ov-file#using-cardano-cli) to query the tip of the Cardano main chain
+The stack consists of two elements:
+- ogmios
+- tools
 
-As a user, you can choose where to place those services and binaries: on the test runner machine or a separate remote host.
-
-## Set up stack on test runner machine
-
-In case of the test runner machine (and local execution), you will need to update the binaries path in `stack_config.tools` for `<env>-stack.json` file in the `config/<blockchain>/<env>` folder:
-
-- `cardano_cli`
-- `partner_chains_node`
-
-## Set up stack on remote host
-
-To configure the stack, you will need to do the following:
-1. Run cardano-node, expose the node socket file and make cardano-cli executable on remote host
-2. Create an SSH key for the remote host
-3. Add the SSH public key to the `config/<blockchain>` folder
-4. Add the SSH key to the `secrets/<blockchain>/<env>/keys` folder
-5. Update `<env>-stack.json` file in the `config/<blockchain>/<env>` folder
-   1. Set `stack_config.tools_host` to the IP address of remote host
-   2. Set `stack_config.ssh.username` and `stack_config.ssh.port`
-   3. Set `stack_config.ssh.host_keys_path` to the file added at step 3
-   4. Set `stack_config.ssh.private_key_path` to the file added at step 4
-6. Set `tools.cardano_cli.cli` to the path to the cardano-cli binary. Do not forget about exposing CARDANO_NODE_SOCKET_PATH. E.g. `export CARDANO_NODE_SOCKET_PATH=/ipc/node.socket && /cardano-cli`
-7. Set `tools.partner_chains_node` to the path to the `partner-chains-node` binary
-
-### `<env>-stack.json` template:
+### Example stack configuration
 
 ```
 {
     "stack_config": {
-        ...
-        "tools_host": <STRING>,
-        "ssh": {
-            "username": <STRING>,
-            "host": "${stack_config[tools_host]}",
-            "port": 22,
-            "host_keys_path": "config/<blockchain>/known_hosts",
-            "private_key_path": "secrets/<blockchain>/<env>/keys/ssh-key.yaml.decrypted"
-        },
+        "ogmios_scheme": "ws",
+        "ogmios_host": "staging-preview-services-service.staging-preview.svc.cluster.local",
+        "ogmios_port": 1337,
         "tools": {
-            "cardano_cli": {
-                "cli": <STRING>,
-                "ssh": "${stack_config[ssh]}"
-            },
-            "partner_chains_node": {
-                "cli": <STRING>,
-                "ssh": "${stack_config[ssh]}"
-            },
-            "bech32": {
-                "cli": <STRING>,
-                "ssh": "${stack_config[ssh]}"
+            ...
+        }
+    }
+}
+```
+
+## Ogmios
+
+Ogmios service is needed for the smart contracts to work. Make sure that it's accessible in any location you run your tests from.
+
+## Tools
+
+Partner chains tests require a set of binaries for test execution:
+- [node](https://github.com/input-output-hk/partner-chains) to interact with smart contracts, generate signatures etc.
+- [cardano-cli](https://github.com/IntersectMBO/cardano-node?tab=readme-ov-file#using-cardano-cli) to query Cardano main chain state
+
+As a user, you need to configure paths to these executables. Currently `Runner` and `RunnerConfig` classes support kubernetes and docker executors. If needed this may be extended to local or SSH based solution.
+
+### Example docker configuration
+
+```
+"tools": {
+    "cardano_cli": {
+        "path": "cardano-cli",
+        "runner": {
+            "docker": {
+                "container": "cardano-node-1"
+            }
+        }
+    },
+    "node": {
+        "path": "./partner-chains-node",
+        "runner": {
+            "docker": {
+                "container": "partner-chains-setup"
             }
         }
     }
 }
+```
+
+In this example, each tool will execute commands via `docker exec -c <container> bash -c "<command>"`.
+
+### Example kubernetes configuration
+
+```
+"tools": {
+    "runner": {
+        "kubernetes": {
+            "pod": "staging-preview-validator-1",
+            "namespace": "staging-preview"
+        }
+    },
+    "cardano_cli": {
+        "path": "cardano-cli",
+        "runner": {
+            "kubernetes": {
+                "container": "cardano-node"
+            }
+        }
+    },
+    "node": {
+        "path": "/usr/local/bin/partner-chains-node",
+        "runner": {
+            "workdir": "/data/e2e-tests",
+            "copy_secrets": true,
+            "kubernetes": {
+                "container": "substrate-node"
+            }
+        }
+    }
+}
+```
+
+In this example, you can observe default runner configuration for both tools: kubernetes pod and namespace.
+Each of the tools has its own container specified, since the tools exists in different containers.
+You can also override default values for any tool.
+
+The commands will be executed via `kubectl exec <pod> -c <container> -n <namespace> -- bash -c "<command>"`.
+
+This example also reveals two additional config options that you can set: `workdir` and `copy_secrets`.
+
+### Configuring working directory
+
+Runner commands are executed in the same directory that you get into when entering the shell.
+If necessary, user can configure working directory by specifying `workdir`:
+```
+"runner": {
+    "workdir": "/data/e2e-tests",
+    ...
+}
+```
+
+Working directory also impacts the location of any temp file that is created during test execution.
+
+For example, `test_upsert_permissioned_candidates` uses `write_file` fixture to save file with public keys on the same container that `node` is.
+If `workdir` is specified, the temp file will be created under `<workdir>/tmp.XXXXXXXXXX`.
+If `workdir` is not set, any temp files are saved to `/tmp/tmp.XXXXXXXXXX`.
+
+### Copying secrets
+
+Some tests require signing keys to be accessible by the `node` tool so that given operation might be completed, e.g. `node smart-contracts register -k <payment key file>`.
+If those secrets are not stored alongside tools, user can explicitly configure the stack to copy them into a temporary file.
+```
+"runner": {
+    "copy_secrets": true,
+    ...
+}
+```
+
+Temp file are deleted after the test completes.

@@ -3,7 +3,6 @@ from src.cardano_cli import CardanoCli
 from src.partner_chain_rpc import PartnerChainRpc, PartnerChainRpcResponse, DParam
 from src.partner_chains_node.node import PartnerChainsNode
 from src.partner_chains_node.models import AddressAssociationSignature, BlockProducerMetadataSignature
-from config.api_config import Node
 
 
 class Transaction:
@@ -113,7 +112,9 @@ class BlockchainApi(ABC):
         pass
 
     @abstractmethod
-    def update_d_param(self, genesis_utxo: str, permissioned_candidates_count: int, trustless_candidates_count: int) -> (bool, int):
+    def update_d_param(
+        self, genesis_utxo: str, permissioned_candidates_count: int, trustless_candidates_count: int
+    ) -> (bool, int):
         """
         Update D parameter configuration for the sidechain
         Arguments:
@@ -154,7 +155,7 @@ class BlockchainApi(ABC):
         pass
 
     @abstractmethod
-    def upsert_permissioned_candidates(self, genesis_utxo: str, new_candidates_list: dict[str, Node]) -> (bool, int):
+    def upsert_permissioned_candidates(self, genesis_utxo: str, permissioned_candidates_file: str) -> (bool, int):
         pass
 
     @abstractmethod
@@ -393,14 +394,16 @@ class BlockchainApi(ABC):
         """
 
     @abstractmethod
-    def sign_address_association(self, genesis_utxo: str, address: str, stake_signing_key: str) -> AddressAssociationSignature:
+    def sign_address_association(
+        self, genesis_utxo: str, address: str, stake_signing_key: str
+    ) -> AddressAssociationSignature:
         """
         Creates a signature of the association between a PC address and a Cardano address. This association along
         with the signature can be submitted to the network via :func:`submit_address_association` method to allow
         ADA delegators to participate in PC block production rewards.
 
         Arguments:
-        	genesis_utxo {str} -- Genesis UTXO of the Partner Chain
+                genesis_utxo {str} -- Genesis UTXO of the Partner Chain
             address {str} -- PC address (hex format) to be associated with the Cardano address
             stake_signing_key {str} -- Cardano Stake Signing key in hex format
 
@@ -411,14 +414,14 @@ class BlockchainApi(ABC):
 
     @abstractmethod
     def sign_block_producer_metadata(
-        self, genesis_utxo: str, metadata: dict, cross_chain_signing_key: str
+        self, genesis_utxo: str, metadata_file: str, cross_chain_signing_key: str
     ) -> BlockProducerMetadataSignature:
         """
         Creates a signature for block producer metadata.
 
         Arguments:
             genesis_utxo {str} -- Genesis UTXO of the Partner Chain
-            metadata {dict} -- block producer metadata
+            metadata_file {str} -- block producer metadata file path
             cross_chain_signing_key {str} -- Cross Chain Signing key in hex format
 
         Returns:
