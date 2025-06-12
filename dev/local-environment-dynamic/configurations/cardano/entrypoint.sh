@@ -89,6 +89,9 @@ while true; do
     fi
 done
 
+echo "[LOG] Waiting 10 seconds to ensure node.socket is ready..."
+sleep 10
+
 echo "[LOG] node.socket found."
 
 echo "[LOG] Preparing native token and initial funding addresses."
