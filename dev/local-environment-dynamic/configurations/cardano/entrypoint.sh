@@ -325,7 +325,7 @@ tx_out4=1000000000
 # Fund $NUM_PERMISSIONED_NODES_TO_PROCESS permissioned nodes
 for i in $(seq 1 $NUM_PERMISSIONED_NODES_TO_PROCESS); do
     var_name="tx_out${i}_permissioned"
-    declare "$var_name=510000000" # 510 ADA - covers SPO registration (500 ADA pool deposit + 2 ADA stake deposit + buffer for fees)
+    declare "$var_name=600000000" # 600 ADA - covers SPO registration (500 ADA pool deposit + 0.4 ADA stake deposit + generous buffer for fees)
 done
 
 # Fund $NUM_REGISTERED_NODES_TO_PROCESS registered nodes (These are defined but not used in the *initial* main transaction anymore)
@@ -568,7 +568,7 @@ for batch_num in $(seq 1 "$num_batches"); do
 
     for (( current_array_idx=start_node_array_idx; current_array_idx<=end_node_array_idx; current_array_idx++ )); do
         node_payment_address="${registered_node_payment_addresses[$current_array_idx]}"
-        node_funding_amount=510000000 # 510 ADA - covers SPO registration (500 ADA pool deposit + 2 ADA stake deposit + buffer for fees)
+        node_funding_amount=600000000 # 600 ADA - covers SPO registration (500 ADA pool deposit + 0.4 ADA stake deposit + generous buffer for fees)
         batch_tx_out_params_array+=(--tx-out "$node_payment_address+$node_funding_amount")
         batch_total_output_lovelace=$((batch_total_output_lovelace + node_funding_amount))
         actual_nodes_in_this_batch=$((actual_nodes_in_this_batch + 1))
@@ -716,7 +716,7 @@ for batch_num in $(seq 1 "$num_batches"); do
             batch_tx_fee=300000
         else
             # Base buffer for reference script overhead (fixed ~25k) + scaling buffer for larger batches
-            reference_script_buffer=25000
+            reference_script_buffer=40000
             batch_scaling_buffer=$((actual_nodes_in_this_batch * 1000)) # 1k lovelace per output for safety
             total_buffer=$((reference_script_buffer + batch_scaling_buffer))
             
@@ -1040,7 +1040,7 @@ for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do
         echo "[DEBUG] ERROR: Failed to calculate registration transaction fee for $NODE_LOG_NAME. Using fallback fee."
         REG_FEE=500000 # Fallback fee
     else
-        REG_FEE=$((CALCULATED_REG_FEE + 10000)) # Add buffer
+        REG_FEE=$((CALCULATED_REG_FEE + 50000)) # Add buffer
         echo "[LOG] Calculated registration fee for $NODE_LOG_NAME: $REG_FEE"
     fi
 
@@ -1203,7 +1203,7 @@ for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do
         echo "[DEBUG] ERROR: Failed to calculate delegation transaction fee for $NODE_LOG_NAME. Using fallback fee."
         DELEG_FEE=300000 # Fallback fee
     else
-        DELEG_FEE=$((CALCULATED_DELEG_FEE + 10000)) # Add buffer
+        DELEG_FEE=$((CALCULATED_DELEG_FEE + 50000)) # Add buffer
         echo "[LOG] Calculated delegation fee for $NODE_LOG_NAME: $DELEG_FEE"
     fi
 
@@ -1427,7 +1427,7 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
         echo "[DEBUG] ERROR: Failed to calculate registration transaction fee for $NODE_LOG_NAME. Using fallback fee."
         REG_FEE=500000 # Fallback fee
     else
-        REG_FEE=$((CALCULATED_REG_FEE + 10000)) # Add buffer
+        REG_FEE=$((CALCULATED_REG_FEE + 50000)) # Add buffer
         echo "[LOG] Calculated registration fee for $NODE_LOG_NAME: $REG_FEE"
     fi
 
@@ -1589,7 +1589,7 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
         echo "[DEBUG] ERROR: Failed to calculate delegation transaction fee for $NODE_LOG_NAME. Using fallback fee."
         DELEG_FEE=300000 # Fallback fee
     else
-        DELEG_FEE=$((CALCULATED_DELEG_FEE + 10000)) # Add buffer
+        DELEG_FEE=$((CALCULATED_DELEG_FEE + 50000)) # Add buffer
         echo "[LOG] Calculated delegation fee for $NODE_LOG_NAME: $DELEG_FEE"
     fi
 
