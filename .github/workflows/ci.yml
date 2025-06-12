@@ -26,7 +26,7 @@ jobs:
 ### Pre merge workflow ###############################################################################################################
 
   build-linux-x86_64-pre-merge:
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-22.04-64
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
     steps:
       - name: Checkout repository
@@ -223,7 +223,7 @@ jobs:
 ### Post merge workflow ###############################################################################################################
 
   build-linux-x86_64-post-merge:
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-22.04-64
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
     outputs:
       sha: ${{ steps.get_sha.outputs.sha }}
@@ -460,7 +460,7 @@ jobs:
 ### Workflow dispatch flow ###############################################################################################################
 
   build-linux-x86_64-workflow-dispatch:
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-22.04-64
     if: github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout target code to build
