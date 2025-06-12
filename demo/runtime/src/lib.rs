@@ -36,6 +36,8 @@ use pallet_session_validator_management::session_manager::ValidatorManagementSes
 use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier};
 use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
+use schnorr::{Public as BeefyId, Public, Signature as BeefySignature};
+use schnorr_jubjub as schnorr;
 use serde::{Deserialize, Serialize};
 use sidechain_domain::byte_string::{BoundedString, ByteString, SizedByteString};
 use sidechain_domain::{
@@ -46,11 +48,7 @@ use sidechain_slots::Slot;
 use sp_api::impl_runtime_apis;
 use sp_block_participation::AsCardanoSPO;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_consensus_beefy::{
-	mmr::MmrLeafVersion,
-};
-use schnorr_jubjub as schnorr;
-use schnorr::{Public as BeefyId, Public, Signature as BeefySignature};
+use sp_consensus_beefy::mmr::MmrLeafVersion;
 #[cfg(feature = "runtime-benchmarks")]
 use sp_core::ByteArray;
 use sp_core::{OpaqueMetadata, crypto::KeyTypeId};
@@ -177,7 +175,9 @@ pub mod opaque {
 		}
 	}
 	impl From<(sr25519::Public, schnorr::Public, ed25519::Public)> for SessionKeys {
-		fn from((aura, beefy, grandpa): (sr25519::Public, schnorr::Public, ed25519::Public)) -> Self {
+		fn from(
+			(aura, beefy, grandpa): (sr25519::Public, schnorr::Public, ed25519::Public),
+		) -> Self {
 			Self { aura: aura.into(), beefy: beefy.into(), grandpa: grandpa.into() }
 		}
 	}

@@ -6,9 +6,9 @@ use crate::filter_invalid_candidates::{
 };
 use log::{info, warn};
 use plutus::*;
+use schnorr_jubjub;
 use sidechain_domain::{EpochNonce, ScEpochNumber, UtxoId};
 use sp_core::{U256, ecdsa, ed25519, sr25519};
-use schnorr_jubjub;
 
 /// Selects authorities using the Ariadne selection algorithm and data sourced from Partner Chains smart contracts on Cardano.
 /// Seed is constructed from the MC epoch nonce and the sidechain epoch.

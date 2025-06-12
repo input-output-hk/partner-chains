@@ -16,10 +16,10 @@ use sc_rpc::SubscriptionTaskExecutor;
 use sc_service::{Configuration, TaskManager, WarpSyncConfig, error::Error as ServiceError};
 use sc_telemetry::{Telemetry, TelemetryWorker};
 use sc_transaction_pool_api::OffchainTransactionPoolFactory;
+use schnorr_jubjub::Public as BeefyId;
 use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 use sidechain_mc_hash::McHashInherentDigest;
 use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;
-use schnorr_jubjub::Public as BeefyId;
 
 use sp_partner_chains_consensus_aura::block_proposal::PartnerChainsProposerFactory;
 use sp_runtime::traits::Block as BlockT;

@@ -19,7 +19,9 @@ pub fn authority_keys(
 	sidechain_pub_key: &str,
 ) -> AuthorityKeys {
 	let aura_pk = sr25519::Public::from_raw(from_hex(aura_pub_key).unwrap().try_into().unwrap());
-	let beefy_pk = schnorr_jubjub::Public(schnorr_jubjub::InnerPublicBytes::from_raw(from_hex(beefy_pub_key).unwrap().try_into().unwrap()));
+	let beefy_pk = schnorr_jubjub::Public(schnorr_jubjub::InnerPublicBytes::from_raw(
+		from_hex(beefy_pub_key).unwrap().try_into().unwrap(),
+	));
 	let granda_pk =
 		ed25519::Public::from_raw(from_hex(grandpa_pub_key).unwrap().try_into().unwrap());
 	let sidechain_pk = sidechain_domain::SidechainPublicKey(from_hex(sidechain_pub_key).unwrap());

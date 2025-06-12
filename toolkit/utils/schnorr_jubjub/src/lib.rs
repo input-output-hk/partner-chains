@@ -5,8 +5,8 @@
 
 mod beefy_structures;
 mod keystore;
+mod poseidon;
 mod primitive;
 mod runtime;
-mod poseidon;
 
-pub use beefy_structures::{Public, InnerPublicBytes, Signature};
+pub use beefy_structures::{InnerPublicBytes, Public, Signature};

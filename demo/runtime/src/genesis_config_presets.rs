@@ -20,9 +20,9 @@ use crate::{
 	test_helper_pallet,
 };
 use alloc::{vec, vec::Vec};
+use schnorr_jubjub::Public as BeefyId;
 use serde_json::Value;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use schnorr_jubjub::Public as BeefyId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
 use sp_core::crypto::get_public_from_string_or_panic;
 use sp_genesis_builder::{self, PresetId};

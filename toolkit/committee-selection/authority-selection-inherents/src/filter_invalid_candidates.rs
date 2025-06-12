@@ -5,11 +5,11 @@ use frame_support::pallet_prelude::TypeInfo;
 use parity_scale_codec::{Decode, Encode};
 use plutus::*;
 use plutus_datum_derive::ToDatum;
+use schnorr_jubjub;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sidechain_domain::*;
 use sp_core::{ecdsa, ed25519, sr25519};
-use schnorr_jubjub;
 use sp_runtime::traits::Verify;
 
 /// Signed Message of the Authority Candidate to register
@@ -275,8 +275,10 @@ pub fn validate_registration_data(
 	stake_pool_pub_key: &StakePoolPublicKey,
 	registration_data: &RegistrationData,
 	genesis_utxo: UtxoId,
-) -> Result<(ecdsa::Public, (sr25519::Public, schnorr_jubjub::Public, ed25519::Public)), RegistrationDataError>
-{
+) -> Result<
+	(ecdsa::Public, (sr25519::Public, schnorr_jubjub::Public, ed25519::Public)),
+	RegistrationDataError,
+> {
 	let aura_pub_key = registration_data
 		.aura_pub_key
 		.try_into_sr25519()
