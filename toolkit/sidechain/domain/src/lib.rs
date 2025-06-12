@@ -36,6 +36,8 @@ use {
 	serde::{Deserialize, Deserializer, Serialize, Serializer},
 };
 
+use schnorr_jubjub;
+
 /// The number of main chain epochs back a Partner Chain queries for committee selection inputs.
 /// This offset is necessary to ensure that data is present and stable.
 const DATA_MC_EPOCH_OFFSET: u32 = 2;
@@ -1049,8 +1051,8 @@ impl From<sr25519::Public> for AuraPublicKey {
 pub struct BeefyPublicKey(pub Vec<u8>);
 impl BeefyPublicKey {
 	/// Attempts to cast this public key to a valid [ecdsa::Public]
-	pub fn try_into_ecdsa(&self) -> Option<ecdsa::Public> {
-		Some(ecdsa::Public::from_raw(self.0.clone().try_into().ok()?))
+	pub fn try_into_schnorr(&self) -> Option<schnorr_jubjub::Public> {
+		Some(schnorr_jubjub::Public::try_from(self.0.as_slice()).ok()?)
 	}
 }
 

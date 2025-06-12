@@ -19,7 +19,7 @@ use sc_transaction_pool_api::OffchainTransactionPoolFactory;
 use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 use sidechain_mc_hash::McHashInherentDigest;
 use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;
-use sp_consensus_beefy::ecdsa_crypto::AuthorityId as BeefyId;
+use schnorr_jubjub::Public as BeefyId;
 
 use sp_partner_chains_consensus_aura::block_proposal::PartnerChainsProposerFactory;
 use sp_runtime::traits::Block as BlockT;

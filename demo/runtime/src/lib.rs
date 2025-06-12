@@ -8,6 +8,7 @@
 extern crate frame_benchmarking;
 
 extern crate alloc;
+extern crate core;
 
 use alloc::collections::BTreeMap;
 use alloc::string::String;
@@ -46,12 +47,12 @@ use sp_api::impl_runtime_apis;
 use sp_block_participation::AsCardanoSPO;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_consensus_beefy::{
-	ecdsa_crypto::{AuthorityId as BeefyId, Signature as BeefySignature},
 	mmr::MmrLeafVersion,
 };
+use schnorr_jubjub as schnorr;
+use schnorr::{Public as BeefyId, Public, Signature as BeefySignature};
 #[cfg(feature = "runtime-benchmarks")]
 use sp_core::ByteArray;
-use sp_core::ecdsa;
 use sp_core::{OpaqueMetadata, crypto::KeyTypeId};
 use sp_governed_map::MainChainScriptsV1;
 use sp_inherents::InherentIdentifier;
@@ -175,8 +176,8 @@ pub mod opaque {
 			pub grandpa: Grandpa,
 		}
 	}
-	impl From<(sr25519::Public, ecdsa::Public, ed25519::Public)> for SessionKeys {
-		fn from((aura, beefy, grandpa): (sr25519::Public, ecdsa::Public, ed25519::Public)) -> Self {
+	impl From<(sr25519::Public, schnorr::Public, ed25519::Public)> for SessionKeys {
+		fn from((aura, beefy, grandpa): (sr25519::Public, schnorr::Public, ed25519::Public)) -> Self {
 			Self { aura: aura.into(), beefy: beefy.into(), grandpa: grandpa.into() }
 		}
 	}
@@ -703,7 +704,8 @@ parameter_types! {
 
 impl pallet_beefy_mmr::Config for Runtime {
 	type LeafVersion = LeafVersion;
-	type BeefyAuthorityToMerkleLeaf = pallet_beefy_mmr::BeefyEcdsaToEthereum;
+	// todo: THIS SHOULD BE A FIELD ELEMENT IF WE USE POSEIDON
+	type BeefyAuthorityToMerkleLeaf = Public;
 	type LeafExtra = Vec<u8>;
 	type BeefyDataProvider = ();
 	type WeightInfo = ();
