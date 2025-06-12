@@ -304,8 +304,7 @@ choose_deployment_option() {
     echo "2) Include Cardano testnet with Ogmios"
     echo "3) Include Cardano testnet, Ogmios, DB-Sync and Postgres"
     echo "4) Deploy a single Partner Chains node with network_mode: "host" for external connections (adjust partner-chains-external-node.txt before running this script)"
-    echo "5) Deploy a 3 node Partner Chain network using wizard" 
-    read -p "Enter your choice (1/2/3/4/5): " deployment_option
+    read -p "Enter your choice (1/2/3/4): " deployment_option
   else
     deployment_option=0
   fi
@@ -630,11 +629,11 @@ parse_arguments() {
                 shift
                 ;;
             -d|--deployment-option)
-                if [[ -n "$2" && "$2" =~ ^[1-5]$ ]]; then
+                if [[ -n "$2" && "$2" =~ ^[1-4]$ ]]; then
                     deployment_option="$2"
                     shift 2
                 else
-                    echo "Error: Invalid deployment option '$2'. Valid options are 1, 2, 3, 4 or 5."
+                    echo "Error: Invalid deployment option '$2'. Valid options are 1, 2, 3, or 4."
                     exit 1
                 fi
                 ;;
