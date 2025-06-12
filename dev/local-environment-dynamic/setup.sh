@@ -4,9 +4,9 @@ NUM_PERMISSIONED_NODES_TO_PROCESS=10
 NUM_REGISTERED_NODES_TO_PROCESS=10
 
 PARTNER_CHAINS_NODE_IMAGE="ghcr.io/input-output-hk/partner-chains/partner-chains-node-unstable:latest"
-CARDANO_IMAGE="ghcr.io/intersectmbo/cardano-node:10.1.4"
-DBSYNC_IMAGE="ghcr.io/intersectmbo/cardano-db-sync:13.6.0.4"
-OGMIOS_IMAGE="cardanosolutions/ogmios:v6.11.0"
+CARDANO_IMAGE="ghcr.io/intersectmbo/cardano-node:10.4.1"
+DBSYNC_IMAGE="ghcr.io/intersectmbo/cardano-db-sync:13.6.0.5"
+OGMIOS_IMAGE="cardanosolutions/ogmios:v6.12.0"
 POSTGRES_IMAGE="postgres:17.2"
 TESTS_IMAGE="python:3.12-slim"
 
