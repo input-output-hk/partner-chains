@@ -1,4 +1,6 @@
-//! TODO
+//! This crate provides an enum type [PartnerChainsSubcommand] collecting all Partner Chains specific subcommands,
+//! and a [run] function for running these commands.
+//! [PartnerChainsSubcommand] is meant to be used by a command line argument parser library.
 #![deny(missing_docs)]
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
