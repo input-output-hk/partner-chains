@@ -1,3 +1,5 @@
+//! TODO
+#![deny(missing_docs)]
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 use authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
@@ -29,8 +31,10 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 #[derive(Debug, Clone, Parser)]
+/// Command line arguments for the `ariadne-parameters` command.
 pub struct AriadneParametersCmd {
 	#[arg(long)]
+	/// Main chain epoch number for which the parameters should be queried.
 	pub mc_epoch_number: McEpochNumber,
 	#[allow(missing_docs)]
 	#[clap(flatten)]
@@ -44,6 +48,7 @@ impl CliConfiguration for AriadneParametersCmd {
 }
 
 #[derive(Debug, Clone, Parser)]
+/// Command line arguments for the `sidechain-params` command.
 pub struct SidechainParamsCmd {
 	#[allow(missing_docs)]
 	#[clap(flatten)]
@@ -57,11 +62,14 @@ impl CliConfiguration for SidechainParamsCmd {
 }
 
 #[derive(Debug, Clone, Parser)]
+/// Command line arguments for the `registration-status` command.
 pub struct RegistrationStatusCmd {
 	#[arg(long)]
 	#[arg(long, alias = "mainchain-pub-key")]
+	/// Stake pool public key for which the registration status should be returned.
 	pub stake_pool_pub_key: StakePoolPublicKey,
 	#[arg(long)]
+	/// Mainchain epoch number for which the registration status should be returned.
 	pub mc_epoch_number: McEpochNumber,
 	#[allow(missing_docs)]
 	#[clap(flatten)]
@@ -90,14 +98,15 @@ static REGISTRATION_STATUS_AFTER_HELP: once_cell::sync::Lazy<String> = once_cell
 
 #[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
+/// Entry point for all Partner Chains specific subcommand.
 pub enum PartnerChainsSubcommand<
 	RuntimeBindings: PartnerChainRuntime,
 	PartnerchainAddress: Clone + Sync + Send + FromStr + 'static,
 > {
-	/// Returns sidechain parameters
+	/// Returns sidechain parameters.
 	SidechainParams(SidechainParamsCmd),
 
-	/// Returns registration status for a given mainchain public key and epoch number.
+	/// Returns registration status for a given stake pool public key and epoch number.
 	/// If registration has been included in Cardano block in epoch N, then it should be returned by this command if epoch greater than N+1 is provided.
 	/// If this command won't show your registration after a few minutes after it has been included in a cardano block, you can start debugging for unsuccessful registration.
 	#[clap(
@@ -128,6 +137,7 @@ pub enum PartnerChainsSubcommand<
 }
 
 #[allow(deprecated)]
+/// Runs a Partner Chains subcommand.
 pub fn run<
 	Cli,
 	Block,
