@@ -41,6 +41,7 @@ use partner_chains_plutus_data::reserve::{
 };
 use sidechain_domain::{AssetId, PolicyId, UtxoId};
 
+/// Creates new reserve with the given [ReserveParameters].
 pub async fn create_reserve_utxo<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 	A: AwaitTx,
@@ -66,9 +67,13 @@ pub async fn create_reserve_utxo<
 	.await
 }
 
+/// Parameters for token reserve.
 pub struct ReserveParameters {
+	/// [PolicyId] of the V-function minting policy.
 	pub total_accrued_function_script_hash: PolicyId,
+	/// [AssetId] of reserve token.
 	pub token: AssetId,
+	/// Initial deposit amount.
 	pub initial_deposit: u64,
 }
 
@@ -76,7 +81,7 @@ impl From<&ReserveParameters> for ReserveDatum {
 	fn from(value: &ReserveParameters) -> Self {
 		ReserveDatum {
 			// `t0` field is not used by on-chain code of partner-chains smart-contracts,
-			// but only gave a possiblity for user to store "t0" for his own V-function.
+			// but only gave a possibility for user to store "t0" for his own V-function.
 			// Not configurable anymore, hardcoded to 0. If users need "t0" for their V-function, they are responsible for storing it somewhere.
 			immutable_settings: ReserveImmutableSettings { t0: 0, token: value.token.clone() },
 			mutable_settings: ReserveMutableSettings {

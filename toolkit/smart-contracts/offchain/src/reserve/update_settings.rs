@@ -35,6 +35,7 @@ use ogmios_client::{
 use partner_chains_plutus_data::reserve::{ReserveDatum, ReserveRedeemer};
 use sidechain_domain::{ScriptHash, UtxoId};
 
+/// Updates reserve settings.
 pub async fn update_reserve_settings<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 	A: AwaitTx,

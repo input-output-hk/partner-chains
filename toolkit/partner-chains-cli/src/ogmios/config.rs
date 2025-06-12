@@ -20,7 +20,14 @@ pub(crate) fn prompt_ogmios_configuration<C: IOContext>(
 		.map_err(anyhow::Error::msg)?;
 	let ogmios_hostname = OGMIOS_HOSTNAME.prompt_with_default_from_file_and_save(context);
 	let ogmios_port = OGMIOS_PORT.prompt_with_default_from_file_parse_and_save(context)?;
-	Ok(ServiceConfig { protocol: ogmios_protocol, hostname: ogmios_hostname, port: ogmios_port })
+	let timeout = OGMIOS_REQUEST_TIMEOUT.save_if_empty(180, context);
+
+	Ok(ServiceConfig {
+		protocol: ogmios_protocol,
+		hostname: ogmios_hostname,
+		port: ogmios_port,
+		timeout_seconds: timeout,
+	})
 }
 
 #[cfg(test)]
@@ -42,6 +49,7 @@ pub(crate) mod tests {
 				.unwrap_or(NetworkProtocol::Http),
 			hostname: OGMIOS_HOSTNAME.default.unwrap_or("localhost").to_string(),
 			port: OGMIOS_PORT.default.unwrap_or("1337").parse().unwrap(),
+			timeout_seconds: OGMIOS_REQUEST_TIMEOUT.default.unwrap_or("180").parse().unwrap(),
 		}
 	}
 
@@ -50,6 +58,7 @@ pub(crate) mod tests {
 			"protocol": "http",
 			"hostname": "localhost",
 			"port": 1337,
+			"request_timeout": 180,
 		})
 	}
 

@@ -9,7 +9,9 @@ use jsonrpsee::{
 };
 use serde::de::DeserializeOwned;
 use serde_json::json;
+use std::time::Duration;
 
+/// Converts the method and parameters to a JSON-RPC request string.
 fn request_to_json(method: &str, params: impl ToRpcParams) -> Result<String, OgmiosClientError> {
 	let params = params
 		.to_rpc_params()
@@ -24,6 +26,7 @@ fn request_to_json(method: &str, params: impl ToRpcParams) -> Result<String, Ogm
 	serde_json::to_string(&req).map_err(|err| OgmiosClientError::ParametersError(err.to_string()))
 }
 
+/// Converts the response to a JSON string.
 fn response_to_json(resp: &Result<serde_json::Value, ClientError>) -> String {
 	match &resp {
 		Ok(resp) => serde_json::to_string(&resp).unwrap(),
@@ -32,6 +35,7 @@ fn response_to_json(resp: &Result<serde_json::Value, ClientError>) -> String {
 	}
 }
 
+/// Enum that represents the ogmios client that works either with HTTP or WebSockets.
 pub enum OgmiosClients {
 	HttpClient(HttpClient),
 	WsClient(WsClient),
@@ -39,9 +43,10 @@ pub enum OgmiosClients {
 
 /// Returns client that works either with HTTP or WebSockets.
 /// HTTP does not return JSON-RPC error body in case of 400 Bad Request.
-pub async fn client_for_url(addr: &str) -> Result<OgmiosClients, String> {
+pub async fn client_for_url(addr: &str, timeout: Duration) -> Result<OgmiosClients, String> {
 	if addr.starts_with("http") || addr.starts_with("https") {
 		let client = HttpClientBuilder::default()
+			.request_timeout(timeout)
 			.build(addr)
 			.map_err(|e| format!("Couldn't create HTTP client: {}", e))?;
 
@@ -56,6 +61,7 @@ pub async fn client_for_url(addr: &str) -> Result<OgmiosClients, String> {
 		Ok(http_client)
 	} else if addr.starts_with("ws") || addr.starts_with("wss") {
 		let client = WsClientBuilder::default()
+			.request_timeout(timeout)
 			.build(addr.to_owned())
 			.await
 			.map_err(|e| format!("Couldn't create WebSockets client: {}", e))?;
@@ -66,6 +72,7 @@ pub async fn client_for_url(addr: &str) -> Result<OgmiosClients, String> {
 }
 
 impl OgmiosClient for OgmiosClients {
+	/// Sends a JSON-RPC request to the Ogmios server and returns the response.
 	async fn request<T: DeserializeOwned>(
 		&self,
 		method: &str,

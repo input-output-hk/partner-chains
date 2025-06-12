@@ -24,10 +24,10 @@ pub(crate) fn query_utxos<C: IOContext>(
 	ogmios_config: &ServiceConfig,
 	address: &str,
 ) -> Result<Vec<OgmiosUtxo>, anyhow::Error> {
-	let ogmios_addr = ogmios_config.to_string();
+	let ogmios_addr = ogmios_config.url();
 	context.print(&format!("⚙️ Querying UTXOs of {address} from Ogmios at {ogmios_addr}..."));
 	let response = context
-		.ogmios_rpc(&ogmios_addr, OgmiosRequest::QueryUtxo { address: address.into() })
+		.ogmios_rpc(&ogmios_config, OgmiosRequest::QueryUtxo { address: address.into() })
 		.map_err(|e| anyhow!(e))?;
 	match response {
 		OgmiosResponse::QueryUtxo(utxos) => Ok(utxos),

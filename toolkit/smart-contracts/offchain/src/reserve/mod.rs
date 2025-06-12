@@ -115,7 +115,7 @@ impl ReserveData {
 	}
 }
 
-pub struct TokenAmount {
+pub(crate) struct TokenAmount {
 	pub token: AssetId,
 	pub amount: u64,
 }

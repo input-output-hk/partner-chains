@@ -1,6 +1,5 @@
 {
   "deployment_mc_epoch": 2,
-  "genesis_utxo": "f8fbe7316561e57de9ecd1c86ee8f8b512a314ba86499ba9a584bfa8fe2edc8d#0",
   "main_chain": {
     "network": "--testnet-magic 42",
     "epoch_length": 120,
@@ -15,28 +14,28 @@
       "alice": {
         "host": "127.0.0.1",
         "port": "9933",
-        "aura_ss58_address": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
-        "public_key": "0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1",
-        "aura_public_key": "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d",
-        "grandpa_public_key": "0x88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee",
+        "aura_ss58_address": "5Cyx94iyji8namhRxvs4mAbURtPsvwjWCb68ZihNzfRysGLZ",
+        "public_key": "0x0258dc1e341e42ba85b393804c1e8a531485ec3b73b2d5cd2b0bf56cbcaf102a7e",
+        "aura_public_key": "0x289c161586d774dda981fdb184d061a28e04bdf81322c545b9c37549e7412f2f",
+        "grandpa_public_key": "0x17edf4615819dbe1de4ed887ba0b438190923e14e25de9c6ff25320abcfe7d29",
         "permissioned_candidate": true
       },
       "bob": {
         "host": "127.0.0.1",
         "port": "9934",
-        "aura_ss58_address": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
-        "public_key": "0x0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27",
-        "aura_public_key": "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
-        "grandpa_public_key": "0xd17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69",
+        "aura_ss58_address": "5E4op92Z2Di1GoVS9KqnoGVKQXG2R9x1vdh3RW892YLFsLrc",
+        "public_key": "0x030e0bcd9e16d770ade1fb5a5a50f2da012f1ea53713a9ba8aed5f009bc451404d",
+        "aura_public_key": "0x588c84949c703058577df51caaf82ca81cb1df43928600763a0050d16d2c210f",
+        "grandpa_public_key": "0xf39299bb0a1d6fab19b4990edaf435edb70f5755983bf63fce3ecd13a6be8ea5",
         "permissioned_candidate": true
       },
       "charlie": {
         "host": "127.0.0.1",
         "port": "9935",
-        "aura_ss58_address": "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y",
-        "public_key": "0x0389411795514af1627765eceffcbd002719f031604fadd7d188e2dc585b4e1afb",
-        "aura_public_key": "0x90b5ab205c6974c9ea841be688864633dc9ca8a357843eeacf2314649965fe22",
-        "grandpa_public_key": "0x439660b36c6c03afafca027b910b4fecf99801834c62a5e6006f27d978de234f",
+        "aura_ss58_address": "5CPCXHsSVaSRBMe8Ljs1HPrsuB8pJYuceoMT7TVKksM6uuj3",
+        "public_key": "0x03425892d705436ccfd24e0613ca7410e18eb142461579e3c908f4c5e4d429a90d",
+        "aura_public_key": "0x0e1aea53d513c3785ec8d02c2fb43eb98b14169f56194690cf1c8cb2d1639f3a",
+        "grandpa_public_key": "0xbfd485365f3765c31aa70502261868e79ca045d4d0f16db70865280e3a741f88",
         "permissioned_candidate": true
       },
       "dave": {
@@ -80,7 +79,7 @@
     },
     "additional_governance_authorities": [
       {
-        "mainchain_address": "addr_test1vphpcf32drhhznv6rqmrmgpuwq06kug0lkg22ux777rtlqst2er0r%",
+        "mainchain_address": "addr_test1vphpcf32drhhznv6rqmrmgpuwq06kug0lkg22ux777rtlqst2er0r",
         "mainchain_key": "/keys/owner-utxo.skey",
         "mainchain_pub_key_hash": "6e1c262a68ef714d9a18363da03c701fab710ffd90a570def786bf82"
       }
@@ -101,6 +100,6 @@
     }
   },
   "timeouts": {
-      "main_chain_tx": 20
+    "main_chain_tx": 20
   }
 }

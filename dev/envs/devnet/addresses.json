@@ -1,25 +1,18 @@
 {
-  "endpoint": "GetAddrs",
   "addresses": {
-    "CommitteeCandidateValidator": "addr_test1wpwy4z3nhjs9vqx9j204dclj85sg44m2n6wwgqgmd95gees5elx7z",
-    "VersionOracleValidator": "addr_test1wz7a4msuddhgc8yca6geyx9y2hp0grl5qpnall2phlpqvggllswwc",
-    "PermissionedCandidatesValidator": "addr_test1wzwnujc0vpgnckyea4yrndzvk2szkm7jhgx6ecpp2kjgzdqnk6la5",
-    "DParameterValidator": "addr_test1wr7jhcgaf54cqfezl40g4qraq3uzq72qp8g05sfwcyd5u0ctql5kn",
-    "ReserveValidator": "addr_test1wrgw9l32rscccuwzlhu38306wy0ep3ea8hlprq9xayw3e3cp8e7m6",
-    "IlliquidCirculationSupplyValidator": "addr_test1wrddtqdhyneqtwsc8tguce7tc4cz4rvgttpz02el2gxgqqckcx4y9"
+    "CommitteeCandidateValidator": "addr_test1wq8x9nq95dhl3lq95x8wmrc0glkw45ruav8d9lth79ug9wgghly4v",
+    "DParameterValidator": "addr_test1wqaamq9jrs8h9uyetjv5dnfmp062seeq85l0tp2wc8efc7qrvucrl",
+    "GovernedMapValidator": "addr_test1wzs744ajcf80f2me8kwqxzmfs2y2nzleqmc2ue7sfxq97ygam70uh",
+    "IlliquidCirculationSupplyValidator": "addr_test1wz7q8qfln0ff8rs878eadn3j30rnvv3gkqwcqj2l3phrxlqa5kkrt",
+    "PermissionedCandidatesValidator": "addr_test1wzel4fksh0zj6zzc8kej5ewssfxf09xapnhvadvaa0tdfjcufklsd",
+    "ReserveValidator": "addr_test1wqjwfcseh6aspnc5ymhhzzd26edtvy3gdwh0sschcn8rlsq80eet7",
+    "VersionOracleValidator": "addr_test1wrwzqrg7ygk7mpa6ysk2ats0sag76gzgj4g2cd0e63p2tpc4qld9j"
   },
-  "validatorHashes": {
-    "CommitteeCandidateValidator": "5c4a8a33bca05600c5929f56e3f23d208ad76a9e9ce4011b69688ce6",
-    "VersionOracleValidator": "bddaee1c6b6e8c1c98ee919218a455c2f40ff40067dffd41bfc20621",
-    "PermissionedCandidatesValidator": "9d3e4b0f60513c5899ed4839b44cb2a02b6fd2ba0dace02155a48134",
-    "DParameterValidator": "fd2be11d4d2b802722fd5e8a807d047820794009d0fa412ec11b4e3f",
-    "ReserveValidator": "d0e2fe2a1c318c71c2fdf913c5fa711f90c73d3dfe1180a6e91d1cc7",
-    "IlliquidCirculationSupplyValidator": "dad581b724f205ba183ad1cc67cbc5702a8d885ac227ab3f520c8003"
-  },
-  "mintingPolicies": {
-    "VersionOraclePolicy": "5f15fc15749d80f6bfac3ada9153723b5f528f2ecd461ceaa1fef0c5",
-    "PermissionedCandidatesPolicy": "0e025dfd43feae1cdf95049a59a3b00d566901ffe5a1ecdff738e80d",
-    "DParameterPolicy": "127d554550b46ada9e2b6fce4f0a9be18ad6a3b15e163638c4c207a6",
-    "ReserveAuthPolicy": "3a2883d03e1321c443e4070397c2c10d03f98913c09197acd61be326"
+  "policyIds": {
+    "DParameter": "0x8d79459b9a2a26bd4f7d640ebc165caf2767c19ec7687161ad86c684",
+    "GovernedMap": "0x4e91636e5d29310d40fc88baa417eb0f383f76697326ba51bc94191f",
+    "PermissionedCandidates": "0xafbb51b3755a27fc21ae341224f4f682b1e56c3cdb4692948794e9fe",
+    "ReserveAuth": "0x4e9563c1456f45460e6c29cc2c3611bfec4faa4485c4ba571750cb46",
+    "VersionOracle": "0x45f2c6fa3cee1180e397e6a29d9507332807d113ec8a5ef7f70a77e6"
   }
 }

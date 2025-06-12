@@ -9,6 +9,7 @@ use ogmios_client::{
 };
 use serde_json::{Value, json};
 use sidechain_domain::NetworkType;
+use std::time::Duration;
 use time::OffsetDateTime;
 
 mod server;
@@ -43,7 +44,9 @@ async fn shelley_genesis_configuration() {
 	})
 	.await
 	.unwrap();
-	let client = client_for_url(&format!("ws://{address}")).await.unwrap();
+	let client = client_for_url(&format!("ws://{address}"), Duration::from_secs(5))
+		.await
+		.unwrap();
 	let genesis_configuration = client.shelley_genesis_configuration().await.unwrap();
 	assert_eq!(
 		genesis_configuration,

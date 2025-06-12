@@ -1,13 +1,12 @@
 {
-    "deployment_mc_epoch": 903,
-    "genesis_utxo": "c14edd7764339d9877f76259184ecebca240e8cdf41b1a837c34637e7d50b5ed#0",
-    "deployment_version": "v1.5.1",
+    "deployment_mc_epoch": 958,
+    "deployment_version": "v1.7.0-rc2",
     "test_environment": "devnet",
     "committee_participation_tolerance": 0.21,
     "nodes_config": {
         "nodes": {
             "alice": {
-                "host": "10.0.10.13",
+                "host": "10.0.10.58",
                 "port": "30021",
                 "aura_ss58_address": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
                 "pool_id": "17a3e09033f190cdcddd11350f095d3ae11f1a61c65731366750177a",
@@ -17,7 +16,7 @@
                 "permissioned_candidate": true
             },
             "bob": {
-                "host": "10.0.10.13",
+                "host": "10.0.10.58",
                 "port": "30022",
                 "aura_ss58_address": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
                 "pool_id": "dd67a558342e53c9ef9528124e44e43a34b2ae3b432aa5144ffec24d",
@@ -27,7 +26,7 @@
                 "permissioned_candidate": true
             },
             "charlie": {
-                "host": "10.0.10.13",
+                "host": "10.0.10.58",
                 "port": "30023",
                 "aura_ss58_address": "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y",
                 "pool_id": "f824ff53b6a71522bb9f8db18fffd2469d957a56cf00e0cb0bdc8a08",
@@ -37,7 +36,7 @@
                 "permissioned_candidate": true
             },
             "dave": {
-                "host": "10.0.10.13",
+                "host": "10.0.10.58",
                 "port": "30024",
                 "aura_ss58_address": "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",
                 "pool_id": "2e36e13ad5665685f163e4fa3d32ccf0a333fda0a67c93cbac99f7a2",
@@ -46,7 +45,7 @@
                 "grandpa_public_key": "0x5e639b43e0052c47447dac87d6fd2b6ec50bdd4d0f614e4299c665249bbd09d9"
             },
             "eve": {
-                "host": "10.0.10.13",
+                "host": "10.0.10.58",
                 "port": "30025",
                 "aura_ss58_address": "5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMaw",
                 "pool_id": "54512ccbdf3a6912bf4da983a4aa46e9c46eb0fd19a2b3f5341c5366",
@@ -63,7 +62,7 @@
                 }
             },
             "ferdie": {
-                "host": "10.0.10.13",
+                "host": "10.0.10.58",
                 "port": "30026",
                 "aura_ss58_address": "5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL",
                 "pool_id": "9ad70551d17317e44866850f9827f6464f0867e50bff5a87b1f9e3c0",
@@ -80,7 +79,7 @@
                 }
             },
             "greg": {
-                "host": "10.0.10.13",
+                "host": "10.0.10.58",
                 "port": "30027",
                 "aura_ss58_address": "5D4oNr3wasgzxt7KdoHBjnxUthfoM93kWMav63aoYmPHfkBW",
                 "pool_id": "",
@@ -90,7 +89,7 @@
                 "permissioned_candidate": false
             },
             "henry": {
-                "host": "10.0.10.13",
+                "host": "10.0.10.58",
                 "port": "30028",
                 "aura_ss58_address": "5FcTxwLAQ8L23HvTa6Y6UUMBKJkYRG42Vg9wVVpZDpE2ZnTZ",
                 "pool_id": "",

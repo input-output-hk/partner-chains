@@ -40,7 +40,7 @@ pub fn chain_spec() -> Result<ChainSpec, envy::Error> {
 			main_chain_scripts: sp_session_validator_management::MainChainScripts::read_from_env()?,
 		},
 		native_token_management: NativeTokenManagementConfig {
-			main_chain_scripts: sp_native_token_management::MainChainScripts::read_from_env()?,
+			main_chain_scripts: Some(sp_native_token_management::MainChainScripts::read_from_env()?),
 			..Default::default()
 		},
 		governed_map: GovernedMapConfig {

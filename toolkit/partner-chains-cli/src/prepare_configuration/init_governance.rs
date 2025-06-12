@@ -1,3 +1,4 @@
+use super::InitGovernance;
 use crate::{
 	IOContext,
 	config::{
@@ -8,12 +9,12 @@ use crate::{
 use anyhow::anyhow;
 use partner_chains_cardano_offchain::{
 	await_tx::FixedDelayRetries, cardano_keys::CardanoPaymentSigningKey,
-	governance::MultiSigParameters, init_governance::InitGovernance,
+	governance::MultiSigParameters,
 };
 use sidechain_domain::{MainchainKeyHash, McTxHash, UtxoId};
 
 pub(crate) fn run_init_governance<C: IOContext>(
-	retries: FixedDelayRetries,
+	await_tx: FixedDelayRetries,
 	genesis_utxo: UtxoId,
 	payment_key: &CardanoPaymentSigningKey,
 	ogmios_config: &ServiceConfig,
@@ -32,12 +33,12 @@ pub(crate) fn run_init_governance<C: IOContext>(
 		let runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
 		let tx_id = runtime
 			.block_on(offchain.init_governance(
-				retries,
+				await_tx,
 				&multisig_parameters,
 				&payment_key,
 				genesis_utxo,
 			))
-			.map_err(|e| anyhow::anyhow!("Governance initalization failed: {e:?}!"))?;
+			.map_err(|e| anyhow::anyhow!("Governance initialization failed: {e:?}!"))?;
 		context.eprint(&format!("Governance initialized successfully for UTXO: {}", genesis_utxo));
 		Ok(Some(tx_id))
 	} else {
@@ -58,14 +59,14 @@ fn prompt_initial_governance<C: IOContext>(
 		.prompt_with_default_from_file_parse_and_save(context)
 		.map_err(|e| anyhow!("Failed to parse governance authorities: {}", e))?;
 
-	INITIAL_GOVERNANCE_THRESHOLD.save_if_empty(0, context);
+	INITIAL_GOVERNANCE_THRESHOLD.save_if_empty(1, context);
 	let threshold = INITIAL_GOVERNANCE_THRESHOLD
 		.prompt_with_default_from_file_parse_and_save(context)
 		.map_err(|e| anyhow!("Failed do parse threshold: {}", e))?;
 
 	MultiSigParameters::new(authorities.0.as_ref(), threshold).map_err(
 		|err| anyhow!(
-			"Initial Goveranance data is invalid: '{}'. Please run the wizard again and provide correct value or edit values in '{}' and the run the wizard again. Example: '{}'",
+			"Initial Governance data is invalid: '{}'. Please run the wizard again and provide correct value or edit values in '{}' and the run the wizard again. Example: '{}'",
 			err,
 			INITIAL_GOVERNANCE_AUTHORITIES.config_file,
 			&example_governance_auth()
@@ -120,7 +121,7 @@ mod tests {
 				),
 				MockIO::prompt(
 					"Initial Multisig Governance Threshold",
-					Some("0"),
+					Some("1"),
 					"2",
 				),
 				MockIO::prompt_yes_no(
@@ -150,6 +151,7 @@ mod tests {
 			hostname: "localhost".to_string(),
 			port: 1337,
 			protocol: NetworkProtocol::Http,
+			timeout_seconds: 180,
 		}
 	}
 

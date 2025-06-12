@@ -1,4 +1,4 @@
-name: "Deploy staging-preprod"
+name: "Deploy staging-preprod - THERE ARE NO VALID CHAIN SPECS FOR PREPROD"
 description: "Deploys the staging-preprod environment with chain-spec and image override using Kubernetes and Helm."
 inputs:
   image:

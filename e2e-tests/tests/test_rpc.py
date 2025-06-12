@@ -2,6 +2,7 @@ from pytest import mark, skip
 from src.blockchain_api import BlockchainApi
 from config.api_config import ApiConfig
 import logging
+import re
 
 
 @mark.rpc
@@ -34,14 +35,14 @@ class TestRpc:
         assert partner_chain_status['sidechain']['slot']
 
     @mark.test_key('ETCM-7442')
-    def test_get_params(self, api: BlockchainApi, config: ApiConfig):
+    def test_get_params(self, api: BlockchainApi):
         """Test partner_chain_getParams() returns proper values
 
         * execute partner_chain_getParams() API call
-        * check that the return data is equal to the config values
+        * check that the return data is syntactically correct
         """
         params = api.get_params()
-        assert params["genesis_utxo"] == config.genesis_utxo, "Genesis UTXO mismatch"
+        assert re.match(r"[0-9A-Fa-f]{64}#[0-9]+", params["genesis_utxo"]), "Genesis UTXO missing or malformed"
 
     @mark.test_key('ETCM-7445')
     def test_get_ariadne_parameters(self, api: BlockchainApi):

@@ -1,5 +1,4 @@
-//! Data sources implementations that read from db-sync postgres.
-
+//! Helpers for configuring and creating a Postgres database connection
 use figment::Figment;
 use figment::providers::Env;
 use serde::Deserialize;
@@ -12,18 +11,24 @@ use std::fmt::Debug;
 use std::fmt::Formatter;
 use std::str::FromStr;
 
+/// Reads Cardano main chain epoch configuration from the environment.
+///
+/// See documentation of [MainchainEpochConfig::read_from_env] for the list of environment variables read.
 #[cfg(feature = "block-source")]
 pub fn read_mc_epoch_config() -> Result<MainchainEpochConfig, Box<dyn Error + Send + Sync>> {
 	Ok(MainchainEpochConfig::read_from_env()
 		.map_err(|e| format!("Failed to read main chain config: {}", e))?)
 }
 
+/// Postgres connection config used when creating a [PgPool].
 #[derive(Debug, Clone, Deserialize)]
 pub struct ConnectionConfig {
+	/// Postgres connection pool, eg. `postgres://postgres-user:postgres-password@db-sync-postgres-host:5432/db-sync-db`
 	pub(crate) db_sync_postgres_connection_string: SecretString,
 }
 
 impl ConnectionConfig {
+	/// Reads Postgres connection config from the environment
 	pub fn from_env() -> Result<Self, Box<dyn Error + Send + Sync + 'static>> {
 		let config: Self = Figment::new()
 			.merge(Env::raw())
@@ -42,7 +47,7 @@ impl Debug for SecretString {
 	}
 }
 
-pub async fn get_connection(
+async fn get_connection(
 	connection_string: &str,
 	acquire_timeout: std::time::Duration,
 ) -> Result<PgPool, Box<dyn Error + Send + Sync + 'static>> {
@@ -68,6 +73,11 @@ pub async fn get_connection(
 #[error("Could not connect to database: postgres://***:***@{0}:{1}/{2}; error: {3}")]
 struct PostgresConnectionError(String, u16, String, String);
 
+/// Returns a Postgres connection pool constructed using configuration read from environment
+///
+/// # Environment variables read:
+/// - `DB_SYNC_POSTGRES_CONNECTION_STRING`: Postgres connection pool, eg.
+///   `postgres://postgres-user:postgres-password@db-sync-postgres-host:5432/db-sync-db`
 pub async fn get_connection_from_env() -> Result<PgPool, Box<dyn Error + Send + Sync + 'static>> {
 	let config = ConnectionConfig::from_env()?;
 	get_connection(

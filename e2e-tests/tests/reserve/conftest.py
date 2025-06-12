@@ -1,10 +1,23 @@
-from pytest import fixture
+from pytest import fixture, mark
 from config.api_config import ApiConfig
 from src.blockchain_api import BlockchainApi
 from src.cardano_cli import cbor_to_bech32, hex_to_bech32
 from src.partner_chains_node.models import Reserve, VFunction
 import json
 import logging
+
+
+def pytest_collection_modifyitems(items):
+    for item in items:
+        if "tests/reserve" in item.nodeid:
+            item.add_marker(mark.reserve)
+        if "observe" in item.nodeid:
+            item.add_marker(
+                mark.skipif(
+                    item.config.security_param > 20,
+                    reason="Observability tests would take too long to run with a high main chain security parameter",
+                )
+            )
 
 
 @fixture(scope="session")
@@ -15,6 +28,18 @@ def governance_address(config: ApiConfig) -> str:
 @fixture(scope="session")
 def payment_key(config: ApiConfig, governance_skey_with_cli):
     return config.nodes_config.governance_authority.mainchain_key
+
+
+@fixture(scope="session")
+def cardano_payment_key(config: ApiConfig, api: BlockchainApi, write_file):
+    payment_key_path = config.nodes_config.governance_authority.mainchain_key
+    if api.cardano_cli.run_command.copy_secrets:
+        with open(payment_key_path, "r") as f:
+            content = json.load(f)
+            path = write_file(api.cardano_cli.run_command, content)
+        return path
+    else:
+        return payment_key_path
 
 
 @fixture(scope="session")
@@ -66,7 +91,7 @@ def mint_token(
     transaction_input: str,
     minting_policy_filepath,
     api: BlockchainApi,
-    payment_key,
+    cardano_payment_key,
 ):
     lovelace_amount = MIN_LOVELACE_FOR_TX - MIN_LOVELACE_TO_COVER_FEES
 
@@ -81,7 +106,7 @@ def mint_token(
             policy_script_filepath=minting_policy_filepath,
         )
 
-        signed_tx_filepath = api.cardano_cli.sign_transaction(tx_filepath=tx_filepath, signing_key=payment_key)
+        signed_tx_filepath = api.cardano_cli.sign_transaction(tx_filepath=tx_filepath, signing_key=cardano_payment_key)
 
         result = api.cardano_cli.submit_transaction(signed_tx_filepath)
         return result
@@ -155,7 +180,7 @@ def transaction_input(governance_address: str, api: BlockchainApi):
 
 
 @fixture(scope="package")
-def attach_v_function_to_utxo(transaction_input, governance_address, payment_key, api: BlockchainApi):
+def attach_v_function_to_utxo(transaction_input, governance_address, cardano_payment_key, api: BlockchainApi):
     def _attach_v_function_to_utxo(address, filepath):
         logging.info(f"Attaching V-function to {address}...")
         lovelace_amount = MIN_LOVELACE_FOR_TX - MIN_LOVELACE_TO_COVER_FEES
@@ -167,7 +192,9 @@ def attach_v_function_to_utxo(transaction_input, governance_address, payment_key
             change_address=governance_address,
         )
 
-        signed_tx_filepath = api.cardano_cli.sign_transaction(tx_filepath=raw_tx_filepath, signing_key=payment_key)
+        signed_tx_filepath = api.cardano_cli.sign_transaction(
+            tx_filepath=raw_tx_filepath, signing_key=cardano_payment_key
+        )
 
         result = api.cardano_cli.submit_transaction(signed_tx_filepath)
         return result

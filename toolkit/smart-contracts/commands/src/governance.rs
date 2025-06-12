@@ -35,7 +35,7 @@ pub struct InitGovernanceCmd {
 	#[clap(flatten)]
 	common_arguments: crate::CommonArguments,
 	#[arg(short = 'g', long, num_args = 1.., value_delimiter = ' ')]
-	/// Governance authority to be set, hex encoded, space delimited, order does not matter
+	/// Governance authority to be set, list of hex encoded, space delimited public key hashes, order does not matter
 	governance_authority: Vec<MainchainKeyHash>,
 	#[arg(short = 't', long)]
 	/// Minimum number of authorities required to sign a transaction

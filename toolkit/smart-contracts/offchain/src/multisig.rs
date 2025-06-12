@@ -19,28 +19,42 @@ use ogmios_client::{
 use serde::{Serialize, Serializer};
 use sidechain_domain::{McTxHash, UtxoId, UtxoIndex, crypto::blake2b};
 
-/// Successfull smart contracts offchain results in either transaction submission or creating transaction that has to be signed by the governance authorities
+/// Successful smart contracts offchain results in either transaction submission or creating transaction that has to be signed by the governance authorities
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum MultiSigSmartContractResult {
+	/// Result signifying that transaction has been submitted successfully.
 	TransactionSubmitted(McTxHash),
+	/// Result signifying that transaction requires more signatures by governance authorities.
 	TransactionToSign(MultiSigTransactionData),
+}
+
+impl MultiSigSmartContractResult {
+	/// Constructs [MultiSigSmartContractResult] from raw transaction hash bytes.
+	pub fn tx_submitted(hash: [u8; 32]) -> Self {
+		Self::TransactionSubmitted(McTxHash(hash))
+	}
 }
 
 /// MultiSig transactions awaiting for signatures use temporary wallets where funds are stored until the transaction is signed and submitted.
 /// This prevents payment utxo from being spend when the signatures for MultiSig are being collected.
 #[derive(Clone, Debug, Serialize)]
 pub struct MultiSigTransactionData {
+	/// Name of the transaction.
 	pub tx_name: String,
+	/// Temporary wallet data.
 	pub temporary_wallet: TemporaryWalletData,
 	#[serde(serialize_with = "serialize_as_conway_tx")]
+	/// Transaction CBOR bytes.
 	pub tx: Vec<u8>,
 }
 
-/// To be used only for manual re-claim of the funds if transaction has not been submitted
+/// To be used only for manual re-claim of the funds if transaction has not been submitted.
 #[derive(Clone, Debug, Serialize)]
 pub struct TemporaryWalletData {
+	/// Wallet address.
 	pub address: String,
+	/// Wallet public key hash.
 	pub public_key_hash: String,
 }
 
@@ -74,12 +88,6 @@ where
 		"cborHex": hex::encode(tx_bytes)
 	});
 	json.serialize(serializer)
-}
-
-impl MultiSigSmartContractResult {
-	pub fn tx_submitted(hash: [u8; 32]) -> Self {
-		Self::TransactionSubmitted(McTxHash(hash))
-	}
 }
 
 pub(crate) async fn fund_temporary_wallet<

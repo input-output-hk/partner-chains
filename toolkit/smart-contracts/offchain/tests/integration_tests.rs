@@ -16,16 +16,16 @@ use ogmios_client::{
 	transactions::Transactions,
 };
 use partner_chains_cardano_offchain::{
-	assemble_tx,
+	assemble_and_submit_tx,
 	await_tx::{AwaitTx, FixedDelayRetries},
 	cardano_keys::CardanoPaymentSigningKey,
+	csl::NetworkTypeExt,
 	d_param,
 	governance::MultiSigParameters,
 	governed_map::{run_get, run_insert, run_insert_with_force, run_list, run_remove, run_update},
 	init_governance,
 	multisig::{MultiSigSmartContractResult, MultiSigTransactionData},
 	permissioned_candidates,
-	register::Register,
 	reserve::{self, release::release_reserve_funds},
 	scripts_data, sign_tx, update_governance,
 };
@@ -39,8 +39,6 @@ use sidechain_domain::{
 use std::time::Duration;
 use testcontainers::{Container, GenericImage, clients::Cli};
 use tokio_retry::{Retry, strategy::FixedInterval};
-
-mod legacy_governance_tx;
 
 const TEST_IMAGE: &str = "ghcr.io/input-output-hk/smart-contracts-tests-cardano-node-ogmios";
 
@@ -146,6 +144,10 @@ async fn upsert_d_param() {
 			.await
 			.is_none()
 	);
+	assert_eq!(
+		d_param::get_d_param(genesis_utxo, &client).await.unwrap().unwrap(),
+		DParameter { num_registered_candidates: 1, num_permissioned_candidates: 0 }
+	);
 	assert!(
 		run_upsert_d_param(genesis_utxo, 1, 1, &governance_authority_payment_key(), &client)
 			.await
@@ -160,7 +162,15 @@ async fn upsert_permissioned_candidates() {
 	let container = client.run(image);
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_goveranance(&client).await;
+	let network = client.shelley_genesis_configuration().await.unwrap().network.to_csl();
 	assert!(run_upsert_permissioned_candidates(genesis_utxo, 77, &client).await.is_some());
+	assert_eq!(
+		permissioned_candidates::get_permissioned_candidates(genesis_utxo, network, &client)
+			.await
+			.unwrap()
+			.unwrap(),
+		vec![make_candidate(77)]
+	);
 	assert!(run_upsert_permissioned_candidates(genesis_utxo, 77, &client).await.is_none());
 	assert!(run_upsert_permissioned_candidates(genesis_utxo, 231, &client).await.is_some())
 }
@@ -249,34 +259,6 @@ async fn register() {
 	assert!(run_register(genesis_utxo, signature.clone(), &client).await.is_some());
 	assert!(run_register(genesis_utxo, signature, &client).await.is_none());
 	assert!(run_register(genesis_utxo, other_signature, &client).await.is_some());
-}
-
-// Proves that offchain code can still understand Plutus Script MultiSig from PCSC
-#[tokio::test]
-async fn update_legacy_governance() {
-	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
-	let client = Cli::default();
-	let container = client.run(image);
-	let client = initialize(&container).await;
-
-	let genesis_utxo =
-		UtxoId::new(hex!("f8fbe7316561e57de9ecd1c86ee8f8b512a314ba86499ba9a584bfa8fe2edc8d"), 0);
-	let legacy_init_governance_tx = legacy_governance_tx::legacy_governance_init_transaction(
-		genesis_utxo,
-		GOVERNANCE_AUTHORITY_KEY,
-	);
-	let result = client.submit_transaction(&legacy_init_governance_tx).await.unwrap();
-
-	FixedDelayRetries::new(Duration::from_millis(500), 100)
-		.await_tx_output(&client, UtxoId::new(result.transaction.id, 0))
-		.await
-		.unwrap();
-	// This proves current code was able to understand legacy MultiSig implementation
-	assert!(
-		run_upsert_d_param(genesis_utxo, 0, 1, &governance_authority_payment_key(), &client)
-			.await
-			.is_some()
-	);
 }
 
 #[tokio::test]
@@ -434,7 +416,7 @@ async fn initialize<'a>(container: &Container<'a, GenericImage>) -> OgmiosClient
 async fn await_ogmios(ogmios_port: u16) -> Result<OgmiosClients, String> {
 	let url = format!("ws://localhost:{}", ogmios_port);
 	Retry::spawn(FixedInterval::new(Duration::from_millis(100)).take(1000), || async {
-		let client = client_for_url(&url).await?;
+		let client = client_for_url(&url, Duration::from_secs(5)).await?;
 		let _ = client.shelley_genesis_configuration().await.map_err(|e| e.to_string())?;
 		Ok(client)
 	})
@@ -535,11 +517,7 @@ async fn run_upsert_permissioned_candidates<
 	candidate: u8,
 	client: &T,
 ) -> Option<MultiSigSmartContractResult> {
-	let candidates = vec![PermissionedCandidateData {
-		sidechain_public_key: SidechainPublicKey([candidate; 33].to_vec()),
-		aura_public_key: AuraPublicKey([candidate; 32].to_vec()),
-		grandpa_public_key: GrandpaPublicKey([candidate; 32].to_vec()),
-	}];
+	let candidates = vec![make_candidate(candidate)];
 	let result = permissioned_candidates::upsert_permissioned_candidates(
 		genesis_utxo,
 		&candidates,
@@ -551,6 +529,14 @@ async fn run_upsert_permissioned_candidates<
 	.unwrap();
 	result.iter().for_each(cleanup_temp_wallet_file);
 	result
+}
+
+fn make_candidate(n: u8) -> PermissionedCandidateData {
+	PermissionedCandidateData {
+		sidechain_public_key: SidechainPublicKey([n; 33].to_vec()),
+		aura_public_key: AuraPublicKey([n; 32].to_vec()),
+		grandpa_public_key: GrandpaPublicKey([n; 32].to_vec()),
+	}
 }
 
 async fn run_init_reserve_management<
@@ -681,26 +667,28 @@ async fn run_register<T: QueryLedgerState + Transactions + QueryNetwork + QueryU
 ) -> Option<McTxHash> {
 	let eve_utxos = client.query_utxos(&[EVE_ADDRESS.to_string()]).await.unwrap();
 	let registration_utxo = eve_utxos.first().unwrap().utxo_id();
-	client
-		.register(
-			FixedDelayRetries::five_minutes(),
-			genesis_utxo,
-			&CandidateRegistration {
-				stake_ownership: AdaBasedStaking {
-					pub_key: EVE_PUBLIC_KEY,
-					signature: MainchainSignature([19u8; 64]),
-				},
-				partner_chain_pub_key: SidechainPublicKey([20u8; 32].to_vec()),
-				partner_chain_signature: partnerchain_signature,
-				own_pkh: EVE_PUBLIC_KEY_HASH,
-				registration_utxo,
-				aura_pub_key: AuraPublicKey([22u8; 32].to_vec()),
-				grandpa_pub_key: GrandpaPublicKey([23u8; 32].to_vec()),
+
+	partner_chains_cardano_offchain::register::run_register(
+		genesis_utxo,
+		&CandidateRegistration {
+			stake_ownership: AdaBasedStaking {
+				pub_key: EVE_PUBLIC_KEY,
+				signature: MainchainSignature([19u8; 64]),
 			},
-			&eve_payment_key(),
-		)
-		.await
-		.unwrap()
+			partner_chain_pub_key: SidechainPublicKey([20u8; 32].to_vec()),
+			partner_chain_signature: partnerchain_signature,
+			own_pkh: EVE_PUBLIC_KEY_HASH,
+			registration_utxo,
+			aura_pub_key: AuraPublicKey([22u8; 32].to_vec()),
+			grandpa_pub_key: GrandpaPublicKey([23u8; 32].to_vec()),
+		},
+		&eve_payment_key(),
+		client,
+		FixedDelayRetries::five_minutes(),
+	)
+	.await
+	.map_err(|e| e.to_string())
+	.unwrap()
 }
 
 async fn assert_token_amount_eq<T: QueryLedgerState>(
@@ -854,7 +842,9 @@ async fn run_assemble_and_sign<
 			.collect();
 
 		let await_tx = FixedDelayRetries::new(Duration::from_millis(500), 100);
-		assemble_tx::assemble_tx(tx, witnesses, client, &await_tx).await.unwrap()
+		assemble_and_submit_tx::assemble_and_submit_tx(tx, witnesses, client, &await_tx)
+			.await
+			.unwrap()
 	} else {
 		panic!("Expected transaction cbor, because governance policy is not '1 of 1'")
 	}

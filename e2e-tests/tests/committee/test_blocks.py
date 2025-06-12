@@ -1,4 +1,4 @@
-from pytest import mark, skip
+from pytest import mark
 from src.blockchain_api import BlockchainApi, Wallet
 from config.api_config import ApiConfig
 import logging as logger
@@ -7,7 +7,7 @@ COMMITTEE_REPETITIONS_IN_PC_EPOCH = 2
 
 
 @mark.xdist_group("faucet_tx")
-def test_block_producer_can_update_their_metadata(api: BlockchainApi, get_wallet: Wallet):
+def test_block_producer_can_update_their_metadata(genesis_utxo, api: BlockchainApi, get_wallet: Wallet, write_file):
     logger.info("Signing block producer metadata...")
     skey, vkey_hex, vkey_hash = api.cardano_cli.generate_cross_chain_keys()
 
@@ -16,7 +16,9 @@ def test_block_producer_can_update_their_metadata(api: BlockchainApi, get_wallet
         "url": "http://test.example",
         "hash": "0x0000000000000000000000000000000000000000000000000000000000000001",
     }
-    signature = api.sign_block_producer_metadata(metadata, skey)
+    metadata_filepath = write_file(api.partner_chains_node.run_command, metadata)
+
+    signature = api.sign_block_producer_metadata(genesis_utxo, metadata_filepath, skey)
     assert signature.signature, "Signature is empty"
     assert signature.cross_chain_pub_key == f"0x{vkey_hex}"
 
@@ -38,7 +40,8 @@ def test_block_producer_can_update_their_metadata(api: BlockchainApi, get_wallet
         "url": "http://test.example",
         "hash": "0x0000000000000000000000000000000000000000000000000000000000000002",
     }
-    signature = api.sign_block_producer_metadata(metadata, skey)
+    metadata_filepath = write_file(api.partner_chains_node.run_command, metadata)
+    signature = api.sign_block_producer_metadata(genesis_utxo, metadata_filepath, skey)
     assert signature.signature, "Signature is empty"
     assert signature.cross_chain_pub_key == f"0x{vkey_hex}"
 
@@ -59,12 +62,7 @@ def test_block_producer_can_update_their_metadata(api: BlockchainApi, get_wallet
 @mark.skip_on_new_chain
 @mark.test_key('ETCM-7020')
 def test_block_authors_match_committee_seats(
-    api: BlockchainApi,
-    config: ApiConfig,
-    get_pc_epoch_committee,
-    pc_epoch,
-    get_block_authorship_keys_dict,
-    get_pc_epoch_blocks,
+    api: BlockchainApi, get_pc_epoch_committee, pc_epoch, get_block_authorship_keys_dict, get_pc_epoch_blocks
 ):
     """
     Verifies that a pc epoch's block authors match the committee attendance.
@@ -72,48 +70,41 @@ def test_block_authors_match_committee_seats(
     The pc epoch comes from the argument given at runtime.
     """
     logger.info(f"Verifying block authors for pc epoch {pc_epoch}...")
-    first_block_no = get_pc_epoch_blocks(pc_epoch)["range"].start
-    last_block_no = get_pc_epoch_blocks(pc_epoch)["range"].stop
-    if last_block_no - first_block_no != config.nodes_config.slots_in_epoch:
-        skip(f'Some blocks missing on pc epoch {pc_epoch}. Found only {last_block_no - first_block_no} blocks.')
+    block_range = get_pc_epoch_blocks(pc_epoch)["range"]
+    logger.info(f"Blocks produced in epoch {pc_epoch}: {block_range}")
 
-    # Committee members for current PC epoch
+    # Session committee is rotated on the first block of the epoch, so we need to offset the range by 1
+    block_range_with_offset = range(block_range.start + 1, block_range.stop + 1)
+    logger.info(f"Blocks produced in epoch {pc_epoch} with committee offset: {block_range_with_offset}")
+
     committee = get_pc_epoch_committee(pc_epoch)
     committee_block_auth_pub_keys = []
     for member in committee:
         committee_block_auth_pub_keys.append(get_block_authorship_keys_dict[member["sidechainPubKey"]])
 
-    validator_set = api.get_validator_set(get_pc_epoch_blocks(pc_epoch)[first_block_no])
+    validator_set = api.get_validator_set(get_pc_epoch_blocks(pc_epoch)[block_range_with_offset.start])
     block_authors = []
+    block_slots = []
     for block_no in get_pc_epoch_blocks(pc_epoch)["range"]:
-        block_author = api.get_block_author(block=get_pc_epoch_blocks(pc_epoch)[block_no], validator_set=validator_set)
+        block_author, block_slot = api.get_block_author_and_slot(
+            block=get_pc_epoch_blocks(pc_epoch)[block_no], validator_set=validator_set
+        )
         assert block_author, f"Could not get author of block {block_no}."
         assert (
             block_author in committee_block_auth_pub_keys
         ), f"Block {block_no} was authored by non-committee member {block_author}"
         block_authors.append(block_author)
+        block_slots.append(block_slot)
 
-    # Synthesize the expected list of block authors from committee to be exactly double in size
-    # so that it contains any other sequence of the same ordered list
-    # i.e. [A,B,C,D,A,B,C,D] contains [C,D,A,B] or [B,C,D,A], etc.
-    expected_authors = committee_block_auth_pub_keys + committee_block_auth_pub_keys
+    expected_block_authors = []
+    for slot in block_slots:
+        rank_validator = slot % len(committee)
+        expected_author = committee_block_auth_pub_keys[rank_validator]
+        expected_block_authors.append(expected_author)
 
-    # Get 1 sequence equal in both lists
-    for offset in range(len(committee_block_auth_pub_keys)):
-        matching_authors = True
-        for i in range(len(committee_block_auth_pub_keys)):
-            matching_authors = expected_authors[i + offset] == block_authors[i]
-            if not matching_authors:
-                break
-        if matching_authors:
-            break
     assert (
-        matching_authors
-    ), f"Could not find the same order of block authors as expected by the committee in epoch {pc_epoch}"
-
-    # Both lists should contain the same elements, i.e. all blocks should be authored by committee members
-    # in the exact number we expect with round robin assignment
-    assert expected_authors.sort() == block_authors.sort(), f"Unexpected block authors for SC epoch {pc_epoch}"
+        expected_block_authors == block_authors
+    ), f"Block authors do not match committee members for pc epoch {pc_epoch}"
 
 
 @mark.test_key('ETCM-7481')

@@ -78,8 +78,8 @@ expect "Select an UTXO to use as the genesis UTXO"
 send "\r"
 expect "Space separated keys hashes of the initial Multisig Governance Authorities (0x$GOVERNANCE_AUTHORITY)"
 send "\r"
-expect "Initial Multisig Governance Threshold (0)"
-send "1\r"
+expect "Initial Multisig Governance Threshold (1)"
+send "\r"
 expect "Do you want to continue? (y/N)"
 send "y\r"
 expect "Do you want to configure a native token for you Partner Chain? (Y/n)"
@@ -116,16 +116,17 @@ expect eof
 EOF
 
 
-echo "Set initial funds to Alice (ecdsa), ?, and Alice (sr25519)"
+echo "Set initial funds to node-1 (ECDSA), node-1 (sr25519), node-4 (ECDSA) and node-4 (sr25519)"
 jq '.genesis.runtimeGenesis.config.balances.balances = [
-    ["5C7C2Z5sWbytvHpuLTvzKunnnRwQxft1jiqrLD5rhucQ5S9X", 1000000000000000],
-    ["5D9eDKbFt4JKaEndQvMmbJYnpX9ENUj8U9UUg1AxSa64FJxE", 1000000000000000],
-    ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY", 1000000000000000]
+    ["5FnXTMg8UnfeGsMaGg24o3NY21VRFRDRdgxuLGmXuYLeZmin", 1000000000000000],
+    ["5Cyx94iyji8namhRxvs4mAbURtPsvwjWCb68ZihNzfRysGLZ", 1000000000000000],
+    ["5GaTC1bjMYLxXo2DqnxxdCWLEdGZK86mWmSYtzkG6BKHzT2H", 1000000000000000],
+    ["5HKLH5ErLMNHReWGFGtrDPRdNqdKP56ArQA6DFmgANzunK7A", 1000000000000000]
 ]' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
 
-echo "Configuring Alice as sudo..."
+echo "Configuring node-1 (sr25519) as sudo..."
 jq '.genesis.runtimeGenesis.config.sudo = {
-    "key": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+    "key": "5Cyx94iyji8namhRxvs4mAbURtPsvwjWCb68ZihNzfRysGLZ"
 }' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
 
 echo "Configuring Epoch Length..."
@@ -145,16 +146,14 @@ echo "Setting up main chain state..."
 expect <<EOF
 spawn ./partner-chains-node wizards setup-main-chain-state
 set timeout 300
-expect "DB-Sync Postgres connection string (postgresql://postgres-user:postgres-password@localhost:5432/cexplorer)"
-send "postgresql://postgres:$POSTGRES_PASSWORD@postgres:$POSTGRES_PORT/cexplorer\r"
-expect "Do you want to set/update the permissioned candidates on the main chain with values from configuration file? (y/N)"
-send "y\r"
 expect "Ogmios protocol (http/https)"
 send "\r"
 expect "Ogmios hostname (ogmios)"
 send "\r"
 expect "Ogmios port (1337)"
 send "\r"
+expect "Do you want to set/update the permissioned candidates on the main chain with values from configuration file? (y/N)"
+send "y\r"
 expect "path to the payment signing key file (/keys/funded_address.skey)"
 send "\r"
 expect "Do you want to set/update the D-parameter on the main chain? (y/N)"

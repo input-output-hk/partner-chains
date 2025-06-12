@@ -9,7 +9,7 @@ from src.blockchain_api import BlockchainApi, Wallet
 from src.blockchain_types import BlockchainTypes
 from src.pc_epoch_calculator import PartnerChainEpochCalculator
 from src.partner_chain_rpc import PartnerChainRpc
-from src.run_command import Runner, RunnerFactory
+from src.run_command import Runner
 from config.api_config import ApiConfig
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
@@ -17,7 +17,6 @@ from src.db.models import Base
 from filelock import FileLock
 from typing import Generator
 import time
-import uuid
 
 _config: ApiConfig = None
 partner_chain_rpc_api: PartnerChainRpc = None
@@ -477,10 +476,13 @@ def get_wallet(api: BlockchainApi, secrets) -> Wallet:
     scheme = faucet["scheme"]
     return api.get_wallet(address=address, public_key=public_key, secret=secret, scheme=scheme)
 
+@fixture(scope="session")
+def genesis_utxo(api: BlockchainApi):
+	return api.get_params()["genesis_utxo"]
 
 @fixture(scope="session")
-def get_scripts(api: BlockchainApi):
-    return api.partner_chains_node.smart_contracts.get_scripts().json
+def get_scripts(genesis_utxo, api: BlockchainApi):
+    return api.partner_chains_node.smart_contracts.get_scripts(genesis_utxo).json
 
 
 @fixture(scope="session")
@@ -539,7 +541,7 @@ def wait_until():
 
 @fixture(scope="session")
 def write_file():
-    """Writes a file in location that is available by CLI being in use in tests.
+    """Write a file in a location that is available by tools used in tests, e.g. node.
 
     Example usage:
     ```python
@@ -550,9 +552,11 @@ def write_file():
         assert policy_id
     ```
 
-    The file is created in `/tmp` directory with a random name.
-    The content is passed as a string and is converted to JSON format.
-    The file is created on the same host that is configured in the `<env>_stack.json` for given tool (SSH or shell).
+    The file is created using `mktemp` command, which creates a temporary file under /tmp/tmp.XXXXXXX, unless
+    the tool.runner.workdir is set in the `<env>_stack.json` file, in which case it creates a temporary file in that
+    directory.
+    The content is passed as a string and is converted to JSON format, unless `is_json` is set to False.
+    The file is created on the same host that is configured in the `<env>_stack.json` for given tool.
     The file is removed after the test completes.
 
 
@@ -562,52 +566,50 @@ def write_file():
     Yields:
         function: write_file callable function that takes runner and content as arguments
     """
-    saved_files = {}
+    runners: list[Runner] = []
 
-    def _write_file(runner: Runner, content: str):
-        filepath = f"/tmp/{uuid.uuid4().hex}"
-        content_json = json.dumps(content)
-        runner.run(f"echo '{content_json}' > {filepath}")
+    def _write_file(runner: Runner, content: str, is_json: bool = True) -> str:
+        temp_file = runner.mktemp()
+        if is_json:
+            content = json.dumps(content)
+            content = content.replace('"', '\\"')
+        runner.exec(f"echo '{content}' > {temp_file}")
 
-        if runner not in saved_files:
-            saved_files[runner] = []
-        saved_files[runner].append(filepath)
-        return filepath
+        if runner not in runners:
+            runners.append(runner)
+        return temp_file
 
     yield _write_file
 
-    for runner, filepaths in saved_files.items():
-        logging.info("Cleaning up temporary cli files on remote host...")
-        cmd = f"rm {' '.join(filepaths)}"
-        runner.run(cmd)
+    for runner in runners:
+        logging.info(f"Cleaning up temporary files created by {runner.__class__.__name__}...")
+        runner.cleanup()
 
 
 @fixture(scope="session")
-def governance_skey_with_cli(config: ApiConfig):
+def governance_skey_with_cli(config: ApiConfig, api: BlockchainApi, write_file):
     """
     Securely copy the governance authority's init skey (a secret key used by the smart-contracts to authorize admin
-    operations) to a temporary directory on the remote machine and update the path in the configuration.
-    The temporary directory is deleted after the test completes.
+    operations) to a temporary file on the remote machine and update the path in the configuration.
+    The temporary file is deleted after the test completes.
 
     This fixture is executed only if:
     - you call it directly in test or other fixture
-    - SSH is configured in `<env>_stack.json` for given tool
+    - tools.node.runner.files.copy_secrets is set to true in the config file `<env>_stack.json`
 
     WARNING: This fixture copies secret file to a remote host and should be used with caution.
 
     :param config: The API configuration object.
     """
-    if config.stack_config.ssh:
-        runner = RunnerFactory.get_runner(config.stack_config.ssh, "/bin/bash")
-        temp_dir = runner.run("mktemp -d").stdout.strip()
+    if config.stack_config.tools.node.runner.copy_secrets:
+        runner = api.partner_chains_node.run_command
         path = config.nodes_config.governance_authority.mainchain_key
-        filename = path.split("/")[-1]
-        runner.scp(path, temp_dir)
-        config.nodes_config.governance_authority.mainchain_key = f"{temp_dir}/{filename}"
+        with open(path, "r") as f:
+            content = json.load(f)
+            filepath = write_file(runner, content)
+        config.nodes_config.governance_authority.mainchain_key = filepath
         yield
-        logging.info("Cleaning up governance skey file on remote host...")
         config.nodes_config.governance_authority.mainchain_key = path
-        runner.run(f"rm -rf {temp_dir}")
     else:
         yield
 
@@ -623,7 +625,7 @@ def additional_governance_authorities(config: ApiConfig):
 
 
 @fixture(scope="session", autouse=True)
-def set_governance_to_multisig(multisig, api: BlockchainApi, governance_authority, additional_governance_authorities):
+def set_governance_to_multisig(multisig, api: BlockchainApi, genesis_utxo, governance_authority, additional_governance_authorities):
     if not multisig:
         yield
         return
@@ -638,6 +640,7 @@ def set_governance_to_multisig(multisig, api: BlockchainApi, governance_authorit
     threshold = 2
 
     response = api.partner_chains_node.smart_contracts.governance.update(
+        genesis_utxo,
         payment_key=governance_authority.mainchain_key,
         new_governance_authorities=all_authorities,
         new_governance_threshold=threshold,
@@ -646,6 +649,7 @@ def set_governance_to_multisig(multisig, api: BlockchainApi, governance_authorit
     yield response
 
     response = api.partner_chains_node.smart_contracts.governance.update(
+        genesis_utxo,
         payment_key=governance_authority.mainchain_key,
         new_governance_authorities=[governance_authority.mainchain_pub_key_hash],
         new_governance_threshold=1,

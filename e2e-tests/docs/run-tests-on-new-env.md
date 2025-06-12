@@ -134,43 +134,7 @@ E.g. for Cardano Preview it will be:
 
 ### 4. Add `<env>_stack.json` to `config/<blockchain>/<env>` folder
 
-`<env>_stack.json` configuration file represents connection strings to partner chain dependencies (ogmios) and binaries (partner-chains-node, sidechain-main-cli, cardano-cli).
-
-**NOTE:**
-- **ogmios** services can be executed on the remote host or made available on test runner machine
-- partner chains binaries can be made available on the test runner machine or on the remote host
-  - if you want to use the remote host - you need to configure your own SSH keys
-
-#### `<env>_stack.json` template:
-
-```
-{
-    "stack_config": {
-        "ogmios_host": <STRING>,
-        "ogmios_port": 1337,
-        "tools_shell": "/bin/bash",
-        "tools_host": <STRING,
-        "ssh": {
-            "username": "root",
-            "host": "${stack_config[tools_host]}",
-            "port": 22,
-            "host_keys_path": "config/<blockchain>/known_hosts",
-            "private_key_path": <STRING>
-        },
-        "tools": {
-            "cardano_cli": {
-                "cli": <STRING>, // path to cardano-cli binary
-            },
-            "partner_chains_node": {
-                "cli": <STRING> // path to partner-chains-node binary
-            },
-            "bech32": {
-                "cli": <STRING> // path to bech32 binary
-            }
-        }
-    }
-}
-```
+`<env>_stack.json` configuration file represents tests dependencies. Follow [Configure stack](./configure-stack.md) guide on how to set it up.
 
 ### 5. Add `<env>.json` to `secrets/<blockchain>`
 

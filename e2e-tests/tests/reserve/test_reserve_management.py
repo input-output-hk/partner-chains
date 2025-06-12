@@ -6,14 +6,14 @@ from src.partner_chains_node.models import VFunction
 from pytest import fixture, mark, skip
 
 
-pytestmark = [mark.reserve, mark.xdist_group(name="governance_action")]
+pytestmark = [mark.xdist_group(name="governance_action")]
 
 INITIAL_RESERVE_DEPOSIT = 1000
 
 
 @fixture(scope="module", autouse=True)
-def init_reserve(api: BlockchainApi, payment_key):
-    response = api.partner_chains_node.smart_contracts.reserve.init(payment_key)
+def init_reserve(api: BlockchainApi, genesis_utxo, payment_key):
+    response = api.partner_chains_node.smart_contracts.reserve.init(genesis_utxo, payment_key)
     return response
 
 
@@ -34,8 +34,9 @@ def native_token_initial_balance(
 
 
 @fixture(scope="module")
-def create_reserve(api: BlockchainApi, reserve, payment_key):
+def create_reserve(api: BlockchainApi, reserve, genesis_utxo, payment_key):
     response = api.partner_chains_node.smart_contracts.reserve.create(
+        genesis_utxo,
         v_function_hash=reserve.v_function.script_hash,
         initial_deposit=INITIAL_RESERVE_DEPOSIT,
         token=reserve.token,
@@ -44,7 +45,7 @@ def create_reserve(api: BlockchainApi, reserve, payment_key):
     logging.info(f"Reserve created with initial deposit of {INITIAL_RESERVE_DEPOSIT} tokens")
     yield response
     logging.info("Cleaning up reserve (handover)...")
-    api.partner_chains_node.smart_contracts.reserve.handover(payment_key)
+    api.partner_chains_node.smart_contracts.reserve.handover(genesis_utxo, payment_key)
 
 
 @fixture(scope="class")
@@ -94,18 +95,22 @@ class TestReleaseFunds:
     def amount_to_release(self, reserve_initial_balance):
         return random.randint(1, min(reserve_initial_balance, 100))
 
-    @fixture(scope="class")
+    @fixture(scope="class", autouse=True)
     def release_funds(
         self,
         amount_to_release,
         circulation_supply_initial_balance,
         api: BlockchainApi,
         v_function: VFunction,
+        genesis_utxo,
         payment_key,
     ):
         logging.info(f"Releasing {amount_to_release} tokens from reserve...")
         response = api.partner_chains_node.smart_contracts.reserve.release(
-            reference_utxo=v_function.reference_utxo, amount=amount_to_release, payment_key=payment_key
+            genesis_utxo,
+            reference_utxo=v_function.reference_utxo,
+            amount=amount_to_release,
+            payment_key=payment_key
         )
         return response
 
@@ -114,7 +119,6 @@ class TestReleaseFunds:
         assert response.returncode == 0
         assert response.json
 
-    @mark.usefixtures("release_funds")
     def test_circulation_supply_balance_after_release(
         self,
         circulation_supply_initial_balance,
@@ -126,12 +130,15 @@ class TestReleaseFunds:
         circulation = api.get_mc_balance(addresses["IlliquidCirculationSupplyValidator"], reserve_asset_id)
         assert circulation_supply_initial_balance + amount_to_release == circulation
 
-    @mark.usefixtures("release_funds")
     def test_reserve_balance_after_release(
         self, reserve_initial_balance, amount_to_release, api: BlockchainApi, reserve_asset_id, addresses
     ):
         reserve_balance = api.get_mc_balance(addresses["ReserveValidator"], reserve_asset_id)
         assert reserve_initial_balance - amount_to_release == reserve_balance
+
+    def test_observe_released_funds(self, api: BlockchainApi, amount_to_release):
+        observed_transfer = api.subscribe_token_transfer()
+        assert observed_transfer == amount_to_release
 
 
 class TestDepositFunds:
@@ -146,9 +153,11 @@ class TestDepositFunds:
         return random.randint(1, min(reserve_initial_balance, 100))
 
     @fixture(scope="class", autouse=True)
-    def deposit_funds(self, native_token_balance, amount_to_deposit, api: BlockchainApi, payment_key):
+    def deposit_funds(self, native_token_balance, amount_to_deposit, api: BlockchainApi, genesis_utxo, payment_key):
         response = api.partner_chains_node.smart_contracts.reserve.deposit(
-            amount=amount_to_deposit, payment_key=payment_key
+            genesis_utxo,
+            amount=amount_to_deposit,
+            payment_key=payment_key
         )
         return response
 
@@ -183,9 +192,11 @@ class TestUpdateVFunction:
         return v_function
 
     @fixture(scope="class", autouse=True)
-    def update_v_function(self, create_reserve, new_v_function: VFunction, api: BlockchainApi, payment_key):
+    def update_v_function(self, create_reserve, new_v_function: VFunction, api: BlockchainApi, genesis_utxo, payment_key):
         response = api.partner_chains_node.smart_contracts.reserve.update_settings(
-            v_function_hash=new_v_function.script_hash, payment_key=payment_key
+            genesis_utxo,
+            v_function_hash=new_v_function.script_hash,
+            payment_key=payment_key
         )
         return response
 
@@ -194,16 +205,22 @@ class TestUpdateVFunction:
         assert response.returncode == 0
         assert response.json
 
-    def test_release_funds_with_updated_v_function(self, api: BlockchainApi, new_v_function: VFunction, payment_key):
+    def test_release_funds_with_updated_v_function(self, api: BlockchainApi, new_v_function: VFunction, genesis_utxo, payment_key):
         response = api.partner_chains_node.smart_contracts.reserve.release(
-            reference_utxo=new_v_function.reference_utxo, amount=1, payment_key=payment_key
+            genesis_utxo,
+            reference_utxo=new_v_function.reference_utxo,
+            amount=1,
+            payment_key=payment_key
         )
         assert response.returncode == 0
         assert response.json
 
-    def test_release_funds_with_old_v_function(self, api: BlockchainApi, v_function: VFunction, payment_key):
+    def test_release_funds_with_old_v_function(self, api: BlockchainApi, v_function: VFunction, genesis_utxo, payment_key):
         response = api.partner_chains_node.smart_contracts.reserve.release(
-            reference_utxo=v_function.reference_utxo, amount=1, payment_key=payment_key
+            genesis_utxo,
+            reference_utxo=v_function.reference_utxo,
+            amount=1,
+            payment_key=payment_key
         )
         assert response.returncode == 1
         assert "Error" in response.stderr
@@ -211,8 +228,8 @@ class TestUpdateVFunction:
 
 class TestHandoverReserve:
     @fixture(scope="class", autouse=True)
-    def handover_reserve(self, create_reserve, api: BlockchainApi, payment_key):
-        response = api.partner_chains_node.smart_contracts.reserve.handover(payment_key)
+    def handover_reserve(self, create_reserve, api: BlockchainApi, genesis_utxo, payment_key):
+        response = api.partner_chains_node.smart_contracts.reserve.handover(genesis_utxo, payment_key)
         return response
 
     def test_handover_reserve(self, handover_reserve):

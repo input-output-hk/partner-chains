@@ -38,6 +38,7 @@ use partner_chains_plutus_data::reserve::ReserveRedeemer;
 use sidechain_domain::{McTxHash, UtxoId};
 use std::num::NonZero;
 
+/// Releases funds from reserve.
 pub async fn release_reserve_funds<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 	A: AwaitTx,

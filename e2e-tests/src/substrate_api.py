@@ -44,7 +44,7 @@ class SubstrateApi(BlockchainApi):
         self.db_sync = db_sync
         self.url = config.nodes_config.node.url
         self._substrate = None
-        self.cardano_cli = CardanoCli(config.main_chain, config.stack_config.tools["cardano_cli"])
+        self.cardano_cli = CardanoCli(config.main_chain, config.stack_config.tools.cardano_cli)
         self.partner_chains_node = PartnerChainsNode(config)
         self.partner_chain_rpc = PartnerChainRpc(config.nodes_config.node.rpc_url)
         self.partner_chain_epoch_calculator = PartnerChainEpochCalculator(config)
@@ -203,7 +203,7 @@ class SubstrateApi(BlockchainApi):
     def get_wallet(self, address, public_key, secret, scheme):
         scheme_type = _keypair_name_to_type(scheme)
 
-        if secret.startswith("//"):
+        if secret.startswith("//") or secret.count(" ") >= 11:
             keypair = Keypair.create_from_uri(secret)
         else:
             keypair = Keypair(
@@ -243,11 +243,11 @@ class SubstrateApi(BlockchainApi):
             logger.error(f"Could not parse cardano key file: {e}")
         return key.strip()
 
-    def update_d_param(self, permissioned_candidates_count, registered_candidates_count):
+    def update_d_param(self, genesis_utxo, permissioned_candidates_count, registered_candidates_count):
         signing_key = self.config.nodes_config.governance_authority.mainchain_key
 
         response = self.partner_chains_node.smart_contracts.update_d_param(
-            permissioned_candidates_count, registered_candidates_count, signing_key
+            genesis_utxo, permissioned_candidates_count, registered_candidates_count, signing_key
         )
         tx_id = response.json["transaction_submitted"]
         effective_in_mc_epoch = self._effective_in_mc_epoch()
@@ -262,9 +262,9 @@ class SubstrateApi(BlockchainApi):
             logger.error(f"Update of D Param failed, STDOUT: {response.stdout}, STDERR: {response.stderr}")
             return False, None
 
-    def upsert_permissioned_candidates(self, new_candidates_list):
+    def upsert_permissioned_candidates(self, genesis_utxo, permissioned_candidates_file):
         response = self.partner_chains_node.smart_contracts.upsert_permissioned_candidates(
-            self.config.nodes_config.governance_authority.mainchain_key, new_candidates_list
+            genesis_utxo, self.config.nodes_config.governance_authority.mainchain_key, permissioned_candidates_file
         )
         tx_id = response.json["transaction_submitted"]
         effective_in_mc_epoch = self._effective_in_mc_epoch()
@@ -279,7 +279,7 @@ class SubstrateApi(BlockchainApi):
             logger.error(f"Upsert permissioned candidates failed, STDOUT: {response.stdout}, STDERR: {response.stderr}")
             return False, None
 
-    def register_candidate(self, candidate_name):
+    def register_candidate(self, genesis_utxo, candidate_name):
         keys_files = self.config.nodes_config.nodes[candidate_name].keys_files
         # Get a UTxO from payment account
         utxos_json = self.cardano_cli.get_utxos(self.config.nodes_config.nodes[candidate_name].cardano_payment_addr)
@@ -287,6 +287,7 @@ class SubstrateApi(BlockchainApi):
         assert registration_utxo is not None, "ERROR: Could not find a well funded utxo for registration"
 
         signatures = self.partner_chains_node.get_signatures(
+            genesis_utxo,
             registration_utxo,
             self.read_cardano_key_file(keys_files.spo_signing_key),
             self._read_json_file(keys_files.partner_chain_signing_key)['skey'],
@@ -295,6 +296,7 @@ class SubstrateApi(BlockchainApi):
         )
 
         response = self.partner_chains_node.smart_contracts.register(
+            genesis_utxo,
             signatures,
             keys_files.cardano_payment_key,
             self.read_cardano_key_file(keys_files.spo_public_key),
@@ -315,10 +317,10 @@ class SubstrateApi(BlockchainApi):
             )
             return False, None
 
-    def deregister_candidate(self, candidate_name):
+    def deregister_candidate(self, genesis_utxo, candidate_name):
         keys_files = self.config.nodes_config.nodes[candidate_name].keys_files
         response = self.partner_chains_node.smart_contracts.deregister(
-            keys_files.cardano_payment_key, self.read_cardano_key_file(keys_files.spo_public_key)
+            genesis_utxo, keys_files.cardano_payment_key, self.read_cardano_key_file(keys_files.spo_public_key)
         )
         tx_id = response.json["transaction_submitted"]
         effective_in_mc_epoch = self._effective_in_mc_epoch()
@@ -337,6 +339,79 @@ class SubstrateApi(BlockchainApi):
 
     def get_pc_epoch(self):
         return self.partner_chain_rpc.partner_chain_get_status().result['sidechain']['epoch']
+
+    def get_pc_epoch_blocks(self, epoch):
+        """Returns a range of blocks produced in the given epoch.
+        The algorithm is as follows:
+        1. Find any block in the given epoch.
+            This task is crucial to find the range, especially when there are a lot of empty slots.
+            It works as follows:
+            - calculate the difference between the current epoch and the given epoch
+            - use it to calculate the number of slots (blocks) to go back
+            - check the epoch of the block
+                * if it matches, exit loop
+                * if it doesn't match, and the epoch diff > 1, reduce the number of slots to go back by one epoch
+                * else, reduce the number of slots to go back by one slot
+        2. Find the first block in the given epoch. Once we've found a block in the given epoch,
+            we're iterating over each previous block until the epoch changes.
+        3. Find the last block in the given epoch. Once we've found the first block, we go forward by one epoch,
+            and iterate over each previous block until the epoch matches the searched epoch again.
+
+        Args:
+            epoch (int): epoch to search for
+
+        Raises:
+            ValueError: if the given epoch is greater than or equal to the current epoch
+
+        Returns:
+            range: range of blocks produced in the given epoch
+        """
+        current_block = self.get_latest_pc_block_number()
+        current_pc_epoch = self.get_pc_epoch()
+        if epoch >= current_pc_epoch:
+            raise ValueError(
+                f"Cannot get blocks for current or future epoch {epoch}. Current epoch is {current_pc_epoch}."
+            )
+
+        # search for a block in <epoch>
+        slots_in_epoch = self.config.nodes_config.slots_in_epoch
+        slots_to_go_back = (current_pc_epoch - epoch) * slots_in_epoch
+        found_epoch = 0
+        while found_epoch != epoch:
+            block_in_searched_epoch = self.get_block(block_no=(current_block - slots_to_go_back))
+            result = self.substrate.query(
+                "SessionCommitteeManagement", "CurrentCommittee", block_hash=block_in_searched_epoch["header"]["hash"]
+            )
+            found_epoch = result.value["epoch"]
+            if epoch - found_epoch > 1:
+                slots_to_go_back -= slots_in_epoch
+            else:
+                slots_to_go_back -= 1
+        logger.info(f"Found a block in epoch {epoch}: {block_in_searched_epoch['header']['number']}")
+
+        # search for the first block in <epoch>
+        while found_epoch == epoch:
+            first_block = block_in_searched_epoch
+            result = self.substrate.query(
+                "SessionCommitteeManagement", "CurrentCommittee", block_hash=first_block["header"]["parentHash"]
+            )
+            found_epoch = result.value["epoch"]
+            block_in_searched_epoch = self.get_block(block_no=first_block["header"]["number"] - 1)
+        logger.info(f"Found the first block in epoch {epoch}: {first_block['header']['number']}")
+
+        # search for the last block in <epoch>
+        slots_to_go_forward = slots_in_epoch
+        found_epoch = 0
+        while found_epoch != epoch:
+            last_block = self.get_block(block_no=(first_block["header"]["number"] + slots_to_go_forward))
+            result = self.substrate.query(
+                "SessionCommitteeManagement", "CurrentCommittee", block_hash=last_block["header"]["hash"]
+            )
+            found_epoch = result.value["epoch"]
+            slots_to_go_forward -= 1
+        logger.info(f"Found the last block in epoch {epoch}: {last_block['header']['number']}")
+
+        return range(first_block["header"]["number"], last_block["header"]["number"] + 1)
 
     def get_params(self):
         return self.partner_chain_rpc.partner_chain_get_params().result
@@ -515,8 +590,8 @@ class SubstrateApi(BlockchainApi):
     def get_validator_set(self, block):
         return self.substrate.query("Session", "ValidatorsAndKeys", block_hash=block["header"]["parentHash"])
 
-    def get_block_author(self, block, validator_set):
-        """Custom implementation of substrate.get_block(include_author=True) to get block author.
+    def get_block_author_and_slot(self, block, validator_set):
+        """Custom implementation of substrate.get_block(include_author=True) to get block author, and block slot.
         py-substrate-interface does not work because it calls "Validators" function from "Session" pallet,
         which in our node is disabled and returns empty list. Here we use "ValidatorsAndKeys".
         The function then iterates over "PreRuntime" logs and once it finds aura engine, it gets the slot
@@ -537,13 +612,14 @@ class SubstrateApi(BlockchainApi):
 
                 block_author = validator_set[rank_validator]
                 block["author"] = block_author.value[1]["aura"]
+                block["slot"] = aura_predigest.value["slot_number"]
                 break
 
         if "author" not in block:
             block_no = block["header"]["number"]
             logger.error(f"Could not find author for block {block_no}. No PreRuntime log found with aura engine.")
             return None
-        return block["author"]
+        return block["author"], block["slot"]
 
     def get_mc_hash_from_pc_block_header(self, block):
         mc_hash_key = "0x6d637368"
@@ -606,11 +682,13 @@ class SubstrateApi(BlockchainApi):
         """Calculates main chain epoch in which smart contracts candidates related operation will be effective."""
         return self.cardano_cli.get_epoch() + 2
 
-    def sign_address_association(self, address, stake_signing_key):
-        return self.partner_chains_node.sign_address_association(address, stake_signing_key)
+    def sign_address_association(self, genesis_utxo, address, stake_signing_key):
+        return self.partner_chains_node.sign_address_association(genesis_utxo, address, stake_signing_key)
 
-    def sign_block_producer_metadata(self, metadata, cross_chain_signing_key):
-        return self.partner_chains_node.sign_block_producer_metadata(metadata, cross_chain_signing_key)
+    def sign_block_producer_metadata(self, genesis_utxo, metadata_file, cross_chain_signing_key):
+        return self.partner_chains_node.sign_block_producer_metadata(
+            genesis_utxo, metadata_file, cross_chain_signing_key
+        )
 
     @long_running_function
     def submit_address_association(self, signature, wallet):
@@ -825,5 +903,36 @@ class SubstrateApi(BlockchainApi):
             f"Subscribing to Governed Map changes. {change_to_observe_msg}. "
             f"Max main chain reference block: {max_mc_reference_block}."
         )
+        result = self.substrate.subscribe_block_headers(subscription_handler)
+        return result
+
+    def subscribe_token_transfer(self):
+        max_mc_reference_block = self.get_mc_block()
+
+        def subscription_handler(obj, update_nr, subscription_id):
+            block_no = obj["header"]["number"]
+            logger.debug(f"New block #{block_no}")
+
+            mc_hash = self.get_mc_hash_from_pc_block_header(obj)
+            mc_block = self.get_mc_block_by_block_hash(mc_hash).block_no
+            logger.debug(f"Main chain reference block: {mc_block}")
+
+            token_transfer_value = None
+            block = self.substrate.get_block(block_number=block_no)
+            for idx, extrinsic in enumerate(block["extrinsics"]):
+                logger.debug(f"# {idx}: {extrinsic.value}")
+                if (
+                    extrinsic.value["call"]["call_module"] == "NativeTokenManagement"
+                    and extrinsic.value["call"]["call_function"] == "transfer_tokens"
+                ):
+                    token_transfer_value = extrinsic.value["call"]["call_args"][0]["value"]
+                    break
+            if token_transfer_value:
+                return token_transfer_value
+            if mc_block > max_mc_reference_block:
+                logger.warning("Max main chain block reached. Stopping subscription.")
+                self.substrate.rpc_request("chain_unsubscribeNewHeads", [subscription_id])
+                return False
+
         result = self.substrate.subscribe_block_headers(subscription_handler)
         return result

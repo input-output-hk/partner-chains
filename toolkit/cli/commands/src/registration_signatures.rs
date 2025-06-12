@@ -10,21 +10,26 @@ use sidechain_domain::{
 };
 use std::fmt::{Display, Formatter};
 
+/// Generates dual signatures (Ed25519 + ECDSA) for Partner Chain validator registration.
 #[derive(Clone, Debug, Parser)]
 #[command(author, version, about, long_about = None)]
 pub struct RegistrationSignaturesCmd {
+	/// Genesis UTXO that uniquely identifies the target Partner Chain
 	#[arg(long)]
 	pub genesis_utxo: UtxoId,
 	/// Bytes of the Cardano Stake Pool Signing Key. Bytes of 'cbor' field of a Cardano key file content, after dropping the '5820' prefix.
 	#[arg(long)]
 	pub mainchain_signing_key: StakePoolSigningKeyParam,
+	/// ECDSA private key for the Partner Chain validator
 	#[arg(long)]
 	pub sidechain_signing_key: SidechainSigningKeyParam,
+	/// UTXO to be spend during validator registration transaction
 	#[arg(long)]
 	pub registration_utxo: UtxoId,
 }
 
 impl RegistrationSignaturesCmd {
+	/// Creates the structured message that will be signed by both mainchain and sidechain keys.
 	pub fn to_register_validator_message(&self, genesis_utxo: UtxoId) -> RegisterValidatorMessage {
 		RegisterValidatorMessage::new(
 			genesis_utxo,
@@ -33,6 +38,7 @@ impl RegistrationSignaturesCmd {
 		)
 	}
 
+	/// Generates mainchain and sidechain signatures with public keys.
 	pub fn execute(&self) -> RegistrationCmdOutput {
 		self.to_register_validator_message(self.genesis_utxo)
 			.sign_and_prepare_registration_cmd_output(
@@ -42,11 +48,16 @@ impl RegistrationSignaturesCmd {
 	}
 }
 
+/// Complete registration output with signatures and public keys for both chains.
 #[derive(Clone, Debug, Serialize)]
 pub struct RegistrationCmdOutput {
+	/// Ed25519 public key of the Cardano stake pool operator
 	pub spo_public_key: StakePoolPublicKey,
+	/// Ed25519 signature from the stake pool operator
 	pub spo_signature: MainchainSignature,
+	/// ECDSA public key for Partner Chain operations
 	pub sidechain_public_key: SidechainPublicKey,
+	/// ECDSA signature from the Partner Chain validator key
 	pub sidechain_signature: SidechainSignature,
 }
 
@@ -59,14 +70,19 @@ impl Display for RegistrationCmdOutput {
 	}
 }
 
+/// Message structure for validator registration signatures.
 #[derive(Clone, Debug, ToDatum)]
 pub struct RegisterValidatorMessage {
+	/// Genesis UTXO identifying the specific Partner Chain instance
 	pub genesis_utxo: UtxoId,
+	/// ECDSA public key for the validator on the Partner Chain
 	pub sidechain_pub_key: SidechainPublicKey,
+	/// UTXO consumed in the registration transaction for uniqueness
 	pub registration_utxo: UtxoId,
 }
 
 impl RegisterValidatorMessage {
+	/// Creates new validator registration message.
 	pub fn new(
 		genesis_utxo: UtxoId,
 		pub_key: secp256k1::PublicKey,
@@ -79,6 +95,7 @@ impl RegisterValidatorMessage {
 		}
 	}
 
+	/// Signs message with both mainchain and sidechain keys.
 	pub fn sign_and_prepare_registration_cmd_output(
 		&self,
 		mainchain_key: ed25519_zebra::SigningKey,

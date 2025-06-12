@@ -1,3 +1,7 @@
+//! This crate provides an enum type [PartnerChainsSubcommand] collecting all Partner Chains specific subcommands,
+//! and a [run] function for running these commands.
+//! [PartnerChainsSubcommand] is meant to be used by a command line argument parser library.
+#![deny(missing_docs)]
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 use authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
@@ -7,10 +11,8 @@ use cli_commands::block_producer_metadata_signatures::BlockProducerMetadataSigna
 use cli_commands::registration_signatures::RegistrationSignaturesCmd;
 use frame_support::sp_runtime::traits::NumberFor;
 use parity_scale_codec::{Decode, Encode};
-use partner_chains_cli::io::DefaultCmdRunContext;
-pub use partner_chains_cli::{
-	PartnerChainRuntime, PartnerChainRuntimeBindings, RuntimeTypeWrapper,
-};
+use partner_chains_cli::DefaultCmdRunContext;
+pub use partner_chains_cli::{PartnerChainRuntime, RuntimeTypeWrapper};
 use partner_chains_smart_contracts_commands::SmartContractsCmd;
 use sc_cli::{CliConfiguration, SharedParams, SubstrateCli};
 use sc_service::TaskManager;
@@ -31,8 +33,10 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 #[derive(Debug, Clone, Parser)]
+/// Command line arguments for the `ariadne-parameters` command.
 pub struct AriadneParametersCmd {
 	#[arg(long)]
+	/// Main chain epoch number for which the parameters should be queried.
 	pub mc_epoch_number: McEpochNumber,
 	#[allow(missing_docs)]
 	#[clap(flatten)]
@@ -46,6 +50,7 @@ impl CliConfiguration for AriadneParametersCmd {
 }
 
 #[derive(Debug, Clone, Parser)]
+/// Command line arguments for the `sidechain-params` command.
 pub struct SidechainParamsCmd {
 	#[allow(missing_docs)]
 	#[clap(flatten)]
@@ -59,11 +64,14 @@ impl CliConfiguration for SidechainParamsCmd {
 }
 
 #[derive(Debug, Clone, Parser)]
+/// Command line arguments for the `registration-status` command.
 pub struct RegistrationStatusCmd {
 	#[arg(long)]
 	#[arg(long, alias = "mainchain-pub-key")]
+	/// Stake pool public key for which the registration status should be returned.
 	pub stake_pool_pub_key: StakePoolPublicKey,
 	#[arg(long)]
+	/// Mainchain epoch number for which the registration status should be returned.
 	pub mc_epoch_number: McEpochNumber,
 	#[allow(missing_docs)]
 	#[clap(flatten)]
@@ -76,20 +84,35 @@ impl CliConfiguration for RegistrationStatusCmd {
 	}
 }
 
+static REGISTRATION_STATUS_AFTER_HELP: once_cell::sync::Lazy<String> = once_cell::sync::Lazy::new(
+	|| {
+		fn get_node_exe_name() -> Option<String> {
+			let exe_path = std::env::current_exe().ok()?;
+			let exe_name_osstr = exe_path.file_name()?.to_os_string();
+			Some(exe_name_osstr.to_str()?.to_string())
+		}
+		format!(
+			"Example: {} registration-status --stake-pool-pub-key 0x702b81ab2e86cf73a87062af1eb0da666d451976d9d91c63a119ed94e6a33dc0 --mc-epoch-number 586",
+			get_node_exe_name().unwrap_or("node-bin".to_string())
+		)
+	},
+);
+
 #[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
+/// Entry point for all Partner Chains specific subcommand.
 pub enum PartnerChainsSubcommand<
-	RuntimeBindings: PartnerChainRuntime + PartnerChainRuntimeBindings,
+	RuntimeBindings: PartnerChainRuntime,
 	PartnerchainAddress: Clone + Sync + Send + FromStr + 'static,
 > {
-	/// Returns sidechain parameters
+	/// Returns sidechain parameters.
 	SidechainParams(SidechainParamsCmd),
 
-	/// Returns registration status for a given mainchain public key and epoch number.
+	/// Returns registration status for a given stake pool public key and epoch number.
 	/// If registration has been included in Cardano block in epoch N, then it should be returned by this command if epoch greater than N+1 is provided.
 	/// If this command won't show your registration after a few minutes after it has been included in a cardano block, you can start debugging for unsuccessful registration.
 	#[clap(
-		after_help = "Example: partner-chains-node -- registration-status --stake-pool-pub-key 0x702b81ab2e86cf73a87062af1eb0da666d451976d9d91c63a119ed94e6a33dc0 --mc-epoch-number 586"
+		after_help = &*REGISTRATION_STATUS_AFTER_HELP
 	)]
 	RegistrationStatus(RegistrationStatusCmd),
 
@@ -116,13 +139,14 @@ pub enum PartnerChainsSubcommand<
 }
 
 #[allow(deprecated)]
+/// Runs a Partner Chains subcommand.
 pub fn run<
 	Cli,
 	Block,
 	CommitteeMember,
 	Client,
 	BlockProducerMetadata,
-	RuntimeBindings: PartnerChainRuntime + PartnerChainRuntimeBindings,
+	RuntimeBindings: PartnerChainRuntime,
 	PartnerchainAddress,
 >(
 	cli: &Cli,
