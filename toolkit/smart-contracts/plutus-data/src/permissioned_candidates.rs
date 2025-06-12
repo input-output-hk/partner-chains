@@ -36,28 +36,17 @@ impl TryFrom<PlutusData> for PermissionedCandidateDatums {
 
 impl From<PermissionedCandidateDatumV0> for PermissionedCandidateData {
 	fn from(value: PermissionedCandidateDatumV0) -> Self {
-		Self {
+		Self::V0(PermissionedCandidateDataV0 {
 			sidechain_public_key: value.sidechain_public_key,
 			aura_public_key: value.aura_public_key,
 			grandpa_public_key: value.grandpa_public_key,
-		}
+		})
 	}
 }
 
 impl From<PermissionedCandidateDatumV1> for PermissionedCandidateData {
 	fn from(value: PermissionedCandidateDatumV1) -> Self {
-		let sidechain_public_key =
-			value.keys.iter().find(|(key_type, _key)| key_type == b"crch").unwrap();
-		let aura_public_key =
-			value.keys.iter().find(|(key_type, _key)| key_type == b"aura").unwrap();
-		let grandpa_public_key =
-			value.keys.iter().find(|(key_type, _key)| key_type == b"gran").unwrap();
-
-		Self {
-			sidechain_public_key: SidechainPublicKey(sidechain_public_key.1.clone()),
-			aura_public_key: AuraPublicKey(aura_public_key.1.clone()),
-			grandpa_public_key: GrandpaPublicKey(grandpa_public_key.1.clone()),
-		}
+		Self::V1(PermissionedCandidateDataV1 { keys: value.keys })
 	}
 }
 
@@ -102,33 +91,46 @@ pub fn permissioned_candidates_to_plutus_data(
 	let mut list = PlutusList::new();
 	for candidate in candidates {
 		let mut candidate_datum = PlutusList::new();
-		{
-			let mut sidechain = PlutusList::new();
-			candidate_datum.add(&PlutusData::new_bytes(b"crch".to_vec()));
-			sidechain.add(&PlutusData::new_bytes(candidate.sidechain_public_key.0.clone()));
-			candidate_datum.add(&PlutusData::new_list(&sidechain));
-		}
-		{
-			let mut aura = PlutusList::new();
-			candidate_datum.add(&PlutusData::new_bytes(b"aura".to_vec()));
-			aura.add(&PlutusData::new_bytes(candidate.aura_public_key.0.clone()));
-			candidate_datum.add(&PlutusData::new_list(&aura));
-		}
-		{
-			let mut grandpa = PlutusList::new();
-			candidate_datum.add(&PlutusData::new_bytes(b"gran".to_vec()));
-			grandpa.add(&PlutusData::new_bytes(candidate.grandpa_public_key.0.clone()));
-			candidate_datum.add(&PlutusData::new_list(&grandpa));
-		}
+		match candidate {
+			PermissionedCandidateData::V0(data) => {
+				candidate_datum.add(&PlutusData::new_bytes(data.sidechain_public_key.0.clone()));
+				candidate_datum.add(&PlutusData::new_bytes(data.aura_public_key.0.clone()));
+				candidate_datum.add(&PlutusData::new_bytes(data.grandpa_public_key.0.clone()));
+			},
+			PermissionedCandidateData::V1(data) => {
+				for (key_type, key) in &data.keys {
+					let mut key_type_with_key = PlutusList::new();
+					key_type_with_key.add(&PlutusData::new_bytes(key_type.to_vec()));
+					key_type_with_key.add(&PlutusData::new_bytes(key.to_vec()));
+					candidate_datum.add(&PlutusData::new_list(&key_type_with_key));
+				}
+			},
+		};
 		list.add(&PlutusData::new_list(&candidate_datum));
 	}
 	let appendix = PlutusData::new_list(&list);
 	VersionedGenericDatum {
 		datum: PlutusData::new_empty_constr_plutus_data(&BigNum::zero()),
 		appendix,
-		version: 0,
+		version: 1,
 	}
 	.into()
+}
+
+impl PermissionedCandidateDatums {
+	/// Parses plutus data schema in accordance with V1 schema
+	fn decode_v1(data: &PlutusData) -> Result<Self, String> {
+		let permissioned_candidates = data
+			.as_list()
+			.and_then(|list_datums| {
+				list_datums
+					.into_iter()
+					.map(decode_v1_candidate_datum)
+					.collect::<Option<Vec<PermissionedCandidateDatumV1>>>()
+			})
+			.ok_or("Expected [[ByteString, ByteString], [ByteString,ByteString], ... ]")?;
+		Ok(Self::V1(permissioned_candidates))
+	}
 }
 
 impl VersionedDatumWithLegacy for PermissionedCandidateDatums {
@@ -157,6 +159,8 @@ impl VersionedDatumWithLegacy for PermissionedCandidateDatums {
 		match version {
 			0 => PermissionedCandidateDatums::decode_legacy(appendix)
 				.map_err(|msg| format!("Cannot parse appendix: {msg}")),
+			1 => PermissionedCandidateDatums::decode_v1(appendix)
+				.map_err(|msg| format!("Cannot parse appendix: {msg}")),
 			_ => Err(format!("Unknown version: {version}")),
 		}
 	}
@@ -174,6 +178,18 @@ fn decode_legacy_candidate_datum(datum: &PlutusData) -> Option<PermissionedCandi
 		aura_public_key: AuraPublicKey(aura),
 		grandpa_public_key: GrandpaPublicKey(grandpa),
 	})
+}
+
+fn decode_v1_candidate_datum(datum: &PlutusData) -> Option<PermissionedCandidateDatumV1> {
+	let keys = datum
+		.as_list()
+		.iter()
+		.map(|datum| {
+			(datum.get(0).as_bytes().unwrap().try_into().unwrap(), datum.get(1).as_bytes().unwrap())
+		})
+		.collect();
+
+	Some(PermissionedCandidateDatumV1 { keys })
 }
 
 #[cfg(test)]
@@ -225,20 +241,136 @@ mod plutus_data {
 		assert_eq!(PermissionedCandidateDatums::try_from(plutus_data).unwrap(), expected_datum)
 	}
 
+	fn v0_datum_json() -> serde_json::Value {
+		serde_json::json!({
+			"list": [
+				{ "constructor": 0, "fields": [] },
+				{ "list": [
+					{"list": [
+						{"bytes": "cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854"},
+						{"bytes": "bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec"},
+						{"bytes": "9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d"}
+					]},
+					{"list": [
+						{"bytes": "79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf"},
+						{"bytes": "56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19"},
+						{"bytes": "7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32"}
+					]}
+				]},
+				{ "int": 1 }
+			]
+		})
+	}
+
+	fn v1_datum_json() -> serde_json::Value {
+		serde_json::json!({
+			"list": [
+				{ "constructor": 0, "fields": [] },
+				{"list": [
+					{"list": [
+						{"bytes": hex::encode(b"crch")},
+						{"bytes": "cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854"}
+					]},
+					{"list": [
+						{"bytes": hex::encode(b"aura")},
+						{"bytes": "bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec"}
+					]},
+					{"list": [
+						{"bytes": hex::encode(b"gran")},
+						{"bytes": "9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d"}
+					]}
+				]},
+				{"list": [
+					{"list": [
+						{"bytes": hex::encode(b"crch")},
+						{"bytes": "79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf"}
+					]},
+					{"list": [
+						{"bytes": hex::encode(b"aura")},
+						{"bytes": "56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19"}
+					]},
+					{"list": [
+						{"bytes": hex::encode(b"gran")},
+						{"bytes": "7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32"}
+					]}
+				]},
+				{ "int": 1 }
+			]
+		})
+	}
+
+	#[test]
+	fn test_permissioned_candidates_to_plutus_data() {
+		let expected_plutus_data = json_to_plutus_data(v0_datum_json());
+
+		let domain_data = vec![
+			PermissionedCandidateData::V0(PermissionedCandidateDataV0 {
+				sidechain_public_key: SidechainPublicKey(
+					hex!("cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854")
+						.to_vec(),
+				),
+				aura_public_key: AuraPublicKey(
+					hex!("bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec")
+						.to_vec(),
+				),
+				grandpa_public_key: GrandpaPublicKey(
+					hex!("9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d")
+						.to_vec(),
+				),
+			}),
+			PermissionedCandidateData::V0(PermissionedCandidateDataV0 {
+				sidechain_public_key: SidechainPublicKey(
+					hex!("79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf")
+						.to_vec(),
+				),
+				aura_public_key: AuraPublicKey(
+					hex!("56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19")
+						.to_vec(),
+				),
+				grandpa_public_key: GrandpaPublicKey(
+					hex!("7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32")
+						.to_vec(),
+				),
+			}),
+		];
+		assert_eq!(permissioned_candidates_to_plutus_data(&domain_data), expected_plutus_data)
+	}
+
+	#[test]
+	fn valid_v0_permissioned_candidates() {
+		let plutus_data = json_to_plutus_data(v0_datum_json());
+
+		let expected_datum = PermissionedCandidateDatums::V0(vec![
+			PermissionedCandidateDatumV0 {
+				sidechain_public_key: SidechainPublicKey(
+					hex!("cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854").into(),
+				),
+				aura_public_key: AuraPublicKey(
+					hex!("bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec").into(),
+				),
+				grandpa_public_key: GrandpaPublicKey(
+					hex!("9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d").into(),
+				),
+			},
+			PermissionedCandidateDatumV0 {
+				sidechain_public_key: SidechainPublicKey(
+					hex!("79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf").into(),
+				),
+				aura_public_key: AuraPublicKey(
+					hex!("56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19").into(),
+				),
+				grandpa_public_key: GrandpaPublicKey(
+					hex!("7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32").into(),
+				),
+			},
+		]);
+
+		assert_eq!(PermissionedCandidateDatums::try_from(plutus_data).unwrap(), expected_datum)
+	}
+
 	#[test]
 	fn valid_v1_permissioned_candidates() {
-		let plutus_data = test_plutus_data!({"list": [
-			{"list": [
-				{"list": [{"bytes": b"crch".to_vec()}, {"bytes": "cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854"}]},
-				{"list": [{"bytes": b"aura".to_vec()}, {"bytes": "bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec"}]},
-				{"list": [{"bytes": b"gran".to_vec()}, {"bytes": "9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d"}]}
-			]},
-			{"list": [
-				{"list": [{"bytes": b"crch".to_vec()}, {"bytes": "79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf"}]},
-				{"list": [{"bytes": b"aura".to_vec()}, {"bytes": "56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19"}]},
-				{"list": [{"bytes": b"gran".to_vec()}, {"bytes": "7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32"}]}
-			]}
-		]});
+		let plutus_data = json_to_plutus_data(v1_datum_json());
 
 		let expected_datum = PermissionedCandidateDatums::V1(vec![
 			PermissionedCandidateDatumV1 {
@@ -278,96 +410,6 @@ mod plutus_data {
 							.into(),
 					),
 				],
-			},
-		]);
-
-		assert_eq!(PermissionedCandidateDatums::try_from(plutus_data).unwrap(), expected_datum)
-	}
-
-	fn v0_datum_json() -> serde_json::Value {
-		serde_json::json!({
-			"list": [
-				{ "constructor": 0, "fields": [] },
-				{ "list": [
-					{"list": [
-						{"bytes": "cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854"},
-						{"bytes": "bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec"},
-						{"bytes": "9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d"}
-					]},
-					{"list": [
-						{"bytes": "79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf"},
-						{"bytes": "56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19"},
-						{"bytes": "7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32"}
-					]}
-				]},
-				{ "int": 0 }
-			]
-		})
-	}
-
-	#[test]
-	fn test_permissioned_candidates_to_plutus_data() {
-		let expected_plutus_data = json_to_plutus_data(v0_datum_json());
-
-		let domain_data = vec![
-			PermissionedCandidateData {
-				sidechain_public_key: SidechainPublicKey(
-					hex!("cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854")
-						.to_vec(),
-				),
-				aura_public_key: AuraPublicKey(
-					hex!("bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec")
-						.to_vec(),
-				),
-				grandpa_public_key: GrandpaPublicKey(
-					hex!("9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d")
-						.to_vec(),
-				),
-			},
-			PermissionedCandidateData {
-				sidechain_public_key: SidechainPublicKey(
-					hex!("79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf")
-						.to_vec(),
-				),
-				aura_public_key: AuraPublicKey(
-					hex!("56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19")
-						.to_vec(),
-				),
-				grandpa_public_key: GrandpaPublicKey(
-					hex!("7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32")
-						.to_vec(),
-				),
-			},
-		];
-		assert_eq!(permissioned_candidates_to_plutus_data(&domain_data), expected_plutus_data)
-	}
-
-	#[test]
-	fn valid_v0_permissioned_candidates() {
-		let plutus_data = json_to_plutus_data(v0_datum_json());
-
-		let expected_datum = PermissionedCandidateDatums::V0(vec![
-			PermissionedCandidateDatumV0 {
-				sidechain_public_key: SidechainPublicKey(
-					hex!("cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854").into(),
-				),
-				aura_public_key: AuraPublicKey(
-					hex!("bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec").into(),
-				),
-				grandpa_public_key: GrandpaPublicKey(
-					hex!("9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d").into(),
-				),
-			},
-			PermissionedCandidateDatumV0 {
-				sidechain_public_key: SidechainPublicKey(
-					hex!("79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf").into(),
-				),
-				aura_public_key: AuraPublicKey(
-					hex!("56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19").into(),
-				),
-				grandpa_public_key: GrandpaPublicKey(
-					hex!("7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32").into(),
-				),
 			},
 		]);
 

@@ -83,6 +83,7 @@ impl VersionedDatumWithLegacy for DParamDatum {
 		match version {
 			0 => DParamDatum::decode_legacy(appendix)
 				.map_err(|msg| format!("Cannot parse appendix: {msg}")),
+			1 => unimplemented!(),
 			_ => Err(format!("Unknown version: {version}")),
 		}
 	}

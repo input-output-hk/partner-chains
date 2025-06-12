@@ -1110,13 +1110,61 @@ impl DParameter {
 /// Permissioned candidates are nominated by the Partner Chain's governance authority to be
 /// eligible for participation in block producer committee without controlling any ADA stake
 /// on Cardano and registering as SPOs.
-pub struct PermissionedCandidateData {
+pub enum PermissionedCandidateData {
+	/// Initial/legacy permissioned candidate schema
+	V0(PermissionedCandidateDataV0),
+	/// Permissioned candidate with universal keys
+	V1(PermissionedCandidateDataV1),
+}
+
+#[derive(
+	Debug,
+	Clone,
+	PartialEq,
+	Eq,
+	Decode,
+	DecodeWithMemTracking,
+	Encode,
+	TypeInfo,
+	PartialOrd,
+	Ord,
+	Hash,
+)]
+/// Information about a permissioned committee member candidate
+///
+/// Permissioned candidates are nominated by the Partner Chain's governance authority to be
+/// eligible for participation in block producer committee without controlling any ADA stake
+/// on Cardano and registering as SPOs.
+pub struct PermissionedCandidateDataV0 {
 	/// Sidechain public key of the trustless candidate
 	pub sidechain_public_key: SidechainPublicKey,
 	/// Aura public key of the trustless candidate
 	pub aura_public_key: AuraPublicKey,
 	/// Grandpa public key of the trustless candidate
 	pub grandpa_public_key: GrandpaPublicKey,
+}
+
+#[derive(
+	Debug,
+	Clone,
+	PartialEq,
+	Eq,
+	Decode,
+	DecodeWithMemTracking,
+	Encode,
+	TypeInfo,
+	PartialOrd,
+	Ord,
+	Hash,
+)]
+/// Information about a permissioned committee member candidate
+///
+/// Permissioned candidates are nominated by the Partner Chain's governance authority to be
+/// eligible for participation in block producer committee without controlling any ADA stake
+/// on Cardano and registering as SPOs.
+pub struct PermissionedCandidateDataV1 {
+	/// Arbitrary set of keys with associated key type
+	pub keys: Vec<([u8; 4], Vec<u8>)>,
 }
 
 /// Cardano SPO registration. This is a stripped-down version of [RegistrationData].
