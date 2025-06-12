@@ -192,8 +192,9 @@ echo "Generating chain-spec.json file for Partner chain Nodes..."
 ./partner-chains-node build-spec --disable-default-bootnode > chain-spec.json
 
 echo "Configuring Initial Validators..."
-jq '.genesis.runtimeGenesis.config.session.initialValidators = [
+jq '.genesis.runtimeGenesis.config.session.keys = [
      [
+         "5FnXTMg8UnfeGsMaGg24o3NY21VRFRDRdgxuLGmXuYLeZmin",
          "5FnXTMg8UnfeGsMaGg24o3NY21VRFRDRdgxuLGmXuYLeZmin",
          {
              "aura": "5Cyx94iyji8namhRxvs4mAbURtPsvwjWCb68ZihNzfRysGLZ",
@@ -201,6 +202,7 @@ jq '.genesis.runtimeGenesis.config.session.initialValidators = [
          }
      ],
      [
+         "5FJMH4MeZgd4fpiiAVLnr4uRop2EDFgzAFcvLmcduQ2cofCi",
          "5FJMH4MeZgd4fpiiAVLnr4uRop2EDFgzAFcvLmcduQ2cofCi",
          {
              "aura": "5E4op92Z2Di1GoVS9KqnoGVKQXG2R9x1vdh3RW892YLFsLrc",
