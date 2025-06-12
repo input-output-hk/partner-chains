@@ -1,0 +1,38 @@
+
+  cardano-node-1:
+    container_name: cardano-node-1
+    image: ${CARDANO_IMAGE}
+    platform: linux/amd64
+    volumes:
+      - cardano-node-1-data:/data
+      - shared-volume:/shared
+      - ./configurations/busybox:/busybox
+      - ./configurations/cardano/entrypoint.sh:/entrypoint.sh
+      - ./configurations/cardano/topology-pool1.json:/shared/node-1-topology.json
+      - ./configurations/cardano/keys/cold.vkey:/keys/cold.vkey
+      - ./configurations/cardano/keys/kes.skey:/keys/kes.skey
+      - ./configurations/cardano/keys/vrf.skey:/keys/vrf.skey
+      - ./configurations/cardano/keys/funded_address.skey:/keys/funded_address.skey
+      - ./configurations/cardano/keys/funded_address.vkey:/keys/funded_address.vkey
+      - ./configurations/cardano/keys/owner-utxo.skey:/keys/owner-utxo.skey
+      - ./configurations/cardano/keys/owner-utxo.vkey:/keys/owner-utxo.vkey
+      - ./configurations/cardano/keys/op.cert:/keys/node.cert
+      - ./configurations/cardano/reward_token_policy.script:/shared/reward_token_policy.script
+      - ./configurations/cardano/v-function.script:/shared/v-function.script
+      - ./configurations/cardano/config-pool1.json:/shared/node-1-config.json.base
+      - ./configurations/db-sync/config.json:/shared/db-sync-config.json.base
+      - ./configurations/genesis/byron/genesis.json:/shared/byron/genesis.json.base
+      - ./configurations/genesis/shelley/genesis.json:/shared/shelley/genesis.json.base
+      - ./configurations/genesis/shelley/genesis.alonzo.json:/shared/shelley/genesis.alonzo.json.base
+      - ./configurations/genesis/shelley/genesis-utxo.addr:/shared/shelley/genesis-utxo.addr
+      - ./configurations/genesis/shelley/genesis-utxo.skey:/shared/shelley/genesis-utxo.skey
+      - ./configurations/genesis/shelley/genesis-utxo.vkey:/shared/shelley/genesis-utxo.vkey
+      - ./configurations/genesis/conway/genesis.conway.json:/shared/conway/genesis.conway.json.base
+      - ./runtime-values:/runtime-values
+    environment:
+      - CARDANO_NODE_SOCKET_PATH=/data/node.socket
+      - NUM_PERMISSIONED_NODES_TO_PROCESS=${NUM_PERMISSIONED_NODES_TO_PROCESS}
+      - NUM_REGISTERED_NODES_TO_PROCESS=${NUM_REGISTERED_NODES_TO_PROCESS}
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]
+    ports:
+      - "32000:32000"
