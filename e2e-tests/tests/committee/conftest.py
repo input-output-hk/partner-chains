@@ -1,6 +1,7 @@
 import math
 import logging
 import random
+import json
 from typing import Generator, Tuple
 from config.api_config import ApiConfig, Node
 from pytest import fixture, mark, skip
@@ -11,7 +12,6 @@ from src.blockchain_api import BlockchainApi
 from src.db.models import Candidates, PermissionedCandidates, StakeDistributionCommittee
 from src.partner_chain_rpc import DParam
 from src.pc_epoch_calculator import PartnerChainEpochCalculator
-from src.run_command import RunnerFactory
 
 
 CANDIDATES_STABILITY_OFFSET_IN_MC_EPOCHS = 2
@@ -529,30 +529,29 @@ def get_pc_epoch_blocks(api: BlockchainApi) -> Generator[dict, None, None]:
 
 
 @fixture
-def candidate_skey_with_cli(config: ApiConfig, candidate: Candidates):
+def candidate_skey_with_cli(config: ApiConfig, api: BlockchainApi, candidate: Candidates, write_file):
     """
     Securely copy the candidate's Cardano payment key (a secret key used by the smart-contracts to pay fees)
-    to a temporary directory on the remote machine and update the path in the configuration.
-    The temporary directory is deleted after the test completes.
+    to a temporary file on the remote machine and update the path in the configuration.
+    The temporary file is deleted after the test completes.
 
     This fixture is executed only if:
     - you call it directly in test or other fixture
-    - SSH is configured in `<env>_stack.json` for given tool
+    - tools.node.runner.files.copy_secrets is set to true in the config file `<env>_stack.json`
 
     WARNING: This fixture copies secret file to a remote host and should be used with caution.
 
     :param config: The API configuration object.
     :param candidate: The candidate to register/deregister.
     """
-    if config.stack_config.ssh:
-        runner = RunnerFactory.get_runner(config.stack_config.ssh, "/bin/bash")
-        temp_dir = runner.run("mktemp -d").stdout.strip()
+    if config.stack_config.tools.node.runner.copy_secrets:
+        runner = api.partner_chains_node.run_command
         path = config.nodes_config.nodes[candidate.name].keys_files.cardano_payment_key
-        filename = path.split("/")[-1]
-        runner.scp(path, temp_dir)
-        config.nodes_config.nodes[candidate.name].keys_files.cardano_payment_key = f"{temp_dir}/{filename}"
+        with open(path, "r") as f:
+            content = json.load(f)
+            filepath = write_file(runner, content)
+        config.nodes_config.nodes[candidate.name].keys_files.cardano_payment_key = filepath
         yield
         config.nodes_config.nodes[candidate.name].keys_files.cardano_payment_key = path
-        runner.run(f"rm -rf {temp_dir}")
     else:
         yield

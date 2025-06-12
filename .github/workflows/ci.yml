@@ -31,10 +31,15 @@ jobs:
     steps:
       - name: Clean runner environment
         run: rm -rf *
+      - name: ls
+        run: ls -la
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          clean: true
+      - name: ls
+        run: ls -la
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -229,7 +234,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.sha }}
+          ref: master
           clean: true
       - name: Get current commit SHA
         id: get_sha
@@ -381,6 +386,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           ref: master
       - name: Deploy ci-preview
         uses: ./.github/actions/deploy/deploy-ci-preview
@@ -455,23 +461,23 @@ jobs:
     runs-on: nixos
     if: github.event_name == 'workflow_dispatch'
     steps:
+      - name: Clean runner environment
+        run: rm -rf *
       - name: Checkout target code to build
         uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           ref: ${{ inputs.sha }}
           clean: true
-
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN_SECRET }}
           aws-region: ${{ env.AWS_REGION }}
-
       - name: Login to container registry
         uses: docker/login-action@v3
         with:
           registry: ${{ secrets.ECR_REGISTRY_SECRET }}
-
       - name: Cache cargo build
         uses: actions/cache@v3
         with:
@@ -481,24 +487,18 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
-
       - name: Build
         run: nix develop -c bash -c "cargo build --locked --profile=release"
-
       - name: Test
         run: nix develop -c bash -c "cargo test --locked --profile=release --features=runtime-benchmarks"
-
       - name: Lint
         run: nix develop -c bash -c "RUSTFLAGS=-Dwarnings cargo clippy --all-targets --all-features"
-
       - name: Formatting
         run: nix develop -c bash -c "cargo fmt --check"
-
       #- name: Run cargo-deny to check licenses
       #  uses: EmbarkStudios/cargo-deny-action@v1
       #  with:
       #    command: check licenses
-
       - name: Build chain specs
         run: |
           source dev/envs/devnet/.envrc
@@ -510,27 +510,23 @@ jobs:
           source dev/envs/staging-preview/.envrc
           target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
           nix develop -c bash -c "./dev/update-chain-spec.sh staging_preview_chain_spec.json"
-
       - name: Build and push docker image
         run: |
           cp target/release/partner-chains-demo-node .
           nix develop -c bash -c "patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 partner-chains-demo-node"
           docker build -t ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ inputs.sha }} .
           docker push ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ inputs.sha }}
-
       - name: Rename and prepare artifact for workflow dispatch
         run: |
           ARTIFACT_NAME="partner-chains-node-${{ inputs.sha }}-x86_64-linux"
           cp ./partner-chains-demo-node "$ARTIFACT_NAME"
           chmod +x "$ARTIFACT_NAME"
         shell: bash
-
       - name: Upload partner-chains-node artifact
         uses: actions/upload-artifact@v4
         with:
           name: partner-chains-node-linux-artifact
           path: partner-chains-node-${{ inputs.sha }}-x86_64-linux
-
       - name: Upload chain spec artifacts
         uses: actions/upload-artifact@v4
         with:
