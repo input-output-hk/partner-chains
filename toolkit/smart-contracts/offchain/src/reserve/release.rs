@@ -86,7 +86,7 @@ pub async fn release_reserve_funds<
 	})?;
 	let tx_id = res.transaction.id;
 	log::info!("Reserve release transaction submitted: {}", hex::encode(tx_id));
-	await_tx.await_tx_output(client, UtxoId::new(tx_id, 0)).await?;
+	await_tx.await_tx_output(client, McTxHash(tx_id)).await?;
 
 	Ok(McTxHash(tx_id))
 }
