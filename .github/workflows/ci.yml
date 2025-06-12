@@ -30,7 +30,7 @@ jobs:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
     steps:
       - name: Clean runner environment
-        run: find . -mindepth 1 -exec rm -rf {} +
+        run: rm -rf ./*
       - name: ls
         run: ls -la
       - name: Checkout repository
@@ -231,7 +231,7 @@ jobs:
       sha: ${{ steps.get_sha.outputs.sha }}
     steps:
       - name: Clean runner environment
-        run: find . -mindepth 1 -exec rm -rf {} +
+        run: rm -rf ./*
       - name: Checkout master branch code
         uses: actions/checkout@v4
         with:
@@ -464,7 +464,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     steps:
       - name: Clean runner environment
-        run: find . -mindepth 1 -exec rm -rf {} +
+        run: rm -rf ./*
       - name: Checkout target code to build
         uses: actions/checkout@v4
         with:
