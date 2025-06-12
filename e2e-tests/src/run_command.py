@@ -1,13 +1,7 @@
-import io
 import logging
-import paramiko
 import subprocess
-import yaml
-from abc import ABC, abstractmethod
-from config.api_config import SSH
-from scp import SCPClient
-import time
-
+from abc import ABC
+from config.api_config import RunnerConfig
 
 STDOUT_MAX_LEN = 2000
 
@@ -24,64 +18,76 @@ class Result:
 
 class RunnerFactory:
     @staticmethod
-    def get_runner(ssh: SSH, shell: str):
-        if ssh:
-            return SSHRunner(ssh)
+    def get_runner(cfg: RunnerConfig) -> 'Runner':
+        if cfg.kubernetes:
+            return KubernetesRunner(cfg)
+        elif cfg.docker:
+            return DockerRunner(cfg)
         else:
-            return LocalRunner(shell)
+            raise ValueError(
+                "No valid runner configuration provided. Please specify either Kubernetes or Docker configuration."
+            )
 
 
 class Runner(ABC):
-    @abstractmethod
-    def run(self, command: str, timeout=120) -> Result:
-        """Run any command.
 
-        Currently supports two types of runners: LocalRunner and SSHRunner.
+    def __init__(self, config: RunnerConfig):
+        self.copy_secrets = config.copy_secrets
+        self.workdir = config.workdir
+        self.workdir_created = False
+        self.files_created = []
+        if self.workdir:
+            self.create_working_directory()
 
-        LocalRunner is used when no SSH configuration is provided.
-        It uses subprocess.run to execute the command with shell=True.
+    def exec(self, command: str, timeout=120) -> Result:
+        if self.workdir:
+            command = f"cd {self.workdir} && {command}"
+        return self._run(command, timeout)
 
-        SSHRunner is used when SSH configuration is provided.
-        It uses paramiko.SSHClient to establish an SSH connection and execute the command.
+    def mktemp(self) -> str:
+        command = "mktemp"
+        if self.workdir:
+            command = f"{command} -p {self.workdir}"
+        result = self._run(command)
+        if result.returncode != 0:
+            raise RuntimeError(f"Failed to create temporary directory: {result.stderr}")
+        temp_file = result.stdout.strip()
+        self.files_created.append(temp_file)
+        logging.debug(f"Temporary file created: {temp_file}")
+        return temp_file
 
-        Arguments:
-            command {str} -- command to run
+    def cleanup(self) -> None:
+        if not self.files_created:
+            logging.info("No temporary files to remove.")
+            return
+        logging.info(f"Removing temporary files: {self.files_created}")
+        cmd = f"rm {' '.join(self.files_created)}"
+        self._run(cmd)
 
-        Keyword Arguments:
-            timeout {int} -- default: 120s
+    def create_working_directory(self) -> str:
+        if not self.workdir or self.workdir_created:
+            return
 
-        Returns:
-            Result -- object containing returncode, stdout and stderr
-        """
-        pass
+        result = self._run(f"test -d {self.workdir}", suppress_stderr_logs=True)
+        if result.returncode == 0:
+            self.workdir_created = True
+            return
 
+        logging.info(f"Creating working directory {self.workdir} in container {self.container}")
+        result = self._run(f"mkdir -p {self.workdir}")
+        if result.returncode != 0:
+            raise RuntimeError(f"Failed to create working directory: {result.stderr}")
+        self.workdir_created = True
 
-class LocalRunner(Runner):
-    def __init__(self, shell: str = None):
-        self.shell = shell
-
-    def _cmd(self, cli, cmd) -> str:
-        full_cmd = "{cli} {cmd}".format(cli=cli, cmd=cmd)
-        if self.shell:
-            full_cmd = "{shell} \"{cli} {cmd}\"".format(shell=self.shell, cli=cli, cmd=cmd)
-        return full_cmd
-
-    def run(self, command: str, timeout=120) -> Result:
-        logging.debug(f"CMD: '{command}' TIMEOUT: {timeout} SHELL: {self.shell}")
-
-        executable = self.shell
-        if self.shell and self.shell.split(" "):
-            executable = None
-            escaped_command = command.replace('"', '\\"')
-            command = "{shell} \"{command}\"".format(shell=self.shell, command=escaped_command)
-
+    def _run(self, cmd: str, timeout=120, suppress_stderr_logs=False) -> Result:
+        full_cmd = self._full_cmd(cmd)
+        logging.debug(f"CMD: '{full_cmd}' TIMEOUT: {timeout}")
         try:
             completed_process = subprocess.run(
-                command,
+                full_cmd,
                 timeout=timeout,
                 capture_output=True,
                 shell=True,
-                executable=executable,
                 encoding="utf-8",
             )
             result = Result(
@@ -93,7 +99,7 @@ class LocalRunner(Runner):
                 result.stdout[:STDOUT_MAX_LEN] + "..." if len(result.stdout) > STDOUT_MAX_LEN else result.stdout
             )
             logging.debug(f"STDOUT: {truncated_output}")
-            if result.stderr:
+            if result.stderr and not suppress_stderr_logs:
                 logging.warning(f"STDERR: {result.stderr}")
             return result
         except subprocess.TimeoutExpired as e:
@@ -104,83 +110,21 @@ class LocalRunner(Runner):
             raise e
 
 
-class SSHRunner(Runner):
-    def __init__(self, ssh_config: SSH):
-        self.host = ssh_config.host
-        self.port = ssh_config.port
-        self.user = ssh_config.username
-        self.key_path = ssh_config.private_key_path
-        self.client = paramiko.SSHClient()
-        if ssh_config.host_keys_path:
-            self.client.load_host_keys(ssh_config.host_keys_path)
+class KubernetesRunner(Runner):
+    def __init__(self, config: RunnerConfig):
+        self.pod = config.kubernetes.pod
+        self.namespace = config.kubernetes.namespace
+        self.container = config.kubernetes.container
+        super().__init__(config)
 
-    def load_key_from_yaml(self, path):
-        with open(path, "r") as file:
-            key = yaml.safe_load(file)["ssh_key"]
-            return key
+    def _full_cmd(self, command: str) -> str:
+        return f"kubectl exec {self.pod} -c {self.container} -n {self.namespace} -- bash -c \"{command}\""
 
-    def connect(self):
-        logging.debug(f"SSH: Connecting to {self.host}:{self.port} as {self.user}")
-        try:
-            private_key_str = self.load_key_from_yaml(self.key_path)
-            private_key = paramiko.RSAKey.from_private_key(io.StringIO(private_key_str))
-            self.client.connect(self.host, self.port, self.user, pkey=private_key)
-        except paramiko.AuthenticationException as auth_err:
-            logging.error(f"Authentication failed: {auth_err}")
-            raise auth_err
-        except paramiko.SSHException as ssh_err:
-            logging.error(f"Unable to establish SSH connection: {ssh_err}")
-            raise ssh_err
-        except Exception as e:
-            logging.error(f"An error occurred: {e}")
-            raise e
 
-        return None
+class DockerRunner(Runner):
+    def __init__(self, config: RunnerConfig):
+        self.container = config.docker.container
+        super().__init__(config)
 
-    def run(self, command: str, timeout=120) -> Result:
-        self.connect()
-        logging.debug(f"CMD: '{command}' TIMEOUT: {timeout}")
-        try:
-            _, stdout, stderr = self.client.exec_command(command, timeout=timeout)
-
-            # Wait until we can read the channel.
-            end_time = time.time() + timeout
-            while not stdout.channel.exit_status_ready() and not stderr.channel.exit_status_ready():
-                time.sleep(1)
-                if time.time() > end_time:
-                    raise TimeoutError(f"Command '{command}' timed out after {timeout}s")
-            output = stdout.read().decode()
-
-            # this blocks execution until the command finishes, but it should be merged already into stdout
-            returncode = stderr.channel.recv_exit_status()
-            error = stderr.read().decode()
-
-            result = Result(returncode=returncode, stdout=output, stderr=error)
-            truncated_output = (
-                result.stdout[:STDOUT_MAX_LEN] + "..." if len(result.stdout) > STDOUT_MAX_LEN else result.stdout
-            )
-            logging.debug(f"STDOUT: {truncated_output}")
-            if result.stderr:
-                logging.warning(f"STDERR: {result.stderr}")
-            return result
-        except TimeoutError as e:
-            logging.error(f"TIMEOUT: {e}")
-            raise e
-        except Exception as e:
-            logging.error(f"UNKNOWN ERROR: {e}")
-            raise e
-        finally:
-            self.close()
-
-    def scp(self, path, remote_path):
-        self.connect()
-        logging.debug(f"SCP: '{path}' INTO: {remote_path}")
-        try:
-            with SCPClient(self.client.get_transport()) as scp:
-                scp.put(path, remote_path=remote_path)
-        finally:
-            self.close()
-
-    def close(self):
-        self.client.close()
-        logging.debug(f"SSH: disconnected from {self.host}:{self.port} as {self.user}")
+    def _full_cmd(self, command: str) -> str:
+        return f"docker exec {self.container} bash -c \"{command}\""

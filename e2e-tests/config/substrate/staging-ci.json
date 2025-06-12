@@ -22,8 +22,5 @@
                 "port": "${nodes_config[default_port]}"
             }
         }
-    },
-    "stack_config": {
-        "tools_host": "binary-host-service.sc.svc.cluster.local"
     }
 }

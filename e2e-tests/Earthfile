@@ -33,7 +33,19 @@ ARG --global pytest_cmd=pytest --blockchain $blockchain --env $env --log-cli-lev
 
 build:
   ARG USERARCH
-  RUN mkdir -m 0700 ~/.ssh && cat config/substrate/known_hosts >> ~/.ssh/known_hosts
+  IF [ "$USERARCH" = "arm64" ]
+    RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip"
+  ELSE
+    RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+  END
+  RUN unzip -q awscliv2.zip
+  RUN ./aws/install
+  RUN curl -LO --silent https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/${USERARCH}/kubectl
+  RUN install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+  RUN --secret K8S_SERVER kubectl config set-cluster my-cluster --server=${K8S_SERVER} --insecure-skip-tls-verify=true
+  RUN --secret K8S_SA_TOKEN kubectl config set-credentials github-actions --token=${K8S_SA_TOKEN}
+  RUN kubectl config set-context my-context --cluster=my-cluster --user=github-actions --namespace=default
+  RUN kubectl config use-context my-context
   RUN curl -L --silent https://github.com/getsops/sops/releases/download/v3.7.3/sops_3.7.3_${USERARCH}.deb > sops.deb && dpkg -i sops.deb && rm sops.deb
   RUN pip install -r requirements.txt
 
@@ -44,9 +56,9 @@ test:
   FROM +build
   ARG CI_RUN
   IF [ "$CI_RUN" = "true" ]
-    RUN --secret AWS_SECRET_ACCESS_KEY --secret AWS_ACCESS_KEY_ID --secret AWS_SESSION_TOKEN --no-cache --ssh eval $pytest_cmd --ci-run || true
+    RUN --secret AWS_SECRET_ACCESS_KEY --secret AWS_ACCESS_KEY_ID --secret AWS_SESSION_TOKEN --no-cache eval $pytest_cmd --ci-run || true
   ELSE
-    RUN --mount=type=secret,target=/root/.aws/credentials,id=aws --no-cache --ssh eval $pytest_cmd || true
+    RUN --mount=type=secret,target=/root/.aws/credentials,id=aws --mount=type=secret,target=/root/.kube/config,id=kube --no-cache eval $pytest_cmd || true
   END
 
 test-artifacts:
