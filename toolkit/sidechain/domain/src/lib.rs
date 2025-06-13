@@ -1167,6 +1167,18 @@ pub struct PermissionedCandidateDataV1 {
 	pub keys: Vec<([u8; 4], Vec<u8>)>,
 }
 
+impl From<PermissionedCandidateDataV0> for PermissionedCandidateData {
+	fn from(value: PermissionedCandidateDataV0) -> Self {
+		PermissionedCandidateData::V0(value)
+	}
+}
+
+impl From<PermissionedCandidateDataV1> for PermissionedCandidateData {
+	fn from(value: PermissionedCandidateDataV1) -> Self {
+		PermissionedCandidateData::V1(value)
+	}
+}
+
 /// Cardano SPO registration. This is a stripped-down version of [RegistrationData].
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct CandidateRegistration {

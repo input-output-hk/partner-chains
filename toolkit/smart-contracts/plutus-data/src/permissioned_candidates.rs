@@ -73,18 +73,19 @@ impl From<PermissionedCandidateDatums> for Vec<PermissionedCandidateData> {
 ///   - datum: ()
 ///   - appendix:
 ///     [
-///       [ candidates[0].sidechain_public_key
-///       , candidates[0].aura_public_key
-///       , candidates[0].grandpa_public_key
-///       ]
-///     ,
-///       [ candidates[1].sidechain_public_key
-///       , candidates[1].aura_public_key
-///       , candidates[1].grandpa_public_key
+///       [
+///         [b"crch", candidates[0].sidechain_public_key],
+///         [b"aura", candidates[0].aura_public_key],
+///         [b"gran", candidates[0].grandpa_public_key]
+///       ],
+///       [
+///         [b"crch", candidates[1].sidechain_public_key],
+///         [b"aura", candidates[1].aura_public_key],
+///         [b"gran", candidates[1].grandpa_public_key]
 ///       ]
 ///       // etc.
 ///     ]
-///   - version: 0
+///   - version: 1
 pub fn permissioned_candidates_to_plutus_data(
 	candidates: &[PermissionedCandidateData],
 ) -> PlutusData {
