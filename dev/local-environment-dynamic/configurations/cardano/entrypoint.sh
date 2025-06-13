@@ -111,104 +111,6 @@ echo "[LOG] New main address created: $new_address"
 # Array to store payment addresses for registered nodes
 registered_node_payment_addresses=() # Array to store payment addresses
 
-# --- New: Generate Payment, Cold, KES, VRF, and Stake Keys for Permissioned Nodes ---
-echo "[LOG] Generating Keys for $NUM_PERMISSIONED_NODES_TO_PROCESS Permissioned Nodes..."
-# Assume permissioned node key directories are structured like: /shared/node-keys/permissioned-<i>/keys
-# And node names are like partner-chains-node-1, partner-chains-node-2, etc. up to 10.
-# Let's map them to permissioned-1 to permissioned-10 for consistency with registered nodes.
-# The config maps node-1 to permissioned-1 etc.
-permissioned_node_payment_addresses=() # Array to store payment addresses
-
-for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do # Iterate based on the variable
-    node_idx=$((i+1)) # 1-indexed for directory name
-    NODE_SPECIFIC_KEYS_DIR="/shared/node-keys/permissioned-${node_idx}/keys" # Dynamic path
-    mkdir -p "$NODE_SPECIFIC_KEYS_DIR" # Ensure directory exists
-
-    echo "[LOG] Generating/checking keys for permissioned-$node_idx in $NODE_SPECIFIC_KEYS_DIR..."
-
-    # Payment Keys (Generate if not exist, assuming they might exist from other configs)
-    if [ ! -f "${NODE_SPECIFIC_KEYS_DIR}/payment.vkey" ]; then
-        echo "[LOG] Generating payment keys for permissioned-$node_idx..."
-        cardano-cli address key-gen \
-            --verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/payment.vkey" \
-            --signing-key-file "${NODE_SPECIFIC_KEYS_DIR}/payment.skey"
-        if [ $? -ne 0 ]; then echo "Error generating payment keys for permissioned-$node_idx!"; fi
-    else
-        echo "[LOG] Payment keys already exist for permissioned-$node_idx."
-    fi
-
-    node_payment_address=$(cardano-cli address build \
-        --payment-verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/payment.vkey" \
-        --testnet-magic 42)
-    if [ -z "$node_payment_address" ]; then echo "Error building payment address for permissioned-$node_idx!"; fi
-    permissioned_node_payment_addresses+=("$node_payment_address")
-    echo "Generated payment address for permissioned-$node_idx: $node_payment_address"
-
-
-    # Cold Keys (Generate if not exist)
-     if [ ! -f "${NODE_SPECIFIC_KEYS_DIR}/cold.vkey" ]; then
-        echo "[LOG] Generating cold keys for permissioned-$node_idx..."
-        cardano-cli node key-gen \
-            --cold-verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/cold.vkey" \
-            --cold-signing-key-file "${NODE_SPECIFIC_KEYS_DIR}/cold.skey" \
-            --operational-certificate-issue-counter-file "${NODE_SPECIFIC_KEYS_DIR}/cold.counter"
-         if [ $? -ne 0 ]; then echo "Error generating cold keys for permissioned-$node_idx!"; fi
-    else
-        echo "[LOG] Cold keys already exist for permissioned-$node_idx."
-        # Ensure counter file exists if keys exist
-        if [ ! -f "${NODE_SPECIFIC_KEYS_DIR}/cold.counter" ]; then
-            echo "[WARN] Cold keys exist but counter file missing for permissioned-$node_idx. Generating a new counter file."
-            echo 0 > "${NODE_SPECIFIC_KEYS_DIR}/cold.counter" # Start counter at 0
-        fi
-    fi
-
-    # KES Keys (Generate)
-    echo "[LOG] Generating KES keys for permissioned-$node_idx..."
-    cardano-cli node key-gen-KES \
-        --verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/kes.vkey" \
-        --signing-key-file "${NODE_SPECIFIC_KEYS_DIR}/kes.skey"
-    if [ $? -ne 0 ]; then echo "Error generating KES keys for permissioned-$node_idx!"; fi
-
-    # VRF Keys (Generate)
-    echo "[LOG] Generating VRF keys for permissioned-$node_idx..."
-    cardano-cli node key-gen-VRF \
-        --verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/vrf.vkey" \
-        --signing-key-file "${NODE_SPECIFIC_KEYS_DIR}/vrf.skey"
-    if [ $? -ne 0 ]; then echo "Error generating VRF keys for permissioned-$node_idx!"; fi
-
-    # Stake Keys (Generate)
-    echo "[LOG] Generating Stake keys for permissioned-$node_idx..."
-    cardano-cli shelley stake-address key-gen \
-        --verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.vkey" \
-        --signing-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.skey"
-    if [ $? -ne 0 ]; then echo "Error generating Stake keys for permissioned-$node_idx!"; fi
-
-done
-echo "[LOG] Completed generation of keys for $NUM_PERMISSIONED_NODES_TO_PROCESS permissioned nodes."
-# --- End of New Permissioned Key Generation ---
-
-# --- New: Generate Stake Addresses for Permissioned Nodes ---
-echo "[LOG] Generating Stake Addresses for $NUM_PERMISSIONED_NODES_TO_PROCESS Permissioned Nodes..."
-permissioned_node_stake_addresses=() # Array to store stake addresses
-for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do # Iterate based on the variable
-    node_idx=$((i+1)) # 1-indexed for directory name
-    NODE_SPECIFIC_KEYS_DIR="/shared/node-keys/permissioned-${node_idx}/keys" # Dynamic path
-    echo "[LOG] Generating stake address for permissioned-$node_idx in $NODE_SPECIFIC_KEYS_DIR..."
-    node_stake_address=$(cardano-cli shelley stake-address build \
-        --stake-verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.vkey" \
-        --testnet-magic 42)
-
-    if [ -z "$node_stake_address" ]; then
-        echo "Error building stake address for permissioned-$node_idx!"
-        # Decide how to handle error - log and continue for now.
-    else
-        permissioned_node_stake_addresses+=("$node_stake_address")
-        echo "Generated stake address for permissioned-$node_idx: $node_stake_address"
-    fi
-done
-echo "[LOG] Completed generation of stake addresses for $NUM_PERMISSIONED_NODES_TO_PROCESS permissioned nodes."
-# --- End of New Stake Address Generation ---
-
 # --- New: Generate KES, VRF, and Stake Keypairs for Registered Nodes FIRST ---
 echo "[LOG] Generating KES, VRF, and Stake Keypairs for $NUM_REGISTERED_NODES_TO_PROCESS Registered Nodes..."
 for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
@@ -294,7 +196,6 @@ echo "[LOG] Completed generation of payment keypairs and addresses for $NUM_REGI
 
 # Debug: Verify that the arrays are populated
 echo "[DEBUG] Verifying populated arrays..."
-echo "[DEBUG] Number of permissioned payment addresses: ${#permissioned_node_payment_addresses[@]}"
 echo "[DEBUG] Number of registered payment addresses: ${#registered_node_payment_addresses[@]}"
 echo "[DEBUG] Number of registered stake addresses: ${#registered_node_stake_addresses[@]}"
 
@@ -325,12 +226,6 @@ tx_out3=1000000000
 # partner-chains-setup (extra)
 tx_out4=1000000000
 
-# Fund $NUM_PERMISSIONED_NODES_TO_PROCESS permissioned nodes
-for i in $(seq 1 $NUM_PERMISSIONED_NODES_TO_PROCESS); do
-    var_name="tx_out${i}_permissioned"
-    declare "$var_name=600000000" # 600 ADA - covers SPO registration (500 ADA pool deposit + 0.4 ADA stake deposit + generous buffer for fees)
-done
-
 # Fund $NUM_REGISTERED_NODES_TO_PROCESS registered nodes (These are defined but not used in the *initial* main transaction anymore)
 # They are funded in batches later.
 for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
@@ -347,17 +242,6 @@ echo "[LOG] Calculating initial total output (tx_out1-4)."
 total_output=$((tx_out1 + tx_out2 + tx_out3 + tx_out4))
 echo "[LOG] Initial total_output = $total_output"
 
-echo "[LOG] Adding permissioned node amounts to total_output."
-for i in $(seq 1 $NUM_PERMISSIONED_NODES_TO_PROCESS); do
-    var_name="tx_out${i}_permissioned"
-    echo "[DEBUG] var_name for permissioned loop iteration $i is: $var_name"
-    echo "[DEBUG] Value of variable named '$var_name' is: $(eval echo "\$$var_name")"
-    amount_permissioned="${!var_name}"
-    echo "[DEBUG] amount_permissioned for iteration $i after dereference is: '$amount_permissioned'"
-    total_output=$((total_output + amount_permissioned))
-done
-echo "[LOG] total_output after permissioned nodes = $total_output"
-
 echo "[LOG] Adding tx_out5_lovelace and tx_out6 to total_output."
 total_output=$((total_output + tx_out5_lovelace + tx_out6))
 echo "[LOG] Final total_output before fee = $total_output"
@@ -371,14 +255,6 @@ main_tx_out_params_array+=(--tx-out "$new_address+$tx_out1")
 main_tx_out_params_array+=(--tx-out "$new_address+$tx_out2")
 main_tx_out_params_array+=(--tx-out "$new_address+$tx_out3")
 main_tx_out_params_array+=(--tx-out "$new_address+$tx_out4")
-
-# Permissioned nodes outputs (to their individual addresses)
-for i in $(seq 1 $NUM_PERMISSIONED_NODES_TO_PROCESS); do
-    var_name="tx_out${i}_permissioned"
-    amount_permissioned="${!var_name}"
-    permissioned_node_address="${permissioned_node_payment_addresses[$((i-1))]}" # Use 0-based index for array
-    main_tx_out_params_array+=(--tx-out "$permissioned_node_address+$amount_permissioned")
-done
 
 # Output with native token for new_address
 main_tx_out_params_array+=(--tx-out "$new_address+$tx_out5_lovelace+$tx_out5_reward_token")
@@ -904,15 +780,13 @@ echo "[LOG] Starting Cardano SPO Registration and Delegation for all nodes..."
 STAKE_ADDRESS_DEPOSIT_AMT=400000 # 2 ADA in lovelace for stake address registration. MODIFIED TO 0.4 ADA based on error analysis.
 POOL_REG_DEPOSIT_AMT=500000000    # 500 ADA in lovelace for pool registration deposit
 
-# Combine permissioned and registered node indices and directories
-# Permissioned nodes (1-based index, 0-based array index for directories)
-for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do
-    node_idx=$((i+1)) # 1-indexed for logs
-    NODE_SPECIFIC_KEYS_DIR="/shared/node-keys/permissioned-${node_idx}/keys" # Dynamic path
-    NODE_TYPE="permissioned"
-    NODE_LOG_NAME="${NODE_TYPE}-${node_idx}"
-    NODE_PAYMENT_ADDRESS="${permissioned_node_payment_addresses[$i]}"
-    NODE_STAKE_ADDRESS="${permissioned_node_stake_addresses[$i]}"
+# Registered nodes (1-based index)
+for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
+    NODE_SPECIFIC_KEYS_DIR="/shared/node-keys/registered-${i}/keys"
+    NODE_TYPE="registered"
+    NODE_LOG_NAME="${NODE_TYPE}-${i}"
+    NODE_PAYMENT_ADDRESS="${registered_node_payment_addresses[$((i-1))]}"
+    NODE_STAKE_ADDRESS="${registered_node_stake_addresses[$((i-1))]}"
     NODE_COLD_VKEY="${NODE_SPECIFIC_KEYS_DIR}/cold.vkey"
     NODE_COLD_SKEY="${NODE_SPECIFIC_KEYS_DIR}/cold.skey"
     NODE_VRF_VKEY="${NODE_SPECIFIC_KEYS_DIR}/vrf.vkey"
@@ -927,7 +801,6 @@ for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do
     # Add this check
     if [ ! -f "$NODE_STAKE_VKEY" ]; then
         echo "[DEBUG] CRITICAL ERROR: Stake verification key file NOT FOUND for $NODE_LOG_NAME at path: $NODE_STAKE_VKEY. Cannot generate pool reg cert."
-        # We might have created a stake registration cert already, ensure we clean up if we skip.
         if [ -f "/data/${NODE_LOG_NAME}_stake_reg.cert" ]; then rm -f "/data/${NODE_LOG_NAME}_stake_reg.cert"; fi
         continue
     else
@@ -1158,392 +1031,6 @@ for i in $(seq 0 $((NUM_PERMISSIONED_NODES_TO_PROCESS - 1))); do
     fi
     echo "[LOG] $NODE_LOG_NAME Delegation Funding UTXO amount: $NODE_FUNDING_UTXO_DELEG_AMOUNT lovelace."
 
-
-    # 10. Generate Delegation Certificate
-    echo "[LOG] Generating delegation certificate for $NODE_LOG_NAME to pool $POOL_ID..."
-    DELEG_CERT="/data/${NODE_LOG_NAME}_deleg.cert"
-     if ! cardano-cli latest stake-address stake-delegation-certificate \
-        --stake-verification-key-file "$NODE_STAKE_VKEY" \
-        --stake-pool-id "$POOL_ID" \
-        --out-file "$DELEG_CERT"; then
-        echo "[DEBUG] ERROR: Failed to generate delegation certificate for $NODE_LOG_NAME. Skipping this node."
-        continue
-    fi
-
-    # 11. Build Delegation Transaction (Dummy for fee calculation)
-    echo "[LOG] Building dummy delegation transaction for $NODE_LOG_NAME fee calculation..."
-    DELEG_TX_DUMMY="/data/${NODE_LOG_NAME}_deleg_tx_dummy.raw"
-    CHANGE_OUTPUT_DELEG_DUMMY=1000000 # Placeholder for change (1 ADA)
-
-    if ! cardano-cli latest transaction build-raw \
-        --tx-in "$NODE_FUNDING_UTXO_DELEG" \
-        --tx-out "$NODE_PAYMENT_ADDRESS+$CHANGE_OUTPUT_DELEG_DUMMY" \
-        --certificate-file "$DELEG_CERT" \
-        --fee 0 \
-        --out-file "$DELEG_TX_DUMMY"; then
-        echo "[DEBUG] ERROR: Failed to build dummy delegation transaction for $NODE_LOG_NAME. Skipping this node."
-        rm -f "$DELEG_CERT"
-        continue
-    fi
-
-    # 12. Calculate Fee
-    echo "[LOG] Calculating delegation transaction fee for $NODE_LOG_NAME..."
-    NUM_DELEG_TX_INPUTS=1
-    NUM_DELEG_TX_OUTPUTS=1 # Change output
-    NUM_DELEG_TX_WITNESSES=2 # payment.skey, stake.skey
-
-    CALCULATED_DELEG_FEE=$(cardano-cli latest transaction calculate-min-fee \
-        --tx-body-file "$DELEG_TX_DUMMY" \
-        --testnet-magic 42 \
-        --protocol-params-file "$protocol_params_file" \
-        --tx-in-count "$NUM_DELEG_TX_INPUTS" \
-        --tx-out-count "$NUM_DELEG_TX_OUTPUTS" \
-        --witness-count "$NUM_DELEG_TX_WITNESSES" | /busybox awk '{print $1}')
-
-    rm -f "$DELEG_TX_DUMMY"
-
-    if ! [[ "$CALCULATED_DELEG_FEE" =~ ^[0-9]+$ ]]; then
-        echo "[DEBUG] ERROR: Failed to calculate delegation transaction fee for $NODE_LOG_NAME. Using fallback fee."
-        DELEG_FEE=300000 # Fallback fee
-    else
-        DELEG_FEE=$((CALCULATED_DELEG_FEE + 50000)) # Add buffer
-        echo "[LOG] Calculated delegation fee for $NODE_LOG_NAME: $DELEG_FEE"
-    fi
-
-    # 13. Calculate Change and Build Final Delegation Transaction
-    DELEG_TX_CHANGE=$((NODE_FUNDING_UTXO_DELEG_AMOUNT - DELEG_FEE))
-     if [ "$DELEG_TX_CHANGE" -lt 1000000 ]; then # Ensure minimum change
-        echo "[DEBUG] CRITICAL ERROR: Delegation transaction change for $NODE_LOG_NAME is too small ($DELEG_TX_CHANGE). Skipping."
-        rm -f "$DELEG_CERT"
-        continue
-    fi
-    echo "[LOG] Delegation transaction change for $NODE_LOG_NAME: $DELEG_TX_CHANGE"
-
-
-    DELEG_TX_FINAL="/data/${NODE_LOG_NAME}_deleg_tx.raw"
-    if ! cardano-cli latest transaction build-raw \
-        --tx-in "$NODE_FUNDING_UTXO_DELEG" \
-        --tx-out "$NODE_PAYMENT_ADDRESS+$DELEG_TX_CHANGE" \
-        --certificate-file "$DELEG_CERT" \
-        --fee "$DELEG_FEE" \
-        --out-file "$DELEG_TX_FINAL"; then
-        echo "[DEBUG] ERROR: Failed to build final delegation transaction for $NODE_LOG_NAME. Skipping this node."
-        rm -f "$DELEG_CERT"
-        continue
-    fi
-
-    # 14. Sign Delegation Transaction
-    echo "[LOG] Signing delegation transaction for $NODE_LOG_NAME..."
-
-    # Verify signing keys exist before attempting to sign
-    echo "[DEBUG] Checking for signing keys for $NODE_LOG_NAME (delegation):"
-    echo "[DEBUG]   Payment SKey: $NODE_PAYMENT_SKEY"
-    echo "[DEBUG]   Stake SKey:   $NODE_STAKE_SKEY"
-    echo "[DEBUG]   Payment SKey exists: $([ -f "$NODE_PAYMENT_SKEY" ] && echo true || echo false)"
-    echo "[DEBUG]   Stake SKey exists:   $([ -f "$NODE_STAKE_SKEY" ] && echo true || echo false)"
-
-    if [ ! -f "$NODE_PAYMENT_SKEY" ] || [ ! -f "$NODE_STAKE_SKEY" ]; then
-        echo "[DEBUG] CRITICAL ERROR: One or more signing key files NOT FOUND for $NODE_LOG_NAME (delegation)."
-        echo "[DEBUG]   Payment SKey exists: $([ -f "$NODE_PAYMENT_SKEY" ] && echo true || echo false)"
-        echo "[DEBUG]   Stake SKey exists:   $([ -f "$NODE_STAKE_SKEY" ] && echo true || echo false)"
-        echo "[DEBUG]   Cold SKey exists:    $([ -f "$NODE_COLD_SKEY" ] && echo true || echo false)"
-        # Clean up certs if they were created
-        if [ -f "$DELEG_CERT" ]; then rm -f "$DELEG_CERT"; fi
-        if [ -f "$DELEG_TX_FINAL" ]; then rm -f "$DELEG_TX_FINAL"; fi
-        continue # Skip to next node
-    fi
-
-    DELEG_TX_SIGNED="/data/${NODE_LOG_NAME}_deleg_tx.signed"
-
-     if ! cardano-cli latest transaction sign \
-        --tx-body-file "$DELEG_TX_FINAL" \
-        --signing-key-file "$NODE_PAYMENT_SKEY" \
-        --signing-key-file "$NODE_STAKE_SKEY" \
-        --testnet-magic 42 \
-        --out-file "$DELEG_TX_SIGNED"; then
-        echo "[DEBUG] ERROR: Failed to sign delegation transaction for $NODE_LOG_NAME."
-        echo "[DEBUG] Attempted to use keys:"
-        echo "[DEBUG]   Payment SKey: $NODE_PAYMENT_SKEY"
-        echo "[DEBUG]   Stake SKey:   $NODE_STAKE_SKEY"
-        rm -f "$DELEG_CERT" "$DELEG_TX_FINAL"
-        continue
-    fi
-
-    # 15. Submit Delegation Transaction
-    echo "[LOG] Submitting delegation transaction for $NODE_LOG_NAME..."
-    SUBMITTED_DELEG=false
-    for attempt in {1..5}; do
-        if cardano-cli latest transaction submit --tx-file "$DELEG_TX_SIGNED" --testnet-magic 42; then
-            echo "[LOG] Delegation transaction submitted for $NODE_LOG_NAME."
-            SUBMITTED_DELEG=true
-            break
-        else
-            echo "[WARN] Attempt $attempt to submit delegation transaction for $NODE_LOG_NAME failed. Retrying in 5s..."
-            sleep 5
-        fi
-    done
-
-    rm -f "$DELEG_CERT" "$DELEG_TX_FINAL" "$DELEG_TX_SIGNED" # Clean up
-
-    if [ "$SUBMITTED_DELEG" = false ]; then
-        echo "[DEBUG] CRITICAL ERROR: Failed to submit delegation transaction for $NODE_LOG_NAME after multiple attempts."
-    fi
-
-    echo "[LOG] Completed SPO registration and delegation process for $NODE_LOG_NAME."
-    echo "---" # Separator for logs
-
-done # End loop for permissioned nodes
-
-# Registered nodes (1-based index)
-for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
-    NODE_SPECIFIC_KEYS_DIR="/shared/node-keys/registered-${i}/keys"
-    NODE_TYPE="registered"
-    NODE_LOG_NAME="${NODE_TYPE}-${i}"
-    NODE_PAYMENT_ADDRESS="${registered_node_payment_addresses[$((i-1))]}" # Use 0-based index for array
-    NODE_STAKE_ADDRESS="${registered_node_stake_addresses[$((i-1))]}" # Use 0-based index for array
-    NODE_COLD_VKEY="${NODE_SPECIFIC_KEYS_DIR}/cold.vkey"
-    NODE_COLD_SKEY="${NODE_SPECIFIC_KEYS_DIR}/cold.skey"
-    NODE_VRF_VKEY="${NODE_SPECIFIC_KEYS_DIR}/vrf.vkey"
-    NODE_KES_VKEY="${NODE_SPECIFIC_KEYS_DIR}/kes.vkey"
-    NODE_STAKE_VKEY="${NODE_SPECIFIC_KEYS_DIR}/stake.vkey"
-    NODE_STAKE_SKEY="${NODE_SPECIFIC_KEYS_DIR}/stake.skey"
-    NODE_PAYMENT_SKEY="${NODE_SPECIFIC_KEYS_DIR}/payment.skey"
-    NODE_COLD_COUNTER="${NODE_SPECIFIC_KEYS_DIR}/cold.counter"
-
-    echo "[LOG] Processing $NODE_LOG_NAME for SPO registration..."
-
-    # Add this check
-    if [ ! -f "$NODE_STAKE_VKEY" ]; then
-        echo "[DEBUG] CRITICAL ERROR: Stake verification key file NOT FOUND for $NODE_LOG_NAME at path: $NODE_STAKE_VKEY. Cannot generate pool reg cert."
-        if [ -f "/data/${NODE_LOG_NAME}_stake_reg.cert" ]; then rm -f "/data/${NODE_LOG_NAME}_stake_reg.cert"; fi
-        continue
-    else
-        echo "[LOG] Stake verification key file FOUND for $NODE_LOG_NAME at path: $NODE_STAKE_VKEY."
-    fi
-
-    # 1. Query UTXO for transaction funding
-    echo "[LOG] Querying UTXO for $NODE_LOG_NAME..."
-    NODE_FUNDING_UTXO=""
-    for attempt in {1..10}; do
-        echo "[LOG] Querying address UTXOs for $NODE_LOG_NAME (Attempt $attempt)..."
-        utxo_info=$(cardano-cli latest query utxo \
-            --testnet-magic 42 --address "$NODE_PAYMENT_ADDRESS" --out-file /dev/stdout 2>&1)
-        NODE_FUNDING_UTXO=$(echo "$utxo_info" | /busybox grep -o '[a-f0-9]\{64\}#[0-9]\+' | head -1)
-        if [ -n "$NODE_FUNDING_UTXO" ]; then
-            echo "[LOG] Found funding UTXO for $NODE_LOG_NAME: $NODE_FUNDING_UTXO"
-            break
-        else
-            echo "[WARN] No UTXO found for $NODE_LOG_NAME at $NODE_PAYMENT_ADDRESS. Waiting 5s... (Attempt $attempt)"
-            sleep 5
-        fi
-    done
-
-    if [ -z "$NODE_FUNDING_UTXO" ]; then
-        echo "[DEBUG] CRITICAL ERROR: Failed to find funding UTXO for $NODE_LOG_NAME. Cannot perform SPO registration/delegation. Skipping this node."
-        continue # Skip to the next node if funding UTXO not found
-    fi
-
-    # Extract UTXO amount for fee calculation
-    NODE_FUNDING_UTXO_AMOUNT=$(echo "$utxo_info" | /busybox grep "$NODE_FUNDING_UTXO" -A 20 | /busybox grep '"lovelace":' | /busybox grep -o '[0-9]\+' | head -1)
-     if ! [[ "$NODE_FUNDING_UTXO_AMOUNT" =~ ^[0-9]+$ ]] || [ "$NODE_FUNDING_UTXO_AMOUNT" -eq 0 ]; then
-         echo "[DEBUG] CRITICAL ERROR: Failed to get valid UTXO amount for $NODE_LOG_NAME. Skipping this node."
-         continue
-    fi
-    echo "[LOG] $NODE_LOG_NAME Funding UTXO amount: $NODE_FUNDING_UTXO_AMOUNT lovelace."
-
-    # 2. Generate Stake Address Registration Certificate
-    echo "[LOG] Generating stake address registration certificate for $NODE_LOG_NAME..."
-    STAKE_REG_CERT="/data/${NODE_LOG_NAME}_stake_reg.cert"
-     if ! cardano-cli latest stake-address registration-certificate \
-        --stake-verification-key-file "$NODE_STAKE_VKEY" \
-        --key-reg-deposit-amt "$STAKE_ADDRESS_DEPOSIT_AMT" \
-        --out-file "$STAKE_REG_CERT"; then
-        echo "[DEBUG] ERROR: Failed to generate stake address registration certificate for $NODE_LOG_NAME. Skipping this node."
-        continue
-    fi
-
-    # 3. Generate Stake Pool Registration Certificate
-    echo "[LOG] Generating stake pool registration certificate for $NODE_LOG_NAME..."
-    POOL_REG_CERT="/data/${NODE_LOG_NAME}_pool_reg.cert"
-    POOL_ID=$(cardano-cli latest stake-pool id --cold-verification-key-file "$NODE_COLD_VKEY" --output-format hex)
-    echo "[LOG] $NODE_LOG_NAME Pool ID: $POOL_ID"
-
-    # Pool parameters (minimal for local env)
-    PLEDGE=0 # No pledge required for this setup
-    POOL_COST=0 # Minimal cost
-    POOL_MARGIN="0/1000" # 0% margin
-
-    echo "[DEBUG] Attempting to run stake-pool registration-certificate command..."
-
-    if ! cardano-cli latest stake-pool registration-certificate \
-        --cold-verification-key-file "$NODE_COLD_VKEY" \
-        --vrf-verification-key-file "$NODE_VRF_VKEY" \
-        --reward-account-verification-key-file "$NODE_STAKE_VKEY" \
-        --pool-owner-stake-verification-key-file "$NODE_STAKE_VKEY" \
-        --pool-pledge "$PLEDGE" \
-        --pool-cost "$POOL_COST" \
-        --pool-margin "$POOL_MARGIN" \
-        --pool-relay-ipv4 127.0.0.1 \
-        --pool-relay-port 30000 \
-        --metadata-url "https://example.com/${NODE_LOG_NAME}.json" --metadata-hash 0000000000000000000000000000000000000000000000000000000000000000 \
-        --testnet-magic 42 \
-        --out-file "$POOL_REG_CERT"; then
-        echo "[DEBUG] ERROR: Failed to generate stake pool registration certificate for $NODE_LOG_NAME. Skipping this node."
-        rm -f "$STAKE_REG_CERT"
-        continue
-    fi
-
-    # 4. Build Registration Transaction (Dummy for fee calculation)
-    echo "[LOG] Building dummy registration transaction for $NODE_LOG_NAME fee calculation..."
-    REG_TX_DUMMY="/data/${NODE_LOG_NAME}_reg_tx_dummy.raw"
-    CHANGE_OUTPUT_DUMMY=1000000 # Placeholder for change (1 ADA)
-
-    if ! cardano-cli latest transaction build-raw \
-        --tx-in "$NODE_FUNDING_UTXO" \
-        --tx-out "$NODE_PAYMENT_ADDRESS+$CHANGE_OUTPUT_DUMMY" \
-        --certificate-file "$STAKE_REG_CERT" \
-        --certificate-file "$POOL_REG_CERT" \
-        --fee 0 \
-        --out-file "$REG_TX_DUMMY"; then
-        echo "[DEBUG] ERROR: Failed to build dummy registration transaction for $NODE_LOG_NAME. Skipping this node."
-        rm -f "$STAKE_REG_CERT" "$POOL_REG_CERT"
-        continue
-    fi
-
-    # 5. Calculate Fee
-    echo "[LOG] Calculating registration transaction fee for $NODE_LOG_NAME..."
-    NUM_REG_TX_INPUTS=1
-    NUM_REG_TX_OUTPUTS=1 # Change output
-    NUM_REG_TX_WITNESSES=3 # payment.skey, stake.skey, cold.skey
-
-    CALCULATED_REG_FEE=$(cardano-cli latest transaction calculate-min-fee \
-        --tx-body-file "$REG_TX_DUMMY" \
-        --testnet-magic 42 \
-        --protocol-params-file "$protocol_params_file" \
-        --tx-in-count "$NUM_REG_TX_INPUTS" \
-        --tx-out-count "$NUM_REG_TX_OUTPUTS" \
-        --witness-count "$NUM_REG_TX_WITNESSES" | /busybox awk '{print $1}')
-
-    rm -f "$REG_TX_DUMMY"
-
-    if ! [[ "$CALCULATED_REG_FEE" =~ ^[0-9]+$ ]]; then
-        echo "[DEBUG] ERROR: Failed to calculate registration transaction fee for $NODE_LOG_NAME. Using fallback fee."
-        REG_FEE=500000 # Fallback fee
-    else
-        REG_FEE=$((CALCULATED_REG_FEE + 50000)) # Add buffer
-        echo "[LOG] Calculated registration fee for $NODE_LOG_NAME: $REG_FEE"
-    fi
-
-    # 6. Calculate Change and Build Final Registration Transaction
-    REG_TX_CHANGE=$((NODE_FUNDING_UTXO_AMOUNT - REG_FEE - STAKE_ADDRESS_DEPOSIT_AMT - POOL_REG_DEPOSIT_AMT))
-     if [ "$REG_TX_CHANGE" -lt 1000000 ]; then # Ensure minimum change
-        echo "[DEBUG] CRITICAL ERROR: Registration transaction change for $NODE_LOG_NAME is too small ($REG_TX_CHANGE) after accounting for fee and deposits. Input: $NODE_FUNDING_UTXO_AMOUNT, Fee: $REG_FEE, StakeDeposit: $STAKE_ADDRESS_DEPOSIT_AMT, PoolDeposit: $POOL_REG_DEPOSIT_AMT. Skipping."
-        rm -f "$STAKE_REG_CERT" "$POOL_REG_CERT"
-        continue
-    fi
-    echo "[LOG] Registration transaction change for $NODE_LOG_NAME: $REG_TX_CHANGE"
-
-    REG_TX_FINAL="/data/${NODE_LOG_NAME}_reg_tx.raw"
-    if ! cardano-cli latest transaction build-raw \
-        --tx-in "$NODE_FUNDING_UTXO" \
-        --tx-out "$NODE_PAYMENT_ADDRESS+$REG_TX_CHANGE" \
-        --certificate-file "$STAKE_REG_CERT" \
-        --certificate-file "$POOL_REG_CERT" \
-        --fee "$REG_FEE" \
-        --out-file "$REG_TX_FINAL"; then
-        echo "[DEBUG] ERROR: Failed to build final registration transaction for $NODE_LOG_NAME. Skipping this node."
-        rm -f "$STAKE_REG_CERT" "$POOL_REG_CERT"
-        continue
-    fi
-
-    # 7. Sign Registration Transaction
-    echo "[LOG] Signing registration transaction for $NODE_LOG_NAME..."
-
-    # Verify signing keys exist before attempting to sign
-    echo "[DEBUG] Checking for signing keys for $NODE_LOG_NAME:"
-    echo "[DEBUG]   Payment SKey: $NODE_PAYMENT_SKEY"
-    echo "[DEBUG]   Stake SKey:   $NODE_STAKE_SKEY"
-    echo "[DEBUG]   Cold SKey:    $NODE_COLD_SKEY"
-    if [ ! -f "$NODE_PAYMENT_SKEY" ] || [ ! -f "$NODE_STAKE_SKEY" ] || [ ! -f "$NODE_COLD_SKEY" ]; then
-        echo "[DEBUG] CRITICAL ERROR: One or more signing key files NOT FOUND for $NODE_LOG_NAME."
-        echo "[DEBUG]   Payment SKey exists: $([ -f "$NODE_PAYMENT_SKEY" ] && echo true || echo false)"
-        echo "[DEBUG]   Stake SKey exists:   $([ -f "$NODE_STAKE_SKEY" ] && echo true || echo false)"
-        echo "[DEBUG]   Cold SKey exists:    $([ -f "$NODE_COLD_SKEY" ] && echo true || echo false)"
-        # Clean up certs if they were created
-        if [ -f "$STAKE_REG_CERT" ]; then rm -f "$STAKE_REG_CERT"; fi
-        if [ -f "$POOL_REG_CERT" ]; then rm -f "$POOL_REG_CERT"; fi
-        if [ -f "$REG_TX_FINAL" ]; then rm -f "$REG_TX_FINAL"; fi
-        continue # Skip to next node
-    fi
-
-    REG_TX_SIGNED="/data/${NODE_LOG_NAME}_reg_tx.signed"
-    if ! cardano-cli latest transaction sign \
-        --tx-body-file "$REG_TX_FINAL" \
-        --signing-key-file "$NODE_PAYMENT_SKEY" \
-        --signing-key-file "$NODE_STAKE_SKEY" \
-        --signing-key-file "$NODE_COLD_SKEY" \
-        --testnet-magic 42 \
-        --out-file "$REG_TX_SIGNED"; then
-        echo "[DEBUG] ERROR: Failed to sign registration transaction for $NODE_LOG_NAME."
-        echo "[DEBUG] Attempted to use keys:"
-        echo "[DEBUG]   Payment SKey: $NODE_PAYMENT_SKEY"
-        echo "[DEBUG]   Stake SKey:   $NODE_STAKE_SKEY"
-        echo "[DEBUG]   Cold SKey:    $NODE_COLD_SKEY"
-        rm -f "$STAKE_REG_CERT" "$POOL_REG_CERT" "$REG_TX_FINAL"
-        continue
-    fi
-
-    # 8. Submit Registration Transaction
-    echo "[LOG] Submitting registration transaction for $NODE_LOG_NAME..."
-    SUBMITTED_REG=false
-    for attempt in {1..5}; do
-        if cardano-cli latest transaction submit --tx-file "$REG_TX_SIGNED" --testnet-magic 42; then
-            echo "[LOG] Registration transaction submitted for $NODE_LOG_NAME."
-            SUBMITTED_REG=true
-            break
-        else
-            echo "[WARN] Attempt $attempt to submit registration transaction for $NODE_LOG_NAME failed. Retrying in 5s..."
-            sleep 5
-        fi
-    done
-
-    rm -f "$STAKE_REG_CERT" "$POOL_REG_CERT" "$REG_TX_FINAL" "$REG_TX_SIGNED" # Clean up
-
-    if [ "$SUBMITTED_REG" = false ]; then
-        echo "[DEBUG] CRITICAL ERROR: Failed to submit registration transaction for $NODE_LOG_NAME after multiple attempts. Skipping delegation for this node."
-        continue # Skip delegation if registration failed
-    fi
-
-    # 9. Wait for confirmation and Query UTXO for Delegation Transaction
-    echo "[LOG] Waiting 15 seconds for registration transaction for $NODE_LOG_NAME to confirm..."
-    sleep 15
-
-    echo "[LOG] Querying UTXO for delegation transaction for $NODE_LOG_NAME..."
-    NODE_FUNDING_UTXO_DELEG=""
-    for attempt in {1..10}; do
-        echo "[LOG] Querying address UTXOs for $NODE_LOG_NAME (Delegation Attempt $attempt)..."
-        utxo_info_deleg=$(cardano-cli latest query utxo \
-            --testnet-magic 42 --address "$NODE_PAYMENT_ADDRESS" --out-file /dev/stdout 2>&1)
-        NODE_FUNDING_UTXO_DELEG=$(echo "$utxo_info_deleg" | /busybox grep -o '[a-f0-9]\{64\}#[0-9]\+' | head -1)
-        if [ -n "$NODE_FUNDING_UTXO_DELEG" ]; then
-            echo "[LOG] Found funding UTXO for $NODE_LOG_NAME delegation: $NODE_FUNDING_UTXO_DELEG"
-            break
-        else
-            echo "[WARN] No UTXO found for $NODE_LOG_NAME delegation at $NODE_PAYMENT_ADDRESS. Waiting 5s... (Attempt $attempt)"
-            sleep 5
-        fi
-    done
-
-     if [ -z "$NODE_FUNDING_UTXO_DELEG" ]; then
-        echo "[DEBUG] CRITICAL ERROR: Failed to find funding UTXO for $NODE_LOG_NAME delegation. Cannot perform delegation. Skipping this node."
-        continue # Skip delegation if funding UTXO not found
-    fi
-    NODE_FUNDING_UTXO_DELEG_AMOUNT=$(echo "$utxo_info_deleg" | /busybox grep "$NODE_FUNDING_UTXO_DELEG" -A 20 | /busybox grep '"lovelace":' | /busybox grep -o '[0-9]\+' | head -1)
-     if ! [[ "$NODE_FUNDING_UTXO_DELEG_AMOUNT" =~ ^[0-9]+$ ]] || [ "$NODE_FUNDING_UTXO_DELEG_AMOUNT" -eq 0 ]; then
-         echo "[DEBUG] CRITICAL ERROR: Failed to get valid UTXO amount for $NODE_LOG_NAME delegation. Skipping this node."
-         continue
-    fi
-    echo "[LOG] $NODE_LOG_NAME Delegation Funding UTXO amount: $NODE_FUNDING_UTXO_DELEG_AMOUNT lovelace."
 
     # 10. Generate Delegation Certificate
     echo "[LOG] Generating delegation certificate for $NODE_LOG_NAME to pool $POOL_ID..."
