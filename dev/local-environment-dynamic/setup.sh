@@ -8,7 +8,6 @@ CARDANO_IMAGE="ghcr.io/intersectmbo/cardano-node:10.1.4"
 DBSYNC_IMAGE="ghcr.io/intersectmbo/cardano-db-sync:13.6.0.5"
 OGMIOS_IMAGE="cardanosolutions/ogmios:v6.12.0"
 POSTGRES_IMAGE="postgres:17.2"
-TESTS_IMAGE="python:3.12-slim"
 
 display_banner() {
   cat <<'EOF'
@@ -284,7 +283,6 @@ CARDANO_IMAGE=$CARDANO_IMAGE
 DBSYNC_IMAGE=$DBSYNC_IMAGE
 OGMIOS_IMAGE=$OGMIOS_IMAGE
 POSTGRES_IMAGE=$POSTGRES_IMAGE
-TESTS_IMAGE=$TESTS_IMAGE
 PARTNER_CHAINS_NODE_IMAGE=${node_image:-$PARTNER_CHAINS_NODE_IMAGE}
 NUM_PERMISSIONED_NODES_TO_PROCESS=$NUM_PERMISSIONED_NODES_TO_PROCESS
 NUM_REGISTERED_NODES_TO_PROCESS=$NUM_REGISTERED_NODES_TO_PROCESS
@@ -588,11 +586,6 @@ create_docker_compose() {
     cat "$script_dir/modules/postgres.txt" >> docker-compose.yml
     cat "$script_dir/modules/partner-chains-setup.txt" >> docker-compose.yml
 
-    if [ "$tests_enabled" == "yes" ]; then
-        echo -e "Including tests.\n"
-        cat "$script_dir/modules/tests.txt" >> docker-compose.yml
-    fi
-
     # Add volumes
     cat "$script_dir/modules/volumes.txt" >> docker-compose.yml
     echo "" >> docker-compose.yml # Ensure a newline
@@ -620,7 +613,6 @@ parse_arguments() {
     non_interactive=0
     deployment_option=0
     postgres_password=""
-    tests_enabled="no"
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -655,11 +647,6 @@ parse_arguments() {
                     exit 1
                 fi
                 ;;
-            -t|--tests)
-                tests_enabled="yes"
-                echo "Tests enabled. Ensure contents of e2e-tests directory is copied to ./configurations/tests/."
-                shift
-                ;;
             -h|--help)
                 echo "Usage: $0 [OPTION]..."
                 echo "Initialize and configure the Docker environment."
@@ -667,7 +654,6 @@ parse_arguments() {
                 echo "  -d, --deployment-option   Specify one of the custom deployment options (1, 2, 3, or 4)."
                 echo "  -p, --postgres-password   Set a specific password for PostgreSQL (overrides automatic generation)."
                 echo "  -i, --node-image          Specify a custom Partner Chains Node image."
-                echo "  -t, --tests               Include tests container."
                 echo "  -h, --help                Display this help dialogue and exit."
                 exit 0
                 ;;
@@ -686,7 +672,6 @@ parse_arguments() {
     export deployment_option
     export postgres_password
     export node_image
-    export tests_enabled
 }
 
 main() {
