@@ -1,0 +1,9 @@
+{
+  "localRoots": [],
+  "publicRoots": [
+    {
+      "accessPoints": [],
+      "advertise": false
+    }
+  ]
+}
