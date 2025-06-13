@@ -6,6 +6,16 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Changed
 
+## Added
+
+## Fixed
+
+## Removed
+
+# v1.7.0
+
+## Changed
+
 * `partner-chains-db-sync-data-sources` and `partner-chains-mock-data-sources` crates now exports all its public members from the root
 * `partner-chains-db-sync-data-sources` crate now exports all its public members from the root
 * `smart-contracts` commands can accept parameter to configure Ogmios requests timeout
