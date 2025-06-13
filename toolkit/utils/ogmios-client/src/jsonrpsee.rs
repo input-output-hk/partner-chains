@@ -46,6 +46,7 @@ pub enum OgmiosClients {
 pub async fn client_for_url(addr: &str, timeout: Duration) -> Result<OgmiosClients, String> {
 	if addr.starts_with("http") || addr.starts_with("https") {
 		let client = HttpClientBuilder::default()
+			.max_response_size(u32::MAX)
 			.request_timeout(timeout)
 			.build(addr)
 			.map_err(|e| format!("Couldn't create HTTP client: {}", e))?;
@@ -61,6 +62,7 @@ pub async fn client_for_url(addr: &str, timeout: Duration) -> Result<OgmiosClien
 		Ok(http_client)
 	} else if addr.starts_with("ws") || addr.starts_with("wss") {
 		let client = WsClientBuilder::default()
+			.max_response_size(u32::MAX)
 			.request_timeout(timeout)
 			.build(addr.to_owned())
 			.await
