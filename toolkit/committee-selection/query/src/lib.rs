@@ -238,10 +238,19 @@ where
 		let validate_permissioned_candidate = |candidate: &RawPermissionedCandidateData| {
 			api.validate_permissioned_candidate_data(
 				best_block,
-				sidechain_domain::PermissionedCandidateData {
-					sidechain_public_key: candidate.sidechain_public_key.clone(),
-					aura_public_key: candidate.aura_public_key.clone(),
-					grandpa_public_key: candidate.grandpa_public_key.clone(),
+				match candidate {
+					RawPermissionedCandidateData::V0(data) => {
+						sidechain_domain::PermissionedCandidateDataV0 {
+							sidechain_public_key: data.sidechain_public_key.clone(),
+							aura_public_key: data.aura_public_key.clone(),
+							grandpa_public_key: data.grandpa_public_key.clone(),
+						}
+						.into()
+					},
+					RawPermissionedCandidateData::V1(data) => {
+						sidechain_domain::PermissionedCandidateDataV1 { keys: data.keys.clone() }
+							.into()
+					},
 				},
 			)
 		};

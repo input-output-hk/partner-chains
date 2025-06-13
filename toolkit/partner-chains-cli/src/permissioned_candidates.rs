@@ -48,10 +48,21 @@ impl From<&sidechain_domain::PermissionedCandidateData> for PermissionedCandidat
 }
 
 #[derive(Debug, Deserialize, Eq, PartialEq, Ord, PartialOrd, Serialize)]
-pub(crate) struct ParsedPermissionedCandidatesKeys {
+pub(crate) enum ParsedPermissionedCandidatesKeys {
+	V0(ParsedPermissionedCandidatesKeysV0),
+	V1(ParsedPermissionedCandidatesKeysV1),
+}
+
+#[derive(Debug, Deserialize, Eq, PartialEq, Ord, PartialOrd, Serialize)]
+pub(crate) struct ParsedPermissionedCandidatesKeysV0 {
 	pub sidechain: ecdsa::Public,
 	pub aura: sr25519::Public,
 	pub grandpa: ed25519::Public,
+}
+
+#[derive(Debug, Deserialize, Eq, PartialEq, Ord, PartialOrd, Serialize)]
+pub(crate) struct ParsedPermissionedCandidatesKeysV1 {
+	pub keys: Vec<([u8; 4], Vec<u8>)>,
 }
 
 impl ParsedPermissionedCandidatesKeys {
