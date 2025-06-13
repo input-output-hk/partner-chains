@@ -37,6 +37,7 @@ impl TryFrom<PermissionedCandidateData> for ParsedPermissionedCandidatesKeys {
 		let keys = PermissionedCandidateKeys {
 			sidechain_pub_key: hex::encode(value.sidechain_public_key.0),
 			aura_pub_key: hex::encode(value.aura_public_key.0),
+			beefy_pub_key: hex::encode(value.beefy_public_key.0),
 			grandpa_pub_key: hex::encode(value.grandpa_public_key.0),
 		};
 		TryFrom::try_from(&keys)
