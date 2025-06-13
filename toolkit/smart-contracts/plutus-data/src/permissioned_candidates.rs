@@ -129,7 +129,7 @@ impl PermissionedCandidateDatums {
 					.map(decode_v1_candidate_datum)
 					.collect::<Option<Vec<PermissionedCandidateDatumV1>>>()
 			})
-			.ok_or("Expected [[ByteString, ByteString], [ByteString,ByteString], ... ]")?;
+			.ok_or("Expected [[ByteString, ByteString], [ByteString, ByteString], ... ]")?;
 		Ok(Self::V1(permissioned_candidates))
 	}
 }
