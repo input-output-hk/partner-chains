@@ -75,6 +75,7 @@ pub trait BenchmarkHelper<BlockProducerMetadata> {
 #[benchmarks]
 mod benchmarks {
 	use super::*;
+	use frame_support::traits::{Currency, Get};
 
 	#[benchmark]
 	fn upsert_metadata() {
@@ -82,8 +83,13 @@ mod benchmarks {
 		let cross_chain_pub_key = T::BenchmarkHelper::cross_chain_pub_key();
 		let cross_chain_signature = T::BenchmarkHelper::cross_chain_signature();
 
+		// Create an account with sufficient balance for burning
+		let caller: T::AccountId = account("caller", 0, 0);
+		let burn_amount = T::BurnAmount::get();
+		let _ = T::Currency::make_free_balance_be(&caller, burn_amount * 2u32.into());
+
 		#[extrinsic_call]
-		_(RawOrigin::None, metadata, cross_chain_signature, cross_chain_pub_key);
+		_(RawOrigin::Signed(caller), metadata, cross_chain_signature, cross_chain_pub_key);
 	}
 
 	impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);

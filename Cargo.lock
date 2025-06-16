@@ -6408,6 +6408,7 @@ dependencies = [
  "hex-literal 1.0.0",
  "k256",
  "log",
+ "pallet-balances",
  "parity-scale-codec",
  "scale-info",
  "sidechain-domain",
