@@ -7,6 +7,7 @@ use jsonrpsee::{
     rpc_params,
 };
 use serde::{Deserialize, Serialize};
+use hex;
 
 #[cfg(test)]
 mod tests;
@@ -34,15 +35,28 @@ impl AutomaticGenerateKeysConfig {
     }
 }
 
+// Generic key pair structure: 4-byte identifier + key bytes
+pub type KeyPair = ([u8; 4], Vec<u8>);
+pub type SessionKeys = Vec<KeyPair>;
+
+// Key type identifiers (4 bytes each)
+const AURA_KEY_TYPE: [u8; 4] = *b"aura";
+const GRANDPA_KEY_TYPE: [u8; 4] = *b"gran"; 
+const BEEFY_KEY_TYPE: [u8; 4] = *b"beef";
+const IMON_KEY_TYPE: [u8; 4] = *b"imon";
+
+// For JSON serialization compatibility
 #[derive(Debug, Serialize, Deserialize)]
-struct AutomaticGeneratedKeys {
-    aura: String,
-    gran: String, // keeping consistent with existing naming
-    beefy: Option<String>,
-    imon: Option<String>,
+struct SessionKeysJson {
+    keys: Vec<KeyEntry>,
 }
 
-
+#[derive(Debug, Serialize, Deserialize)]
+struct KeyEntry {
+    key_type: String,
+    key_type_bytes: [u8; 4],
+    public_key: String,
+}
 
 impl CmdRun for AutomaticGenerateKeysCmd {
     fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
@@ -88,7 +102,7 @@ async fn connect_and_rotate_keys(node_url: &str) -> Result<String> {
 fn generate_keys_via_rpc<C: IOContext>(
     config: &AutomaticGenerateKeysConfig,
     context: &C,
-) -> Result<AutomaticGeneratedKeys> {
+) -> Result<SessionKeys> {
     context.eprint("⚙️ Calling author_rotateKeys() RPC method...");
     
     // Create a new Tokio runtime for the async operation
@@ -102,19 +116,17 @@ fn generate_keys_via_rpc<C: IOContext>(
     let keys = parse_rotated_keys(&keys_hex)?;
     
     context.eprint("✅ Keys parsed successfully:");
-    context.eprint(&format!("   • Aura key: {}", keys.aura));
-    context.eprint(&format!("   • Grandpa key: {}", keys.gran));
-    if let Some(ref beefy) = keys.beefy {
-        context.eprint(&format!("   • Beefy key: {}", beefy));
-    }
-    if let Some(ref imon) = keys.imon {
-        context.eprint(&format!("   • IMON key: {}", imon));
+    for (key_type, key_bytes) in &keys {
+        let key_type_str = String::from_utf8_lossy(key_type);
+        let key_hex = format!("0x{}", hex::encode(key_bytes));
+        context.eprint(&format!("   • {} key: {}", key_type_str, key_hex));
     }
     
     Ok(keys)
 }
 
-fn parse_rotated_keys(keys_hex: &str) -> Result<AutomaticGeneratedKeys> {
+// Generic parsing function that doesn't hardcode specific key types
+fn parse_rotated_keys(keys_hex: &str) -> Result<SessionKeys> {
     // Remove 0x prefix if present
     let keys_hex = keys_hex.strip_prefix("0x").unwrap_or(keys_hex);
     
@@ -127,32 +139,45 @@ fn parse_rotated_keys(keys_hex: &str) -> Result<AutomaticGeneratedKeys> {
         return Err(anyhow!("Keys string has odd length, expected even number of hex characters"));
     }
     
-    // Parse keys by position (each key is 32 bytes = 64 hex chars)
-    let aura = format!("0x{}", &keys_hex[0..64]);
-    let gran = format!("0x{}", &keys_hex[64..128]);
+    // Decode hex string to bytes
+    let key_bytes = hex::decode(keys_hex)
+        .context("Failed to decode hex string")?;
     
-    let mut beefy = None;
-    let mut imon = None;
+    // Each key is 32 bytes, parse them generically
+    let key_size = 32;
+    let num_keys = key_bytes.len() / key_size;
     
-    // Check if we have more keys (Beefy and IMON are optional)
-    if keys_hex.len() >= 192 {
-        beefy = Some(format!("0x{}", &keys_hex[128..192]));
+    if key_bytes.len() % key_size != 0 {
+        return Err(anyhow!("Invalid key data length, not divisible by 32 bytes"));
     }
     
-    if keys_hex.len() >= 256 {
-        imon = Some(format!("0x{}", &keys_hex[192..256]));
+    let mut session_keys = Vec::new();
+    
+    // Define expected key types in order based on common Substrate patterns
+    let key_types = [AURA_KEY_TYPE, GRANDPA_KEY_TYPE, BEEFY_KEY_TYPE, IMON_KEY_TYPE];
+    
+    for i in 0..num_keys {
+        let start_idx = i * key_size;
+        let end_idx = start_idx + key_size;
+        let key_data = key_bytes[start_idx..end_idx].to_vec();
+        
+        // Use predefined key type if available, otherwise generate a generic one
+        let key_type = if i < key_types.len() {
+            key_types[i]
+        } else {
+            // Generate generic key type identifier for unknown keys
+            let key_num = (i as u32).to_be_bytes();
+            [b'k', b'e', b'y', key_num[3]]
+        };
+        
+        session_keys.push((key_type, key_data));
     }
     
-    Ok(AutomaticGeneratedKeys {
-        aura,
-        gran,
-        beefy,
-        imon,
-    })
+    Ok(session_keys)
 }
 
 fn save_keys_with_identifiers<C: IOContext>(
-    keys: &AutomaticGeneratedKeys,
+    keys: &SessionKeys,
     context: &C,
 ) -> Result<()> {
     let output_file = "automatic-generated-keys.json";
@@ -166,8 +191,22 @@ fn save_keys_with_identifiers<C: IOContext>(
         }
     }
     
+    // Convert to JSON-friendly format
+    let json_keys = SessionKeysJson {
+        keys: keys.iter().map(|(key_type, key_bytes)| {
+            let key_type_str = String::from_utf8_lossy(key_type).to_string();
+            let public_key = format!("0x{}", hex::encode(key_bytes));
+            
+            KeyEntry {
+                key_type: key_type_str,
+                key_type_bytes: *key_type,
+                public_key,
+            }
+        }).collect(),
+    };
+    
     // Serialize keys to JSON
-    let json_content = serde_json::to_string_pretty(keys)
+    let json_content = serde_json::to_string_pretty(&json_keys)
         .context("Failed to serialize keys to JSON")?;
     
     // Write to file
