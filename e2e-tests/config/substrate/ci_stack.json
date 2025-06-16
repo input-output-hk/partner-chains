@@ -1,28 +1,32 @@
 {
     "stack_config": {
         "ogmios_scheme": "ws",
-        "ogmios_host": "devnet-services-service",
+        "ogmios_host": "staging-preview-services-service.staging-preview.svc.cluster.local",
         "ogmios_port": 1337,
-        "tools_host": "10.0.12.163",
-        "ssh": {
-            "username": "root",
-            "host": "${stack_config[tools_host]}",
-            "port": 22,
-            "host_keys_path": "config/substrate/known_hosts",
-            "private_key_path": "secrets/substrate/staging/keys/ssh-key.yaml.decrypted"
-        },
         "tools": {
+            "runner": {
+                "kubernetes": {
+                    "pod": "ci-preview-validator-1",
+                    "namespace": "ci-preview"
+                }
+            },
             "cardano_cli": {
-                "cli": "export CARDANO_NODE_SOCKET_PATH=/ipc/node.socket && /tools/cardano-cli",
-                "ssh": "${stack_config[ssh]}"
+                "path": "cardano-cli",
+                "runner": {
+                    "kubernetes": {
+                        "container": "cardano-node"
+                    }
+                }
             },
-            "partner_chains_node": {
-                "cli": "/tools/ci-preview/partner-chains-node-latest",
-                "ssh": "${stack_config[ssh]}"
-            },
-            "bech32": {
-                "cli": "/tools/bech32",
-                "ssh": "${stack_config[ssh]}"
+            "node": {
+                "path": "/usr/local/bin/partner-chains-node",
+                "runner": {
+                    "workdir": "/data/e2e-tests",
+                    "copy_secrets": true,
+                    "kubernetes": {
+                        "container": "substrate-node"
+                    }
+                }
             }
         }
     }

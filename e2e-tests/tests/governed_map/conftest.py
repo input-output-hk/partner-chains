@@ -67,10 +67,10 @@ def new_value_hex_bytes(new_value):
 
 
 @fixture(scope="class")
-def insert_data(api: BlockchainApi, random_key, random_value, payment_key):
+def insert_data(api: BlockchainApi, genesis_utxo, random_key, random_value, payment_key):
     logging.info(f"Inserting data into Governed Map with key: {random_key} and value: {random_value}")
     hex_data = string_to_hex_bytes(random_value)
-    result = api.partner_chains_node.smart_contracts.governed_map.insert(random_key, hex_data, payment_key)
+    result = api.partner_chains_node.smart_contracts.governed_map.insert(genesis_utxo, random_key, hex_data, payment_key)
     yield result
-    api.partner_chains_node.smart_contracts.governed_map.remove(random_key, payment_key)
+    api.partner_chains_node.smart_contracts.governed_map.remove(genesis_utxo, random_key, payment_key)
     logging.info(f"Cleaned up test data from Governed Map with key: {random_key}")

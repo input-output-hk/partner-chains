@@ -9,21 +9,23 @@ use sidechain_domain::*;
 use sp_block_producer_metadata::MetadataSignedMessage;
 use std::io::{BufReader, Read};
 
+/// Generates ECDSA signatures for block producer metadata using cross-chain keys.
 #[derive(Clone, Debug, Parser)]
 #[command(author, version, about, long_about = None)]
 pub struct BlockProducerMetadataSignatureCmd {
-	/// Genesis UTXO of the target Partner Chain
+	/// Genesis UTXO that uniquely identifies the target Partner Chain
 	#[arg(long)]
 	pub genesis_utxo: UtxoId,
-	/// Path of the file containing the metadata in JSON format
+	/// Path to JSON file containing the metadata to be signed
 	#[arg(long)]
 	pub metadata_file: String,
-	/// ECDSA signing key of the block producer, corresponding to the public key that will be associated with new metadata
+	/// ECDSA private key for cross-chain operations, corresponding to the block producer's identity
 	#[arg(long)]
 	pub cross_chain_signing_key: CrossChainSigningKeyParam,
 }
 
 impl BlockProducerMetadataSignatureCmd {
+	/// Reads metadata file, generates signatures, and outputs JSON to stdout.
 	pub fn execute<M: Send + Sync + DeserializeOwned + Encode>(&self) -> anyhow::Result<()> {
 		let file = std::fs::File::open(self.metadata_file.clone())
 			.map_err(|err| anyhow!("Failed to open file {}: {err}", self.metadata_file))?;
@@ -35,6 +37,7 @@ impl BlockProducerMetadataSignatureCmd {
 		Ok(())
 	}
 
+	/// Generates ECDSA signatures for JSON metadata from reader.
 	pub fn get_output<M: Send + Sync + DeserializeOwned + Encode>(
 		&self,
 		metadata_reader: impl Read,

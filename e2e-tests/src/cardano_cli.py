@@ -26,13 +26,13 @@ def hex_to_bech32(hex_string: str, prefix: str) -> str:
 
 class CardanoCli:
     def __init__(self, config: MainChainConfig, cardano_cli: Tool):
-        self.cli = cardano_cli.cli
+        self.cli = cardano_cli.path
         self.network = config.network
-        self.run_command = RunnerFactory.get_runner(cardano_cli.ssh, cardano_cli.shell)
+        self.run_command = RunnerFactory.get_runner(cardano_cli.runner)
 
     def query_tip(self) -> int:
         cmd = f"{self.cli} latest query tip {self.network}"
-        result = self.run_command.run(cmd)
+        result = self.run_command.exec(cmd)
         return json.loads(result.stdout)
 
     def get_epoch(self) -> int:
@@ -49,7 +49,7 @@ class CardanoCli:
 
     def get_utxos(self, addr):
         cmd = f"{self.cli} latest query utxo --address {addr} {self.network} --out-file /dev/stdout"
-        result = self.run_command.run(cmd)
+        result = self.run_command.exec(cmd)
         if result.stderr:
             logger.error(result.stderr)
         return json.loads(result.stdout)
@@ -80,7 +80,7 @@ class CardanoCli:
     def get_stake_pool_id(self, cold_vkey, output_format="hex"):
         logger.debug("Getting Stake Pool Id...")
         cmd = f'{self.cli} latest stake-pool id --stake-pool-verification-key {cold_vkey} --output-format "{output_format}"'
-        result = self.run_command.run(cmd)
+        result = self.run_command.exec(cmd)
         if result.stderr:
             logger.error(result.stderr)
         pool_id = result.stdout.strip()
@@ -90,7 +90,7 @@ class CardanoCli:
     def get_stake_snapshot_of_pool(self, pool_id):
         logger.debug("Getting pool's stake distribution...")
         cmd = f"{self.cli} latest query stake-snapshot {self.network} --stake-pool-id {pool_id}"
-        result = self.run_command.run(cmd)
+        result = self.run_command.exec(cmd)
         if result.stderr:
             logger.error(result.stderr)
         return json.loads(result.stdout)
@@ -103,7 +103,7 @@ class CardanoCli:
     def generate_payment_keys(self):
         logger.debug("Generating payment keys...")
         cmd = f"{self.cli} latest address key-gen --verification-key-file /dev/stdout --signing-key-file /dev/stdout"
-        result = self.run_command.run(cmd)
+        result = self.run_command.exec(cmd)
         if result.stderr:
             logger.error(result.stderr)
             return None, None
@@ -119,7 +119,7 @@ class CardanoCli:
             f"{self.cli} latest stake-address key-gen "
             "--verification-key-file /dev/stdout --signing-key-file /dev/stdout"
         )
-        result = self.run_command.run(cmd)
+        result = self.run_command.exec(cmd)
         if result.stderr:
             logger.error(result.stderr)
             return None, None
@@ -132,7 +132,7 @@ class CardanoCli:
     def build_address(self, payment_vkey):
         logger.debug("Building address...")
         cmd = f"{self.cli} latest address build --payment-verification-key {payment_vkey} {self.network}"
-        result = self.run_command.run(cmd)
+        result = self.run_command.exec(cmd)
         if result.stderr:
             logger.error(result.stderr)
         return result.stdout.strip()
@@ -158,7 +158,7 @@ class CardanoCli:
     def get_stake_key_hash(self, stake_key):
         logger.debug("Getting stake key hash...")
         cmd = f"{self.cli} latest stake-address key-hash --stake-verification-key {stake_key}"
-        result = self.run_command.run(cmd)
+        result = self.run_command.exec(cmd)
         if result.stderr:
             logger.error(result.stderr)
         return result.stdout.strip()
@@ -166,7 +166,7 @@ class CardanoCli:
     def get_address_key_hash(self, payment_vkey):
         logger.debug("Getting address key hash...")
         cmd = f"{self.cli} latest address key-hash --payment-verification-key {payment_vkey}"
-        result = self.run_command.run(cmd)
+        result = self.run_command.exec(cmd)
         if result.stderr:
             logger.error(result.stderr)
         return result.stdout.strip()
@@ -174,7 +174,7 @@ class CardanoCli:
     def get_policy_id(self, script_file):
         logger.debug("Calculating policy id...")
         cmd = f"{self.cli} latest transaction policyid --script-file {script_file}"
-        result = self.run_command.run(cmd)
+        result = self.run_command.exec(cmd)
         if result.stderr:
             logger.error(result.stderr)
         return result.stdout.strip()
@@ -192,7 +192,7 @@ class CardanoCli:
             f"--out-file {minting_token_tx_filepath} "
             f"{self.network}"
         )
-        result = self.run_command.run(cmd)
+        result = self.run_command.exec(cmd)
         if result.stderr:
             logger.error(result.stderr)
         return result.stdout.strip(), minting_token_tx_filepath
@@ -209,7 +209,7 @@ class CardanoCli:
             f"--out-file {raw_tx_filepath} "
             f"{self.network}"
         )
-        result = self.run_command.run(cmd)
+        result = self.run_command.exec(cmd)
         if result.stderr:
             logger.error(result.stderr)
         return result.stdout.strip(), raw_tx_filepath
@@ -224,7 +224,7 @@ class CardanoCli:
             f"--out-file {signed_tx_filepath} "
             f"{self.network}"
         )
-        result = self.run_command.run(cmd)
+        result = self.run_command.exec(cmd)
         if result.stderr:
             logger.error(result.stderr)
         return signed_tx_filepath
@@ -232,7 +232,7 @@ class CardanoCli:
     def submit_transaction(self, signed_tx_filepath):
         logger.debug("Submitting transaction...")
         cmd = f"{self.cli} latest transaction submit --tx-file {signed_tx_filepath} {self.network}"
-        result = self.run_command.run(cmd)
+        result = self.run_command.exec(cmd)
         if result.stderr:
             logger.error(result.stderr)
         return result.stdout.strip()

@@ -17,7 +17,7 @@ use ogmios_client::{
 	transactions::Transactions,
 };
 use serde::{Serialize, Serializer};
-use sidechain_domain::{McTxHash, UtxoId, UtxoIndex, crypto::blake2b};
+use sidechain_domain::{McTxHash, crypto::blake2b};
 
 /// Successful smart contracts offchain results in either transaction submission or creating transaction that has to be signed by the governance authorities
 #[derive(Clone, Debug, Serialize)]
@@ -173,7 +173,7 @@ async fn transfer_to_temporary_wallet<T: Transactions + QueryUtxoByUtxoId, A: Aw
 		&hex::encode(tx_hash)
 	);
 	client.submit_transaction(&payment_ctx.sign(&funding_tx).to_bytes()).await?;
-	await_tx.await_tx_output(client, UtxoId::new(tx_hash, 0)).await?;
+	await_tx.await_tx_output(client, McTxHash(tx_hash)).await?;
 	Ok(())
 }
 
@@ -232,12 +232,7 @@ where
 	})?;
 	let tx_id = McTxHash(res.transaction.id);
 	log::info!("'{}' transaction submitted: {}", tx_name, hex::encode(tx_id.0));
-	await_tx
-		.await_tx_output(
-			client,
-			UtxoId { tx_hash: McTxHash(res.transaction.id), index: UtxoIndex(0) },
-		)
-		.await?;
+	await_tx.await_tx_output(client, McTxHash(res.transaction.id)).await?;
 	Ok(tx_id)
 }
 

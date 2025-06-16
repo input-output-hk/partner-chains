@@ -1,6 +1,6 @@
 use anyhow::anyhow;
 use ogmios_client::query_ledger_state::QueryUtxoByUtxoId;
-use sidechain_domain::UtxoId;
+use sidechain_domain::{McTxHash, UtxoId};
 use std::time::Duration;
 use tokio_retry::{Retry, strategy::FixedInterval};
 
@@ -8,11 +8,10 @@ use tokio_retry::{Retry, strategy::FixedInterval};
 pub trait AwaitTx {
 	#[allow(async_fn_in_trait)]
 	/// This is used for waiting until the output of a submitted transaction can be observed.
-	/// TODO: make this take a Transaction ID instead of a UtxoId
 	async fn await_tx_output<C: QueryUtxoByUtxoId>(
 		&self,
 		client: &C,
-		utxo_id: UtxoId,
+		tx_hash: McTxHash,
 	) -> anyhow::Result<()>;
 }
 
@@ -38,9 +37,10 @@ impl AwaitTx for FixedDelayRetries {
 	async fn await_tx_output<C: QueryUtxoByUtxoId>(
 		&self,
 		client: &C,
-		utxo_id: UtxoId,
+		tx_hash: McTxHash,
 	) -> anyhow::Result<()> {
 		let strategy = FixedInterval::new(self.delay).take(self.retries);
+		let utxo_id = UtxoId::new(tx_hash.0, 0);
 		let _ = Retry::spawn(strategy, || async {
 			log::info!("Probing for transaction output '{}'", utxo_id);
 			let utxo = client.query_utxo_by_id(utxo_id).await.map_err(|_| ())?;
@@ -69,7 +69,7 @@ pub(crate) mod mock {
 		async fn await_tx_output<Q: QueryUtxoByUtxoId>(
 			&self,
 			_query: &Q,
-			_utxo_id: sidechain_domain::UtxoId,
+			_utxo_id: sidechain_domain::McTxHash,
 		) -> anyhow::Result<()> {
 			Ok(())
 		}
@@ -84,7 +84,7 @@ mod tests {
 		query_ledger_state::QueryUtxoByUtxoId,
 		types::{OgmiosTx, OgmiosUtxo},
 	};
-	use sidechain_domain::{McTxHash, UtxoId, UtxoIndex};
+	use sidechain_domain::McTxHash;
 	use std::{cell::RefCell, time::Duration};
 
 	#[tokio::test]
@@ -92,7 +92,7 @@ mod tests {
 		let mock =
 			MockQueryUtxoByUtxoId { responses: RefCell::new(vec![Ok(Some(awaited_utxo()))]) };
 		FixedDelayRetries::new(Duration::from_millis(1), 3)
-			.await_tx_output(&mock, awaited_utxo_id())
+			.await_tx_output(&mock, awaited_tx_hash())
 			.await
 			.unwrap();
 	}
@@ -103,7 +103,7 @@ mod tests {
 			responses: RefCell::new(vec![Ok(None), Ok(Some(awaited_utxo()))]),
 		};
 		FixedDelayRetries::new(Duration::from_millis(1), 3)
-			.await_tx_output(&mock, awaited_utxo_id())
+			.await_tx_output(&mock, awaited_tx_hash())
 			.await
 			.unwrap();
 	}
@@ -113,7 +113,7 @@ mod tests {
 		let mock =
 			MockQueryUtxoByUtxoId { responses: RefCell::new(vec![Ok(None), Ok(None), Ok(None)]) };
 		let result = FixedDelayRetries::new(Duration::from_millis(1), 2)
-			.await_tx_output(&mock, awaited_utxo_id())
+			.await_tx_output(&mock, awaited_tx_hash())
 			.await;
 		assert!(result.is_err())
 	}
@@ -128,7 +128,7 @@ mod tests {
 			]),
 		};
 		let result = FixedDelayRetries::new(Duration::from_millis(1), 2)
-			.await_tx_output(&mock, awaited_utxo_id())
+			.await_tx_output(&mock, awaited_tx_hash())
 			.await;
 		assert!(result.is_err())
 	}
@@ -142,7 +142,7 @@ mod tests {
 			&self,
 			utxo: sidechain_domain::UtxoId,
 		) -> Result<Option<OgmiosUtxo>, OgmiosClientError> {
-			if utxo == awaited_utxo_id() {
+			if utxo.tx_hash == awaited_tx_hash() {
 				self.responses.borrow_mut().pop().unwrap()
 			} else {
 				Ok(None)
@@ -150,8 +150,8 @@ mod tests {
 		}
 	}
 
-	fn awaited_utxo_id() -> UtxoId {
-		UtxoId { tx_hash: McTxHash([7u8; 32]), index: UtxoIndex(1) }
+	fn awaited_tx_hash() -> McTxHash {
+		McTxHash([7u8; 32])
 	}
 
 	fn awaited_utxo() -> OgmiosUtxo {

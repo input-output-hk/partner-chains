@@ -1,4 +1,4 @@
-from pytest import mark, skip
+from pytest import mark
 from src.blockchain_api import BlockchainApi, Wallet
 from config.api_config import ApiConfig
 import logging as logger
@@ -7,7 +7,7 @@ COMMITTEE_REPETITIONS_IN_PC_EPOCH = 2
 
 
 @mark.xdist_group("faucet_tx")
-def test_block_producer_can_update_their_metadata(api: BlockchainApi, get_wallet: Wallet):
+def test_block_producer_can_update_their_metadata(genesis_utxo, api: BlockchainApi, get_wallet: Wallet, write_file):
     logger.info("Signing block producer metadata...")
     skey, vkey_hex, vkey_hash = api.cardano_cli.generate_cross_chain_keys()
 
@@ -16,7 +16,9 @@ def test_block_producer_can_update_their_metadata(api: BlockchainApi, get_wallet
         "url": "http://test.example",
         "hash": "0x0000000000000000000000000000000000000000000000000000000000000001",
     }
-    signature = api.sign_block_producer_metadata(metadata, skey)
+    metadata_filepath = write_file(api.partner_chains_node.run_command, metadata)
+
+    signature = api.sign_block_producer_metadata(genesis_utxo, metadata_filepath, skey)
     assert signature.signature, "Signature is empty"
     assert signature.cross_chain_pub_key == f"0x{vkey_hex}"
 
@@ -38,7 +40,8 @@ def test_block_producer_can_update_their_metadata(api: BlockchainApi, get_wallet
         "url": "http://test.example",
         "hash": "0x0000000000000000000000000000000000000000000000000000000000000002",
     }
-    signature = api.sign_block_producer_metadata(metadata, skey)
+    metadata_filepath = write_file(api.partner_chains_node.run_command, metadata)
+    signature = api.sign_block_producer_metadata(genesis_utxo, metadata_filepath, skey)
     assert signature.signature, "Signature is empty"
     assert signature.cross_chain_pub_key == f"0x{vkey_hex}"
 

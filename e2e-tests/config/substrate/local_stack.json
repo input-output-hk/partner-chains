@@ -3,18 +3,22 @@
         "ogmios_scheme": "ws",
         "ogmios_host": "ogmios",
         "ogmios_port": 1337,
-        "tools_shell": "/bin/bash",
         "tools": {
             "cardano_cli": {
-                "cli": "cardano-cli",
-                "shell": "docker exec cardano-node-1 bash -c"
+                "path": "cardano-cli",
+                "runner": {
+                    "docker": {
+                        "container": "cardano-node-1"
+                    }
+                }
             },
-            "partner_chains_node": {
-                "cli": "./partner-chains-node",
-                "shell": "docker exec partner-chains-setup bash -c"
-            },
-            "bech32": {
-                "cli": "bech32"
+            "node": {
+                "path": "./partner-chains-node",
+                "runner": {
+                    "docker": {
+                        "container": "partner-chains-setup"
+                    }
+                }
             }
         }
     }
