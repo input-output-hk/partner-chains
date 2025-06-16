@@ -2,6 +2,7 @@
 //! Interacts with Smart Contracts using [`partner_chains_cardano_offchain`] crate.
 #![deny(missing_docs)]
 
+mod automatic_generate_keys;
 mod cardano_key;
 mod cmd_traits;
 mod config;
@@ -53,6 +54,8 @@ impl CommonArguments {
 pub enum Command<T: PartnerChainRuntime> {
 	/// This wizard generates the keys required for operating a partner-chains node, stores them in the keystore directory, and prints the public keys and keystore location.
 	GenerateKeys(generate_keys::GenerateKeysCmd),
+	/// This wizard automatically generates keys by connecting to a running Partner Chain node, calling author_rotateKeys(), and saving the keys with identifiers.
+	AutomaticGenerateKeys(automatic_generate_keys::AutomaticGenerateKeysCmd),
 	/// Wizard to obtain the configuration needed for the partner-chain governance authority. This configuration should be shared with chain participants and used to create the chain spec json file.
 	PrepareConfiguration(prepare_configuration::PrepareConfigurationCmd),
 	/// Wizard for creating a chain spec json file based on the chain configuration (see `prepare-configuration`).
@@ -78,6 +81,7 @@ impl<T: PartnerChainRuntime> Command<T> {
 	pub fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
 		match self {
 			Command::GenerateKeys(cmd) => cmd.run(context),
+			Command::AutomaticGenerateKeys(cmd) => cmd.run(context),
 			Command::PrepareConfiguration(cmd) => cmd.run(context),
 			Command::CreateChainSpec(cmd) => cmd.run(context),
 			Command::SetupMainChainState(cmd) => cmd.run(context),
