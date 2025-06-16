@@ -6899,6 +6899,7 @@ dependencies = [
  "hex",
  "hex-literal 1.0.0",
  "inquire",
+ "jsonrpsee",
  "libp2p-identity",
  "log",
  "ogmios-client",
