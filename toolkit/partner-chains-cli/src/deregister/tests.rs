@@ -140,11 +140,19 @@ fn read_keys_io() -> MockIO {
 }
 
 fn read_payment_signing_key() -> MockIO {
-	MockIO::prompt("path to the payment signing key file", Some("payment.skey"), MY_PAYMEMENT_SKEY)
+	MockIO::prompt(
+		"Enter the path to the payment signing key file",
+		Some("payment.skey"),
+		MY_PAYMEMENT_SKEY,
+	)
 }
 
 fn read_cold_verification_key() -> MockIO {
-	MockIO::prompt("path to the cold verification key file", Some("cold.vkey"), MY_COLD_VKEY)
+	MockIO::prompt(
+		"Enter the path to the cold verification key file",
+		Some("cold.vkey"),
+		MY_COLD_VKEY,
+	)
 }
 
 fn test_chain_config_content() -> serde_json::Value {

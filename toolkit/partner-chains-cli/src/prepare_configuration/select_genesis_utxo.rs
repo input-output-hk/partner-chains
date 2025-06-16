@@ -131,6 +131,10 @@ mod tests {
 	}
 
 	fn prompt_payment_vkey_and_read_it_to_derive_address() -> MockIO {
-		MockIO::prompt("path to the payment signing key file", Some("payment.skey"), "payment.skey")
+		MockIO::prompt(
+			"Enter the path to the payment signing key file",
+			Some("payment.skey"),
+			"payment.skey",
+		)
 	}
 }

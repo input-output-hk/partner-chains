@@ -60,6 +60,8 @@ spawn ./partner-chains-node wizards prepare-configuration
 set timeout 180
 expect "node base path (./data)"
 send "\r"
+expect "Do you want to configure a single bootnode with"
+send "Y\r"
 expect "Your bootnode should be accessible via:"
 send "\r"
 expect "Enter bootnode TCP port (3033)"
@@ -76,7 +78,7 @@ expect "path to the payment signing key file (payment.skey)"
 send "/keys/funded_address.skey\r"
 expect "Select an UTXO to use as the genesis UTXO"
 send "\r"
-expect "Space separated keys hashes of the initial Multisig Governance Authorities (0x$GOVERNANCE_AUTHORITY)"
+expect "Enter the space separated keys hashes of the initial Multisig Governance Authorities"
 send "\r"
 expect "Initial Multisig Governance Threshold (1)"
 send "\r"
@@ -164,8 +166,7 @@ expect "Enter R, the number of registered candidates seats, as a non-negative in
 send "1\r"
 expect "path to the payment signing key file (/keys/funded_address.skey)"
 send "\r"
-expect "Done. Main chain state is set."
-expect eof
+expect "Done."
 EOF
 
 touch /shared/partner-chains-node-1.ready

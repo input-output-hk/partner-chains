@@ -39,7 +39,7 @@ pub mod scenarios {
 	}
 
 	pub fn prompt_all_config_fields() -> MockIO {
-		MockIO::prompt("node base path", Some("./data"), DATA_PATH)
+		MockIO::prompt("Enter the node base path", Some("./data"), DATA_PATH)
 	}
 
 	pub fn resources_file_content() -> serde_json::Value {
