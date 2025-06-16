@@ -41,6 +41,9 @@ plutus-datum-derive = { workspace = true }
 ed25519-zebra = { workspace = true }
 sp-session-validator-management = { workspace = true, features = ["std"] }
 pallet-session-validator-management = { workspace = true, features = ["std"] }
+subxt = "0.35"
+scale-decode = "0.16.0"
+scale-info.workspace = true
 
 [dev-dependencies]
 pretty_assertions = { workspace = true }

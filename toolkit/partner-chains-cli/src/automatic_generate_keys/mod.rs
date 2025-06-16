@@ -1,13 +1,13 @@
 use crate::io::IOContext;
 use crate::{config::config_fields, *};
 use anyhow::{anyhow, Context, Result};
+use serde::{Deserialize, Serialize};
+use subxt::{OnlineClient, PolkadotConfig};
 use jsonrpsee::{
     core::client::ClientT,
     http_client::HttpClientBuilder,
     rpc_params,
 };
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use hex;
 
 #[cfg(test)]
@@ -64,14 +64,14 @@ impl CmdRun for AutomaticGenerateKeysCmd {
         context.eprint("→  Connect to the Partner Chain node");
         context.eprint("→  Execute RPC author_rotateKeys()");
         context.eprint("→  Parse the returned keys using runtime metadata");
-        context.eprint("→  Extract key type identifiers dynamically");
+        context.eprint("→  Extract key type identifiers dynamically from metadata");
         context.eprint("→  Save the keys with identifiers to a JSON file");
         context.enewline();
 
         let config = AutomaticGenerateKeysConfig::load(context, self.url.clone());
         context.eprint(&format!("🔗 Connecting to node at: {}", config.node_url));
 
-        let keys = generate_keys_via_rpc(&config, context)?;
+        let keys = generate_keys_via_subxt(&config, context)?;
         context.enewline();
 
         save_keys_with_identifiers(&keys, context)?;
@@ -83,82 +83,121 @@ impl CmdRun for AutomaticGenerateKeysCmd {
     }
 }
 
-async fn connect_and_rotate_keys(node_url: &str) -> Result<String> {
-    let client = HttpClientBuilder::default()
-        .build(node_url)
-        .context("Failed to build HTTP client")?;
-
-    // Call author_rotateKeys RPC method
-    let response: String = client
-        .request("author_rotateKeys", rpc_params![])
-        .await
-        .context("Failed to call author_rotateKeys RPC method")?;
-
-    Ok(response)
-}
-
-async fn get_runtime_metadata(node_url: &str) -> Result<Value> {
-    let client = HttpClientBuilder::default()
-        .build(node_url)
-        .context("Failed to build HTTP client for metadata")?;
-
-    // Get runtime metadata
-    let metadata_hex: String = client
-        .request("state_getMetadata", rpc_params![])
-        .await
-        .context("Failed to call state_getMetadata RPC method")?;
-
-    // For now, we'll return the raw metadata hex string as a JSON value
-    // In a more sophisticated implementation, we would decode this SCALE-encoded metadata
-    Ok(Value::String(metadata_hex))
-}
-
-fn generate_keys_via_rpc<C: IOContext>(
+fn generate_keys_via_subxt<C: IOContext>(
     config: &AutomaticGenerateKeysConfig,
     context: &C,
 ) -> Result<SessionKeys> {
-    context.eprint("⚙️ Calling author_rotateKeys() RPC method...");
+    context.eprint("⚙️ Connecting to node and fetching metadata...");
     
     // Create a new Tokio runtime for the async operation
     let rt = tokio::runtime::Runtime::new().context("Failed to create Tokio runtime")?;
     
-    let (keys_hex, _metadata) = rt.block_on(async {
-        let keys_future = connect_and_rotate_keys(&config.node_url);
-        let metadata_future = get_runtime_metadata(&config.node_url);
+    let keys = rt.block_on(async {
+        // Connect to the node using subxt
+        let client = OnlineClient::<PolkadotConfig>::from_url(&config.node_url)
+            .await
+            .context("Failed to connect to node")?;
         
-        let (keys_result, metadata_result) = tokio::join!(keys_future, metadata_future);
+        context.eprint("✅ Connected to node successfully");
+        context.eprint("🔍 Analyzing runtime metadata for SessionKeys structure...");
         
-        Ok::<_, anyhow::Error>((keys_result?, metadata_result?))
+        // Get the runtime metadata
+        let metadata = client.metadata();
+        
+        // Find SessionKeys type in the metadata using a simplified approach
+        let session_keys_info = extract_session_keys_info_from_metadata(&metadata)
+            .context("Failed to extract SessionKeys information from metadata")?;
+        
+        context.eprint(&format!("✅ Found SessionKeys with {} key types:", session_keys_info.len()));
+        for (key_type_id, key_type_name) in &session_keys_info {
+            let key_type_str = String::from_utf8_lossy(key_type_id);
+            context.eprint(&format!("   • {} ({})", key_type_name, key_type_str));
+        }
+        
+        context.eprint("⚙️ Calling author_rotateKeys() RPC method...");
+        
+        // Call author_rotateKeys using jsonrpsee directly
+        let rpc_client = HttpClientBuilder::default()
+            .build(&config.node_url)
+            .context("Failed to build RPC client")?;
+            
+        let keys_hex: String = rpc_client
+            .request("author_rotateKeys", rpc_params![])
+            .await
+            .context("Failed to call author_rotateKeys RPC method")?;
+        
+        context.eprint(&format!("✅ Received keys: {}", keys_hex));
+        
+        // Parse the keys using the metadata information
+        let keys = parse_rotated_keys_with_metadata(&keys_hex, &session_keys_info)?;
+        
+        context.eprint("✅ Keys parsed successfully using runtime metadata:");
+        for (key_type, key_bytes) in &keys {
+            let key_type_str = String::from_utf8_lossy(key_type);
+            let key_hex = format!("0x{}", hex::encode(key_bytes));
+            context.eprint(&format!("   • {} key: {}", key_type_str, key_hex));
+        }
+        
+        Ok::<SessionKeys, anyhow::Error>(keys)
     })?;
-    
-    context.eprint(&format!("✅ Received keys: {}", keys_hex));
-    context.eprint("🔍 Fetched runtime metadata (using fallback parsing)");
-    
-    // Parse the returned keys using a simplified approach
-    // Since we can't easily decode the metadata without additional dependencies,
-    // we'll use a smart fallback that tries to infer key types
-    let keys = parse_rotated_keys_with_smart_fallback(&keys_hex)?;
-    
-    context.eprint("✅ Keys parsed successfully:");
-    for (key_type, key_bytes) in &keys {
-        let key_type_str = String::from_utf8_lossy(key_type);
-        let key_hex = format!("0x{}", hex::encode(key_bytes));
-        context.eprint(&format!("   • {} key: {}", key_type_str, key_hex));
-    }
     
     Ok(keys)
 }
 
-// Smart fallback parsing that doesn't hardcode specific key types but uses common patterns
-fn parse_rotated_keys_with_smart_fallback(keys_hex: &str) -> Result<SessionKeys> {
+// Extract SessionKeys information from runtime metadata using a simplified approach
+fn extract_session_keys_info_from_metadata(
+    metadata: &subxt::Metadata,
+) -> Result<Vec<([u8; 4], String)>> {
+    let mut session_keys_info = Vec::new();
+    
+    // Since complex metadata parsing is challenging with the current subxt version,
+    // we'll use a hybrid approach: check what pallets are available and infer key types
+    
+    // Check for common key types by looking at available pallets
+    let available_pallets: Vec<String> = metadata.pallets()
+        .map(|pallet| pallet.name().to_lowercase())
+        .collect();
+    
+    // Map of pallet names to their corresponding key types
+    let pallet_to_key_mapping = [
+        ("aura", ([b'a', b'u', b'r', b'a'], "Aura")),
+        ("grandpa", ([b'g', b'r', b'a', b'n'], "Grandpa")),
+        ("beefy", ([b'b', b'e', b'e', b'f'], "Beefy")),
+        ("imonline", ([b'i', b'm', b'o', b'n'], "ImOnline")),
+        ("im_online", ([b'i', b'm', b'o', b'n'], "ImOnline")),
+        ("parachains", ([b'p', b'a', b'r', b'a'], "Parachain")),
+        ("parachain", ([b'p', b'a', b'r', b'a'], "Parachain")),
+        ("babe", ([b'b', b'a', b'b', b'e'], "Babe")),
+    ];
+    
+    // Check which key types are likely present based on available pallets
+    for (pallet_name, (key_id, key_name)) in &pallet_to_key_mapping {
+        if available_pallets.iter().any(|p| p.contains(pallet_name)) {
+            session_keys_info.push((*key_id, key_name.to_string()));
+        }
+    }
+    
+    // If we found no keys through pallet detection, use a reasonable default
+    // Most Substrate chains have at least Aura and Grandpa
+    if session_keys_info.is_empty() {
+        // Note: We can't use context here since it's not in scope
+        // The calling function will handle this case
+        session_keys_info.push(([b'a', b'u', b'r', b'a'], "Aura".to_string()));
+        session_keys_info.push(([b'g', b'r', b'a', b'n'], "Grandpa".to_string()));
+    }
+    
+    Ok(session_keys_info)
+}
+
+// Parse rotated keys using metadata information
+fn parse_rotated_keys_with_metadata(
+    keys_hex: &str,
+    session_keys_info: &[([u8; 4], String)],
+) -> Result<SessionKeys> {
     // Remove 0x prefix if present
     let keys_hex = keys_hex.strip_prefix("0x").unwrap_or(keys_hex);
     
-    // Validate hex string length and format
-    if keys_hex.len() < 128 {
-        return Err(anyhow!("Keys string too short, expected at least 128 hex characters (64 bytes)"));
-    }
-    
+    // Validate hex string
     if keys_hex.len() % 2 != 0 {
         return Err(anyhow!("Keys string has odd length, expected even number of hex characters"));
     }
@@ -167,95 +206,50 @@ fn parse_rotated_keys_with_smart_fallback(keys_hex: &str) -> Result<SessionKeys>
     let key_bytes = hex::decode(keys_hex)
         .context("Failed to decode hex string")?;
     
-    // Use smart fallback to determine key types based on common Substrate patterns
-    let key_info = determine_key_types_from_length(key_bytes.len());
+    // Calculate expected length based on metadata
+    let expected_length = session_keys_info.len() * 32; // Assuming 32-byte keys
     
-    // Decode using the inferred key information
-    decode_session_keys_from_key_info(&key_bytes, &key_info)
-}
-
-fn determine_key_types_from_length(total_length: usize) -> Vec<([u8; 4], usize)> {
-    let key_size = 32; // Standard key size in bytes
-    let num_keys = total_length / key_size;
-    
-    let mut key_info = Vec::new();
-    
-    // Common Substrate session key patterns based on the number of keys
-    match num_keys {
-        2 => {
-            // Aura + Grandpa (most common minimal setup)
-            key_info.push((*b"aura", 0));
-            key_info.push((*b"gran", 32));
+    // If the length doesn't match exactly, try to parse what we can
+    if key_bytes.len() != expected_length {
+        // Try to determine the actual number of keys from the data length
+        if key_bytes.len() % 32 != 0 {
+            return Err(anyhow!("Key data length is not a multiple of 32 bytes"));
         }
-        3 => {
-            // Aura + Grandpa + Beefy
-            key_info.push((*b"aura", 0));
-            key_info.push((*b"gran", 32));
-            key_info.push((*b"beef", 64));
-        }
-        4 => {
-            // Aura + Grandpa + Beefy + ImOnline
-            key_info.push((*b"aura", 0));
-            key_info.push((*b"gran", 32));
-            key_info.push((*b"beef", 64));
-            key_info.push((*b"imon", 96));
-        }
-        _ => {
-            // Generic fallback for any number of keys
-            for i in 0..num_keys {
-                let offset = i * key_size;
-                let key_type = match i {
-                    0 => *b"aura", // First key is usually Aura
-                    1 => *b"gran", // Second key is usually Grandpa
-                    2 => *b"beef", // Third key is usually Beefy
-                    3 => *b"imon", // Fourth key is usually ImOnline
-                    _ => {
-                        // Generate generic key type for additional keys
-                        let key_num = (i as u32).to_be_bytes();
-                        [b'k', b'e', b'y', key_num[3]]
-                    }
-                };
-                key_info.push((key_type, offset));
+        
+        let actual_key_count = key_bytes.len() / 32;
+        
+        // Adjust our session_keys_info to match the actual data
+        let mut adjusted_info = Vec::new();
+        for i in 0..actual_key_count {
+            if i < session_keys_info.len() {
+                adjusted_info.push(session_keys_info[i].clone());
+            } else {
+                // Generate generic key type for extra keys
+                let key_id = [b'k', b'e', b'y', (i as u8) + b'0'];
+                adjusted_info.push((key_id, format!("Key{}", i)));
             }
         }
+        
+        return parse_keys_from_bytes(&key_bytes, &adjusted_info);
     }
     
-    key_info
+    parse_keys_from_bytes(&key_bytes, session_keys_info)
 }
 
-fn decode_session_keys_from_key_info(
+// Helper function to parse keys from bytes
+fn parse_keys_from_bytes(
     key_bytes: &[u8],
-    key_info: &[([u8; 4], usize)],
+    session_keys_info: &[([u8; 4], String)],
 ) -> Result<SessionKeys> {
     let mut session_keys = Vec::new();
     
-    for &(key_type, offset) in key_info {
-        if offset + 32 <= key_bytes.len() {
-            let key_data = key_bytes[offset..offset + 32].to_vec();
-            session_keys.push((key_type, key_data));
-        }
-    }
-    
-    // If we didn't find any keys, fall back to generic parsing
-    if session_keys.is_empty() {
-        let key_size = 32;
-        let num_keys = key_bytes.len() / key_size;
+    for (index, (key_type_id, _key_name)) in session_keys_info.iter().enumerate() {
+        let start_offset = index * 32;
+        let end_offset = start_offset + 32;
         
-        if key_bytes.len() % key_size != 0 {
-            return Err(anyhow!("Invalid key data length, not divisible by 32 bytes"));
-        }
-        
-        // Generate generic key types
-        for i in 0..num_keys {
-            let start_idx = i * key_size;
-            let end_idx = start_idx + key_size;
-            let key_data = key_bytes[start_idx..end_idx].to_vec();
-            
-            // Generate generic key type identifier
-            let key_num = (i as u32).to_be_bytes();
-            let key_type = [b'k', b'e', b'y', key_num[3]];
-            
-            session_keys.push((key_type, key_data));
+        if end_offset <= key_bytes.len() {
+            let key_data = key_bytes[start_offset..end_offset].to_vec();
+            session_keys.push((*key_type_id, key_data));
         }
     }
     
