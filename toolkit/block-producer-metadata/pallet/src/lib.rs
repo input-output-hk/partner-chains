@@ -46,6 +46,8 @@
 //!     type WeightInfo = pallet_block_producer_metadata::weights::SubstrateWeight<Runtime>;
 //!
 //!     type BlockProducerMetadata = BlockProducerMetadata;
+//! 	type Currency = Balances;
+//!	    type BurnAmount = MetadataBurnAmount
 //!
 //!     fn genesis_utxo() -> sidechain_domain::UtxoId {
 //!         Sidechain::genesis_utxo()
@@ -55,6 +57,7 @@
 //!
 //! Here, besides providing the metadata type and using weights already provided with the pallet, we are also
 //! wiring the `genesis_utxo` function to fetch the chain's genesis UTXO from the `pallet_sidechain` pallet.
+//! Currency and BurnAmount types are required to configure additional fee for occupying storage.
 //!
 //! At this point, the pallet is ready to be used.
 //!
@@ -110,8 +113,11 @@ use sp_block_producer_metadata::MetadataSignedMessage;
 pub mod pallet {
 	use super::*;
 	use crate::weights::WeightInfo;
-	use frame_support::pallet_prelude::*;
-	use frame_system::pallet_prelude::OriginFor;
+	use frame_support::{
+		pallet_prelude::*,
+		traits::{Currency, ExistenceRequirement, Get, WithdrawReasons},
+	};
+	use frame_system::{ensure_signed, pallet_prelude::OriginFor};
 	use sidechain_domain::{CrossChainSignature, UtxoId};
 
 	/// Current version of the pallet
@@ -130,6 +136,13 @@ pub mod pallet {
 
 		/// Should return the chain's genesis UTXO
 		fn genesis_utxo() -> UtxoId;
+
+		/// The currency used for burning tokens
+		type Currency: Currency<Self::AccountId>;
+
+		/// The amount of tokens to burn when upserting metadata
+		#[pallet::constant]
+		type BurnAmount: Get<<<Self as Config>::Currency as Currency<Self::AccountId>>::Balance>;
 
 		/// Helper providing mock values for use in benchmarks
 		#[cfg(feature = "runtime-benchmarks")]
@@ -150,11 +163,14 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// Signals that the signature submitted to `upsert_metadata` does not match the metadata and public key
 		InvalidMainchainSignature,
+		/// Insufficient balance to burn tokens as fee for upserting block producer metadata
+		InsufficientBalance,
 	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Inserts or updates metadata for the block producer identified by `cross_chain_pub_key`.
+		/// Burns a constant amount from the caller's account as a fee for including metadata on the chain.
 		///
 		/// Arguments:
 		/// - `metadata`: new metadata value
@@ -165,11 +181,12 @@ pub mod pallet {
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::upsert_metadata())]
 		pub fn upsert_metadata(
-			_origin: OriginFor<T>,
+			origin: OriginFor<T>,
 			metadata: T::BlockProducerMetadata,
 			signature: CrossChainSignature,
 			cross_chain_pub_key: CrossChainPublicKey,
 		) -> DispatchResult {
+			let origin_account = ensure_signed(origin)?;
 			let genesis_utxo = T::genesis_utxo();
 
 			let cross_chain_key_hash = cross_chain_pub_key.hash();
@@ -184,6 +201,17 @@ pub mod pallet {
 				signature.verify(&cross_chain_pub_key, &metadata_message.encode()).is_ok();
 
 			ensure!(is_valid_signature, Error::<T>::InvalidMainchainSignature);
+
+			if BlockProducerMetadataStorage::<T>::get(cross_chain_key_hash).is_none() {
+				T::Currency::withdraw(
+					&origin_account,
+					T::BurnAmount::get(),
+					WithdrawReasons::FEE,
+					ExistenceRequirement::KeepAlive,
+				)
+				.map(|_| ())
+				.map_err(|_| Error::<T>::InsufficientBalance)?
+			}
 
 			BlockProducerMetadataStorage::<T>::insert(cross_chain_key_hash, metadata);
 			Ok(())

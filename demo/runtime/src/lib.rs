@@ -591,6 +591,11 @@ impl pallet_block_producer_fees::Config for Runtime {
 	type BenchmarkHelper = PalletBlockProducerFeesBenchmarkHelper;
 }
 
+parameter_types! {
+	/// Amount of tokens to burn when upserting metadata
+	pub const MetadataBurnAmount: Balance = 1_000_000_000;
+}
+
 impl pallet_block_producer_metadata::Config for Runtime {
 	type WeightInfo = pallet_block_producer_metadata::weights::SubstrateWeight<Runtime>;
 
@@ -599,6 +604,9 @@ impl pallet_block_producer_metadata::Config for Runtime {
 	fn genesis_utxo() -> UtxoId {
 		Sidechain::genesis_utxo()
 	}
+
+	type Currency = Balances;
+	type BurnAmount = MetadataBurnAmount;
 
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = PalletBlockProducerMetadataBenchmarkHelper;

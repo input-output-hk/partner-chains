@@ -1,6 +1,6 @@
-use frame_support::traits::ConstU32;
+use frame_support::traits::{ConstU32, ConstU128};
 use frame_support::{
-	construct_runtime,
+	construct_runtime, parameter_types,
 	traits::{ConstU16, ConstU64},
 };
 use hex_literal::hex;
@@ -16,10 +16,12 @@ use sp_runtime::{
 
 pub type Block = frame_system::mocking::MockBlock<Test>;
 pub type AccountId = AccountId32;
+pub type Balance = u128;
 
 construct_runtime! {
 	pub enum Test {
 		System: frame_system,
+		Balances: pallet_balances,
 		BlockProducerMetadata: crate::pallet
 	}
 }
@@ -39,7 +41,7 @@ impl frame_system::Config for Test {
 	type BlockHashCount = ConstU64<250>;
 	type Version = ();
 	type PalletInfo = PalletInfo;
-	type AccountData = ();
+	type AccountData = pallet_balances::AccountData<Balance>;
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type SystemWeightInfo = ();
@@ -55,6 +57,27 @@ impl frame_system::Config for Test {
 	type PreInherents = ();
 	type PostInherents = ();
 	type PostTransactions = ();
+}
+
+impl pallet_balances::Config for Test {
+	type MaxLocks = ConstU32<50>;
+	type MaxReserves = ();
+	type ReserveIdentifier = [u8; 8];
+	type Balance = Balance;
+	type RuntimeEvent = RuntimeEvent;
+	type DustRemoval = ();
+	type ExistentialDeposit = ConstU128<1>;
+	type AccountStore = System;
+	type WeightInfo = pallet_balances::weights::SubstrateWeight<Test>;
+	type FreezeIdentifier = ();
+	type MaxFreezes = ();
+	type RuntimeHoldReason = ();
+	type RuntimeFreezeReason = ();
+	type DoneSlashHandler = ();
+}
+
+parameter_types! {
+	pub const MetadataBurnAmount: Balance = 1000;
 }
 
 #[derive(
@@ -90,16 +113,27 @@ impl crate::benchmarking::BenchmarkHelper<BlockProducerUrlMetadata>
 	}
 }
 
+pub(crate) const FUNDED_ACCOUNT: AccountId32 = AccountId32::new([1; 32]);
+
 impl crate::pallet::Config for Test {
 	type WeightInfo = ();
 	type BlockProducerMetadata = BlockProducerUrlMetadata;
 	fn genesis_utxo() -> UtxoId {
 		UtxoId::new(hex!("59104061ffa0d66f9ba0135d6fc6a884a395b10f8ae9cb276fc2c3bfdfedc260"), 1)
 	}
+	type Currency = Balances;
+	type BurnAmount = MetadataBurnAmount;
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = PalletBlockProducerMetadataBenchmarkHelper;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	frame_system::GenesisConfig::<Test>::default().build_storage().unwrap().into()
+	let mut t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
+	pallet_balances::GenesisConfig::<Test> {
+		balances: vec![(FUNDED_ACCOUNT, 100_000)],
+		dev_accounts: None,
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
+	t.into()
 }
