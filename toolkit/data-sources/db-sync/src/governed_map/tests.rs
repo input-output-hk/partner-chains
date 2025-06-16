@@ -4,8 +4,8 @@ use crate::metrics::mock::test_metrics;
 use hex_literal::hex;
 use pretty_assertions::assert_eq;
 use sidechain_domain::byte_string::ByteString;
-use sidechain_domain::mainchain_epoch::{Duration, MainchainEpochConfig, Timestamp};
 use sidechain_domain::cardano_config::CardanoConfig;
+use sidechain_domain::mainchain_epoch::{Duration, MainchainEpochConfig, Timestamp};
 use sidechain_domain::*;
 use sp_governed_map::{GovernedMapDataSource, MainChainScriptsV1};
 use sqlx::PgPool;
@@ -146,9 +146,7 @@ async fn make_cached_source(pool: PgPool) -> GovernedMapDataSourceCachedImpl {
 		cache: Arc::new(Mutex::new(Cache::default())),
 		blocks: Arc::new(BlockDataSourceImpl::from_config(
 			pool,
-			DbSyncBlockDataSourceConfig {
-				block_stability_margin: 0,
-			},
+			DbSyncBlockDataSourceConfig { block_stability_margin: 0 },
 			&cardano_config(),
 		)),
 	}
