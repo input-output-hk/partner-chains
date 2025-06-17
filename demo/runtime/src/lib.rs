@@ -546,10 +546,17 @@ impl pallet_block_production_log::Config for Runtime {
 	type BenchmarkHelper = PalletBlockProductionLogBenchmarkHelper;
 }
 
+parameter_types! {
+	/// Amount of tokens to burn when making irreversible, forever association
+	pub const AddressAssociationBurnAmount: Balance = 1_000_000;
+}
+
 impl pallet_address_associations::Config for Runtime {
 	type WeightInfo = pallet_address_associations::weights::SubstrateWeight<Runtime>;
 
 	type PartnerChainAddress = AccountId;
+	type Currency = Balances;
+	type BurnAmount = AddressAssociationBurnAmount;
 
 	fn genesis_utxo() -> UtxoId {
 		Sidechain::genesis_utxo()

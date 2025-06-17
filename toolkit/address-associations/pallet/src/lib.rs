@@ -6,7 +6,7 @@
 //! The purpose of this mapping is primarily to indicate the local PC address to be the recipient of any
 //! block production rewards or cross-chain token transfers credited to a Cardano key holders on a Partner
 //! Chain. Some intended scenarios inlude:
-//! 1. ADA delegators become eligible for block rewards due to their stake poool's operator participating
+//! 1. ADA delegators become eligible for block rewards due to their stake pool's operator participating
 //!    in a Partner Chain network. The on-chain payout mechanism uses data provided by this pallet to
 //!    identify each delegator's Partner Chain address based on their Cardano staking key.
 //! 2. A Partner Chain develops its own cross-chain bridge from Cardano. A Cardano user associates their
@@ -27,7 +27,7 @@
 //!
 //! ## Usage - PC User
 //!
-//! This pallet expoes a single extrinsic `associate_address` accepting the Cardano public key
+//! This pallet exposes a single extrinsic `associate_address` accepting the Cardano public key
 //! and Partner Chain address to be associated together with a signature confirming that the submitter is
 //! the owner of the associated Cardano public key.
 //!
@@ -89,11 +89,13 @@ pub mod pallet {
 	use super::*;
 	use crate::weights::WeightInfo;
 	use frame_support::pallet_prelude::*;
-	use frame_system::pallet_prelude::OriginFor;
+	use frame_support::traits::fungible::{Inspect, Mutate};
+	use frame_support::traits::tokens::{Fortitude, Precision, Preservation};
+	use frame_system::{ensure_signed, pallet_prelude::OriginFor};
 	use sidechain_domain::{MainchainKeyHash, StakeKeySignature, StakePublicKey, UtxoId};
 
 	/// Current version of the pallet
-	pub const PALLET_VERSION: u32 = 1;
+	pub const PALLET_VERSION: u32 = 2;
 
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
@@ -106,6 +108,13 @@ pub mod pallet {
 		/// Type representing a local PC address. This can be a standard Substrate address, an
 		/// account ID, or some address type specific to the Partner Chain.
 		type PartnerChainAddress: Member + Parameter + MaxEncodedLen;
+
+		/// The currency used for burning tokens when a address association is made
+		type Currency: Mutate<Self::AccountId>;
+
+		/// The amount of tokens to hold when upserting metadata
+		#[pallet::constant]
+		type BurnAmount: Get<<Self::Currency as Inspect<Self::AccountId>>::Balance>;
 
 		/// Function returning the genesis UTXO of the Partner Chain.
 		/// This typically should be wired with the `genesis_utxo` function exposed by `pallet_sidechain`.
@@ -133,6 +142,8 @@ pub mod pallet {
 		MainchainKeyAlreadyAssociated,
 		/// Signals an invalid Cardano key signature
 		InvalidMainchainSignature,
+		/// Could not burn additional fee for occupying space
+		InsufficientBalance,
 	}
 
 	#[pallet::call]
@@ -145,11 +156,12 @@ pub mod pallet {
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::associate_address())]
 		pub fn associate_address(
-			_origin: OriginFor<T>,
+			origin: OriginFor<T>,
 			partnerchain_address: T::PartnerChainAddress,
 			signature: StakeKeySignature,
 			stake_public_key: StakePublicKey,
 		) -> DispatchResult {
+			let origin_account_id = ensure_signed(origin)?;
 			let genesis_utxo = T::genesis_utxo();
 
 			let stake_key_hash = stake_public_key.hash();
@@ -158,6 +170,14 @@ pub mod pallet {
 				!AddressAssociations::<T>::contains_key(&stake_key_hash),
 				Error::<T>::MainchainKeyAlreadyAssociated
 			);
+			T::Currency::burn_from(
+				&origin_account_id,
+				T::BurnAmount::get(),
+				Preservation::Preserve,
+				Precision::Exact,
+				Fortitude::Force,
+			)
+			.map_err(|_| Error::<T>::InsufficientBalance)?;
 
 			let address_association_message = AddressAssociationSignedMessage {
 				stake_public_key: stake_public_key.clone(),
