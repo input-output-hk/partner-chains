@@ -121,7 +121,7 @@ pub mod pallet {
 	use sidechain_domain::{CrossChainSignature, UtxoId};
 
 	/// Current version of the pallet
-	pub const PALLET_VERSION: u32 = 1;
+	pub const PALLET_VERSION: u32 = 2;
 
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
