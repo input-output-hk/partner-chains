@@ -6,6 +6,7 @@ pub use pallet::*;
 pub mod pallet {
 	use crate::{AccountId, BlockAuthor, MaxKeyLength, MaxValueLength};
 	use frame_support::pallet_prelude::*;
+	use frame_support::traits::{Currency, ExistenceRequirement, WithdrawReasons};
 	use frame_system::pallet_prelude::OriginFor;
 	use frame_system::{ensure_none, ensure_root};
 	use sidechain_domain::byte_string::BoundedString;
@@ -22,7 +23,15 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config {}
+	pub trait Config: frame_system::Config {
+		/// The currency used for burning tokens
+		type Currency: frame_support::traits::Currency<Self::AccountId>;
+
+		#[pallet::constant]
+		type XAssociationBurnAmount: Get<
+			<<Self as Config>::Currency as Currency<Self::AccountId>>::Balance,
+		>;
+	}
 
 	#[pallet::storage]
 	#[pallet::unbounded]
@@ -67,14 +76,27 @@ pub mod pallet {
 		}
 	}
 
-	impl<T: Config> pallet_address_associations::OnNewAssociation<AccountId> for Pallet<T> {
+	impl<T: Config>
+		pallet_address_associations::OnNewAssociation<
+			AccountId,
+			<T as frame_system::Config>::AccountId,
+		> for Pallet<T>
+	{
 		fn on_new_association(
+			origin_account: <T as frame_system::Config>::AccountId,
 			partner_chain_address: AccountId,
 			main_chain_key_hash: MainchainKeyHash,
-		) {
+		) -> bool {
 			log::info!(
 				"New address association: {partner_chain_address:?} -> {main_chain_key_hash:?}"
 			);
+			T::Currency::withdraw(
+				&origin_account,
+				T::XAssociationBurnAmount::get(),
+				WithdrawReasons::FEE,
+				ExistenceRequirement::KeepAlive,
+			)
+			.is_ok()
 		}
 	}
 
