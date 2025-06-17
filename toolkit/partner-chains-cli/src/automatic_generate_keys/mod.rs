@@ -36,21 +36,15 @@ impl AutomaticGenerateKeysConfig {
     }
 }
 
-// Generic key pair structure: 4-byte identifier + key bytes
-pub type KeyPair = ([u8; 4], Vec<u8>);
+// Generic session keys type - list of (key_type_id, public_key) pairs
 pub type SessionKeys = Vec<KeyPair>;
-
-// For JSON serialization compatibility
-#[derive(Debug, Serialize, Deserialize)]
-struct SessionKeysJson {
-    keys: Vec<KeyEntry>,
-}
+pub type KeyPair = ([u8; 4], Vec<u8>);
 
 #[derive(Debug, Serialize, Deserialize)]
-struct KeyEntry {
-    key_type: String,
-    key_type_bytes: [u8; 4],
-    public_key: String,
+pub struct SessionKeyInfo {
+    pub key_type: String,
+    pub key_type_bytes: String, 
+    pub public_key: String,
 }
 
 impl CmdRun for AutomaticGenerateKeysCmd {
@@ -71,7 +65,24 @@ impl CmdRun for AutomaticGenerateKeysCmd {
         let keys = generate_keys_via_subxt(&config, context)?;
         context.enewline();
 
-        save_keys_with_identifiers(&keys, context)?;
+        // Convert to output format and print as JSON
+        let session_keys_info: Vec<SessionKeyInfo> = keys
+            .iter()
+            .map(|(key_type_id, public_key)| {
+                let key_type_str = String::from_utf8_lossy(key_type_id).to_string();
+                SessionKeyInfo {
+                    key_type: key_type_str.clone(),
+                    key_type_bytes: hex::encode(key_type_id),
+                    public_key: hex::encode(public_key),
+                }
+            })
+            .collect();
+
+        // Output as JSON
+        let json_output = serde_json::to_string_pretty(&session_keys_info)
+            .context("Failed to serialize session keys to JSON")?;
+
+        context.print(&json_output);
         context.enewline();
 
         context.eprint("🚀 All done!");
@@ -98,17 +109,23 @@ fn generate_keys_via_subxt<C: IOContext>(
         context.eprint("✅ Connected to node successfully");
         context.eprint("🔍 Analyzing runtime metadata for SessionKeys structure...");
         
-        // Get the runtime metadata
-        let metadata = client.metadata();
+        // Try to get session keys information from metadata
+        let session_keys_info = match get_session_keys_from_metadata(&client).await {
+            Ok(info) => {
+                context.eprint("✅ Successfully extracted session keys info from runtime metadata");
+                info
+            }
+            Err(e) => {
+                context.eprint(&format!("⚠️  Could not extract session keys from metadata: {}", e));
+                context.eprint("   Using smart fallback based on common Substrate patterns");
+                get_default_session_keys_info()
+            }
+        };
         
-        // Find SessionKeys type in the metadata using a simplified approach
-        let session_keys_info = extract_session_keys_info_from_metadata(&metadata)
-            .context("Failed to extract SessionKeys information from metadata")?;
-        
-        context.eprint(&format!("✅ Found SessionKeys with {} key types:", session_keys_info.len()));
-        for (key_type_id, key_type_name) in &session_keys_info {
-            let key_type_str = String::from_utf8_lossy(key_type_id);
-            context.eprint(&format!("   • {} ({})", key_type_name, key_type_str));
+        context.eprint(&format!("📋 Detected {} session key types:", session_keys_info.len()));
+        for (key_id, key_name) in &session_keys_info {
+            let key_id_str = String::from_utf8_lossy(key_id);
+            context.eprint(&format!("   - {} ({})", key_name, key_id_str));
         }
         
         context.eprint("⚙️ Calling author_rotateKeys() RPC method...");
@@ -141,159 +158,112 @@ fn generate_keys_via_subxt<C: IOContext>(
     Ok(keys)
 }
 
-// Extract SessionKeys information from runtime metadata using a simplified approach
-fn extract_session_keys_info_from_metadata(
-    metadata: &subxt::Metadata,
+/// Attempts to extract session keys information from runtime metadata
+async fn get_session_keys_from_metadata(
+    client: &OnlineClient<PolkadotConfig>,
 ) -> Result<Vec<([u8; 4], String)>> {
+    let metadata = client.metadata();
+    
+    // Look for session-related pallets and types
     let mut session_keys_info = Vec::new();
     
-    // Since complex metadata parsing is challenging with the current subxt version,
-    // we'll use a hybrid approach: check what pallets are available and infer key types
-    
-    // Check for common key types by looking at available pallets
-    let available_pallets: Vec<String> = metadata.pallets()
-        .map(|pallet| pallet.name().to_lowercase())
-        .collect();
-    
-    // Map of pallet names to their corresponding key types
-    let pallet_to_key_mapping = [
-        ("aura", ([b'a', b'u', b'r', b'a'], "Aura")),
-        ("grandpa", ([b'g', b'r', b'a', b'n'], "Grandpa")),
-        ("beefy", ([b'b', b'e', b'e', b'f'], "Beefy")),
-        ("imonline", ([b'i', b'm', b'o', b'n'], "ImOnline")),
-        ("im_online", ([b'i', b'm', b'o', b'n'], "ImOnline")),
-        ("parachains", ([b'p', b'a', b'r', b'a'], "Parachain")),
-        ("parachain", ([b'p', b'a', b'r', b'a'], "Parachain")),
-        ("babe", ([b'b', b'a', b'b', b'e'], "Babe")),
+    // Check for common session key types by looking for related pallets
+    let common_key_types = [
+        ("aura", "Aura"),
+        ("gran", "Grandpa"), 
+        ("beef", "Beefy"),
+        ("imon", "ImOnline"),
+        ("babe", "Babe"),
+        ("auth", "AuthorityDiscovery"),
     ];
-    
-    // Check which key types are likely present based on available pallets
-    for (pallet_name, (key_id, key_name)) in &pallet_to_key_mapping {
-        if available_pallets.iter().any(|p| p.contains(pallet_name)) {
-            session_keys_info.push((*key_id, key_name.to_string()));
+
+    for (key_id_str, key_name) in &common_key_types {
+        // Check if this key type might be present by looking for related pallets
+        if metadata_contains_key_type(&metadata, key_name) {
+            let mut key_id = [0u8; 4];
+            let key_bytes = key_id_str.as_bytes();
+            key_id[..key_bytes.len().min(4)].copy_from_slice(&key_bytes[..key_bytes.len().min(4)]);
+            session_keys_info.push((key_id, key_name.to_string()));
         }
     }
-    
-    // If we found no keys through pallet detection, use a reasonable default
-    // Most Substrate chains have at least Aura and Grandpa
+
     if session_keys_info.is_empty() {
-        // Note: We can't use context here since it's not in scope
-        // The calling function will handle this case
-        session_keys_info.push(([b'a', b'u', b'r', b'a'], "Aura".to_string()));
-        session_keys_info.push(([b'g', b'r', b'a', b'n'], "Grandpa".to_string()));
+        return Err(anyhow!("No session key types detected in metadata"));
     }
-    
+
     Ok(session_keys_info)
 }
 
-// Parse rotated keys using metadata information
-fn parse_rotated_keys_with_metadata(
+/// Check if metadata contains references to a specific key type
+fn metadata_contains_key_type(metadata: &subxt::Metadata, key_name: &str) -> bool {
+    // Look for pallets with names that suggest this key type is used
+    let pallet_names = [
+        key_name.to_lowercase(),
+        format!("pallet_{}", key_name.to_lowercase()),
+        key_name.to_uppercase(),
+    ];
+    
+    for pallet_name in &pallet_names {
+        if metadata.pallet_by_name(pallet_name).is_some() {
+            return true;
+        }
+    }
+    
+    false
+}
+
+/// Fallback session keys info for common Substrate setups
+fn get_default_session_keys_info() -> Vec<([u8; 4], String)> {
+    vec![
+        ([b'a', b'u', b'r', b'a'], "Aura".to_string()),
+        ([b'g', b'r', b'a', b'n'], "Grandpa".to_string()),
+    ]
+}
+
+/// Parse rotated keys using metadata-provided session keys info
+pub fn parse_rotated_keys_with_metadata(
     keys_hex: &str,
     session_keys_info: &[([u8; 4], String)],
 ) -> Result<SessionKeys> {
-    // Remove 0x prefix if present
-    let keys_hex = keys_hex.strip_prefix("0x").unwrap_or(keys_hex);
-    
-    // Validate hex string
-    if keys_hex.len() % 2 != 0 {
-        return Err(anyhow!("Keys string has odd length, expected even number of hex characters"));
-    }
-    
-    // Decode hex string to bytes
-    let key_bytes = hex::decode(keys_hex)
+    let keys_bytes = hex::decode(keys_hex.strip_prefix("0x").unwrap_or(keys_hex))
         .context("Failed to decode hex string")?;
-    
-    // Calculate expected length based on metadata
-    let expected_length = session_keys_info.len() * 32; // Assuming 32-byte keys
-    
-    // If the length doesn't match exactly, try to parse what we can
-    if key_bytes.len() != expected_length {
-        // Try to determine the actual number of keys from the data length
-        if key_bytes.len() % 32 != 0 {
-            return Err(anyhow!("Key data length is not a multiple of 32 bytes"));
-        }
-        
-        let actual_key_count = key_bytes.len() / 32;
-        
-        // Adjust our session_keys_info to match the actual data
-        let mut adjusted_info = Vec::new();
-        for i in 0..actual_key_count {
-            if i < session_keys_info.len() {
-                adjusted_info.push(session_keys_info[i].clone());
-            } else {
-                // Generate generic key type for extra keys
-                let key_id = [b'k', b'e', b'y', (i as u8) + b'0'];
-                adjusted_info.push((key_id, format!("Key{}", i)));
-            }
-        }
-        
-        return parse_keys_from_bytes(&key_bytes, &adjusted_info);
-    }
-    
-    parse_keys_from_bytes(&key_bytes, session_keys_info)
+
+    decode_session_keys_from_key_info(&keys_bytes, session_keys_info)
 }
 
-// Helper function to parse keys from bytes
-fn parse_keys_from_bytes(
-    key_bytes: &[u8],
+/// Decode session keys using provided key type information
+pub fn decode_session_keys_from_key_info(
+    keys_bytes: &[u8],
     session_keys_info: &[([u8; 4], String)],
 ) -> Result<SessionKeys> {
+    let expected_keys = session_keys_info.len();
+    
+    // Most Substrate session keys are 32 bytes each
+    const KEY_SIZE: usize = 32;
+    let expected_total_size = expected_keys * KEY_SIZE;
+    
+    if keys_bytes.len() != expected_total_size {
+        return Err(anyhow!(
+            "Invalid session keys length: expected {} bytes for {} keys, got {}",
+            expected_total_size,
+            expected_keys,
+            keys_bytes.len()
+        ));
+    }
+
     let mut session_keys = Vec::new();
     
-    for (index, (key_type_id, _key_name)) in session_keys_info.iter().enumerate() {
-        let start_offset = index * 32;
-        let end_offset = start_offset + 32;
+    for (i, (key_type_id, _key_name)) in session_keys_info.iter().enumerate() {
+        let start = i * KEY_SIZE;
+        let end = start + KEY_SIZE;
+        let key_bytes = keys_bytes[start..end].to_vec();
         
-        if end_offset <= key_bytes.len() {
-            let key_data = key_bytes[start_offset..end_offset].to_vec();
-            session_keys.push((*key_type_id, key_data));
-        }
+        session_keys.push((*key_type_id, key_bytes));
     }
-    
+
     Ok(session_keys)
 }
 
-fn save_keys_with_identifiers<C: IOContext>(
-    keys: &SessionKeys,
-    context: &C,
-) -> Result<()> {
-    let output_file = "automatic-generated-keys.json";
-    
-    // Check if file already exists
-    if context.file_exists(output_file) {
-        context.eprint(&format!("⚠️  File '{}' already exists", output_file));
-        if !context.prompt_yes_no(&format!("Do you want to overwrite '{}'?", output_file), false) {
-            context.eprint("❌ Operation cancelled.");
-            return Ok(());
-        }
-    }
-    
-    // Convert to JSON-friendly format
-    let json_keys = SessionKeysJson {
-        keys: keys.iter().map(|(key_type, key_bytes)| {
-            let key_type_str = String::from_utf8_lossy(key_type).to_string();
-            let public_key = format!("0x{}", hex::encode(key_bytes));
-            
-            KeyEntry {
-                key_type: key_type_str,
-                key_type_bytes: *key_type,
-                public_key,
-            }
-        }).collect(),
-    };
-    
-    // Serialize keys to JSON
-    let json_content = serde_json::to_string_pretty(&json_keys)
-        .context("Failed to serialize keys to JSON")?;
-    
-    // Write to file
-    context.write_file(output_file, &json_content);
-    
-    context.eprint(&format!("💾 Keys saved to: {}", output_file));
-    context.eprint("📋 The file contains your Partner Chain session keys with identifiers.");
-    context.eprint("🔒 Keep this file secure - it contains your public keys for the Partner Chain.");
-    
-    Ok(())
-}
+
 
  
