@@ -6,7 +6,7 @@
 //! The purpose of this mapping is primarily to indicate the local PC address to be the recipient of any
 //! block production rewards or cross-chain token transfers credited to a Cardano key holders on a Partner
 //! Chain. Some intended scenarios inlude:
-//! 1. ADA delegators become eligible for block rewards due to their stake poool's operator participating
+//! 1. ADA delegators become eligible for block rewards due to their stake pool's operator participating
 //!    in a Partner Chain network. The on-chain payout mechanism uses data provided by this pallet to
 //!    identify each delegator's Partner Chain address based on their Cardano staking key.
 //! 2. A Partner Chain develops its own cross-chain bridge from Cardano. A Cardano user associates their
@@ -27,7 +27,7 @@
 //!
 //! ## Usage - PC User
 //!
-//! This pallet expoes a single extrinsic `associate_address` accepting the Cardano public key
+//! This pallet exposes a single extrinsic `associate_address` accepting the Cardano public key
 //! and Partner Chain address to be associated together with a signature confirming that the submitter is
 //! the owner of the associated Cardano public key.
 //!
@@ -69,19 +69,23 @@ pub struct AddressAssociationSignedMessage<PartnerChainAddress> {
 }
 
 /// Handler for new associations
-pub trait OnNewAssociation<PartnerChainAddress> {
+pub trait OnNewAssociation<PartnerChainAddress, AccountId> {
 	/// Function called every time a new address association is created
+	/// Signals error returning `false`.
 	fn on_new_association(
+		origin_account_id: AccountId,
 		partner_chain_address: PartnerChainAddress,
 		main_chain_key_hash: MainchainKeyHash,
-	);
+	) -> bool;
 }
 
-impl<PartnerChainAddress> OnNewAssociation<PartnerChainAddress> for () {
+impl<PartnerChainAddress, AccountId> OnNewAssociation<PartnerChainAddress, AccountId> for () {
 	fn on_new_association(
+		_origin_account_id: AccountId,
 		_partner_chain_address: PartnerChainAddress,
 		_main_chain_key_hash: MainchainKeyHash,
-	) {
+	) -> bool {
+		true
 	}
 }
 #[frame_support::pallet]
@@ -89,7 +93,7 @@ pub mod pallet {
 	use super::*;
 	use crate::weights::WeightInfo;
 	use frame_support::pallet_prelude::*;
-	use frame_system::pallet_prelude::OriginFor;
+	use frame_system::{ensure_signed, pallet_prelude::OriginFor};
 	use sidechain_domain::{MainchainKeyHash, StakeKeySignature, StakePublicKey, UtxoId};
 
 	/// Current version of the pallet
@@ -114,7 +118,7 @@ pub mod pallet {
 		/// Handler that is called for each new address association.
 		///
 		/// If no handling logic is needed, [()] can be used for a no-op implementation.
-		type OnNewAssociation: OnNewAssociation<Self::PartnerChainAddress>;
+		type OnNewAssociation: OnNewAssociation<Self::PartnerChainAddress, <Self as frame_system::Config>::AccountId>;
 	}
 
 	/// Storage of address association
@@ -133,6 +137,8 @@ pub mod pallet {
 		MainchainKeyAlreadyAssociated,
 		/// Signals an invalid Cardano key signature
 		InvalidMainchainSignature,
+		/// Additional handler has failed
+		OnNewAssociationFailed,
 	}
 
 	#[pallet::call]
@@ -145,11 +151,12 @@ pub mod pallet {
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::associate_address())]
 		pub fn associate_address(
-			_origin: OriginFor<T>,
+			origin: OriginFor<T>,
 			partnerchain_address: T::PartnerChainAddress,
 			signature: StakeKeySignature,
 			stake_public_key: StakePublicKey,
 		) -> DispatchResult {
+			let origin_account_id = ensure_signed(origin)?;
 			let genesis_utxo = T::genesis_utxo();
 
 			let stake_key_hash = stake_public_key.hash();
@@ -172,9 +179,15 @@ pub mod pallet {
 
 			AddressAssociations::<T>::insert(stake_key_hash, partnerchain_address.clone());
 
-			T::OnNewAssociation::on_new_association(partnerchain_address, stake_key_hash);
-
-			Ok(())
+			if T::OnNewAssociation::on_new_association(
+				origin_account_id,
+				partnerchain_address,
+				stake_key_hash,
+			) {
+				Ok(())
+			} else {
+				Err(Error::<T>::OnNewAssociationFailed.into())
+			}
 		}
 	}
 

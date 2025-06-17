@@ -636,7 +636,15 @@ impl pallet_governed_map::Config for Runtime {
 	type BenchmarkHelper = ();
 }
 
-impl crate::test_helper_pallet::Config for Runtime {}
+parameter_types! {
+	/// Amount of tokens to burn when upserting metadata
+	pub const AssociationBurnAmount: Balance = 1_000_000_000;
+}
+
+impl crate::test_helper_pallet::Config for Runtime {
+	type Currency = Balances;
+	type XAssociationBurnAmount = AssociationBurnAmount;
+}
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(

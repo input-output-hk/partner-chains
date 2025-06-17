@@ -30,12 +30,14 @@ pub mod mock_pallet {
 	pub type LastNewAssociation<T: Config> =
 		StorageValue<_, (PartnerChainAddress, MainchainKeyHash), OptionQuery>;
 
-	impl<T: Config> crate::OnNewAssociation<AccountId> for Pallet<T> {
+	impl<T: Config> crate::OnNewAssociation<AccountId, AccountId> for Pallet<T> {
 		fn on_new_association(
+			_origin: AccountId,
 			partner_chain_address: PartnerChainAddress,
 			main_chain_key_hash: MainchainKeyHash,
-		) {
-			LastNewAssociation::<T>::put((partner_chain_address, main_chain_key_hash))
+		) -> bool {
+			LastNewAssociation::<T>::put((partner_chain_address, main_chain_key_hash));
+			true
 		}
 	}
 }
