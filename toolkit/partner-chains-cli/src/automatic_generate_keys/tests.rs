@@ -207,7 +207,7 @@ fn test_parse_keys_from_bytes() {
         ([b'g', b'r', b'a', b'n'], "Grandpa".to_string()),
     ];
     
-    let result = parse_keys_from_bytes(&key_bytes, &session_keys_info).unwrap();
+    let result = decode_session_keys_from_key_info(&key_bytes, &session_keys_info).unwrap();
     
     assert_eq!(result.len(), 2);
     assert_eq!(result[0].0, [b'a', b'u', b'r', b'a']);
