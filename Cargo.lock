@@ -6456,6 +6456,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-cardano-config"
+version = "1.7.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "pretty_assertions",
+ "scale-info",
+ "sidechain-domain",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+]
+
+[[package]]
 name = "pallet-governed-map"
 version = "1.7.0"
 dependencies = [

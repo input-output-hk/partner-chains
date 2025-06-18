@@ -56,6 +56,7 @@ members = [
 	"toolkit/utils/db-sync-sqlx",
 	"toolkit/governed-map/primitives",
 	"toolkit/governed-map/pallet",
+	"toolkit/cardano-config/pallet",
 ]
 resolver = "2"
 
@@ -328,6 +329,9 @@ partner-chains-mock-data-sources = { path = "toolkit/data-sources/mock", default
 # Governed Map
 sp-governed-map = { path = "toolkit/governed-map/primitives", default-features = false }
 pallet-governed-map = { path = "toolkit/governed-map/pallet", default-features = false }
+
+# Cardano Config
+pallet-cardano-config = { path = "toolkit/cardano-config/pallet", default-features = false }
 
 # demo node
 partner-chains-demo-runtime = { path = "demo/runtime" }
