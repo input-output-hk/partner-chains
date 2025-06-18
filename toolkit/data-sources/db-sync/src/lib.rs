@@ -35,7 +35,7 @@
 //!     let pool = get_connection_from_env().await?;
 //!
 //!     // Block data source is shared by others for cache reuse
-//!     let block = Arc::new(BlockDataSourceImpl::new_from_env(pool.clone()).await?);
+//!     let block = Arc::new(BlockDataSourceImpl::new_from_env(pool.clone(), &sidechain_domain::cardano_config::CardanoConfig).await?);
 //!
 //!     let sidechain_rpc = SidechainRpcDataSourceImpl::new(block.clone(), metrics.clone());
 //!
@@ -44,10 +44,10 @@
 //!     let authority_selection =
 //!         CandidatesDataSourceImpl::new(pool.clone(), metrics.clone())
 //!     	.await?
-//!     	.cached(CANDIDATES_FOR_EPOCH_CACHE_SIZE)?;
+//!     	.cached(CANDIDATES_FOR_EPOCH_CACHE_SIZE, &sidechain_domain::cardano_config::CardanoConfig)?;
 //!
 //!     let native_token =
-//!         NativeTokenManagementDataSourceImpl::new_from_env(pool.clone(), metrics.clone()).await?;
+//!         NativeTokenManagementDataSourceImpl::new_from_env(pool.clone(), metrics.clone(), &sidechain_domain::cardano_config::CardanoConfig).await?;
 //!
 //!     let block_participation =
 //!     	StakeDistributionDataSourceImpl::new(pool.clone(), metrics.clone(), STAKE_CACHE_SIZE);
