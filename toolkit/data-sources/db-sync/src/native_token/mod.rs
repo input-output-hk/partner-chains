@@ -94,12 +94,9 @@ impl NativeTokenManagementDataSourceImpl {
 	pub async fn new_from_env(
 		pool: PgPool,
 		metrics_opt: Option<McFollowerMetrics>,
+		cardano_config: &sidechain_domain::cardano_config::CardanoConfig,
 	) -> std::result::Result<Self, Box<dyn std::error::Error + Send + Sync>> {
-		let security_parameter: u32 = std::env::var("CARDANO_SECURITY_PARAMETER")
-			.ok()
-			.and_then(|s| s.parse().ok())
-			.ok_or("Couldn't read env variable CARDANO_SECURITY_PARAMETER as u32")?;
-		Self::new(pool, metrics_opt, security_parameter, 1000).await
+		Self::new(pool, metrics_opt, cardano_config.cardano_security_parameter, 1000).await
 	}
 
 	fn get_from_cache(

@@ -34,8 +34,12 @@
 //!     let metrics = register_metrics_warn_errors(metrics_registry_opt);
 //!     let pool = get_connection_from_env().await?;
 //!
+//!     // Create CardanoConfig instance - can be from environment or use default
+//!     let cardano_config = sidechain_domain::cardano_config::CardanoConfig::from_env()
+//!         .unwrap_or_else(|_| sidechain_domain::cardano_config::CardanoConfig::default());
+//!
 //!     // Block data source is shared by others for cache reuse
-//!     let block = Arc::new(BlockDataSourceImpl::new_from_env(pool.clone()).await?);
+//!     let block = Arc::new(BlockDataSourceImpl::new_from_env(pool.clone(), &cardano_config).await?);
 //!
 //!     let sidechain_rpc = SidechainRpcDataSourceImpl::new(block.clone(), metrics.clone());
 //!
@@ -44,10 +48,10 @@
 //!     let authority_selection =
 //!         CandidatesDataSourceImpl::new(pool.clone(), metrics.clone())
 //!     	.await?
-//!     	.cached(CANDIDATES_FOR_EPOCH_CACHE_SIZE)?;
+//!     	.cached(CANDIDATES_FOR_EPOCH_CACHE_SIZE, &cardano_config)?;
 //!
 //!     let native_token =
-//!         NativeTokenManagementDataSourceImpl::new_from_env(pool.clone(), metrics.clone()).await?;
+//!         NativeTokenManagementDataSourceImpl::new_from_env(pool.clone(), metrics.clone(), &cardano_config).await?;
 //!
 //!     let block_participation =
 //!     	StakeDistributionDataSourceImpl::new(pool.clone(), metrics.clone(), STAKE_CACHE_SIZE);
@@ -97,9 +101,12 @@
 #![allow(rustdoc::private_intra_doc_links)]
 
 pub use crate::{
-	data_sources::{ConnectionConfig, PgPool, get_connection_from_env, read_mc_epoch_config},
+	data_sources::{ConnectionConfig, PgPool, get_connection_from_env},
 	metrics::{McFollowerMetrics, register_metrics_warn_errors},
 };
+
+#[cfg(feature = "block-source")]
+pub use crate::data_sources::read_mc_epoch_config;
 
 #[cfg(feature = "block-source")]
 pub use crate::block::{BlockDataSourceImpl, DbSyncBlockDataSourceConfig};

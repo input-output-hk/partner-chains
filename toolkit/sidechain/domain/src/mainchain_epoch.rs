@@ -23,7 +23,7 @@ pub use sp_core::offchain::{Duration, Timestamp};
 /// duration was changed after it entered Shelley era, the reference point should be one after
 /// this happened, eg. the beginning of the first epoch in which all slots are of the new duration.
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "std", derive(serde::Deserialize))]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct MainchainEpochConfig {
 	/// Duration of a single epoch on the Cardano main chain
 	///

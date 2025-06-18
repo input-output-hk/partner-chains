@@ -123,8 +123,9 @@ mod data_source {
 	}
 
 	pub(crate) async fn block() -> Result<BlockDataSourceWrapper> {
+		let cardano_config = sidechain_domain::cardano_config::CardanoConfig::from_env()?;
 		Ok(BlockDataSourceWrapper {
-			inner: BlockDataSourceImpl::new_from_env(pool().await?).await?,
+			inner: BlockDataSourceImpl::new_from_env(pool().await?, &cardano_config).await?,
 		})
 	}
 
