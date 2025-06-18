@@ -6,16 +6,19 @@
 //! protocol, ensuring compatibility with Substrate's runtime and cryptographic
 //! infrastructure.
 
-use core::fmt::{Debug, Formatter};
-use std::{convert::TryInto, fmt::Display, hash::Hash};
+use alloc::vec::Vec;
+use core::fmt::{Debug, Display, Formatter};
+// use std::{convert::TryInto, fmt::Display, hash::Hash};
 
 use crate::poseidon::PoseidonJubjub;
-use blstrs::{Fr, JubjubSubgroup};
-use group::{Group, GroupEncoding};
+use ark_ed_on_bls12_381::{Fr, EdwardsAffine};
+use ark_ff::fields::Field;
+use ark_ec::AffineRepr;
+use ark_serialize::CanonicalSerialize;
 use rand_core::OsRng;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use sha2::Digest;
-use sp_consensus_beefy::{AuthorityIdBound, BeefyAuthorityId, BeefySignatureHasher};
+use sp_consensus_beefy::{AuthorityIdBound, BeefyAuthorityId};
 use sp_core::{
 	ByteArray, Decode, DecodeWithMemTracking, DeriveJunction, Encode, MaxEncodedLen,
 	Pair as TraitPair,
@@ -29,6 +32,7 @@ use sp_runtime::{
 	app_crypto::{AppCrypto, AppPair, AppPublic, AppSignature},
 	traits::Convert,
 };
+use sp_runtime::biguint::BigUint;
 
 use crate::primitive::{SchnorrSignature, VerifyingKey};
 
@@ -69,7 +73,7 @@ pub type InnerPublicBytes = PublicBytes<PUBLIC_SERIALIZED_SIZE, SchnorrJubJubTag
 pub struct Public(pub InnerPublicBytes);
 
 impl Display for Public {
-	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+	fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
 		write!(f, "0x{}", hex::encode(self.as_slice()))
 	}
 }
@@ -108,6 +112,7 @@ impl Debug for Public {
 }
 
 impl AuthorityIdBound for Public {
+	type SignatureHasher = PoseidonJubjub;
 	type BoundedSignature = Signature;
 }
 
@@ -269,8 +274,8 @@ impl TraitPair for crate::primitive::KeyPair {
 
 		let h = sha2::Sha512::digest(&seed);
 
-		let secret = Fr::from_bytes_wide(&h.as_slice().try_into().unwrap());
-		Ok(Self { 0: secret, 1: JubjubSubgroup::generator() * &secret })
+		let secret = Fr::from_random_bytes(h.as_slice()).expect("Failed to deserialize random bytes. This is a bug.");
+		Ok(Self { 0: secret, 1: (EdwardsAffine::generator() * &secret).into() })
 	}
 
 	fn sign(&self, message: &[u8]) -> Self::Signature {
@@ -297,15 +302,17 @@ impl TraitPair for crate::primitive::KeyPair {
 	}
 
 	fn public(&self) -> Self::Public {
-		let bytes: [u8; 32] = self.1.to_bytes().try_into().unwrap();
+		let mut writer = Vec::new();
+		self.1.serialize_compressed(&mut writer).expect("Serialisation should not fail - writer is big enough");
+		let bytes: [u8; 32] = writer.try_into().unwrap();
 
 		Public(PublicBytes::from(bytes))
 	}
 
 	fn to_raw_vec(&self) -> Vec<u8> {
 		let mut res = Vec::with_capacity(64);
-		res.extend_from_slice(&self.0.to_bytes());
-		res.extend_from_slice(&self.1.to_bytes());
+		self.0.serialize_compressed(&mut res);
+		self.1.serialize_compressed(&mut res);
 
 		res
 	}
@@ -339,7 +346,7 @@ impl AppPair for crate::primitive::KeyPair {
 /// [`crate::primitive::KeyPair`].
 type Seed = [u8; SEED_SERIALIZED_SIZE];
 
-impl BeefyAuthorityId<BeefySignatureHasher> for Public {
+impl BeefyAuthorityId<PoseidonJubjub> for Public {
 	fn verify(&self, signature: &<Self as RuntimeAppPublic>::Signature, msg: &[u8]) -> bool {
 		<crate::primitive::KeyPair as TraitPair>::verify(signature, msg, self)
 	}

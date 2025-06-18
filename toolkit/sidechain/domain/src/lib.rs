@@ -1051,8 +1051,8 @@ impl From<sr25519::Public> for AuraPublicKey {
 pub struct BeefyPublicKey(pub Vec<u8>);
 impl BeefyPublicKey {
 	/// Attempts to cast this public key to a valid [ecdsa::Public]
-	pub fn try_into_schnorr(&self) -> Option<schnorr_jubjub::Public> {
-		Some(schnorr_jubjub::Public::try_from(self.0.as_slice()).ok()?)
+	pub fn try_into_ed25519(&self) -> Option<ed25519::Public> {
+		Some(ed25519::Public::try_from(self.0.as_slice()).ok()?)
 	}
 }
 

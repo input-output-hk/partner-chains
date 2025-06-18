@@ -5,6 +5,7 @@
 //! signatures over the JubJub curve, which the default implementation does not
 //! support due to lack of genericity.
 
+use alloc::vec::Vec;
 use sc_keystore::LocalKeystore;
 use sp_application_crypto::Pair as TraitPair;
 use sp_core::{

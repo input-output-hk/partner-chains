@@ -4,8 +4,10 @@
 //! primitives and keystore functionality into the Substrate runtime
 //! environment, enabling their use in on-chain logic and consensus mechanisms.
 
-use std::convert::TryInto;
+// use std::convert::TryInto;
 
+use alloc::vec::Vec;
+use core::panic;
 use rand_core::{OsRng, RngCore};
 use sp_core::{
 	ByteArray, Pair as TraitPair,

@@ -54,7 +54,6 @@ use sp_core::ByteArray;
 use sp_core::{OpaqueMetadata, crypto::KeyTypeId};
 use sp_governed_map::MainChainScriptsV1;
 use sp_inherents::InherentIdentifier;
-use sp_runtime::traits::Keccak256;
 use sp_runtime::{
 	ApplyExtrinsicResult, MultiSignature, Perbill, generic, impl_opaque_keys,
 	traits::{
@@ -67,6 +66,8 @@ use sp_sidechain::SidechainStatus;
 use sp_std::prelude::*;
 use sp_version::RuntimeVersion;
 use sp_weights::Weight;
+use schnorr_jubjub::PoseidonJubjub;
+use crate::mmr::Hashing;
 
 // Make the WASM binary available.
 #[cfg(feature = "std")]
@@ -662,8 +663,10 @@ parameter_types! {
 	pub const BeefySetIdSessionEntries: u32 = BondingDuration::get() * SessionsPerEra::get();
 }
 
+
 impl pallet_beefy::Config for Runtime {
 	type BeefyId = BeefyId;
+	type SignatureHasher = PoseidonJubjub;
 	type MaxAuthorities = MaxValidators;
 	type MaxNominators = ConstU32<0>;
 	type MaxSetIdSessionEntries = BeefySetIdSessionEntries;
@@ -689,7 +692,8 @@ mod mmr {
 
 impl pallet_mmr::Config for Runtime {
 	const INDEXING_PREFIX: &'static [u8] = b"mmr";
-	type Hashing = Keccak256;
+	// TODO: Think about changing the leaf data (so that encode/decode can be efficient)
+	type Hashing = PoseidonJubjub;
 	type LeafData = pallet_mmr::ParentNumberAndHash<Self>;
 	type OnNewRoot = pallet_beefy_mmr::DepositBeefyDigest<Runtime>;
 	type BlockHashProvider = pallet_mmr::DefaultBlockHashProvider<Runtime>;
