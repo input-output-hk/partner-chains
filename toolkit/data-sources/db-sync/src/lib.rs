@@ -34,8 +34,12 @@
 //!     let metrics = register_metrics_warn_errors(metrics_registry_opt);
 //!     let pool = get_connection_from_env().await?;
 //!
+//!     // Create CardanoConfig instance - can be from environment or use default
+//!     let cardano_config = sidechain_domain::cardano_config::CardanoConfig::from_env()
+//!         .unwrap_or_else(|_| sidechain_domain::cardano_config::CardanoConfig::default());
+//!
 //!     // Block data source is shared by others for cache reuse
-//!     let block = Arc::new(BlockDataSourceImpl::new_from_env(pool.clone(), &sidechain_domain::cardano_config::CardanoConfig).await?);
+//!     let block = Arc::new(BlockDataSourceImpl::new_from_env(pool.clone(), &cardano_config).await?);
 //!
 //!     let sidechain_rpc = SidechainRpcDataSourceImpl::new(block.clone(), metrics.clone());
 //!
@@ -44,10 +48,10 @@
 //!     let authority_selection =
 //!         CandidatesDataSourceImpl::new(pool.clone(), metrics.clone())
 //!     	.await?
-//!     	.cached(CANDIDATES_FOR_EPOCH_CACHE_SIZE, &sidechain_domain::cardano_config::CardanoConfig)?;
+//!     	.cached(CANDIDATES_FOR_EPOCH_CACHE_SIZE, &cardano_config)?;
 //!
 //!     let native_token =
-//!         NativeTokenManagementDataSourceImpl::new_from_env(pool.clone(), metrics.clone(), &sidechain_domain::cardano_config::CardanoConfig).await?;
+//!         NativeTokenManagementDataSourceImpl::new_from_env(pool.clone(), metrics.clone(), &cardano_config).await?;
 //!
 //!     let block_participation =
 //!     	StakeDistributionDataSourceImpl::new(pool.clone(), metrics.clone(), STAKE_CACHE_SIZE);
