@@ -71,13 +71,13 @@ impl pallet_balances::Config for Test {
 	type WeightInfo = pallet_balances::weights::SubstrateWeight<Test>;
 	type FreezeIdentifier = ();
 	type MaxFreezes = ();
-	type RuntimeHoldReason = ();
+	type RuntimeHoldReason = RuntimeHoldReason;
 	type RuntimeFreezeReason = ();
 	type DoneSlashHandler = ();
 }
 
 parameter_types! {
-	pub const MetadataBurnAmount: Balance = 1000;
+	pub const MetadataHoldAmount: Balance = 1000;
 }
 
 #[derive(
@@ -122,7 +122,8 @@ impl crate::pallet::Config for Test {
 		UtxoId::new(hex!("59104061ffa0d66f9ba0135d6fc6a884a395b10f8ae9cb276fc2c3bfdfedc260"), 1)
 	}
 	type Currency = Balances;
-	type BurnAmount = MetadataBurnAmount;
+	type HoldAmount = MetadataHoldAmount;
+	type RuntimeHoldReason = RuntimeHoldReason;
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = PalletBlockProducerMetadataBenchmarkHelper;
 }

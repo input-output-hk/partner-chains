@@ -349,7 +349,7 @@ impl pallet_balances::Config for Runtime {
 	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 	type FreezeIdentifier = ();
 	type MaxFreezes = ();
-	type RuntimeHoldReason = ();
+	type RuntimeHoldReason = RuntimeHoldReason;
 	type RuntimeFreezeReason = RuntimeFreezeReason;
 	type DoneSlashHandler = ();
 }
@@ -592,8 +592,8 @@ impl pallet_block_producer_fees::Config for Runtime {
 }
 
 parameter_types! {
-	/// Amount of tokens to burn when upserting metadata
-	pub const MetadataBurnAmount: Balance = 1_000_000_000;
+	/// Amount of tokens to hold when upserting block producer metadata.
+	pub const MetadataHoldAmount: Balance = 1_000_000_000;
 }
 
 impl pallet_block_producer_metadata::Config for Runtime {
@@ -606,7 +606,8 @@ impl pallet_block_producer_metadata::Config for Runtime {
 	}
 
 	type Currency = Balances;
-	type BurnAmount = MetadataBurnAmount;
+	type HoldAmount = MetadataHoldAmount;
+	type RuntimeHoldReason = RuntimeHoldReason;
 
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = PalletBlockProducerMetadataBenchmarkHelper;
