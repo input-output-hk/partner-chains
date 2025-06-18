@@ -47,7 +47,8 @@
 //!
 //!     type BlockProducerMetadata = BlockProducerMetadata;
 //! 	type Currency = Balances;
-//!	    type BurnAmount = MetadataBurnAmount
+//!	    type HoldAmount = MetadataHoldAmount;
+//!     type RuntimeHoldReason = RuntimeHoldReason;
 //!
 //!     fn genesis_utxo() -> sidechain_domain::UtxoId {
 //!         Sidechain::genesis_utxo()
@@ -57,7 +58,7 @@
 //!
 //! Here, besides providing the metadata type and using weights already provided with the pallet, we are also
 //! wiring the `genesis_utxo` function to fetch the chain's genesis UTXO from the `pallet_sidechain` pallet.
-//! Currency and BurnAmount types are required to configure additional fee for occupying storage.
+//! Currency, HoldAmount, and RuntimeHoldReason types are required to configure the deposit mechanism for occupying storage.
 //!
 //! At this point, the pallet is ready to be used.
 //!
@@ -82,6 +83,9 @@
 //! update their metadata. The extrinsic requires a valid signature, which the user should prepare using the
 //! `sign-block-producer-metadata` command provided by the chain's node. This command returns the signature
 //! and the metadata encoded as hex bytes.
+//!
+//! When metadata is inserted for the first time, a deposit is held from the caller's account. Updates to existing
+//! metadata do not require additional deposits.
 //!
 //! After the signature has been obtained, the user should submit the `upsert_metadata` extrinsic (eg. using PolkadotJS)
 //! providing:
@@ -115,7 +119,7 @@ pub mod pallet {
 	use crate::weights::WeightInfo;
 	use frame_support::{
 		pallet_prelude::*,
-		traits::{Currency, ExistenceRequirement, Get, WithdrawReasons},
+		traits::{Get, tokens::fungible::MutateHold},
 	};
 	use frame_system::{ensure_signed, pallet_prelude::OriginFor};
 	use sidechain_domain::{CrossChainSignature, UtxoId};
@@ -137,12 +141,16 @@ pub mod pallet {
 		/// Should return the chain's genesis UTXO
 		fn genesis_utxo() -> UtxoId;
 
-		/// The currency used for burning tokens
-		type Currency: Currency<Self::AccountId>;
+		/// The currency used for holding tokens
+		type Currency: MutateHold<Self::AccountId, Reason = Self::RuntimeHoldReason>
+			+ frame_support::traits::tokens::fungible::Mutate<Self::AccountId>;
 
-		/// The amount of tokens to burn when upserting metadata
+		/// The amount of tokens to hold when upserting metadata
 		#[pallet::constant]
-		type BurnAmount: Get<<<Self as Config>::Currency as Currency<Self::AccountId>>::Balance>;
+		type HoldAmount: Get<<Self::Currency as frame_support::traits::tokens::fungible::Inspect<Self::AccountId>>::Balance>;
+
+		/// The runtime's hold reason type
+		type RuntimeHoldReason: From<HoldReason>;
 
 		/// Helper providing mock values for use in benchmarks
 		#[cfg(feature = "runtime-benchmarks")]
@@ -158,19 +166,26 @@ pub mod pallet {
 		QueryKind = OptionQuery,
 	>;
 
+	/// Hold reasons for this pallet
+	#[pallet::composite_enum]
+	pub enum HoldReason {
+		/// Tokens held as deposit for block producer metadata
+		MetadataDeposit,
+	}
+
 	/// Error type returned by this pallet's extrinsic
 	#[pallet::error]
 	pub enum Error<T> {
 		/// Signals that the signature submitted to `upsert_metadata` does not match the metadata and public key
 		InvalidMainchainSignature,
-		/// Insufficient balance to burn tokens as fee for upserting block producer metadata
+		/// Insufficient balance to hold tokens as fee for upserting block producer metadata
 		InsufficientBalance,
 	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Inserts or updates metadata for the block producer identified by `cross_chain_pub_key`.
-		/// Burns a constant amount from the caller's account as a fee for including metadata on the chain.
+		/// Holds a constant amount from the caller's account as a deposit for including metadata on the chain.
 		///
 		/// Arguments:
 		/// - `metadata`: new metadata value
@@ -203,14 +218,12 @@ pub mod pallet {
 			ensure!(is_valid_signature, Error::<T>::InvalidMainchainSignature);
 
 			if BlockProducerMetadataStorage::<T>::get(cross_chain_key_hash).is_none() {
-				T::Currency::withdraw(
+				T::Currency::hold(
+					&HoldReason::MetadataDeposit.into(),
 					&origin_account,
-					T::BurnAmount::get(),
-					WithdrawReasons::FEE,
-					ExistenceRequirement::KeepAlive,
+					T::HoldAmount::get(),
 				)
-				.map(|_| ())
-				.map_err(|_| Error::<T>::InsufficientBalance)?
+				.map_err(|_| Error::<T>::InsufficientBalance)?;
 			}
 
 			BlockProducerMetadataStorage::<T>::insert(cross_chain_key_hash, metadata);

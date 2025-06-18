@@ -1,5 +1,5 @@
 use super::*;
-use frame_support::{assert_noop, assert_ok};
+use frame_support::{assert_noop, assert_ok, traits::tokens::fungible::InspectHold};
 use frame_system::pallet_prelude::OriginFor;
 use hex_literal::hex;
 use mock::*;
@@ -8,7 +8,7 @@ use sidechain_domain::*;
 use sp_runtime::{AccountId32, BoundedVec};
 
 #[test]
-fn saves_new_metadata_and_burns_fee() {
+fn saves_new_metadata_and_holds_fee() {
 	new_test_ext().execute_with(|| {
 		let initial_balance = Balances::free_balance(&FUNDED_ACCOUNT);
 
@@ -25,12 +25,19 @@ fn saves_new_metadata_and_burns_fee() {
 		);
 
 		let final_balance = Balances::free_balance(&FUNDED_ACCOUNT);
-		assert_eq!(final_balance, initial_balance - MetadataBurnAmount::get());
+		assert_eq!(final_balance, initial_balance - MetadataHoldAmount::get());
+
+		// Check that the amount is held, not burned
+		let held_balance = Balances::balance_on_hold(
+			&RuntimeHoldReason::BlockProducerMetadata(crate::HoldReason::MetadataDeposit),
+			&FUNDED_ACCOUNT,
+		);
+		assert_eq!(held_balance, MetadataHoldAmount::get());
 	})
 }
 
 #[test]
-fn updates_metadata_without_burning_fee() {
+fn updates_metadata_without_holding_additional_fee() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(super::Pallet::<Test>::upsert_metadata(
 			OriginFor::<Test>::signed(FUNDED_ACCOUNT),
@@ -44,6 +51,11 @@ fn updates_metadata_without_burning_fee() {
 			Some(url_metadata_1())
 		);
 		let balance_after_insert = Balances::free_balance(&FUNDED_ACCOUNT);
+		let held_after_insert = Balances::balance_on_hold(
+			&RuntimeHoldReason::BlockProducerMetadata(crate::HoldReason::MetadataDeposit),
+			&FUNDED_ACCOUNT,
+		);
+
 		assert_ok!(super::Pallet::<Test>::upsert_metadata(
 			OriginFor::<Test>::signed(FUNDED_ACCOUNT),
 			url_metadata_2(),
@@ -57,7 +69,13 @@ fn updates_metadata_without_burning_fee() {
 		);
 
 		let balance_after_update = Balances::free_balance(&FUNDED_ACCOUNT);
-		assert_eq!(balance_after_insert, balance_after_update)
+		let held_after_update = Balances::balance_on_hold(
+			&RuntimeHoldReason::BlockProducerMetadata(crate::HoldReason::MetadataDeposit),
+			&FUNDED_ACCOUNT,
+		);
+
+		assert_eq!(balance_after_insert, balance_after_update);
+		assert_eq!(held_after_insert, held_after_update);
 	})
 }
 
