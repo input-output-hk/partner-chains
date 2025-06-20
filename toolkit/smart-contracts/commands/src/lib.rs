@@ -181,17 +181,18 @@ impl From<GenesisUtxo> for UtxoId {
 	}
 }
 
-// Parses public keys in formatted as SIDECHAIN_KEY:AURA_KEY:GRANDPA_KEY
+// Parses public keys in formatted as SIDECHAIN_KEY:AURA_KEY:BEEFY_KEY:GRANDPA_KEY
 pub(crate) fn parse_partnerchain_public_keys(
 	partner_chain_public_keys: &str,
 ) -> CmdResult<PermissionedCandidateData> {
 	let partner_chain_public_keys = partner_chain_public_keys.replace("0x", "");
-	if let [sidechain_pub_key, aura_pub_key, grandpa_pub_key] =
+	if let [sidechain_pub_key, aura_pub_key, beefy_pub_key, grandpa_pub_key] =
 		partner_chain_public_keys.split(":").collect::<Vec<_>>()[..]
 	{
 		Ok(PermissionedCandidateData {
 			sidechain_public_key: SidechainPublicKey(hex::decode(sidechain_pub_key)?),
 			aura_public_key: AuraPublicKey(hex::decode(aura_pub_key)?),
+			beefy_public_key: BeefyPublicKey(hex::decode(beefy_pub_key)?),
 			grandpa_public_key: GrandpaPublicKey(hex::decode(grandpa_pub_key)?),
 		})
 	} else {
