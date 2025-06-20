@@ -121,8 +121,9 @@ impl crate::pallet::Config for Test {
 	fn genesis_utxo() -> UtxoId {
 		UtxoId::new(hex!("59104061ffa0d66f9ba0135d6fc6a884a395b10f8ae9cb276fc2c3bfdfedc260"), 1)
 	}
-	type OnMetadataUpsert =
-		crate::HoldAmountOnInsert<Self, Balances, MetadataHoldAmount, RuntimeHoldReason>;
+	type Currency = Balances;
+	type HoldAmount = MetadataHoldAmount;
+	type RuntimeHoldReason = RuntimeHoldReason;
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = PalletBlockProducerMetadataBenchmarkHelper;
 }
