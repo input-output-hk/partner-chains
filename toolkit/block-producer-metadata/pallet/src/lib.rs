@@ -46,9 +46,7 @@
 //!     type WeightInfo = pallet_block_producer_metadata::weights::SubstrateWeight<Runtime>;
 //!
 //!     type BlockProducerMetadata = BlockProducerMetadata;
-//! 	type Currency = Balances;
-//!	    type HoldAmount = MetadataHoldAmount;
-//!     type RuntimeHoldReason = RuntimeHoldReason;
+//! 	type OnMetadataUpsert = OnMetadataUpsert;
 //!
 //!     fn genesis_utxo() -> sidechain_domain::UtxoId {
 //!         Sidechain::genesis_utxo()
@@ -58,7 +56,7 @@
 //!
 //! Here, besides providing the metadata type and using weights already provided with the pallet, we are also
 //! wiring the `genesis_utxo` function to fetch the chain's genesis UTXO from the `pallet_sidechain` pallet.
-//! Currency, HoldAmount, and RuntimeHoldReason types are required to configure the deposit mechanism for occupying storage.
+//! OnMetadataUpsert type is required to configure an additional action that happens with upsert, like taking deposit for occupying storage.
 //!
 //! At this point, the pallet is ready to be used.
 //!
@@ -98,6 +96,9 @@
 
 extern crate alloc;
 
+use core::marker::PhantomData;
+use frame_support::traits::{Get, fungible::MutateHold};
+use frame_system::pallet_prelude::OriginFor;
 pub use pallet::*;
 
 pub mod benchmarking;
@@ -113,15 +114,62 @@ use parity_scale_codec::Encode;
 use sidechain_domain::{CrossChainKeyHash, CrossChainPublicKey};
 use sp_block_producer_metadata::MetadataSignedMessage;
 
+/// Flag that discriminate insert and update
+pub enum InsertOrUpdate {
+	/// Metadata for given key is newly inserted
+	Insert,
+	/// Metadata for given key is updated
+	Update,
+}
+
+/// Type for an additional action when metadata is inserted.
+pub trait OnMetadataUpsert<Origin, Metadata> {
+	/// Called when metadata is upsert. Returning false signals error.
+	fn on_upsert(origin: Origin, metadata: Metadata, insert_or_update: InsertOrUpdate) -> bool;
+}
+
+/// Implementation for [OnMetadataUpsert] that holds [HoldAmount] of [Currency] when metadata is inserted for a new key
+pub struct HoldAmountOnInsert<T, Currency, HoldAmount, RuntimeHoldReason>(
+	PhantomData<(T, Currency, HoldAmount, RuntimeHoldReason)>,
+);
+
+impl<T, Currency, HoldAmount, RuntimeHoldReason>
+	OnMetadataUpsert<OriginFor<T>, T::BlockProducerMetadata>
+	for HoldAmountOnInsert<T, Currency, HoldAmount, RuntimeHoldReason>
+where
+	T: pallet::Config,
+	Currency: MutateHold<T::AccountId, Reason = RuntimeHoldReason>
+		+ frame_support::traits::tokens::fungible::Mutate<T::AccountId>,
+	HoldAmount:
+		Get<<Currency as frame_support::traits::tokens::fungible::Inspect<T::AccountId>>::Balance>,
+	RuntimeHoldReason: From<HoldReason>,
+{
+	fn on_upsert(
+		origin: OriginFor<T>,
+		_metadata: T::BlockProducerMetadata,
+		insert_or_update: InsertOrUpdate,
+	) -> bool {
+		match insert_or_update {
+			InsertOrUpdate::Update => true,
+			InsertOrUpdate::Insert => match frame_system::ensure_signed(origin) {
+				Ok(origin_account) => Currency::hold(
+					&HoldReason::MetadataDeposit.into(),
+					&origin_account,
+					HoldAmount::get(),
+				)
+				.is_ok(),
+				_ => false,
+			},
+		}
+	}
+}
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
 	use crate::weights::WeightInfo;
-	use frame_support::{
-		pallet_prelude::*,
-		traits::{Get, tokens::fungible::MutateHold},
-	};
-	use frame_system::{ensure_signed, pallet_prelude::OriginFor};
+	use frame_support::pallet_prelude::*;
+	use frame_system::pallet_prelude::OriginFor;
 	use sidechain_domain::{CrossChainSignature, UtxoId};
 
 	/// Current version of the pallet
@@ -141,16 +189,8 @@ pub mod pallet {
 		/// Should return the chain's genesis UTXO
 		fn genesis_utxo() -> UtxoId;
 
-		/// The currency used for holding tokens
-		type Currency: MutateHold<Self::AccountId, Reason = Self::RuntimeHoldReason>
-			+ frame_support::traits::tokens::fungible::Mutate<Self::AccountId>;
-
-		/// The amount of tokens to hold when upserting metadata
-		#[pallet::constant]
-		type HoldAmount: Get<<Self::Currency as frame_support::traits::tokens::fungible::Inspect<Self::AccountId>>::Balance>;
-
-		/// The runtime's hold reason type
-		type RuntimeHoldReason: From<HoldReason>;
+		/// Defines the logic of and additional action when the upsert occurs. For example taking fees.
+		type OnMetadataUpsert: OnMetadataUpsert<OriginFor<Self>, Self::BlockProducerMetadata>;
 
 		/// Helper providing mock values for use in benchmarks
 		#[cfg(feature = "runtime-benchmarks")]
@@ -178,8 +218,8 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// Signals that the signature submitted to `upsert_metadata` does not match the metadata and public key
 		InvalidMainchainSignature,
-		/// Insufficient balance to hold tokens as fee for upserting block producer metadata
-		InsufficientBalance,
+		/// User specified upsert handler has failed
+		OnUpsertHandlerFailed,
 	}
 
 	#[pallet::call]
@@ -201,7 +241,6 @@ pub mod pallet {
 			signature: CrossChainSignature,
 			cross_chain_pub_key: CrossChainPublicKey,
 		) -> DispatchResult {
-			let origin_account = ensure_signed(origin)?;
 			let genesis_utxo = T::genesis_utxo();
 
 			let cross_chain_key_hash = cross_chain_pub_key.hash();
@@ -217,17 +256,19 @@ pub mod pallet {
 
 			ensure!(is_valid_signature, Error::<T>::InvalidMainchainSignature);
 
-			if BlockProducerMetadataStorage::<T>::get(cross_chain_key_hash).is_none() {
-				T::Currency::hold(
-					&HoldReason::MetadataDeposit.into(),
-					&origin_account,
-					T::HoldAmount::get(),
-				)
-				.map_err(|_| Error::<T>::InsufficientBalance)?;
-			}
+			let insert_or_update =
+				if BlockProducerMetadataStorage::<T>::get(cross_chain_key_hash).is_none() {
+					InsertOrUpdate::Insert
+				} else {
+					InsertOrUpdate::Update
+				};
 
-			BlockProducerMetadataStorage::<T>::insert(cross_chain_key_hash, metadata);
-			Ok(())
+			if T::OnMetadataUpsert::on_upsert(origin, metadata.clone(), insert_or_update) {
+				BlockProducerMetadataStorage::<T>::insert(cross_chain_key_hash, metadata);
+				Ok(())
+			} else {
+				Err(Error::<T>::OnUpsertHandlerFailed.into())
+			}
 		}
 	}
 

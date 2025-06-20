@@ -107,7 +107,7 @@ fn fails_with_insufficient_balance() {
 				cross_chain_signature_1(),
 				cross_chain_pub_key(),
 			),
-			Error::<Test>::InsufficientBalance
+			Error::<Test>::OnUpsertHandlerFailed
 		);
 	})
 }
