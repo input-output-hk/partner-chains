@@ -28,7 +28,7 @@ use frame_support::{
 };
 use frame_system::EnsureRoot;
 use opaque::SessionKeys;
-use pallet_block_producer_metadata;
+use pallet_block_producer_metadata::{self, HoldAmountOnInsert};
 use pallet_grandpa::AuthorityId as GrandpaId;
 use pallet_session_validator_management::session_manager::ValidatorManagementSessionManager;
 use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier};
@@ -605,9 +605,8 @@ impl pallet_block_producer_metadata::Config for Runtime {
 		Sidechain::genesis_utxo()
 	}
 
-	type Currency = Balances;
-	type HoldAmount = MetadataHoldAmount;
-	type RuntimeHoldReason = RuntimeHoldReason;
+	type OnMetadataUpsert =
+		HoldAmountOnInsert<Self, Balances, MetadataHoldAmount, RuntimeHoldReason>;
 
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = PalletBlockProducerMetadataBenchmarkHelper;
