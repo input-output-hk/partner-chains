@@ -59,6 +59,7 @@
 //! Here, besides providing the metadata type and using weights already provided with the pallet, we are also
 //! wiring the `genesis_utxo` function to fetch the chain's genesis UTXO from the `pallet_sidechain` pallet.
 //! Currency, HoldAmount, and RuntimeHoldReason types are required to configure the deposit mechanism for occupying storage.
+//! Removing Metadata is not supported, so this deposit is currently ethernal.
 //!
 //! At this point, the pallet is ready to be used.
 //!
@@ -119,7 +120,10 @@ pub mod pallet {
 	use crate::weights::WeightInfo;
 	use frame_support::{
 		pallet_prelude::*,
-		traits::{Get, tokens::fungible::MutateHold},
+		traits::{
+			Get,
+			tokens::fungible::{Inspect, MutateHold},
+		},
 	};
 	use frame_system::{ensure_signed, pallet_prelude::OriginFor};
 	use sidechain_domain::{CrossChainSignature, UtxoId};
@@ -142,12 +146,11 @@ pub mod pallet {
 		fn genesis_utxo() -> UtxoId;
 
 		/// The currency used for holding tokens
-		type Currency: MutateHold<Self::AccountId, Reason = Self::RuntimeHoldReason>
-			+ frame_support::traits::tokens::fungible::Mutate<Self::AccountId>;
+		type Currency: MutateHold<Self::AccountId, Reason = Self::RuntimeHoldReason>;
 
 		/// The amount of tokens to hold when upserting metadata
 		#[pallet::constant]
-		type HoldAmount: Get<<Self::Currency as frame_support::traits::tokens::fungible::Inspect<Self::AccountId>>::Balance>;
+		type HoldAmount: Get<<Self::Currency as Inspect<Self::AccountId>>::Balance>;
 
 		/// The runtime's hold reason type
 		type RuntimeHoldReason: From<HoldReason>;
