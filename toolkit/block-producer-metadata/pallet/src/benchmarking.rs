@@ -85,9 +85,7 @@ mod benchmarks {
 
 		// Create an account and fund it with sufficient balance
 		let caller: T::AccountId = account("caller", 0, 0);
-		let hold_amount = T::HoldAmount::get();
-		let fund_amount = hold_amount * 10u32.into(); // Fund with 10x the required amount
-		let _ = T::Currency::mint_into(&caller, fund_amount);
+		let _ = T::Currency::mint_into(&caller, T::HoldAmount::get() * 2u32.into());
 
 		#[extrinsic_call]
 		_(RawOrigin::Signed(caller), metadata, cross_chain_signature, cross_chain_pub_key);

@@ -110,9 +110,13 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+use frame_support::traits::tokens::fungible::Inspect;
 use parity_scale_codec::Encode;
 use sidechain_domain::{CrossChainKeyHash, CrossChainPublicKey};
 use sp_block_producer_metadata::MetadataSignedMessage;
+
+type BalanceOf<T> =
+	<<T as pallet::Config>::Currency as Inspect<<T as frame_system::Config>::AccountId>>::Balance;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -120,10 +124,7 @@ pub mod pallet {
 	use crate::weights::WeightInfo;
 	use frame_support::{
 		pallet_prelude::*,
-		traits::{
-			Get,
-			tokens::fungible::{Inspect, MutateHold},
-		},
+		traits::{Get, tokens::fungible::MutateHold},
 	};
 	use frame_system::{ensure_signed, pallet_prelude::OriginFor};
 	use sidechain_domain::{CrossChainSignature, UtxoId};
@@ -150,7 +151,7 @@ pub mod pallet {
 
 		/// The amount of tokens to hold when upserting metadata
 		#[pallet::constant]
-		type HoldAmount: Get<<Self::Currency as Inspect<Self::AccountId>>::Balance>;
+		type HoldAmount: Get<BalanceOf<Self>>;
 
 		/// The runtime's hold reason type
 		type RuntimeHoldReason: From<HoldReason>;
