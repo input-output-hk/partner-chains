@@ -15,6 +15,7 @@ use crate::Pallet as AddressAssociations;
 #[benchmarks(where <T as Config>::PartnerChainAddress: Ss58Codec)]
 mod benchmarks {
 	use super::*;
+	use frame_support::traits::{Get, tokens::fungible::Mutate};
 
 	#[benchmark]
 	fn associate_address() {
@@ -31,8 +32,12 @@ mod benchmarks {
 			"1aa8c1b363a207ddadf0c6242a0632f5a557690a327d0245f9d473b983b3d8e1c95a3dd804cab41123c36ddbcb7137b8261c35d5c8ef04ce9d0f8d5c4b3ca607"
 		));
 
+		// Create an account and fund it with sufficient balance
+		let caller: T::AccountId = account("caller", 0, 0);
+		let _ = T::Currency::mint_into(&caller, T::BurnAmount::get() * 2u32.into());
+
 		#[extrinsic_call]
-		_(RawOrigin::None, pc_address, signature, stake_public_key);
+		_(RawOrigin::Signed(caller), pc_address, signature, stake_public_key);
 	}
 
 	impl_benchmark_test_suite!(AddressAssociations, crate::mock::new_test_ext(), crate::mock::Test);

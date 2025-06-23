@@ -6349,6 +6349,7 @@ dependencies = [
  "frame-system",
  "hex-literal 1.0.0",
  "log",
+ "pallet-balances",
  "parity-scale-codec",
  "scale-info",
  "sidechain-domain",
