@@ -3,11 +3,7 @@ use crate::*;
 use anyhow::{anyhow, Context, Result};
 use serde::{Deserialize, Serialize};
 use subxt::{OnlineClient, PolkadotConfig};
-use jsonrpsee::{
-    core::client::ClientT,
-    http_client::HttpClientBuilder,
-    rpc_params,
-};
+
 use hex;
 
 #[cfg(test)]
@@ -118,17 +114,14 @@ fn generate_keys_via_runtime<C: IOContext>(
             context.eprint(&format!("   - {} ({}, {} bytes)", key_info.key_name, key_id_str, key_info.key_size));
         }
         
-        // Step 1: Generate keys using author_rotateKeys RPC
-        context.eprint("⚙️ Calling author_rotateKeys() RPC method...");
+        // Step 1: Generate keys using author_rotateKeys RPC via node executable
+        context.eprint("⚙️ Calling author_rotateKeys() via node executable...");
         
-        let rpc_client = HttpClientBuilder::default()
-            .build(&config.node_url)
-            .context("Failed to build RPC client")?;
-            
-        let keys_hex: String = rpc_client
-            .request("author_rotateKeys", rpc_params![])
-            .await
-            .context("Failed to call author_rotateKeys RPC method")?;
+        let node_executable = context.current_executable()?;
+        let keys_hex = context
+            .run_command(&format!("{node_executable} rpc author_rotateKeys --url {}", config.node_url))?
+            .trim()
+            .to_string();
         
         context.eprint(&format!("✅ Generated session keys: {}", keys_hex));
         
@@ -236,7 +229,7 @@ fn extract_key_info_from_field(field_name: &str, type_id: u32, metadata: &subxt:
         .ok_or_else(|| anyhow!("Failed to resolve field type"))?;
     
     // Determine key size from the type
-    let key_size = determine_key_size_from_type(field_type)?;
+    let key_size = determine_key_size_from_type_with_metadata(field_type, metadata)?;
     
     // Generate key type ID from field name
     let key_type_id = generate_key_type_id_from_name(field_name);
@@ -254,7 +247,7 @@ fn extract_key_info_from_type_id(type_id: u32, _index: usize, metadata: &subxt::
         .ok_or_else(|| anyhow!("Failed to resolve field type"))?;
     
     // Determine key size from the type
-    let key_size = determine_key_size_from_type(field_type)?;
+    let key_size = determine_key_size_from_type_with_metadata(field_type, metadata)?;
     
     // Try to infer key type from the type path
     let key_name = extract_key_name_from_path(&field_type.path);
@@ -269,26 +262,116 @@ fn extract_key_info_from_type_id(type_id: u32, _index: usize, metadata: &subxt::
 }
 
 /// Determine the size of a key from its type definition
-/// This reads the actual type definition from metadata
-fn determine_key_size_from_type(ty: &scale_info::Type<scale_info::form::PortableForm>) -> Result<usize> {
+/// This reads the actual type definition from metadata and recursively resolves nested types
+fn determine_key_size_from_type_with_metadata(
+    ty: &scale_info::Type<scale_info::form::PortableForm>, 
+    metadata: &subxt::Metadata
+) -> Result<usize> {
+    determine_key_size_from_type_recursive(ty, metadata, &mut std::collections::HashSet::new())
+}
+
+/// Recursive helper to determine key size, with cycle detection
+fn determine_key_size_from_type_recursive(
+    ty: &scale_info::Type<scale_info::form::PortableForm>,
+    metadata: &subxt::Metadata,
+    visited: &mut std::collections::HashSet<u32>
+) -> Result<usize> {
     match &ty.type_def {
         scale_info::TypeDef::Array(array) => {
             // For array types like [u8; 32], return the length
             Ok(array.len as usize)
         }
         scale_info::TypeDef::Composite(composite) => {
-            // For composite types, try to determine size from fields
-            // Most crypto keys are 32 bytes, but this could vary
+            // For composite types, recurse into the fields to find the actual size
             if composite.fields.len() == 1 {
-                // Single field composite, might wrap an array
-                // This is a simplification - in practice we'd need to recurse
-                Ok(32) // Default assumption
+                // Single field composite - likely a newtype wrapper, recurse into it
+                let field = &composite.fields[0];
+                
+                // Cycle detection - prevent infinite recursion
+                if visited.contains(&field.ty.id) {
+                    return Err(anyhow!("Circular type reference detected"));
+                }
+                visited.insert(field.ty.id);
+                
+                // Resolve the field type and recurse
+                let field_type = metadata.types().resolve(field.ty.id)
+                    .ok_or_else(|| anyhow!("Failed to resolve field type"))?;
+                
+                determine_key_size_from_type_recursive(field_type, metadata, visited)
+            } else if composite.fields.is_empty() {
+                // Empty composite (unit struct)
+                Ok(0)
             } else {
-                Err(anyhow!("Cannot determine key size from composite type"))
+                // Multi-field composite - sum the sizes of all fields
+                let mut total_size = 0;
+                for field in &composite.fields {
+                    // Cycle detection
+                    if visited.contains(&field.ty.id) {
+                        return Err(anyhow!("Circular type reference detected"));
+                    }
+                    visited.insert(field.ty.id);
+                    
+                    // Resolve and recurse into each field
+                    let field_type = metadata.types().resolve(field.ty.id)
+                        .ok_or_else(|| anyhow!("Failed to resolve field type"))?;
+                    
+                    total_size += determine_key_size_from_type_recursive(field_type, metadata, visited)?;
+                }
+                Ok(total_size)
             }
         }
+        scale_info::TypeDef::Primitive(primitive) => {
+            // Handle primitive types
+            use scale_info::TypeDefPrimitive;
+            match primitive {
+                TypeDefPrimitive::Bool => Ok(1),
+                TypeDefPrimitive::Char => Ok(4), // UTF-8 char
+                TypeDefPrimitive::Str => Err(anyhow!("String types don't have fixed size")),
+                TypeDefPrimitive::U8 | TypeDefPrimitive::I8 => Ok(1),
+                TypeDefPrimitive::U16 | TypeDefPrimitive::I16 => Ok(2),
+                TypeDefPrimitive::U32 | TypeDefPrimitive::I32 => Ok(4),
+                TypeDefPrimitive::U64 | TypeDefPrimitive::I64 => Ok(8),
+                TypeDefPrimitive::U128 | TypeDefPrimitive::I128 => Ok(16),
+                TypeDefPrimitive::U256 | TypeDefPrimitive::I256 => Ok(32),
+            }
+        }
+        scale_info::TypeDef::Sequence(_) => {
+            // Sequences (Vec<T>) don't have fixed size
+            Err(anyhow!("Sequence types don't have fixed size"))
+        }
+        scale_info::TypeDef::Tuple(tuple) => {
+            // Tuples - sum the sizes of all elements
+            if tuple.fields.is_empty() {
+                Ok(0) // Unit tuple ()
+            } else {
+                let mut total_size = 0;
+                for field_type in &tuple.fields {
+                    // Cycle detection
+                    if visited.contains(&field_type.id) {
+                        return Err(anyhow!("Circular type reference detected"));
+                    }
+                    visited.insert(field_type.id);
+                    
+                    // Resolve and recurse into each tuple element
+                    let resolved_type = metadata.types().resolve(field_type.id)
+                        .ok_or_else(|| anyhow!("Failed to resolve tuple element type"))?;
+                    
+                    total_size += determine_key_size_from_type_recursive(resolved_type, metadata, visited)?;
+                }
+                Ok(total_size)
+            }
+        }
+        scale_info::TypeDef::Compact(_) => {
+            // Compact encoding - variable size, not suitable for keys
+            Err(anyhow!("Compact types don't have fixed size"))
+        }
+        scale_info::TypeDef::BitSequence(_) => {
+            // Bit sequences - variable size
+            Err(anyhow!("Bit sequences don't have fixed size"))
+        }
         _ => {
-            // Default to 32 bytes for unknown types (most Substrate keys are 32 bytes)
+            // For any other types (enums, etc.), default to common key size
+            // Most crypto keys in Substrate are 32 bytes
             Ok(32)
         }
     }
