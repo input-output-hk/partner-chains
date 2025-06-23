@@ -8,6 +8,8 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Changed
 
+* `pallet-block-producer-metadata` is updated with a configurable fee for inserting the metadata, to make attacks on unbounded storage economically infeasible
+
 ## Added
 
 ## Fixed

@@ -46,6 +46,9 @@
 //!     type WeightInfo = pallet_block_producer_metadata::weights::SubstrateWeight<Runtime>;
 //!
 //!     type BlockProducerMetadata = BlockProducerMetadata;
+//! 	type Currency = Balances;
+//!	    type HoldAmount = MetadataHoldAmount;
+//!     type RuntimeHoldReason = RuntimeHoldReason;
 //!
 //!     fn genesis_utxo() -> sidechain_domain::UtxoId {
 //!         Sidechain::genesis_utxo()
@@ -55,6 +58,8 @@
 //!
 //! Here, besides providing the metadata type and using weights already provided with the pallet, we are also
 //! wiring the `genesis_utxo` function to fetch the chain's genesis UTXO from the `pallet_sidechain` pallet.
+//! Currency, HoldAmount, and RuntimeHoldReason types are required to configure the deposit mechanism for occupying storage.
+//! Removing Metadata is not supported, so this deposit is currently ethernal.
 //!
 //! At this point, the pallet is ready to be used.
 //!
@@ -80,6 +85,9 @@
 //! `sign-block-producer-metadata` command provided by the chain's node. This command returns the signature
 //! and the metadata encoded as hex bytes.
 //!
+//! When metadata is inserted for the first time, a deposit is held from the caller's account. Updates to existing
+//! metadata do not require additional deposits.
+//!
 //! After the signature has been obtained, the user should submit the `upsert_metadata` extrinsic (eg. using PolkadotJS)
 //! providing:
 //! - *metadata value*: when using PolkadotJS UI, care must be taken to submit the same values that were passed to the CLI
@@ -102,20 +110,27 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+use frame_support::traits::tokens::fungible::Inspect;
 use parity_scale_codec::Encode;
 use sidechain_domain::{CrossChainKeyHash, CrossChainPublicKey};
 use sp_block_producer_metadata::MetadataSignedMessage;
+
+type BalanceOf<T> =
+	<<T as pallet::Config>::Currency as Inspect<<T as frame_system::Config>::AccountId>>::Balance;
 
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
 	use crate::weights::WeightInfo;
-	use frame_support::pallet_prelude::*;
-	use frame_system::pallet_prelude::OriginFor;
+	use frame_support::{
+		pallet_prelude::*,
+		traits::{Get, tokens::fungible::MutateHold},
+	};
+	use frame_system::{ensure_signed, pallet_prelude::OriginFor};
 	use sidechain_domain::{CrossChainSignature, UtxoId};
 
 	/// Current version of the pallet
-	pub const PALLET_VERSION: u32 = 1;
+	pub const PALLET_VERSION: u32 = 2;
 
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
@@ -131,6 +146,16 @@ pub mod pallet {
 		/// Should return the chain's genesis UTXO
 		fn genesis_utxo() -> UtxoId;
 
+		/// The currency used for holding tokens
+		type Currency: MutateHold<Self::AccountId, Reason = Self::RuntimeHoldReason>;
+
+		/// The amount of tokens to hold when upserting metadata
+		#[pallet::constant]
+		type HoldAmount: Get<BalanceOf<Self>>;
+
+		/// The runtime's hold reason type
+		type RuntimeHoldReason: From<HoldReason>;
+
 		/// Helper providing mock values for use in benchmarks
 		#[cfg(feature = "runtime-benchmarks")]
 		type BenchmarkHelper: benchmarking::BenchmarkHelper<Self::BlockProducerMetadata>;
@@ -145,16 +170,26 @@ pub mod pallet {
 		QueryKind = OptionQuery,
 	>;
 
+	/// Hold reasons for this pallet
+	#[pallet::composite_enum]
+	pub enum HoldReason {
+		/// Tokens held as deposit for block producer metadata
+		MetadataDeposit,
+	}
+
 	/// Error type returned by this pallet's extrinsic
 	#[pallet::error]
 	pub enum Error<T> {
 		/// Signals that the signature submitted to `upsert_metadata` does not match the metadata and public key
 		InvalidMainchainSignature,
+		/// Insufficient balance to hold tokens as fee for upserting block producer metadata
+		InsufficientBalance,
 	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Inserts or updates metadata for the block producer identified by `cross_chain_pub_key`.
+		/// Holds a constant amount from the caller's account as a deposit for including metadata on the chain.
 		///
 		/// Arguments:
 		/// - `metadata`: new metadata value
@@ -165,11 +200,12 @@ pub mod pallet {
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::upsert_metadata())]
 		pub fn upsert_metadata(
-			_origin: OriginFor<T>,
+			origin: OriginFor<T>,
 			metadata: T::BlockProducerMetadata,
 			signature: CrossChainSignature,
 			cross_chain_pub_key: CrossChainPublicKey,
 		) -> DispatchResult {
+			let origin_account = ensure_signed(origin)?;
 			let genesis_utxo = T::genesis_utxo();
 
 			let cross_chain_key_hash = cross_chain_pub_key.hash();
@@ -184,6 +220,15 @@ pub mod pallet {
 				signature.verify(&cross_chain_pub_key, &metadata_message.encode()).is_ok();
 
 			ensure!(is_valid_signature, Error::<T>::InvalidMainchainSignature);
+
+			if BlockProducerMetadataStorage::<T>::get(cross_chain_key_hash).is_none() {
+				T::Currency::hold(
+					&HoldReason::MetadataDeposit.into(),
+					&origin_account,
+					T::HoldAmount::get(),
+				)
+				.map_err(|_| Error::<T>::InsufficientBalance)?;
+			}
 
 			BlockProducerMetadataStorage::<T>::insert(cross_chain_key_hash, metadata);
 			Ok(())
