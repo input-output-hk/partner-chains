@@ -1,18 +1,18 @@
-//! Pallet storing associations from main chain public key to parter chain address.
+//! Pallet storing associations from main chain public key to partner chain address.
 //!
 //! ## Purpose of this pallet
 //!
 //! This pallet establishes a many-to-one mapping from Cardano staking keys to Partner Chain addresses.
 //! The purpose of this mapping is primarily to indicate the local PC address to be the recipient of any
 //! block production rewards or cross-chain token transfers credited to a Cardano key holders on a Partner
-//! Chain. Some intended scenarios inlude:
+//! Chain. Some intended scenarios include:
 //! 1. ADA delegators become eligible for block rewards due to their stake pool's operator participating
 //!    in a Partner Chain network. The on-chain payout mechanism uses data provided by this pallet to
 //!    identify each delegator's Partner Chain address based on their Cardano staking key.
 //! 2. A Partner Chain develops its own cross-chain bridge from Cardano. A Cardano user associates their
 //!    Cardano public key with a Partner Chain address that they control. The user then uses the bridge
 //!    to send some tokens to themselves. The receiving logic in the Partner Chain ledger then uses this
-//!    pallet's data to identify the user's PC account and comlete the transfer.
+//!    pallet's data to identify the user's PC account and complete the transfer.
 //!
 //! ## Usage - PC Builder
 //!
@@ -109,7 +109,7 @@ pub mod pallet {
 		/// account ID, or some address type specific to the Partner Chain.
 		type PartnerChainAddress: Member + Parameter + MaxEncodedLen;
 
-		/// The currency used for burning tokens when a address association is made
+		/// The currency used for burning tokens when an address association is made
 		type Currency: Mutate<Self::AccountId>;
 
 		/// The amount of tokens to hold when upserting metadata
