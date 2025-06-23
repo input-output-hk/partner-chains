@@ -4,6 +4,8 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 # Unreleased
 
+* Added extra constant burn fee in `pallet-address-association` to discourage attacks on pallet storage.
+
 ## Changed
 
 ## Added
