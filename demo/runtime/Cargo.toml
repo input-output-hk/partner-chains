@@ -27,6 +27,7 @@ serde_json = { workspace = true, default-features = false, features = [
 
 pallet-aura = { workspace = true }
 pallet-balances = { workspace = true }
+pallet-parameters = { workspace = true }
 frame-support = { workspace = true }
 pallet-grandpa = { workspace = true }
 pallet-partner-chains-session = { workspace = true, features = [
@@ -127,6 +128,7 @@ std = [
 	"frame-try-runtime/std",
 	"pallet-aura/std",
 	"pallet-balances/std",
+	"pallet-parameters/std",
 	"pallet-block-producer-fees/std",
 	"pallet-block-production-log/std",
 	"pallet-grandpa/std",
@@ -181,6 +183,7 @@ runtime-benchmarks = [
 	"frame-system/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
 	"pallet-grandpa/runtime-benchmarks",
+	"pallet-parameters/runtime-benchmarks",
 	"pallet-sudo/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
@@ -200,6 +203,7 @@ try-runtime = [
 	"pallet-aura/try-runtime",
 	"pallet-balances/try-runtime",
 	"pallet-grandpa/try-runtime",
+	"pallet-parameters/try-runtime",
 	"pallet-sudo/try-runtime",
 	"pallet-timestamp/try-runtime",
 	"pallet-transaction-payment/try-runtime",

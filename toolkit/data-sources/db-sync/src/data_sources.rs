@@ -13,13 +13,11 @@ use std::str::FromStr;
 
 /// Reads Cardano main chain epoch configuration from the environment.
 ///
-/// Note: This function now uses the unified CardanoConfig and extracts the epoch configuration from it.
-/// See documentation of [sidechain_domain::cardano_config::CardanoConfig::from_env] for the list of environment variables read.
+/// See documentation of [MainchainEpochConfig::read_from_env] for the list of environment variables read.
 #[cfg(feature = "block-source")]
 pub fn read_mc_epoch_config() -> Result<MainchainEpochConfig, Box<dyn Error + Send + Sync>> {
-	let cardano_config = sidechain_domain::cardano_config::CardanoConfig::from_env()
-		.map_err(|e| format!("Failed to read unified Cardano config: {}", e))?;
-	Ok(cardano_config.epoch_config)
+	Ok(MainchainEpochConfig::read_from_env()
+		.map_err(|e| format!("Failed to read main chain config: {}", e))?)
 }
 
 /// Postgres connection config used when creating a [PgPool].

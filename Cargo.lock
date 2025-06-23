@@ -1519,7 +1519,7 @@ checksum = "fe6d2e5af09e8c8ad56c969f2157a3d4238cebc7c55f0a517728c38f7b200f81"
 dependencies = [
  "serde",
  "termcolor",
- "unicode-width 0.2.0",
+ "unicode-width 0.1.14",
 ]
 
 [[package]]
@@ -6530,6 +6530,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-parameters"
+version = "0.11.0"
+source = "git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-stable2503-5#f4dba53bfac614b054735aa725d2b0c44efda414"
+dependencies = [
+ "docify",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "paste",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-runtime",
+]
+
+[[package]]
 name = "pallet-partner-chains-session"
 version = "1.7.0"
 dependencies = [
@@ -6752,7 +6769,7 @@ checksum = "4e69bf016dc406eff7d53a7d3f7cf1c2e72c82b9088aac1118591e36dd2cd3e9"
 dependencies = [
  "bitcoin_hashes 0.13.0",
  "rand 0.8.5",
- "rand_core 0.6.4",
+ "rand_core 0.4.2",
  "serde",
  "unicode-normalization",
 ]
@@ -7099,6 +7116,7 @@ dependencies = [
  "pallet-governed-map",
  "pallet-grandpa",
  "pallet-native-token-management",
+ "pallet-parameters",
  "pallet-partner-chains-session",
  "pallet-session",
  "pallet-session-validator-management",

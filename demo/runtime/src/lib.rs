@@ -18,6 +18,7 @@ use authority_selection_inherents::filter_invalid_candidates::{
 	validate_permissioned_candidate_data,
 };
 use authority_selection_inherents::select_authorities::select_authorities;
+use frame_support::dynamic_params::{dynamic_pallet_params, dynamic_params};
 use frame_support::genesis_builder_helper::{build_state, get_preset};
 use frame_support::inherent::ProvideInherent;
 use frame_support::weights::constants::RocksDbWeight as RuntimeDbWeight;
@@ -293,6 +294,44 @@ impl frame_system::Config for Runtime {
 	type PreInherents = ();
 	type PostInherents = ();
 	type PostTransactions = ();
+}
+
+#[dynamic_params(RuntimeParameters, pallet_parameters::Parameters::<Runtime>)]
+pub mod dynamic_params {
+	use super::*;
+
+	#[dynamic_pallet_params]
+	#[codec(index = 0)]
+	pub mod cardano_config {
+		#[codec(index = 0)]
+		pub static SecurityParameter: u64 = 432;
+		#[codec(index = 1)]
+		pub static ActiveSlotsCoeff: sp_runtime::Permill = sp_runtime::Permill::from_percent(5);
+	}
+
+	#[dynamic_pallet_params]
+	#[codec(index = 1)]
+	pub mod cardano_epoch_config {
+		#[codec(index = 0)]
+		pub static EpochDuration: core::time::Duration =
+			core::time::Duration::from_millis(432000000); // 5 days
+		#[codec(index = 1)]
+		pub static SlotDurationMillis: core::time::Duration =
+			core::time::Duration::from_millis(1000); // 1 second
+		#[codec(index = 2)]
+		pub static FirstEpochTimestampMillis: u64 = 1596059091000;
+		#[codec(index = 3)]
+		pub static FirstEpochNumber: u32 = 208;
+		#[codec(index = 4)]
+		pub static FirstSlotNumber: u32 = 4492800;
+	}
+}
+
+impl pallet_parameters::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeParameters = RuntimeParameters;
+	type AdminOrigin = EnsureRoot<Self::AccountId>;
+	type WeightInfo = ();
 }
 
 impl pallet_native_token_management::Config for Runtime {
@@ -697,6 +736,7 @@ construct_runtime!(
 		Session: pallet_partner_chains_session,
 		NativeTokenManagement: pallet_native_token_management,
 		GovernedMap: pallet_governed_map,
+		Parameters: pallet_parameters,
 		TestHelperPallet: crate::test_helper_pallet,
 	}
 );
