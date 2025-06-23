@@ -182,7 +182,7 @@ node5_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-5/keys/grandp
     --genesis-utxo $GENESIS_UTXO \
     --spo-public-key $node5_spo_public_key \
     --spo-signature $node5_spo_signature \
-    --sidechain-public-keys $node5_sidechain_public_key:$node5_aura_vkey:$node5_grandpa_vkey \
+    --sidechain-public-keys $node5_sidechain_public_key:$node5_aura_vkey:$node5_beefy_vkey:$node5_grandpa_vkey \
     --sidechain-signature $node5_sidechain_signature \
     --registration-utxo $node5_utxo \
     --payment-key-file /partner-chains-nodes/partner-chains-node-5/keys/payment.skey
