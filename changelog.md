@@ -4,7 +4,11 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 # Unreleased
 
+* Added extra constant burn fee in `pallet-address-association` to discourage attacks on pallet storage.
+
 ## Changed
+
+* `pallet-block-producer-metadata` is updated with a configurable fee for inserting the metadata, to make attacks on unbounded storage economically infeasible
 
 ## Added
 

@@ -1,3 +1,4 @@
+use frame_support::parameter_types;
 use frame_support::traits::ConstU32;
 use frame_support::{
 	construct_runtime,
@@ -5,7 +6,8 @@ use frame_support::{
 };
 use hex_literal::hex;
 use sidechain_domain::*;
-use sp_core::H256;
+use sp_core::crypto::Ss58Codec;
+use sp_core::{ConstU128, H256};
 use sp_runtime::{
 	AccountId32, BuildStorage,
 	traits::{BlakeTwo256, IdentityLookup},
@@ -35,7 +37,7 @@ pub mod mock_pallet {
 			partner_chain_address: PartnerChainAddress,
 			main_chain_key_hash: MainchainKeyHash,
 		) {
-			LastNewAssociation::<T>::put((partner_chain_address, main_chain_key_hash))
+			LastNewAssociation::<T>::put((partner_chain_address, main_chain_key_hash));
 		}
 	}
 }
@@ -44,6 +46,7 @@ construct_runtime! {
 	pub enum Test {
 		System: frame_system,
 		AddressAssociations: crate::pallet,
+		Balances: pallet_balances,
 		MockPallet: mock_pallet
 	}
 }
@@ -65,7 +68,7 @@ impl frame_system::Config for Test {
 	type BlockHashCount = ConstU64<250>;
 	type Version = ();
 	type PalletInfo = PalletInfo;
-	type AccountData = ();
+	type AccountData = pallet_balances::AccountData<u128>;
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type SystemWeightInfo = ();
@@ -83,16 +86,58 @@ impl frame_system::Config for Test {
 	type PostTransactions = ();
 }
 
+impl pallet_balances::Config for Test {
+	type MaxLocks = ConstU32<50>;
+	type MaxReserves = ();
+	type ReserveIdentifier = [u8; 8];
+	type Balance = u128;
+	type RuntimeEvent = RuntimeEvent;
+	type DustRemoval = ();
+	type ExistentialDeposit = ConstU128<1>;
+	type AccountStore = System;
+	type WeightInfo = pallet_balances::weights::SubstrateWeight<Test>;
+	type FreezeIdentifier = ();
+	type MaxFreezes = ();
+	type RuntimeHoldReason = RuntimeHoldReason;
+	type RuntimeFreezeReason = ();
+	type DoneSlashHandler = ();
+}
+
+parameter_types! {
+	pub const AssociationFeeBurn: u128 = 1000;
+}
+
+pub(crate) const FUNDED_ACCOUNT: AccountId32 = AccountId32::new([1; 32]);
+
+pub(crate) const STAKE_PUBLIC_KEY: StakePublicKey =
+	StakePublicKey(hex!("2bebcb7fbc74a6e0fd6e00a311698b047b7b659f0e047ff5349dbd984aefc52c"));
+
+pub(crate) fn pc_address() -> AccountId32 {
+	AccountId32::from_ss58check("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY").unwrap()
+}
+
+pub(crate) const VALID_SIGNATURE: [u8; 64] = hex!(
+	"1aa8c1b363a207ddadf0c6242a0632f5a557690a327d0245f9d473b983b3d8e1c95a3dd804cab41123c36ddbcb7137b8261c35d5c8ef04ce9d0f8d5c4b3ca607"
+);
+
 impl crate::pallet::Config for Test {
 	type WeightInfo = ();
 	type PartnerChainAddress = PartnerChainAddress;
 	fn genesis_utxo() -> UtxoId {
 		UtxoId::new(hex!("59104061ffa0d66f9ba0135d6fc6a884a395b10f8ae9cb276fc2c3bfdfedc260"), 1)
 	}
-
+	type Currency = Balances;
+	type BurnAmount = AssociationFeeBurn;
 	type OnNewAssociation = MockPallet;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	frame_system::GenesisConfig::<Test>::default().build_storage().unwrap().into()
+	let mut t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
+	pallet_balances::GenesisConfig::<Test> {
+		balances: vec![(FUNDED_ACCOUNT, 100_000)],
+		dev_accounts: None,
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
+	t.into()
 }
