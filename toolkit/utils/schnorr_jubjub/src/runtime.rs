@@ -75,7 +75,8 @@ impl RuntimePublic for Public {
 	}
 
 	fn generate_pair(key_type: KeyTypeId, seed: Option<Vec<u8>>) -> Self {
-		let seed: [u8; 64] = seed.expect("Only support key generation from given seed.")
+		let seed: [u8; 64] = seed
+			.expect("Only support key generation from given seed.")
 			.try_into()
 			.expect("Invalid seed size.");
 

@@ -10,14 +10,14 @@
 use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt::Debug;
-use rand_chacha::rand_core::{RngCore};
+use rand_chacha::rand_core::RngCore;
 use sha2::Digest;
 
 use crate::poseidon::{PoseidonError, PoseidonJubjub};
-use ark_ed_on_bls12_381::{Fr, EdwardsAffine as Point, Fq as Scalar};
-use ark_serialize::{CanonicalSerialize, CanonicalDeserialize};
-use ark_ff::{Field, UniformRand};
 use ark_ec::AffineRepr;
+use ark_ed_on_bls12_381::{EdwardsAffine as Point, Fq as Scalar, Fr};
+use ark_ff::{Field, UniformRand};
+use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 
 /// A Schnorr private key is a scalar from the Jubjub scalar field.
 #[derive(Clone, Debug)]
@@ -72,7 +72,8 @@ impl KeyPair {
 
 	/// Generates a Schnorr keypair from a seed.
 	pub fn generate_from_seed(seed: [u8; 64]) -> Self {
-		let sk = Fr::from_random_bytes(&seed).expect("Failed to construct Fr from bytes. This is a bug.");
+		let sk = Fr::from_random_bytes(&seed)
+			.expect("Failed to construct Fr from bytes. This is a bug.");
 		let pk = Point::generator() * sk;
 		Self(sk, pk.into())
 	}
@@ -87,16 +88,21 @@ impl KeyPair {
 	/// A Schnorr `Signature`.
 	pub fn sign(&self, msg: &[Scalar]) -> SchnorrSignature {
 		let mut bytes_nonce = [0u8; 32];
-		self.0.serialize_compressed(bytes_nonce.as_mut_slice()).expect("Failed to serialize.");
+		self.0
+			.serialize_compressed(bytes_nonce.as_mut_slice())
+			.expect("Failed to serialize.");
 
 		for scalar in msg {
-			scalar.serialize_compressed(bytes_nonce.as_mut_slice()).expect("Failed to serialize.");
+			scalar
+				.serialize_compressed(bytes_nonce.as_mut_slice())
+				.expect("Failed to serialize.");
 		}
 
 		// Generate a random nonce
 		// TODO: We compute it deterministically (as done in ed25519) to avoid needing a RNG
 		let h = sha2::Sha512::digest(&bytes_nonce);
-		let a = Fr::from_random_bytes(&h).expect("Failed to generate number from bytes. This is a bug.");
+		let a = Fr::from_random_bytes(&h)
+			.expect("Failed to generate number from bytes. This is a bug.");
 		let A = (Point::generator() * a).into();
 
 		// Compute challenge e = H(R || PK || msg)
@@ -151,8 +157,10 @@ impl SchnorrSignature {
 			return Err(SchnorrError::InvalidSignatureFormat);
 		}
 
-		let A = Point::deserialize_compressed(&bytes[..32]).map_err(|_| SchnorrError::InvalidSignatureFormat)?;
-		let r = Fr::deserialize_compressed(&bytes[32..]).map_err(|_| SchnorrError::InvalidSignatureFormat)?;
+		let A = Point::deserialize_compressed(&bytes[..32])
+			.map_err(|_| SchnorrError::InvalidSignatureFormat)?;
+		let r = Fr::deserialize_compressed(&bytes[32..])
+			.map_err(|_| SchnorrError::InvalidSignatureFormat)?;
 
 		Ok(Self { A, r })
 	}

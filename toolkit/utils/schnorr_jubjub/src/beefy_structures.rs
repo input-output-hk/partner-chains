@@ -10,9 +10,9 @@ use alloc::vec::Vec;
 use core::fmt::{Debug, Display, Formatter};
 
 use crate::poseidon::PoseidonJubjub;
-use ark_ed_on_bls12_381::{Fr, EdwardsAffine};
-use ark_ff::fields::Field;
 use ark_ec::AffineRepr;
+use ark_ed_on_bls12_381::{EdwardsAffine, Fr};
+use ark_ff::fields::Field;
 use ark_serialize::CanonicalSerialize;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use sha2::Digest;
@@ -271,7 +271,8 @@ impl TraitPair for crate::primitive::KeyPair {
 
 		let h = sha2::Sha512::digest(&seed);
 
-		let secret = Fr::from_random_bytes(h.as_slice()).expect("Failed to deserialize random bytes. This is a bug.");
+		let secret = Fr::from_random_bytes(h.as_slice())
+			.expect("Failed to deserialize random bytes. This is a bug.");
 		Ok(Self { 0: secret, 1: (EdwardsAffine::generator() * &secret).into() })
 	}
 
@@ -302,7 +303,9 @@ impl TraitPair for crate::primitive::KeyPair {
 
 	fn public(&self) -> Self::Public {
 		let mut writer = Vec::new();
-		self.1.serialize_compressed(&mut writer).expect("Serialisation should not fail - writer is big enough");
+		self.1
+			.serialize_compressed(&mut writer)
+			.expect("Serialisation should not fail - writer is big enough");
 		let bytes: [u8; 32] = writer.try_into().unwrap();
 
 		Public(PublicBytes::from(bytes))

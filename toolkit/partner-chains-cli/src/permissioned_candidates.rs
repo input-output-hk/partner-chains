@@ -1,4 +1,3 @@
-
 use ogmios_client::query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId};
 use ogmios_client::query_network::QueryNetwork;
 use ogmios_client::transactions::Transactions;
@@ -60,7 +59,9 @@ pub(crate) struct ParsedPermissionedCandidatesKeys {
 }
 
 impl ParsedPermissionedCandidatesKeys {
-	pub fn session_keys<SessionKeys: From<(sr25519::Public, schnorr_jubjub::Public, ed25519::Public)>>(
+	pub fn session_keys<
+		SessionKeys: From<(sr25519::Public, schnorr_jubjub::Public, ed25519::Public)>,
+	>(
 		&self,
 	) -> SessionKeys {
 		SessionKeys::from((

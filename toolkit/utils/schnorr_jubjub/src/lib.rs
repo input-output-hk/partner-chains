@@ -14,4 +14,4 @@ mod runtime;
 
 pub use beefy_structures::{InnerPublicBytes, Public, Signature};
 
-pub use poseidon::{PoseidonJubjub,};
+pub use poseidon::PoseidonJubjub;
