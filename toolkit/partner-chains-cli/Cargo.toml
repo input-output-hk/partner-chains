@@ -48,9 +48,9 @@ pallet-sidechain = { workspace = true, features = ["std"] }
 pallet-governed-map = { workspace = true, features = ["std"] }
 sp-governed-map = { workspace = true, features = ["std"] }
 sidechain-slots = { workspace = true }
-subxt = "0.35"
-scale-decode = "0.16.0"
-scale-info.workspace = true
+subxt = { workspace = true }
+scale-decode = { workspace = true }
+scale-info = { workspace = true }
 
 [dev-dependencies]
 frame-system = { workspace = true }

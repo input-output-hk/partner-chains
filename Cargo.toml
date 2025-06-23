@@ -140,6 +140,8 @@ proptest = { version = "1.5.0" }
 scale-info = { version = "2.11.1", default-features = false, features = [
 	"derive",
 ] }
+scale-decode = { version = "0.16.0" }
+subxt = { version = "0.35" }
 testcontainers = { version = "0.15.0" }
 quickcheck_macros = { version = "1" }
 quote = "1.0"
