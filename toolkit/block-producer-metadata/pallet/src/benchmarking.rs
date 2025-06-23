@@ -72,7 +72,7 @@ pub trait BenchmarkHelper<BlockProducerMetadata> {
 	fn cross_chain_signature() -> CrossChainSignature;
 }
 
-#[benchmarks]
+#[benchmarks(where <T as Config>::Currency: frame_support::traits::tokens::fungible::Mutate<<T as frame_system::Config>::AccountId>)]
 mod benchmarks {
 	use super::*;
 	use frame_support::traits::{Get, tokens::fungible::Mutate};
