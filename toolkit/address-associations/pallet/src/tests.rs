@@ -10,7 +10,7 @@ use sp_runtime::AccountId32;
 fn saves_new_address_association() {
 	new_test_ext().execute_with(|| {
 		assert_eq!(mock_pallet::LastNewAssociation::<Test>::get(), None);
-
+		let initial_balance = Balances::free_balance(&FUNDED_ACCOUNT);
 		assert_ok!(super::Pallet::<Test>::associate_address(
 			OriginFor::<Test>::signed(FUNDED_ACCOUNT),
 			pc_address(),
@@ -27,6 +27,8 @@ fn saves_new_address_association() {
 			mock_pallet::LastNewAssociation::<Test>::get(),
 			Some((pc_address(), STAKE_PUBLIC_KEY.hash()))
 		);
+		let final_balance = Balances::free_balance(&FUNDED_ACCOUNT);
+		assert_eq!(final_balance, initial_balance - AssociationFeeBurn::get());
 	})
 }
 
