@@ -44,7 +44,7 @@ class SubstrateApi(BlockchainApi):
         self.db_sync = db_sync
         self.url = config.nodes_config.node.url
         self._substrate = None
-        self.cardano_cli = CardanoCli(config.main_chain, config.stack_config.tools["cardano_cli"])
+        self.cardano_cli = CardanoCli(config.main_chain, config.stack_config.tools.cardano_cli)
         self.partner_chains_node = PartnerChainsNode(config)
         self.partner_chain_rpc = PartnerChainRpc(config.nodes_config.node.rpc_url)
         self.partner_chain_epoch_calculator = PartnerChainEpochCalculator(config)
@@ -243,11 +243,11 @@ class SubstrateApi(BlockchainApi):
             logger.error(f"Could not parse cardano key file: {e}")
         return key.strip()
 
-    def update_d_param(self, permissioned_candidates_count, registered_candidates_count):
+    def update_d_param(self, genesis_utxo, permissioned_candidates_count, registered_candidates_count):
         signing_key = self.config.nodes_config.governance_authority.mainchain_key
 
         response = self.partner_chains_node.smart_contracts.update_d_param(
-            permissioned_candidates_count, registered_candidates_count, signing_key
+            genesis_utxo, permissioned_candidates_count, registered_candidates_count, signing_key
         )
         tx_id = response.json["transaction_submitted"]
         effective_in_mc_epoch = self._effective_in_mc_epoch()
@@ -262,9 +262,9 @@ class SubstrateApi(BlockchainApi):
             logger.error(f"Update of D Param failed, STDOUT: {response.stdout}, STDERR: {response.stderr}")
             return False, None
 
-    def upsert_permissioned_candidates(self, new_candidates_list):
+    def upsert_permissioned_candidates(self, genesis_utxo, permissioned_candidates_file):
         response = self.partner_chains_node.smart_contracts.upsert_permissioned_candidates(
-            self.config.nodes_config.governance_authority.mainchain_key, new_candidates_list
+            genesis_utxo, self.config.nodes_config.governance_authority.mainchain_key, permissioned_candidates_file
         )
         tx_id = response.json["transaction_submitted"]
         effective_in_mc_epoch = self._effective_in_mc_epoch()
@@ -279,7 +279,7 @@ class SubstrateApi(BlockchainApi):
             logger.error(f"Upsert permissioned candidates failed, STDOUT: {response.stdout}, STDERR: {response.stderr}")
             return False, None
 
-    def register_candidate(self, candidate_name):
+    def register_candidate(self, genesis_utxo, candidate_name):
         keys_files = self.config.nodes_config.nodes[candidate_name].keys_files
         # Get a UTxO from payment account
         utxos_json = self.cardano_cli.get_utxos(self.config.nodes_config.nodes[candidate_name].cardano_payment_addr)
@@ -287,6 +287,7 @@ class SubstrateApi(BlockchainApi):
         assert registration_utxo is not None, "ERROR: Could not find a well funded utxo for registration"
 
         signatures = self.partner_chains_node.get_signatures(
+            genesis_utxo,
             registration_utxo,
             self.read_cardano_key_file(keys_files.spo_signing_key),
             self._read_json_file(keys_files.partner_chain_signing_key)['skey'],
@@ -295,6 +296,7 @@ class SubstrateApi(BlockchainApi):
         )
 
         response = self.partner_chains_node.smart_contracts.register(
+            genesis_utxo,
             signatures,
             keys_files.cardano_payment_key,
             self.read_cardano_key_file(keys_files.spo_public_key),
@@ -315,10 +317,10 @@ class SubstrateApi(BlockchainApi):
             )
             return False, None
 
-    def deregister_candidate(self, candidate_name):
+    def deregister_candidate(self, genesis_utxo, candidate_name):
         keys_files = self.config.nodes_config.nodes[candidate_name].keys_files
         response = self.partner_chains_node.smart_contracts.deregister(
-            keys_files.cardano_payment_key, self.read_cardano_key_file(keys_files.spo_public_key)
+            genesis_utxo, keys_files.cardano_payment_key, self.read_cardano_key_file(keys_files.spo_public_key)
         )
         tx_id = response.json["transaction_submitted"]
         effective_in_mc_epoch = self._effective_in_mc_epoch()
@@ -680,11 +682,13 @@ class SubstrateApi(BlockchainApi):
         """Calculates main chain epoch in which smart contracts candidates related operation will be effective."""
         return self.cardano_cli.get_epoch() + 2
 
-    def sign_address_association(self, address, stake_signing_key):
-        return self.partner_chains_node.sign_address_association(address, stake_signing_key)
+    def sign_address_association(self, genesis_utxo, address, stake_signing_key):
+        return self.partner_chains_node.sign_address_association(genesis_utxo, address, stake_signing_key)
 
-    def sign_block_producer_metadata(self, metadata, cross_chain_signing_key):
-        return self.partner_chains_node.sign_block_producer_metadata(metadata, cross_chain_signing_key)
+    def sign_block_producer_metadata(self, genesis_utxo, metadata_file, cross_chain_signing_key):
+        return self.partner_chains_node.sign_block_producer_metadata(
+            genesis_utxo, metadata_file, cross_chain_signing_key
+        )
 
     @long_running_function
     def submit_address_association(self, signature, wallet):

@@ -9,7 +9,7 @@ from config.api_config import ApiConfig
 @mark.candidate_status("inactive")
 @mark.test_key('ETCM-7017')
 @mark.usefixtures("candidate_skey_with_cli")
-def test_register_candidate(candidate: Candidates, api: BlockchainApi, db: Session, config: ApiConfig):
+def test_register_candidate(genesis_utxo: str, candidate: Candidates, api: BlockchainApi, db: Session, config: ApiConfig):
     """Test registration of the trustless (SPO) candidate
 
     * register inactive SPO candidate
@@ -17,7 +17,7 @@ def test_register_candidate(candidate: Candidates, api: BlockchainApi, db: Sessi
     * check that registered candidate appeared in the partner_chain_getAriadneParameters() response
     """
     logging.info(f"Registering {candidate}")
-    result, next_status_epoch = api.register_candidate(candidate.name)
+    result, next_status_epoch = api.register_candidate(genesis_utxo, candidate.name)
     assert result, f"Registration of candidate {candidate.name} failed."
 
     registered_candidate = Candidates()
@@ -58,7 +58,7 @@ def test_register_candidate(candidate: Candidates, api: BlockchainApi, db: Sessi
 @mark.candidate_status("active")
 @mark.test_key('ETCM-7018')
 @mark.usefixtures("candidate_skey_with_cli")
-def test_deregister_candidate(candidate: Candidates, api: BlockchainApi, db: Session, config: ApiConfig):
+def test_deregister_candidate(genesis_utxo: str, candidate: Candidates, api: BlockchainApi, db: Session, config: ApiConfig):
     """Test deregistration of the trustless (SPO) candidate
 
     * deregister active SPO candidate
@@ -67,7 +67,7 @@ def test_deregister_candidate(candidate: Candidates, api: BlockchainApi, db: Ses
     """
     logging.info(f"Deregistering {candidate}")
     # mc_block_before_deregistration = api.get_mc_block() # TODO: https://input-output.atlassian.net/browse/ETCM-5566
-    result, next_status_epoch = api.deregister_candidate(candidate.name)
+    result, next_status_epoch = api.deregister_candidate(genesis_utxo, candidate.name)
     assert result, f"Deregistration of candidate {candidate.name} failed."
 
     deregistered_candidate = Candidates()

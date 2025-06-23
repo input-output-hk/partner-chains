@@ -83,7 +83,7 @@ pub async fn run_register<
 	})?;
 	let tx_id = result.transaction.id;
 	log::info!("✅ Transaction submitted. ID: {}", hex::encode(result.transaction.id));
-	await_tx.await_tx_output(client, UtxoId::new(tx_id, 0)).await?;
+	await_tx.await_tx_output(client, McTxHash(tx_id)).await?;
 
 	Ok(Some(McTxHash(result.transaction.id)))
 }
@@ -136,7 +136,7 @@ pub async fn run_deregister<
 	})?;
 	let tx_id = result.transaction.id;
 	log::info!("✅ Transaction submitted. ID: {}", hex::encode(result.transaction.id));
-	await_tx.await_tx_output(client, UtxoId::new(tx_id, 0)).await?;
+	await_tx.await_tx_output(client, McTxHash(tx_id)).await?;
 
 	Ok(Some(McTxHash(result.transaction.id)))
 }

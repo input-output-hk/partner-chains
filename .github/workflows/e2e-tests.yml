@@ -44,11 +44,6 @@ jobs:
       contents: read
     runs-on: eks
     steps:
-    - name: set ssh-agent to binary host
-      uses: webfactory/ssh-agent@v0.8.0
-      with:
-        ssh-private-key: ${{ secrets.SSH_KEY_BINARY_HOST }}
-
     - name: Acquire AWS Credentials
       uses: aws-actions/configure-aws-credentials@v2
       with:
@@ -98,18 +93,21 @@ jobs:
         XRAY_CLIENT_SECRET: ${{ secrets.XRAY_CLIENT_SECRET }}
         XRAY_API_BASE_URL: ${{ secrets.XRAY_API_BASE_URL }}
         JIRA_URL: ${{ secrets.JIRA_URL }}
+        K8S_SERVER: ${{ secrets.K8S_SERVER }}
+        K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
       run: |
         cd e2e-tests
         earthly \
           --secret AWS_SESSION_TOKEN="$AWS_SESSION_TOKEN" \
           --secret AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
           --secret AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
+          --secret K8S_SERVER="$K8S_SERVER" \
+          --secret K8S_SA_TOKEN="$K8S_SA_TOKEN" \
           --secret SLACK_WEBHOOK_URL="$SLACK_WEBHOOK_URL" \
           --secret XRAY_CLIENT_ID="$XRAY_CLIENT_ID" \
           --secret XRAY_CLIENT_SECRET="$XRAY_CLIENT_SECRET" \
           --secret XRAY_API_BASE_URL="$XRAY_API_BASE_URL" \
           --secret JIRA_URL="$JIRA_URL" \
-          --ssh-auth-sock="$SSH_AUTH_SOCK" \
           +report \
           --log_level="${LOG_LEVEL:-"info"}" \
           --env=${{ inputs.env }} \

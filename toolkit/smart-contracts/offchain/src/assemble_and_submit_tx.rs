@@ -5,7 +5,7 @@ use ogmios_client::query_ledger_state::QueryUtxoByUtxoId;
 use ogmios_client::{
 	query_ledger_state::QueryLedgerState, query_network::QueryNetwork, transactions::Transactions,
 };
-use sidechain_domain::{McTxHash, UtxoId};
+use sidechain_domain::McTxHash;
 
 /// Adds `witnesses` to `transaction` and submits it with `ogmios_client`.
 pub async fn assemble_and_submit_tx<
@@ -38,7 +38,7 @@ pub async fn assemble_and_submit_tx<
 	let tx_id = McTxHash(res.transaction.id);
 	log::info!("Transaction submitted: {}", hex::encode(tx_id.0));
 
-	await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_id.0, 0)).await?;
+	await_tx.await_tx_output(ogmios_client, tx_id).await?;
 
 	Ok(tx_id)
 }

@@ -64,19 +64,36 @@ class MainchainAccount:
 
 
 @dataclass
-class SSH:
-    username: str = MISSING
-    host: str = MISSING
-    port: int = MISSING
-    host_keys_path: Optional[str] = None
-    private_key_path: Optional[str] = None
+class KubernetesConfig:
+    pod: str = MISSING
+    namespace: str = MISSING
+    container: str = MISSING
+
+
+@dataclass
+class DockerConfig:
+    container: str = MISSING
+
+
+@dataclass
+class RunnerConfig:
+    copy_secrets: bool = False
+    workdir: Optional[str] = None
+    docker: Optional[DockerConfig] = None
+    kubernetes: Optional[KubernetesConfig] = None
 
 
 @dataclass
 class Tool:
-    cli: str = MISSING
-    ssh: Optional[SSH] = None
-    shell: Optional[str] = SI("${...tools_shell}")
+    path: str = MISSING
+    runner: RunnerConfig = SI("${..runner}")
+
+
+@dataclass
+class Tools:
+    runner: RunnerConfig = MISSING
+    cardano_cli: Tool = MISSING
+    node: Tool = MISSING
 
 
 @dataclass
@@ -115,16 +132,11 @@ class StackApiConfig:
     ogmios_host: str = MISSING
     ogmios_port: int = MISSING
     ogmios_url: str = SI("${.ogmios_scheme}://${.ogmios_host}:${.ogmios_port}")
-    tools: dict[str, Tool] = MISSING
-    tools_host: str = MISSING
-    tools_shell: Optional[str] = None
-    ssh: Optional[SSH] = None
+    tools: Tools = MISSING
 
 
 @dataclass
 class ApiConfig:
-    genesis_utxo: str = MISSING
-    atms_kind: str = MISSING
     committee_epoch_slippage: int = MISSING
     committee_participation_tolerance: float = MISSING
     max_validators: int = MISSING

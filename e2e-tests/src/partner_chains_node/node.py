@@ -4,7 +4,6 @@ from .smart_contracts import SmartContracts
 from .models import AddressAssociationSignature, RegistrationSignatures, BlockProducerMetadataSignature
 import json
 import logging
-import uuid
 
 
 class PartnerChainsNodeException(Exception):
@@ -17,20 +16,20 @@ class PartnerChainsNodeException(Exception):
 class PartnerChainsNode:
     def __init__(self, config: ApiConfig):
         self.config = config
-        cli_config = config.stack_config.tools["partner_chains_node"]
-        self.cli = cli_config.cli
-        self.run_command = RunnerFactory.get_runner(cli_config.ssh, cli_config.shell)
+        cli_config = config.stack_config.tools.node
+        self.cli = cli_config.path
+        self.run_command = RunnerFactory.get_runner(cli_config.runner)
         self.smart_contracts = SmartContracts(self.cli, self.run_command, config)
 
-    def sign_address_association(self, partner_chain_address, stake_signing_key):
+    def sign_address_association(self, genesis_utxo: str, partner_chain_address, stake_signing_key):
         sign_address_association_cmd = (
             f"{self.cli} sign-address-association "
-            f"--genesis-utxo {self.config.genesis_utxo} "
+            f"--genesis-utxo {genesis_utxo} "
             f"--partnerchain-address {partner_chain_address} "
             f"--signing-key {stake_signing_key}"
         )
 
-        result = self.run_command.run(sign_address_association_cmd)
+        result = self.run_command.exec(sign_address_association_cmd)
         try:
             response = json.loads(result.stdout)
             return AddressAssociationSignature(
@@ -42,21 +41,17 @@ class PartnerChainsNode:
             logging.error(f"Could not parse response of sign-address-association cmd: {result}")
             raise e
 
-    def sign_block_producer_metadata(self, metadata, cross_chain_signing_key):
+    def sign_block_producer_metadata(self, genesis_utxo, metadata_file, cross_chain_signing_key):
         cross_chain_signing_key = cross_chain_signing_key.to_string().hex()
-        metadata_str = json.dumps(metadata)
-        metadata_file_name = f"/tmp/metadata_{uuid.uuid4().hex}.json"
-        save_file_cmd = f"echo '{metadata_str}' > {metadata_file_name}"
-        self.run_command.run(save_file_cmd)
 
         sign_block_producer_metadata_cmd = (
             f"{self.cli} sign-block-producer-metadata "
-            f"--genesis-utxo {self.config.genesis_utxo} "
-            f"--metadata-file {metadata_file_name} "
+            f"--genesis-utxo {genesis_utxo} "
+            f"--metadata-file {metadata_file} "
             f"--cross-chain-signing-key {cross_chain_signing_key}"
         )
 
-        result = self.run_command.run(sign_block_producer_metadata_cmd)
+        result = self.run_command.exec(sign_block_producer_metadata_cmd)
         try:
             response = json.loads(result.stdout)
 
@@ -73,6 +68,7 @@ class PartnerChainsNode:
 
     def get_signatures(
         self,
+        genesis_utxo: str,
         sidechain_registration_utxo,
         spo_signing_key,
         sidechain_signing_key,
@@ -81,13 +77,13 @@ class PartnerChainsNode:
     ):
         get_signatures_cmd = (
             f"{self.cli} registration-signatures "
-            f"--genesis-utxo {self.config.genesis_utxo} "
+            f"--genesis-utxo {genesis_utxo} "
             f"--mainchain-signing-key {spo_signing_key} "
             f"--sidechain-signing-key {sidechain_signing_key} "
             f"--registration-utxo {sidechain_registration_utxo}"
         )
 
-        result = self.run_command.run(get_signatures_cmd)
+        result = self.run_command.exec(get_signatures_cmd)
 
         try:
             registration_signatures = json.loads(result.stdout)
