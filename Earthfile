@@ -177,27 +177,3 @@ chainspecs:
 
   COPY dev/envs/preview-exports.sh dev/envs/preview-exports.sh
   COPY dev/update-chain-spec.sh dev/update-chain-spec.sh
-
-  # Devnet
-  COPY dev/envs/devnet/.envrc dev/envs/devnet/.envrc
-  COPY dev/envs/devnet/addresses.json dev/envs/devnet/addresses.json
-  RUN . ./dev/envs/devnet/.envrc \
-      && partner-chains-node build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json \
-      && ./dev/update-chain-spec.sh devnet_chain_spec.json
-  SAVE ARTIFACT devnet_chain_spec.json AS LOCAL devnet_chain_spec.json
-
-  # ci-preview
-  COPY dev/envs/ci-preview/.envrc dev/envs/ci-preview/.envrc
-  COPY dev/envs/ci-preview/addresses.json dev/envs/ci-preview/addresses.json
-  RUN . ./dev/envs/ci-preview/.envrc \
-      && partner-chains-node build-spec --chain staging --disable-default-bootnode > ci_preview_chain_spec.json \
-      && ./dev/update-chain-spec.sh ci_preview_chain_spec.json
-  SAVE ARTIFACT ci_preview_chain_spec.json AS LOCAL ci_preview_chain_spec.json
-
-  # staging-preview
-  COPY dev/envs/staging-preview/.envrc dev/envs/staging-preview/.envrc
-  COPY dev/envs/staging-preview/addresses.json dev/envs/staging-preview/addresses.json
-  RUN . ./dev/envs/staging-preview/.envrc \
-      && partner-chains-node build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json \
-      && ./dev/update-chain-spec.sh staging_preview_chain_spec.json
-  SAVE ARTIFACT staging_preview_chain_spec.json AS LOCAL staging_preview_chain_spec.json
