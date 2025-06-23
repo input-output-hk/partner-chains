@@ -1,5 +1,7 @@
 [package]
 name = "schnorr_jubjub"
+license = "Apache-2.0"
+description = "Implementation of schnorr over JubJub using poseidon."
 authors.workspace = true
 edition.workspace = true
 homepage.workspace = true
