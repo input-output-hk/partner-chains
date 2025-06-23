@@ -87,7 +87,7 @@ pub async fn upsert_d_param<
 		},
 	};
 	if let Some(TransactionSubmitted(tx_hash)) = tx_hash_opt {
-		await_tx.await_tx_output(client, UtxoId::new(tx_hash.0, 0)).await?;
+		await_tx.await_tx_output(client, tx_hash).await?;
 	}
 	Ok(tx_hash_opt)
 }

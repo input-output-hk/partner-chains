@@ -76,6 +76,6 @@ pub async fn run_init_governance<
 	let result = client.submit_transaction(&signed_transaction.to_bytes()).await?;
 	let tx_id = result.transaction.id;
 	log::info!("✅ Transaction submitted. ID: {}", hex::encode(tx_id));
-	await_tx.await_tx_output(client, UtxoId::new(tx_id, 0)).await?;
+	await_tx.await_tx_output(client, McTxHash(tx_id)).await?;
 	Ok(InitGovernanceResult { tx_hash: McTxHash(tx_id), genesis_utxo: genesis_utxo.utxo_id() })
 }

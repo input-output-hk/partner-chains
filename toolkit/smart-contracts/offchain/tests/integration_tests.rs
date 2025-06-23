@@ -443,7 +443,7 @@ async fn initial_transaction<T: Transactions + QueryUtxoByUtxoId>(
 		.map_err(|e| e.to_string())
 		.map(|response| McTxHash(response.transaction.id))?;
 	FixedDelayRetries::new(Duration::from_millis(500), 100)
-		.await_tx_output(client, UtxoId::new(tx_hash.0, 0))
+		.await_tx_output(client, tx_hash)
 		.await
 		.map_err(|e| e.to_string())?;
 	Ok(tx_hash)

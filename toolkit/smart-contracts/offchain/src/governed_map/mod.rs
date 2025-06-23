@@ -74,7 +74,7 @@ pub async fn run_insert<
 		},
 	};
 	if let Some(TransactionSubmitted(tx_hash)) = tx_hash_opt {
-		await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_hash.0, 0)).await?;
+		await_tx.await_tx_output(ogmios_client, tx_hash).await?;
 	}
 	Ok(tx_hash_opt)
 }
@@ -205,7 +205,7 @@ pub async fn run_update<
 	};
 
 	if let Some(TransactionSubmitted(tx_hash)) = tx_hash_opt {
-		await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_hash.0, 0)).await?;
+		await_tx.await_tx_output(ogmios_client, tx_hash).await?;
 	}
 	Ok(tx_hash_opt)
 }
@@ -338,7 +338,7 @@ pub async fn run_remove<
 		),
 	};
 	if let Some(TransactionSubmitted(tx_hash)) = tx_hash_opt {
-		await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_hash.0, 0)).await?;
+		await_tx.await_tx_output(ogmios_client, tx_hash).await?;
 	}
 	Ok(tx_hash_opt)
 }
@@ -501,7 +501,7 @@ pub async fn run_insert_with_force<
 	);
 
 	if let Some(TransactionSubmitted(tx_hash)) = tx_hash_opt {
-		await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_hash.0, 0)).await?;
+		await_tx.await_tx_output(ogmios_client, tx_hash).await?;
 	}
 	Ok(tx_hash_opt)
 }

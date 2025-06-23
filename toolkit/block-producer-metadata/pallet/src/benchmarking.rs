@@ -72,9 +72,10 @@ pub trait BenchmarkHelper<BlockProducerMetadata> {
 	fn cross_chain_signature() -> CrossChainSignature;
 }
 
-#[benchmarks]
+#[benchmarks(where <T as Config>::Currency: frame_support::traits::tokens::fungible::Mutate<<T as frame_system::Config>::AccountId>)]
 mod benchmarks {
 	use super::*;
+	use frame_support::traits::{Get, tokens::fungible::Mutate};
 
 	#[benchmark]
 	fn upsert_metadata() {
@@ -82,8 +83,12 @@ mod benchmarks {
 		let cross_chain_pub_key = T::BenchmarkHelper::cross_chain_pub_key();
 		let cross_chain_signature = T::BenchmarkHelper::cross_chain_signature();
 
+		// Create an account and fund it with sufficient balance
+		let caller: T::AccountId = account("caller", 0, 0);
+		let _ = T::Currency::mint_into(&caller, T::HoldAmount::get() * 2u32.into());
+
 		#[extrinsic_call]
-		_(RawOrigin::None, metadata, cross_chain_signature, cross_chain_pub_key);
+		_(RawOrigin::Signed(caller), metadata, cross_chain_signature, cross_chain_pub_key);
 	}
 
 	impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);
