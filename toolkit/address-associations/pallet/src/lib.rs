@@ -112,7 +112,7 @@ pub mod pallet {
 		/// The currency used for burning tokens when an address association is made
 		type Currency: Mutate<Self::AccountId>;
 
-		/// The amount of tokens to hold when upserting metadata
+		/// The amount of tokens to burn when upserting metadata
 		#[pallet::constant]
 		type BurnAmount: Get<<Self::Currency as Inspect<Self::AccountId>>::Balance>;
 
