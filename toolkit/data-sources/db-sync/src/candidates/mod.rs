@@ -139,13 +139,8 @@ impl CandidatesDataSourceImpl {
 	pub fn cached(
 		self,
 		candidates_for_epoch_cache_size: usize,
-		cardano_config: &sidechain_domain::cardano_config::CardanoConfig,
 	) -> std::result::Result<cached::CandidateDataSourceCached, Box<dyn Error + Send + Sync>> {
-		cached::CandidateDataSourceCached::new_from_env(
-			self,
-			candidates_for_epoch_cache_size,
-			cardano_config,
-		)
+		cached::CandidateDataSourceCached::new_from_env(self, candidates_for_epoch_cache_size)
 	}
 
 	/// Registrations state up to this block are considered as "active", after it - as "pending".

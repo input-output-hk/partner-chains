@@ -4,7 +4,6 @@ use crate::metrics::mock::test_metrics;
 use hex_literal::hex;
 use pretty_assertions::assert_eq;
 use sidechain_domain::byte_string::ByteString;
-use sidechain_domain::cardano_config::CardanoConfig;
 use sidechain_domain::mainchain_epoch::{Duration, MainchainEpochConfig, Timestamp};
 use sidechain_domain::*;
 use sp_governed_map::{GovernedMapDataSource, MainChainScriptsV1};
@@ -146,8 +145,12 @@ async fn make_cached_source(pool: PgPool) -> GovernedMapDataSourceCachedImpl {
 		cache: Arc::new(Mutex::new(Cache::default())),
 		blocks: Arc::new(BlockDataSourceImpl::from_config(
 			pool,
-			DbSyncBlockDataSourceConfig { block_stability_margin: 0 },
-			&cardano_config(),
+			DbSyncBlockDataSourceConfig {
+				cardano_security_parameter: 432,
+				cardano_active_slots_coeff: 0.05,
+				block_stability_margin: 0,
+			},
+			&mainchain_epoch_config(),
 		)),
 	}
 }
@@ -159,13 +162,5 @@ fn mainchain_epoch_config() -> MainchainEpochConfig {
 		first_epoch_number: 189,
 		first_slot_number: 189000,
 		slot_duration_millis: Duration::from_millis(1000),
-	}
-}
-
-fn cardano_config() -> CardanoConfig {
-	CardanoConfig {
-		epoch_config: mainchain_epoch_config(),
-		cardano_security_parameter: 432,
-		cardano_active_slots_coeff: 0.05,
 	}
 }

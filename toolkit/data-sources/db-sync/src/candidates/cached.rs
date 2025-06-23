@@ -81,7 +81,7 @@ impl AuthoritySelectionDataSource for CandidateDataSourceCached {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct CandidateDataSourceCacheConfig {
-	// Note: cardano_security_parameter is now part of CardanoConfig
+	pub cardano_security_parameter: u32,
 }
 
 impl CandidateDataSourceCacheConfig {
@@ -117,14 +117,9 @@ impl CandidateDataSourceCached {
 	pub fn new_from_env(
 		inner: CandidatesDataSourceImpl,
 		candidates_for_epoch_cache_size: usize,
-		cardano_config: &sidechain_domain::cardano_config::CardanoConfig,
 	) -> std::result::Result<Self, Box<dyn Error + Send + Sync + 'static>> {
-		let _config = CandidateDataSourceCacheConfig::from_env()?;
-		Ok(Self::new(
-			inner,
-			candidates_for_epoch_cache_size,
-			cardano_config.cardano_security_parameter,
-		))
+		let config = CandidateDataSourceCacheConfig::from_env()?;
+		Ok(Self::new(inner, candidates_for_epoch_cache_size, config.cardano_security_parameter))
 	}
 
 	async fn get_candidates_with_caching(

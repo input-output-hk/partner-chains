@@ -109,9 +109,15 @@ impl BlockDataSourceImpl {
 }
 
 /// Configuration for [BlockDataSourceImpl]
-/// Note: Cardano-specific parameters (security parameter and active slots coefficient) are now part of CardanoConfig.
 #[derive(Debug, Clone, Deserialize)]
 pub struct DbSyncBlockDataSourceConfig {
+	/// Cardano security parameter, ie. the number of confirmations needed to stabilize a block
+	pub cardano_security_parameter: u32,
+	/// Expected fraction of Cardano slots that will have a block produced
+	///
+	/// This value can be found in `shelley-genesis.json` file used by the Cardano node,
+	/// example: `"activeSlotsCoeff": 0.05`.
+	pub cardano_active_slots_coeff: f64,
 	/// Additional offset applied when selecting the latest stable Cardano block
 	///
 	/// This parameter should be 0 by default and should only be increased to 1 in networks
@@ -135,20 +141,24 @@ impl BlockDataSourceImpl {
 	/// Creates a new instance of [BlockDataSourceImpl], reading configuration from the environment.
 	pub async fn new_from_env(
 		pool: PgPool,
-		cardano_config: &sidechain_domain::cardano_config::CardanoConfig,
 	) -> std::result::Result<Self, Box<dyn Error + Send + Sync + 'static>> {
-		Ok(Self::from_config(pool, DbSyncBlockDataSourceConfig::from_env()?, cardano_config))
+		Ok(Self::from_config(
+			pool,
+			DbSyncBlockDataSourceConfig::from_env()?,
+			&crate::data_sources::read_mc_epoch_config()?,
+		))
 	}
 
 	/// Creates a new instance of [BlockDataSourceImpl], using passed configuration.
 	pub fn from_config(
 		pool: PgPool,
-		DbSyncBlockDataSourceConfig { block_stability_margin }: DbSyncBlockDataSourceConfig,
-		cardano_config: &sidechain_domain::cardano_config::CardanoConfig,
+		DbSyncBlockDataSourceConfig {
+			cardano_security_parameter,
+			cardano_active_slots_coeff,
+			block_stability_margin,
+		}: DbSyncBlockDataSourceConfig,
+		mc_epoch_config: &MainchainEpochConfig,
 	) -> BlockDataSourceImpl {
-		let cardano_security_parameter = cardano_config.cardano_security_parameter;
-		let cardano_active_slots_coeff = cardano_config.cardano_active_slots_coeff as f64;
-		let mc_epoch_config = &cardano_config.epoch_config;
 		let k: f64 = cardano_security_parameter.into();
 		let slot_duration: f64 = mc_epoch_config.slot_duration_millis.millis() as f64;
 		let min_slot_boundary = (slot_duration * k / cardano_active_slots_coeff).round() as i64;
