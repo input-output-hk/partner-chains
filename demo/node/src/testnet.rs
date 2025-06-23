@@ -9,7 +9,7 @@ use sc_service::ChainType;
 use sidechain_domain::*;
 use sidechain_slots::SlotsPerEpoch;
 use sp_core::bytes::from_hex;
-use sp_core::{ecdsa, ed25519, sr25519};
+use sp_core::{ed25519, sr25519};
 use std::str::FromStr;
 
 pub fn authority_keys(

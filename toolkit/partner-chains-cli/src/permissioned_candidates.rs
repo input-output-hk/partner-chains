@@ -1,3 +1,4 @@
+
 use ogmios_client::query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId};
 use ogmios_client::query_network::QueryNetwork;
 use ogmios_client::transactions::Transactions;
@@ -10,7 +11,7 @@ use partner_chains_cardano_offchain::permissioned_candidates::{
 };
 use serde::{Deserialize, Serialize};
 use sidechain_domain::{PermissionedCandidateData, UtxoId};
-use sp_core::crypto::AccountId32;
+use sp_core::crypto::{AccountId32, PublicBytes};
 use sp_core::{ecdsa, ed25519, sr25519};
 use sp_runtime::traits::IdentifyAccount;
 use std::fmt::{Display, Formatter};
@@ -54,17 +55,17 @@ impl From<&sidechain_domain::PermissionedCandidateData> for PermissionedCandidat
 pub(crate) struct ParsedPermissionedCandidatesKeys {
 	pub sidechain: ecdsa::Public,
 	pub aura: sr25519::Public,
-	pub beefy: ecdsa::Public,
+	pub beefy: schnorr_jubjub::Public,
 	pub grandpa: ed25519::Public,
 }
 
 impl ParsedPermissionedCandidatesKeys {
-	pub fn session_keys<SessionKeys: From<(sr25519::Public, ecdsa::Public, ed25519::Public)>>(
+	pub fn session_keys<SessionKeys: From<(sr25519::Public, schnorr_jubjub::Public, ed25519::Public)>>(
 		&self,
 	) -> SessionKeys {
 		SessionKeys::from((
 			sr25519::Public::from(self.aura),
-			ecdsa::Public::from(self.beefy),
+			schnorr_jubjub::Public::from(self.beefy.clone()),
 			ed25519::Public::from(self.grandpa),
 		))
 	}
@@ -85,9 +86,9 @@ impl TryFrom<&PermissionedCandidateKeys> for ParsedPermissionedCandidatesKeys {
 			"{} is invalid sr25519 public key",
 			value.aura_pub_key
 		)))?;
-		let beefy = parse_ecdsa(&value.beefy_pub_key).ok_or(anyhow::Error::msg(format!(
-			"{} is invalid ecdsa public key",
-			value.aura_pub_key
+		let beefy = parse_jubjub(&value.beefy_pub_key).ok_or(anyhow::Error::msg(format!(
+			"{} is invalid beefy public key",
+			value.beefy_pub_key
 		)))?;
 		let grandpa = parse_ed25519(&value.grandpa_pub_key).ok_or(anyhow::Error::msg(format!(
 			"{} is invalid Ed25519 public key",
@@ -116,6 +117,11 @@ fn parse_ecdsa(value: &str) -> Option<ecdsa::Public> {
 fn parse_sr25519(value: &str) -> Option<sr25519::Public> {
 	let bytes = sp_core::bytes::from_hex(value).ok()?;
 	Some(sr25519::Public::from(<[u8; 32]>::try_from(bytes).ok()?))
+}
+
+fn parse_jubjub(value: &str) -> Option<schnorr_jubjub::Public> {
+	let bytes = sp_core::bytes::from_hex(value).ok()?;
+	Some(schnorr_jubjub::Public(PublicBytes::from(<[u8; 32]>::try_from(bytes).ok()?)))
 }
 
 fn parse_ed25519(value: &str) -> Option<ed25519::Public> {

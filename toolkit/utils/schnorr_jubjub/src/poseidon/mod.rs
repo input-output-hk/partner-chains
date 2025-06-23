@@ -5,7 +5,7 @@ pub mod poseidon_cpu;
 
 pub mod round_skips;
 
-use constants::{PoseidonField, WIDTH};
+use constants::{PoseidonField};
 pub use poseidon_cpu::*;
 
 // Implementation of Poseidon over JubJub (using midnight-circuits implementation).
@@ -87,7 +87,7 @@ impl Hasher for PoseidonJubjub {
         let out_fr = Self::hash(&msg);
 
         let mut out = [0u8; 32];
-        out_fr.serialize_compressed(out.as_mut_slice());
+        out_fr.serialize_compressed(out.as_mut_slice()).expect("Failed to serialize.");
         out.into()
     }
 }

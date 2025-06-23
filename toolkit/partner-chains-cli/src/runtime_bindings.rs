@@ -15,7 +15,7 @@ pub trait PartnerChainRuntime {
 	type AuthorityKeys: Send
 		+ Sync
 		+ 'static
-		+ From<(sr25519::Public, ecdsa::Public, ed25519::Public)>
+		+ From<(sr25519::Public, schnorr_jubjub::Public, ed25519::Public)>
 		+ Serialize;
 	/// Partner Chain committee member type
 	type CommitteeMember: Serialize;

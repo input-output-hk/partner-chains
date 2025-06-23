@@ -6,12 +6,12 @@
 
 extern crate alloc;
 
-// mod beefy_structures;
+mod beefy_structures;
 // mod keystore;
-// mod poseidon;
-// mod primitive;
-// mod runtime;
-//
-// pub use beefy_structures::{InnerPublicBytes, Public, Signature};
-//
-// pub use poseidon::{PoseidonJubjub,};
+mod poseidon;
+mod primitive;
+mod runtime;
+
+pub use beefy_structures::{InnerPublicBytes, Public, Signature};
+
+pub use poseidon::{PoseidonJubjub,};

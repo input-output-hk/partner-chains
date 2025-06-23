@@ -8,14 +8,12 @@
 
 use alloc::vec::Vec;
 use core::fmt::{Debug, Display, Formatter};
-// use std::{convert::TryInto, fmt::Display, hash::Hash};
 
 use crate::poseidon::PoseidonJubjub;
 use ark_ed_on_bls12_381::{Fr, EdwardsAffine};
 use ark_ff::fields::Field;
 use ark_ec::AffineRepr;
 use ark_serialize::CanonicalSerialize;
-use rand_core::OsRng;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use sha2::Digest;
 use sp_consensus_beefy::{AuthorityIdBound, BeefyAuthorityId};
@@ -32,7 +30,6 @@ use sp_runtime::{
 	app_crypto::{AppCrypto, AppPair, AppPublic, AppSignature},
 	traits::Convert,
 };
-use sp_runtime::biguint::BigUint;
 
 use crate::primitive::{SchnorrSignature, VerifyingKey};
 
@@ -278,10 +275,12 @@ impl TraitPair for crate::primitive::KeyPair {
 		Ok(Self { 0: secret, 1: (EdwardsAffine::generator() * &secret).into() })
 	}
 
+	#[cfg(feature = "full_crypto")]
 	fn sign(&self, message: &[u8]) -> Self::Signature {
 		let msg = PoseidonJubjub::msg_from_bytes(message, false)
 			.expect("With flag set to false, this should not fail. Report a bug.");
-		let shcnorr_sig = self.sign(&msg, &mut OsRng);
+
+		let shcnorr_sig = self.sign(&msg);
 
 		let bytes = shcnorr_sig.to_bytes();
 
@@ -311,8 +310,8 @@ impl TraitPair for crate::primitive::KeyPair {
 
 	fn to_raw_vec(&self) -> Vec<u8> {
 		let mut res = Vec::with_capacity(64);
-		self.0.serialize_compressed(&mut res);
-		self.1.serialize_compressed(&mut res);
+		self.0.serialize_compressed(&mut res).expect("Failed to serialize.");
+		self.1.serialize_compressed(&mut res).expect("Failed to serialize.");
 
 		res
 	}

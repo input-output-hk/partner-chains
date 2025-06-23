@@ -10,13 +10,14 @@
 use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt::Debug;
+use rand_chacha::rand_core::{RngCore};
+use sha2::Digest;
 
 use crate::poseidon::{PoseidonError, PoseidonJubjub};
-use ark_ed_on_bls12_381::{Fr, EdwardsAffine as Point, EdwardsProjective, Fq as Scalar};
+use ark_ed_on_bls12_381::{Fr, EdwardsAffine as Point, Fq as Scalar};
 use ark_serialize::{CanonicalSerialize, CanonicalDeserialize};
 use ark_ff::{Field, UniformRand};
 use ark_ec::AffineRepr;
-use rand_core::{CryptoRng, RngCore};
 
 /// A Schnorr private key is a scalar from the Jubjub scalar field.
 #[derive(Clone, Debug)]
@@ -84,9 +85,18 @@ impl KeyPair {
 	///
 	/// # Returns
 	/// A Schnorr `Signature`.
-	pub fn sign(&self, msg: &[Scalar], rng: &mut (impl RngCore + CryptoRng)) -> SchnorrSignature {
+	pub fn sign(&self, msg: &[Scalar]) -> SchnorrSignature {
+		let mut bytes_nonce = [0u8; 32];
+		self.0.serialize_compressed(bytes_nonce.as_mut_slice()).expect("Failed to serialize.");
+
+		for scalar in msg {
+			scalar.serialize_compressed(bytes_nonce.as_mut_slice()).expect("Failed to serialize.");
+		}
+
 		// Generate a random nonce
-		let a = Fr::rand(rng);
+		// TODO: We compute it deterministically (as done in ed25519) to avoid needing a RNG
+		let h = sha2::Sha512::digest(&bytes_nonce);
+		let a = Fr::from_random_bytes(&h).expect("Failed to generate number from bytes. This is a bug.");
 		let A = (Point::generator() * a).into();
 
 		// Compute challenge e = H(R || PK || msg)
@@ -126,8 +136,8 @@ impl SchnorrSignature {
 	/// Converts a signature to a byte array.
 	pub fn to_bytes(&self) -> [u8; 64] {
 		let mut out = [0u8; 64];
-		self.A.serialize_compressed(out.as_mut_slice());
-		self.r.serialize_compressed(out.as_mut_slice());
+		self.A.serialize_compressed(out.as_mut_slice()).expect("Failed to serialize.");
+		self.r.serialize_compressed(out.as_mut_slice()).expect("Failed to serialize.");
 
 		out
 	}
@@ -141,9 +151,8 @@ impl SchnorrSignature {
 			return Err(SchnorrError::InvalidSignatureFormat);
 		}
 
-		let mut buffer = bytes.to_vec();
-		let A = Point::deserialize_compressed(&buffer[..]).map_err(|_| SchnorrError::InvalidSignatureFormat)?;
-		let r = Fr::deserialize_compressed(&buffer[..]).map_err(|_| SchnorrError::InvalidSignatureFormat)?;
+		let A = Point::deserialize_compressed(&bytes[..32]).map_err(|_| SchnorrError::InvalidSignatureFormat)?;
+		let r = Fr::deserialize_compressed(&bytes[32..]).map_err(|_| SchnorrError::InvalidSignatureFormat)?;
 
 		Ok(Self { A, r })
 	}
@@ -153,7 +162,7 @@ impl VerifyingKey {
 	/// Converts a verifying key to a byte array.
 	pub fn to_bytes(&self) -> [u8; 32] {
 		let mut out = [0u8; 32];
-		self.0.serialize_compressed(out.as_mut_slice());
+		self.0.serialize_compressed(out.as_mut_slice()).expect("Failed to serialize");
 		out
 	}
 
@@ -190,7 +199,7 @@ fn hash_to_jj_scalar(input: &[Scalar]) -> Fr {
 
 	// Now we need to convert a BLS scalar to a JubJub scalar
 	let mut bytes_wide = [0u8; 64];
-	e.serialize_compressed(bytes_wide.as_mut_slice());
+	e.serialize_compressed(bytes_wide.as_mut_slice()).expect("Failed to serialize");
 
 	Fr::from_random_bytes(&bytes_wide).expect("Failed to compute Fr from bytes. This is a bug.")
 }

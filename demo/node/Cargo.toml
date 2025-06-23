@@ -119,7 +119,7 @@ pallet-block-producer-metadata-rpc = { workspace = true }
 sp-governed-map = { workspace = true, features = ["std"] }
 
 # Dependency for Schnorr crypto
-schnorr_jubjub = { workspace = true }
+schnorr_jubjub = { workspace = true, features = ["std"] }
 
 [build-dependencies]
 substrate-build-script-utils = { workspace = true }

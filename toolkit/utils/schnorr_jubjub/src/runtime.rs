@@ -7,8 +7,6 @@
 // use std::convert::TryInto;
 
 use alloc::vec::Vec;
-use core::panic;
-use rand_core::{OsRng, RngCore};
 use sp_core::{
 	ByteArray, Pair as TraitPair,
 	crypto::{CryptoTypeId, KeyTypeId},
@@ -77,13 +75,7 @@ impl RuntimePublic for Public {
 	}
 
 	fn generate_pair(key_type: KeyTypeId, seed: Option<Vec<u8>>) -> Self {
-		let seed: [u8; 64] = seed
-			.unwrap_or({
-				let mut res = [0u8; 64];
-				OsRng.fill_bytes(&mut res);
-
-				res.to_vec()
-			})
+		let seed: [u8; 64] = seed.expect("Only support key generation from given seed.")
 			.try_into()
 			.expect("Invalid seed size.");
 

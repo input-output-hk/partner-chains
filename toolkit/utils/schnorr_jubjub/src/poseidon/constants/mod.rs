@@ -1,5 +1,3 @@
-use core::ops::{AddAssign, Mul};
-
 /// Length of Poseidon's state.
 pub(crate) const WIDTH: usize = 3;
 

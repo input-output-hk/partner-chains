@@ -12,7 +12,6 @@ pallet-beefy-mmr = { workspace = true }
 parity-scale-codec = { workspace = true }
 rand_core = { workspace = true }
 scale-info = {workspace = true}
-sc-keystore = { workspace = true }
 sp-core = { workspace = true, features = ["serde"] }
 sp-application-crypto = { workspace = true }
 sp-consensus-beefy = { workspace = true }
@@ -37,7 +36,11 @@ ark-serialize = { workspace = true }
 
 
 [features]
-default = ["std"]
+default = ["std", "full_crypto"]
+full_crypto = [
+    "sp-application-crypto/full_crypto",
+    "sp-core/full_crypto"
+]
 std = [
     "ark-ed-on-bls12-381/std",
     "ark-ff/std",

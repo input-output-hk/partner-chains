@@ -99,7 +99,7 @@ sp-block-producer-fees = { workspace = true }
 pallet-block-producer-fees = { workspace = true }
 
 sp-io = { workspace = true }
-#schnorr_jubjub = { workspace = true }
+schnorr_jubjub = { workspace = true, features = ["full_crypto"] }
 
 [dev-dependencies]
 sp-keyring = { workspace = true }
@@ -182,7 +182,7 @@ std = [
 	"sp-block-participation/std",
 	"pallet-governed-map/std",
 	"sp-governed-map/std",
-#	"schnorr_jubjub/std",
+	"schnorr_jubjub/std",
 ]
 
 runtime-benchmarks = [

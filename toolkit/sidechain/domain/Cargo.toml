@@ -57,5 +57,6 @@ std = [
 	"secp256k1/global-context",
 	"ed25519-zebra",
 	"ed25519-zebra/std",
+	"schnorr_jubjub/std",
 ]
 serde = ["dep:serde", "scale-info/serde", "sp-core/serde"]

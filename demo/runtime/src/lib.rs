@@ -38,6 +38,7 @@ use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use schnorr::{Public as BeefyId, Public, Signature as BeefySignature};
 use schnorr_jubjub as schnorr;
+use schnorr_jubjub::PoseidonJubjub;
 use serde::{Deserialize, Serialize};
 use sidechain_domain::byte_string::{BoundedString, ByteString, SizedByteString};
 use sidechain_domain::{
@@ -66,12 +67,16 @@ use sp_sidechain::SidechainStatus;
 use sp_std::prelude::*;
 use sp_version::RuntimeVersion;
 use sp_weights::Weight;
-use schnorr_jubjub::PoseidonJubjub;
-use crate::mmr::Hashing;
 
 // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
+
+#[cfg(all(not(feature = "std"), target_arch = "wasm32"))]
+#[panic_handler]
+fn panic(_info: &core::panic::PanicInfo) -> ! {
+	loop {}
+}
 
 pub mod genesis_config_presets;
 
@@ -662,7 +667,6 @@ parameter_types! {
 parameter_types! {
 	pub const BeefySetIdSessionEntries: u32 = BondingDuration::get() * SessionsPerEra::get();
 }
-
 
 impl pallet_beefy::Config for Runtime {
 	type BeefyId = BeefyId;
