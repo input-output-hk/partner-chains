@@ -114,6 +114,9 @@ impl crate::benchmarking::BenchmarkHelper<BlockProducerUrlMetadata>
 }
 
 pub(crate) const FUNDED_ACCOUNT: AccountId32 = AccountId32::new([1; 32]);
+pub(crate) const FUNDED_ACCOUNT_2: AccountId32 = AccountId32::new([2; 32]);
+
+pub(crate) const INITIAL_BALANCE: u128 = 100_000;
 
 impl crate::pallet::Config for Test {
 	type WeightInfo = ();
@@ -131,7 +134,7 @@ impl crate::pallet::Config for Test {
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
 	pallet_balances::GenesisConfig::<Test> {
-		balances: vec![(FUNDED_ACCOUNT, 100_000)],
+		balances: vec![(FUNDED_ACCOUNT, INITIAL_BALANCE), (FUNDED_ACCOUNT_2, INITIAL_BALANCE)],
 		dev_accounts: None,
 	}
 	.assimilate_storage(&mut t)

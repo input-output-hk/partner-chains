@@ -123,6 +123,7 @@ pub mod pallet {
 	use super::*;
 	use crate::weights::WeightInfo;
 	use frame_support::{
+		dispatch::DispatchResult,
 		pallet_prelude::*,
 		traits::{Get, tokens::fungible::MutateHold},
 	};
@@ -170,6 +171,15 @@ pub mod pallet {
 		QueryKind = OptionQuery,
 	>;
 
+	/// Storage mapping from block producers to their metadata depositor accounts
+	#[pallet::storage]
+	type BlockProducerMetadataOwners<T: Config> = StorageMap<
+		Hasher = Blake2_128Concat,
+		Key = CrossChainKeyHash,
+		Value = T::AccountId,
+		QueryKind = OptionQuery,
+	>;
+
 	/// Hold reasons for this pallet
 	#[pallet::composite_enum]
 	pub enum HoldReason {
@@ -190,6 +200,8 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Inserts or updates metadata for the block producer identified by `cross_chain_pub_key`.
 		/// Holds a constant amount from the caller's account as a deposit for including metadata on the chain.
+		/// If metadata is updated using a different account, the deposit will be returned to the original
+		/// account and held again from the new one.
 		///
 		/// Arguments:
 		/// - `metadata`: new metadata value
@@ -221,21 +233,24 @@ pub mod pallet {
 
 			ensure!(is_valid_signature, Error::<T>::InvalidMainchainSignature);
 
-			if BlockProducerMetadataStorage::<T>::get(cross_chain_key_hash).is_none() {
-				T::Currency::hold(
-					&HoldReason::MetadataDeposit.into(),
-					&origin_account,
-					T::HoldAmount::get(),
-				)
-				.map_err(|_| Error::<T>::InsufficientBalance)?;
+			if BlockProducerMetadataOwners::<T>::get(cross_chain_key_hash).is_none() {
+				Self::hold_deposit(&origin_account)?;
+				BlockProducerMetadataOwners::<T>::insert(cross_chain_key_hash, origin_account);
 			}
 
 			BlockProducerMetadataStorage::<T>::insert(cross_chain_key_hash, metadata);
+
 			Ok(())
 		}
 	}
 
 	impl<T: Config> Pallet<T> {
+		fn hold_deposit(account: &T::AccountId) -> DispatchResult {
+			T::Currency::hold(&HoldReason::MetadataDeposit.into(), account, T::HoldAmount::get())
+				.map_err(|_| Error::<T>::InsufficientBalance)?;
+			Ok(())
+		}
+
 		/// Returns the current pallet version.
 		pub fn get_version() -> u32 {
 			PALLET_VERSION

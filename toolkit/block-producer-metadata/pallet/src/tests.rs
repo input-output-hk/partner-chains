@@ -50,11 +50,6 @@ fn updates_metadata_without_holding_additional_fee() {
 			Pallet::<Test>::get_metadata_for(&cross_chain_pub_key()),
 			Some(url_metadata_1())
 		);
-		let balance_after_insert = Balances::free_balance(&FUNDED_ACCOUNT);
-		let held_after_insert = Balances::balance_on_hold(
-			&RuntimeHoldReason::BlockProducerMetadata(crate::HoldReason::MetadataDeposit),
-			&FUNDED_ACCOUNT,
-		);
 
 		assert_ok!(super::Pallet::<Test>::upsert_metadata(
 			OriginFor::<Test>::signed(FUNDED_ACCOUNT),
@@ -68,14 +63,23 @@ fn updates_metadata_without_holding_additional_fee() {
 			Some(url_metadata_2())
 		);
 
-		let balance_after_update = Balances::free_balance(&FUNDED_ACCOUNT);
-		let held_after_update = Balances::balance_on_hold(
+		let account_1_balance = Balances::free_balance(&FUNDED_ACCOUNT);
+		let account_1_held = Balances::balance_on_hold(
 			&RuntimeHoldReason::BlockProducerMetadata(crate::HoldReason::MetadataDeposit),
 			&FUNDED_ACCOUNT,
 		);
 
-		assert_eq!(balance_after_insert, balance_after_update);
-		assert_eq!(held_after_insert, held_after_update);
+		let account_2_balance = Balances::free_balance(&FUNDED_ACCOUNT_2);
+		let account_2_held = Balances::balance_on_hold(
+			&RuntimeHoldReason::BlockProducerMetadata(crate::HoldReason::MetadataDeposit),
+			&FUNDED_ACCOUNT_2,
+		);
+
+		assert_eq!(account_1_balance, INITIAL_BALANCE - MetadataHoldAmount::get());
+		assert_eq!(account_1_held, MetadataHoldAmount::get());
+
+		assert_eq!(account_2_balance, INITIAL_BALANCE);
+		assert_eq!(account_2_held, 0);
 	})
 }
 
