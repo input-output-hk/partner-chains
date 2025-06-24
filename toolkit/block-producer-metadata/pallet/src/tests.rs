@@ -3,9 +3,10 @@ use frame_support::{assert_noop, assert_ok, traits::tokens::fungible::InspectHol
 use frame_system::pallet_prelude::OriginFor;
 use hex_literal::hex;
 use mock::*;
+use pretty_assertions::assert_eq;
 use sidechain_domain::byte_string::SizedByteString;
 use sidechain_domain::*;
-use sp_runtime::{AccountId32, BoundedVec};
+use sp_runtime::AccountId32;
 
 #[test]
 fn saves_new_metadata_and_holds_fee() {
@@ -118,27 +119,27 @@ fn fails_with_insufficient_balance() {
 
 fn url_metadata_1() -> BlockProducerUrlMetadata {
 	BlockProducerUrlMetadata {
-		url: BoundedVec::try_from("https://cool.stuff/spo.json".as_bytes().to_vec()).unwrap(),
+		url: "https://cool.stuff/spo.json".try_into().unwrap(),
 		hash: SizedByteString::from([0; 32]),
 	}
 }
 
 fn cross_chain_signature_1() -> CrossChainSignature {
 	CrossChainSignature(hex!(
-		"e25b0291cdc8f5f7eb34e0e1586c25ee05dfb589ce9b53968bfbdeee741d2bf4430ebdd2644829ab0b7659a035fdf3d87befa05e8ec06fd22fb4092f02f6e1d6"
+		"810854f5bd1d06dc8583ebd58ff4877dddb1646511edb10afd021f716bf51a8e617353b6c5d5f92a2005e2c3c24b782a6f74132d6b54251854cce186c981862c"
 	).to_vec())
 }
 
 fn url_metadata_2() -> BlockProducerUrlMetadata {
 	BlockProducerUrlMetadata {
-		url: BoundedVec::try_from("https://cooler.stuff/spo2.json".as_bytes().to_vec()).unwrap(),
+		url: "https://cooler.stuff/spo2.json".try_into().unwrap(),
 		hash: SizedByteString::from([17; 32]),
 	}
 }
 
 fn cross_chain_signature_2() -> CrossChainSignature {
 	CrossChainSignature(hex!(
-		"6c251e9558903db7f22b93b4b6c1a3dc1088559180a70a46b12e6687ab6b3fcc7ba92798f78c7fbdf35ac6242e4862787427ff3be1c3cd55b3695cb095d13d7b"
+		"0379f07264830b3e99f8fe92ff63aabec8004103253555725402a3efbd1090da232a6aeae7a083421625b544fcc4ce26964a334987982d2b398074bf16b6d481"
 	).to_vec())
 }
 

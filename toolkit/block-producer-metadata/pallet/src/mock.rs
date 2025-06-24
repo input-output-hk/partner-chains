@@ -5,12 +5,12 @@ use frame_support::{
 };
 use hex_literal::hex;
 use scale_info::TypeInfo;
-use sidechain_domain::byte_string::SizedByteString;
+use sidechain_domain::byte_string::{BoundedString, SizedByteString};
 use sidechain_domain::*;
 use sp_core::H256;
 use sp_runtime::codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use sp_runtime::{
-	AccountId32, BoundedVec, BuildStorage,
+	AccountId32, BuildStorage,
 	traits::{BlakeTwo256, IdentityLookup},
 };
 
@@ -84,7 +84,7 @@ parameter_types! {
 	Clone, Debug, MaxEncodedLen, Encode, Decode, DecodeWithMemTracking, PartialEq, Eq, TypeInfo,
 )]
 pub struct BlockProducerUrlMetadata {
-	pub url: BoundedVec<u8, ConstU32<512>>,
+	pub url: BoundedString<ConstU32<512>>,
 	pub hash: SizedByteString<32>,
 }
 
@@ -97,7 +97,7 @@ impl crate::benchmarking::BenchmarkHelper<BlockProducerUrlMetadata>
 {
 	fn metadata() -> BlockProducerUrlMetadata {
 		BlockProducerUrlMetadata {
-			url: "https://cool.stuff/spo.json".as_bytes().to_vec().try_into().unwrap(),
+			url: "https://cool.stuff/spo.json".try_into().unwrap(),
 			hash: SizedByteString::from([0; 32]),
 		}
 	}
@@ -109,7 +109,7 @@ impl crate::benchmarking::BenchmarkHelper<BlockProducerUrlMetadata>
 	}
 
 	fn cross_chain_signature() -> CrossChainSignature {
-		CrossChainSignature(hex!("e25b0291cdc8f5f7eb34e0e1586c25ee05dfb589ce9b53968bfbdeee741d2bf4430ebdd2644829ab0b7659a035fdf3d87befa05e8ec06fd22fb4092f02f6e1d6").to_vec())
+		CrossChainSignature(hex!("d1e02e4a5484c3b7202ce6b844577048e7578dc62901cf8f51e6d74bbd3adb091688feacedd8343d0b04a0f5862b2e06148934a75e678e42051fde5431eca33d").to_vec())
 	}
 }
 

@@ -224,7 +224,7 @@ pub mod pallet {
 
 			let metadata_message = MetadataSignedMessage {
 				cross_chain_pub_key: cross_chain_pub_key.clone(),
-				metadata: metadata.clone(),
+				metadata: Some(metadata.clone()),
 				genesis_utxo,
 			};
 

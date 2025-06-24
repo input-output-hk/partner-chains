@@ -8,7 +8,7 @@ extern crate alloc;
 #[derive(Debug, Clone, Encode)]
 pub struct MetadataSignedMessage<Metadata> {
 	pub cross_chain_pub_key: CrossChainPublicKey,
-	pub metadata: Metadata,
+	pub metadata: Option<Metadata>,
 	pub genesis_utxo: UtxoId,
 }
 

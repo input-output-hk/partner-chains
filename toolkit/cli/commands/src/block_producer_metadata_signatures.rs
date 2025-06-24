@@ -48,7 +48,7 @@ impl BlockProducerMetadataSignatureCmd {
 		let encoded_metadata = metadata.encode();
 		let message = MetadataSignedMessage {
 			cross_chain_pub_key: self.cross_chain_signing_key.vkey(),
-			metadata,
+			metadata: Some(metadata),
 			genesis_utxo: self.genesis_utxo,
 		};
 		let signature = message.sign_with_key(&self.cross_chain_signing_key.0);
