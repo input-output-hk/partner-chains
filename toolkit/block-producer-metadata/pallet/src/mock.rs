@@ -108,8 +108,12 @@ impl crate::benchmarking::BenchmarkHelper<BlockProducerUrlMetadata>
 		)
 	}
 
-	fn cross_chain_signature() -> CrossChainSignature {
-		CrossChainSignature(hex!("d1e02e4a5484c3b7202ce6b844577048e7578dc62901cf8f51e6d74bbd3adb091688feacedd8343d0b04a0f5862b2e06148934a75e678e42051fde5431eca33d").to_vec())
+	fn upsert_cross_chain_signature() -> CrossChainSignature {
+		CrossChainSignature(hex!("810854f5bd1d06dc8583ebd58ff4877dddb1646511edb10afd021f716bf51a8e617353b6c5d5f92a2005e2c3c24b782a6f74132d6b54251854cce186c981862c").to_vec())
+	}
+
+	fn delete_cross_chain_signature() -> CrossChainSignature {
+		CrossChainSignature(hex!("5c1a701c8adffdf53a371409a24cc6c2d778a4c65c2c105c5fccfc5eeb69e3fa59bd723e7c10893f53fcfdfff8c02954f2230953cb9596119c11d4a9a29564c5").to_vec())
 	}
 }
 

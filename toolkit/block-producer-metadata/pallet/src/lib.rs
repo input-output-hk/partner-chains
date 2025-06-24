@@ -242,12 +242,54 @@ pub mod pallet {
 
 			Ok(())
 		}
+
+		/// Deletes metadata for the block producer identified by `cross_chain_pub_key`.
+		#[pallet::call_index(1)]
+		#[pallet::weight(T::WeightInfo::delete_metadata())]
+		pub fn delete_metadata(
+			origin: OriginFor<T>,
+			cross_chain_pub_key: CrossChainPublicKey,
+			signature: CrossChainSignature,
+		) -> DispatchResult {
+			ensure_signed(origin)?;
+
+			let genesis_utxo = T::genesis_utxo();
+			let metadata_message = MetadataSignedMessage::<T::BlockProducerMetadata> {
+				cross_chain_pub_key: cross_chain_pub_key.clone(),
+				metadata: None,
+				genesis_utxo,
+			};
+			let cross_chain_key_hash = cross_chain_pub_key.hash();
+			let is_valid_signature =
+				signature.verify(&cross_chain_pub_key, &metadata_message.encode()).is_ok();
+
+			ensure!(is_valid_signature, Error::<T>::InvalidMainchainSignature);
+
+			if let Some(owner) = BlockProducerMetadataOwners::<T>::get(cross_chain_key_hash) {
+				Self::release_deposit(&owner)?;
+				BlockProducerMetadataOwners::<T>::remove(cross_chain_key_hash);
+			}
+
+			BlockProducerMetadataStorage::<T>::remove(cross_chain_key_hash);
+
+			Ok(())
+		}
 	}
 
 	impl<T: Config> Pallet<T> {
 		fn hold_deposit(account: &T::AccountId) -> DispatchResult {
 			T::Currency::hold(&HoldReason::MetadataDeposit.into(), account, T::HoldAmount::get())
 				.map_err(|_| Error::<T>::InsufficientBalance)?;
+			Ok(())
+		}
+
+		fn release_deposit(account: &T::AccountId) -> DispatchResult {
+			T::Currency::release(
+				&HoldReason::MetadataDeposit.into(),
+				&account,
+				T::HoldAmount::get(),
+				frame_support::traits::tokens::Precision::BestEffort,
+			)?;
 			Ok(())
 		}
 
