@@ -44,7 +44,7 @@ mod tests {
 	fn round_trip() {
 		let message = MetadataSignedMessage {
 			cross_chain_pub_key: CrossChainPublicKey(vec![1; 32]),
-			metadata: "metadata".to_string(),
+			metadata: Some("metadata".to_string()),
 			genesis_utxo: UtxoId::new([2; 32], 0),
 		};
 
