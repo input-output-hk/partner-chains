@@ -160,22 +160,23 @@ fn extract_session_keys_type_from_metadata(
 /// Find the SessionKeys type in the metadata by looking at type paths
 fn find_session_keys_type(metadata: &subxt::Metadata) -> Result<&scale_info::Type<scale_info::form::PortableForm>> {
     // Look through all types to find one that looks like SessionKeys
-    for (_type_id, ty) in metadata.types().types.iter().enumerate() {
+    for (_type_id, portable_type) in metadata.types().types.iter().enumerate() {
         // Check if this type has a path that indicates it's SessionKeys
-        let path = &ty.ty.path;
+        let path = &portable_type.ty.path;
         let path_segments: Vec<&str> = path.segments.iter().map(|s| s.as_str()).collect();
         
         // Look for types with SessionKeys in their path
         if path_segments.iter().any(|segment| segment.contains("SessionKeys")) {
-            return Ok(&ty.ty);
+            return Ok(&portable_type.ty);
         }
         
-        // Also check for runtime-specific session key types
+        // If no direct "SessionKeys" match found, try runtime-specific patterns
         if path_segments.len() >= 2 {
             let last_two = &path_segments[path_segments.len()-2..];
-            if last_two[0].to_lowercase().contains("runtime") && 
-               last_two[1].to_lowercase().contains("sessionkeys") {
-                return Ok(&ty.ty);
+            let has_runtime = last_two.iter().any(|s| s.to_lowercase().contains("runtime"));
+            let has_session_keys = last_two.iter().any(|s| s.to_lowercase().contains("sessionkeys"));
+            if has_runtime && has_session_keys {
+                return Ok(&portable_type.ty);
             }
         }
     }
@@ -418,22 +419,26 @@ fn decode_session_keys_from_type_info(
     
     // Calculate expected total size based on actual type information
     let expected_total_size: usize = session_keys_type_info.iter().map(|info| info.key_size).sum();
+
+    let keys_bytes_length = keys_bytes.len();
     
-    if keys_bytes.len() != expected_total_size {
+    if keys_bytes_length != expected_total_size {
         return Err(anyhow!(
-            "Invalid session keys length: expected {} bytes, got {}",
+            "Invalid session keys length: expected {} bytes, got {}. Difference {}",
             expected_total_size,
-            keys_bytes.len()
+            keys_bytes_length,
+            (expected_total_size - keys_bytes_length)
         ));
     }
     
-    let mut session_keys = Vec::new();
+    let mut session_keys: SessionKeys = Vec::new();
     let mut offset = 0;
     
     // Decode each key using its actual size from the type definition
     for key_info in session_keys_type_info {
         let key_bytes = keys_bytes[offset..offset + key_info.key_size].to_vec();
-        session_keys.push((key_info.key_type_id, key_bytes));
+        let key_pair: KeyPair = (key_info.key_type_id, key_bytes);
+        session_keys.push(key_pair);
         offset += key_info.key_size;
     }
     
