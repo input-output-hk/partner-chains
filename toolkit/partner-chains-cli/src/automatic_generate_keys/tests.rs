@@ -56,7 +56,9 @@ fn test_generate_keys_via_rpc() {
 			"params": ["0x123abc"],
 			"id": 2
 		})))
-		.with_body(r#"{"jsonrpc":"2.0","result":[["0x16c425233d22...","gran"],["0x2ef6a0d...","imon"]],"id":2}"#)
+		.with_body(
+			r#"{"jsonrpc":"2.0","result":[["0x16c425233d22...","gran"],["0x2ef6a0d...","imon"]],"id":2}"#,
+		)
 		.create();
 
 	let config = AutomaticGenerateKeysConfig { node_url: server.url() };
@@ -71,9 +73,8 @@ fn test_generate_keys_via_rpc() {
 #[test]
 fn test_generate_keys_error_response() {
 	let mut server = mockito::Server::new();
-	let mock_context = MockIOContext::new().with_expected_io(vec![
-		MockIO::eprint("🔑 Generating session keys via RPC..."),
-	]);
+	let mock_context = MockIOContext::new()
+		.with_expected_io(vec![MockIO::eprint("🔑 Generating session keys via RPC...")]);
 
 	// Mock the rotate keys request with an error response
 	let rotate_mock = server
@@ -84,7 +85,9 @@ fn test_generate_keys_error_response() {
 			"params": [],
 			"id": 1
 		})))
-		.with_body(r#"{"jsonrpc":"2.0","error":{"code":-32601,"message":"Method not found"},"id":1}"#)
+		.with_body(
+			r#"{"jsonrpc":"2.0","error":{"code":-32601,"message":"Method not found"},"id":1}"#,
+		)
 		.create();
 
 	let config = AutomaticGenerateKeysConfig { node_url: server.url() };
