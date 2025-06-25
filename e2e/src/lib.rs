@@ -1,3 +1,4 @@
+#![cfg(test)]
 /// Experiment porting our pytest E2E tests into Rust
 ///
 /// To run, start local-env and run `cargo test --bin e2e`

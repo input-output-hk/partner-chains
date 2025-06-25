@@ -10,7 +10,7 @@ const INITIAL_RESERVE_DEPOSIT: i64 = 1000;
 const MIN_LOVELACE_FOR_TX: i64 = 20_000_000;
 const MIN_LOVELACE_TO_COVER_FEES: i64 = 10_000_000;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct VFunction {
 	cbor: String,
 	script_path: String,
@@ -122,7 +122,7 @@ fn v_function(api: &SubstrateApi, config: &ApiConfig) -> Result<VFunction, Strin
 		address: v_function_address,
 		reference_utxo,
 	};
-	log::info!("V-function successfully created: {v_function:?}");
+	println!("V-function successfully created: {v_function:?}");
 	Ok(v_function)
 }
 
@@ -134,8 +134,12 @@ fn reserve(
 	Ok(Reserve { token: reserve_asset_id(config, api)?, v_function })
 }
 
-fn create_reserve(config: &ApiConfig, api: &SubstrateApi) -> Result<(), String> {
-	let reserve = reserve(api, &config, v_function(api, &config)?)?;
+fn create_reserve(
+	config: &ApiConfig,
+	api: &SubstrateApi,
+	v_function: VFunction,
+) -> Result<(), String> {
+	let reserve = reserve(api, &config, v_function)?;
 	api.partner_chains_node().reserve_create(
 		&reserve.v_function.script_hash,
 		INITIAL_RESERVE_DEPOSIT,
@@ -203,25 +207,40 @@ fn deposit_funds(
 		.reserve_deposit(amount_to_deposit, &payment_key(config))
 }
 
+fn release_funds(
+	api: &SubstrateApi,
+	config: &ApiConfig,
+	amount_to_release: i64,
+	reference_utxo: &str,
+) -> Result<JsonValue, String> {
+	api.partner_chains_node().reserve_release(
+		reference_utxo,
+		amount_to_release,
+		&payment_key(config),
+	)
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;
+
 	#[test]
 	fn test_deposit_funds() -> Result<(), String> {
 		let config = ApiConfig::load();
 		let api = &SubstrateApi::new(&config);
 		let payment_key = payment_key(&config);
 		api.partner_chains_node().reserve_init(&payment_key)?;
-		create_reserve(&config, api)?;
+		let v_function = v_function(api, &config)?;
+		create_reserve(&config, api, v_function.clone())?;
 		let amount_to_deposit = amount_to_deposit(api, &config)?;
 		let initial_balance = reserve_initial_balance(api, &config)?;
 		let native_token_balance = native_token_balance(api, &config)?;
 
-		// def test_deposit_funds():
+		// test_deposit_funds
 		let response = deposit_funds(api, &config, amount_to_deposit);
 		assert!(response.is_ok());
 
-		// def test_reserve_balance_after_deposit():
+		// test_reserve_balance_after_deposit
 		let reserve_asset_id = &reserve_asset_id(&config, api)?;
 		let reserve_balance = api.get_mc_balance(
 			addresses(api)["ReserveValidator"].as_str().expect("str"),
@@ -229,10 +248,40 @@ mod tests {
 		)?;
 		assert!(initial_balance + amount_to_deposit == reserve_balance);
 
-		// def test_native_token_balance_after_deposit():
+		// test_native_token_balance_after_deposit
 		let native_token = api.get_mc_balance(&governance_address(&config), reserve_asset_id)?;
 		assert!(native_token_balance - amount_to_deposit == native_token);
 		clean_up_reserve(&config, api)?;
+		Ok(())
+	}
+
+	#[test]
+	fn test_release_funds() -> Result<(), String> {
+		let config = ApiConfig::load();
+		let api = &SubstrateApi::new(&config);
+		let payment_key = payment_key(&config);
+		api.partner_chains_node().reserve_init(&payment_key)?;
+		let v_function = v_function(api, &config)?;
+		create_reserve(&config, api, v_function.clone())?;
+		let amount_to_release = amount_to_deposit(api, &config)? * 100; // TODO function name
+		let initial_balance = reserve_initial_balance(api, &config)?;
+		let native_token_balance = native_token_balance(api, &config)?;
+
+		// test_release_funds
+		let response = release_funds(api, &config, amount_to_release, &v_function.reference_utxo);
+		assert!(response.is_ok());
+
+		// // test_circulation_supply_balance_after_release
+		// circulation = api.get_mc_balance(addresses["IlliquidCirculationSupplyValidator"], reserve_asset_id)
+		// assert circulation_supply_initial_balance + amount_to_release == circulation
+
+		// // test_reserve_balance_after_release
+		// reserve_balance = api.get_mc_balance(addresses["ReserveValidator"], reserve_asset_id)
+		// assert reserve_initial_balance - amount_to_release == reserve_balance
+
+		// // test_observe_released_funds
+		// observed_transfer = api.subscribe_token_transfer()
+		// assert observed_transfer == amount_to_release
 		Ok(())
 	}
 }

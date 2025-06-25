@@ -108,6 +108,28 @@ impl PartnerChainsNode {
 		return self.handle_governance_signature(parsed_response);
 	}
 
+	pub fn reserve_release(
+		&self,
+		reference_utxo: &str,
+		amount: i64,
+		payment_key: &str,
+	) -> Result<JsonValue, String> {
+		let cli = &self.cli;
+		let genesis_utxo = &self.config.genesis_utxo;
+		let ogmios_url = &self.config.stack_config.ogmios_url();
+		let cmd = format!(
+			"{cli} smart-contracts reserve release
+                --reference-utxo {reference_utxo}
+                --amount {amount}
+                --payment-key-file {payment_key}
+                --genesis-utxo {genesis_utxo}
+                --ogmios-url {ogmios_url}"
+		);
+		let response = self.run_command.run(&cmd, self.config.timeouts.main_chain_tx)?;
+		let parsed_response = parse_json_response(response)?;
+		return self.handle_governance_signature(parsed_response);
+	}
+
 	pub fn sign_tx(
 		&self,
 		transaction_cbor: &str,
