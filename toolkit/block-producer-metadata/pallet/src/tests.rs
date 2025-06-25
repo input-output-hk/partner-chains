@@ -1,4 +1,5 @@
 use super::*;
+use frame_support::traits::fungibles::metadata::MetadataDeposit;
 use frame_support::{assert_noop, assert_ok, traits::tokens::fungible::InspectHold};
 use frame_system::pallet_prelude::OriginFor;
 use hex_literal::hex;
@@ -152,10 +153,10 @@ fn deletes_metadata_and_returns_fee() {
 			&FUNDED_ACCOUNT_2,
 		);
 
-		assert_eq!(account_1_balance, INITIAL_BALANCE);
+		assert_eq!(account_1_balance, INITIAL_BALANCE - MetadataHoldAmount::get());
 		assert_eq!(account_1_held, 0);
 
-		assert_eq!(account_2_balance, INITIAL_BALANCE);
+		assert_eq!(account_2_balance, INITIAL_BALANCE + MetadataHoldAmount::get());
 		assert_eq!(account_2_held, 0);
 	})
 }

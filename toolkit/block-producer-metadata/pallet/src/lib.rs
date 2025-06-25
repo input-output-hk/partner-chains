@@ -59,7 +59,6 @@
 //! Here, besides providing the metadata type and using weights already provided with the pallet, we are also
 //! wiring the `genesis_utxo` function to fetch the chain's genesis UTXO from the `pallet_sidechain` pallet.
 //! Currency, HoldAmount, and RuntimeHoldReason types are required to configure the deposit mechanism for occupying storage.
-//! Removing Metadata is not supported, so this deposit is currently ethernal.
 //!
 //! At this point, the pallet is ready to be used.
 //!
@@ -86,8 +85,8 @@
 //! and the metadata encoded as hex bytes (in case of upsert).
 //!
 //! When metadata is inserted for the first time, a deposit is held from the caller's account. Updates to existing
-//! metadata do not require additional deposits. Deleting metadata will release the deposit to the depositor account
-//! (this account may be different from the one submitting the [delete_metadata] extrinsic).
+//! metadata do not require additional deposits. Deleting metadata will release the deposit to the account that was
+//! used to submit the [delete_metadata] extrinsic.
 //!
 //! After the signature has been obtained, the user should submit the [upsert_metadata] extrinsic (eg. using PolkadotJS)
 //! providing:
@@ -247,6 +246,8 @@ pub mod pallet {
 		}
 
 		/// Deletes metadata for the block producer identified by `cross_chain_pub_key`.
+		///
+		/// The deposit funds will be returned to the submitter of the extrinsic.
 		#[pallet::call_index(1)]
 		#[pallet::weight(T::WeightInfo::delete_metadata())]
 		pub fn delete_metadata(
@@ -254,7 +255,7 @@ pub mod pallet {
 			cross_chain_pub_key: CrossChainPublicKey,
 			signature: CrossChainSignature,
 		) -> DispatchResult {
-			ensure_signed(origin)?;
+			let origin_account = ensure_signed(origin)?;
 
 			let genesis_utxo = T::genesis_utxo();
 			let metadata_message = MetadataSignedMessage::<T::BlockProducerMetadata> {
@@ -269,7 +270,7 @@ pub mod pallet {
 			ensure!(is_valid_signature, Error::<T>::InvalidMainchainSignature);
 
 			if let Some(owner) = BlockProducerMetadataOwners::<T>::get(cross_chain_key_hash) {
-				Self::release_deposit(&owner)?;
+				Self::release_deposit(&owner, &origin_account)?;
 				BlockProducerMetadataOwners::<T>::remove(cross_chain_key_hash);
 			}
 
@@ -286,12 +287,17 @@ pub mod pallet {
 			Ok(())
 		}
 
-		fn release_deposit(account: &T::AccountId) -> DispatchResult {
-			T::Currency::release(
+		fn release_deposit(depositor: &T::AccountId, beneficiary: &T::AccountId) -> DispatchResult {
+			use frame_support::traits::tokens::*;
+
+			<T::Currency as MutateHold<_>>::transfer_on_hold(
 				&HoldReason::MetadataDeposit.into(),
-				&account,
+				depositor,
+				beneficiary,
 				T::HoldAmount::get(),
-				frame_support::traits::tokens::Precision::BestEffort,
+				Precision::BestEffort,
+				Restriction::Free,
+				Fortitude::Polite,
 			)?;
 			Ok(())
 		}
