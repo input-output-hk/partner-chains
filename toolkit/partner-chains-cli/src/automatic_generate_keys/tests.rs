@@ -19,18 +19,15 @@ fn test_generate_keys_via_rpc() {
 		MockIO::eprint("🔑 Generating session keys via RPC..."),
 		MockIO::eprint("✅ Generated session keys: 0x123abc"),
 		MockIO::eprint("🔍 Decoding session keys to get key types..."),
-		MockIO::eprint(r#"✅ Decode response: {"id":2,"jsonrpc":"2.0","result":[["0x16c425233d22...","gran"],["0x2ef6a0d...","imon"]]}"#),
-		MockIO::eprint("✅ Successfully decoded 2 session keys"),
+		MockIO::eprint(r#"✅ Decode response: {"id":2,"jsonrpc":"2.0","result":"0x08deadbeef04aura"}"#),
+		MockIO::eprint("⚠️  Runtime call returned encoded data - providing raw keys for now"),
+		MockIO::eprint("✅ Successfully decoded 1 session keys"),
 		MockIO::eprint("💾 Session keys saved to session_keys.json"),
 		MockIO::eprint("🔑 Generated session keys:"),
 		MockIO::print(r#"[
   {
-    "key_type": "gran",
-    "public_key": "0x16c425233d22..."
-  },
-  {
-    "key_type": "imon",
-    "public_key": "0x2ef6a0d..."
+    "key_type": "raw",
+    "public_key": "0x123abc"
   }
 ]"#),
 	]);
@@ -52,12 +49,12 @@ fn test_generate_keys_via_rpc() {
 		.mock("POST", "/")
 		.match_body(mockito::Matcher::Json(json!({
 			"jsonrpc": "2.0",
-			"method": "sessionKeys_decodeSessionKeys",
-			"params": ["0x123abc"],
+			"method": "state_call",
+			"params": ["SessionKeys_decode_session_keys", "0x123abc"],
 			"id": 2
 		})))
 		.with_body(
-			r#"{"jsonrpc":"2.0","result":[["0x16c425233d22...","gran"],["0x2ef6a0d...","imon"]],"id":2}"#,
+			r#"{"jsonrpc":"2.0","result":"0x08deadbeef04aura","id":2}"#,
 		)
 		.create();
 
@@ -86,7 +83,7 @@ fn test_generate_keys_error_response() {
 			"id": 1
 		})))
 		.with_body(
-			r#"{"jsonrpc":"2.0","error":{"code":-32601,"message":"Method not found"},"id":1}"#,
+			r#"{"jsonrpc":"2.0","error":{"code":-32601,"message":"RPC call is unsafe to be called externally"},"id":1}"#,
 		)
 		.create();
 
@@ -94,7 +91,9 @@ fn test_generate_keys_error_response() {
 
 	let result = generate_keys_via_rpc(&config, "", &mock_context);
 	assert!(result.is_err());
-	assert!(result.unwrap_err().to_string().contains("No result in RPC response"));
+	let error_msg = result.unwrap_err().to_string();
+	assert!(error_msg.contains("RPC call is unsafe to be called externally"));
+	assert!(error_msg.contains("--rpc-methods=unsafe"));
 
 	rotate_mock.assert();
 }
@@ -106,11 +105,17 @@ fn test_generate_keys_empty_response() {
 		MockIO::eprint("🔑 Generating session keys via RPC..."),
 		MockIO::eprint("✅ Generated session keys: 0x123abc"),
 		MockIO::eprint("🔍 Decoding session keys to get key types..."),
-		MockIO::eprint(r#"✅ Decode response: {"id":2,"jsonrpc":"2.0","result":[]}"#),
-		MockIO::eprint("✅ Successfully decoded 0 session keys"),
+		MockIO::eprint(r#"✅ Decode response: {"id":2,"jsonrpc":"2.0","result":"0x00"}"#),
+		MockIO::eprint("⚠️  Runtime call returned encoded data - providing raw keys for now"),
+		MockIO::eprint("✅ Successfully decoded 1 session keys"),
 		MockIO::eprint("💾 Session keys saved to session_keys.json"),
 		MockIO::eprint("🔑 Generated session keys:"),
-		MockIO::print("[]"),
+		MockIO::print(r#"[
+  {
+    "key_type": "raw",
+    "public_key": "0x123abc"
+  }
+]"#),
 	]);
 
 	// Mock the rotate keys request
@@ -130,11 +135,11 @@ fn test_generate_keys_empty_response() {
 		.mock("POST", "/")
 		.match_body(mockito::Matcher::Json(json!({
 			"jsonrpc": "2.0",
-			"method": "sessionKeys_decodeSessionKeys",
-			"params": ["0x123abc"],
+			"method": "state_call",
+			"params": ["SessionKeys_decode_session_keys", "0x123abc"],
 			"id": 2
 		})))
-		.with_body(r#"{"jsonrpc":"2.0","result":[],"id":2}"#)
+		.with_body(r#"{"jsonrpc":"2.0","result":"0x00","id":2}"#)
 		.create();
 
 	let config = AutomaticGenerateKeysConfig { node_url: server.url() };
