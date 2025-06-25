@@ -80,19 +80,23 @@
 //!
 //! ## Usage - PC Users
 //!
-//! This pallet exposes a single extrinsic `upsert_metadata` for current or prospective block producers to add or
-//! update their metadata. The extrinsic requires a valid signature, which the user should prepare using the
+//! This pallet exposes two extrinsics: [upsert_metadata] and [delete_metadata] for current or prospective block producers to add or
+//! update their metadata. These extrinsics requires a valid signature, which the user should prepare using the
 //! `sign-block-producer-metadata` command provided by the chain's node. This command returns the signature
-//! and the metadata encoded as hex bytes.
+//! and the metadata encoded as hex bytes (in case of upsert).
 //!
 //! When metadata is inserted for the first time, a deposit is held from the caller's account. Updates to existing
-//! metadata do not require additional deposits.
+//! metadata do not require additional deposits. Deleting metadata will release the deposit to the depositor account
+//! (this account may be different from the one submitting the [delete_metadata] extrinsic).
 //!
-//! After the signature has been obtained, the user should submit the `upsert_metadata` extrinsic (eg. using PolkadotJS)
+//! After the signature has been obtained, the user should submit the [upsert_metadata] extrinsic (eg. using PolkadotJS)
 //! providing:
-//! - *metadata value*: when using PolkadotJS UI, care must be taken to submit the same values that were passed to the CLI
-//! - *signature* returned by the CLI
-//! - *cross-chain public key* corresponding to the private key used for signing with the CLI
+//! - **metadata value**: when using PolkadotJS UI, care must be taken to submit the same values that were passed to the CLI
+//! - **signature**: returned by the CLI
+//! - **cross-chain public key**: corresponding to the private key used for signing with the CLI
+//!
+//! [upsert_metadata]: pallet::Pallet::upsert_metadata
+//! [delete_metadata]: pallet::Pallet::delete_metadata
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![deny(missing_docs)]

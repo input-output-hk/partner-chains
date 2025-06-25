@@ -12,6 +12,7 @@ use std::io::BufReader;
 #[derive(Clone, Debug, clap::Subcommand)]
 #[command(author, version, about, long_about = None)]
 pub enum BlockProducerMetadataSignatureCmd {
+	/// Generates signature for the `upsert_metadata` extrinsic
 	Upsert {
 		/// Genesis UTXO that uniquely identifies the target Partner Chain
 		#[arg(long)]
@@ -23,6 +24,7 @@ pub enum BlockProducerMetadataSignatureCmd {
 		#[arg(long)]
 		cross_chain_signing_key: CrossChainSigningKeyParam,
 	},
+	/// Generates signature for the `delete_metadata` extrinsic
 	Delete {
 		/// Genesis UTXO that uniquely identifies the target Partner Chain
 		#[arg(long)]
