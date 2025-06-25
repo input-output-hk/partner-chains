@@ -48,6 +48,7 @@ pallet-sidechain = { workspace = true, features = ["std"] }
 pallet-governed-map = { workspace = true, features = ["std"] }
 sp-governed-map = { workspace = true, features = ["std"] }
 sidechain-slots = { workspace = true }
+reqwest = { version = "0.11", features = ["blocking", "json"] }
 
 [dev-dependencies]
 frame-system = { workspace = true }
@@ -58,6 +59,7 @@ pretty_assertions = { workspace = true }
 scale-info = { workspace = true }
 sp-core = { workspace = true }
 sp-runtime = { workspace = true }
+mockito = { workspace = true }
 
 [features]
 default = ["std"]

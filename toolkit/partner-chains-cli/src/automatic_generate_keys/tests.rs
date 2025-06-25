@@ -1,5 +1,7 @@
 use super::*;
 use crate::tests::{MockIO, MockIOContext};
+use mockito;
+use serde_json::json;
 
 #[test]
 fn test_config_creation() {
@@ -11,98 +13,13 @@ fn test_config_creation() {
 }
 
 #[test]
-fn test_decode_session_keys_via_rpc() {
-	let mock_context = MockIOContext::new().with_expected_io(vec![
-        MockIO::run_command(
-            r#"test-node -- sessionKeys_decodeSessionKeys --params '["0x123abc"]' --url http://localhost:9944"#,
-            r#"[["0x16c425233d22...", "gran"], ["0x2ef6a0d...", "imon"]]"#
-        ),
-        MockIO::eprint("✅ Decode response: [[\"0x16c425233d22...\", \"gran\"], [\"0x2ef6a0d...\", \"imon\"]]"),
-        MockIO::eprint("✅ Successfully decoded 2 session keys"),
-    ]);
-
-	let result = decode_session_keys_via_rpc(
-		"0x123abc",
-		"test-node",
-		"http://localhost:9944",
-		&mock_context,
-	)
-	.unwrap();
-
-	assert_eq!(result.len(), 2);
-
-	// Check first key
-	assert_eq!(result[0].key_type, "gran");
-	assert_eq!(result[0].public_key, "0x16c425233d22...");
-
-	// Check second key
-	assert_eq!(result[1].key_type, "imon");
-	assert_eq!(result[1].public_key, "0x2ef6a0d...");
-}
-
-#[test]
-fn test_decode_empty_response() {
-	let mock_context = MockIOContext::new().with_expected_io(vec![
-        MockIO::run_command(
-            r#"test-node -- sessionKeys_decodeSessionKeys --params '["0x123abc"]' --url http://localhost:9944"#,
-            "[]"
-        ),
-        MockIO::eprint("✅ Decode response: []"),
-        MockIO::eprint("✅ Successfully decoded 0 session keys"),
-    ]);
-
-	let result = decode_session_keys_via_rpc(
-		"0x123abc",
-		"test-node",
-		"http://localhost:9944",
-		&mock_context,
-	)
-	.unwrap();
-
-	assert_eq!(result.len(), 0);
-}
-
-#[test]
-fn test_decode_invalid_json() {
-	let mock_context = MockIOContext::new().with_expected_io(vec![
-        MockIO::run_command(
-            r#"test-node -- sessionKeys_decodeSessionKeys --params '["0x123abc"]' --url http://localhost:9944"#,
-            "invalid json"
-        ),
-        MockIO::eprint("✅ Decode response: invalid json"),
-    ]);
-
-	let result = decode_session_keys_via_rpc(
-		"0x123abc",
-		"test-node",
-		"http://localhost:9944",
-		&mock_context,
-	);
-
-	assert!(result.is_err());
-	assert!(
-		result
-			.unwrap_err()
-			.to_string()
-			.contains("Failed to parse decode response as JSON")
-	);
-}
-
-#[test]
 fn test_generate_keys_via_rpc() {
+	let mut server = mockito::Server::new();
 	let mock_context = MockIOContext::new().with_expected_io(vec![
 		MockIO::eprint("🔑 Generating session keys via RPC..."),
-		MockIO::run_command(
-			r#"test-node -- author_rotateKeys --url http://localhost:9944"#,
-			r#""0x123abc""#
-		),
 		MockIO::eprint("✅ Generated session keys: 0x123abc"),
 		MockIO::eprint("🔍 Decoding session keys to get key types..."),
-		MockIO::run_command(
-			r#"test-node -- sessionKeys_decodeSessionKeys --params '["0x123abc"]' --url http://localhost:9944"#,
-			r#"[["0x16c425233d22...", "gran"], ["0x2ef6a0d...", "imon"]]"#
-		),
-		MockIO::eprint("✅ Decode response: [[\"0x16c425233d22...\", \"gran\"], [\"0x2ef6a0d...\", \"imon\"]]"),
+		MockIO::eprint(r#"✅ Decode response: {"id":2,"jsonrpc":"2.0","result":[["0x16c425233d22...","gran"],["0x2ef6a0d...","imon"]]}"#),
 		MockIO::eprint("✅ Successfully decoded 2 session keys"),
 		MockIO::eprint("💾 Session keys saved to session_keys.json"),
 		MockIO::eprint("🔑 Generated session keys:"),
@@ -118,8 +35,110 @@ fn test_generate_keys_via_rpc() {
 ]"#),
 	]);
 
-	let config = AutomaticGenerateKeysConfig { node_url: "http://localhost:9944".to_string() };
+	// Mock the rotate keys request
+	let rotate_mock = server
+		.mock("POST", "/")
+		.match_body(mockito::Matcher::Json(json!({
+			"jsonrpc": "2.0",
+			"method": "author_rotateKeys",
+			"params": [],
+			"id": 1
+		})))
+		.with_body(r#"{"jsonrpc":"2.0","result":"0x123abc","id":1}"#)
+		.create();
 
-	let result = generate_keys_via_rpc(&config, "test-node", &mock_context);
+	// Mock the decode request
+	let decode_mock = server
+		.mock("POST", "/")
+		.match_body(mockito::Matcher::Json(json!({
+			"jsonrpc": "2.0",
+			"method": "sessionKeys_decodeSessionKeys",
+			"params": ["0x123abc"],
+			"id": 2
+		})))
+		.with_body(r#"{"jsonrpc":"2.0","result":[["0x16c425233d22...","gran"],["0x2ef6a0d...","imon"]],"id":2}"#)
+		.create();
+
+	let config = AutomaticGenerateKeysConfig { node_url: server.url() };
+
+	let result = generate_keys_via_rpc(&config, "", &mock_context);
 	assert!(result.is_ok());
+
+	rotate_mock.assert();
+	decode_mock.assert();
+}
+
+#[test]
+fn test_generate_keys_error_response() {
+	let mut server = mockito::Server::new();
+	let mock_context = MockIOContext::new().with_expected_io(vec![
+		MockIO::eprint("🔑 Generating session keys via RPC..."),
+	]);
+
+	// Mock the rotate keys request with an error response
+	let rotate_mock = server
+		.mock("POST", "/")
+		.match_body(mockito::Matcher::Json(json!({
+			"jsonrpc": "2.0",
+			"method": "author_rotateKeys",
+			"params": [],
+			"id": 1
+		})))
+		.with_body(r#"{"jsonrpc":"2.0","error":{"code":-32601,"message":"Method not found"},"id":1}"#)
+		.create();
+
+	let config = AutomaticGenerateKeysConfig { node_url: server.url() };
+
+	let result = generate_keys_via_rpc(&config, "", &mock_context);
+	assert!(result.is_err());
+	assert!(result.unwrap_err().to_string().contains("No result in RPC response"));
+
+	rotate_mock.assert();
+}
+
+#[test]
+fn test_generate_keys_empty_response() {
+	let mut server = mockito::Server::new();
+	let mock_context = MockIOContext::new().with_expected_io(vec![
+		MockIO::eprint("🔑 Generating session keys via RPC..."),
+		MockIO::eprint("✅ Generated session keys: 0x123abc"),
+		MockIO::eprint("🔍 Decoding session keys to get key types..."),
+		MockIO::eprint(r#"✅ Decode response: {"id":2,"jsonrpc":"2.0","result":[]}"#),
+		MockIO::eprint("✅ Successfully decoded 0 session keys"),
+		MockIO::eprint("💾 Session keys saved to session_keys.json"),
+		MockIO::eprint("🔑 Generated session keys:"),
+		MockIO::print("[]"),
+	]);
+
+	// Mock the rotate keys request
+	let rotate_mock = server
+		.mock("POST", "/")
+		.match_body(mockito::Matcher::Json(json!({
+			"jsonrpc": "2.0",
+			"method": "author_rotateKeys",
+			"params": [],
+			"id": 1
+		})))
+		.with_body(r#"{"jsonrpc":"2.0","result":"0x123abc","id":1}"#)
+		.create();
+
+	// Mock the decode request with empty result
+	let decode_mock = server
+		.mock("POST", "/")
+		.match_body(mockito::Matcher::Json(json!({
+			"jsonrpc": "2.0",
+			"method": "sessionKeys_decodeSessionKeys",
+			"params": ["0x123abc"],
+			"id": 2
+		})))
+		.with_body(r#"{"jsonrpc":"2.0","result":[],"id":2}"#)
+		.create();
+
+	let config = AutomaticGenerateKeysConfig { node_url: server.url() };
+
+	let result = generate_keys_via_rpc(&config, "", &mock_context);
+	assert!(result.is_ok());
+
+	rotate_mock.assert();
+	decode_mock.assert();
 }
