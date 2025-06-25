@@ -105,9 +105,7 @@ mod benchmarks {
 		let cross_chain_pub_key = T::BenchmarkHelper::cross_chain_pub_key();
 		let cross_chain_signature = T::BenchmarkHelper::delete_cross_chain_signature();
 
-		// Create an account and fund it with sufficient balance
 		let caller: T::AccountId = account("caller", 0, 0);
-		let _ = T::Currency::mint_into(&caller, T::HoldAmount::get() * 2u32.into());
 
 		#[extrinsic_call]
 		_(RawOrigin::Signed(caller), cross_chain_pub_key, cross_chain_signature);
