@@ -203,9 +203,8 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Inserts or updates metadata for the block producer identified by `cross_chain_pub_key`.
-		/// Holds a constant amount from the caller's account as a deposit for including metadata on the chain.
-		/// If metadata is updated using a different account, the deposit will be returned to the original
-		/// account and held again from the new one.
+		/// Holds a constant amount from the caller's account as a deposit for including metadata on the chain
+		/// when first inserted. Subsequent updates will not require new deposits.
 		///
 		/// Arguments:
 		/// - `metadata`: new metadata value
