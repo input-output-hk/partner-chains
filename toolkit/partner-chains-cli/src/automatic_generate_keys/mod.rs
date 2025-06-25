@@ -2,6 +2,7 @@ use crate::io::IOContext;
 use crate::*;
 use anyhow::{Context, Result, anyhow};
 use serde::{Deserialize, Serialize};
+use reqwest;
 
 #[cfg(test)]
 mod tests;
@@ -33,85 +34,94 @@ pub struct SessionKeyInfo {
 	pub public_key: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct JsonRpcRequest {
+    jsonrpc: String,
+    method: String,
+    params: Vec<String>,
+    id: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct JsonRpcResponse {
+    jsonrpc: String,
+    result: Option<String>,
+    error: Option<JsonRpcError>,
+    id: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct JsonRpcError {
+    code: i32,
+    message: String,
+}
+
 impl CmdRun for AutomaticGenerateKeysCmd {
 	fn run<C: IOContext>(&self, context: &C) -> Result<()> {
 		let config = AutomaticGenerateKeysConfig::load(context, self.url.clone());
-		let node_executable = context.current_executable()?;
-
-		generate_keys_via_rpc(&config, &node_executable, context)
+		generate_keys_via_rpc(&config, "", context)
 	}
 }
 
 fn generate_keys_via_rpc<C: IOContext>(
 	config: &AutomaticGenerateKeysConfig,
-	node_executable: &str,
+	_node_executable: &str,
 	context: &C,
 ) -> Result<()> {
 	context.eprint("🔑 Generating session keys via RPC...");
 
-	// Step 1: Generate session keys
-	let keys_hex = context
-		.run_command(&format!(
-			r#"{node_executable} -- author_rotateKeys --url {}"#,
-			config.node_url
-		))?
-		.trim()
-		.trim_matches('"')
-		.to_string();
+	// Step 1: Generate session keys using JSON-RPC
+	let client = reqwest::blocking::Client::new();
+	let request = JsonRpcRequest {
+		jsonrpc: "2.0".to_string(),
+		method: "author_rotateKeys".to_string(),
+		params: vec![],
+		id: 1,
+	};
+
+	let response = client
+		.post(&config.node_url)
+		.header("Content-Type", "application/json")
+		.json(&request)
+		.send()
+		.context("Failed to send RPC request")?;
+
+	let json_response: JsonRpcResponse = response
+		.json()
+		.context("Failed to parse RPC response")?;
+
+	let keys_hex = json_response.result
+		.ok_or_else(|| anyhow!("No result in RPC response: {:?}", json_response.error))?;
 
 	context.eprint(&format!("✅ Generated session keys: {}", keys_hex));
 
-	// Step 2: Decode session keys to get actual key types
+	// Step 2: Decode session keys
 	context.eprint("🔍 Decoding session keys to get key types...");
 
-	let decoded_keys =
-		decode_session_keys_via_rpc(&keys_hex, node_executable, &config.node_url, context)
-			.context("Failed to decode session keys")?;
+	let decode_request = JsonRpcRequest {
+		jsonrpc: "2.0".to_string(),
+		method: "sessionKeys_decodeSessionKeys".to_string(),
+		params: vec![keys_hex.clone()],
+		id: 2,
+	};
 
-	// Step 3: Save to JSON file
-	let output_path = "session_keys.json";
-	let json_output = serde_json::to_string_pretty(&decoded_keys)
-		.context("Failed to serialize session keys to JSON")?;
+	let decode_response = client
+		.post(&config.node_url)
+		.header("Content-Type", "application/json")
+		.json(&decode_request)
+		.send()
+		.context("Failed to send decode RPC request")?;
 
-	if prompt_can_write("session keys file", output_path, context) {
-		context.write_file(output_path, &json_output);
-		context.eprint(&format!("💾 Session keys saved to {}", output_path));
-		context.eprint("🔑 Generated session keys:");
-		context.print(&json_output);
-	} else {
-		context.eprint("Refusing to overwrite session keys file - skipping save");
-		context.eprint("🔑 Generated session keys:");
-		context.print(&json_output);
-	}
+	let decode_json: serde_json::Value = decode_response
+		.json()
+		.context("Failed to parse decode response")?;
 
-	Ok(())
-}
-
-/// Decode session keys using the node's sessionKeys_decodeSessionKeys RPC call
-fn decode_session_keys_via_rpc<C: IOContext>(
-	keys_hex: &str,
-	node_executable: &str,
-	node_url: &str,
-	context: &C,
-) -> Result<Vec<SessionKeyInfo>> {
-	// Call sessionKeys_decodeSessionKeys RPC
-	let decode_result = context
-		.run_command(&format!(
-			r#"{node_executable} -- sessionKeys_decodeSessionKeys --params '["{}"]' --url {}"#,
-			keys_hex, node_url
-		))?
-		.trim()
-		.to_string();
-
-	context.eprint(&format!("✅ Decode response: {}", decode_result));
-
-	// Parse the JSON response
-	let json_value: serde_json::Value =
-		serde_json::from_str(&decode_result).context("Failed to parse decode response as JSON")?;
+	context.eprint(&format!("✅ Decode response: {}", decode_json.to_string()));
 
 	// Extract the array from the response
-	let key_array = json_value
-		.as_array()
+	let key_array = decode_json
+		.get("result")
+		.and_then(|v| v.as_array())
 		.ok_or_else(|| anyhow!("Expected array in decode response"))?;
 
 	let mut session_keys = Vec::new();
@@ -140,5 +150,22 @@ fn decode_session_keys_via_rpc<C: IOContext>(
 	}
 
 	context.eprint(&format!("✅ Successfully decoded {} session keys", session_keys.len()));
-	Ok(session_keys)
+
+	// Step 3: Save to JSON file
+	let output_path = "session_keys.json";
+	let json_output = serde_json::to_string_pretty(&session_keys)
+		.context("Failed to serialize session keys to JSON")?;
+
+	if prompt_can_write("session keys file", output_path, context) {
+		context.write_file(output_path, &json_output);
+		context.eprint(&format!("💾 Session keys saved to {}", output_path));
+		context.eprint("🔑 Generated session keys:");
+		context.print(&json_output);
+	} else {
+		context.eprint("Refusing to overwrite session keys file - skipping save");
+		context.eprint("🔑 Generated session keys:");
+		context.print(&json_output);
+	}
+
+	Ok(())
 }
