@@ -1,8 +1,8 @@
 use crate::io::IOContext;
 use crate::*;
 use anyhow::{Context, Result, anyhow};
-use serde::{Deserialize, Serialize};
 use reqwest;
+use serde::{Deserialize, Serialize};
 
 #[cfg(test)]
 mod tests;
@@ -36,24 +36,24 @@ pub struct SessionKeyInfo {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct JsonRpcRequest {
-    jsonrpc: String,
-    method: String,
-    params: Vec<String>,
-    id: i32,
+	jsonrpc: String,
+	method: String,
+	params: Vec<String>,
+	id: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 struct JsonRpcResponse {
-    jsonrpc: String,
-    result: Option<String>,
-    error: Option<JsonRpcError>,
-    id: i32,
+	jsonrpc: String,
+	result: Option<String>,
+	error: Option<JsonRpcError>,
+	id: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 struct JsonRpcError {
-    code: i32,
-    message: String,
+	code: i32,
+	message: String,
 }
 
 impl CmdRun for AutomaticGenerateKeysCmd {
@@ -86,11 +86,10 @@ fn generate_keys_via_rpc<C: IOContext>(
 		.send()
 		.context("Failed to send RPC request")?;
 
-	let json_response: JsonRpcResponse = response
-		.json()
-		.context("Failed to parse RPC response")?;
+	let json_response: JsonRpcResponse = response.json().context("Failed to parse RPC response")?;
 
-	let keys_hex = json_response.result
+	let keys_hex = json_response
+		.result
 		.ok_or_else(|| anyhow!("No result in RPC response: {:?}", json_response.error))?;
 
 	context.eprint(&format!("✅ Generated session keys: {}", keys_hex));
@@ -112,9 +111,8 @@ fn generate_keys_via_rpc<C: IOContext>(
 		.send()
 		.context("Failed to send decode RPC request")?;
 
-	let decode_json: serde_json::Value = decode_response
-		.json()
-		.context("Failed to parse decode response")?;
+	let decode_json: serde_json::Value =
+		decode_response.json().context("Failed to parse decode response")?;
 
 	context.eprint(&format!("✅ Decode response: {}", decode_json.to_string()));
 
