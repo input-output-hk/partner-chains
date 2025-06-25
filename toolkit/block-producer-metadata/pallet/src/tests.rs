@@ -1,5 +1,4 @@
 use super::*;
-use frame_support::traits::fungibles::metadata::MetadataDeposit;
 use frame_support::{assert_noop, assert_ok, traits::tokens::fungible::InspectHold};
 use frame_system::pallet_prelude::OriginFor;
 use hex_literal::hex;
