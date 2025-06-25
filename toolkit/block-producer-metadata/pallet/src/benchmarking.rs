@@ -102,10 +102,14 @@ mod benchmarks {
 
 	#[benchmark]
 	fn delete_metadata() {
+		let metadata = T::BenchmarkHelper::metadata();
 		let cross_chain_pub_key = T::BenchmarkHelper::cross_chain_pub_key();
 		let cross_chain_signature = T::BenchmarkHelper::delete_cross_chain_signature();
 
 		let caller: T::AccountId = account("caller", 0, 0);
+
+		BlockProducerMetadataStorage::<T>::insert(cross_chain_pub_key.hash(), metadata);
+		BlockProducerMetadataOwners::<T>::insert(cross_chain_pub_key.hash(), &caller);
 
 		#[extrinsic_call]
 		_(RawOrigin::Signed(caller), cross_chain_pub_key, cross_chain_signature);

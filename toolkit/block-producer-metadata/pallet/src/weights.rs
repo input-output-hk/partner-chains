@@ -57,25 +57,29 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `197`
 		//  Estimated: `3593`
-		// Minimum execution time: 230_000_000 picoseconds.
-		Weight::from_parts(236_000_000, 3593)
+		// Minimum execution time: 238_000_000 picoseconds.
+		Weight::from_parts(243_000_000, 3593)
 			.saturating_add(T::DbWeight::get().reads(4_u64))
 			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
 	/// Storage: `Sidechain::GenesisUtxo` (r:1 w:0)
 	/// Proof: `Sidechain::GenesisUtxo` (`max_values`: Some(1), `max_size`: Some(34), added: 529, mode: `MaxEncodedLen`)
-	/// Storage: `BlockProducerMetadata::BlockProducerMetadataOwners` (r:1 w:0)
+	/// Storage: `BlockProducerMetadata::BlockProducerMetadataOwners` (r:1 w:1)
 	/// Proof: `BlockProducerMetadata::BlockProducerMetadataOwners` (`max_values`: None, `max_size`: Some(76), added: 2551, mode: `MaxEncodedLen`)
+	/// Storage: `System::Account` (r:1 w:1)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
+	/// Storage: `Balances::Holds` (r:1 w:1)
+	/// Proof: `Balances::Holds` (`max_values`: None, `max_size`: Some(67), added: 2542, mode: `MaxEncodedLen`)
 	/// Storage: `BlockProducerMetadata::BlockProducerMetadataStorage` (r:0 w:1)
 	/// Proof: `BlockProducerMetadata::BlockProducerMetadataStorage` (`max_values`: None, `max_size`: Some(590), added: 3065, mode: `MaxEncodedLen`)
 	fn delete_metadata() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `96`
-		//  Estimated: `3541`
-		// Minimum execution time: 198_000_000 picoseconds.
-		Weight::from_parts(200_000_000, 3541)
-			.saturating_add(T::DbWeight::get().reads(2_u64))
-			.saturating_add(T::DbWeight::get().writes(1_u64))
+		//  Measured:  `231`
+		//  Estimated: `3593`
+		// Minimum execution time: 217_000_000 picoseconds.
+		Weight::from_parts(223_000_000, 3593)
+			.saturating_add(T::DbWeight::get().reads(4_u64))
+			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
 }
 
@@ -95,24 +99,28 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `197`
 		//  Estimated: `3593`
-		// Minimum execution time: 230_000_000 picoseconds.
-		Weight::from_parts(236_000_000, 3593)
+		// Minimum execution time: 238_000_000 picoseconds.
+		Weight::from_parts(243_000_000, 3593)
 			.saturating_add(RocksDbWeight::get().reads(4_u64))
 			.saturating_add(RocksDbWeight::get().writes(4_u64))
 	}
 	/// Storage: `Sidechain::GenesisUtxo` (r:1 w:0)
 	/// Proof: `Sidechain::GenesisUtxo` (`max_values`: Some(1), `max_size`: Some(34), added: 529, mode: `MaxEncodedLen`)
-	/// Storage: `BlockProducerMetadata::BlockProducerMetadataOwners` (r:1 w:0)
+	/// Storage: `BlockProducerMetadata::BlockProducerMetadataOwners` (r:1 w:1)
 	/// Proof: `BlockProducerMetadata::BlockProducerMetadataOwners` (`max_values`: None, `max_size`: Some(76), added: 2551, mode: `MaxEncodedLen`)
+	/// Storage: `System::Account` (r:1 w:1)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
+	/// Storage: `Balances::Holds` (r:1 w:1)
+	/// Proof: `Balances::Holds` (`max_values`: None, `max_size`: Some(67), added: 2542, mode: `MaxEncodedLen`)
 	/// Storage: `BlockProducerMetadata::BlockProducerMetadataStorage` (r:0 w:1)
 	/// Proof: `BlockProducerMetadata::BlockProducerMetadataStorage` (`max_values`: None, `max_size`: Some(590), added: 3065, mode: `MaxEncodedLen`)
 	fn delete_metadata() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `96`
-		//  Estimated: `3541`
-		// Minimum execution time: 198_000_000 picoseconds.
-		Weight::from_parts(200_000_000, 3541)
-			.saturating_add(RocksDbWeight::get().reads(2_u64))
-			.saturating_add(RocksDbWeight::get().writes(1_u64))
+		//  Measured:  `231`
+		//  Estimated: `3593`
+		// Minimum execution time: 217_000_000 picoseconds.
+		Weight::from_parts(223_000_000, 3593)
+			.saturating_add(RocksDbWeight::get().reads(4_u64))
+			.saturating_add(RocksDbWeight::get().writes(4_u64))
 	}
 }

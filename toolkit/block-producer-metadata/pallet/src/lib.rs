@@ -177,7 +177,7 @@ pub mod pallet {
 
 	/// Storage mapping from block producers to their metadata depositor accounts
 	#[pallet::storage]
-	type BlockProducerMetadataOwners<T: Config> = StorageMap<
+	pub(crate) type BlockProducerMetadataOwners<T: Config> = StorageMap<
 		Hasher = Blake2_128Concat,
 		Key = CrossChainKeyHash,
 		Value = T::AccountId,
