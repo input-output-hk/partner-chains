@@ -52,7 +52,7 @@ fn generate_keys_via_rpc<C: IOContext>(
 	// Step 1: Generate session keys
 	let keys_hex = context
 		.run_command(&format!(
-			r#"{node_executable} rpc author_rotateKeys --url {}"#,
+			r#"{node_executable} -- author_rotateKeys --url {}"#,
 			config.node_url
 		))?
 		.trim()
@@ -97,7 +97,7 @@ fn decode_session_keys_via_rpc<C: IOContext>(
 	// Call sessionKeys_decodeSessionKeys RPC
 	let decode_result = context
 		.run_command(&format!(
-			r#"{node_executable} rpc sessionKeys_decodeSessionKeys --params '["{}"]' --url {}"#,
+			r#"{node_executable} -- sessionKeys_decodeSessionKeys --params '["{}"]' --url {}"#,
 			keys_hex, node_url
 		))?
 		.trim()
