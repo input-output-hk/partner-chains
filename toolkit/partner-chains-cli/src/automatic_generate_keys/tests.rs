@@ -14,7 +14,7 @@ fn test_config_creation() {
 fn test_decode_session_keys_via_rpc() {
 	let mock_context = MockIOContext::new().with_expected_io(vec![
         MockIO::run_command(
-            r#"test-node rpc sessionKeys_decodeSessionKeys --params '["0x123abc"]' --url http://localhost:9944"#,
+            r#"test-node -- sessionKeys_decodeSessionKeys --params '["0x123abc"]' --url http://localhost:9944"#,
             r#"[["0x16c425233d22...", "gran"], ["0x2ef6a0d...", "imon"]]"#
         ),
         MockIO::eprint("✅ Decode response: [[\"0x16c425233d22...\", \"gran\"], [\"0x2ef6a0d...\", \"imon\"]]"),
@@ -44,7 +44,7 @@ fn test_decode_session_keys_via_rpc() {
 fn test_decode_empty_response() {
 	let mock_context = MockIOContext::new().with_expected_io(vec![
         MockIO::run_command(
-            r#"test-node rpc sessionKeys_decodeSessionKeys --params '["0x123abc"]' --url http://localhost:9944"#,
+            r#"test-node -- sessionKeys_decodeSessionKeys --params '["0x123abc"]' --url http://localhost:9944"#,
             "[]"
         ),
         MockIO::eprint("✅ Decode response: []"),
@@ -66,7 +66,7 @@ fn test_decode_empty_response() {
 fn test_decode_invalid_json() {
 	let mock_context = MockIOContext::new().with_expected_io(vec![
         MockIO::run_command(
-            r#"test-node rpc sessionKeys_decodeSessionKeys --params '["0x123abc"]' --url http://localhost:9944"#,
+            r#"test-node -- sessionKeys_decodeSessionKeys --params '["0x123abc"]' --url http://localhost:9944"#,
             "invalid json"
         ),
         MockIO::eprint("✅ Decode response: invalid json"),
@@ -86,4 +86,42 @@ fn test_decode_invalid_json() {
 			.to_string()
 			.contains("Failed to parse decode response as JSON")
 	);
+}
+
+#[test]
+fn test_generate_keys_via_rpc() {
+	let mock_context = MockIOContext::new().with_expected_io(vec![
+		MockIO::eprint("🔑 Generating session keys via RPC..."),
+		MockIO::run_command(
+			r#"test-node -- author_rotateKeys --url http://localhost:9944"#,
+			r#""0x123abc""#
+		),
+		MockIO::eprint("✅ Generated session keys: 0x123abc"),
+		MockIO::eprint("🔍 Decoding session keys to get key types..."),
+		MockIO::run_command(
+			r#"test-node -- sessionKeys_decodeSessionKeys --params '["0x123abc"]' --url http://localhost:9944"#,
+			r#"[["0x16c425233d22...", "gran"], ["0x2ef6a0d...", "imon"]]"#
+		),
+		MockIO::eprint("✅ Decode response: [[\"0x16c425233d22...\", \"gran\"], [\"0x2ef6a0d...\", \"imon\"]]"),
+		MockIO::eprint("✅ Successfully decoded 2 session keys"),
+		MockIO::eprint("💾 Session keys saved to session_keys.json"),
+		MockIO::eprint("🔑 Generated session keys:"),
+		MockIO::print(r#"[
+  {
+    "key_type": "gran",
+    "public_key": "0x16c425233d22..."
+  },
+  {
+    "key_type": "imon",
+    "public_key": "0x2ef6a0d..."
+  }
+]"#),
+	]);
+
+	let config = AutomaticGenerateKeysConfig {
+		node_url: "http://localhost:9944".to_string(),
+	};
+
+	let result = generate_keys_via_rpc(&config, "test-node", &mock_context);
+	assert!(result.is_ok());
 }
