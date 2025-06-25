@@ -118,9 +118,7 @@ fn test_generate_keys_via_rpc() {
 ]"#),
 	]);
 
-	let config = AutomaticGenerateKeysConfig {
-		node_url: "http://localhost:9944".to_string(),
-	};
+	let config = AutomaticGenerateKeysConfig { node_url: "http://localhost:9944".to_string() };
 
 	let result = generate_keys_via_rpc(&config, "test-node", &mock_context);
 	assert!(result.is_ok());
