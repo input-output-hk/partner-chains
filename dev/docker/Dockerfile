@@ -1,7 +1,6 @@
-FROM partner-chains-node-builder:latest AS builder
+FROM --platform=linux/amd64 partner-chains-node-builder:latest AS builder
 
-FROM docker.io/library/ubuntu:25.10
-
+FROM --platform=linux/amd64 docker.io/library/ubuntu:20.04
 COPY --from=builder /partner-chains-node/docker-build/target/release/partner-chains-demo-node /usr/local/bin/partner-chains-node
 
 USER root
