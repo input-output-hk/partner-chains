@@ -296,7 +296,7 @@ pub mod pallet {
 		fn release_deposit(depositor: &T::AccountId, amount: BalanceOf<T>) -> DispatchResult {
 			use frame_support::traits::tokens::*;
 
-			<T::Currency as MutateHold<_>>::release(
+			T::Currency::release(
 				&HoldReason::MetadataDeposit.into(),
 				depositor,
 				amount,
