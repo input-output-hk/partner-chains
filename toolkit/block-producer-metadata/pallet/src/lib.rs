@@ -170,7 +170,7 @@ pub mod pallet {
 	pub type BlockProducerMetadataStorage<T: Config> = StorageMap<
 		Hasher = Blake2_128Concat,
 		Key = CrossChainKeyHash,
-		Value = (T::BlockProducerMetadata, T::AccountId),
+		Value = (T::BlockProducerMetadata, T::AccountId, BalanceOf<T>),
 		QueryKind = OptionQuery,
 	>;
 
@@ -228,16 +228,16 @@ pub mod pallet {
 
 			match BlockProducerMetadataStorage::<T>::get(cross_chain_key_hash) {
 				None => {
-					Self::hold_deposit(&origin_account)?;
+					let deposit = Self::hold_deposit(&origin_account)?;
 					BlockProducerMetadataStorage::<T>::insert(
 						cross_chain_key_hash,
-						(metadata, origin_account),
+						(metadata, origin_account, deposit),
 					);
 				},
-				Some((_old_data, owner)) => {
+				Some((_old_data, owner, deposit)) => {
 					BlockProducerMetadataStorage::<T>::insert(
 						cross_chain_key_hash,
-						(metadata, owner),
+						(metadata, owner, deposit),
 					);
 				},
 			}
@@ -269,10 +269,10 @@ pub mod pallet {
 
 			ensure!(is_valid_signature, Error::<T>::InvalidMainchainSignature);
 
-			if let Some((_data, owner)) =
+			if let Some((_data, owner, deposit)) =
 				BlockProducerMetadataStorage::<T>::get(cross_chain_key_hash)
 			{
-				Self::release_deposit(&owner, &origin_account)?;
+				Self::release_deposit(&owner, &origin_account, deposit)?;
 			}
 
 			BlockProducerMetadataStorage::<T>::remove(cross_chain_key_hash);
@@ -282,20 +282,24 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
-		fn hold_deposit(account: &T::AccountId) -> DispatchResult {
+		fn hold_deposit(account: &T::AccountId) -> Result<BalanceOf<T>, DispatchError> {
 			T::Currency::hold(&HoldReason::MetadataDeposit.into(), account, T::HoldAmount::get())
 				.map_err(|_| Error::<T>::InsufficientBalance)?;
-			Ok(())
+			Ok(T::HoldAmount::get())
 		}
 
-		fn release_deposit(depositor: &T::AccountId, beneficiary: &T::AccountId) -> DispatchResult {
+		fn release_deposit(
+			depositor: &T::AccountId,
+			beneficiary: &T::AccountId,
+			amount: BalanceOf<T>,
+		) -> DispatchResult {
 			use frame_support::traits::tokens::*;
 
 			<T::Currency as MutateHold<_>>::transfer_on_hold(
 				&HoldReason::MetadataDeposit.into(),
 				depositor,
 				beneficiary,
-				T::HoldAmount::get(),
+				amount,
 				Precision::BestEffort,
 				Restriction::Free,
 				Fortitude::Polite,
@@ -313,7 +317,7 @@ pub mod pallet {
 			cross_chain_pub_key: &CrossChainPublicKey,
 		) -> Option<T::BlockProducerMetadata> {
 			BlockProducerMetadataStorage::<T>::get(cross_chain_pub_key.hash())
-				.map(|(data, _owner)| data)
+				.map(|(data, _owner, _deposit)| data)
 		}
 	}
 }
