@@ -92,13 +92,20 @@ mod benchmarks {
 		let metadata = T::BenchmarkHelper::metadata();
 		let cross_chain_pub_key = T::BenchmarkHelper::cross_chain_pub_key();
 		let cross_chain_signature = T::BenchmarkHelper::upsert_cross_chain_signature();
+		let valid_before = 100_000_000;
 
 		// Create an account and fund it with sufficient balance
 		let caller: T::AccountId = account("caller", 0, 0);
 		let _ = T::Currency::mint_into(&caller, T::HoldAmount::get() * 2u32.into());
 
 		#[extrinsic_call]
-		_(RawOrigin::Signed(caller), metadata, cross_chain_signature, cross_chain_pub_key);
+		_(
+			RawOrigin::Signed(caller),
+			metadata,
+			cross_chain_signature,
+			cross_chain_pub_key,
+			valid_before,
+		);
 	}
 
 	#[benchmark]
@@ -106,6 +113,7 @@ mod benchmarks {
 		let metadata = T::BenchmarkHelper::metadata();
 		let cross_chain_pub_key = T::BenchmarkHelper::cross_chain_pub_key();
 		let cross_chain_signature = T::BenchmarkHelper::delete_cross_chain_signature();
+		let valid_before = 100_000_000;
 
 		let caller: T::AccountId = account("caller", 0, 0);
 		let _ =
@@ -117,7 +125,7 @@ mod benchmarks {
 		);
 
 		#[extrinsic_call]
-		_(RawOrigin::Signed(caller), cross_chain_pub_key, cross_chain_signature);
+		_(RawOrigin::Signed(caller), cross_chain_pub_key, cross_chain_signature, valid_before);
 	}
 
 	impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);
