@@ -1,3 +1,5 @@
+use crate::HoldReason;
+
 use super::*;
 use frame_support::{assert_noop, assert_ok, traits::tokens::fungible::InspectHold};
 use frame_system::pallet_prelude::OriginFor;
@@ -30,7 +32,7 @@ fn saves_new_metadata_and_holds_fee() {
 
 		// Check that the amount is held, not burned
 		let held_balance = Balances::balance_on_hold(
-			&RuntimeHoldReason::BlockProducerMetadata(crate::HoldReason::MetadataDeposit),
+			&RuntimeHoldReason::BlockProducerMetadata(HoldReason::MetadataDeposit),
 			&FUNDED_ACCOUNT,
 		);
 		assert_eq!(held_balance, MetadataHoldAmount::get());
@@ -66,13 +68,13 @@ fn updates_metadata_without_holding_additional_fee() {
 
 		let account_1_balance = Balances::free_balance(&FUNDED_ACCOUNT);
 		let account_1_held = Balances::balance_on_hold(
-			&RuntimeHoldReason::BlockProducerMetadata(crate::HoldReason::MetadataDeposit),
+			&RuntimeHoldReason::BlockProducerMetadata(HoldReason::MetadataDeposit),
 			&FUNDED_ACCOUNT,
 		);
 
 		let account_2_balance = Balances::free_balance(&FUNDED_ACCOUNT_2);
 		let account_2_held = Balances::balance_on_hold(
-			&RuntimeHoldReason::BlockProducerMetadata(crate::HoldReason::MetadataDeposit),
+			&RuntimeHoldReason::BlockProducerMetadata(HoldReason::MetadataDeposit),
 			&FUNDED_ACCOUNT_2,
 		);
 
@@ -141,21 +143,17 @@ fn deletes_metadata_and_returns_fee() {
 		assert_eq!(Pallet::<Test>::get_metadata_for(&cross_chain_pub_key()), None);
 
 		let account_1_balance = Balances::free_balance(&FUNDED_ACCOUNT);
-		let account_1_held = Balances::balance_on_hold(
-			&RuntimeHoldReason::BlockProducerMetadata(crate::HoldReason::MetadataDeposit),
-			&FUNDED_ACCOUNT,
-		);
+		let account_1_held =
+			Balances::balance_on_hold(&HoldReason::MetadataDeposit.into(), &FUNDED_ACCOUNT);
 
 		let account_2_balance = Balances::free_balance(&FUNDED_ACCOUNT_2);
-		let account_2_held = Balances::balance_on_hold(
-			&RuntimeHoldReason::BlockProducerMetadata(crate::HoldReason::MetadataDeposit),
-			&FUNDED_ACCOUNT_2,
-		);
+		let account_2_held =
+			Balances::balance_on_hold(&HoldReason::MetadataDeposit.into(), &FUNDED_ACCOUNT_2);
 
-		assert_eq!(account_1_balance, INITIAL_BALANCE - MetadataHoldAmount::get());
+		assert_eq!(account_1_balance, INITIAL_BALANCE);
 		assert_eq!(account_1_held, 0);
 
-		assert_eq!(account_2_balance, INITIAL_BALANCE + MetadataHoldAmount::get());
+		assert_eq!(account_2_balance, INITIAL_BALANCE);
 		assert_eq!(account_2_held, 0);
 	})
 }

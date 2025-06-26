@@ -255,7 +255,7 @@ pub mod pallet {
 			cross_chain_pub_key: CrossChainPublicKey,
 			signature: CrossChainSignature,
 		) -> DispatchResult {
-			let origin_account = ensure_signed(origin)?;
+			ensure_signed(origin)?;
 
 			let genesis_utxo = T::genesis_utxo();
 			let metadata_message = MetadataSignedMessage::<T::BlockProducerMetadata> {
@@ -272,7 +272,7 @@ pub mod pallet {
 			if let Some((_data, owner, deposit)) =
 				BlockProducerMetadataStorage::<T>::get(cross_chain_key_hash)
 			{
-				Self::release_deposit(&owner, &origin_account, deposit)?;
+				Self::release_deposit(&owner, deposit)?;
 			}
 
 			BlockProducerMetadataStorage::<T>::remove(cross_chain_key_hash);
@@ -288,21 +288,14 @@ pub mod pallet {
 			Ok(T::HoldAmount::get())
 		}
 
-		fn release_deposit(
-			depositor: &T::AccountId,
-			beneficiary: &T::AccountId,
-			amount: BalanceOf<T>,
-		) -> DispatchResult {
+		fn release_deposit(depositor: &T::AccountId, amount: BalanceOf<T>) -> DispatchResult {
 			use frame_support::traits::tokens::*;
 
-			<T::Currency as MutateHold<_>>::transfer_on_hold(
+			<T::Currency as MutateHold<_>>::release(
 				&HoldReason::MetadataDeposit.into(),
 				depositor,
-				beneficiary,
 				amount,
 				Precision::BestEffort,
-				Restriction::Free,
-				Fortitude::Polite,
 			)?;
 			Ok(())
 		}
