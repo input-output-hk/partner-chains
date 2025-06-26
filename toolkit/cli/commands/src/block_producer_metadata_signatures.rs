@@ -7,6 +7,7 @@ use serde_json::{self, json};
 use sidechain_domain::*;
 use sp_block_producer_metadata::MetadataSignedMessage;
 use std::io::BufReader;
+use time_source::{SystemTimeSource, TimeSource};
 
 /// Generates ECDSA signatures for block producer metadata using cross-chain keys.
 #[derive(Clone, Debug, clap::Subcommand)]
@@ -23,6 +24,9 @@ pub enum BlockProducerMetadataSignatureCmd {
 		/// ECDSA private key for cross-chain operations, corresponding to the block producer's identity
 		#[arg(long)]
 		cross_chain_signing_key: CrossChainSigningKeyParam,
+		/// Time-to-live of the signature in seconds.
+		#[arg(long, default_value = "3600")]
+		ttl: u64,
 	},
 	/// Generates signature for the `delete_metadata` extrinsic
 	Delete {
@@ -32,6 +36,9 @@ pub enum BlockProducerMetadataSignatureCmd {
 		/// ECDSA private key for cross-chain operations, corresponding to the block producer's identity
 		#[arg(long)]
 		cross_chain_signing_key: CrossChainSigningKeyParam,
+		/// Time-to-live of the signature in seconds.
+		#[arg(long, default_value = "3600")]
+		ttl: u64,
 	},
 }
 
@@ -39,7 +46,8 @@ impl BlockProducerMetadataSignatureCmd {
 	/// Reads metadata file, generates signatures, and outputs JSON to stdout.
 	pub fn execute<M: Send + Sync + DeserializeOwned + Encode>(&self) -> anyhow::Result<()> {
 		let input = self.get_input::<M>()?;
-		let output = self.get_output(input)?;
+		let time_source = SystemTimeSource;
+		let output = self.get_output(input, &time_source)?;
 		println!("{}", serde_json::to_string_pretty(&output)?);
 
 		Ok(())
@@ -66,12 +74,14 @@ impl BlockProducerMetadataSignatureCmd {
 	pub fn get_output<M: Send + Sync + DeserializeOwned + Encode>(
 		&self,
 		metadata: Option<M>,
+		time_source: &impl TimeSource,
 	) -> anyhow::Result<serde_json::Value> {
 		let encoded_metadata = metadata.as_ref().map(|data| data.encode());
 		let message = MetadataSignedMessage {
 			cross_chain_pub_key: self.cross_chain_signing_key().vkey(),
 			metadata,
 			genesis_utxo: *self.genesis_utxo(),
+			valid_before: self.valid_before(time_source),
 		};
 		let signature = message.sign_with_key(&self.cross_chain_signing_key().0);
 
@@ -80,7 +90,8 @@ impl BlockProducerMetadataSignatureCmd {
 			"cross_chain_pub_key": self.cross_chain_signing_key().vkey(),
 			"cross_chain_pub_key_hash": self.cross_chain_signing_key().vkey().hash(),
 			"encoded_metadata": encoded_metadata.map(ByteString),
-			"encoded_message": ByteString(message.encode())
+			"encoded_message": ByteString(message.encode()),
+			"valid_before": self.valid_before(time_source)
 		}))
 	}
 
@@ -97,6 +108,16 @@ impl BlockProducerMetadataSignatureCmd {
 			Self::Upsert { genesis_utxo, .. } => genesis_utxo,
 		}
 	}
+
+	fn valid_before(&self, time_source: &impl TimeSource) -> u64 {
+		let ttl = match self {
+			Self::Delete { ttl, .. } => *ttl,
+			Self::Upsert { ttl, .. } => *ttl,
+		};
+		let now = time_source.get_current_time_millis() / 1000;
+
+		now + ttl
+	}
 }
 
 #[cfg(test)]
@@ -108,6 +129,7 @@ mod tests {
 	use serde::Deserialize;
 	use serde_json::json;
 	use sidechain_domain::UtxoId;
+	use time_source::MockedTimeSource;
 
 	#[derive(Deserialize, Encode)]
 	struct TestMetadata {
@@ -117,6 +139,11 @@ mod tests {
 
 	#[test]
 	fn produces_correct_json_output_with_signature_and_pubkey() {
+		let time = 100_000_000;
+		let ttl = 3600;
+
+		let time_source = MockedTimeSource { current_time_millis: time * 1000 };
+
 		let cmd = BlockProducerMetadataSignatureCmd::Upsert {
 			genesis_utxo: UtxoId::new([1; 32], 1),
 			metadata_file: "unused".to_string(),
@@ -127,18 +154,20 @@ mod tests {
 				)
 				.unwrap(),
 			),
+			ttl: 3600,
 		};
 
 		let metadata = TestMetadata { url: "http://example.com".into(), hash: "1234".into() };
 
-		let output = cmd.get_output::<TestMetadata>(Some(metadata)).unwrap();
+		let output = cmd.get_output::<TestMetadata>(Some(metadata), &time_source).unwrap();
 
 		let expected_output = json!({
 			"cross_chain_pub_key": "0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1",
 			"cross_chain_pub_key_hash" : "0x4a20b7cab322b36838a8e4b6063c3563cdb79c97175f6c2d233dac4d",
-			"encoded_message": "0x84020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a10148687474703a2f2f6578616d706c652e636f6d103132333401010101010101010101010101010101010101010101010101010101010101010100",
-			"signature": "0x574077ad8e6b367d18348a6022ffed6f58a84b72dd764d6efdc5957ae9525dd43268716c355c3d1fff80a79febb00ae3e26caddbe8d5a6787c24a36bcf395e9f",
-			"encoded_metadata": "0x48687474703a2f2f6578616d706c652e636f6d1031323334"
+			"encoded_message": "0x84020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a10148687474703a2f2f6578616d706c652e636f6d10313233340101010101010101010101010101010101010101010101010101010101010101010010eff50500000000",
+			"signature": "0x94bc07a67ada4a27f24a9e455ac7adb12e81b6b53b59637a1cae96c9f7a2fcf321586c8a3d4605949c3a105f5767ae0b315e3dcfa44b01272e9c698df3317ec4",
+			"encoded_metadata": "0x48687474703a2f2f6578616d706c652e636f6d1031323334",
+			"valid_before": time + ttl
 		});
 
 		assert_eq!(output, expected_output)

@@ -1484,6 +1484,7 @@ dependencies = [
  "sp-runtime",
  "sp-sidechain",
  "thiserror 2.0.12",
+ "time-source",
 ]
 
 [[package]]
