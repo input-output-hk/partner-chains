@@ -85,8 +85,8 @@
 //! and the metadata encoded as hex bytes (in case of upsert).
 //!
 //! When metadata is inserted for the first time, a deposit is held from the caller's account. Updates to existing
-//! metadata do not require additional deposits. Deleting metadata will release the deposit to the account that was
-//! used to submit the [delete_metadata] extrinsic.
+//! metadata do not require additional deposits. Deleting metadata will release the deposit to the account that
+//! originally provided it.
 //!
 //! After the signature has been obtained, the user should submit the [upsert_metadata] extrinsic (eg. using PolkadotJS)
 //! providing:
@@ -165,7 +165,7 @@ pub mod pallet {
 		type BenchmarkHelper: benchmarking::BenchmarkHelper<Self::BlockProducerMetadata>;
 	}
 
-	/// Storage mapping from block producers to their metadata and owner Substrate account
+	/// Storage mapping from block producers to their metadata, depositor account and deposit amount
 	#[pallet::storage]
 	pub type BlockProducerMetadataStorage<T: Config> = StorageMap<
 		Hasher = Blake2_128Concat,
@@ -247,7 +247,7 @@ pub mod pallet {
 
 		/// Deletes metadata for the block producer identified by `cross_chain_pub_key`.
 		///
-		/// The deposit funds will be returned to the submitter of the extrinsic.
+		/// The deposit funds will be returned to the original depositor account.
 		#[pallet::call_index(1)]
 		#[pallet::weight(T::WeightInfo::delete_metadata())]
 		pub fn delete_metadata(
