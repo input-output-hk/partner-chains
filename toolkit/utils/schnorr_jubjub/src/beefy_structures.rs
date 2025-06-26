@@ -6,7 +6,7 @@
 //! protocol, ensuring compatibility with Substrate's runtime and cryptographic
 //! infrastructure.
 
-use alloc::vec::Vec;
+use alloc::{format, vec::Vec, string::String};
 use core::fmt::{Debug, Display, Formatter};
 
 use crate::poseidon::PoseidonJubjub;
@@ -14,7 +14,7 @@ use ark_ec::AffineRepr;
 use ark_ed_on_bls12_381::{EdwardsAffine, Fr};
 use ark_ff::fields::Field;
 use ark_serialize::CanonicalSerialize;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use sha2::Digest;
 use sp_consensus_beefy::{AuthorityIdBound, BeefyAuthorityId};
 use sp_core::{
@@ -30,6 +30,8 @@ use sp_runtime::{
 	app_crypto::{AppCrypto, AppPair, AppPublic, AppSignature},
 	traits::Convert,
 };
+
+use sp_core::crypto::Ss58Codec;
 
 use crate::primitive::{SchnorrSignature, VerifyingKey};
 
@@ -86,7 +88,7 @@ impl Serialize for Public {
 	where
 		S: Serializer,
 	{
-		serializer.serialize_bytes(self.0.as_ref())
+		serializer.serialize_str(&self.to_ss58check())
 	}
 }
 
@@ -95,10 +97,12 @@ impl<'de> Deserialize<'de> for Public {
 	where
 		D: Deserializer<'de>,
 	{
-		let bytes: &[u8] = Deserialize::deserialize(deserializer)?;
-		let key = Self::try_from(bytes)
-			.map_err(|_| serde::de::Error::custom("invalid public key bytes"))?;
-		Ok(key)
+		Public::from_ss58check(&String::deserialize(deserializer)?)
+			.map_err(|e| de::Error::custom(format!("{:?}", e)))
+		// let bytes: &[u8] = Deserialize::deserialize(deserializer)?;
+		// let key = Self::try_from(bytes)
+		// 	.map_err(|_| serde::de::Error::custom("invalid public key bytes"))?;
+		// Ok(key)
 	}
 }
 
