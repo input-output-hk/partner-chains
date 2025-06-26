@@ -1,0 +1,29 @@
+{
+    "nodes_config": {
+        "nodes": {
+            "validator-1": {
+                "host": "ci-preview-validator-1-service.ci-preview.svc.cluster.local",
+                "port": "${nodes_config[default_port]}"
+            },
+            "validator-2": {
+                "host": "ci-preview-validator-2-service.ci-preview.svc.cluster.local",
+                "port": "${nodes_config[default_port]}"
+            },
+            "validator-3": {
+                "host": "ci-preview-validator-3-service.ci-preview.svc.cluster.local",
+                "port": "${nodes_config[default_port]}"
+            },
+            "validator-4": {
+                "host": "ci-preview-validator-4-service.ci-preview.svc.cluster.local",
+                "port": "${nodes_config[default_port]}"
+            },
+            "validator-5": {
+                "host": "ci-preview-validator-5-service.ci-preview.svc.cluster.local",
+                "port": "${nodes_config[default_port]}"
+            }
+        }
+    },
+    "stack_config": {
+        "tools_host": "binary-host-service.sc.svc.cluster.local"
+    }
+}

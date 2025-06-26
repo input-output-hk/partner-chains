@@ -1,0 +1,114 @@
+{
+    "deployment_mc_epoch": 941,
+    "genesis_utxo": "f9321b197b0995c5f40e30425b1f3c5a797c4cb2678e1ed44934bc50858a9278#1",
+    "deployment_version": "v1.7.0-rc1",
+    "test_environment": "devnet",
+    "committee_participation_tolerance": 0.21,
+    "nodes_config": {
+        "nodes": {
+            "alice": {
+                "host": "10.0.10.13",
+                "port": "30021",
+                "aura_ss58_address": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+                "pool_id": "17a3e09033f190cdcddd11350f095d3ae11f1a61c65731366750177a",
+                "public_key": "0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1",
+                "aura_public_key": "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d",
+                "grandpa_public_key": "0x88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee",
+                "permissioned_candidate": true
+            },
+            "bob": {
+                "host": "10.0.10.13",
+                "port": "30022",
+                "aura_ss58_address": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+                "pool_id": "dd67a558342e53c9ef9528124e44e43a34b2ae3b432aa5144ffec24d",
+                "public_key": "0x0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27",
+                "aura_public_key": "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
+                "grandpa_public_key": "0xd17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69",
+                "permissioned_candidate": true
+            },
+            "charlie": {
+                "host": "10.0.10.13",
+                "port": "30023",
+                "aura_ss58_address": "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y",
+                "pool_id": "f824ff53b6a71522bb9f8db18fffd2469d957a56cf00e0cb0bdc8a08",
+                "public_key": "0x0389411795514af1627765eceffcbd002719f031604fadd7d188e2dc585b4e1afb",
+                "aura_public_key": "0x90b5ab205c6974c9ea841be688864633dc9ca8a357843eeacf2314649965fe22",
+                "grandpa_public_key": "0x439660b36c6c03afafca027b910b4fecf99801834c62a5e6006f27d978de234f",
+                "permissioned_candidate": true
+            },
+            "dave": {
+                "host": "10.0.10.13",
+                "port": "30024",
+                "aura_ss58_address": "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",
+                "pool_id": "2e36e13ad5665685f163e4fa3d32ccf0a333fda0a67c93cbac99f7a2",
+                "public_key": "0x03bc9d0ca094bd5b8b3225d7651eac5d18c1c04bf8ae8f8b263eebca4e1410ed0c",
+                "aura_public_key": "0x306721211d5404bd9da88e0204360a1a9ab8b87c66c1bc2fcdd37f3c2222cc20",
+                "grandpa_public_key": "0x5e639b43e0052c47447dac87d6fd2b6ec50bdd4d0f614e4299c665249bbd09d9"
+            },
+            "eve": {
+                "host": "10.0.10.13",
+                "port": "30025",
+                "aura_ss58_address": "5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMaw",
+                "pool_id": "54512ccbdf3a6912bf4da983a4aa46e9c46eb0fd19a2b3f5341c5366",
+                "public_key": "0x031d10105e323c4afce225208f71a6441ee327a65b9e646e772500c74d31f669aa",
+                "aura_public_key": "0xe659a7a1628cdd93febc04a4e0646ea20e9f5f0ce097d9a05290d4a9e054df4e",
+                "grandpa_public_key": "0x1dfe3e22cc0d45c70779c1095f7489a8ef3cf52d62fbd8c2fa38c9f1723502b5",
+                "rotation_candidate": true,
+                "cardano_payment_addr": "addr_test1vr88zd5ywcdu07hqpnutd8umqyld34e6rrtzgu7m3rua67gg6clcz",
+                "keys_files": {
+                    "cardano_payment_key": "./secrets/substrate/devnet/keys/eve/payment.skey.json.decrypted",
+                    "spo_signing_key": "./secrets/substrate/devnet/keys/eve/cold.skey.json.decrypted",
+                    "spo_public_key": "./secrets/substrate/devnet/keys/eve/cold.vkey.json.decrypted",
+                    "partner_chain_signing_key": "./secrets/substrate/devnet/keys/eve/partner_chain.skey.json.decrypted"
+                }
+            },
+            "ferdie": {
+                "host": "10.0.10.13",
+                "port": "30026",
+                "aura_ss58_address": "5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL",
+                "pool_id": "9ad70551d17317e44866850f9827f6464f0867e50bff5a87b1f9e3c0",
+                "public_key": "0x0291f1217d5a04cb83312ee3d88a6e6b33284e053e6ccfc3a90339a0299d12967c",
+                "aura_public_key": "0x1cbd2d43530a44705ad088af313e18f80b53ef16b36177cd4b77b846f2a5f07c",
+                "grandpa_public_key": "0x568cb4a574c6d178feb39c27dfc8b3f789e5f5423e19c71633c748b9acf086b5",
+                "rotation_candidate": true,
+                "cardano_payment_addr": "addr_test1vrkp4j33xcysqfancc7fttdrwf86ztgpaqhhzu98vahnevqfng7r9",
+                "keys_files": {
+                    "cardano_payment_key": "./secrets/substrate/devnet/keys/ferdie/payment.skey.json.decrypted",
+                    "spo_signing_key": "./secrets/substrate/devnet/keys/ferdie/cold.skey.json.decrypted",
+                    "spo_public_key": "./secrets/substrate/devnet/keys/ferdie/cold.vkey.json.decrypted",
+                    "partner_chain_signing_key": "./secrets/substrate/devnet/keys/ferdie/partner_chain.skey.json.decrypted"
+                }
+            },
+            "greg": {
+                "host": "10.0.10.13",
+                "port": "30027",
+                "aura_ss58_address": "5D4oNr3wasgzxt7KdoHBjnxUthfoM93kWMav63aoYmPHfkBW",
+                "pool_id": "",
+                "public_key": "0x02dacce90fca29ca80404d9b4e8ff3d9dabd03def6a82e412acb2ad04dd734dbfc",
+                "aura_public_key": "0x2c4ed1038f6e4131c21b6b89885ed232c5b81bae09009376e9079cc8aa518a1c",
+                "grandpa_public_key": "0xfa41bacb202b0529288b05af1b324f85fe561091c2d29d9df1df37c3aa687c23",
+                "permissioned_candidate": false
+            },
+            "henry": {
+                "host": "10.0.10.13",
+                "port": "30028",
+                "aura_ss58_address": "5FcTxwLAQ8L23HvTa6Y6UUMBKJkYRG42Vg9wVVpZDpE2ZnTZ",
+                "pool_id": "",
+                "public_key": "0x0263c9cdabbef76829fe5b35f0bbf3051bd1c41b80f58b5d07c271d0dd04de2a4e",
+                "aura_public_key": "0x9cedc9f7b926191f64d68ee77dd90c834f0e73c0f53855d77d3b0517041d5640",
+                "grandpa_public_key": "0xde21d8171821fc29a43a1ed90ee75623edc3794012010f165b6afc3483a569aa",
+                "permissioned_candidate": true
+            }
+        },
+        "governance_authority": {
+            "mainchain_address": "addr_test1vp7yrmz5p6mdm3ph0a0jaxtk58hny3wseuw80fwql93huygczalde",
+            "mainchain_key": "./secrets/substrate/devnet/keys/governance_authority/init.skey.json.decrypted"
+        },
+        "selected_node": "dave",
+        "node": "${nodes_config[nodes][${nodes_config[selected_node]}]}",
+        "token_conversion_rate": 9,
+        "block_duration": 6,
+        "slots_in_epoch": 60,
+        "token_policy_id": "a8629ed63b21472af8b18382303a2367b4707e3c2bc852f303a4612b.4655454c"
+    }
+}
