@@ -19,17 +19,21 @@ fn test_generate_keys_via_rpc() {
 		MockIO::eprint("🔑 Generating session keys via RPC..."),
 		MockIO::eprint("✅ Generated session keys: 0x123abc"),
 		MockIO::eprint("🔍 Decoding session keys to get key types..."),
-		MockIO::eprint(r#"✅ Decode response: {"id":2,"jsonrpc":"2.0","result":"0x08deadbeef04aura"}"#),
+		MockIO::eprint(
+			r#"✅ Decode response: {"id":2,"jsonrpc":"2.0","result":"0x08deadbeef04aura"}"#,
+		),
 		MockIO::eprint("⚠️  Runtime call returned encoded data - providing raw keys for now"),
 		MockIO::eprint("✅ Successfully decoded 1 session keys"),
 		MockIO::eprint("💾 Session keys saved to session_keys.json"),
 		MockIO::eprint("🔑 Generated session keys:"),
-		MockIO::print(r#"[
+		MockIO::print(
+			r#"[
   {
     "key_type": "raw",
     "public_key": "0x123abc"
   }
-]"#),
+]"#,
+		),
 	]);
 
 	// Mock the rotate keys request
@@ -53,9 +57,7 @@ fn test_generate_keys_via_rpc() {
 			"params": ["SessionKeys_decode_session_keys", "0x123abc"],
 			"id": 2
 		})))
-		.with_body(
-			r#"{"jsonrpc":"2.0","result":"0x08deadbeef04aura","id":2}"#,
-		)
+		.with_body(r#"{"jsonrpc":"2.0","result":"0x08deadbeef04aura","id":2}"#)
 		.create();
 
 	let config = AutomaticGenerateKeysConfig { node_url: server.url() };
@@ -110,12 +112,14 @@ fn test_generate_keys_empty_response() {
 		MockIO::eprint("✅ Successfully decoded 1 session keys"),
 		MockIO::eprint("💾 Session keys saved to session_keys.json"),
 		MockIO::eprint("🔑 Generated session keys:"),
-		MockIO::print(r#"[
+		MockIO::print(
+			r#"[
   {
     "key_type": "raw",
     "public_key": "0x123abc"
   }
-]"#),
+]"#,
+		),
 	]);
 
 	// Mock the rotate keys request

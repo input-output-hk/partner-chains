@@ -115,10 +115,7 @@ fn generate_keys_via_rpc<C: IOContext>(
 	let decode_request = JsonRpcRequest {
 		jsonrpc: "2.0".to_string(),
 		method: "state_call".to_string(),
-		params: vec![
-			"SessionKeys_decode_session_keys".to_string(),
-			keys_hex.clone(),
-		],
+		params: vec!["SessionKeys_decode_session_keys".to_string(), keys_hex.clone()],
 		id: 2,
 	};
 
@@ -139,30 +136,23 @@ fn generate_keys_via_rpc<C: IOContext>(
 			// The result is a hex-encoded SCALE-encoded Vec<(Bytes, KeyTypeId)>
 			// For now, we'll provide the raw keys since decoding SCALE data requires more complex parsing
 			context.eprint("⚠️  Runtime call returned encoded data - providing raw keys for now");
-			vec![SessionKeyInfo {
-				key_type: "raw".to_string(),
-				public_key: keys_hex.clone(),
-			}]
+			vec![SessionKeyInfo { key_type: "raw".to_string(), public_key: keys_hex.clone() }]
 		} else {
 			context.eprint("⚠️  Unexpected decode response format - providing raw keys instead");
-			vec![SessionKeyInfo {
-				key_type: "raw".to_string(),
-				public_key: keys_hex.clone(),
-			}]
+			vec![SessionKeyInfo { key_type: "raw".to_string(), public_key: keys_hex.clone() }]
 		}
 	} else {
 		// Check if there's an error
 		if let Some(error) = decode_json.get("error") {
-			context.eprint(&format!("⚠️  Decode runtime call failed: {} - providing raw keys instead", 
-				error.get("message").and_then(|m| m.as_str()).unwrap_or("Unknown error")));
+			context.eprint(&format!(
+				"⚠️  Decode runtime call failed: {} - providing raw keys instead",
+				error.get("message").and_then(|m| m.as_str()).unwrap_or("Unknown error")
+			));
 		} else {
 			context.eprint("⚠️  Could not decode session keys - providing raw keys instead");
 		}
-		
-		vec![SessionKeyInfo {
-			key_type: "raw".to_string(),
-			public_key: keys_hex.clone(),
-		}]
+
+		vec![SessionKeyInfo { key_type: "raw".to_string(), public_key: keys_hex.clone() }]
 	};
 
 	context.eprint(&format!("✅ Successfully decoded {} session keys", session_keys.len()));
