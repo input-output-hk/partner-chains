@@ -140,20 +140,20 @@ fn generate_keys_via_rpc<C: IOContext>(
 fn parse_session_keys_hex<C: IOContext>(keys_hex: &str, context: &C) -> Vec<SessionKeyInfo> {
 	// Remove 0x prefix if present
 	let hex_data = keys_hex.strip_prefix("0x").unwrap_or(keys_hex);
-	
+
 	// Common key types and their lengths in bytes (hex chars = bytes * 2)
 	// AURA: 32 bytes (64 hex chars) - Sr25519
 	// GRANDPA: 32 bytes (64 hex chars) - Ed25519
 	// ImOnline: 32 bytes (64 hex chars) - Sr25519
 	// AuthorityDiscovery: 32 bytes (64 hex chars) - Sr25519
-	
+
 	let mut session_keys = Vec::new();
 	let mut offset = 0;
 	let key_types = ["aura", "gran", "imon", "auth"];
-	
+
 	// Each key is typically 32 bytes = 64 hex characters
 	let key_length = 64;
-	
+
 	for (index, &key_type) in key_types.iter().enumerate() {
 		if offset + key_length <= hex_data.len() {
 			let key_hex = &hex_data[offset..offset + key_length];
@@ -162,13 +162,13 @@ fn parse_session_keys_hex<C: IOContext>(keys_hex: &str, context: &C) -> Vec<Sess
 				public_key: format!("0x{}", key_hex),
 			});
 			offset += key_length;
-			
+
 			context.eprint(&format!("  📝 Parsed {} key: 0x{}", key_type, key_hex));
 		} else {
 			break;
 		}
 	}
-	
+
 	// If there's remaining data, add it as a raw key
 	if offset < hex_data.len() {
 		let remaining_hex = &hex_data[offset..];
@@ -178,15 +178,13 @@ fn parse_session_keys_hex<C: IOContext>(keys_hex: &str, context: &C) -> Vec<Sess
 		});
 		context.eprint(&format!("  📝 Remaining data: 0x{}", remaining_hex));
 	}
-	
+
 	// If we couldn't parse any keys, provide the full hex as raw
 	if session_keys.is_empty() {
 		context.eprint("  ⚠️  Could not parse individual keys - providing full hex as raw");
-		session_keys.push(SessionKeyInfo {
-			key_type: "raw".to_string(),
-			public_key: keys_hex.to_string(),
-		});
+		session_keys
+			.push(SessionKeyInfo { key_type: "raw".to_string(), public_key: keys_hex.to_string() });
 	}
-	
+
 	session_keys
 }
