@@ -750,7 +750,7 @@ class SubstrateApi(BlockchainApi):
     def get_block_producer_metadata(self, cross_chain_public_key_hash: str):
         result = self.substrate.query(
             "BlockProducerMetadata", "BlockProducerMetadataStorage", [f"0x{cross_chain_public_key_hash}"]
-        )
+        )[0]
         logger.debug(f"Block producer metadata for {cross_chain_public_key_hash}: {result}")
         return result.value
 

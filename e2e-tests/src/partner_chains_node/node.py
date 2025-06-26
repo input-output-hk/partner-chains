@@ -45,7 +45,7 @@ class PartnerChainsNode:
         cross_chain_signing_key = cross_chain_signing_key.to_string().hex()
 
         sign_block_producer_metadata_cmd = (
-            f"{self.cli} sign-block-producer-metadata "
+            f"{self.cli} sign-block-producer-metadata upsert "
             f"--genesis-utxo {genesis_utxo} "
             f"--metadata-file {metadata_file} "
             f"--cross-chain-signing-key {cross_chain_signing_key}"

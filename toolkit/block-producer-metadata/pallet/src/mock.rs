@@ -5,12 +5,12 @@ use frame_support::{
 };
 use hex_literal::hex;
 use scale_info::TypeInfo;
-use sidechain_domain::byte_string::SizedByteString;
+use sidechain_domain::byte_string::{BoundedString, SizedByteString};
 use sidechain_domain::*;
 use sp_core::H256;
 use sp_runtime::codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use sp_runtime::{
-	AccountId32, BoundedVec, BuildStorage,
+	AccountId32, BuildStorage,
 	traits::{BlakeTwo256, IdentityLookup},
 };
 
@@ -84,7 +84,7 @@ parameter_types! {
 	Clone, Debug, MaxEncodedLen, Encode, Decode, DecodeWithMemTracking, PartialEq, Eq, TypeInfo,
 )]
 pub struct BlockProducerUrlMetadata {
-	pub url: BoundedVec<u8, ConstU32<512>>,
+	pub url: BoundedString<ConstU32<512>>,
 	pub hash: SizedByteString<32>,
 }
 
@@ -97,7 +97,7 @@ impl crate::benchmarking::BenchmarkHelper<BlockProducerUrlMetadata>
 {
 	fn metadata() -> BlockProducerUrlMetadata {
 		BlockProducerUrlMetadata {
-			url: "https://cool.stuff/spo.json".as_bytes().to_vec().try_into().unwrap(),
+			url: "https://cool.stuff/spo.json".try_into().unwrap(),
 			hash: SizedByteString::from([0; 32]),
 		}
 	}
@@ -108,12 +108,19 @@ impl crate::benchmarking::BenchmarkHelper<BlockProducerUrlMetadata>
 		)
 	}
 
-	fn cross_chain_signature() -> CrossChainSignature {
-		CrossChainSignature(hex!("e25b0291cdc8f5f7eb34e0e1586c25ee05dfb589ce9b53968bfbdeee741d2bf4430ebdd2644829ab0b7659a035fdf3d87befa05e8ec06fd22fb4092f02f6e1d6").to_vec())
+	fn upsert_cross_chain_signature() -> CrossChainSignature {
+		CrossChainSignature(hex!("810854f5bd1d06dc8583ebd58ff4877dddb1646511edb10afd021f716bf51a8e617353b6c5d5f92a2005e2c3c24b782a6f74132d6b54251854cce186c981862c").to_vec())
+	}
+
+	fn delete_cross_chain_signature() -> CrossChainSignature {
+		CrossChainSignature(hex!("5c1a701c8adffdf53a371409a24cc6c2d778a4c65c2c105c5fccfc5eeb69e3fa59bd723e7c10893f53fcfdfff8c02954f2230953cb9596119c11d4a9a29564c5").to_vec())
 	}
 }
 
 pub(crate) const FUNDED_ACCOUNT: AccountId32 = AccountId32::new([1; 32]);
+pub(crate) const FUNDED_ACCOUNT_2: AccountId32 = AccountId32::new([2; 32]);
+
+pub(crate) const INITIAL_BALANCE: u128 = 100_000;
 
 impl crate::pallet::Config for Test {
 	type WeightInfo = ();
@@ -131,7 +138,7 @@ impl crate::pallet::Config for Test {
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
 	pallet_balances::GenesisConfig::<Test> {
-		balances: vec![(FUNDED_ACCOUNT, 100_000)],
+		balances: vec![(FUNDED_ACCOUNT, INITIAL_BALANCE), (FUNDED_ACCOUNT_2, INITIAL_BALANCE)],
 		dev_accounts: None,
 	}
 	.assimilate_storage(&mut t)
