@@ -46,6 +46,7 @@ class PartnerChainsNode:
 
         sign_block_producer_metadata_cmd = (
             f"{self.cli} sign-block-producer-metadata "
+            f"upsert "
             f"--genesis-utxo {genesis_utxo} "
             f"--metadata-file {metadata_file} "
             f"--cross-chain-signing-key {cross_chain_signing_key}"
