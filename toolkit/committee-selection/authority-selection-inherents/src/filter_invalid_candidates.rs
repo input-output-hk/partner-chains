@@ -234,20 +234,20 @@ pub enum PermissionedCandidateDataError {
 pub fn validate_permissioned_candidate_data<AccountId: TryFrom<SidechainPublicKey>>(
 	candidate: PermissionedCandidateData,
 ) -> Result<(AccountId, sr25519::Public, ed25519::Public), PermissionedCandidateDataError> {
-	Ok((
-		candidate
-			.sidechain_public_key
-			.try_into()
-			.map_err(|_| PermissionedCandidateDataError::InvalidSidechainPubKey)?,
-		candidate
-			.aura_public_key
-			.try_into_sr25519()
-			.ok_or(PermissionedCandidateDataError::InvalidAuraKey)?,
-		candidate
-			.grandpa_public_key
-			.try_into_ed25519()
-			.ok_or(PermissionedCandidateDataError::InvalidGrandpaKey)?,
-	))
+	match candidate {
+		PermissionedCandidateData::V0(data) => Ok((
+			data.sidechain_public_key
+				.try_into()
+				.map_err(|_| PermissionedCandidateDataError::InvalidSidechainPubKey)?,
+			data.aura_public_key
+				.try_into_sr25519()
+				.ok_or(PermissionedCandidateDataError::InvalidAuraKey)?,
+			data.grandpa_public_key
+				.try_into_ed25519()
+				.ok_or(PermissionedCandidateDataError::InvalidGrandpaKey)?,
+		)),
+		PermissionedCandidateData::V1(data) => unimplemented!(),
+	}
 }
 
 /// Validates registration data provided by the authority candidate.

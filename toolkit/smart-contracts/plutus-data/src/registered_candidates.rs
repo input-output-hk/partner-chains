@@ -81,6 +81,7 @@ impl VersionedDatumWithLegacy for RegisterValidatorDatum {
 		match version {
 			0 => decode_v0_register_validator_datum(datum, appendix)
 				.ok_or("Can not parse appendix".to_string()),
+			1 => unimplemented!(),
 			_ => Err(format!("Unknown version: {version}")),
 		}
 	}
