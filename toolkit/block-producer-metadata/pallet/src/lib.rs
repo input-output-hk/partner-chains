@@ -206,6 +206,8 @@ pub mod pallet {
 		///   and the current Partner Chain's genesis UTXO, created using the private key corresponding
 		///   to `cross_chain_pub_key`
 		/// - `cross_chain_pub_key`: public key identifying the block producer
+		/// - `valid_before`: timestamp in seconds before the extrinsic must be processed for the signature
+		///                   to be considered valid
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::upsert_metadata())]
 		pub fn upsert_metadata(
@@ -213,6 +215,7 @@ pub mod pallet {
 			metadata: T::BlockProducerMetadata,
 			signature: CrossChainSignature,
 			cross_chain_pub_key: CrossChainPublicKey,
+			valid_before: u64,
 		) -> DispatchResult {
 			let origin_account = ensure_signed(origin)?;
 			let genesis_utxo = T::genesis_utxo();
@@ -223,6 +226,7 @@ pub mod pallet {
 				cross_chain_pub_key: cross_chain_pub_key.clone(),
 				metadata: Some(metadata.clone()),
 				genesis_utxo,
+				valid_before,
 			};
 
 			let is_valid_signature =
@@ -253,12 +257,21 @@ pub mod pallet {
 		/// Deletes metadata for the block producer identified by `cross_chain_pub_key`.
 		///
 		/// The deposit funds will be returned.
+		///
+		/// Arguments:
+		/// - `cross_chain_pub_key`: public key identifying the block producer
+		/// - `signature`: a signature of [MetadataSignedMessage] created from this inherent's arguments
+		///   and the current Partner Chain's genesis UTXO, created using the private key corresponding
+		///   to `cross_chain_pub_key`
+		/// - `valid_before`: timestamp in seconds before the extrinsic must be processed for the signature
+		///                   to be considered valid
 		#[pallet::call_index(1)]
 		#[pallet::weight(T::WeightInfo::delete_metadata())]
 		pub fn delete_metadata(
 			origin: OriginFor<T>,
 			cross_chain_pub_key: CrossChainPublicKey,
 			signature: CrossChainSignature,
+			valid_before: u64,
 		) -> DispatchResult {
 			let origin_account = ensure_signed(origin)?;
 
@@ -267,6 +280,7 @@ pub mod pallet {
 				cross_chain_pub_key: cross_chain_pub_key.clone(),
 				metadata: None,
 				genesis_utxo,
+				valid_before,
 			};
 			let cross_chain_key_hash = cross_chain_pub_key.hash();
 			let is_valid_signature =
