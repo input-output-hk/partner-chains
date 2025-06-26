@@ -1,3 +1,5 @@
+use crate::HoldReason;
+
 use super::*;
 use frame_support::{assert_noop, assert_ok, traits::tokens::fungible::InspectHold};
 use frame_system::pallet_prelude::OriginFor;
@@ -5,136 +7,230 @@ use hex_literal::hex;
 use mock::*;
 use sidechain_domain::byte_string::SizedByteString;
 use sidechain_domain::*;
-use sp_runtime::{AccountId32, BoundedVec};
+use sp_runtime::AccountId32;
 
-#[test]
-fn saves_new_metadata_and_holds_fee() {
-	new_test_ext().execute_with(|| {
-		let initial_balance = Balances::free_balance(&FUNDED_ACCOUNT);
+mod upsert_metadata {
+	use super::*;
+	use pretty_assertions::assert_eq;
+	#[test]
+	fn saves_new_metadata_and_holds_fee() {
+		new_test_ext().execute_with(|| {
+			let initial_balance = Balances::free_balance(&FUNDED_ACCOUNT);
 
-		assert_ok!(super::Pallet::<Test>::upsert_metadata(
-			OriginFor::<Test>::signed(FUNDED_ACCOUNT),
-			url_metadata_1(),
-			cross_chain_signature_1(),
-			cross_chain_pub_key(),
-		));
-
-		assert_eq!(
-			Pallet::<Test>::get_metadata_for(&cross_chain_pub_key()),
-			Some(url_metadata_1())
-		);
-
-		let final_balance = Balances::free_balance(&FUNDED_ACCOUNT);
-		assert_eq!(final_balance, initial_balance - MetadataHoldAmount::get());
-
-		// Check that the amount is held, not burned
-		let held_balance = Balances::balance_on_hold(
-			&RuntimeHoldReason::BlockProducerMetadata(crate::HoldReason::MetadataDeposit),
-			&FUNDED_ACCOUNT,
-		);
-		assert_eq!(held_balance, MetadataHoldAmount::get());
-	})
-}
-
-#[test]
-fn updates_metadata_without_holding_additional_fee() {
-	new_test_ext().execute_with(|| {
-		assert_ok!(super::Pallet::<Test>::upsert_metadata(
-			OriginFor::<Test>::signed(FUNDED_ACCOUNT),
-			url_metadata_1(),
-			cross_chain_signature_1(),
-			cross_chain_pub_key(),
-		));
-
-		assert_eq!(
-			Pallet::<Test>::get_metadata_for(&cross_chain_pub_key()),
-			Some(url_metadata_1())
-		);
-		let balance_after_insert = Balances::free_balance(&FUNDED_ACCOUNT);
-		let held_after_insert = Balances::balance_on_hold(
-			&RuntimeHoldReason::BlockProducerMetadata(crate::HoldReason::MetadataDeposit),
-			&FUNDED_ACCOUNT,
-		);
-
-		assert_ok!(super::Pallet::<Test>::upsert_metadata(
-			OriginFor::<Test>::signed(FUNDED_ACCOUNT),
-			url_metadata_2(),
-			cross_chain_signature_2(),
-			cross_chain_pub_key(),
-		));
-
-		assert_eq!(
-			Pallet::<Test>::get_metadata_for(&cross_chain_pub_key()),
-			Some(url_metadata_2())
-		);
-
-		let balance_after_update = Balances::free_balance(&FUNDED_ACCOUNT);
-		let held_after_update = Balances::balance_on_hold(
-			&RuntimeHoldReason::BlockProducerMetadata(crate::HoldReason::MetadataDeposit),
-			&FUNDED_ACCOUNT,
-		);
-
-		assert_eq!(balance_after_insert, balance_after_update);
-		assert_eq!(held_after_insert, held_after_update);
-	})
-}
-
-#[test]
-fn rejects_invalid_signature() {
-	new_test_ext().execute_with(|| {
-		assert_eq!(
-			super::Pallet::<Test>::upsert_metadata(
+			assert_ok!(super::Pallet::<Test>::upsert_metadata(
 				OriginFor::<Test>::signed(FUNDED_ACCOUNT),
-				url_metadata_2(),
-				cross_chain_signature_1(),
-				cross_chain_pub_key(),
-			)
-			.unwrap_err(),
-			Error::<Test>::InvalidMainchainSignature.into()
-		);
-	})
-}
-
-#[test]
-fn fails_with_insufficient_balance() {
-	new_test_ext().execute_with(|| {
-		let poor_account = AccountId32::new([13; 32]);
-
-		assert_noop!(
-			super::Pallet::<Test>::upsert_metadata(
-				OriginFor::<Test>::signed(poor_account),
 				url_metadata_1(),
 				cross_chain_signature_1(),
 				cross_chain_pub_key(),
-			),
-			Error::<Test>::InsufficientBalance
-		);
-	})
+			));
+
+			assert_eq!(
+				Pallet::<Test>::get_metadata_for(&cross_chain_pub_key()),
+				Some(url_metadata_1())
+			);
+
+			let final_balance = Balances::free_balance(&FUNDED_ACCOUNT);
+			assert_eq!(final_balance, initial_balance - MetadataHoldAmount::get());
+
+			// Check that the amount is held, not burned
+			let held_balance = Balances::balance_on_hold(
+				&RuntimeHoldReason::BlockProducerMetadata(HoldReason::MetadataDeposit),
+				&FUNDED_ACCOUNT,
+			);
+			assert_eq!(held_balance, MetadataHoldAmount::get());
+		})
+	}
+
+	#[test]
+	fn updates_metadata_without_holding_additional_fee() {
+		new_test_ext().execute_with(|| {
+			assert_ok!(super::Pallet::<Test>::upsert_metadata(
+				OriginFor::<Test>::signed(FUNDED_ACCOUNT),
+				url_metadata_1(),
+				cross_chain_signature_1(),
+				cross_chain_pub_key(),
+			));
+
+			assert_eq!(
+				Pallet::<Test>::get_metadata_for(&cross_chain_pub_key()),
+				Some(url_metadata_1())
+			);
+
+			assert_ok!(super::Pallet::<Test>::upsert_metadata(
+				OriginFor::<Test>::signed(FUNDED_ACCOUNT),
+				url_metadata_2(),
+				cross_chain_signature_2(),
+				cross_chain_pub_key(),
+			));
+
+			assert_eq!(
+				Pallet::<Test>::get_metadata_for(&cross_chain_pub_key()),
+				Some(url_metadata_2())
+			);
+
+			let account_1_balance = Balances::free_balance(&FUNDED_ACCOUNT);
+			let account_1_held = Balances::balance_on_hold(
+				&RuntimeHoldReason::BlockProducerMetadata(HoldReason::MetadataDeposit),
+				&FUNDED_ACCOUNT,
+			);
+
+			let account_2_balance = Balances::free_balance(&FUNDED_ACCOUNT_2);
+			let account_2_held = Balances::balance_on_hold(
+				&RuntimeHoldReason::BlockProducerMetadata(HoldReason::MetadataDeposit),
+				&FUNDED_ACCOUNT_2,
+			);
+
+			assert_eq!(account_1_balance, INITIAL_BALANCE - MetadataHoldAmount::get());
+			assert_eq!(account_1_held, MetadataHoldAmount::get());
+
+			assert_eq!(account_2_balance, INITIAL_BALANCE);
+			assert_eq!(account_2_held, 0);
+		})
+	}
+
+	#[test]
+	fn rejects_invalid_signature() {
+		new_test_ext().execute_with(|| {
+			assert_eq!(
+				super::Pallet::<Test>::upsert_metadata(
+					OriginFor::<Test>::signed(FUNDED_ACCOUNT),
+					url_metadata_2(),
+					cross_chain_signature_1(),
+					cross_chain_pub_key(),
+				)
+				.unwrap_err(),
+				Error::<Test>::InvalidMainchainSignature.into()
+			);
+		})
+	}
+
+	#[test]
+	fn fails_with_insufficient_balance() {
+		new_test_ext().execute_with(|| {
+			let poor_account = AccountId32::new([13; 32]);
+
+			assert_noop!(
+				super::Pallet::<Test>::upsert_metadata(
+					OriginFor::<Test>::signed(poor_account),
+					url_metadata_1(),
+					cross_chain_signature_1(),
+					cross_chain_pub_key(),
+				),
+				Error::<Test>::InsufficientBalance
+			);
+		})
+	}
+
+	#[test]
+	fn rejects_non_owner_origin() {
+		new_test_ext().execute_with(|| {
+			super::Pallet::<Test>::upsert_metadata(
+				OriginFor::<Test>::signed(FUNDED_ACCOUNT),
+				url_metadata_1(),
+				cross_chain_signature_1(),
+				cross_chain_pub_key(),
+			)
+			.expect("First insert should succeed");
+
+			let error = super::Pallet::<Test>::upsert_metadata(
+				OriginFor::<Test>::signed(FUNDED_ACCOUNT_2),
+				url_metadata_1(),
+				cross_chain_signature_1(),
+				cross_chain_pub_key(),
+			)
+			.unwrap_err();
+			assert_eq!(error, Error::<Test>::NotTheOwner.into());
+		})
+	}
+}
+
+mod delete_metadata {
+	use super::*;
+	use pretty_assertions::assert_eq;
+
+	#[test]
+	fn deletes_metadata_and_returns_fee() {
+		new_test_ext().execute_with(|| {
+			assert_ok!(super::Pallet::<Test>::upsert_metadata(
+				OriginFor::<Test>::signed(FUNDED_ACCOUNT),
+				url_metadata_1(),
+				cross_chain_signature_1(),
+				cross_chain_pub_key(),
+			));
+
+			assert_eq!(
+				Pallet::<Test>::get_metadata_for(&cross_chain_pub_key()),
+				Some(url_metadata_1())
+			);
+
+			assert_ok!(super::Pallet::<Test>::delete_metadata(
+				OriginFor::<Test>::signed(FUNDED_ACCOUNT),
+				cross_chain_pub_key(),
+				cross_chain_signature_delete(),
+			));
+
+			assert_eq!(Pallet::<Test>::get_metadata_for(&cross_chain_pub_key()), None);
+
+			let account_1_balance = Balances::free_balance(&FUNDED_ACCOUNT);
+			let account_1_held =
+				Balances::balance_on_hold(&HoldReason::MetadataDeposit.into(), &FUNDED_ACCOUNT);
+
+			assert_eq!(account_1_balance, INITIAL_BALANCE);
+			assert_eq!(account_1_held, 0);
+		})
+	}
+
+	#[test]
+	fn rejects_non_owner_origin() {
+		new_test_ext().execute_with(|| {
+			super::Pallet::<Test>::upsert_metadata(
+				OriginFor::<Test>::signed(FUNDED_ACCOUNT),
+				url_metadata_1(),
+				cross_chain_signature_1(),
+				cross_chain_pub_key(),
+			)
+			.expect("First insert should succeed");
+
+			let error = super::Pallet::<Test>::delete_metadata(
+				OriginFor::<Test>::signed(FUNDED_ACCOUNT_2),
+				cross_chain_pub_key(),
+				cross_chain_signature_delete(),
+			)
+			.unwrap_err();
+			assert_eq!(error, Error::<Test>::NotTheOwner.into());
+		})
+	}
 }
 
 fn url_metadata_1() -> BlockProducerUrlMetadata {
 	BlockProducerUrlMetadata {
-		url: BoundedVec::try_from("https://cool.stuff/spo.json".as_bytes().to_vec()).unwrap(),
+		url: "https://cool.stuff/spo.json".try_into().unwrap(),
 		hash: SizedByteString::from([0; 32]),
 	}
 }
 
 fn cross_chain_signature_1() -> CrossChainSignature {
 	CrossChainSignature(hex!(
-		"e25b0291cdc8f5f7eb34e0e1586c25ee05dfb589ce9b53968bfbdeee741d2bf4430ebdd2644829ab0b7659a035fdf3d87befa05e8ec06fd22fb4092f02f6e1d6"
+		"810854f5bd1d06dc8583ebd58ff4877dddb1646511edb10afd021f716bf51a8e617353b6c5d5f92a2005e2c3c24b782a6f74132d6b54251854cce186c981862c"
 	).to_vec())
 }
 
 fn url_metadata_2() -> BlockProducerUrlMetadata {
 	BlockProducerUrlMetadata {
-		url: BoundedVec::try_from("https://cooler.stuff/spo2.json".as_bytes().to_vec()).unwrap(),
+		url: "https://cooler.stuff/spo2.json".try_into().unwrap(),
 		hash: SizedByteString::from([17; 32]),
 	}
 }
 
 fn cross_chain_signature_2() -> CrossChainSignature {
 	CrossChainSignature(hex!(
-		"6c251e9558903db7f22b93b4b6c1a3dc1088559180a70a46b12e6687ab6b3fcc7ba92798f78c7fbdf35ac6242e4862787427ff3be1c3cd55b3695cb095d13d7b"
+		"0379f07264830b3e99f8fe92ff63aabec8004103253555725402a3efbd1090da232a6aeae7a083421625b544fcc4ce26964a334987982d2b398074bf16b6d481"
+	).to_vec())
+}
+
+fn cross_chain_signature_delete() -> CrossChainSignature {
+	CrossChainSignature(hex!(
+		"5c1a701c8adffdf53a371409a24cc6c2d778a4c65c2c105c5fccfc5eeb69e3fa59bd723e7c10893f53fcfdfff8c02954f2230953cb9596119c11d4a9a29564c5"
 	).to_vec())
 }
 

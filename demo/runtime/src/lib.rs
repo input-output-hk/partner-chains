@@ -542,8 +542,11 @@ impl pallet_block_producer_metadata::benchmarking::BenchmarkHelper<BlockProducer
 				.to_vec(),
 		)
 	}
-	fn cross_chain_signature() -> sidechain_domain::CrossChainSignature {
-		sidechain_domain::CrossChainSignature(hex_literal::hex!("d1e02e4a5484c3b7202ce6b844577048e7578dc62901cf8f51e6d74bbd3adb091688feacedd8343d0b04a0f5862b2e06148934a75e678e42051fde5431eca33d").to_vec())
+	fn upsert_cross_chain_signature() -> sidechain_domain::CrossChainSignature {
+		sidechain_domain::CrossChainSignature(hex_literal::hex!("8d253dfa15ce5a78cb82cc40a47e202324fa363e1604c67794817603a348062d58d680a2b5507547ab06effc35e1a3594594023e637afdf8918730ef290d6337").to_vec())
+	}
+	fn delete_cross_chain_signature() -> sidechain_domain::CrossChainSignature {
+		sidechain_domain::CrossChainSignature(hex_literal::hex!("5cad14605a613e78dc0de20ebc97a2c8df354a24c6e53076b7c3abeab67470ae71cac1646d9594eaa291ac539dee568061144d9003e04c74b1be817d32becd9f").to_vec())
 	}
 }
 

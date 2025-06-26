@@ -6532,6 +6532,7 @@ dependencies = [
  "log",
  "pallet-balances",
  "parity-scale-codec",
+ "pretty_assertions",
  "scale-info",
  "sidechain-domain",
  "sp-block-producer-metadata",
