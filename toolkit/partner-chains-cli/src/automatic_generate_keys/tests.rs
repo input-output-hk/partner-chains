@@ -17,12 +17,11 @@ fn test_generate_keys_via_rpc() {
 	let mut server = mockito::Server::new();
 	let mock_context = MockIOContext::new().with_expected_io(vec![
 		MockIO::eprint("🔑 Generating session keys via RPC..."),
-		MockIO::eprint("✅ Generated session keys: 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef5678901234567890ab5678901234567890ab5678901234567890ab5678901234567890ab"),
+		MockIO::eprint("✅ Generated session keys: 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef5678901234567890ab5678901234567890ab5678901234567890ab567890123"),
 		MockIO::eprint("🔍 Parsing session keys..."),
 		MockIO::eprint("  📝 Parsed aura key: 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"),
-		MockIO::eprint("  📝 Parsed gran key: 0x5678901234567890ab5678901234567890ab5678901234567890ab567890123"),
-		MockIO::eprint("  📝 Remaining data: 0x4567890ab"),
-		MockIO::eprint("✅ Successfully parsed 3 session keys"),
+		MockIO::eprint("  📝 Remaining data: 0x5678901234567890ab5678901234567890ab5678901234567890ab567890123"),
+		MockIO::eprint("✅ Successfully parsed 2 session keys"),
 		MockIO::eprint("💾 Session keys saved to session_keys.json"),
 		MockIO::eprint("🔑 Generated session keys:"),
 		MockIO::print(
@@ -32,12 +31,8 @@ fn test_generate_keys_via_rpc() {
     "public_key": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
   },
   {
-    "key_type": "gran",
-    "public_key": "0x5678901234567890ab5678901234567890ab5678901234567890ab567890123"
-  },
-  {
     "key_type": "remaining",
-    "public_key": "0x4567890ab"
+    "public_key": "0x5678901234567890ab5678901234567890ab5678901234567890ab567890123"
   }
 ]"#,
 		),
@@ -52,7 +47,7 @@ fn test_generate_keys_via_rpc() {
 			"params": [],
 			"id": 1
 		})))
-		.with_body(r#"{"jsonrpc":"2.0","result":"0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef5678901234567890ab5678901234567890ab5678901234567890ab5678901234567890ab4567890ab","id":1}"#)
+		.with_body(r#"{"jsonrpc":"2.0","result":"0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef5678901234567890ab5678901234567890ab5678901234567890ab567890123","id":1}"#)
 		.create();
 
 	let config = AutomaticGenerateKeysConfig { node_url: server.url() };
@@ -101,14 +96,14 @@ fn test_generate_keys_empty_response() {
 		MockIO::eprint("🔑 Generating session keys via RPC..."),
 		MockIO::eprint("✅ Generated session keys: 0x123abc"),
 		MockIO::eprint("🔍 Parsing session keys..."),
-		MockIO::eprint("  ⚠️  Could not parse individual keys - providing full hex as raw"),
+		MockIO::eprint("  📝 Remaining data: 0x123abc"),
 		MockIO::eprint("✅ Successfully parsed 1 session keys"),
 		MockIO::eprint("💾 Session keys saved to session_keys.json"),
 		MockIO::eprint("🔑 Generated session keys:"),
 		MockIO::print(
 			r#"[
   {
-    "key_type": "raw",
+    "key_type": "remaining",
     "public_key": "0x123abc"
   }
 ]"#,
