@@ -29,7 +29,7 @@ impl CmdRun for Register1Cmd {
 				"⚠️ Keystore not found. Please run the `generate-keys` command first"
 			))?;
 
-		let GeneratedKeysFileContent { sidechain_pub_key, aura_pub_key, grandpa_pub_key } =
+		let GeneratedKeysFileContent { sidechain_pub_key: pc_pub_key, aura_pub_key, grandpa_pub_key } =
 			read_generated_keys(context).map_err(|e| {
 			    context.eprint("⚠️ The keys file `partner-chains-cli-keys.json` is missing or invalid. Please run the `generate-keys` command first");
 				anyhow!(e)
@@ -57,34 +57,32 @@ impl CmdRun for Register1Cmd {
 		);
 		context.print("");
 
-		let sidechain_pub_key_typed: SidechainPublicKey =
-			SidechainPublicKey(from_hex(&sidechain_pub_key).map_err(|e| {
-				context.eprint(&format!("⚠️ Failed to decode sidechain public key: {e}"));
+		let pc_pub_key_typed: SidechainPublicKey =
+			SidechainPublicKey(from_hex(&pc_pub_key).map_err(|e| {
+				context.eprint(&format!("⚠️ Failed to decode partner-chains public key: {e}"));
 				anyhow!(e)
 			})?);
 
 		let registration_message = RegisterValidatorMessage {
 			genesis_utxo,
-			sidechain_pub_key: sidechain_pub_key_typed,
+			sidechain_pub_key: pc_pub_key_typed,
 			registration_utxo,
 		};
 
-		let ecdsa_pair = get_ecdsa_pair_from_file(
-			context,
-			&keystore_path(&node_data_base_path),
-			&sidechain_pub_key,
-		)
-		.map_err(|e| {
-			context.eprint(&format!("⚠️ Failed to read sidechain key from the keystore: {e}"));
-			anyhow!(e)
-		})?;
+		let ecdsa_pair =
+			get_ecdsa_pair_from_file(context, &keystore_path(&node_data_base_path), &pc_pub_key)
+				.map_err(|e| {
+					context
+						.eprint(&format!("⚠️ Failed to read sidechain key from the keystore: {e}"));
+					anyhow!(e)
+				})?;
 
-		let sidechain_signature =
+		let pc_signature =
 			sign_registration_message_with_sidechain_key(registration_message, ecdsa_pair)?;
 		let executable = context.current_executable()?;
 		context.print("Run the following command to generate signatures on the next step. It has to be executed on the machine with your SPO cold signing key.");
 		context.print("");
-		context.print(&format!("{executable} wizards register2 \\\n --genesis-utxo {genesis_utxo} \\\n --registration-utxo {registration_utxo} \\\n --aura-pub-key {aura_pub_key} \\\n --grandpa-pub-key {grandpa_pub_key} \\\n --sidechain-pub-key {sidechain_pub_key} \\\n --sidechain-signature {sidechain_signature}"));
+		context.print(&format!("{executable} wizards register2 \\\n --genesis-utxo {genesis_utxo} \\\n --registration-utxo {registration_utxo} \\\n --aura-pub-key {aura_pub_key} \\\n --grandpa-pub-key {grandpa_pub_key} \\\n --partner-chain-pub-key {pc_pub_key} \\\n --partner-chain-signature {pc_signature}"));
 
 		Ok(())
 	}
@@ -501,7 +499,7 @@ mod tests {
 			),
 			MockIO::print(""),
 			MockIO::print(
-				"<mock executable> wizards register2 \\\n --genesis-utxo 0000000000000000000000000000000000000000000000000000000000000001#0 \\\n --registration-utxo 4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 \\\n --aura-pub-key 0xdf883ee0648f33b6103017b61be702017742d501b8fe73b1d69ca0157460b777 \\\n --grandpa-pub-key 0x5a091a06abd64f245db11d2987b03218c6bd83d64c262fe10e3a2a1230e90327 \\\n --sidechain-pub-key 0x031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6 \\\n --sidechain-signature 6e295e36a6b11d8b1c5ec01ac8a639b466fbfbdda94b39ea82b0992e303d58543341345fc705e09c7838786ba0bc746d9038036f66a36d1127d924c4a0228bec",
+				"<mock executable> wizards register2 \\\n --genesis-utxo 0000000000000000000000000000000000000000000000000000000000000001#0 \\\n --registration-utxo 4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 \\\n --aura-pub-key 0xdf883ee0648f33b6103017b61be702017742d501b8fe73b1d69ca0157460b777 \\\n --grandpa-pub-key 0x5a091a06abd64f245db11d2987b03218c6bd83d64c262fe10e3a2a1230e90327 \\\n --partner-chain-pub-key 0x031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6 \\\n --partner-chain-signature 6e295e36a6b11d8b1c5ec01ac8a639b466fbfbdda94b39ea82b0992e303d58543341345fc705e09c7838786ba0bc746d9038036f66a36d1127d924c4a0228bec",
 			),
 		]
 	}
