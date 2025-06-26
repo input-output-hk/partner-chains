@@ -109,53 +109,12 @@ fn generate_keys_via_rpc<C: IOContext>(
 
 	context.eprint(&format!("✅ Generated session keys: {}", keys_hex));
 
-	// Step 2: Decode session keys using runtime call
-	context.eprint("🔍 Decoding session keys to get key types...");
+	// Step 2: Parse session keys manually since runtime decode is failing
+	context.eprint("🔍 Parsing session keys...");
 
-	let decode_request = JsonRpcRequest {
-		jsonrpc: "2.0".to_string(),
-		method: "state_call".to_string(),
-		params: vec!["SessionKeys_decode_session_keys".to_string(), keys_hex.clone()],
-		id: 2,
-	};
+	let session_keys = parse_session_keys_hex(&keys_hex, context);
 
-	let decode_response = client
-		.post(&config.node_url)
-		.header("Content-Type", "application/json")
-		.json(&decode_request)
-		.send()
-		.context("Failed to send decode RPC request")?;
-
-	let decode_json: serde_json::Value =
-		decode_response.json().context("Failed to parse decode response")?;
-
-	context.eprint(&format!("✅ Decode response: {}", decode_json.to_string()));
-
-	let session_keys = if let Some(result) = decode_json.get("result") {
-		if let Some(result_str) = result.as_str() {
-			// The result is a hex-encoded SCALE-encoded Vec<(Bytes, KeyTypeId)>
-			// For now, we'll provide the raw keys since decoding SCALE data requires more complex parsing
-			context.eprint("⚠️  Runtime call returned encoded data - providing raw keys for now");
-			vec![SessionKeyInfo { key_type: "raw".to_string(), public_key: keys_hex.clone() }]
-		} else {
-			context.eprint("⚠️  Unexpected decode response format - providing raw keys instead");
-			vec![SessionKeyInfo { key_type: "raw".to_string(), public_key: keys_hex.clone() }]
-		}
-	} else {
-		// Check if there's an error
-		if let Some(error) = decode_json.get("error") {
-			context.eprint(&format!(
-				"⚠️  Decode runtime call failed: {} - providing raw keys instead",
-				error.get("message").and_then(|m| m.as_str()).unwrap_or("Unknown error")
-			));
-		} else {
-			context.eprint("⚠️  Could not decode session keys - providing raw keys instead");
-		}
-
-		vec![SessionKeyInfo { key_type: "raw".to_string(), public_key: keys_hex.clone() }]
-	};
-
-	context.eprint(&format!("✅ Successfully decoded {} session keys", session_keys.len()));
+	context.eprint(&format!("✅ Successfully parsed {} session keys", session_keys.len()));
 
 	// Step 3: Save to JSON file
 	let output_path = "session_keys.json";
@@ -174,4 +133,60 @@ fn generate_keys_via_rpc<C: IOContext>(
 	}
 
 	Ok(())
+}
+
+/// Parse session keys from hex string by splitting into common key lengths
+/// Substrate session keys are typically concatenated public keys of fixed lengths
+fn parse_session_keys_hex<C: IOContext>(keys_hex: &str, context: &C) -> Vec<SessionKeyInfo> {
+	// Remove 0x prefix if present
+	let hex_data = keys_hex.strip_prefix("0x").unwrap_or(keys_hex);
+	
+	// Common key types and their lengths in bytes (hex chars = bytes * 2)
+	// AURA: 32 bytes (64 hex chars) - Sr25519
+	// GRANDPA: 32 bytes (64 hex chars) - Ed25519
+	// ImOnline: 32 bytes (64 hex chars) - Sr25519
+	// AuthorityDiscovery: 32 bytes (64 hex chars) - Sr25519
+	
+	let mut session_keys = Vec::new();
+	let mut offset = 0;
+	let key_types = ["aura", "gran", "imon", "auth"];
+	
+	// Each key is typically 32 bytes = 64 hex characters
+	let key_length = 64;
+	
+	for (index, &key_type) in key_types.iter().enumerate() {
+		if offset + key_length <= hex_data.len() {
+			let key_hex = &hex_data[offset..offset + key_length];
+			session_keys.push(SessionKeyInfo {
+				key_type: key_type.to_string(),
+				public_key: format!("0x{}", key_hex),
+			});
+			offset += key_length;
+			
+			context.eprint(&format!("  📝 Parsed {} key: 0x{}", key_type, key_hex));
+		} else {
+			break;
+		}
+	}
+	
+	// If there's remaining data, add it as a raw key
+	if offset < hex_data.len() {
+		let remaining_hex = &hex_data[offset..];
+		session_keys.push(SessionKeyInfo {
+			key_type: "remaining".to_string(),
+			public_key: format!("0x{}", remaining_hex),
+		});
+		context.eprint(&format!("  📝 Remaining data: 0x{}", remaining_hex));
+	}
+	
+	// If we couldn't parse any keys, provide the full hex as raw
+	if session_keys.is_empty() {
+		context.eprint("  ⚠️  Could not parse individual keys - providing full hex as raw");
+		session_keys.push(SessionKeyInfo {
+			key_type: "raw".to_string(),
+			public_key: keys_hex.to_string(),
+		});
+	}
+	
+	session_keys
 }

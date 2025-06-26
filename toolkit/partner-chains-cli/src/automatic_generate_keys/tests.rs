@@ -17,20 +17,27 @@ fn test_generate_keys_via_rpc() {
 	let mut server = mockito::Server::new();
 	let mock_context = MockIOContext::new().with_expected_io(vec![
 		MockIO::eprint("🔑 Generating session keys via RPC..."),
-		MockIO::eprint("✅ Generated session keys: 0x123abc"),
-		MockIO::eprint("🔍 Decoding session keys to get key types..."),
-		MockIO::eprint(
-			r#"✅ Decode response: {"id":2,"jsonrpc":"2.0","result":"0x08deadbeef04aura"}"#,
-		),
-		MockIO::eprint("⚠️  Runtime call returned encoded data - providing raw keys for now"),
-		MockIO::eprint("✅ Successfully decoded 1 session keys"),
+		MockIO::eprint("✅ Generated session keys: 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef5678901234567890ab5678901234567890ab5678901234567890ab5678901234567890ab"),
+		MockIO::eprint("🔍 Parsing session keys..."),
+		MockIO::eprint("  📝 Parsed aura key: 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"),
+		MockIO::eprint("  📝 Parsed gran key: 0x5678901234567890ab5678901234567890ab5678901234567890ab567890123"),
+		MockIO::eprint("  📝 Remaining data: 0x4567890ab"),
+		MockIO::eprint("✅ Successfully parsed 3 session keys"),
 		MockIO::eprint("💾 Session keys saved to session_keys.json"),
 		MockIO::eprint("🔑 Generated session keys:"),
 		MockIO::print(
 			r#"[
   {
-    "key_type": "raw",
-    "public_key": "0x123abc"
+    "key_type": "aura",
+    "public_key": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+  },
+  {
+    "key_type": "gran",
+    "public_key": "0x5678901234567890ab5678901234567890ab5678901234567890ab567890123"
+  },
+  {
+    "key_type": "remaining",
+    "public_key": "0x4567890ab"
   }
 ]"#,
 		),
@@ -45,19 +52,7 @@ fn test_generate_keys_via_rpc() {
 			"params": [],
 			"id": 1
 		})))
-		.with_body(r#"{"jsonrpc":"2.0","result":"0x123abc","id":1}"#)
-		.create();
-
-	// Mock the decode request
-	let decode_mock = server
-		.mock("POST", "/")
-		.match_body(mockito::Matcher::Json(json!({
-			"jsonrpc": "2.0",
-			"method": "state_call",
-			"params": ["SessionKeys_decode_session_keys", "0x123abc"],
-			"id": 2
-		})))
-		.with_body(r#"{"jsonrpc":"2.0","result":"0x08deadbeef04aura","id":2}"#)
+		.with_body(r#"{"jsonrpc":"2.0","result":"0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef5678901234567890ab5678901234567890ab5678901234567890ab5678901234567890ab4567890ab","id":1}"#)
 		.create();
 
 	let config = AutomaticGenerateKeysConfig { node_url: server.url() };
@@ -66,7 +61,6 @@ fn test_generate_keys_via_rpc() {
 	assert!(result.is_ok());
 
 	rotate_mock.assert();
-	decode_mock.assert();
 }
 
 #[test]
@@ -106,10 +100,9 @@ fn test_generate_keys_empty_response() {
 	let mock_context = MockIOContext::new().with_expected_io(vec![
 		MockIO::eprint("🔑 Generating session keys via RPC..."),
 		MockIO::eprint("✅ Generated session keys: 0x123abc"),
-		MockIO::eprint("🔍 Decoding session keys to get key types..."),
-		MockIO::eprint(r#"✅ Decode response: {"id":2,"jsonrpc":"2.0","result":"0x00"}"#),
-		MockIO::eprint("⚠️  Runtime call returned encoded data - providing raw keys for now"),
-		MockIO::eprint("✅ Successfully decoded 1 session keys"),
+		MockIO::eprint("🔍 Parsing session keys..."),
+		MockIO::eprint("  ⚠️  Could not parse individual keys - providing full hex as raw"),
+		MockIO::eprint("✅ Successfully parsed 1 session keys"),
 		MockIO::eprint("💾 Session keys saved to session_keys.json"),
 		MockIO::eprint("🔑 Generated session keys:"),
 		MockIO::print(
@@ -134,23 +127,10 @@ fn test_generate_keys_empty_response() {
 		.with_body(r#"{"jsonrpc":"2.0","result":"0x123abc","id":1}"#)
 		.create();
 
-	// Mock the decode request with empty result
-	let decode_mock = server
-		.mock("POST", "/")
-		.match_body(mockito::Matcher::Json(json!({
-			"jsonrpc": "2.0",
-			"method": "state_call",
-			"params": ["SessionKeys_decode_session_keys", "0x123abc"],
-			"id": 2
-		})))
-		.with_body(r#"{"jsonrpc":"2.0","result":"0x00","id":2}"#)
-		.create();
-
 	let config = AutomaticGenerateKeysConfig { node_url: server.url() };
 
 	let result = generate_keys_via_rpc(&config, "", &mock_context);
 	assert!(result.is_ok());
 
 	rotate_mock.assert();
-	decode_mock.assert();
 }
