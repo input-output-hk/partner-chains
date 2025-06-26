@@ -84,6 +84,7 @@ pub trait BenchmarkHelper<BlockProducerMetadata> {
 #[benchmarks(where <T as Config>::Currency: frame_support::traits::tokens::fungible::Mutate<<T as frame_system::Config>::AccountId>)]
 mod benchmarks {
 	use super::*;
+	use frame_support::traits::fungible::MutateHold;
 	use frame_support::traits::{Get, tokens::fungible::Mutate};
 
 	#[benchmark]
@@ -107,6 +108,8 @@ mod benchmarks {
 		let cross_chain_signature = T::BenchmarkHelper::delete_cross_chain_signature();
 
 		let caller: T::AccountId = account("caller", 0, 0);
+		let _ =
+			T::Currency::hold(&HoldReason::MetadataDeposit.into(), &caller, T::HoldAmount::get());
 
 		BlockProducerMetadataStorage::<T>::insert(
 			cross_chain_pub_key.hash(),
