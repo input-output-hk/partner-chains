@@ -110,7 +110,7 @@ mod benchmarks {
 
 		BlockProducerMetadataStorage::<T>::insert(
 			cross_chain_pub_key.hash(),
-			(metadata, caller.clone(), BalanceOf::<T>::from(10u32)),
+			(metadata, caller.clone(), T::HoldAmount::get()),
 		);
 
 		#[extrinsic_call]
