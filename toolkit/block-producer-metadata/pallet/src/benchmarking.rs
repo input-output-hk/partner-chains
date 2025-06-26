@@ -108,8 +108,10 @@ mod benchmarks {
 
 		let caller: T::AccountId = account("caller", 0, 0);
 
-		BlockProducerMetadataStorage::<T>::insert(cross_chain_pub_key.hash(), metadata);
-		BlockProducerMetadataOwners::<T>::insert(cross_chain_pub_key.hash(), &caller);
+		BlockProducerMetadataStorage::<T>::insert(
+			cross_chain_pub_key.hash(),
+			(metadata, caller.clone()),
+		);
 
 		#[extrinsic_call]
 		_(RawOrigin::Signed(caller), cross_chain_pub_key, cross_chain_signature);

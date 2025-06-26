@@ -165,21 +165,12 @@ pub mod pallet {
 		type BenchmarkHelper: benchmarking::BenchmarkHelper<Self::BlockProducerMetadata>;
 	}
 
-	/// Storage mapping from block producers to their metadata
+	/// Storage mapping from block producers to their metadata and owner Substrate account
 	#[pallet::storage]
 	pub type BlockProducerMetadataStorage<T: Config> = StorageMap<
 		Hasher = Blake2_128Concat,
 		Key = CrossChainKeyHash,
-		Value = T::BlockProducerMetadata,
-		QueryKind = OptionQuery,
-	>;
-
-	/// Storage mapping from block producers to their metadata depositor accounts
-	#[pallet::storage]
-	pub(crate) type BlockProducerMetadataOwners<T: Config> = StorageMap<
-		Hasher = Blake2_128Concat,
-		Key = CrossChainKeyHash,
-		Value = T::AccountId,
+		Value = (T::BlockProducerMetadata, T::AccountId),
 		QueryKind = OptionQuery,
 	>;
 
@@ -235,12 +226,21 @@ pub mod pallet {
 
 			ensure!(is_valid_signature, Error::<T>::InvalidMainchainSignature);
 
-			if BlockProducerMetadataOwners::<T>::get(cross_chain_key_hash).is_none() {
-				Self::hold_deposit(&origin_account)?;
-				BlockProducerMetadataOwners::<T>::insert(cross_chain_key_hash, origin_account);
+			match BlockProducerMetadataStorage::<T>::get(cross_chain_key_hash) {
+				None => {
+					Self::hold_deposit(&origin_account)?;
+					BlockProducerMetadataStorage::<T>::insert(
+						cross_chain_key_hash,
+						(metadata, origin_account),
+					);
+				},
+				Some((_old_data, owner)) => {
+					BlockProducerMetadataStorage::<T>::insert(
+						cross_chain_key_hash,
+						(metadata, owner),
+					);
+				},
 			}
-
-			BlockProducerMetadataStorage::<T>::insert(cross_chain_key_hash, metadata);
 
 			Ok(())
 		}
@@ -269,9 +269,10 @@ pub mod pallet {
 
 			ensure!(is_valid_signature, Error::<T>::InvalidMainchainSignature);
 
-			if let Some(owner) = BlockProducerMetadataOwners::<T>::get(cross_chain_key_hash) {
+			if let Some((_data, owner)) =
+				BlockProducerMetadataStorage::<T>::get(cross_chain_key_hash)
+			{
 				Self::release_deposit(&owner, &origin_account)?;
-				BlockProducerMetadataOwners::<T>::remove(cross_chain_key_hash);
 			}
 
 			BlockProducerMetadataStorage::<T>::remove(cross_chain_key_hash);
@@ -312,6 +313,7 @@ pub mod pallet {
 			cross_chain_pub_key: &CrossChainPublicKey,
 		) -> Option<T::BlockProducerMetadata> {
 			BlockProducerMetadataStorage::<T>::get(cross_chain_pub_key.hash())
+				.map(|(data, _owner)| data)
 		}
 	}
 }
