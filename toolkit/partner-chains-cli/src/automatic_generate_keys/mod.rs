@@ -154,7 +154,7 @@ fn parse_session_keys_hex<C: IOContext>(keys_hex: &str, context: &C) -> Vec<Sess
 	// Each key is typically 32 bytes = 64 hex characters
 	let key_length = 64;
 
-	for (index, &key_type) in key_types.iter().enumerate() {
+	for &key_type in key_types.iter() {
 		if offset + key_length <= hex_data.len() {
 			let key_hex = &hex_data[offset..offset + key_length];
 			session_keys.push(SessionKeyInfo {
