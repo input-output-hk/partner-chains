@@ -84,7 +84,8 @@
 //! `sign-block-producer-metadata` command provided by the chain's node. This command returns the signature
 //! and the metadata encoded as hex bytes (in case of upsert).
 //!
-//! When metadata is inserted for the first time, a deposit is held from the caller's account. Updates to existing
+//! When metadata is inserted for the first time, a deposit is held from the caller's account. This account becomes
+//! the owner of the metadata and is the only one allowed to update or delete it. Updates to existing
 //! metadata do not require additional deposits. Deleting metadata will release the deposit to the account that
 //! originally provided it.
 //!
@@ -165,7 +166,7 @@ pub mod pallet {
 		type BenchmarkHelper: benchmarking::BenchmarkHelper<Self::BlockProducerMetadata>;
 	}
 
-	/// Storage mapping from block producers to their metadata, depositor account and deposit amount
+	/// Storage mapping from block producers to their metadata, owner account and deposit amount
 	#[pallet::storage]
 	pub type BlockProducerMetadataStorage<T: Config> = StorageMap<
 		Hasher = Blake2_128Concat,
@@ -188,13 +189,16 @@ pub mod pallet {
 		InvalidMainchainSignature,
 		/// Insufficient balance to hold tokens as fee for upserting block producer metadata
 		InsufficientBalance,
+		/// Attempt to update or delete metadata by a different Partner Chain account than the owner
+		NotTheOwner,
 	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Inserts or updates metadata for the block producer identified by `cross_chain_pub_key`.
 		/// Holds a constant amount from the caller's account as a deposit for including metadata on the chain
-		/// when first inserted. Subsequent updates will not require new deposits.
+		/// when first inserted. Subsequent updates will not require new deposits. Existing metadata can be
+		/// updated only using the same Partner Chain account that created it.
 		///
 		/// Arguments:
 		/// - `metadata`: new metadata value
@@ -235,6 +239,7 @@ pub mod pallet {
 					);
 				},
 				Some((_old_data, owner, deposit)) => {
+					ensure!(owner == origin_account, Error::<T>::NotTheOwner);
 					BlockProducerMetadataStorage::<T>::insert(
 						cross_chain_key_hash,
 						(metadata, owner, deposit),
@@ -247,7 +252,7 @@ pub mod pallet {
 
 		/// Deletes metadata for the block producer identified by `cross_chain_pub_key`.
 		///
-		/// The deposit funds will be returned to the original depositor account.
+		/// The deposit funds will be returned.
 		#[pallet::call_index(1)]
 		#[pallet::weight(T::WeightInfo::delete_metadata())]
 		pub fn delete_metadata(
@@ -255,7 +260,7 @@ pub mod pallet {
 			cross_chain_pub_key: CrossChainPublicKey,
 			signature: CrossChainSignature,
 		) -> DispatchResult {
-			ensure_signed(origin)?;
+			let origin_account = ensure_signed(origin)?;
 
 			let genesis_utxo = T::genesis_utxo();
 			let metadata_message = MetadataSignedMessage::<T::BlockProducerMetadata> {
@@ -272,10 +277,10 @@ pub mod pallet {
 			if let Some((_data, owner, deposit)) =
 				BlockProducerMetadataStorage::<T>::get(cross_chain_key_hash)
 			{
+				ensure!(owner == origin_account, Error::<T>::NotTheOwner);
 				Self::release_deposit(&owner, deposit)?;
+				BlockProducerMetadataStorage::<T>::remove(cross_chain_key_hash);
 			}
-
-			BlockProducerMetadataStorage::<T>::remove(cross_chain_key_hash);
 
 			Ok(())
 		}
