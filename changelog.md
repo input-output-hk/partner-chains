@@ -14,6 +14,8 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Fixed
 
+* `smart-contracts` governance actions were failing due too redundant signature when initiated by non-governance wallet
+
 ## Removed
 
 # v1.7.0
