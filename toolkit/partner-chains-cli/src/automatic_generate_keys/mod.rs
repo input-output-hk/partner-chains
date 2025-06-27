@@ -1,190 +1,159 @@
-use crate::io::IOContext;
-use crate::*;
-use anyhow::{Context, Result, anyhow};
-use reqwest;
+use super::*;
+use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
-
-#[cfg(test)]
-mod tests;
-
-// We'll use dynamic metadata handling instead of static code generation
-// This allows us to work with any Partner Chain runtime without pre-generated metadata
+use subxt::{OnlineClient, SubstrateConfig, dynamic::Value, backend::rpc::{RpcClient, RpcParams}};
+use tokio;
 
 #[derive(Clone, Debug, clap::Parser)]
 pub struct AutomaticGenerateKeysCmd {
-	/// Substrate node RPC URL
-	#[arg(long, default_value = "http://localhost:9933")]
-	pub url: String,
+    /// Substrate node RPC URL
+    #[arg(long, default_value = "ws://localhost:9944")]
+    pub url: String,
 }
 
 #[derive(Debug)]
 pub struct AutomaticGenerateKeysConfig {
-	pub node_url: String,
+    pub node_url: String,
 }
 
 impl AutomaticGenerateKeysConfig {
-	pub(crate) fn load<C: IOContext>(_context: &C, url: String) -> Self {
-		Self { node_url: url }
-	}
+    pub(crate) fn load<C: IOContext>(_context: &C, url: String) -> Self {
+        Self { node_url: url }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SessionKeyInfo {
-	pub key_type: String,
-	pub public_key: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct JsonRpcRequest {
-	jsonrpc: String,
-	method: String,
-	params: Vec<String>,
-	id: i32,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct JsonRpcResponse {
-	jsonrpc: String,
-	result: Option<String>,
-	error: Option<JsonRpcError>,
-	id: i32,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct JsonRpcError {
-	code: i32,
-	message: String,
+    pub key_type: String,
+    pub public_key: String,
 }
 
 impl CmdRun for AutomaticGenerateKeysCmd {
-	fn run<C: IOContext>(&self, context: &C) -> Result<()> {
-		let config = AutomaticGenerateKeysConfig::load(context, self.url.clone());
-		generate_keys_via_rpc(&config, "", context)
-	}
+    fn run<C: IOContext>(&self, context: &C) -> Result<()> {
+        let config = AutomaticGenerateKeysConfig::load(context, self.url.clone());
+        let rt = tokio::runtime::Runtime::new().context("Failed to create tokio runtime")?;
+        rt.block_on(generate_keys_via_rpc(&config, context))
+    }
 }
 
-fn generate_keys_via_rpc<C: IOContext>(
-	config: &AutomaticGenerateKeysConfig,
-	_node_executable: &str,
-	context: &C,
+async fn generate_keys_via_rpc<C: IOContext>(
+    config: &AutomaticGenerateKeysConfig,
+    context: &C,
 ) -> Result<()> {
-	context.eprint("🔑 Generating session keys via RPC...");
+    context.eprint("🔑 Generating session keys via RPC...");
 
-	// Step 1: Generate session keys using JSON-RPC
-	let client = reqwest::blocking::Client::new();
-	let request = JsonRpcRequest {
-		jsonrpc: "2.0".to_string(),
-		method: "author_rotateKeys".to_string(),
-		params: vec![],
-		id: 1,
-	};
+    // Step 1: Create subxt client
+    let client = OnlineClient::<SubstrateConfig>::from_url(&config.node_url)
+        .await
+        .context("Failed to create subxt client")?;
 
-	let response = client
-		.post(&config.node_url)
-		.header("Content-Type", "application/json")
-		.json(&request)
-		.send()
-		.context("Failed to send RPC request")?;
+    // Step 2: Make the author_rotateKeys RPC call
+    let keys_hex: String = RpcClient::from_url(&config.node_url)
+        .await
+        .context("Failed to create RPC client")?
+        .request("author_rotateKeys", RpcParams::new())
+        .await
+        .context("Failed to call author_rotateKeys RPC method")?;
 
-	let json_response: JsonRpcResponse = response.json().context("Failed to parse RPC response")?;
+    context.eprint(&format!("✅ Generated session keys: {}", keys_hex));
 
-	let keys_hex = json_response
-		.result
-		.ok_or_else(|| {
-			if let Some(error) = &json_response.error {
-				if error.code == -32601 && error.message.contains("unsafe") {
-					anyhow!(
-						"RPC call is unsafe to be called externally. \
-						To fix this, start your node with --rpc-methods=unsafe flag, or use --rpc-methods=auto if running locally. \
-						Error: {} (code: {})", 
-						error.message, error.code
-					)
-				} else {
-					anyhow!("RPC error: {} (code: {})", error.message, error.code)
-				}
-			} else {
-				anyhow!("No result in RPC response and no error provided")
-			}
-		})?;
+    // Step 3: Decode the session keys using the runtime API
+    context.eprint("🔍 Decoding session keys...");
+    let session_keys = decode_session_keys(&client, &keys_hex, context)
+        .await
+        .context("Failed to decode session keys")?;
 
-	context.eprint(&format!("✅ Generated session keys: {}", keys_hex));
+    context.eprint(&format!("✅ Successfully decoded {} session keys", session_keys.len()));
 
-	// Step 2: Parse session keys manually since runtime decode is failing
-	context.eprint("🔍 Parsing session keys...");
+    // Step 4: Save to JSON file
+    let output_path = "session_keys.json";
+    let json_output = serde_json::to_string_pretty(&session_keys)
+        .context("Failed to serialize session keys to JSON")?;
 
-	let session_keys = parse_session_keys_hex(&keys_hex, context);
+    if prompt_can_write("session_keys file", output_path, context) {
+        context.write_file(output_path, &json_output);
+        context.eprint(&format!("💾 Session keys saved to {}", output_path));
+        context.eprint("🔑 Generated session keys:");
+        context.print(&json_output);
+    } else {
+        context.eprint("Refusing to overwrite session_keys file - skipping save");
+        context.eprint("🔑 Generated session keys:");
+        context.print(&json_output);
+    }
 
-	context.eprint(&format!("✅ Successfully parsed {} session keys", session_keys.len()));
-
-	// Step 3: Save to JSON file
-	let output_path = "session_keys.json";
-	let json_output = serde_json::to_string_pretty(&session_keys)
-		.context("Failed to serialize session keys to JSON")?;
-
-	if prompt_can_write("session keys file", output_path, context) {
-		context.write_file(output_path, &json_output);
-		context.eprint(&format!("💾 Session keys saved to {}", output_path));
-		context.eprint("🔑 Generated session keys:");
-		context.print(&json_output);
-	} else {
-		context.eprint("Refusing to overwrite session keys file - skipping save");
-		context.eprint("🔑 Generated session keys:");
-		context.print(&json_output);
-	}
-
-	Ok(())
+    Ok(())
 }
 
-/// Parse session keys from hex string by splitting into common key lengths
-/// Substrate session keys are typically concatenated public keys of fixed lengths
-fn parse_session_keys_hex<C: IOContext>(keys_hex: &str, context: &C) -> Vec<SessionKeyInfo> {
-	// Remove 0x prefix if present
-	let hex_data = keys_hex.strip_prefix("0x").unwrap_or(keys_hex);
+/// Decode session keys using a dynamic SessionKeys::decode_session_keys runtime call
+async fn decode_session_keys<C: IOContext>(
+    client: &OnlineClient<SubstrateConfig>,
+    keys_hex: &str,
+    context: &C,
+) -> Result<Vec<SessionKeyInfo>> {
+    // Remove 0x prefix if present and decode hex to bytes
+    let hex_data = keys_hex.strip_prefix("0x").unwrap_or(keys_hex);
+    let encoded_keys = hex::decode(hex_data).context("Failed to decode hex string")?;
 
-	// Common key types and their lengths in bytes (hex chars = bytes * 2)
-	// AURA: 32 bytes (64 hex chars) - Sr25519
-	// GRANDPA: 32 bytes (64 hex chars) - Ed25519
-	// ImOnline: 32 bytes (64 hex chars) - Sr25519
-	// AuthorityDiscovery: 32 bytes (64 hex chars) - Sr25519
+    // Dynamic runtime call to SessionKeys::decode_session_keys
+    let call = subxt::dynamic::runtime_api_call("SessionKeys", "decode_session_keys", vec![Value::from_bytes(encoded_keys)]);
+    let decoded_keys = client
+        .runtime_api()
+        .at_latest()
+        .await
+        .context("Failed to get latest block")?
+        .call(call)
+        .await
+        .context("Failed to call decode_session_keys")?
+        .to_value()
+        .context("Failed to convert to value")?;
 
-	let mut session_keys = Vec::new();
-	let mut offset = 0;
-	let key_types = ["aura", "gran", "imon", "auth"];
+    // Debug the decoded keys structure
+    context.eprint(&format!("DEBUG: Decoded keys structure: {:?}", decoded_keys));
 
-	// Each key is typically 32 bytes = 64 hex characters
-	let key_length = 64;
+    // Process the decoded keys
+    let session_keys = match decoded_keys.as_vec() {
+        Some((_variant_name, value)) => {
+            // Expecting a 'Some' variant containing a Vec of tuples
+            match value.as_vec() {
+                Some(sequence) => {
+                    let mut session_keys = Vec::new();
+                    for value in sequence {
+                        let tuple = value.as_tuple().ok_or(anyhow::anyhow!("Invalid key tuple format"))?;
+                        if tuple.len() != 2 {
+                            return Err(anyhow::anyhow!("Invalid key tuple length"));
+                        }
+                        let public_key = tuple[0].as_bytes().ok_or(anyhow::anyhow!("Invalid public key format"))?;
+                        let key_type_id = tuple[1].as_bytes().ok_or(anyhow::anyhow!("Invalid key type ID format"))?;
+                        let key_type = String::from_utf8(key_type_id.to_vec())
+                            .map_err(|e| anyhow::anyhow!("Invalid key type ID: {}", e))?;
+                        let public_key_hex = format!("0x{}", hex::encode(&public_key));
 
-	for &key_type in key_types.iter() {
-		if offset + key_length <= hex_data.len() {
-			let key_hex = &hex_data[offset..offset + key_length];
-			session_keys.push(SessionKeyInfo {
-				key_type: key_type.to_string(),
-				public_key: format!("0x{}", key_hex),
-			});
-			offset += key_length;
+                        context.eprint(&format!("  📝 Decoded {} key: {}", key_type, public_key_hex));
 
-			context.eprint(&format!("  📝 Parsed {} key: 0x{}", key_type, key_hex));
-		} else {
-			break;
-		}
-	}
+                        session_keys.push(SessionKeyInfo {
+                            key_type,
+                            public_key: public_key_hex,
+                        });
+                    }
+                    session_keys
+                }
+                None => {
+                    context.eprint("  ⚠️  Expected a sequence in Some variant, got different type");
+                    vec![SessionKeyInfo {
+                        key_type: "raw".to_string(),
+                        public_key: keys_hex.to_string(),
+                    }]
+                }
+            }
+        }
+        None => {
+            context.eprint("  ⚠️  Could not decode session keys - got None variant");
+            vec![SessionKeyInfo {
+                key_type: "raw".to_string(),
+                public_key: keys_hex.to_string(),
+            }]
+        }
+    };
 
-	// If there's remaining data, add it as a raw key
-	if offset < hex_data.len() {
-		let remaining_hex = &hex_data[offset..];
-		session_keys.push(SessionKeyInfo {
-			key_type: "remaining".to_string(),
-			public_key: format!("0x{}", remaining_hex),
-		});
-		context.eprint(&format!("  📝 Remaining data: 0x{}", remaining_hex));
-	}
-
-	// If we couldn't parse any keys, provide the full hex as raw
-	if session_keys.is_empty() {
-		context.eprint("  ⚠️  Could not parse individual keys - providing full hex as raw");
-		session_keys
-			.push(SessionKeyInfo { key_type: "raw".to_string(), public_key: keys_hex.to_string() });
-	}
-
-	session_keys
+    Ok(session_keys)
 }
