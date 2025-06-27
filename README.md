@@ -73,7 +73,6 @@ Chain Toolkit offers and how to use it for different use-cases.
 
 Rust Docs for all crates provided by the toolkit are available to browse online [here](https://input-output-hk.github.io/partner-chains/)
 
-
 ### 📃 License
 
 This project is primarly distributed under the Apache License 2.0. You can review the full license
