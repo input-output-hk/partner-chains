@@ -207,7 +207,7 @@ macro_rules! plutus_script {
 			plutus_script!(@inner, script $(,$args)*)
 		}
 	);
-	(@inner, $ps:expr) => (Ok($ps));
+	(@inner, $ps:expr) => (Ok::<crate::plutus_script::PlutusScript, anyhow::Error>($ps));
     (@inner, $ps:expr, $arg:expr $(,$args:expr)*) => (
 		$ps.apply_data_uplc($crate::plutus_script::PlutusDataWrapper::from($arg).0)
 	    	.and_then(|ps| plutus_script!(@inner, ps $(,$args)*))
