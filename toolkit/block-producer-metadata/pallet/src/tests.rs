@@ -1,6 +1,7 @@
 use crate::HoldReason;
 
 use super::*;
+use crate::mock::mock_pallet::CurrentSlot;
 use frame_support::{assert_noop, assert_ok, traits::tokens::fungible::InspectHold};
 use frame_system::pallet_prelude::OriginFor;
 use hex_literal::hex;
@@ -10,6 +11,7 @@ use sidechain_domain::*;
 use sp_runtime::AccountId32;
 
 mod upsert_metadata {
+
 	use super::*;
 	use pretty_assertions::assert_eq;
 	#[test]
@@ -149,6 +151,24 @@ mod upsert_metadata {
 			assert_eq!(error, Error::<Test>::NotTheOwner.into());
 		})
 	}
+
+	#[test]
+	fn rejects_signature_past_validity_time() {
+		new_test_ext().execute_with(|| {
+			CurrentSlot::<Test>::set((valid_before() / SECONDS_PER_SLOT + 1).into());
+
+			let error = super::Pallet::<Test>::upsert_metadata(
+				OriginFor::<Test>::signed(FUNDED_ACCOUNT),
+				url_metadata_1(),
+				cross_chain_signature_1(),
+				cross_chain_pub_key(),
+				valid_before(),
+			)
+			.unwrap_err();
+
+			assert_eq!(error, Error::<Test>::PastValidityTime.into());
+		})
+	}
 }
 
 mod delete_metadata {
@@ -209,6 +229,23 @@ mod delete_metadata {
 			)
 			.unwrap_err();
 			assert_eq!(error, Error::<Test>::NotTheOwner.into());
+		})
+	}
+
+	#[test]
+	fn rejects_signature_past_validity_time() {
+		new_test_ext().execute_with(|| {
+			CurrentSlot::<Test>::set((valid_before() / SECONDS_PER_SLOT + 1).into());
+
+			let error = super::Pallet::<Test>::delete_metadata(
+				OriginFor::<Test>::signed(FUNDED_ACCOUNT),
+				cross_chain_pub_key(),
+				cross_chain_signature_delete(),
+				valid_before(),
+			)
+			.unwrap_err();
+
+			assert_eq!(error, Error::<Test>::PastValidityTime.into());
 		})
 	}
 }

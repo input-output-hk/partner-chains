@@ -608,6 +608,15 @@ impl pallet_block_producer_metadata::Config for Runtime {
 		Sidechain::genesis_utxo()
 	}
 
+	fn current_slot() -> Slot {
+		let slot: u64 = pallet_aura::CurrentSlot::<Runtime>::get().into();
+		sp_consensus_slots::Slot::from(slot)
+	}
+
+	fn seconds_to_slot(timestamp_seconds: u64) -> Slot {
+		(timestamp_seconds * 1000 / SLOT_DURATION).into()
+	}
+
 	type Currency = Balances;
 	type HoldAmount = MetadataHoldAmount;
 	type RuntimeHoldReason = RuntimeHoldReason;

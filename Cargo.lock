@@ -6415,6 +6415,7 @@ dependencies = [
  "pretty_assertions",
  "scale-info",
  "sidechain-domain",
+ "sidechain-slots",
  "sp-block-producer-metadata",
  "sp-core",
  "sp-io",
