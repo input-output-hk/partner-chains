@@ -61,6 +61,7 @@ class PartnerChainsNode:
                 encoded_message=response["encoded_message"],
                 encoded_metadata=response["encoded_metadata"],
                 signature=response["signature"],
+                valid_before=response["valid_before"],
             )
         except Exception as e:
             logging.error(f"Could not parse response of sign-block-producer-metadata cmd: {result}")

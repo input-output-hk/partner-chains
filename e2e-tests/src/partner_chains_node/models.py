@@ -23,6 +23,7 @@ class BlockProducerMetadataSignature:
     encoded_message: str
     encoded_metadata: str
     signature: str
+    valid_before: int
 
 
 @dataclass
