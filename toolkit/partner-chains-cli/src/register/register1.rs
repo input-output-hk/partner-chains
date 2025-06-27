@@ -34,7 +34,7 @@ impl CmdRun for Register1Cmd {
 			    context.eprint("⚠️ The keys file `partner-chains-cli-keys.json` is missing or invalid. Please run the `generate-keys` command first");
 				anyhow!(e)
 			})?;
-
+		//aaa
 		context.print("This wizard will query your UTXOs using address derived from the payment verification key and Ogmios service");
 		let ogmios_configuration = prompt_ogmios_configuration(context)?;
 		let shelley_genesis_config = get_shelley_config(&ogmios_configuration, context)?;
