@@ -202,6 +202,25 @@ impl From<IlliquidCirculationSupplyRedeemer> for PlutusData {
 	}
 }
 
+#[derive(Debug, Clone, PartialEq)]
+/// Datum of the illiquid circulation supply.
+pub struct IlliquidCirculationSupplyDatum;
+
+impl From<IlliquidCirculationSupplyDatum> for PlutusData {
+	fn from(_value: IlliquidCirculationSupplyDatum) -> Self {
+		VersionedGenericDatum {
+			datum: PlutusData::new_empty_constr_plutus_data(
+				&cardano_serialization_lib::BigNum::zero(),
+			),
+			appendix: PlutusData::new_empty_constr_plutus_data(
+				&cardano_serialization_lib::BigNum::zero(),
+			),
+			version: 0,
+		}
+		.into()
+	}
+}
+
 #[cfg(test)]
 mod tests {
 	use cardano_serialization_lib::PlutusData;
