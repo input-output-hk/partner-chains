@@ -16,8 +16,7 @@ RUN apt-get update && apt-get install -y \
 	vim \
 	dnsutils \
 	jq \
-	htop \
-	&& rm -rf /var/lib/apt/lists/*
+	htop
 
 RUN useradd -m -u 1010 -U -s /bin/sh -d /substrate substrate \
 	&& mkdir -p /data /substrate/.local/share/partner-chains-node \
@@ -29,9 +28,13 @@ RUN chown substrate:substrate /usr/local/bin/partner-chains-node && chmod +x /us
 
 USER substrate
 
+#p2p
 EXPOSE 30333
+#prometheus exporter
 EXPOSE 9615
+#JSON-RPC HTTP
 EXPOSE 9933
+#JSON-RPC WS
 EXPOSE 9944
 
 VOLUME ["/data"]
