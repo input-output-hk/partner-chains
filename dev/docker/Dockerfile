@@ -1,27 +1,7 @@
-FROM --platform=linux/amd64 partner-chains-node-builder:latest AS builder
+FROM partner-chains-node-builder:latest AS builder
+FROM partner-chains-node-runner:latest
 
-FROM ubuntu:24.04
 COPY --from=builder /partner-chains-node/partner-chains-demo-node /usr/local/bin/partner-chains-node
-
-RUN apt-get update && apt-get install -y \
-	ca-certificates \
-	libgcc-s1 \
-	libstdc++6 \
-	libc6 \
-	libssl3 \
-	zlib1g \
-	libgomp1 \
-	curl \
-	wget \
-	vim \
-	dnsutils \
-	jq \
-	htop
-
-RUN useradd -m -u 1010 -U -s /bin/sh -d /substrate substrate \
-	&& mkdir -p /data /substrate/.local/share/partner-chains-node \
-	&& chown -R substrate:substrate /data /substrate \
-	&& ln -s /data /substrate/.local/share/partner-chains-node
 
 RUN /usr/local/bin/partner-chains-node --version
 RUN chown substrate:substrate /usr/local/bin/partner-chains-node && chmod +x /usr/local/bin/partner-chains-node
