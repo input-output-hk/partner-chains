@@ -187,6 +187,21 @@ fn decode_token_id_datum(pd: &PlutusData) -> Option<AssetId> {
 	})
 }
 
+#[derive(Debug, Clone)]
+/// Redeemer for illiquid circulation supply
+pub enum IlliquidCirculationSupplyRedeemer {
+	/// Deposit tokens to the supply
+	DepositMoreToSupply = 0,
+	/// Withdraw from the illiquid supply
+	WithdrawFromSupply = 1,
+}
+
+impl From<IlliquidCirculationSupplyRedeemer> for PlutusData {
+	fn from(value: IlliquidCirculationSupplyRedeemer) -> Self {
+		PlutusData::new_integer(&BigInt::from(value as u64))
+	}
+}
+
 #[cfg(test)]
 mod tests {
 	use cardano_serialization_lib::PlutusData;
