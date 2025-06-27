@@ -73,7 +73,7 @@ impl CmdRun for Register1Cmd {
 			get_ecdsa_pair_from_file(context, &keystore_path(&node_data_base_path), &pc_pub_key)
 				.map_err(|e| {
 					context
-						.eprint(&format!("⚠️ Failed to read sidechain key from the keystore: {e}"));
+						.eprint(&format!("⚠️ Failed to read partner chain key from the keystore: {e}"));
 					anyhow!(e)
 				})?;
 
