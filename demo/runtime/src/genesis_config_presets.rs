@@ -17,7 +17,7 @@
 
 use crate::{
 	AccountId, BalancesConfig, GovernedMapConfig, RuntimeGenesisConfig, SudoConfig,
-	test_helper_pallet,
+	test_helper_pallet, config::PartnerChainsConfig,
 };
 use alloc::{vec, vec::Vec};
 use serde_json::Value;
@@ -31,6 +31,7 @@ fn testnet_genesis(
 	initial_authorities: Vec<(AuraId, GrandpaId)>,
 	endowed_accounts: Vec<AccountId>,
 	root: AccountId,
+	_partner_chains_config: Option<PartnerChainsConfig>,
 ) -> Value {
 	let config = RuntimeGenesisConfig {
 		balances: BalancesConfig {
@@ -84,6 +85,7 @@ pub fn development_config_genesis() -> Value {
 			Sr25519Keyring::BobStash.to_account_id(),
 		],
 		sp_keyring::Sr25519Keyring::Alice.to_account_id(),
+		Some(PartnerChainsConfig::default()),
 	)
 }
 
@@ -105,6 +107,7 @@ pub fn local_config_genesis() -> Value {
 			.map(|v| v.to_account_id())
 			.collect::<Vec<_>>(),
 		Sr25519Keyring::Alice.to_account_id(),
+		Some(PartnerChainsConfig::default()),
 	)
 }
 
@@ -119,6 +122,50 @@ pub fn get_preset(id: &PresetId) -> Option<Vec<u8>> {
 		serde_json::to_string(&patch)
 			.expect("serialization to json is expected to work. qed.")
 			.into_bytes(),
+	)
+}
+
+/// Return the development genesis config with custom partner chains config.
+pub fn development_config_genesis_with_config(partner_chains_config: PartnerChainsConfig) -> Value {
+	// For now, we store the config but the actual parameter setting will be done
+	// through runtime calls after genesis. The config is available for reference.
+	testnet_genesis(
+		vec![(
+			sp_keyring::Sr25519Keyring::Alice.public().into(),
+			sp_keyring::Ed25519Keyring::Alice.public().into(),
+		)],
+		vec![
+			Sr25519Keyring::Alice.to_account_id(),
+			Sr25519Keyring::Bob.to_account_id(),
+			Sr25519Keyring::AliceStash.to_account_id(),
+			Sr25519Keyring::BobStash.to_account_id(),
+		],
+		sp_keyring::Sr25519Keyring::Alice.to_account_id(),
+		Some(partner_chains_config),
+	)
+}
+
+/// Return the local genesis config with custom partner chains config.
+pub fn local_config_genesis_with_config(partner_chains_config: PartnerChainsConfig) -> Value {
+	// For now, we store the config but the actual parameter setting will be done
+	// through runtime calls after genesis. The config is available for reference.
+	testnet_genesis(
+		vec![
+			(
+				sp_keyring::Sr25519Keyring::Alice.public().into(),
+				sp_keyring::Ed25519Keyring::Alice.public().into(),
+			),
+			(
+				sp_keyring::Sr25519Keyring::Bob.public().into(),
+				sp_keyring::Ed25519Keyring::Bob.public().into(),
+			),
+		],
+		Sr25519Keyring::iter()
+			.filter(|v| v != &Sr25519Keyring::One && v != &Sr25519Keyring::Two)
+			.map(|v| v.to_account_id())
+			.collect::<Vec<_>>(),
+		Sr25519Keyring::Alice.to_account_id(),
+		Some(partner_chains_config),
 	)
 }
 

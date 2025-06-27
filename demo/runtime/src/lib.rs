@@ -68,6 +68,7 @@ use sp_weights::Weight;
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 pub mod genesis_config_presets;
+pub mod config;
 
 #[cfg(test)]
 mod mock;
@@ -300,24 +301,38 @@ impl frame_system::Config for Runtime {
 pub mod dynamic_params {
 	use super::*;
 
+	// Load partner chains config to get default values
+	fn get_partner_chains_config() -> config::PartnerChainsConfig {
+		#[cfg(feature = "std")]
+		{
+			config::PartnerChainsConfig::from_env_or_default()
+		}
+		#[cfg(not(feature = "std"))]
+		{
+			config::PartnerChainsConfig::default()
+		}
+	}
+
 	#[dynamic_pallet_params]
 	#[codec(index = 0)]
 	pub mod cardano_config {
+		use super::get_partner_chains_config;
+		
 		#[codec(index = 0)]
-		pub static SecurityParameter: u64 = 432;
+		pub static SecurityParameter: u64 = get_partner_chains_config().security_param;
 		#[codec(index = 1)]
-		pub static ActiveSlotsCoeff: sp_runtime::Permill = sp_runtime::Permill::from_percent(5);
+		pub static ActiveSlotsCoeff: sp_runtime::Permill = get_partner_chains_config().active_slots_coeff_permill();
 	}
 
 	#[dynamic_pallet_params]
 	#[codec(index = 1)]
 	pub mod cardano_epoch_config {
+		use super::get_partner_chains_config;
+		
 		#[codec(index = 0)]
-		pub static EpochDuration: core::time::Duration =
-			core::time::Duration::from_millis(432000000); // 5 days
+		pub static EpochDuration: core::time::Duration = get_partner_chains_config().epoch_duration();
 		#[codec(index = 1)]
-		pub static SlotDurationMillis: core::time::Duration =
-			core::time::Duration::from_millis(1000); // 1 second
+		pub static SlotDurationMillis: core::time::Duration = get_partner_chains_config().slot_duration();
 		#[codec(index = 2)]
 		pub static FirstEpochTimestampMillis: u64 = 1596059091000;
 		#[codec(index = 3)]
