@@ -40,7 +40,15 @@
 //! }
 //! ```
 //!
-//! Once the metadata type is defined, the pallet can be added to the runtime and should be configured:
+//! Once the metadata type is defined, the pallet can be added to the runtime and should be configured. This
+//! requires providing types used in the runtime along with logic to get the:
+//! - Partner Chain's genesis UTXO
+//! - current Partner Chain slot
+//! - Partner Chain slot containing a given timestamp
+//!
+//! These are dependent on the consesnsus mechanism used by the Partner Chain. For example, a chain that
+//! uses Aura for its consensus may define a configuration like this:
+//!
 //! ```rust,ignore
 //! impl pallet_block_producer_metadata::Config for Runtime {
 //!     type WeightInfo = pallet_block_producer_metadata::weights::SubstrateWeight<Runtime>;
@@ -53,12 +61,26 @@
 //!     fn genesis_utxo() -> sidechain_domain::UtxoId {
 //!         Sidechain::genesis_utxo()
 //!     }
+//!
+//!     fn current_slot() -> Slot {
+//!     	let slot: u64 = pallet_aura::CurrentSlot::<Runtime>::get().into();
+//!     	sp_consensus_slots::Slot::from(slot)
+//!     }
+//!
+//!     fn seconds_to_slot(timestamp_seconds: u64) -> Slot {
+//!     	(timestamp_seconds * 1000 / SLOT_DURATION).into()
+//!     }
 //! }
 //! ```
+//! where the `SLOT_DURATION` constant is the same as was passed to the Aura configuration, and `Sidechain`
+//! is the `pallet_sidechain`.
 //!
-//! Here, besides providing the metadata type and using weights already provided with the pallet, we are also
-//! wiring the `genesis_utxo` function to fetch the chain's genesis UTXO from the `pallet_sidechain` pallet.
-//! Currency, HoldAmount, and RuntimeHoldReason types are required to configure the deposit mechanism for occupying storage.
+//! Note here, that we are using weights already provided with the pallet in the example. These weights were
+//! generated for a setup identical to the example. Chains that use different implementations of `current_slot`
+//! and `seconds_to_slot` should use their own benchmarks.
+//!
+//! `Currency`, `HoldAmount`, and `RuntimeHoldReason` types are required to configure the deposit mechanism
+//! for occupying storage.
 //!
 //! At this point, the pallet is ready to be used.
 //!
@@ -94,6 +116,8 @@
 //! - **metadata value**: when using PolkadotJS UI, care must be taken to submit the same values that were passed to the CLI
 //! - **signature**: returned by the CLI
 //! - **cross-chain public key**: corresponding to the private key used for signing with the CLI
+//! - **valid-before**: timestamp returned by the CLI. This value can not be changed and defines the time range
+//!                     during which the signature is valid.
 //!
 //! [upsert_metadata]: pallet::Pallet::upsert_metadata
 //! [delete_metadata]: pallet::Pallet::delete_metadata
@@ -133,6 +157,7 @@ pub mod pallet {
 	};
 	use frame_system::{ensure_signed, pallet_prelude::OriginFor};
 	use sidechain_domain::{CrossChainSignature, UtxoId};
+	use sidechain_slots::Slot;
 
 	/// Current version of the pallet
 	pub const PALLET_VERSION: u32 = 2;
@@ -150,6 +175,12 @@ pub mod pallet {
 
 		/// Should return the chain's genesis UTXO
 		fn genesis_utxo() -> UtxoId;
+
+		/// Should return current slot
+		fn current_slot() -> Slot;
+
+		/// Should return the slot containing `timestamp_seconds`
+		fn seconds_to_slot(timestamp_seconds: u64) -> Slot;
 
 		/// The currency used for holding tokens
 		type Currency: MutateHold<Self::AccountId, Reason = Self::RuntimeHoldReason>;
@@ -191,6 +222,8 @@ pub mod pallet {
 		InsufficientBalance,
 		/// Attempt to update or delete metadata by a different Partner Chain account than the owner
 		NotTheOwner,
+		/// Attempt to update or delete metadata using a signature after its valid-before time
+		PastValidityTime,
 	}
 
 	#[pallet::call]
@@ -232,6 +265,10 @@ pub mod pallet {
 			let is_valid_signature =
 				signature.verify(&cross_chain_pub_key, &metadata_message.encode()).is_ok();
 
+			ensure!(
+				T::current_slot() <= T::seconds_to_slot(valid_before),
+				Error::<T>::PastValidityTime
+			);
 			ensure!(is_valid_signature, Error::<T>::InvalidMainchainSignature);
 
 			match BlockProducerMetadataStorage::<T>::get(cross_chain_key_hash) {
@@ -286,6 +323,10 @@ pub mod pallet {
 			let is_valid_signature =
 				signature.verify(&cross_chain_pub_key, &metadata_message.encode()).is_ok();
 
+			ensure!(
+				T::current_slot() <= T::seconds_to_slot(valid_before),
+				Error::<T>::PastValidityTime
+			);
 			ensure!(is_valid_signature, Error::<T>::InvalidMainchainSignature);
 
 			if let Some((_data, owner, deposit)) =

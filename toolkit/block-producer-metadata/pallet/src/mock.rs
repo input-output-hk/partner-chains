@@ -7,6 +7,7 @@ use hex_literal::hex;
 use scale_info::TypeInfo;
 use sidechain_domain::byte_string::{BoundedString, SizedByteString};
 use sidechain_domain::*;
+use sidechain_slots::Slot;
 use sp_core::H256;
 use sp_runtime::codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use sp_runtime::{
@@ -18,13 +19,37 @@ pub type Block = frame_system::mocking::MockBlock<Test>;
 pub type AccountId = AccountId32;
 pub type Balance = u128;
 
+#[frame_support::pallet]
+pub mod mock_pallet {
+	use super::*;
+	use frame_support::pallet_prelude::*;
+
+	#[pallet::pallet]
+	pub struct Pallet<T>(_);
+
+	#[pallet::config]
+	pub trait Config: frame_system::Config {}
+
+	#[pallet::storage]
+	pub type CurrentSlot<T: Config> = StorageValue<_, Slot, ValueQuery>;
+
+	impl<T: Config> Pallet<T> {
+		pub fn current_slot() -> Slot {
+			CurrentSlot::<T>::get()
+		}
+	}
+}
+
 construct_runtime! {
 	pub enum Test {
 		System: frame_system,
 		Balances: pallet_balances,
-		BlockProducerMetadata: crate::pallet
+		BlockProducerMetadata: crate::pallet,
+		Mock: mock_pallet
 	}
 }
+
+impl mock_pallet::Config for Test {}
 
 impl frame_system::Config for Test {
 	type BaseCallFilter = frame_support::traits::Everything;
@@ -121,12 +146,19 @@ pub(crate) const FUNDED_ACCOUNT: AccountId32 = AccountId32::new([1; 32]);
 pub(crate) const FUNDED_ACCOUNT_2: AccountId32 = AccountId32::new([2; 32]);
 
 pub(crate) const INITIAL_BALANCE: u128 = 100_000;
+pub(crate) const SECONDS_PER_SLOT: u64 = 10;
 
 impl crate::pallet::Config for Test {
 	type WeightInfo = ();
 	type BlockProducerMetadata = BlockProducerUrlMetadata;
 	fn genesis_utxo() -> UtxoId {
 		UtxoId::new(hex!("59104061ffa0d66f9ba0135d6fc6a884a395b10f8ae9cb276fc2c3bfdfedc260"), 1)
+	}
+	fn current_slot() -> Slot {
+		Mock::current_slot()
+	}
+	fn seconds_to_slot(timestamp_seconds: u64) -> Slot {
+		(timestamp_seconds / SECONDS_PER_SLOT).into()
 	}
 	type Currency = Balances;
 	type HoldAmount = MetadataHoldAmount;
