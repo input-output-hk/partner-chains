@@ -34,7 +34,7 @@ use ogmios_client::{
 	query_ledger_state::*, query_network::QueryNetwork, transactions::Transactions,
 	types::OgmiosUtxo,
 };
-use partner_chains_plutus_data::reserve::ReserveRedeemer;
+use partner_chains_plutus_data::reserve::{IlliquidCirculationSupplyDatum, ReserveRedeemer};
 use sidechain_domain::{McTxHash, UtxoId};
 use std::num::NonZero;
 
@@ -126,7 +126,7 @@ fn reserve_release_tx(
 		reserve_data.scripts.illiquid_circulation_supply_validator.bytes.len(),
 	);
 
-	// Mint v-function tokens in the number equal to the *total* number of tokens transfered.
+	// Mint v-function tokens in the number equal to the *total* number of tokens transferred.
 	// This serves as a validation of the v-function value.
 	let v_function = v_function_from_utxo(reference_utxo)?;
 	tx_builder.add_mint_script_token_using_reference_script(
@@ -150,7 +150,7 @@ fn reserve_release_tx(
 			.with_address(
 				&reserve_data.scripts.illiquid_circulation_supply_validator.address(ctx.network),
 			)
-			.with_plutus_data(&PlutusData::new_empty_constr_plutus_data(&0u64.into()))
+			.with_plutus_data(&IlliquidCirculationSupplyDatum.into())
 			.next()?
 			.with_minimum_ada_and_asset(&token.to_multi_asset(amount_to_transfer)?, ctx)?
 			.build()?
