@@ -127,6 +127,7 @@ pub enum PartnerChainsSubcommand<
 	SignAddressAssociation(AddressAssociationSignaturesCmd<PartnerchainAddress>),
 
 	/// Signs block producer metadata for submitting to the runtime
+	#[command(subcommand)]
 	SignBlockProducerMetadata(BlockProducerMetadataSignatureCmd),
 
 	/// Commands for interacting with Partner Chain smart contracts on Cardano

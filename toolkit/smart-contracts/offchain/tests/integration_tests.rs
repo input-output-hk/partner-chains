@@ -402,6 +402,19 @@ async fn governed_map_update() {
 	assert!(result.is_err(), "Updating an existing key should fail with incorrect expected value");
 }
 
+#[tokio::test]
+async fn governance_action_can_be_initiated_by_non_governance() {
+	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
+	let client = Cli::default();
+	let container = client.run(image);
+	let client = initialize(&container).await;
+	let genesis_utxo = run_init_goveranance(&client).await;
+	let tx_to_sign = run_upsert_d_param(genesis_utxo, 1, 1, &eve_payment_key(), &client)
+		.await
+		.unwrap();
+	run_assemble_and_sign(tx_to_sign, &[GOVERNANCE_AUTHORITY_KEY], &client).await;
+}
+
 async fn initialize<'a>(container: &Container<'a, GenericImage>) -> OgmiosClients {
 	let ogmios_port = container.get_host_port_ipv4(1337);
 	println!("Ogmios port: {}", ogmios_port);

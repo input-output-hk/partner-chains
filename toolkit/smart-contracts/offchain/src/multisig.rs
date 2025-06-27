@@ -203,7 +203,15 @@ where
 		)
 	} else {
 		MultiSigSmartContractResult::TransactionToSign(
-			create_transaction_to_sign(payment_ctx, make_tx, tx_name, client, await_tx).await?,
+			create_transaction_to_sign(
+				payment_ctx,
+				make_tx,
+				governance_data,
+				tx_name,
+				client,
+				await_tx,
+			)
+			.await?,
 		)
 	})
 }
@@ -239,6 +247,7 @@ where
 async fn create_transaction_to_sign<F, T, A>(
 	payment_ctx: TransactionContext,
 	make_tx: F,
+	governance_data: &GovernanceData,
 	tx_name: &str,
 	client: &T,
 	await_tx: &A,
@@ -268,7 +277,12 @@ where
 					e
 				)
 			})?;
-	let signed_tx_by_caller = original_ctx.sign(&tx);
+	let signed_tx_by_caller =
+		if governance_data.policy.contains_authority(&original_ctx.payment_key_hash()) {
+			original_ctx.sign(&tx)
+		} else {
+			tx
+		};
 	let signed_tx = temp_wallet_ctx.sign(&signed_tx_by_caller);
 	Ok(MultiSigTransactionData {
 		tx_name: tx_name.to_owned(),
