@@ -764,9 +764,6 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
 done
 echo "[LOG] Finished generating mainchain cold keys."
 
-echo "[LOG] Creating /shared/cardano.ready signal file."
-touch /shared/cardano.ready
-
 echo "[LOG] Querying and saving the first UTXO details for new address to /shared/genesis.utxo:"
 # Query UTXOs and extract the first UTXO key from JSON format
 cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" --out-file /dev/stdout | /busybox grep -o '"[a-f0-9]\{64\}#[0-9]\+":' | head -1 | /busybox sed 's/"//g' | /busybox sed 's/://g' > /shared/genesis.utxo
