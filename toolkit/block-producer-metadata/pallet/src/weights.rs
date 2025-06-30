@@ -45,8 +45,8 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Storage: `Sidechain::GenesisUtxo` (r:1 w:0)
 	/// Proof: `Sidechain::GenesisUtxo` (`max_values`: Some(1), `max_size`: Some(34), added: 529, mode: `MaxEncodedLen`)
-	/// Storage: `Aura::CurrentSlot` (r:1 w:0)
-	/// Proof: `Aura::CurrentSlot` (`max_values`: Some(1), `max_size`: Some(8), added: 503, mode: `MaxEncodedLen`)
+	/// Storage: `Timestamp::Now` (r:1 w:0)
+	/// Proof: `Timestamp::Now` (`max_values`: Some(1), `max_size`: Some(8), added: 503, mode: `MaxEncodedLen`)
 	/// Storage: `BlockProducerMetadata::BlockProducerMetadataStorage` (r:1 w:1)
 	/// Proof: `BlockProducerMetadata::BlockProducerMetadataStorage` (`max_values`: None, `max_size`: Some(638), added: 3113, mode: `MaxEncodedLen`)
 	/// Storage: `System::Account` (r:1 w:1)
@@ -55,17 +55,17 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: `Balances::Holds` (`max_values`: None, `max_size`: Some(67), added: 2542, mode: `MaxEncodedLen`)
 	fn upsert_metadata() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `311`
+		//  Measured:  `203`
 		//  Estimated: `4103`
-		// Minimum execution time: 238_000_000 picoseconds.
-		Weight::from_parts(242_000_000, 4103)
+		// Minimum execution time: 231_000_000 picoseconds.
+		Weight::from_parts(234_000_000, 4103)
 			.saturating_add(T::DbWeight::get().reads(5_u64))
 			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
 	/// Storage: `Sidechain::GenesisUtxo` (r:1 w:0)
 	/// Proof: `Sidechain::GenesisUtxo` (`max_values`: Some(1), `max_size`: Some(34), added: 529, mode: `MaxEncodedLen`)
-	/// Storage: `Aura::CurrentSlot` (r:1 w:0)
-	/// Proof: `Aura::CurrentSlot` (`max_values`: Some(1), `max_size`: Some(8), added: 503, mode: `MaxEncodedLen`)
+	/// Storage: `Timestamp::Now` (r:1 w:0)
+	/// Proof: `Timestamp::Now` (`max_values`: Some(1), `max_size`: Some(8), added: 503, mode: `MaxEncodedLen`)
 	/// Storage: `BlockProducerMetadata::BlockProducerMetadataStorage` (r:1 w:1)
 	/// Proof: `BlockProducerMetadata::BlockProducerMetadataStorage` (`max_values`: None, `max_size`: Some(638), added: 3113, mode: `MaxEncodedLen`)
 	/// Storage: `System::Account` (r:1 w:1)
@@ -74,10 +74,10 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: `Balances::Holds` (`max_values`: None, `max_size`: Some(67), added: 2542, mode: `MaxEncodedLen`)
 	fn delete_metadata() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `390`
+		//  Measured:  `282`
 		//  Estimated: `4103`
-		// Minimum execution time: 224_000_000 picoseconds.
-		Weight::from_parts(229_000_000, 4103)
+		// Minimum execution time: 216_000_000 picoseconds.
+		Weight::from_parts(221_000_000, 4103)
 			.saturating_add(T::DbWeight::get().reads(5_u64))
 			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
@@ -87,8 +87,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 impl WeightInfo for () {
 	/// Storage: `Sidechain::GenesisUtxo` (r:1 w:0)
 	/// Proof: `Sidechain::GenesisUtxo` (`max_values`: Some(1), `max_size`: Some(34), added: 529, mode: `MaxEncodedLen`)
-	/// Storage: `Aura::CurrentSlot` (r:1 w:0)
-	/// Proof: `Aura::CurrentSlot` (`max_values`: Some(1), `max_size`: Some(8), added: 503, mode: `MaxEncodedLen`)
+	/// Storage: `Timestamp::Now` (r:1 w:0)
+	/// Proof: `Timestamp::Now` (`max_values`: Some(1), `max_size`: Some(8), added: 503, mode: `MaxEncodedLen`)
 	/// Storage: `BlockProducerMetadata::BlockProducerMetadataStorage` (r:1 w:1)
 	/// Proof: `BlockProducerMetadata::BlockProducerMetadataStorage` (`max_values`: None, `max_size`: Some(638), added: 3113, mode: `MaxEncodedLen`)
 	/// Storage: `System::Account` (r:1 w:1)
@@ -97,17 +97,17 @@ impl WeightInfo for () {
 	/// Proof: `Balances::Holds` (`max_values`: None, `max_size`: Some(67), added: 2542, mode: `MaxEncodedLen`)
 	fn upsert_metadata() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `311`
+		//  Measured:  `203`
 		//  Estimated: `4103`
-		// Minimum execution time: 238_000_000 picoseconds.
-		Weight::from_parts(242_000_000, 4103)
+		// Minimum execution time: 231_000_000 picoseconds.
+		Weight::from_parts(234_000_000, 4103)
 			.saturating_add(RocksDbWeight::get().reads(5_u64))
 			.saturating_add(RocksDbWeight::get().writes(3_u64))
 	}
 	/// Storage: `Sidechain::GenesisUtxo` (r:1 w:0)
 	/// Proof: `Sidechain::GenesisUtxo` (`max_values`: Some(1), `max_size`: Some(34), added: 529, mode: `MaxEncodedLen`)
-	/// Storage: `Aura::CurrentSlot` (r:1 w:0)
-	/// Proof: `Aura::CurrentSlot` (`max_values`: Some(1), `max_size`: Some(8), added: 503, mode: `MaxEncodedLen`)
+	/// Storage: `Timestamp::Now` (r:1 w:0)
+	/// Proof: `Timestamp::Now` (`max_values`: Some(1), `max_size`: Some(8), added: 503, mode: `MaxEncodedLen`)
 	/// Storage: `BlockProducerMetadata::BlockProducerMetadataStorage` (r:1 w:1)
 	/// Proof: `BlockProducerMetadata::BlockProducerMetadataStorage` (`max_values`: None, `max_size`: Some(638), added: 3113, mode: `MaxEncodedLen`)
 	/// Storage: `System::Account` (r:1 w:1)
@@ -116,10 +116,10 @@ impl WeightInfo for () {
 	/// Proof: `Balances::Holds` (`max_values`: None, `max_size`: Some(67), added: 2542, mode: `MaxEncodedLen`)
 	fn delete_metadata() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `390`
+		//  Measured:  `282`
 		//  Estimated: `4103`
-		// Minimum execution time: 224_000_000 picoseconds.
-		Weight::from_parts(229_000_000, 4103)
+		// Minimum execution time: 216_000_000 picoseconds.
+		Weight::from_parts(221_000_000, 4103)
 			.saturating_add(RocksDbWeight::get().reads(5_u64))
 			.saturating_add(RocksDbWeight::get().writes(3_u64))
 	}

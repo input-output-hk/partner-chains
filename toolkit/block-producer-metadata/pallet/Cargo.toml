@@ -19,7 +19,6 @@ parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 sidechain-domain = { workspace = true }
 sp-std = { workspace = true }
-sidechain-slots = { workspace = true }
 hex-literal = { workspace = true, optional = true }
 sp-core = { workspace = true, optional = true }
 sp-block-producer-metadata = { workspace = true }
@@ -49,7 +48,6 @@ std = [
     "sp-core?/std",
     "sp-block-producer-metadata/std",
     "pallet-balances/std",
-    "sidechain-slots/std"
 ]
 runtime-benchmarks = [
     "frame-benchmarking/runtime-benchmarks",

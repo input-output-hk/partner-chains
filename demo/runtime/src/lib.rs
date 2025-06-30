@@ -617,8 +617,7 @@ impl pallet_block_producer_metadata::Config for Runtime {
 	}
 
 	fn current_time() -> u64 {
-		let slot: u64 = pallet_aura::CurrentSlot::<Runtime>::get().into();
-		slot * SLOT_DURATION / 1000
+		pallet_timestamp::Now::<Runtime>::get()
 	}
 
 	type Currency = Balances;
