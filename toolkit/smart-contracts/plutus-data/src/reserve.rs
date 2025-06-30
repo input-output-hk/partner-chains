@@ -227,11 +227,11 @@ mod tests {
 	use pretty_assertions::assert_eq;
 	use sidechain_domain::{AssetName, PolicyId};
 
-	use crate::test_helpers::test_plutus_data;
+	use crate::{reserve::IlliquidCirculationSupplyDatum, test_helpers::test_plutus_data};
 
 	use super::{ReserveDatum, ReserveImmutableSettings, ReserveMutableSettings, ReserveStats};
 
-	fn test_datum() -> ReserveDatum {
+	fn test_reserve_datum() -> ReserveDatum {
 		ReserveDatum {
 			immutable_settings: ReserveImmutableSettings {
 				t0: 0,
@@ -248,7 +248,7 @@ mod tests {
 		}
 	}
 
-	fn test_datum_plutus_data() -> PlutusData {
+	fn test_reserve_datum_plutus_data() -> PlutusData {
 		test_plutus_data!({"list":[
 			{"list":[
 				{"list":[
@@ -270,12 +270,27 @@ mod tests {
 	}
 
 	#[test]
-	fn encode() {
-		assert_eq!(PlutusData::from(test_datum()), test_datum_plutus_data())
+	fn encode_reserve_datum() {
+		assert_eq!(PlutusData::from(test_reserve_datum()), test_reserve_datum_plutus_data())
 	}
 
 	#[test]
-	fn decode() {
-		assert_eq!(ReserveDatum::try_from(test_datum_plutus_data()).unwrap(), test_datum())
+	fn decode_reserve_datum() {
+		assert_eq!(
+			ReserveDatum::try_from(test_reserve_datum_plutus_data()).unwrap(),
+			test_reserve_datum()
+		)
+	}
+
+	#[test]
+	fn encode_ics_datum() {
+		assert_eq!(
+			PlutusData::from(IlliquidCirculationSupplyDatum),
+			test_plutus_data!({"list":[
+				{"constructor":0,"fields":[]},
+				{"constructor":0,"fields":[]},
+				{"int":0}
+			]})
+		)
 	}
 }
