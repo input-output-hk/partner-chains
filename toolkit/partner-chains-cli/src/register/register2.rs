@@ -1,5 +1,5 @@
 use super::RegisterValidatorMessage;
-use super::{PlainPublicKeyParam, SidechainPublicKeyParam, StakePoolSigningKeyParam};
+use super::{PartnerChainPublicKeyParam, PlainPublicKeyParam, StakePoolSigningKeyParam};
 use crate::CmdRun;
 use crate::cardano_key::get_mc_staking_signing_key_from_file;
 use crate::io::IOContext;
@@ -15,13 +15,13 @@ pub struct Register2Cmd {
 	#[arg(long)]
 	pub registration_utxo: UtxoId,
 	#[arg(long)]
-	pub sidechain_pub_key: SidechainPublicKeyParam,
+	pub partner_chain_pub_key: PartnerChainPublicKeyParam,
 	#[arg(long)]
 	pub aura_pub_key: PlainPublicKeyParam,
 	#[arg(long)]
 	pub grandpa_pub_key: PlainPublicKeyParam,
 	#[arg(long)]
-	pub sidechain_signature: String,
+	pub partner_chain_signature: String,
 }
 
 impl CmdRun for Register2Cmd {
@@ -38,7 +38,7 @@ impl CmdRun for Register2Cmd {
 
 		let registration_message = RegisterValidatorMessage {
 			genesis_utxo: self.genesis_utxo,
-			sidechain_pub_key: self.sidechain_pub_key.0.clone(),
+			sidechain_pub_key: self.partner_chain_pub_key.0.clone(),
 			registration_utxo: self.registration_utxo,
 		};
 
@@ -51,7 +51,7 @@ impl CmdRun for Register2Cmd {
 		context.print("To finish the registration process, run the following command on the machine with the partner chain dependencies running:\n");
 		context.print(&format!(
 			"{executable} wizards register3 \\\n--genesis-utxo {} \\\n--registration-utxo {} \\\n--aura-pub-key {} \\\n--grandpa-pub-key {} \\\n--partner-chain-pub-key {} \\\n--partner-chain-signature {} \\\n--spo-public-key {} \\\n--spo-signature {}",
-			self.genesis_utxo, self.registration_utxo, self.aura_pub_key, self.grandpa_pub_key, self.sidechain_pub_key, self.sidechain_signature, spo_public_key, spo_signature));
+			self.genesis_utxo, self.registration_utxo, self.aura_pub_key, self.grandpa_pub_key, self.partner_chain_pub_key, self.partner_chain_signature, spo_public_key, spo_signature));
 		Ok(())
 	}
 }
@@ -131,10 +131,10 @@ mod tests {
 		Register2Cmd {
             genesis_utxo: "0000000000000000000000000000000000000000000000000000000000000001#0".parse().unwrap(),
             registration_utxo: "7e9ebd0950ae1bec5606f0cd7ac88b3c60b1103d7feb6ffa36402edae4d1b617#0".parse().unwrap(),
-            sidechain_pub_key: "0x031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6".parse().unwrap(),
+            partner_chain_pub_key: "0x031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6".parse().unwrap(),
             aura_pub_key: "0xdf883ee0648f33b6103017b61be702017742d501b8fe73b1d69ca0157460b777".parse().unwrap(),
             grandpa_pub_key: "0x5a091a06abd64f245db11d2987b03218c6bd83d64c262fe10e3a2a1230e90327".parse().unwrap(),
-            sidechain_signature: "7a7e3e585a5dc248d4a2772814e1b58c90313443dd99369f994e960ecc4931442a08305743db7ab42ab9b8672e00250e1cc7c08bc018b0630a8197c4f95528a301".parse().unwrap()
+            partner_chain_signature: "7a7e3e585a5dc248d4a2772814e1b58c90313443dd99369f994e960ecc4931442a08305743db7ab42ab9b8672e00250e1cc7c08bc018b0630a8197c4f95528a301".parse().unwrap()
         }
 	}
 
