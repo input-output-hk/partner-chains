@@ -23,21 +23,21 @@ pub struct RegisterValidatorMessage {
 }
 
 #[derive(Clone, Debug)]
-pub struct SidechainPublicKeyParam(pub SidechainPublicKey);
+pub struct PartnerChainPublicKeyParam(pub SidechainPublicKey);
 
-impl Display for SidechainPublicKeyParam {
+impl Display for PartnerChainPublicKeyParam {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		write!(f, "0x{}", hex::encode(&self.0.0))
 	}
 }
 
-impl FromStr for SidechainPublicKeyParam {
+impl FromStr for PartnerChainPublicKeyParam {
 	type Err = secp256k1::Error;
 
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
 		let trimmed = s.trim_start_matches("0x");
 		let pk = PublicKey::from_str(trimmed)?;
-		Ok(SidechainPublicKeyParam(SidechainPublicKey(pk.serialize().to_vec())))
+		Ok(PartnerChainPublicKeyParam(SidechainPublicKey(pk.serialize().to_vec())))
 	}
 }
 

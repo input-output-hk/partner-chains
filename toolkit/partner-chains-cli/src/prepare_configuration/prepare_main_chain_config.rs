@@ -99,7 +99,7 @@ If you intend to run a chain with permissioned candidates, you must manually set
   ]
 }
 
-After setting up the permissioned candidates, execute the 'create-chain-spec' command to generate the final chain specification."#;
+After setting up the permissioned candidates, execute the 'setup-main-chain-state' command to write required data to Cardano, and run the 'create-chain-spec' command to generate the final chain specification."#;
 
 #[cfg(test)]
 mod tests {
@@ -158,11 +158,15 @@ mod tests {
 					true,
 				),
 				MockIO::prompt(
-					NATIVE_TOKEN_POLICY.name,
+					&format!("Enter the {}", NATIVE_TOKEN_POLICY.name),
 					None,
 					"ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4",
 				),
-				MockIO::prompt(NATIVE_TOKEN_ASSET_NAME.name, None, "5043546f6b656e44656d6f"),
+				MockIO::prompt(
+					&format!("Enter the {}", NATIVE_TOKEN_ASSET_NAME.name),
+					None,
+					"5043546f6b656e44656d6f",
+				),
 			])
 		}
 	}

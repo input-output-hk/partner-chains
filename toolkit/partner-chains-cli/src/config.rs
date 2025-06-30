@@ -44,7 +44,7 @@ impl<'a> ConfigFieldDefinition<'a, String> {
 		if let Some(value) = self.load_from_file_and_print(context) {
 			value
 		} else {
-			let value = context.prompt(self.name, self.default);
+			let value = context.prompt(&format!("Enter the {}", self.name), self.default);
 			self.save_to_file(&value, context);
 			value
 		}
@@ -55,8 +55,10 @@ impl<'a> ConfigFieldDefinition<'a, String> {
 		&self,
 		context: &C,
 	) -> String {
-		let value =
-			context.prompt(self.name, self.load_from_file(context).as_deref().or(self.default));
+		let value = context.prompt(
+			&format!("Enter the {}", self.name),
+			self.load_from_file(context).as_deref().or(self.default),
+		);
 		self.save_to_file(&value, context);
 		value
 	}
@@ -72,7 +74,7 @@ impl<'a, T> ConfigFieldDefinition<'a, T> {
 	{
 		let loaded_value = self.load_from_file(context).map(|v| v.to_string());
 		let default_value = loaded_value.as_deref().or(self.default);
-		let value = context.prompt(self.name, default_value);
+		let value = context.prompt(&format!("Enter the {}", self.name), default_value);
 		let parsed_value: T = value.parse()?;
 		self.save_to_file(&parsed_value, context);
 		Ok(parsed_value)
@@ -655,7 +657,7 @@ pub(crate) mod config_fields {
 	> = ConfigFieldDefinition {
 		config_file: CHAIN_CONFIG_FILE_PATH,
 		path: &["initial_governance", "authorities"],
-		name: "Space separated keys hashes of the initial Multisig Governance Authorities",
+		name: "space separated keys hashes of the initial Multisig Governance Authorities",
 		default: Some("[]"),
 		_marker: PhantomData,
 	};

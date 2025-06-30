@@ -274,7 +274,7 @@ mod tests {
 
 	fn prompt_mc_payment_key_path_io() -> Vec<MockIO> {
 		vec![MockIO::prompt(
-			"path to the payment signing key file",
+			"Enter the path to the payment signing key file",
 			Some("payment.skey"),
 			"/path/to/payment.skey",
 		)]
@@ -301,7 +301,7 @@ mod tests {
 			),
 			MockIO::current_timestamp(mock_timestamp()),
 			MockIO::prompt(
-				"DB-Sync Postgres connection string",
+				"Enter the DB-Sync Postgres connection string",
 				POSTGRES_CONNECTION_STRING.default,
 				POSTGRES_CONNECTION_STRING.default.unwrap(),
 			),

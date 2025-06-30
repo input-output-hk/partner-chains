@@ -5,6 +5,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 # Unreleased
 
 * Added extra constant burn fee in `pallet-address-association` to discourage attacks on pallet storage.
+* Wizards don't require `generate-keys` for `prepare-configuration`. Altered recommended order of `create-chain-spec` and `setup-main-chain-state`.
 
 ## Changed
 
@@ -17,6 +18,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 ## Fixed
 
 * `smart-contracts` governance actions were failing due too redundant signature when initiated by non-governance wallet
+* Wizards using 'sidechain' in command line parameters are changed to use 'partner-chain' instead
 
 ## Removed
 

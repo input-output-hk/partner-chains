@@ -115,12 +115,12 @@ mod tests {
 			.with_expected_io(vec![
 				MockIO::eprint("Please provide the initial chain governance key hashes:"),
 				MockIO::prompt(
-					"Space separated keys hashes of the initial Multisig Governance Authorities",
+					"Enter the space separated keys hashes of the initial Multisig Governance Authorities",
 					Some(test_private_key_hash()),
 					"00000000000000000000000000000000000000000000000000000000  \n\t0x01010101010101010101010101010101010101010101010101010101",
 				),
 				MockIO::prompt(
-					"Initial Multisig Governance Threshold",
+					"Enter the Initial Multisig Governance Threshold",
 					Some("1"),
 					"2",
 				),
