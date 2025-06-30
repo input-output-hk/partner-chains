@@ -726,6 +726,7 @@ class SubstrateApi(BlockchainApi):
                 "metadata": metadata,
                 "signature": signature.signature,
                 "cross_chain_pub_key": signature.cross_chain_pub_key,
+                "valid_before": signature.valid_before
             },
         )
         logger.debug(f"Transaction built {tx._unsigned}")

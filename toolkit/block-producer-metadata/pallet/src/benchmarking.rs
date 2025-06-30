@@ -34,6 +34,12 @@
 //!     fn delete_cross_chain_signature() -> sidechain_domain::CrossChainSignature {
 //!         CrossChainSignature(hex!("5c1a701c8adffdf53a371409a24cc6c2d778a4c65c2c105c5fccfc5eeb69e3fa59bd723e7c10893f53fcfdfff8c02954f2230953cb9596119c11d4a9a29564c5").to_vec())
 //!     }
+//!     fn upsert_valid_before() -> u64 {
+//!     	100_000_000
+//!     }
+//!     fn delete_valid_before() -> u64 {
+//!     	100_000_000
+//!     }
 //! }
 //! ```
 //!
@@ -79,6 +85,12 @@ pub trait BenchmarkHelper<BlockProducerMetadata> {
 	/// This signature must match the cross-chain pubkey returned by `cross_chain_pub_key` and be a valid
 	/// for the genesis UTXO used for benchmarks.
 	fn delete_cross_chain_signature() -> CrossChainSignature;
+
+	/// Should return the valid-before value for the upsert
+	fn upsert_valid_before() -> u64;
+
+	/// Should return the valid-before value for the delete
+	fn delete_valid_before() -> u64;
 }
 
 #[benchmarks(where <T as Config>::Currency: frame_support::traits::tokens::fungible::Mutate<<T as frame_system::Config>::AccountId>)]
@@ -92,13 +104,20 @@ mod benchmarks {
 		let metadata = T::BenchmarkHelper::metadata();
 		let cross_chain_pub_key = T::BenchmarkHelper::cross_chain_pub_key();
 		let cross_chain_signature = T::BenchmarkHelper::upsert_cross_chain_signature();
+		let valid_before = T::BenchmarkHelper::upsert_valid_before();
 
 		// Create an account and fund it with sufficient balance
 		let caller: T::AccountId = account("caller", 0, 0);
 		let _ = T::Currency::mint_into(&caller, T::HoldAmount::get() * 2u32.into());
 
 		#[extrinsic_call]
-		_(RawOrigin::Signed(caller), metadata, cross_chain_signature, cross_chain_pub_key);
+		_(
+			RawOrigin::Signed(caller),
+			metadata,
+			cross_chain_signature,
+			cross_chain_pub_key,
+			valid_before,
+		);
 	}
 
 	#[benchmark]
@@ -106,6 +125,7 @@ mod benchmarks {
 		let metadata = T::BenchmarkHelper::metadata();
 		let cross_chain_pub_key = T::BenchmarkHelper::cross_chain_pub_key();
 		let cross_chain_signature = T::BenchmarkHelper::delete_cross_chain_signature();
+		let valid_before = T::BenchmarkHelper::delete_valid_before();
 
 		let caller: T::AccountId = account("caller", 0, 0);
 		let _ =
@@ -117,7 +137,7 @@ mod benchmarks {
 		);
 
 		#[extrinsic_call]
-		_(RawOrigin::Signed(caller), cross_chain_pub_key, cross_chain_signature);
+		_(RawOrigin::Signed(caller), cross_chain_pub_key, cross_chain_signature, valid_before);
 	}
 
 	impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);
