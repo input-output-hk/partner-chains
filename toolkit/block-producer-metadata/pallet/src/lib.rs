@@ -239,8 +239,7 @@ pub mod pallet {
 		///   and the current Partner Chain's genesis UTXO, created using the private key corresponding
 		///   to `cross_chain_pub_key`
 		/// - `cross_chain_pub_key`: public key identifying the block producer
-		/// - `valid_before`: timestamp in seconds before the extrinsic must be processed for the signature
-		///                   to be considered valid
+		/// - `valid_before`: timestamp in seconds up to which the signature is considered valid
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::upsert_metadata())]
 		pub fn upsert_metadata(
@@ -300,8 +299,7 @@ pub mod pallet {
 		/// - `signature`: a signature of [MetadataSignedMessage] created from this inherent's arguments
 		///   and the current Partner Chain's genesis UTXO, created using the private key corresponding
 		///   to `cross_chain_pub_key`
-		/// - `valid_before`: timestamp in seconds before the extrinsic must be processed for the signature
-		///                   to be considered valid
+		/// - `valid_before`: timestamp in seconds up to which the signature is considered valid
 		#[pallet::call_index(1)]
 		#[pallet::weight(T::WeightInfo::delete_metadata())]
 		pub fn delete_metadata(

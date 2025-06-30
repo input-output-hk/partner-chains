@@ -3,7 +3,8 @@
 //! This crate contains primitive types and logic used by the Block Producer Metadata feature
 //! of the Partner Chain Toolkit. This feature allows Partner Chain block producers to save
 //! information about themselves on-chain. The format of this metadata is left generic for each
-//! Partner Chain builder to define.
+//! Partner Chain builder to define. Metadata is associated with the cross-chain public key of
+//! the block producer.
 //!
 //! Currently the only code defined in this crate is the [MetadataSignedMessage] type describing
 //! the message that is signed and submitted by the block producer together with each change in
@@ -26,8 +27,8 @@ pub struct MetadataSignedMessage<Metadata> {
 	pub metadata: Option<Metadata>,
 	/// Genesis UTXO of the Partner Chain that the metadata will be submitted to
 	pub genesis_utxo: UtxoId,
-	/// UNIX epoch time before which a metadata transaction must be executed to the chain to
-	/// be valid. This value is mapped to a Partner Chain slot which loses precision for
+	/// UNIX epoch time in seconds before which a metadata transaction must be executed on-chain
+	/// to be valid. This value is mapped to a Partner Chain slot which loses precision for
 	/// chains with block times above 1 second.
 	pub valid_before: u64,
 }
