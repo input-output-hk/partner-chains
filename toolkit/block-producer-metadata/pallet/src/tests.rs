@@ -1,7 +1,7 @@
 use crate::HoldReason;
 
 use super::*;
-use crate::mock::mock_pallet::CurrentSlot;
+use crate::mock::mock_pallet::CurrentTime;
 use frame_support::{assert_noop, assert_ok, traits::tokens::fungible::InspectHold};
 use frame_system::pallet_prelude::OriginFor;
 use hex_literal::hex;
@@ -155,7 +155,7 @@ mod upsert_metadata {
 	#[test]
 	fn rejects_signature_past_validity_time() {
 		new_test_ext().execute_with(|| {
-			CurrentSlot::<Test>::set((valid_before() / SECONDS_PER_SLOT + 1).into());
+			CurrentTime::<Test>::set(valid_before() + 1);
 
 			let error = super::Pallet::<Test>::upsert_metadata(
 				OriginFor::<Test>::signed(FUNDED_ACCOUNT),
@@ -235,7 +235,7 @@ mod delete_metadata {
 	#[test]
 	fn rejects_signature_past_validity_time() {
 		new_test_ext().execute_with(|| {
-			CurrentSlot::<Test>::set((valid_before() / SECONDS_PER_SLOT + 1).into());
+			CurrentTime::<Test>::set(valid_before() + 1);
 
 			let error = super::Pallet::<Test>::delete_metadata(
 				OriginFor::<Test>::signed(FUNDED_ACCOUNT),

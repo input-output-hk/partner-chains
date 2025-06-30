@@ -7,7 +7,6 @@ use hex_literal::hex;
 use scale_info::TypeInfo;
 use sidechain_domain::byte_string::{BoundedString, SizedByteString};
 use sidechain_domain::*;
-use sidechain_slots::Slot;
 use sp_core::H256;
 use sp_runtime::codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use sp_runtime::{
@@ -21,7 +20,6 @@ pub type Balance = u128;
 
 #[frame_support::pallet]
 pub mod mock_pallet {
-	use super::*;
 	use frame_support::pallet_prelude::*;
 
 	#[pallet::pallet]
@@ -31,11 +29,11 @@ pub mod mock_pallet {
 	pub trait Config: frame_system::Config {}
 
 	#[pallet::storage]
-	pub type CurrentSlot<T: Config> = StorageValue<_, Slot, ValueQuery>;
+	pub type CurrentTime<T: Config> = StorageValue<_, u64, ValueQuery>;
 
 	impl<T: Config> Pallet<T> {
-		pub fn current_slot() -> Slot {
-			CurrentSlot::<T>::get()
+		pub fn current_time() -> u64 {
+			CurrentTime::<T>::get()
 		}
 	}
 }
@@ -140,13 +138,20 @@ impl crate::benchmarking::BenchmarkHelper<BlockProducerUrlMetadata>
 	fn delete_cross_chain_signature() -> CrossChainSignature {
 		CrossChainSignature(hex!("28e26efe063733903d79bcd2a036b2f2050e6d54372ad0dbf9db2bcd2026ce58171826fcd205c74c5cdd4cda08a3d5e1497b3d968f3d9328e816b3a9166a68d9").to_vec())
 	}
+
+	fn upsert_valid_before() -> u64 {
+		100_000_000
+	}
+
+	fn delete_valid_before() -> u64 {
+		100_000_000
+	}
 }
 
 pub(crate) const FUNDED_ACCOUNT: AccountId32 = AccountId32::new([1; 32]);
 pub(crate) const FUNDED_ACCOUNT_2: AccountId32 = AccountId32::new([2; 32]);
 
 pub(crate) const INITIAL_BALANCE: u128 = 100_000;
-pub(crate) const SECONDS_PER_SLOT: u64 = 10;
 
 impl crate::pallet::Config for Test {
 	type WeightInfo = ();
@@ -154,11 +159,8 @@ impl crate::pallet::Config for Test {
 	fn genesis_utxo() -> UtxoId {
 		UtxoId::new(hex!("59104061ffa0d66f9ba0135d6fc6a884a395b10f8ae9cb276fc2c3bfdfedc260"), 1)
 	}
-	fn current_slot() -> Slot {
-		Mock::current_slot()
-	}
-	fn seconds_to_slot(timestamp_seconds: u64) -> Slot {
-		(timestamp_seconds / SECONDS_PER_SLOT).into()
+	fn current_time() -> u64 {
+		Mock::current_time()
 	}
 	type Currency = Balances;
 	type HoldAmount = MetadataHoldAmount;

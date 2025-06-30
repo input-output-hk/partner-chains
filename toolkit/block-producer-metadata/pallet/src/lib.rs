@@ -43,11 +43,9 @@
 //! Once the metadata type is defined, the pallet can be added to the runtime and should be configured. This
 //! requires providing types used in the runtime along with logic to get the:
 //! - Partner Chain's genesis UTXO
-//! - current Partner Chain slot
-//! - Partner Chain slot containing a given timestamp
+//! - starting timestamp of the current slot
 //!
-//! These are dependent on the consesnsus mechanism used by the Partner Chain. For example, a chain that
-//! uses Aura for its consensus may define a configuration like this:
+//! For example, a chain that uses Aura for its consensus may define a configuration like this:
 //!
 //! ```rust,ignore
 //! impl pallet_block_producer_metadata::Config for Runtime {
@@ -62,13 +60,9 @@
 //!         Sidechain::genesis_utxo()
 //!     }
 //!
-//!     fn current_slot() -> Slot {
+//!     fn current_time() -> u64 {
 //!     	let slot: u64 = pallet_aura::CurrentSlot::<Runtime>::get().into();
-//!     	sp_consensus_slots::Slot::from(slot)
-//!     }
-//!
-//!     fn seconds_to_slot(timestamp_seconds: u64) -> Slot {
-//!     	(timestamp_seconds * 1000 / SLOT_DURATION).into()
+//!     	slot * SLOT_DURATION / 1000
 //!     }
 //! }
 //! ```
@@ -76,8 +70,8 @@
 //! is the `pallet_sidechain`.
 //!
 //! Note here, that we are using weights already provided with the pallet in the example. These weights were
-//! generated for a setup identical to the example. Chains that use different implementations of `current_slot`
-//! and `seconds_to_slot` should use their own benchmarks.
+//! generated for a setup identical to the example. Chains that use different implementations of `current_time`
+//! should use their own benchmarks.
 //!
 //! `Currency`, `HoldAmount`, and `RuntimeHoldReason` types are required to configure the deposit mechanism
 //! for occupying storage.
@@ -157,7 +151,6 @@ pub mod pallet {
 	};
 	use frame_system::{ensure_signed, pallet_prelude::OriginFor};
 	use sidechain_domain::{CrossChainSignature, UtxoId};
-	use sidechain_slots::Slot;
 
 	/// Current version of the pallet
 	pub const PALLET_VERSION: u32 = 2;
@@ -176,11 +169,8 @@ pub mod pallet {
 		/// Should return the chain's genesis UTXO
 		fn genesis_utxo() -> UtxoId;
 
-		/// Should return current slot
-		fn current_slot() -> Slot;
-
-		/// Should return the slot containing `timestamp_seconds`
-		fn seconds_to_slot(timestamp_seconds: u64) -> Slot;
+		/// Should return the start timestamp of current slot in seconds
+		fn current_time() -> u64;
 
 		/// The currency used for holding tokens
 		type Currency: MutateHold<Self::AccountId, Reason = Self::RuntimeHoldReason>;
@@ -264,10 +254,7 @@ pub mod pallet {
 			let is_valid_signature =
 				signature.verify(&cross_chain_pub_key, &metadata_message.encode()).is_ok();
 
-			ensure!(
-				T::current_slot() <= T::seconds_to_slot(valid_before),
-				Error::<T>::PastValidityTime
-			);
+			ensure!(T::current_time() <= valid_before, Error::<T>::PastValidityTime);
 			ensure!(is_valid_signature, Error::<T>::InvalidMainchainSignature);
 
 			match BlockProducerMetadataStorage::<T>::get(cross_chain_key_hash) {
@@ -321,10 +308,7 @@ pub mod pallet {
 			let is_valid_signature =
 				signature.verify(&cross_chain_pub_key, &metadata_message.encode()).is_ok();
 
-			ensure!(
-				T::current_slot() <= T::seconds_to_slot(valid_before),
-				Error::<T>::PastValidityTime
-			);
+			ensure!(T::current_time() <= valid_before, Error::<T>::PastValidityTime);
 			ensure!(is_valid_signature, Error::<T>::InvalidMainchainSignature);
 
 			if let Some((_data, owner, deposit)) =

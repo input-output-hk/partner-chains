@@ -529,10 +529,18 @@ impl pallet_block_producer_metadata::benchmarking::BenchmarkHelper<BlockProducer
 		)
 	}
 	fn upsert_cross_chain_signature() -> sidechain_domain::CrossChainSignature {
-		sidechain_domain::CrossChainSignature(hex_literal::hex!("8d253dfa15ce5a78cb82cc40a47e202324fa363e1604c67794817603a348062d58d680a2b5507547ab06effc35e1a3594594023e637afdf8918730ef290d6337").to_vec())
+		sidechain_domain::CrossChainSignature(hex_literal::hex!("85703b585bc5866cd065deb2d675c677a54f7d41907b491872deb50d8c943397547cb2e1c6b08693d5b4654817fe7415bf5059179b5ad268581fe28f1777ee62").to_vec())
 	}
 	fn delete_cross_chain_signature() -> sidechain_domain::CrossChainSignature {
-		sidechain_domain::CrossChainSignature(hex_literal::hex!("5cad14605a613e78dc0de20ebc97a2c8df354a24c6e53076b7c3abeab67470ae71cac1646d9594eaa291ac539dee568061144d9003e04c74b1be817d32becd9f").to_vec())
+		sidechain_domain::CrossChainSignature(hex_literal::hex!("9b7454f1f4fa197039c03b6ed392ece218e851f57366a0fce9170eaaac54badd49ce6ebbf29d861cd382ba6b1bf5bc383ee85bf835ab87a5e345a97ab0bd72ce").to_vec())
+	}
+
+	fn upsert_valid_before() -> u64 {
+		1851275449
+	}
+
+	fn delete_valid_before() -> u64 {
+		1851275394
 	}
 }
 
@@ -608,13 +616,9 @@ impl pallet_block_producer_metadata::Config for Runtime {
 		Sidechain::genesis_utxo()
 	}
 
-	fn current_slot() -> Slot {
+	fn current_time() -> u64 {
 		let slot: u64 = pallet_aura::CurrentSlot::<Runtime>::get().into();
-		sp_consensus_slots::Slot::from(slot)
-	}
-
-	fn seconds_to_slot(timestamp_seconds: u64) -> Slot {
-		(timestamp_seconds * 1000 / SLOT_DURATION).into()
+		slot * SLOT_DURATION / 1000
 	}
 
 	type Currency = Balances;
