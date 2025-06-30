@@ -1,28 +1,53 @@
-use frame_support::traits::ConstU32;
+use frame_support::traits::{ConstU32, ConstU128};
 use frame_support::{
-	construct_runtime,
+	construct_runtime, parameter_types,
 	traits::{ConstU16, ConstU64},
 };
 use hex_literal::hex;
 use scale_info::TypeInfo;
-use sidechain_domain::byte_string::SizedByteString;
+use sidechain_domain::byte_string::{BoundedString, SizedByteString};
 use sidechain_domain::*;
 use sp_core::H256;
 use sp_runtime::codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use sp_runtime::{
-	AccountId32, BoundedVec, BuildStorage,
+	AccountId32, BuildStorage,
 	traits::{BlakeTwo256, IdentityLookup},
 };
 
 pub type Block = frame_system::mocking::MockBlock<Test>;
 pub type AccountId = AccountId32;
+pub type Balance = u128;
+
+#[frame_support::pallet]
+pub mod mock_pallet {
+	use frame_support::pallet_prelude::*;
+
+	#[pallet::pallet]
+	pub struct Pallet<T>(_);
+
+	#[pallet::config]
+	pub trait Config: frame_system::Config {}
+
+	#[pallet::storage]
+	pub type CurrentTime<T: Config> = StorageValue<_, u64, ValueQuery>;
+
+	impl<T: Config> Pallet<T> {
+		pub fn current_time() -> u64 {
+			CurrentTime::<T>::get()
+		}
+	}
+}
 
 construct_runtime! {
 	pub enum Test {
 		System: frame_system,
-		BlockProducerMetadata: crate::pallet
+		Balances: pallet_balances,
+		BlockProducerMetadata: crate::pallet,
+		Mock: mock_pallet
 	}
 }
+
+impl mock_pallet::Config for Test {}
 
 impl frame_system::Config for Test {
 	type BaseCallFilter = frame_support::traits::Everything;
@@ -39,7 +64,7 @@ impl frame_system::Config for Test {
 	type BlockHashCount = ConstU64<250>;
 	type Version = ();
 	type PalletInfo = PalletInfo;
-	type AccountData = ();
+	type AccountData = pallet_balances::AccountData<Balance>;
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type SystemWeightInfo = ();
@@ -57,11 +82,32 @@ impl frame_system::Config for Test {
 	type PostTransactions = ();
 }
 
+impl pallet_balances::Config for Test {
+	type MaxLocks = ConstU32<50>;
+	type MaxReserves = ();
+	type ReserveIdentifier = [u8; 8];
+	type Balance = Balance;
+	type RuntimeEvent = RuntimeEvent;
+	type DustRemoval = ();
+	type ExistentialDeposit = ConstU128<1>;
+	type AccountStore = System;
+	type WeightInfo = pallet_balances::weights::SubstrateWeight<Test>;
+	type FreezeIdentifier = ();
+	type MaxFreezes = ();
+	type RuntimeHoldReason = RuntimeHoldReason;
+	type RuntimeFreezeReason = ();
+	type DoneSlashHandler = ();
+}
+
+parameter_types! {
+	pub const MetadataHoldAmount: Balance = 1000;
+}
+
 #[derive(
 	Clone, Debug, MaxEncodedLen, Encode, Decode, DecodeWithMemTracking, PartialEq, Eq, TypeInfo,
 )]
 pub struct BlockProducerUrlMetadata {
-	pub url: BoundedVec<u8, ConstU32<512>>,
+	pub url: BoundedString<ConstU32<512>>,
 	pub hash: SizedByteString<32>,
 }
 
@@ -74,7 +120,7 @@ impl crate::benchmarking::BenchmarkHelper<BlockProducerUrlMetadata>
 {
 	fn metadata() -> BlockProducerUrlMetadata {
 		BlockProducerUrlMetadata {
-			url: "https://cool.stuff/spo.json".as_bytes().to_vec().try_into().unwrap(),
+			url: "https://cool.stuff/spo.json".try_into().unwrap(),
 			hash: SizedByteString::from([0; 32]),
 		}
 	}
@@ -85,10 +131,27 @@ impl crate::benchmarking::BenchmarkHelper<BlockProducerUrlMetadata>
 		)
 	}
 
-	fn cross_chain_signature() -> CrossChainSignature {
-		CrossChainSignature(hex!("e25b0291cdc8f5f7eb34e0e1586c25ee05dfb589ce9b53968bfbdeee741d2bf4430ebdd2644829ab0b7659a035fdf3d87befa05e8ec06fd22fb4092f02f6e1d6").to_vec())
+	fn upsert_cross_chain_signature() -> CrossChainSignature {
+		CrossChainSignature(hex!("0e644ae5589365cce0123e673d59eab5381a1c38d5e21a7732bce8592f38fd522e9d395584f72b03ad9b167c1f57813013e0c6feedea799f877f87ec4edc3177").to_vec())
+	}
+
+	fn delete_cross_chain_signature() -> CrossChainSignature {
+		CrossChainSignature(hex!("28e26efe063733903d79bcd2a036b2f2050e6d54372ad0dbf9db2bcd2026ce58171826fcd205c74c5cdd4cda08a3d5e1497b3d968f3d9328e816b3a9166a68d9").to_vec())
+	}
+
+	fn upsert_valid_before() -> u64 {
+		100_000_000
+	}
+
+	fn delete_valid_before() -> u64 {
+		100_000_000
 	}
 }
+
+pub(crate) const FUNDED_ACCOUNT: AccountId32 = AccountId32::new([1; 32]);
+pub(crate) const FUNDED_ACCOUNT_2: AccountId32 = AccountId32::new([2; 32]);
+
+pub(crate) const INITIAL_BALANCE: u128 = 100_000;
 
 impl crate::pallet::Config for Test {
 	type WeightInfo = ();
@@ -96,10 +159,23 @@ impl crate::pallet::Config for Test {
 	fn genesis_utxo() -> UtxoId {
 		UtxoId::new(hex!("59104061ffa0d66f9ba0135d6fc6a884a395b10f8ae9cb276fc2c3bfdfedc260"), 1)
 	}
+	fn current_time() -> u64 {
+		Mock::current_time()
+	}
+	type Currency = Balances;
+	type HoldAmount = MetadataHoldAmount;
+	type RuntimeHoldReason = RuntimeHoldReason;
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = PalletBlockProducerMetadataBenchmarkHelper;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	frame_system::GenesisConfig::<Test>::default().build_storage().unwrap().into()
+	let mut t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
+	pallet_balances::GenesisConfig::<Test> {
+		balances: vec![(FUNDED_ACCOUNT, INITIAL_BALANCE), (FUNDED_ACCOUNT_2, INITIAL_BALANCE)],
+		dev_accounts: None,
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
+	t.into()
 }

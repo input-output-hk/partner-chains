@@ -4,6 +4,29 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 # Unreleased
 
+* Added extra constant burn fee in `pallet-address-association` to discourage attacks on pallet storage.
+* Wizards don't require `generate-keys` for `prepare-configuration`. Altered recommended order of `create-chain-spec` and `setup-main-chain-state`.
+
+## Changed
+
+* `pallet-block-producer-metadata` is updated with a configurable fee for inserting the metadata, to make attacks on unbounded storage economically infeasible
+* Added `valid_before` argument to the signed message and all extrinsics in `pallet_block_producer_metadata`. This is to
+prevent unauthorized re-submission of metadata updates. The `sign-block-producer-metadata` command was updated to
+match this change.
+
+## Added
+
+* `delete_metadata` extrinsic in `pallet-block-producer-metadata`
+
+## Fixed
+
+* `smart-contracts` governance actions were failing due too redundant signature when initiated by non-governance wallet
+* Wizards using 'sidechain' in command line parameters are changed to use 'partner-chain' instead
+
+## Removed
+
+# v1.7.0
+
 ## Changed
 
 * `partner-chains-db-sync-data-sources` and `partner-chains-mock-data-sources` crates now exports all its public members from the root

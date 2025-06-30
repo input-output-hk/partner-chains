@@ -1484,6 +1484,7 @@ dependencies = [
  "sp-runtime",
  "sp-sidechain",
  "thiserror 2.0.12",
+ "time-source",
 ]
 
 [[package]]
@@ -6272,6 +6273,7 @@ dependencies = [
  "frame-system",
  "hex-literal 1.0.0",
  "log",
+ "pallet-balances",
  "parity-scale-codec",
  "scale-info",
  "sidechain-domain",
@@ -6408,7 +6410,9 @@ dependencies = [
  "hex-literal 1.0.0",
  "k256",
  "log",
+ "pallet-balances",
  "parity-scale-codec",
+ "pretty_assertions",
  "scale-info",
  "sidechain-domain",
  "sp-block-producer-metadata",
