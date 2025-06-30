@@ -529,18 +529,18 @@ impl pallet_block_producer_metadata::benchmarking::BenchmarkHelper<BlockProducer
 		)
 	}
 	fn upsert_cross_chain_signature() -> sidechain_domain::CrossChainSignature {
-		sidechain_domain::CrossChainSignature(hex_literal::hex!("85703b585bc5866cd065deb2d675c677a54f7d41907b491872deb50d8c943397547cb2e1c6b08693d5b4654817fe7415bf5059179b5ad268581fe28f1777ee62").to_vec())
+		sidechain_domain::CrossChainSignature(hex_literal::hex!("0892ab398baf72fb90c7e90147caea9b5aa642f082e8573877aba34aeb618c7e3c4a904ef5c12bdb6560d665a71584ea266279ba686ff7e4f886ca75e357fdff").to_vec())
 	}
 	fn delete_cross_chain_signature() -> sidechain_domain::CrossChainSignature {
-		sidechain_domain::CrossChainSignature(hex_literal::hex!("9b7454f1f4fa197039c03b6ed392ece218e851f57366a0fce9170eaaac54badd49ce6ebbf29d861cd382ba6b1bf5bc383ee85bf835ab87a5e345a97ab0bd72ce").to_vec())
+		sidechain_domain::CrossChainSignature(hex_literal::hex!("e891b42327fc5202f258b080d0a3f33d9a292693840dee5fa5e46033fe0b059b682597be65ac5678c182a65b46b621aaadcfb0811155f54e8d99c9e4394a1fe9").to_vec())
 	}
 
 	fn upsert_valid_before() -> u64 {
-		1851275449
+		11751276163
 	}
 
 	fn delete_valid_before() -> u64 {
-		1851275394
+		11751276230
 	}
 }
 
