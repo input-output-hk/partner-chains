@@ -72,8 +72,9 @@ impl CmdRun for Register1Cmd {
 		let ecdsa_pair =
 			get_ecdsa_pair_from_file(context, &keystore_path(&node_data_base_path), &pc_pub_key)
 				.map_err(|e| {
-					context
-						.eprint(&format!("⚠️ Failed to read partner chain key from the keystore: {e}"));
+					context.eprint(&format!(
+						"⚠️ Failed to read partner chain key from the keystore: {e}"
+					));
 					anyhow!(e)
 				})?;
 
@@ -356,7 +357,7 @@ mod tests {
 					query_utxos_io(),
 					select_utxo_io(),
 					vec![MockIO::eprint(
-						"⚠️ Failed to read sidechain key from the keystore: seed phrase file not found",
+						"⚠️ Failed to read partner chain key from the keystore: seed phrase file not found",
 					)],
 				]
 				.into_iter()
@@ -383,7 +384,7 @@ mod tests {
 					query_utxos_io(),
 					select_utxo_io(),
 					vec![MockIO::eprint(
-						"⚠️ Failed to read sidechain key from the keystore: Invalid phrase",
+						"⚠️ Failed to read partner chain key from the keystore: Invalid phrase",
 					)],
 				]
 				.into_iter()
