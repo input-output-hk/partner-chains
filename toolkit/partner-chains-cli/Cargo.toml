@@ -40,6 +40,7 @@ plutus-datum-derive = { workspace = true }
 ed25519-zebra = { workspace = true }
 sp-session-validator-management = { workspace = true, features = ["std"] }
 pallet-session-validator-management = { workspace = true, features = ["std"] }
+schnorr_jubjub = { workspace = true }
 
 [dev-dependencies]
 pretty_assertions = { workspace = true }

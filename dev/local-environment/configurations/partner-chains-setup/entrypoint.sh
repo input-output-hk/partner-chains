@@ -87,15 +87,17 @@ echo "Inserting permissioned candidates for 'node-1' and 'node-2'..."
 
 node1_sidechain_vkey=$(cat /partner-chains-nodes/partner-chains-node-1/keys/sidechain.vkey)
 node1_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-1/keys/aura.vkey)
+node1_beefy_vkey=$(cat /partner-chains-nodes/partner-chains-node-1/keys/beefy.vkey)
 node1_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-1/keys/grandpa.vkey)
 
 node2_sidechain_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/sidechain.vkey)
 node2_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/aura.vkey)
+node2_beefy_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/beefy.vkey)
 node2_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/grandpa.vkey)
 
 cat <<EOF > permissioned_candidates.csv
-$node1_sidechain_vkey:$node1_aura_vkey:$node1_grandpa_vkey
-$node2_sidechain_vkey:$node2_aura_vkey:$node2_grandpa_vkey
+$node1_sidechain_vkey:$node1_aura_vkey:$node1_beefy_vkey:$node1_grandpa_vkey
+$node2_sidechain_vkey:$node2_aura_vkey:$node2_beefy_vkey:$node2_grandpa_vkey
 EOF
 
 ./partner-chains-node smart-contracts upsert-permissioned-candidates \
@@ -131,6 +133,7 @@ node4_spo_signature=$(echo "$node4_output" | jq -r ".spo_signature")
 node4_sidechain_public_key=$(echo "$node4_output" | jq -r ".sidechain_public_key")
 node4_sidechain_signature=$(echo "$node4_output" | jq -r ".sidechain_signature")
 node4_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-4/keys/aura.vkey)
+node4_beefy_vkey=$(cat /partner-chains-nodes/partner-chains-node-4/keys/beefy.vkey)
 node4_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-4/keys/grandpa.vkey)
 
 # Register 'node-4'
@@ -139,7 +142,7 @@ node4_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-4/keys/grandp
     --genesis-utxo $GENESIS_UTXO \
     --spo-public-key $node4_spo_public_key \
     --spo-signature $node4_spo_signature \
-    --sidechain-public-keys $node4_sidechain_public_key:$node4_aura_vkey:$node4_grandpa_vkey \
+    --sidechain-public-keys $node4_sidechain_public_key:$node4_aura_vkey:$node4_beefy_vkey:$node4_grandpa_vkey \
     --sidechain-signature $node4_sidechain_signature \
     --registration-utxo $node4_utxo \
     --payment-key-file /partner-chains-nodes/partner-chains-node-4/keys/payment.skey
@@ -179,7 +182,7 @@ node5_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-5/keys/grandp
     --genesis-utxo $GENESIS_UTXO \
     --spo-public-key $node5_spo_public_key \
     --spo-signature $node5_spo_signature \
-    --sidechain-public-keys $node5_sidechain_public_key:$node5_aura_vkey:$node5_grandpa_vkey \
+    --sidechain-public-keys $node5_sidechain_public_key:$node5_aura_vkey:$node5_beefy_vkey:$node5_grandpa_vkey \
     --sidechain-signature $node5_sidechain_signature \
     --registration-utxo $node5_utxo \
     --payment-key-file /partner-chains-nodes/partner-chains-node-5/keys/payment.skey
@@ -200,6 +203,7 @@ jq '.genesis.runtimeGenesis.config.session.initialValidators = [
          "5FnXTMg8UnfeGsMaGg24o3NY21VRFRDRdgxuLGmXuYLeZmin",
          {
              "aura": "5Cyx94iyji8namhRxvs4mAbURtPsvwjWCb68ZihNzfRysGLZ",
+             "beefy": "5DAAnrj7VHTz5z2TZmZ41ZQ7JL2pnGzH9QGQQ5kuGzSi1RuE",
              "grandpa": "5Cc5eQhbPw4CjwZpWqZkWWumMiuZywfWRK2Rh9guXUJ3U89s"
          }
      ],
@@ -207,6 +211,7 @@ jq '.genesis.runtimeGenesis.config.session.initialValidators = [
          "5FJMH4MeZgd4fpiiAVLnr4uRop2EDFgzAFcvLmcduQ2cofCi",
          {
              "aura": "5E4op92Z2Di1GoVS9KqnoGVKQXG2R9x1vdh3RW892YLFsLrc",
+             "beefy": "5FLSigC9H8N9TnUvmU8bYytPfpz4hF6bFZsXZ7y3ohohT3YQ",
              "grandpa": "5Ha53RXoJjXtcTThFA5XNW7H6f5L39HnTuVSXimxAyhoYLeL"
          }
      ]
@@ -219,6 +224,7 @@ jq '.genesis.runtimeGenesis.config.sessionCommitteeManagement.initialAuthorities
       "id": "KW4wALva83fvah66ufXSxg6r84tTpJmDXna8A1PCYdbZdVL95",
       "keys": {
         "aura": "5Cyx94iyji8namhRxvs4mAbURtPsvwjWCb68ZihNzfRysGLZ",
+        "beefy": "5DAAnrj7VHTz5z2TZmZ41ZQ7JL2pnGzH9QGQQ5kuGzSi1RuE",
         "grandpa": "5Cc5eQhbPw4CjwZpWqZkWWumMiuZywfWRK2Rh9guXUJ3U89s"
       }
     }
@@ -228,6 +234,7 @@ jq '.genesis.runtimeGenesis.config.sessionCommitteeManagement.initialAuthorities
       "id": "KW92jBDRydnbyojCVF3USNFgEsrEvDGV3gvdgDvpfnbXvC13q",
       "keys": {
         "aura": "5E4op92Z2Di1GoVS9KqnoGVKQXG2R9x1vdh3RW892YLFsLrc",
+        "beefy": "5FLSigC9H8N9TnUvmU8bYytPfpz4hF6bFZsXZ7y3ohohT3YQ",
         "grandpa": "5Ha53RXoJjXtcTThFA5XNW7H6f5L39HnTuVSXimxAyhoYLeL"
       }
     }

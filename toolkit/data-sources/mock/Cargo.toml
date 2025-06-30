@@ -30,6 +30,8 @@ sp-block-participation = { workspace = true, optional = true }
 pallet-sidechain-rpc = { workspace = true, optional = true }
 authority-selection-inherents = { workspace = true, optional = true }
 
+schnorr_jubjub = { workspace = true }
+
 [features]
 default = ["std", "block-source", "candidate-source", "governed-map", "native-token"]
 std = [

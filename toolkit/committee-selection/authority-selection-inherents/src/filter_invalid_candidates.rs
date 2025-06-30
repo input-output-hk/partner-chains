@@ -5,6 +5,7 @@ use frame_support::pallet_prelude::TypeInfo;
 use parity_scale_codec::{Decode, Encode};
 use plutus::*;
 use plutus_datum_derive::ToDatum;
+// use schnorr_jubjub;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sidechain_domain::*;
@@ -106,7 +107,7 @@ pub fn filter_trustless_candidates_registrations<TAccountId, TAccountKeys>(
 	genesis_utxo: UtxoId,
 ) -> Vec<(Candidate<TAccountId, TAccountKeys>, selection::Weight)>
 where
-	TAccountKeys: From<(sr25519::Public, ed25519::Public)>,
+	TAccountKeys: From<(sr25519::Public, schnorr_jubjub::Public, ed25519::Public)>,
 	TAccountId: From<ecdsa::Public>,
 {
 	candidate_registrations
@@ -125,15 +126,15 @@ pub fn filter_invalid_permissioned_candidates<TAccountId, TAccountKeys>(
 	permissioned_candidates: Vec<PermissionedCandidateData>,
 ) -> Vec<Candidate<TAccountId, TAccountKeys>>
 where
-	TAccountKeys: From<(sr25519::Public, ed25519::Public)>,
+	TAccountKeys: From<(sr25519::Public, schnorr_jubjub::Public, ed25519::Public)>,
 	TAccountId: TryFrom<sidechain_domain::SidechainPublicKey>,
 {
 	permissioned_candidates
 		.into_iter()
 		.filter_map(|candidate| {
-			let (account_id, aura_key, grandpa_key) =
+			let (account_id, aura_key, beefy_key, grandpa_key) =
 				validate_permissioned_candidate_data(candidate).ok()?;
-			let account_keys = (aura_key, grandpa_key).into();
+			let account_keys = (aura_key, beefy_key, grandpa_key).into();
 			Some(Candidate::Permissioned(PermissionedCandidate { account_id, account_keys }))
 		})
 		.collect()
@@ -145,7 +146,7 @@ fn select_latest_valid_candidate<TAccountId, TAccountKeys>(
 ) -> Option<CandidateWithStake<TAccountId, TAccountKeys>>
 where
 	TAccountId: From<ecdsa::Public>,
-	TAccountKeys: From<(sr25519::Public, ed25519::Public)>,
+	TAccountKeys: From<(sr25519::Public, schnorr_jubjub::Public, ed25519::Public)>,
 {
 	let stake_delegation = validate_stake(candidate_registrations.stake_delegation).ok()?;
 	let stake_pool_pub_key = candidate_registrations.stake_pool_public_key;
@@ -210,6 +211,9 @@ pub enum RegistrationDataError {
 	/// Registration with invalid Aura key
 	#[cfg_attr(feature = "std", error("Registration with invalid Aura key"))]
 	InvalidAuraKey,
+	/// Registration with invalid BEEFY key
+	#[cfg_attr(feature = "std", error("Registration with invalid Beefy key"))]
+	InvalidBeefyKey,
 	/// Registration with invalid GRANDPA key
 	#[cfg_attr(feature = "std", error("Registration with invalid GRANDPA key"))]
 	InvalidGrandpaKey,
@@ -225,15 +229,21 @@ pub enum PermissionedCandidateDataError {
 	/// Permissioned candidate with invalid Aura key
 	#[cfg_attr(feature = "std", error("Permissioned candidate with invalid Aura key"))]
 	InvalidAuraKey,
+	/// Permissioned candidate with invalid BEEFY key
+	#[cfg_attr(feature = "std", error("Permissioned candidate with invalid BEEFY key"))]
+	InvalidBeefyKey,
 	/// Permissioned candidate with invalid GRANDPA key
 	#[cfg_attr(feature = "std", error("Permissioned candidate with invalid GRANDPA key"))]
 	InvalidGrandpaKey,
 }
 
-/// Validates Aura, GRANDPA, and Partner Chain public keys of [PermissionedCandidateData].
+/// Validates Aura, BEEFY, GRANDPA, and Partner Chain public keys of [PermissionedCandidateData].
 pub fn validate_permissioned_candidate_data<AccountId: TryFrom<SidechainPublicKey>>(
 	candidate: PermissionedCandidateData,
-) -> Result<(AccountId, sr25519::Public, ed25519::Public), PermissionedCandidateDataError> {
+) -> Result<
+	(AccountId, sr25519::Public, schnorr_jubjub::Public, ed25519::Public),
+	PermissionedCandidateDataError,
+> {
 	Ok((
 		candidate
 			.sidechain_public_key
@@ -243,6 +253,10 @@ pub fn validate_permissioned_candidate_data<AccountId: TryFrom<SidechainPublicKe
 			.aura_public_key
 			.try_into_sr25519()
 			.ok_or(PermissionedCandidateDataError::InvalidAuraKey)?,
+		candidate
+			.beefy_public_key
+			.try_into_schnorr()
+			.ok_or(PermissionedCandidateDataError::InvalidBeefyKey)?,
 		candidate
 			.grandpa_public_key
 			.try_into_ed25519()
@@ -261,11 +275,18 @@ pub fn validate_registration_data(
 	stake_pool_pub_key: &StakePoolPublicKey,
 	registration_data: &RegistrationData,
 	genesis_utxo: UtxoId,
-) -> Result<(ecdsa::Public, (sr25519::Public, ed25519::Public)), RegistrationDataError> {
+) -> Result<
+	(ecdsa::Public, (sr25519::Public, schnorr_jubjub::Public, ed25519::Public)),
+	RegistrationDataError,
+> {
 	let aura_pub_key = registration_data
 		.aura_pub_key
 		.try_into_sr25519()
 		.ok_or(RegistrationDataError::InvalidAuraKey)?;
+	let beefy_pub_key = registration_data
+		.beefy_pub_key
+		.try_into_schnorr()
+		.ok_or(RegistrationDataError::InvalidBeefyKey)?;
 	let grandpa_pub_key = registration_data
 		.grandpa_pub_key
 		.try_into_ed25519()
@@ -292,7 +313,7 @@ pub fn validate_registration_data(
 	)?;
 	verify_tx_inputs(registration_data)?;
 
-	Ok((sidechain_pub_key, (aura_pub_key, grandpa_pub_key)))
+	Ok((sidechain_pub_key, (aura_pub_key, beefy_pub_key, grandpa_pub_key)))
 }
 
 /// Validates stake delegation. Stake must be known and positive.
