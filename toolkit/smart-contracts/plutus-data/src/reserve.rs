@@ -187,17 +187,51 @@ fn decode_token_id_datum(pd: &PlutusData) -> Option<AssetId> {
 	})
 }
 
+#[derive(Debug, Clone)]
+/// Redeemer for illiquid circulation supply
+pub enum IlliquidCirculationSupplyRedeemer {
+	/// Deposit tokens to the supply
+	DepositMoreToSupply = 0,
+	/// Withdraw from the illiquid supply
+	WithdrawFromSupply = 1,
+}
+
+impl From<IlliquidCirculationSupplyRedeemer> for PlutusData {
+	fn from(value: IlliquidCirculationSupplyRedeemer) -> Self {
+		PlutusData::new_integer(&BigInt::from(value as u64))
+	}
+}
+
+#[derive(Debug, Clone, PartialEq)]
+/// Datum of the illiquid circulation supply.
+pub struct IlliquidCirculationSupplyDatum;
+
+impl From<IlliquidCirculationSupplyDatum> for PlutusData {
+	fn from(_value: IlliquidCirculationSupplyDatum) -> Self {
+		VersionedGenericDatum {
+			datum: PlutusData::new_empty_constr_plutus_data(
+				&cardano_serialization_lib::BigNum::zero(),
+			),
+			appendix: PlutusData::new_empty_constr_plutus_data(
+				&cardano_serialization_lib::BigNum::zero(),
+			),
+			version: 0,
+		}
+		.into()
+	}
+}
+
 #[cfg(test)]
 mod tests {
 	use cardano_serialization_lib::PlutusData;
 	use pretty_assertions::assert_eq;
 	use sidechain_domain::{AssetName, PolicyId};
 
-	use crate::test_helpers::test_plutus_data;
+	use crate::{reserve::IlliquidCirculationSupplyDatum, test_helpers::test_plutus_data};
 
 	use super::{ReserveDatum, ReserveImmutableSettings, ReserveMutableSettings, ReserveStats};
 
-	fn test_datum() -> ReserveDatum {
+	fn test_reserve_datum() -> ReserveDatum {
 		ReserveDatum {
 			immutable_settings: ReserveImmutableSettings {
 				t0: 0,
@@ -214,7 +248,7 @@ mod tests {
 		}
 	}
 
-	fn test_datum_plutus_data() -> PlutusData {
+	fn test_reserve_datum_plutus_data() -> PlutusData {
 		test_plutus_data!({"list":[
 			{"list":[
 				{"list":[
@@ -236,12 +270,27 @@ mod tests {
 	}
 
 	#[test]
-	fn encode() {
-		assert_eq!(PlutusData::from(test_datum()), test_datum_plutus_data())
+	fn encode_reserve_datum() {
+		assert_eq!(PlutusData::from(test_reserve_datum()), test_reserve_datum_plutus_data())
 	}
 
 	#[test]
-	fn decode() {
-		assert_eq!(ReserveDatum::try_from(test_datum_plutus_data()).unwrap(), test_datum())
+	fn decode_reserve_datum() {
+		assert_eq!(
+			ReserveDatum::try_from(test_reserve_datum_plutus_data()).unwrap(),
+			test_reserve_datum()
+		)
+	}
+
+	#[test]
+	fn encode_ics_datum() {
+		assert_eq!(
+			PlutusData::from(IlliquidCirculationSupplyDatum),
+			test_plutus_data!({"list":[
+				{"constructor":0,"fields":[]},
+				{"constructor":0,"fields":[]},
+				{"int":0}
+			]})
+		)
 	}
 }

@@ -97,7 +97,7 @@ async fn governance_flow() {
 	let cli = Cli::default();
 	let container = cli.run(image);
 	let client = initialize(&container).await;
-	let genesis_utxo = run_init_goveranance(&client).await;
+	let genesis_utxo = run_init_governance(&client).await;
 	let _ = run_update_governance(&client, genesis_utxo).await;
 
 	let upsert_candidates_1_result =
@@ -133,7 +133,7 @@ async fn upsert_d_param() {
 	let client = Cli::default();
 	let container = client.run(image);
 	let client = initialize(&container).await;
-	let genesis_utxo = run_init_goveranance(&client).await;
+	let genesis_utxo = run_init_governance(&client).await;
 	assert!(
 		run_upsert_d_param(genesis_utxo, 0, 1, &governance_authority_payment_key(), &client)
 			.await
@@ -161,7 +161,7 @@ async fn upsert_permissioned_candidates() {
 	let client = Cli::default();
 	let container = client.run(image);
 	let client = initialize(&container).await;
-	let genesis_utxo = run_init_goveranance(&client).await;
+	let genesis_utxo = run_init_governance(&client).await;
 	let network = client.shelley_genesis_configuration().await.unwrap().network.to_csl();
 	assert!(run_upsert_permissioned_candidates(genesis_utxo, 77, &client).await.is_some());
 	assert_eq!(
@@ -181,7 +181,7 @@ async fn reserve_management_scenario() {
 	let client = Cli::default();
 	let container = client.run(image);
 	let client = initialize(&container).await;
-	let genesis_utxo = run_init_goveranance(&client).await;
+	let genesis_utxo = run_init_governance(&client).await;
 	let _ = run_update_governance(&client, genesis_utxo).await;
 	let results = run_init_reserve_management(genesis_utxo, &client).await;
 	assert_eq!(results.len(), 3);
@@ -235,7 +235,7 @@ async fn reserve_release_to_zero_scenario() {
 	let client = Cli::default();
 	let container = client.run(image);
 	let client = initialize(&container).await;
-	let genesis_utxo = run_init_goveranance(&client).await;
+	let genesis_utxo = run_init_governance(&client).await;
 	let txs = run_init_reserve_management(genesis_utxo, &client).await;
 	assert_eq!(txs.len(), 3);
 	let _ = run_create_reserve_management(genesis_utxo, V_FUNCTION_HASH, &client).await;
@@ -253,7 +253,7 @@ async fn register() {
 	let client = Cli::default();
 	let container = client.run(image);
 	let client = initialize(&container).await;
-	let genesis_utxo = run_init_goveranance(&client).await;
+	let genesis_utxo = run_init_governance(&client).await;
 	let signature = SidechainSignature([21u8; 33].to_vec());
 	let other_signature = SidechainSignature([121u8; 33].to_vec());
 	assert!(run_register(genesis_utxo, signature.clone(), &client).await.is_some());
@@ -268,7 +268,7 @@ async fn governed_map_operations() {
 	let client = Cli::default();
 	let container = client.run(image);
 	let client = initialize(&container).await;
-	let genesis_utxo = run_init_goveranance(&client).await;
+	let genesis_utxo = run_init_governance(&client).await;
 	let await_tx = FixedDelayRetries::new(Duration::from_millis(500), 100);
 	// Use the governance authority key
 	let skey = governance_authority_payment_key();
@@ -359,7 +359,7 @@ async fn governed_map_update() {
 	let client = Cli::default();
 	let container = client.run(image);
 	let client = initialize(&container).await;
-	let genesis_utxo = run_init_goveranance(&client).await;
+	let genesis_utxo = run_init_governance(&client).await;
 	let await_tx = FixedDelayRetries::new(Duration::from_millis(500), 100);
 	// Use the governance authority key
 	let skey = governance_authority_payment_key();
@@ -408,7 +408,7 @@ async fn governance_action_can_be_initiated_by_non_governance() {
 	let client = Cli::default();
 	let container = client.run(image);
 	let client = initialize(&container).await;
-	let genesis_utxo = run_init_goveranance(&client).await;
+	let genesis_utxo = run_init_governance(&client).await;
 	let tx_to_sign = run_upsert_d_param(genesis_utxo, 1, 1, &eve_payment_key(), &client)
 		.await
 		.unwrap();
@@ -462,7 +462,7 @@ async fn initial_transaction<T: Transactions + QueryUtxoByUtxoId>(
 	Ok(tx_hash)
 }
 
-async fn run_init_goveranance<
+async fn run_init_governance<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 >(
 	client: &T,
