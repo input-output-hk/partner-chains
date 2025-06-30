@@ -10,6 +10,9 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 ## Changed
 
 * `pallet-block-producer-metadata` is updated with a configurable fee for inserting the metadata, to make attacks on unbounded storage economically infeasible
+* `valid_before` argument to the signed message and all extrinsics in `pallet_block_producer_metadata`. This is to
+prevent unauthorized re-submission of metadata updates. The `sign-block-producer-metadata` command was updated to
+match this change.
 
 ## Added
 
