@@ -1,5 +1,5 @@
 use crate::cmd_traits::*;
-use crate::config::ServiceConfig;
+use crate::config::{ConfigFile, ServiceConfig};
 use crate::io::IOContext;
 use crate::ogmios::{OgmiosRequest, OgmiosResponse};
 use anyhow::anyhow;
@@ -159,6 +159,10 @@ pub struct MockIOContext {
 	pub offchain_mocks: OffchainMocks,
 }
 
+pub(crate) const CHAIN_CONFIG_FILE_PATH: &str = "test-pc-chain-config.json";
+
+pub(crate) const RESOURCES_CONFIG_FILE_PATH: &str = "test-pc-resources-config.json";
+
 impl MockIOContext {
 	pub fn new() -> Self {
 		Self {
@@ -167,6 +171,7 @@ impl MockIOContext {
 			offchain_mocks: Default::default(),
 		}
 	}
+
 	pub fn with_file(self, path: &str, content: &str) -> Self {
 		self.files.lock().unwrap().insert(path.into(), content.into());
 		self
@@ -680,6 +685,13 @@ impl IOContext for MockIOContext {
 			anyhow::anyhow!("No mock for Offchain implementation for {:?}", ogmios_config)
 		})?;
 		Ok(mock.clone())
+	}
+
+	fn config_file_path(&self, file: ConfigFile) -> String {
+		match file {
+			ConfigFile::Chain => CHAIN_CONFIG_FILE_PATH.to_owned(),
+			ConfigFile::Resources => RESOURCES_CONFIG_FILE_PATH.to_owned(),
+		}
 	}
 }
 

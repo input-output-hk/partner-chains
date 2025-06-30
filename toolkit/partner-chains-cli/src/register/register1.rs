@@ -160,8 +160,7 @@ fn derive_address<C: IOContext>(
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::tests::{MockIO, MockIOContext};
-	use config::{CHAIN_CONFIG_FILE_PATH, RESOURCES_CONFIG_FILE_PATH};
+	use crate::tests::{CHAIN_CONFIG_FILE_PATH, MockIO, MockIOContext, RESOURCES_CONFIG_FILE_PATH};
 	use ogmios::{
 		OgmiosRequest,
 		config::tests::{

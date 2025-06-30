@@ -2,7 +2,7 @@ use crate::cmd_traits::{
 	GetDParam, GetPermissionedCandidates, UpsertDParam, UpsertPermissionedCandidates,
 };
 use crate::config::config_fields::CARDANO_PAYMENT_SIGNING_KEY_FILE;
-use crate::config::{CHAIN_CONFIG_FILE_PATH, ChainConfig, ConfigFieldDefinition, config_fields};
+use crate::config::{ChainConfig, ConfigFieldDefinition, ConfigFile, config_fields};
 use crate::io::IOContext;
 use crate::ogmios::config::prompt_ogmios_configuration;
 use crate::permissioned_candidates::{ParsedPermissionedCandidatesKeys, PermissionedCandidateKeys};
@@ -64,10 +64,11 @@ impl CmdRun for SetupMainChainStateCmd {
 		context.print("Will read the current D-Parameter and Permissioned Candidates from the main chain using Ogmios client.");
 		let ogmios_config = prompt_ogmios_configuration(context)?;
 		let offchain = context.offchain_impl(&ogmios_config)?;
+		let config_file_path = context.config_file_path(ConfigFile::Chain);
 
 		match get_permissioned_candidates::<C>(&offchain, &chain_config)? {
 			Some(candidates) if candidates == config_initial_authorities => {
-				context.print(&format!("Permissioned candidates in the {} file match the most recent on-chain initial permissioned candidates.", CHAIN_CONFIG_FILE_PATH));
+				context.print(&format!("Permissioned candidates in the {} file match the most recent on-chain initial permissioned candidates.", config_file_path));
 			},
 			candidates => {
 				print_on_chain_and_config_permissioned_candidates(
@@ -146,7 +147,7 @@ fn print_on_chain_and_config_permissioned_candidates<C: IOContext>(
 ) {
 	match on_chain_candidates {
 		Some(candidates) => {
-			context.print(&format!("Permissioned candidates in the {} file does not match the most recent on-chain initial permissioned candidates.", CHAIN_CONFIG_FILE_PATH));
+			context.print(&format!("Permissioned candidates in the {} file does not match the most recent on-chain initial permissioned candidates.", context.chain_config_file_path()));
 			context.print("The most recent on-chain initial permissioned candidates are:");
 			for candidate in candidates.0.iter() {
 				context.print(&format!("{}", PermissionedCandidateKeys::from(candidate)));
@@ -265,7 +266,7 @@ fn load_chain_config_field<C: IOContext, T: DeserializeOwned>(
 	field: &ConfigFieldDefinition<T>,
 ) -> Result<T, anyhow::Error> {
 	field.load_from_file(context).ok_or_else(|| {
-		context.eprint(&format!("The '{}' configuration file is missing or invalid.\nIt should have been created and updated with initial permissioned candidates before running this wizard.", CHAIN_CONFIG_FILE_PATH));
+		context.eprint(&format!("The '{}' configuration file is missing or invalid.\nIt should have been created and updated with initial permissioned candidates before running this wizard.", context.chain_config_file_path()));
 		anyhow!("failed to read '{}'", field.path.join("."))
 	})
 }

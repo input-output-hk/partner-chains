@@ -1,6 +1,5 @@
 use super::*;
 use crate::CmdRun;
-use crate::config::RESOURCES_CONFIG_FILE_PATH;
 use crate::tests::*;
 use scenarios::key_file_content;
 use scenarios::resources_file_content;
