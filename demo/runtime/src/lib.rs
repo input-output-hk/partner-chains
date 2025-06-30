@@ -617,7 +617,7 @@ impl pallet_block_producer_metadata::Config for Runtime {
 	}
 
 	fn current_time() -> u64 {
-		pallet_timestamp::Now::<Runtime>::get()
+		pallet_timestamp::Now::<Runtime>::get() / 1000
 	}
 
 	type Currency = Balances;
