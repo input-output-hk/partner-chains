@@ -408,7 +408,7 @@ async fn governance_action_can_be_initiated_by_non_governance() {
 	let client = Cli::default();
 	let container = client.run(image);
 	let client = initialize(&container).await;
-	let genesis_utxo = run_init_goveranance(&client).await;
+	let genesis_utxo = run_init_governance(&client).await;
 	let tx_to_sign = run_upsert_d_param(genesis_utxo, 1, 1, &eve_payment_key(), &client)
 		.await
 		.unwrap();
