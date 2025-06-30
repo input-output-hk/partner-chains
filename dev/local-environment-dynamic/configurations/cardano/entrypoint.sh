@@ -1167,6 +1167,9 @@ done # End loop for registered nodes
 echo "[LOG] Completed SPO Registration and Delegation for all nodes."
 # --- END NEW: Register Nodes as Cardano SPOs and Delegate Stake ---
 
+echo "[LOG] Waiting 45 seconds for all delegation transactions to be confirmed on-chain..."
+sleep 45
+
 echo "[LOG] Creating /shared/cardano.ready signal file."
 touch /shared/cardano.ready
 
