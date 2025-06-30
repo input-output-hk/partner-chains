@@ -413,11 +413,11 @@ class BlockchainApi(ABC):
         pass
 
     @abstractmethod
-    def sign_block_producer_metadata(
+    def sign_block_producer_metadata_upsert(
         self, genesis_utxo: str, metadata_file: str, cross_chain_signing_key: str
     ) -> BlockProducerMetadataSignature:
         """
-        Creates a signature for block producer metadata.
+        Creates a signature for block producer metadata upsert.
 
         Arguments:
             genesis_utxo {str} -- Genesis UTXO of the Partner Chain
@@ -430,12 +430,42 @@ class BlockchainApi(ABC):
         pass
 
     @abstractmethod
-    def submit_block_producer_metadata(self, signature: BlockProducerMetadataSignature, wallet: Wallet) -> Transaction:
+    def sign_block_producer_metadata_delete(
+        self, genesis_utxo: str, cross_chain_signing_key: str
+    ) -> BlockProducerMetadataSignature:
+        """
+        Creates a signature for block producer metadata deletion.
+
+        Arguments:
+            genesis_utxo {str} -- Genesis UTXO of the Partner Chain
+            cross_chain_signing_key {str} -- Cross Chain Signing key in hex format
+
+        Returns:
+            BlockProducerMetadataSignature
+        """
+        pass
+
+    @abstractmethod
+    def submit_block_producer_metadata_insert(self, signature: BlockProducerMetadataSignature, wallet: Wallet) -> Transaction:
         """
         Submits an extrinsic for upserting a block producer's metadata.
 
         Arguments:
             signature {BlockProducerMetadataSignature} -- Signature of the metadata
+            wallet {Wallet} -- Wallet used to sign the transaction
+
+        Returns:
+            Transaction
+        """
+        pass
+
+    @abstractmethod
+    def submit_block_producer_metadata_delete(self, signature: BlockProducerMetadataSignature, wallet: Wallet) -> Transaction:
+        """
+        Submits an extrinsic for deleting a block producer's metadata.
+
+        Arguments:
+            signature {BlockProducerMetadataSignature} -- Signature of the operation
             wallet {Wallet} -- Wallet used to sign the transaction
 
         Returns:
