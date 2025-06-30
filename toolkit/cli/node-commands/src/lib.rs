@@ -106,18 +106,22 @@ pub enum PartnerChainsSubcommand<
 	PartnerchainAddress: Clone + Sync + Send + FromStr + 'static,
 > {
 	/// Returns sidechain parameters.
+	/// Requires --chain parameter that results in loading a properly configured chain spec.
 	SidechainParams(SidechainParamsCmd),
 
 	/// Returns registration status for a given stake pool public key and epoch number.
 	/// If registration has been included in Cardano block in epoch N, then it should be returned by this command if epoch greater than N+1 is provided.
 	/// If this command won't show your registration after a few minutes after it has been included in a cardano block, you can start debugging for unsuccessful registration.
+	/// Requires --chain parameter that results in loading a properly configured chain spec.
 	#[clap(
 		after_help = &*REGISTRATION_STATUS_AFTER_HELP
 	)]
 	RegistrationStatus(RegistrationStatusCmd),
 
 	/// Returns ariadne parameters effective at given mainchain epoch number.
-	/// Parameters are effective two epochs after the block their change is included in.
+	/// Parameters are effective two epochs after the block their change is included in
+	/// Cardano.
+	/// Requires --chain parameter that results in loading a properly configured chain spec.
 	AriadneParameters(AriadneParametersCmd),
 
 	/// Generates registration signatures for partner chains committee candidates
