@@ -12,8 +12,8 @@ Partner Chain builders are organizations that want to build their own blockchain
 3. Run the prepare-configuration wizard
     1. Set chain parameters
     2. Provide signing key
-4. Run the create-chain-spec wizard
-5. Run the setup-main-chain-state wizard
+4. Run the setup-main-chain-state wizard
+5. Run the create-chain-spec wizard
 6. Run the start-node wizard
 7. Distribute chain files to participants
 
@@ -334,19 +334,7 @@ A sample file:
 }
 ```
 
-### 4. Run the create-chain-spec wizard
-
-The wizard reads the file `pc-chain-config.json`. This file should be present and identical for every node participating in the chain.
-
-1. Start the wizard: `./partner-chains-node wizards create-chain-spec`
-
-The wizard displays the contents of `chain_parameters` and `initial_permissioned_candidates` from the `pc-chain-config.json` file. You can manually modify these values before running this wizard.
-
-The wizard creates the chain specification file `chain-spec.json` using these values.
-
-The wizard informs you of the full path to the `chain-spec.json` file. You can now distribute this file to block production committee candidates.
-
-### 5. Run the setup-main-chain-state wizard
+### 4. Run the setup-main-chain-state wizard
 
 1. Start the wizard: `./partner-chains-node wizards setup-main-chain-state`
 
@@ -364,6 +352,18 @@ The default value of R is zero, and the default value of P is the number of entr
 The configuration of the chain is stored in the file `pc-chain-config.json`. This file should be present and identical for every node participating in the network.
 
 Information about the resources used by each node is stored in the file `partner-chain-cli-resources-config.json`. This file should be present for every node participating in the chain, but its contents are specific to each node.
+
+### 5. Run the create-chain-spec wizard
+
+The wizard reads the file `pc-chain-config.json`. This file should be present and identical for every node participating in the chain.
+
+1. Start the wizard: `./partner-chains-node wizards create-chain-spec`
+
+The wizard displays the contents of `chain_parameters` and `initial_permissioned_candidates` from the `pc-chain-config.json` file. You can manually modify these values before running this wizard.
+
+The wizard creates the chain specification file `chain-spec.json` using these values.
+
+The wizard informs you of the full path to the `chain-spec.json` file. You can now distribute this file to block production committee candidates.
 
 ### 6. Run the partner chain node
 

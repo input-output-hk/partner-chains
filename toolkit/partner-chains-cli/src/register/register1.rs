@@ -454,7 +454,7 @@ mod tests {
 
 	fn prompt_cardano_payment_verification_key_file_io() -> MockIO {
 		MockIO::prompt(
-			"path to the payment verification file",
+			"Enter the path to the payment verification file",
 			Some(PAYMENT_VKEY_PATH),
 			PAYMENT_VKEY_PATH,
 		)
