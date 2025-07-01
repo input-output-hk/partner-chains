@@ -981,10 +981,8 @@ pub struct RegistrationData {
 	pub utxo_info: UtxoInfo,
 	/// List of inputs to the registration transaction
 	pub tx_inputs: Vec<UtxoId>,
-	/// Registering SPO's Aura public key
-	pub aura_pub_key: AuraPublicKey,
-	/// Registering SPO's Grandpa public key
-	pub grandpa_pub_key: GrandpaPublicKey,
+	/// Registering SPO's Session public keys with key type identifiers
+	pub session_keys: Vec<([u8; 4], Vec<u8>)>,
 }
 
 /// Information about an Authority Candidate's Registrations at some block.

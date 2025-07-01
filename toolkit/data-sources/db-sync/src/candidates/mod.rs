@@ -41,8 +41,7 @@ struct RegisteredCandidate {
 	cross_chain_signature: CrossChainSignature,
 	sidechain_pub_key: SidechainPublicKey,
 	cross_chain_pub_key: CrossChainPublicKey,
-	aura_pub_key: AuraPublicKey,
-	grandpa_pub_key: GrandpaPublicKey,
+	session_keys: Vec<([u8; 4], Vec<u8>)>,
 	utxo_info: UtxoInfo,
 }
 
@@ -180,8 +179,7 @@ impl CandidatesDataSourceImpl {
 			cross_chain_signature: c.cross_chain_signature,
 			sidechain_pub_key: c.sidechain_pub_key,
 			cross_chain_pub_key: c.cross_chain_pub_key,
-			aura_pub_key: c.aura_pub_key,
-			grandpa_pub_key: c.grandpa_pub_key,
+			session_keys: c.session_keys,
 			utxo_info: c.utxo_info,
 			tx_inputs: c.tx_inputs,
 		}
@@ -220,29 +218,55 @@ impl CandidatesDataSourceImpl {
 		Self::parse_candidates(outputs)
 			.into_iter()
 			.map(|c| {
-				let RegisterValidatorDatum::V0 {
-					stake_ownership,
-					sidechain_pub_key,
-					sidechain_signature,
-					registration_utxo,
-					own_pkh: _own_pkh,
-					aura_pub_key,
-					grandpa_pub_key,
-				} = c.datum;
-				Ok(RegisteredCandidate {
-					stake_pool_pub_key: stake_ownership.pub_key,
-					mainchain_signature: stake_ownership.signature,
-					// For now we use the same key for both cross chain and sidechain actions
-					cross_chain_pub_key: CrossChainPublicKey(sidechain_pub_key.0.clone()),
-					cross_chain_signature: CrossChainSignature(sidechain_signature.0.clone()),
-					sidechain_signature,
-					sidechain_pub_key,
-					aura_pub_key,
-					grandpa_pub_key,
-					registration_utxo,
-					tx_inputs: c.tx_inputs,
-					utxo_info: c.utxo_info,
-				})
+				match c.datum {
+					RegisterValidatorDatum::V0 {
+						stake_ownership,
+						sidechain_pub_key,
+						sidechain_signature,
+						registration_utxo,
+						own_pkh: _own_pkh,
+						aura_pub_key,
+						grandpa_pub_key,
+					} => {
+						let session_keys =
+							vec![(*b"aura", aura_pub_key.0), (*b"gran", grandpa_pub_key.0)];
+						Ok(RegisteredCandidate {
+							stake_pool_pub_key: stake_ownership.pub_key,
+							mainchain_signature: stake_ownership.signature,
+							// For now we use the same key for both cross chain and sidechain actions
+							cross_chain_pub_key: CrossChainPublicKey(sidechain_pub_key.0.clone()),
+							cross_chain_signature: CrossChainSignature(
+								sidechain_signature.0.clone(),
+							),
+							sidechain_signature,
+							sidechain_pub_key,
+							session_keys,
+							registration_utxo,
+							tx_inputs: c.tx_inputs,
+							utxo_info: c.utxo_info,
+						})
+					},
+					RegisterValidatorDatum::V1 {
+						stake_ownership,
+						sidechain_pub_key,
+						sidechain_signature,
+						registration_utxo,
+						own_pkh: _own_pkh,
+						session_keys,
+					} => Ok(RegisteredCandidate {
+						stake_pool_pub_key: stake_ownership.pub_key,
+						mainchain_signature: stake_ownership.signature,
+						// For now we use the same key for both cross chain and sidechain actions
+						cross_chain_pub_key: CrossChainPublicKey(sidechain_pub_key.0.clone()),
+						cross_chain_signature: CrossChainSignature(sidechain_signature.0.clone()),
+						sidechain_signature,
+						sidechain_pub_key,
+						session_keys,
+						registration_utxo,
+						tx_inputs: c.tx_inputs,
+						utxo_info: c.utxo_info,
+					}),
+				}
 			})
 			.collect()
 	}

@@ -21,7 +21,7 @@ use crate::cmd_traits::{GetPermissionedCandidates, UpsertPermissionedCandidates}
 pub(crate) struct PermissionedCandidateKeys {
 	/// 0x prefixed hex representation of the ECDSA public key
 	pub sidechain_pub_key: String,
-	/// 0x prefixed hex representation of the sr25519 public key
+	/// 0x prefixed hex representation of the Sr25519 public key
 	pub aura_pub_key: String,
 	/// 0x prefixed hex representation of the Ed25519 public key
 	pub grandpa_pub_key: String,
