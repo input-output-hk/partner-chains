@@ -709,44 +709,6 @@ echo "[LOG] Saving FUNDED_ADDRESS to /shared/FUNDED_ADDRESS: $new_address"
 echo "$new_address" > /shared/FUNDED_ADDRESS
 echo "Created /shared/FUNDED_ADDRESS with value: $new_address"
 
-# Registered nodes UTXOs - now query each unique address
-echo "[LOG] Finalizing UTXO files for registered nodes after all batch funding..."
-for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
-    node_unique_address="${registered_node_payment_addresses[$((i-1))]}"
-    # It's critical that the UTXO exists now. Add some retries just in case of chain lag.
-    final_utxo_found=false
-    for attempt in {1..5}; do # Try up to 5 times
-        echo "[LOG] Querying final UTXO for registered-$i at $node_unique_address (Attempt $attempt)..."
-        
-        raw_cli_output_file="/tmp/raw_cli_output_registered_${i}_attempt_${attempt}.txt"
-        cardano-cli latest query utxo --testnet-magic 42 --address "$node_unique_address" --out-file /dev/stdout > "$raw_cli_output_file" 2>&1
-
-        # Parse UTXO from JSON format - extract the key which is the UTXO identifier
-        node_utxo_final=$(cat "$raw_cli_output_file" | /busybox grep -o '"[a-f0-9]\{64\}#[0-9]\+":' | head -1 | /busybox sed 's/"//g' | /busybox sed 's/://g')
-        
-        if [ -n "$node_utxo_final" ]; then
-            if [[ "$node_utxo_final" =~ ^[a-f0-9]{64}#[0-9]+$ ]]; then
-                echo "$node_utxo_final" > "/shared/registered-${i}.utxo"
-                echo "[LOG] Successfully updated /shared/registered-${i}.utxo with: $node_utxo_final"
-                final_utxo_found=true
-                break
-            else
-                echo "[WARN] Attempt $attempt: For registered-$i at $node_unique_address, query output [$node_utxo_final] does not look like TxHash#TxIx. Retrying..."
-                node_utxo_final="" 
-            fi
-        else
-            echo "[WARN] Attempt $attempt: No UTXO found yet for registered-$i at $node_unique_address. Sleeping 5s..."
-            sleep 5
-        fi
-    done
-
-    if [ "$final_utxo_found" = false ]; then
-        echo "[WARN] CRITICAL: Failed to find UTXO for registered-$i at $node_unique_address after multiple attempts. /shared/registered-${i}.utxo will be empty. This will likely cause registration to fail for this node."
-        echo "" > "/shared/registered-${i}.utxo"
-    fi
-done
-echo "[LOG] Finished finalizing UTXO files for all registered nodes."
-
 echo "[LOG] Generating Mainchain Cold Keys for Registered Nodes..."
 for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     NODE_KEYS_DIR="/shared/node-keys/registered-${i}/keys"
@@ -1139,6 +1101,13 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
         continue
     fi
 
+    DELEG_TX_ID=$(cardano-cli latest transaction txid --tx-file "$DELEG_TX_SIGNED")
+    if [ -z "$DELEG_TX_ID" ]; then
+        echo "[DEBUG] CRITICAL ERROR: Could not get TxID for delegation tx for $NODE_LOG_NAME. Cannot save final UTXO."
+        rm -f "$DELEG_CERT" "$DELEG_TX_FINAL" "$DELEG_TX_SIGNED"
+        continue
+    fi
+
     # 15. Submit Delegation Transaction
     echo "[LOG] Submitting delegation transaction for $NODE_LOG_NAME..."
     SUBMITTED_DELEG=false
@@ -1157,6 +1126,10 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
 
     if [ "$SUBMITTED_DELEG" = false ]; then
         echo "[DEBUG] CRITICAL ERROR: Failed to submit delegation transaction for $NODE_LOG_NAME after multiple attempts."
+    else
+        FINAL_UTXO="${DELEG_TX_ID}#0"
+        echo "[LOG] Saving final UTXO for $NODE_LOG_NAME to /shared/registered-${i}.utxo: $FINAL_UTXO"
+        echo "$FINAL_UTXO" > "/shared/registered-${i}.utxo"
     fi
 
     echo "[LOG] Completed SPO registration and delegation process for $NODE_LOG_NAME."
