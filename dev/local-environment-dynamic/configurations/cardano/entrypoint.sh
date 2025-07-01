@@ -1076,11 +1076,8 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
         echo "[DEBUG] CRITICAL ERROR: One or more signing key files NOT FOUND for $NODE_LOG_NAME (delegation)."
         echo "[DEBUG]   Payment SKey exists: $([ -f "$NODE_PAYMENT_SKEY" ] && echo true || echo false)"
         echo "[DEBUG]   Stake SKey exists:   $([ -f "$NODE_STAKE_SKEY" ] && echo true || echo false)"
-        echo "[DEBUG]   Cold SKey exists:    $([ -f "$NODE_COLD_SKEY" ] && echo true || echo false)"
-        # Clean up certs if they were created
-        if [ -f "$DELEG_CERT" ]; then rm -f "$DELEG_CERT"; fi
-        if [ -f "$DELEG_TX_FINAL" ]; then rm -f "$DELEG_TX_FINAL"; fi
-        continue # Skip to next node
+        rm -f "$DELEG_CERT" "$DELEG_TX_FINAL"
+        continue
     fi
 
     DELEG_TX_SIGNED="/data/${NODE_LOG_NAME}_deleg_tx.signed"
@@ -1129,9 +1126,25 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
         echo "[LOG] Saving final UTXO for $NODE_LOG_NAME to /shared/registered-${i}.utxo: $FINAL_UTXO"
         echo "$FINAL_UTXO" > "/shared/registered-${i}.utxo"
 
+        echo "[LOG] Waiting for delegation transaction for $NODE_LOG_NAME ($DELEG_TX_ID) to be confirmed on-chain..."
+        for attempt in {1..20}; do
+            # Check if the UTXO created by the delegation transaction exists.
+            if cardano-cli latest query utxo --tx-in "$DELEG_TX_ID#0" --testnet-magic 42 | /busybox grep -q "$DELEG_TX_ID"; then
+                echo "[LOG] Delegation transaction for $NODE_LOG_NAME confirmed."
+                break
+            fi
+            if [ "$attempt" -eq 20 ]; then
+                echo "[DEBUG] CRITICAL ERROR: Delegation transaction for $NODE_LOG_NAME was not confirmed on-chain after 100 seconds."
+            fi
+            sleep 5
+        done
+
+        echo "[LOG] Waiting for stake delegation for $NODE_LOG_NAME to become active (2 epochs)..."
+        sleep 30
+
         echo "[LOG] Querying stake address info for $NODE_LOG_NAME to verify delegation..."
         cardano-cli latest query stake-address-info \
-            --stake-address "$NODE_STAKE_ADDRESS" \
+            --address "$NODE_STAKE_ADDRESS" \
             --testnet-magic 42 --out-file /dev/stdout || echo "Query stake-address-info failed for $NODE_LOG_NAME"
     fi
 
