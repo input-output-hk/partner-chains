@@ -180,6 +180,7 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     
     node_payment_address=$(cardano-cli address build \
         --payment-verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/payment.vkey" \
+        --stake-verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.vkey" \
         --testnet-magic 42)
     if [ -z "$node_payment_address" ]; then 
         echo "Error building payment address for registered-$i!"
@@ -1140,7 +1141,7 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
         done
 
         echo "[LOG] Waiting for stake delegation for $NODE_LOG_NAME to become active (2 epochs)..."
-        sleep 30
+        sleep 250
 
         echo "[LOG] Querying stake address info for $NODE_LOG_NAME to verify delegation..."
         cardano-cli latest query stake-address-info \
