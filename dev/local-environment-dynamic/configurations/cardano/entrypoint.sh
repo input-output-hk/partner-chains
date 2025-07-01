@@ -180,7 +180,6 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     
     node_payment_address=$(cardano-cli address build \
         --payment-verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/payment.vkey" \
-        --stake-verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.vkey" \
         --testnet-magic 42)
     if [ -z "$node_payment_address" ]; then 
         echo "Error building payment address for registered-$i!"
@@ -1072,9 +1071,7 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     echo "[DEBUG] Checking for signing keys for $NODE_LOG_NAME (delegation):"
     echo "[DEBUG]   Payment SKey: $NODE_PAYMENT_SKEY"
     echo "[DEBUG]   Stake SKey:   $NODE_STAKE_SKEY"
-    echo "[DEBUG]   Payment SKey exists: $([ -f "$NODE_PAYMENT_SKEY" ] && echo true || echo false)"
-    echo "[DEBUG]   Stake SKey exists:   $([ -f "$NODE_STAKE_SKEY" ] && echo true || echo false)"
-
+    echo "[DEBUG]   Cold SKey:    $NODE_COLD_SKEY"
     if [ ! -f "$NODE_PAYMENT_SKEY" ] || [ ! -f "$NODE_STAKE_SKEY" ]; then
         echo "[DEBUG] CRITICAL ERROR: One or more signing key files NOT FOUND for $NODE_LOG_NAME (delegation)."
         echo "[DEBUG]   Payment SKey exists: $([ -f "$NODE_PAYMENT_SKEY" ] && echo true || echo false)"
@@ -1131,6 +1128,11 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
         FINAL_UTXO="${DELEG_TX_ID}#0"
         echo "[LOG] Saving final UTXO for $NODE_LOG_NAME to /shared/registered-${i}.utxo: $FINAL_UTXO"
         echo "$FINAL_UTXO" > "/shared/registered-${i}.utxo"
+
+        echo "[LOG] Querying stake address info for $NODE_LOG_NAME to verify delegation..."
+        cardano-cli latest query stake-address-info \
+            --stake-address "$NODE_STAKE_ADDRESS" \
+            --testnet-magic 42 --out-file /dev/stdout || echo "Query stake-address-info failed for $NODE_LOG_NAME"
     fi
 
     echo "[LOG] Completed SPO registration and delegation process for $NODE_LOG_NAME."
@@ -1140,9 +1142,6 @@ done # End loop for registered nodes
 
 echo "[LOG] Completed SPO Registration and Delegation for all nodes."
 # --- END NEW: Register Nodes as Cardano SPOs and Delegate Stake ---
-
-echo "[LOG] Waiting 90 seconds for all delegation transactions to be confirmed on-chain..."
-sleep 90
 
 echo "[LOG] Creating /shared/cardano.ready signal file."
 touch /shared/cardano.ready
