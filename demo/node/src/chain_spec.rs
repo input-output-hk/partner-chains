@@ -1,5 +1,5 @@
 use partner_chains_demo_runtime::{
-	AccountId, CrossChainPublic, Signature, WASM_BINARY, config::PartnerChainsConfig,
+	AccountId, CrossChainPublic, Signature, WASM_BINARY,
 	opaque::SessionKeys,
 };
 use sp_core::{Pair, Public};
