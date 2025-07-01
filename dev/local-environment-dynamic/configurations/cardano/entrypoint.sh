@@ -178,9 +178,8 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
         continue
     fi
     
-    node_payment_address=$(cardano-cli shelley address build \
+    node_payment_address=$(cardano-cli address build \
         --payment-verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/payment.vkey" \
-        --stake-verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.vkey" \
         --testnet-magic 42)
     if [ -z "$node_payment_address" ]; then 
         echo "[WARN] Error building payment address for registered-$i!"
