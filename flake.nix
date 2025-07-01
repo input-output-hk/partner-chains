@@ -54,6 +54,7 @@
               cargo-edit
               cargo-license
               coreutils
+              docker-compose
               earthly
               gawk
               gnumake
@@ -96,18 +97,18 @@
       }
     );
 
-  # nixConfig = {
-  #   allow-import-from-derivation = true;
-  #   accept-flake-config = true;
-  #   extra-substituters = [
-  #     "https://nix-community.cachix.org"
-  #     "https://cache.iog.io"
-  #     "https://cache.sc.iog.io"
-  #   ];
-  #   extra-trusted-public-keys = [
-  #     "hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ="
-  #     "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-  #     "cache.sc.iog.io:b4YIcBabCEVKrLQgGW8Fylz4W8IvvfzRc+hy0idqrWU="
-  #   ];
-  # };
+  nixConfig = {
+    allow-import-from-derivation = true;
+    accept-flake-config = true;
+    extra-substituters = [
+      "https://nix-community.cachix.org"
+      "https://cache.iog.io"
+      "https://cache.sc.iog.io"
+    ];
+    extra-trusted-public-keys = [
+      "hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ="
+      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+      "cache.sc.iog.io:b4YIcBabCEVKrLQgGW8Fylz4W8IvvfzRc+hy0idqrWU="
+    ];
+  };
 }
