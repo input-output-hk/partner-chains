@@ -1,4 +1,83 @@
+//! Primitives and inherent data provider for the Native Token Management feature
+//!
+//! # Purpose and context
+//!
+//! This crate defines shared types used by components that implement the Native Token Management
+//! feature of the Partner Chains toolkit, along with an inherent data provider for token transfer
+//! data.
+//!
+//! The Native Token Management feature allows a Partner Chain to keep its token as a native asset
+//! on Cardano and have it be transferable to the Partner Chain. This is achieved by the native
+//! token being locked at an _illiquid supply_ address on Cardano, and the Partner Chain handling
+//! this locking event (a _transfer_) after it has been observed as part of a stable block.
+//!
+//! The inherent data provider defined in this crate is responsible for providing information about
+//! the transfers in form of inherent data, and handling them is the responsibility of the pallet,
+//! which allows the Partner Chain builders to define their own transfer handling logic to suit
+//! their needs.
+//!
+//! # Usage
+//!
+//! ## Prerequisites
+//!
+//! This features depends on the MC Reference Hash feature to provide Cardano block reference for
+//! querying the token transfers. See the documentation of `sidechain_mc_hash` crate for more information.
+//!
+//! ## Implementing runtime APIs
+//!
+//! [NativeTokenManagementInherentDataProvider] requires the runtime to implement the
+//! [NativeTokenManagementApi] runtime API. This only requires passing relevant values from the pallet:
+//! ```rust,ignore
+//! impl sp_native_token_management::NativeTokenManagementApi<Block> for Runtime {
+//! 	fn get_main_chain_scripts() -> Option<sp_native_token_management::MainChainScripts> {
+//! 		NativeTokenManagement::get_main_chain_scripts()
+//! 	}
+//! 	fn initialized() -> bool {
+//! 		NativeTokenManagement::initialized()
+//! 	}
+//! }
+//! ```
+//!
+//! ## Adding the inherent data provider
+//!
+//! The inherent data provider requires a data source implementing [NativeTokenManagementDataSource].
+//! A Db-Sync implementation is provided by the `partner_chains_db_sync_data_sources` crate.
+//!
+//! With the data source present, the IDP is straightfoward to create:
+//!
+//! ```rust
+//! use std::sync::Arc;
+//! use sp_runtime::traits::Block as BlockT;
+//! use sp_native_token_management::*;
+//!
+//! async fn create_idps<Block: BlockT, C>(
+//!     parent_hash: Block::Hash,
+//!     client: Arc<C>,
+//!     native_token_data_source: &(dyn NativeTokenManagementDataSource + Send + Sync)
+//! ) -> Result<(NativeTokenManagementInherentDataProvider /* other IDPs */), Box<dyn std::error::Error + Send + Sync>>
+//! where
+//!     C: sp_api::ProvideRuntimeApi<Block> + Send + Sync,
+//!     C::Api: NativeTokenManagementApi<Block>
+//! {
+//!     let (mc_hash, previous_mc_hash) = todo!("Should come from the MC Reference Hash feature");
+//!
+//!     let native_token_idp = NativeTokenManagementInherentDataProvider::new(
+//!     	client.clone(),
+//!     	native_token_data_source,
+//!     	mc_hash,
+//!     	previous_mc_hash,
+//!     	parent_hash,
+//!     )
+//!     .await?;
+//!     Ok((native_token_idp /* other IDPs */))
+//! }
+//! ```
+//!
+//! The same constructor can be used for both proposal and validation of blocks.
+//!
+//! [NativeTokenManagementApi]: sp_native_token_management::NativeTokenManagementApi
 #![cfg_attr(not(feature = "std"), no_std)]
+#![deny(missing_docs)]
 
 #[cfg(feature = "std")]
 use {core::str::FromStr, sp_runtime::traits::Block as BlockT};
@@ -14,6 +93,7 @@ use sp_runtime::scale_info::TypeInfo;
 #[cfg(test)]
 mod tests;
 
+/// Inherent identifier used by the Native Token Management pallet
 pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"nattoken";
 
 /// Values identifying on-chain entities involved in the native token management system on Cardano.
@@ -31,9 +111,15 @@ pub struct MainChainScripts {
 
 #[cfg(feature = "std")]
 impl MainChainScripts {
+	/// Reads the main chain script values from local environment variables
+	///
+	/// It expects the following variables to be set:
+	/// - `NATIVE_TOKEN_POLICY_ID`
+	/// - `NATIVE_TOKEN_ASSET_NAME`
+	/// - `ILLIQUID_SUPPLY_VALIDATOR_ADDRESS`
 	pub fn read_from_env() -> Result<Self, envy::Error> {
 		#[derive(serde::Serialize, serde::Deserialize)]
-		pub struct MainChainScriptsEnvConfig {
+		struct MainChainScriptsEnvConfig {
 			pub native_token_policy_id: PolicyId,
 			pub native_token_asset_name: AssetName,
 			pub illiquid_supply_validator_address: String,
@@ -57,7 +143,9 @@ impl MainChainScripts {
 }
 
 sp_api::decl_runtime_apis! {
+	/// Runtime API exposing configuration and initialization status of the Native Token Management pallet
 	pub trait NativeTokenManagementApi {
+		/// Returns the current main chain scripts configured in the pallet or [None] if they are not set.
 		fn get_main_chain_scripts() -> Option<MainChainScripts>;
 		/// Gets current initializaion status and set it to `true` afterwards. This check is used to
 		/// determine whether historical data from the beginning of main chain should be queried.
@@ -65,21 +153,27 @@ sp_api::decl_runtime_apis! {
 	}
 }
 
+/// Data about token transfers in some period of time
 #[derive(Decode, Encode)]
 pub struct TokenTransferData {
+	/// Aggregate number of tokens transfered
 	pub token_amount: NativeTokenAmount,
 }
 
+/// Error type returned by the Native Token Management pallet inherent logic
 #[derive(Encode, Debug, PartialEq)]
 #[cfg_attr(feature = "std", derive(Decode, thiserror::Error))]
 pub enum InherentError {
+	/// Signals that no inherent was submitted despite new token transfers being observed
 	#[cfg_attr(feature = "std", error("Inherent missing for token transfer of {0} tokens"))]
 	TokenTransferNotHandled(NativeTokenAmount),
+	/// Signals that the inherent registered an incorrect number of tokens transfered
 	#[cfg_attr(
 		feature = "std",
 		error("Incorrect token transfer amount: expected {0}, got {1} tokens")
 	)]
 	IncorrectTokenNumberTransfered(NativeTokenAmount, NativeTokenAmount),
+	/// Signals that an inherent was submitted when no token transfers were observed
 	#[cfg_attr(feature = "std", error("Unexpected transfer of {0} tokens"))]
 	UnexpectedTokenTransferInherent(NativeTokenAmount),
 }
@@ -97,6 +191,7 @@ mod inherent_provider {
 	use std::error::Error;
 	use std::sync::Arc;
 
+	/// Interface for a data source serving native token transfer data compatible with [NativeTokenManagementInherentDataProvider].
 	#[async_trait::async_trait]
 	pub trait NativeTokenManagementDataSource {
 		/// Retrieves total of native token transfers into the illiquid supply in the range (after_block, to_block]
@@ -113,13 +208,17 @@ mod inherent_provider {
 	///
 	/// This IDP will not provide any inherent data if `token_amount` is [None], but *will* provide data for `Some(0)`.
 	pub struct NativeTokenManagementInherentDataProvider {
+		/// Aggregate number of tokens transfered
 		pub token_amount: Option<NativeTokenAmount>,
 	}
 
+	/// Error type returned when creation of [NativeTokenManagementInherentDataProvider] fails
 	#[derive(thiserror::Error, sp_runtime::RuntimeDebug)]
 	pub enum IDPCreationError {
+		/// Signals that the data source used returned an error
 		#[error("Failed to read native token data from data source: {0:?}")]
 		DataSourceError(Box<dyn Error + Send + Sync>),
+		/// Signals that a runtime API call failed
 		#[error("Failed to call runtime API: {0:?}")]
 		ApiError(ApiError),
 	}
@@ -208,6 +307,7 @@ mod inherent_provider {
 		}
 	}
 
+	/// Mock implementation of the data source
 	#[cfg(any(test, feature = "mock"))]
 	pub mod mock {
 		use crate::{MainChainScripts, NativeTokenManagementDataSource};
@@ -216,6 +316,7 @@ mod inherent_provider {
 		use sidechain_domain::*;
 		use std::collections::HashMap;
 
+		/// Mock implementation of [NativeTokenManagementDataSource]
 		#[derive(new, Default)]
 		pub struct MockNativeTokenDataSource {
 			transfers: HashMap<(Option<McBlockHash>, McBlockHash), NativeTokenAmount>,

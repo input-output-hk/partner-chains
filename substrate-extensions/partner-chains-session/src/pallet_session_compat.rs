@@ -37,7 +37,7 @@ macro_rules! impl_pallet_session_config {
 		where
 			$type: pallet_partner_chains_session::Config,
 		{
-			type RuntimeEvent = <$type as pallet_partner_chains_session::Config>::RuntimeEvent;
+			type RuntimeEvent = RuntimeEvent;
 			type ValidatorId = <$type as pallet_partner_chains_session::Config>::ValidatorId;
 			type ValidatorIdOf =
 				pallet_partner_chains_session::pallet_session_compat::PalletSessionStubImpls;
@@ -50,6 +50,8 @@ macro_rules! impl_pallet_session_config {
 			type Keys = <$type as pallet_partner_chains_session::Config>::Keys;
 			type DisablingStrategy = ();
 			type WeightInfo = ();
+			type Currency = Balances;
+			type KeyDeposit = ();
 		}
 	};
 }

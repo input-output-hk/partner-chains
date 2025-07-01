@@ -6,16 +6,11 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Changed
 
-## Removed
-
-## Fixed
-
-## Added
-
-# v1.7.0
-
-## Changed
-
+* `partner-chains-db-sync-data-sources` and `partner-chains-mock-data-sources` crates now exports all its public members from the root
+* `partner-chains-db-sync-data-sources` crate now exports all its public members from the root
+* `smart-contracts` commands can accept parameter to configure Ogmios requests timeout
+* `prepare-configuration` and `create-chain-spec` wizards are updated to setup `governedMap.MainChainScripts` in the chain-spec file.
+* `setup-main-chain-state` wizard uses Ogmios and `offchain` crate for getting the current D-parameter and Permissioned Candidates instead of invoking `<node-executable> ariadne-parameters` command.
 * `prepare-configuration` wizard suggests payment signing key hash as governance authority if there is no value in chain config stored so far.
 * Automatically create required index on `tx_out` table `address` column. Constructor signatures have changed - this change is not source compatible.
 * BREAKING: Wizards are not generating keys nor looking for them in `<base_path>/chains/partner_chains_template` but use `<base_path>` instead.
@@ -41,6 +36,11 @@ to provide it in your IDP stack.
 * Made `mock` module of `pallet-session-validator-management` private
 * Updated dependecies
 * Updated polkadot-sdk to polkadot-stable2503-2
+* Deprecated the `GetSidechainStatus` runtime API in `sp-sidechain` crate. Code
+that needs data that it served should define its own runtime API instead.
+* Updated polkadot-sdk to polkadot-stable2503-5
+* Updated partner-chains-smart-contracts (raw-scripts) dependency to v7.2.2.
+This new version changes Version Oracle Validator script and is not compatible with the previous version.
 
 ## Removed
 
@@ -52,6 +52,10 @@ Its functionality was merged into `pallet-partner-chains-session` under the feat
 the feature `pallet-session-compat`.
 * `TryFrom<&serde_json::Value> for Datum` and `From<&Datum> for serde_json::Value` instances from `plutus`.
 * `ATMSPlainAggregatePubKey`, `ValidatorHash` and `SidechainPublicKeysSorted` types from `domain`.
+* `SidechainApi` trait from `sp-sidechain` and its return type `SidechainStatus`. Code that uses it should directly use
+the APIs that were grouped into this trait or ideally define its own runtime API instead (see deprecation of `GetSidechainStatus`).
+* Trait `PartnerChainRuntimeBindings` and merged into `PartnerChainRuntime` trait.
+* Trait `CreateChainSpecRuntimeBindings` from `partner-chains-cli`, and substituted with `PartnerChainRuntime` trait.
 
 ## Fixed
 

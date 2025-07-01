@@ -1,45 +1,132 @@
-pub mod types;
-
+//! Json RPC for the Sidechain pallet
+//!
+//! # Usage
+//!
+//! ## Implementing runtime APIs
+//!
+//! Your runtime should implement the [SlotApi] and [GetGenesisUtxo] runtime APIs. For example, if
+//! your chain uses Aura for consensus, they may be implemented similar to this:
+//! ```rust,ignore
+//! impl sidechain_slots::SlotApi<Block> for Runtime {
+//!    fn slot_config() -> sidechain_slots::ScSlotConfig {
+//!      sidechain_slots::ScSlotConfig {
+//!        slots_per_epoch: Sidechain::slots_per_epoch(),
+//!        slot_duration: SlotDuration::from(Aura::slot_duration())
+//!      }
+//!    }
+//!  }
+//! impl sp_sidechain::GetGenesisUtxo<Block> for Runtime {
+//!   fn genesis_utxo() -> UtxoId {
+//!     Sidechain::genesis_utxo()
+//!   }
+//! }
+//! ```
+//!
+//! ## Adding to the RPC stack
+//!
+//! Once the runtime APIs are in place, the RPC can be added to the node:
+//!
+//! ```rust
+//! # use jsonrpsee::RpcModule;
+//! # use pallet_sidechain_rpc::{*, types::GetBestHash};
+//! # use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
+//! # use sidechain_slots::SlotApi;
+//! # use sp_api::ProvideRuntimeApi;
+//! # use sp_runtime::traits::Block as BlockT;
+//! # use sp_sidechain::GetGenesisUtxo;
+//! # use std::sync::Arc;
+//! # use time_source::TimeSource;
+//! fn create_rpc<B: BlockT, C: Send + Sync + 'static>(
+//!    client: Arc<C>,
+//!    time_source: Arc<dyn TimeSource + Send + Sync>,
+//!    data_source: Arc<dyn SidechainRpcDataSource + Send + Sync>,
+//! ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
+//! where
+//!     C: ProvideRuntimeApi<B> + GetBestHash<B>,
+//!     C::Api: SlotApi<B> + GetGenesisUtxo<B>
+//! {
+//!
+//!     let mut module = RpcModule::new(());
+//!     module.merge(
+//!         SidechainRpc::new(
+//!             client.clone(),
+//!             MainchainEpochConfig::read_from_env().unwrap(),
+//!             data_source,
+//!             time_source,
+//!         )
+//!         .into_rpc(),
+//!     )?;
+//!
+//!     // ... other RPCs
+//!     Ok(module)
+//! }
+//! ```
+//!
+//! Note that your node should already have necessary time and data sources wired in. A Db-Sync-based
+//! data source is provided by the Partner Chain toolkit in the `partner_chains_db_sync_data_sources`
+//! crate.
+//!
+//! [GetGenesisUtxo]: sp_sidechain::GetGenesisUtxo
+//! [SlotApi]: sidechain_slots::SlotApi
+#![deny(missing_docs)]
 use derive_new::new;
 use jsonrpsee::{
 	core::{RpcResult, async_trait},
 	proc_macros::rpc,
 	types::{ErrorObject, ErrorObjectOwned, error::ErrorCode},
 };
-use sidechain_domain::MainchainBlock;
 use sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
+use sidechain_domain::{MainchainBlock, UtxoId};
 use sidechain_slots::SlotApi;
 use sp_api::ProvideRuntimeApi;
 use sp_core::offchain::Timestamp;
 use sp_runtime::traits::Block as BlockT;
-use sp_sidechain::{GetGenesisUtxo, GetSidechainStatus};
+use sp_sidechain::GetGenesisUtxo;
 use std::sync::Arc;
 use time_source::*;
 use types::*;
 
+/// Response types returned by RPC endpoints for Sidechain pallet
+pub mod types;
+
 #[cfg(test)]
 mod tests;
 
-#[cfg(any(test, feature = "mock"))]
-pub mod mock;
+#[cfg(any(test))]
+mod mock;
 
+/// Response type of the [SidechainRpcApi::get_params] method
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Debug)]
+pub struct GetParamsOutput {
+	/// Genesis UTXO of the queried Partner Chain
+	pub genesis_utxo: UtxoId,
+}
+
+/// Json RPC API for querying basic information about a Partner Chain
 #[rpc(client, server, namespace = "sidechain")]
 pub trait SidechainRpcApi {
+	/// Gets the genesis UTXO of the Partner Chain
+	///
+	/// note: the legacy name `get_params` comes from the times when there were more parameters that
+	///       defined a Partner Chain than a single genesis UTXO
 	#[method(name = "getParams")]
-	fn get_params(&self) -> RpcResult<sp_sidechain::query::Output>;
+	fn get_params(&self) -> RpcResult<GetParamsOutput>;
 
-	/// Returns data related to the status of both the main chain and the sidechain, like their epochs or the timestamp associated to the next epoch.
+	/// Gets information about current Partner Chain and Cardano slot and epoch number
 	#[method(name = "getStatus")]
 	async fn get_status(&self) -> RpcResult<GetStatusResponse>;
 }
 
+/// Data source used by [SidechainRpc] for querying latest block
 #[async_trait]
 pub trait SidechainRpcDataSource {
+	/// Returns the latest Partner Chain block info
 	async fn get_latest_block_info(
 		&self,
 	) -> Result<MainchainBlock, Box<dyn std::error::Error + Send + Sync>>;
 }
 
+/// Json RPC service implementing [SidechainRpcApiServer]
 #[derive(new)]
 pub struct SidechainRpc<C, Block> {
 	client: Arc<C>,
@@ -62,15 +149,15 @@ where
 	C: Send + Sync + 'static,
 	C: ProvideRuntimeApi<Block>,
 	C: GetBestHash<Block>,
-	C::Api: SlotApi<Block> + GetGenesisUtxo<Block> + GetSidechainStatus<Block>,
+	C::Api: SlotApi<Block> + GetGenesisUtxo<Block>,
 {
-	fn get_params(&self) -> RpcResult<sp_sidechain::query::Output> {
+	fn get_params(&self) -> RpcResult<GetParamsOutput> {
 		let api = self.client.runtime_api();
 		let best_block = self.client.best_hash();
 
 		let genesis_utxo = api.genesis_utxo(best_block).map_err(error_object_from)?;
 
-		Ok(sp_sidechain::query::Output { genesis_utxo })
+		Ok(GetParamsOutput { genesis_utxo })
 	}
 
 	async fn get_status(&self) -> RpcResult<GetStatusResponse> {
@@ -114,6 +201,6 @@ where
 	}
 }
 
-pub fn error_object_from<T: std::fmt::Debug>(err: T) -> ErrorObjectOwned {
+fn error_object_from<T: std::fmt::Debug>(err: T) -> ErrorObjectOwned {
 	ErrorObject::owned::<u8>(-1, format!("{err:?}"), None)
 }

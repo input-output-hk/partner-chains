@@ -30,6 +30,9 @@ use std::ops::Neg;
 #[cfg(test)]
 mod tests;
 
+/// Inserts an entry into the governed map.
+/// If the `key` is already set to the provided `value` a transaction is not submitted and the operation succeeds.
+/// Else if the `key` is already set, the operation fails.
 pub async fn run_insert<
 	C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,
 	A: AwaitTx,
@@ -42,11 +45,10 @@ pub async fn run_insert<
 	await_tx: &A,
 ) -> anyhow::Result<Option<MultiSigSmartContractResult>> {
 	let ctx = TransactionContext::for_payment_key(payment_signing_key, ogmios_client).await?;
-	let (validator, policy) = crate::scripts_data::governed_map_scripts(genesis_utxo, ctx.network)?;
-	let validator_address = validator.address_bech32(ctx.network)?;
-	let validator_utxos = ogmios_client.query_utxos(&[validator_address]).await?;
+	let scripts = crate::scripts_data::governed_map_scripts(genesis_utxo, ctx.network)?;
+	let validator_utxos = ogmios_client.query_utxos(&[scripts.validator_address.clone()]).await?;
 
-	let tx_hash_opt = match get_current_value(validator_utxos, key.clone(), policy.policy_id()) {
+	let tx_hash_opt = match get_current_value(validator_utxos, key.clone(), scripts.policy_id()) {
 		Some(current_value) if current_value != value => {
 			return Err(anyhow!("There is already a value stored for key '{key}'."));
 		},
@@ -57,8 +59,17 @@ pub async fn run_insert<
 		None => {
 			log::info!("There is no value stored for key '{key}'. Inserting new one.");
 			Some(
-				insert(&validator, &policy, key, value, ctx, genesis_utxo, ogmios_client, await_tx)
-					.await?,
+				insert(
+					&scripts.validator,
+					&scripts.policy,
+					key,
+					value,
+					ctx,
+					genesis_utxo,
+					ogmios_client,
+					await_tx,
+				)
+				.await?,
 			)
 		},
 	};
@@ -137,6 +148,10 @@ fn insert_key_value_tx(
 	Ok(tx_builder.balance_update_and_build(ctx)?.remove_native_script_witnesses())
 }
 
+/// Updates an entry in the governed map.
+/// If `expected_current_value` is provided, the current `value` for the `key` must match it, otherwise the operation fails.
+/// If the `key` is not set, the operation fails.
+/// If the `key` is already set to the provided `value` a transaction is not submitted and the operation succeeds.
 pub async fn run_update<
 	C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,
 	A: AwaitTx,
@@ -150,13 +165,13 @@ pub async fn run_update<
 	await_tx: &A,
 ) -> anyhow::Result<Option<MultiSigSmartContractResult>> {
 	let ctx = TransactionContext::for_payment_key(payment_signing_key, ogmios_client).await?;
-	let (validator, policy) = crate::scripts_data::governed_map_scripts(genesis_utxo, ctx.network)?;
-	let validator_address = validator.address_bech32(ctx.network)?;
-	let validator_utxos = ogmios_client.query_utxos(&[validator_address]).await?;
-	let utxos_for_key = get_utxos_for_key(validator_utxos.clone(), key.clone(), policy.policy_id());
+	let scripts = crate::scripts_data::governed_map_scripts(genesis_utxo, ctx.network)?;
+	let validator_utxos = ogmios_client.query_utxos(&[scripts.validator_address.clone()]).await?;
+	let utxos_for_key =
+		get_utxos_for_key(validator_utxos.clone(), key.clone(), scripts.policy_id());
 
 	let Some(actual_current_value) =
-		get_current_value(validator_utxos.clone(), key.clone(), policy.policy_id())
+		get_current_value(validator_utxos.clone(), key.clone(), scripts.policy_id())
 	else {
 		return Err(anyhow!("Cannot update nonexistent key :'{key}'."));
 	};
@@ -171,8 +186,8 @@ pub async fn run_update<
 		if actual_current_value != value {
 			Some(
 				update(
-					&validator,
-					&policy,
+					&scripts.validator,
+					&scripts.policy,
 					key,
 					value,
 					&utxos_for_key,
@@ -286,6 +301,8 @@ fn update_key_value_tx(
 	Ok(tx_builder.balance_update_and_build(ctx)?.remove_native_script_witnesses())
 }
 
+/// Removes an entry from the governed map.
+/// If the `key` doesn't exist in the map a transaction is not submitted and the operation succeeds.
 pub async fn run_remove<
 	C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,
 	A: AwaitTx,
@@ -297,11 +314,10 @@ pub async fn run_remove<
 	await_tx: &A,
 ) -> anyhow::Result<Option<MultiSigSmartContractResult>> {
 	let ctx = TransactionContext::for_payment_key(payment_signing_key, ogmios_client).await?;
-	let (validator, policy) = crate::scripts_data::governed_map_scripts(genesis_utxo, ctx.network)?;
-	let validator_address = validator.address_bech32(ctx.network)?;
-	let validator_utxos = ogmios_client.query_utxos(&[validator_address]).await?;
+	let scripts = crate::scripts_data::governed_map_scripts(genesis_utxo, ctx.network)?;
+	let validator_utxos = ogmios_client.query_utxos(&[scripts.validator_address.clone()]).await?;
 
-	let utxos_for_key = get_utxos_for_key(validator_utxos, key.clone(), policy.policy_id());
+	let utxos_for_key = get_utxos_for_key(validator_utxos, key.clone(), scripts.policy_id());
 
 	let tx_hash_opt = match utxos_for_key.len() {
 		0 => {
@@ -309,8 +325,16 @@ pub async fn run_remove<
 			None
 		},
 		_ => Some(
-			remove(&validator, &policy, &utxos_for_key, ctx, genesis_utxo, ogmios_client, await_tx)
-				.await?,
+			remove(
+				&scripts.validator,
+				&scripts.policy,
+				&utxos_for_key,
+				ctx,
+				genesis_utxo,
+				ogmios_client,
+				await_tx,
+			)
+			.await?,
 		),
 	};
 	if let Some(TransactionSubmitted(tx_hash)) = tx_hash_opt {
@@ -363,7 +387,7 @@ fn remove_key_value_tx(
 		&costs,
 	)?;
 
-	let spend_indicies = costs.get_spend_indices();
+	let spend_indices = costs.get_spend_indices();
 
 	let mut inputs = TxInputsBuilder::new();
 	for (ix, utxo) in utxos_for_key.iter().enumerate() {
@@ -371,7 +395,7 @@ fn remove_key_value_tx(
 			utxo,
 			validator,
 			&unit_plutus_data(),
-			&costs.get_spend(*spend_indicies.get(ix).unwrap_or(&0)),
+			&costs.get_spend(*spend_indices.get(ix).unwrap_or(&0)),
 		)?;
 	}
 	tx_builder.set_inputs(&inputs);
@@ -388,28 +412,28 @@ fn remove_key_value_tx(
 	Ok(tx_builder.balance_update_and_build(ctx)?.remove_native_script_witnesses())
 }
 
+/// Queries all entries stored in the governed map.
 pub async fn run_list<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId>(
 	genesis_utxo: UtxoId,
 	ogmios_client: &C,
 ) -> anyhow::Result<impl Iterator<Item = GovernedMapDatum>> {
 	let network = ogmios_client.shelley_genesis_configuration().await?.network.to_csl();
-	let (validator, policy) = crate::scripts_data::governed_map_scripts(genesis_utxo, network)?;
-	let validator_address = validator.address_bech32(network)?;
-	let validator_utxos = ogmios_client.query_utxos(&[validator_address]).await?;
-	Ok(ogmios_utxos_to_governed_map_utxos(validator_utxos.into_iter(), policy.policy_id())
+	let scripts = crate::scripts_data::governed_map_scripts(genesis_utxo, network)?;
+	let validator_utxos = ogmios_client.query_utxos(&[scripts.validator_address.clone()]).await?;
+	Ok(ogmios_utxos_to_governed_map_utxos(validator_utxos.into_iter(), scripts.policy_id())
 		.map(|(_, datum)| datum))
 }
 
+/// Queries the provided `key` from the governed map.
 pub async fn run_get<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId>(
 	genesis_utxo: UtxoId,
 	key: String,
 	ogmios_client: &C,
 ) -> anyhow::Result<Option<ByteString>> {
 	let network = ogmios_client.shelley_genesis_configuration().await?.network.to_csl();
-	let (validator, policy) = crate::scripts_data::governed_map_scripts(genesis_utxo, network)?;
-	let validator_address = validator.address_bech32(network)?;
-	let validator_utxos = ogmios_client.query_utxos(&[validator_address]).await?;
-	Ok(get_current_value(validator_utxos, key, policy.policy_id()))
+	let scripts = crate::scripts_data::governed_map_scripts(genesis_utxo, network)?;
+	let validator_utxos = ogmios_client.query_utxos(&[scripts.validator_address.clone()]).await?;
+	Ok(get_current_value(validator_utxos, key, scripts.policy_id()))
 }
 
 fn ogmios_utxos_to_governed_map_utxos(
@@ -460,10 +484,20 @@ pub async fn run_insert_with_force<
 	await_tx: &A,
 ) -> anyhow::Result<Option<MultiSigSmartContractResult>> {
 	let ctx = TransactionContext::for_payment_key(payment_signing_key, ogmios_client).await?;
-	let (validator, policy) = crate::scripts_data::governed_map_scripts(genesis_utxo, ctx.network)?;
+	let scripts = crate::scripts_data::governed_map_scripts(genesis_utxo, ctx.network)?;
 
 	let tx_hash_opt = Some(
-		insert(&validator, &policy, key, value, ctx, genesis_utxo, ogmios_client, await_tx).await?,
+		insert(
+			&scripts.validator,
+			&scripts.policy,
+			key,
+			value,
+			ctx,
+			genesis_utxo,
+			ogmios_client,
+			await_tx,
+		)
+		.await?,
 	);
 
 	if let Some(TransactionSubmitted(tx_hash)) = tx_hash_opt {

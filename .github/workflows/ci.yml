@@ -86,12 +86,14 @@ jobs:
             ./to-build/devnet_chain_spec.json
             ./to-build/ci_preview_chain_spec.json
             ./to-build/staging_preview_chain_spec.json
-            ./to-build/staging_preprod_chain_spec.json
 
-  local-environment-tests:
+  local-env:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
     needs: build-linux-x86_64-pre-merge
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        markers: [smoke, rpc, reserve, governed_map, delegator_rewards, ariadne, wizards]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -104,7 +106,7 @@ jobs:
           tag: CI
           image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
           sha: ${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
-          tests: premerge
+          markers: ${{ matrix.markers }}
         env:
           SUBSTRATE_REPO_SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
           EARTHLY_TAR: ${{ secrets.EARTHLY_TAR }}
@@ -114,23 +116,27 @@ jobs:
           ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
           TEST_ENVIRONMENT: local
 
-  local-environment-tests-alert:
-    needs: local-environment-tests
-    if: always() && needs.local-environment-tests.result != 'skipped' && github.event_name == 'pull_request' && github.event.pull_request.merged == false
+  local-env-alert:
+    needs: local-env
+    if: >-
+      always() && (
+        needs.local-env.result != 'skipped'
+      ) && github.event_name == 'pull_request' && github.event.pull_request.merged == false
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        markers: [smoke, rpc, reserve, governed_map, delegator_rewards, ariadne, wizards]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - name: Create logs directory
-        run: mkdir -p e2e-tests/logs
       - name: Download test report
         uses: actions/download-artifact@v4
         with:
-          name: test-results
-          path: e2e-tests/logs
+          name: test-results-${{ matrix.markers }}
+          path: e2e-tests/logs-${{ matrix.markers }}
       - name: Report to slack
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -142,7 +148,11 @@ jobs:
           env: local-pre-merge
         run: |
           cd e2e-tests
-          ./report_slack.sh $repository $slack_ref_name $job_url $env $github_actor_username null
+          # Ensure logs directory exists
+          mkdir -p logs
+          # Copy downloaded artifacts to where the script expects them, including hidden files
+          cp -r logs-${{ matrix.markers }}/. logs/
+          ./report_slack.sh $repository $slack_ref_name $job_url $env $github_actor_username null "${{ matrix.markers }}"
         shell: bash
 
   devshell-tests:
@@ -211,13 +221,19 @@ jobs:
 
   pre-merge-checks-complete:
     if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.merged == false }}
-    needs: [build-linux-x86_64-pre-merge, local-environment-tests, devshell-tests, upload-chain-specs-pre-merge, documentation-tests]
+    needs: [
+      build-linux-x86_64-pre-merge,
+      local-env,
+      devshell-tests,
+      upload-chain-specs-pre-merge,
+      documentation-tests
+    ]
     runs-on: ubuntu-latest
     steps:
       - name: Check if any needed job failed
         run: |
           if [[ "${{ needs.build-linux-x86_64-pre-merge.result }}" != "success" ||
-                "${{ needs.local-environment-tests.result }}" != "success" ||
+                "${{ needs.local-env.result }}" != "success" ||
                 "${{ needs.devshell-tests.result }}" != "success" ||
                 "${{ needs.upload-chain-specs-pre-merge.result }}" != "success" ||
                 "${{ needs.documentation-tests.result }}" != "success" ]]; then
@@ -312,7 +328,6 @@ jobs:
             ./to-build/devnet_chain_spec.json
             ./to-build/ci_preview_chain_spec.json
             ./to-build/staging_preview_chain_spec.json
-            ./to-build/staging_preprod_chain_spec.json
 
   build-linux-arm64:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
@@ -445,67 +460,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  local-environment-tests-post-merge:
-    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
-    needs: build-linux-x86_64-post-merge
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: master
-      - name: Deploy and test against local environment
-        uses: ./.github/actions/tests/local-environment-tests
-        with:
-          tag: CI
-          image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-x86_64-post-merge.outputs.sha }}
-          sha: ${{ needs.build-linux-x86_64-post-merge.outputs.sha }}
-          tests: postmerge
-        env:
-          SUBSTRATE_REPO_SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
-          EARTHLY_TAR: ${{ secrets.EARTHLY_TAR }}
-          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
-          AWS_REGION: ${{ env.AWS_REGION }}
-          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
-          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
-          TEST_ENVIRONMENT: local
-
-  local-environment-tests-post-merge-alert:
-    needs: local-environment-tests-post-merge
-    if: always() && needs.local-environment-tests-post-merge.result != 'skipped'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: master
-      - name: Create logs directory
-        run: mkdir -p e2e-tests/logs
-      - name: Download test report
-        uses: actions/download-artifact@v4
-        with:
-          name: test-results
-          path: e2e-tests/logs
-      - name: Report to slack
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          JIRA_URL: ${{ secrets.JIRA_URL }}
-          repository: ${{ github.repository }}
-          slack_ref_name: ${{ github.ref_name }}
-          job_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          github_actor_username: ${{ github.actor }}
-          env: local-post-merge
-        run: |
-          cd e2e-tests
-          ./report_slack.sh $repository $slack_ref_name $job_url $env $github_actor_username null
-        shell: bash
-
   deploy-ci-preview:
     needs:
       - build-linux-x86_64-post-merge
-      - local-environment-tests-post-merge-alert
     permissions:
       id-token: write
       contents: write
@@ -548,40 +505,12 @@ jobs:
           kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
           K8S_SERVER: ${{ secrets.K8S_SERVER }}
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
-#      - name: Run direct kubectl exec tests against ci-preview
-#        uses: ./.github/actions/tests/k8s-direct-tests
-#        with:
-#          namespace: ci-preview
-#          pod: ci-preview-validator-1
-#        env:
-#          AWS_REGION: "eu-central-1"
-#          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-#          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
-#          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
-#          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
-#          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
-#          K8S_SERVER: ${{ secrets.K8S_SERVER }}
-#          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
       - name: Test against ci-preview
         uses: ./.github/actions/tests/run-e2e-tests
-#      - name: Run pytests against ci-preview over kubectl exec
-#        uses: ./.github/actions/tests/k8s-e2e-tests
         with:
           env: ci
           decrypt: true
           blockchain: substrate
-#        env:
-#          USE_KUBECTL_RPC: true
-#          KUBECTL_EXEC_POD: ci-preview-validator-1
-#          K8S_NAMESPACE: ci-preview
-#          AWS_REGION: "eu-central-1"
-#          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-#          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
-#          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
-#          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
-#          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
-#          K8S_SERVER: ${{ secrets.K8S_SERVER }}
-#          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
   post-merge-actions-complete:
     if: ${{ always() && (github.event_name == 'pull_request' && github.event.pull_request.merged == true) }}
@@ -590,7 +519,6 @@ jobs:
         build-linux-x86_64-post-merge,
         deploy-rustdoc,
         upload-chain-specs,
-        local-environment-tests-post-merge,
         ci-preview-tests-post-merge,
         deploy-ci-preview,
         upload-to-s3,
@@ -599,11 +527,11 @@ jobs:
     steps:
       - name: Check if any needed job failed
         run: |
-          if [[ "${{ needs.deploy-rustdoc.result }}" != "success" ||
-                "${{ needs.build-linux-x86_64-post-merge.result }}" != "success" ||
+          if [[ "${{ needs.build-linux-x86_64-post-merge.result }}" != "success" ||
+                "${{ needs.deploy-rustdoc.result }}" != "success" ||
                 "${{ needs.upload-chain-specs.result }}" != "success" ||
-                "${{ needs.local-environment-tests-post-merge.result }}" != "success" ]]
-                "${{ needs.deploy-ci-preview.result }}" != "success" ]]
+                "${{ needs.ci-preview-tests-post-merge.result }}" != "success" ||
+                "${{ needs.deploy-ci-preview.result }}" != "success" ||
                 "${{ needs.upload-to-s3.result }}" != "success" ]]; then
             echo "One or more needed jobs failed."
             exit 1
@@ -670,7 +598,6 @@ jobs:
             ./to-build/devnet_chain_spec.json
             ./to-build/ci_preview_chain_spec.json
             ./to-build/staging_preview_chain_spec.json
-            ./to-build/staging_preprod_chain_spec.json
 
   build-linux-arm64-workflow-dispatch:
     if: github.event_name == 'workflow_dispatch'

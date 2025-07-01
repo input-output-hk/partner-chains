@@ -1,13 +1,13 @@
 {
-    "deployment_mc_epoch": 867,
-    "initial_pc_epoch": 4837864,
-    "genesis_utxo": "de7b8efb08243b770be30cfa22a9ed64317c50052bb4394392960ddcc9810048#1",
-    "deployment_version": "v1.7.0",
+    "deployment_mc_epoch": 958,
+    "initial_pc_epoch": 4859579,
+    "genesis_utxo": "2b95ece9a1466925cbdb1b65e56531d95422ea8aa6abd9e02293e84a42368bd4#1",
+    "deployment_version": "v1.7.0-rc2",
     "test_environment": "staging",
     "nodes_config": {
         "nodes": {
             "validator-1": {
-                "host": "10.0.10.90",
+                "host": "10.0.10.228",
                 "port": "30321",
                 "aura_ss58_address": "5GHLr2zBDNPXno9XdKgh541uRSiTxnZyzFcr4jK6HUbHMpit",
                 "pool_id": "da74fc8256d15c7ab3370a6ca28398986cb97c32e9ef66026ac61e99",
@@ -24,7 +24,7 @@
                 }
             },
             "validator-2": {
-                "host": "10.0.10.90",
+                "host": "10.0.10.228",
                 "port": "30322",
                 "aura_ss58_address": "5DHbxU687f1Y3x8yBCWMtqSiJ5qt2yrxQPXNXZNNDaFtmXKv",
                 "pool_id": "eaed153a8b046770cfd094ee72d080ea682188e63ac11937e3f7f827",
@@ -41,7 +41,7 @@
                 }
             },
             "validator-3": {
-                "host": "10.0.10.90",
+                "host": "10.0.10.228",
                 "port": "30323",
                 "aura_ss58_address": "5FYtL6HccYhk6KZeFP7hNnkMaXrAwVpTHJWsfnNJcu8AM6in",
                 "pool_id": "7dfba85597a867fffa59037df7f6adcd50e745dcceac2b48eda94b20",
@@ -58,7 +58,7 @@
                 }
             },
             "validator-4": {
-                "host": "10.0.10.90",
+                "host": "10.0.10.228",
                 "port": "30324",
                 "aura_ss58_address": "5GVpqdtqjxqUjuVKMkmh8ehSwcs2nXjpvzHqjouZXMJAyC4b",
                 "pool_id": "2a3f5dd02da1310e081f2367412e02b72baad3e2a5045f62df2c78c5",
@@ -75,7 +75,7 @@
                 }
             },
             "validator-5": {
-                "host": "10.0.10.90",
+                "host": "10.0.10.228",
                 "port": "30325",
                 "aura_ss58_address": "5DsfhT7HJe6i5LYeKBzefrXijW5UgPsn2Cuyw5WMa4uEktTn",
                 "pool_id": "ae81beee7a6c3fa13bba811f91f63ebdd7eb25dd8a62476d4996de10",

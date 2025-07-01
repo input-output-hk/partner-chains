@@ -9,22 +9,25 @@ use serde_json::json;
 use sidechain_domain::*;
 use std::str::FromStr;
 
+/// Generates Ed25519 signatures to associate Cardano stake addresses with Partner Chain addresses.
+/// Generic over address type to support different Partner Chain implementations.
 #[derive(Clone, Debug, Parser)]
 #[command(author, version, about, long_about = None)]
 pub struct AddressAssociationSignaturesCmd<
 	PartnerchainAddress: Clone + Sync + Send + FromStr + 'static,
 > {
-	/// Genesis UTXO of the target Partner Chain
+	/// Genesis UTXO that identifies the target Partner Chain
 	#[arg(long)]
 	pub genesis_utxo: UtxoId,
-	/// Partner Chain address to be associated with the Cardano address
+	/// Partner Chain address to be associated with the Cardano stake address
 	#[arg(long, value_parser=parse_pc_address::<PartnerchainAddress>)]
 	pub partnerchain_address: PartnerchainAddress,
-	/// Cardano Stake Signing Key bytes in hex format. Its public key will be associated with partnerchain_address.
+	/// Ed25519 signing key for the Cardano stake address. Its public key will be associated with partnerchain_address.
 	#[arg(long)]
 	pub signing_key: StakeSigningKeyParam,
 }
 
+/// Parses Partner Chain address from string format.
 fn parse_pc_address<T: FromStr>(s: &str) -> Result<T, String> {
 	T::from_str(s).map_err(|_| "Failed to parse Partner Chain address".to_owned())
 }
@@ -33,6 +36,7 @@ impl<PartnerchainAddress> AddressAssociationSignaturesCmd<PartnerchainAddress>
 where
 	PartnerchainAddress: Serialize + Clone + Sync + Send + FromStr + Encode + 'static,
 {
+	/// Generates signature and outputs JSON to stdout.
 	pub fn execute(&self) -> anyhow::Result<()> {
 		let signature = self.sign();
 		let output = json!({
@@ -45,6 +49,7 @@ where
 		Ok(())
 	}
 
+	/// Signs SCALE-encoded address association message with Ed25519.
 	fn sign(&self) -> ByteString {
 		let msg = AddressAssociationSignedMessage {
 			stake_public_key: self.signing_key.vkey(),
@@ -77,7 +82,7 @@ mod test {
 		}
 	}
 
-	// This test is specifically kept in sync with the pallet siganture verification test
+	// This test is specifically kept in sync with the pallet signature verification test
 	#[test]
 	fn signature_test() {
 		let cmd = AddressAssociationSignaturesCmd {

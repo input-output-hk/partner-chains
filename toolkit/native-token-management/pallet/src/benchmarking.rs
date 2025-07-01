@@ -4,7 +4,6 @@
 
 use super::*;
 use crate::Pallet as NativeTokenManagement;
-
 use frame_benchmarking::v2::*;
 use frame_system::RawOrigin;
 

@@ -4,11 +4,11 @@
 //! The datum encodes D-parameter using VersionedGenericDatum envelope with the D-parameter being
 //! `datum` field being `[num_permissioned_candidates, num_registered_candidates]`.
 
-use crate::await_tx::{AwaitTx, FixedDelayRetries};
+use crate::await_tx::AwaitTx;
 use crate::cardano_keys::CardanoPaymentSigningKey;
 use crate::csl::{
-	CostStore, Costs, InputsBuilderExt, TransactionBuilderExt, TransactionContext, TransactionExt,
-	empty_asset_name, get_builder_config, unit_plutus_data,
+	CostStore, Costs, InputsBuilderExt, NetworkTypeExt, TransactionBuilderExt, TransactionContext,
+	TransactionExt, empty_asset_name, get_builder_config, unit_plutus_data,
 };
 use crate::governance::GovernanceData;
 use crate::multisig::submit_or_create_tx_to_sign;
@@ -29,29 +29,12 @@ use sidechain_domain::{DParameter, UtxoId};
 #[cfg(test)]
 mod tests;
 
-pub trait UpsertDParam {
-	#[allow(async_fn_in_trait)]
-	async fn upsert_d_param(
-		&self,
-		retries: FixedDelayRetries,
-		genesis_utxo: UtxoId,
-		d_parameter: &DParameter,
-		payment_signing_key: &CardanoPaymentSigningKey,
-	) -> anyhow::Result<Option<MultiSigSmartContractResult>>;
-}
-
-impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId> UpsertDParam for C {
-	async fn upsert_d_param(
-		&self,
-		retries: FixedDelayRetries,
-		genesis_utxo: UtxoId,
-		d_parameter: &DParameter,
-		payment_signing_key: &CardanoPaymentSigningKey,
-	) -> anyhow::Result<Option<MultiSigSmartContractResult>> {
-		upsert_d_param(genesis_utxo, d_parameter, payment_signing_key, self, &retries).await
-	}
-}
-
+/// This function upserts D-param.
+/// Arguments:
+///  - `genesis_utxo`: UTxO identifying the Partner Chain.
+///  - `d_parameter`: [DParameter] to be upserted.
+///  - `payment_signing_key`: Signing key of the party paying fees.
+///  - `await_tx`: [AwaitTx] strategy.
 pub async fn upsert_d_param<
 	C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,
 	A: AwaitTx,
@@ -59,13 +42,12 @@ pub async fn upsert_d_param<
 	genesis_utxo: UtxoId,
 	d_parameter: &DParameter,
 	payment_signing_key: &CardanoPaymentSigningKey,
-	ogmios_client: &C,
+	client: &C,
 	await_tx: &A,
 ) -> anyhow::Result<Option<MultiSigSmartContractResult>> {
-	let ctx = TransactionContext::for_payment_key(payment_signing_key, ogmios_client).await?;
-	let (validator, policy) = crate::scripts_data::d_parameter_scripts(genesis_utxo, ctx.network)?;
-	let validator_address = validator.address_bech32(ctx.network)?;
-	let validator_utxos = ogmios_client.query_utxos(&[validator_address]).await?;
+	let ctx = TransactionContext::for_payment_key(payment_signing_key, client).await?;
+	let scripts = crate::scripts_data::d_parameter_scripts(genesis_utxo, ctx.network)?;
+	let validator_utxos = client.query_utxos(&[scripts.validator_address.clone()]).await?;
 
 	let tx_hash_opt = match get_current_d_parameter(validator_utxos)? {
 		Some((_, current_d_param)) if current_d_param == *d_parameter => {
@@ -76,13 +58,13 @@ pub async fn upsert_d_param<
 			log::info!("Current D-parameter is different to the one to be set. Updating.");
 			Some(
 				update_d_param(
-					&validator,
-					&policy,
+					&scripts.validator,
+					&scripts.policy,
 					d_parameter,
 					&current_utxo,
 					ctx,
 					genesis_utxo,
-					ogmios_client,
+					client,
 					await_tx,
 				)
 				.await?,
@@ -92,12 +74,12 @@ pub async fn upsert_d_param<
 			log::info!("There is no D-parameter set. Inserting new one.");
 			Some(
 				insert_d_param(
-					&validator,
-					&policy,
+					&scripts.validator,
+					&scripts.policy,
 					d_parameter,
 					ctx,
 					genesis_utxo,
-					ogmios_client,
+					client,
 					await_tx,
 				)
 				.await?,
@@ -105,7 +87,7 @@ pub async fn upsert_d_param<
 		},
 	};
 	if let Some(TransactionSubmitted(tx_hash)) = tx_hash_opt {
-		await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_hash.0, 0)).await?;
+		await_tx.await_tx_output(client, UtxoId::new(tx_hash.0, 0)).await?;
 	}
 	Ok(tx_hash_opt)
 }
@@ -263,4 +245,15 @@ fn update_d_param_tx(
 	)?;
 
 	Ok(tx_builder.balance_update_and_build(ctx)?.remove_native_script_witnesses())
+}
+
+/// Returns D-parameter.
+pub async fn get_d_param<C: QueryLedgerState + QueryNetwork>(
+	genesis_utxo: UtxoId,
+	client: &C,
+) -> anyhow::Result<Option<DParameter>> {
+	let network = client.shelley_genesis_configuration().await?.network.to_csl();
+	let scripts = crate::scripts_data::d_parameter_scripts(genesis_utxo, network)?;
+	let validator_utxos = client.query_utxos(&[scripts.validator_address.clone()]).await?;
+	Ok(get_current_d_parameter(validator_utxos)?.map(|(_, d_parameter)| d_parameter))
 }

@@ -10,7 +10,6 @@ use ogmios_client::{
 
 #[derive(Clone, Default, Debug)]
 pub struct MockOgmiosClient {
-	shelley_config: ShelleyGenesisConfigurationResponse,
 	utxos: Vec<OgmiosUtxo>,
 	protocol_parameters: ProtocolParametersResponse,
 	evaluate_result: Option<Vec<OgmiosEvaluateTransactionResponse>>,
@@ -42,17 +41,13 @@ impl MockOgmiosClient {
 	pub fn with_submit_result(self, submit_result: SubmitTransactionResponse) -> Self {
 		Self { submit_result: Some(submit_result), ..self }
 	}
-
-	pub fn with_shelley_config(self, shelley_config: ShelleyGenesisConfigurationResponse) -> Self {
-		Self { shelley_config, ..self }
-	}
 }
 
 impl QueryNetwork for MockOgmiosClient {
 	async fn shelley_genesis_configuration(
 		&self,
 	) -> Result<ShelleyGenesisConfigurationResponse, ogmios_client::OgmiosClientError> {
-		Ok(self.shelley_config.clone())
+		Ok(Default::default())
 	}
 }
 

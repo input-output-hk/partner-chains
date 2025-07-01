@@ -1,6 +1,7 @@
 use crate::{cardano_keys::CardanoPaymentSigningKey, csl::transaction_from_bytes};
 use cardano_serialization_lib::{Ed25519Signature, Vkey, Vkeywitness};
 
+/// Signs CBOR encoded Cardano transaction `tx` with `payment_key`.
 pub fn sign_tx(tx: Vec<u8>, payment_key: &CardanoPaymentSigningKey) -> anyhow::Result<Vec<u8>> {
 	let transaction = transaction_from_bytes(tx)?;
 	let tx_hash: [u8; 32] =

@@ -1,9 +1,10 @@
 use crate::transaction_submitted_json;
-use partner_chains_cardano_offchain::assemble_tx::assemble_tx;
+use partner_chains_cardano_offchain::assemble_and_submit_tx::assemble_and_submit_tx;
 use partner_chains_cardano_offchain::csl::{transaction_from_bytes, vkey_witness_from_bytes};
 use sidechain_domain::{TransactionCbor, VKeyWitnessCbor};
 
 #[derive(Clone, Debug, clap::Parser)]
+/// Command for assembling transaction with additional witnesses, and submitting it to the chain
 pub struct AssembleAndSubmitCmd {
 	#[clap(flatten)]
 	common_arguments: crate::CommonArguments,
@@ -16,6 +17,7 @@ pub struct AssembleAndSubmitCmd {
 }
 
 impl AssembleAndSubmitCmd {
+	/// Deserialises the transaction and witnesses, combines them and submits the transaction to the chain.
 	pub async fn execute(self) -> crate::SubCmdResult {
 		let client = self.common_arguments.get_ogmios_client().await?;
 
@@ -27,8 +29,13 @@ impl AssembleAndSubmitCmd {
 			.map(|w| vkey_witness_from_bytes(w.0.clone().into_iter().skip(2).collect()))
 			.collect::<Result<Vec<_>, _>>()?;
 
-		let tx_hash =
-			assemble_tx(transaction, witnesses, &client, &self.common_arguments.retries()).await?;
+		let tx_hash = assemble_and_submit_tx(
+			transaction,
+			witnesses,
+			&client,
+			&self.common_arguments.retries(),
+		)
+		.await?;
 		Ok(transaction_submitted_json(tx_hash))
 	}
 }

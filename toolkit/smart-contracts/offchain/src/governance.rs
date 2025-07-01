@@ -112,22 +112,23 @@ impl GovernanceData {
 			})?
 			.network;
 
-		let (_, version_oracle_policy, validator_address) =
-			scripts_data::version_scripts_and_address(genesis_utxo, network.to_csl()).map_err(
-				|e| {
-					JsError::from_str(&format!(
-						"Could not get Version Oracle Script Data for: {}, {}",
-						genesis_utxo, e
-					))
-				},
-			)?;
+		let version_oracle_data = scripts_data::version_oracle(genesis_utxo, network.to_csl())
+			.map_err(|e| {
+				JsError::from_str(&format!(
+					"Could not get Version Oracle Script Data for: {}, {}",
+					genesis_utxo, e
+				))
+			})?;
 
-		let utxos = client.query_utxos(&[validator_address.clone()]).await.map_err(|e| {
-			JsError::from_str(&format!(
-				"Could not query UTXOs Governance Validator at {}: {}",
-				validator_address, e
-			))
-		})?;
+		let utxos = client
+			.query_utxos(&[version_oracle_data.validator_address.clone()])
+			.await
+			.map_err(|e| {
+				JsError::from_str(&format!(
+					"Could not query Governance Validator UTxOs at {}: {}",
+					version_oracle_data.validator_address, e
+				))
+			})?;
 
 		Ok(utxos.into_iter().find(|utxo| {
 			let correct_datum = utxo
@@ -137,7 +138,7 @@ impl GovernanceData {
 				.unwrap_or(false);
 
 			let contains_version_oracle_token =
-				utxo.value.native_tokens.contains_key(&version_oracle_policy.script_hash());
+				utxo.value.native_tokens.contains_key(&version_oracle_data.policy_id().0);
 			correct_datum && contains_version_oracle_token
 		}))
 	}
@@ -157,9 +158,7 @@ fn read_policy(governance_utxo: &OgmiosUtxo) -> Result<GovernancePolicyScript, J
 		.script
 		.clone()
 		.ok_or_else(|| JsError::from_str("No 'script' in governance UTXO"))?;
-	let plutus_multisig = plutus_script::PlutusScript::from_ogmios(script.clone())
-		.ok()
-		.and_then(parse_pc_multisig);
+	let plutus_multisig = script.clone().try_into().ok().and_then(parse_pc_multisig);
 	let policy_script = plutus_multisig.or_else(|| parse_simple_at_least_n_native_script(script));
 	policy_script.ok_or_else(|| {
 		JsError::from_str(&format!(
@@ -214,8 +213,11 @@ fn parse_simple_at_least_n_native_script(
 }
 
 #[derive(Serialize)]
+/// Summary of the M of N MultiSig governance policy.
 pub struct GovernancePolicySummary {
+	/// List of all key hashes of governance members.
 	pub key_hashes: Vec<ByteString>,
+	/// Minimum amount of governance signatures needed for governance action.
 	pub threshold: u32,
 }
 
@@ -241,6 +243,7 @@ impl From<GovernancePolicyScript> for GovernancePolicySummary {
 	}
 }
 
+/// Returns [GovernancePolicySummary] for partner chain identified by `genesis_utxo`.
 pub async fn get_governance_policy_summary<T: QueryLedgerState + QueryNetwork>(
 	genesis_utxo: UtxoId,
 	client: &T,
@@ -254,34 +257,37 @@ pub async fn get_governance_policy_summary<T: QueryLedgerState + QueryNetwork>(
 }
 
 #[derive(Clone, PartialEq, Eq, Hash)]
+/// Parameters for multisig governance policy.
 pub struct MultiSigParameters {
-	governance_authorties: Vec<MainchainKeyHash>,
+	governance_authorities: Vec<MainchainKeyHash>,
 	threshold: u8,
 }
 
 impl MultiSigParameters {
-	pub fn new(governance_authorties: &[MainchainKeyHash], threshold: u8) -> Result<Self, &str> {
-		if governance_authorties.is_empty() {
+	/// Constructs [MultiSigParameters] from governance authority member [MainchainKeyHash]es, and `threshold`.
+	pub fn new(governance_authorities: &[MainchainKeyHash], threshold: u8) -> Result<Self, &str> {
+		if governance_authorities.is_empty() {
 			return Err("governance authorities cannot be be empty");
 		}
 		if threshold == 0 {
 			return Err("threshold has to be a positive number");
 		}
-		if usize::from(threshold) > governance_authorties.len() {
+		if usize::from(threshold) > governance_authorities.len() {
 			return Err("threshold cannot be greater than governance authorities length");
 		}
-		Ok(Self { governance_authorties: governance_authorties.to_vec(), threshold })
+		Ok(Self { governance_authorities: governance_authorities.to_vec(), threshold })
 	}
 
-	pub fn new_one_of_one(goveranance_authority: &MainchainKeyHash) -> Self {
-		Self { governance_authorties: vec![*goveranance_authority], threshold: 1 }
+	/// Constructs [MultiSigParameters] with a single governance authority member.
+	pub fn new_one_of_one(governance_authority: &MainchainKeyHash) -> Self {
+		Self { governance_authorities: vec![*governance_authority], threshold: 1 }
 	}
 
-	/// Retruns [[SimpleAtLeastN]] for this MultiSig parameters.
+	/// Returns [SimpleAtLeastN] for this [MultiSigParameters].
 	pub(crate) fn as_simple_at_least_n(&self) -> SimpleAtLeastN {
 		SimpleAtLeastN {
 			threshold: self.threshold.into(),
-			key_hashes: self.governance_authorties.iter().map(|key_hash| key_hash.0).collect(),
+			key_hashes: self.governance_authorities.iter().map(|key_hash| key_hash.0).collect(),
 		}
 	}
 }
@@ -289,7 +295,7 @@ impl MultiSigParameters {
 impl Display for MultiSigParameters {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		f.write_str("Governance authorities:")?;
-		for authority in self.governance_authorties.iter() {
+		for authority in self.governance_authorities.iter() {
 			f.write_str(&format!("\n\t{}", &authority.to_hex_string()))?;
 		}
 		f.write_str(&format!("\nThreshold: {}", self.threshold))

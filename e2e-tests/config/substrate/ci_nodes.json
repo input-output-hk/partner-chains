@@ -1,5 +1,5 @@
 {
-  "deployment_mc_epoch": 925,
+  "deployment_mc_epoch": 958,
   "genesis_utxo": "d334afbb10b16d9b8bc1537d1da0d7c1b6b46ac71666a3a38161a39a0223db01#1",
   "deployment_version": "master",
   "test_environment": "ci",
@@ -7,7 +7,7 @@
   "nodes_config": {
     "nodes": {
       "validator-1": {
-        "host": "10.0.10.7",
+        "host": "10.0.10.139",
         "port": "30621",
         "aura_ss58_address": "5GHLr2zBDNPXno9XdKgh541uRSiTxnZyzFcr4jK6HUbHMpit",
         "pool_id": "da74fc8256d15c7ab3370a6ca28398986cb97c32e9ef66026ac61e99",
@@ -24,7 +24,7 @@
         }
       },
       "validator-2": {
-        "host": "10.0.11.26",
+        "host": "10.0.10.139",
         "port": "30622",
         "aura_ss58_address": "5DHbxU687f1Y3x8yBCWMtqSiJ5qt2yrxQPXNXZNNDaFtmXKv",
         "pool_id": "eaed153a8b046770cfd094ee72d080ea682188e63ac11937e3f7f827",
@@ -41,7 +41,7 @@
         }
       },
       "validator-3": {
-        "host": "10.0.12.51",
+        "host": "10.0.10.139",
         "port": "30623",
         "aura_ss58_address": "5FYtL6HccYhk6KZeFP7hNnkMaXrAwVpTHJWsfnNJcu8AM6in",
         "pool_id": "7dfba85597a867fffa59037df7f6adcd50e745dcceac2b48eda94b20",
@@ -58,7 +58,7 @@
         }
       },
       "validator-4": {
-        "host": "10.0.10.188",
+        "host": "10.0.10.139",
         "port": "30624",
         "aura_ss58_address": "5GVpqdtqjxqUjuVKMkmh8ehSwcs2nXjpvzHqjouZXMJAyC4b",
         "pool_id": "2a3f5dd02da1310e081f2367412e02b72baad3e2a5045f62df2c78c5",
@@ -75,7 +75,7 @@
         }
       },
       "validator-5": {
-        "host": "10.0.11.239",
+        "host": "10.0.10.139",
         "port": "30625",
         "aura_ss58_address": "5DsfhT7HJe6i5LYeKBzefrXijW5UgPsn2Cuyw5WMa4uEktTn",
         "pool_id": "ae81beee7a6c3fa13bba811f91f63ebdd7eb25dd8a62476d4996de10",

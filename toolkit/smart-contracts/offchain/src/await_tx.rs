@@ -4,40 +4,46 @@ use sidechain_domain::UtxoId;
 use std::time::Duration;
 use tokio_retry::{Retry, strategy::FixedInterval};
 
+/// Trait for different strategies of waiting for a Cardano transaction to complete.
 pub trait AwaitTx {
 	#[allow(async_fn_in_trait)]
-	async fn await_tx_output<Q: QueryUtxoByUtxoId>(
+	/// This is used for waiting until the output of a submitted transaction can be observed.
+	/// TODO: make this take a Transaction ID instead of a UtxoId
+	async fn await_tx_output<C: QueryUtxoByUtxoId>(
 		&self,
-		query: &Q,
+		client: &C,
 		utxo_id: UtxoId,
 	) -> anyhow::Result<()>;
 }
 
+/// Transaction awaiting strategy that uses fixed number of retries and a fixed delay.
 pub struct FixedDelayRetries {
 	delay: Duration,
 	retries: usize,
 }
 
 impl FixedDelayRetries {
+	/// Constructs [FixedDelayRetries] with `delay` [Duration] and `retries` number of maximum retries.
 	pub fn new(delay: Duration, retries: usize) -> Self {
 		Self { delay, retries }
 	}
 
+	/// Constructs [FixedDelayRetries] that keeps retrying every 5 seconds for 5 minutes.
 	pub fn five_minutes() -> Self {
 		Self { delay: Duration::from_secs(5), retries: 59 }
 	}
 }
 
 impl AwaitTx for FixedDelayRetries {
-	async fn await_tx_output<Q: QueryUtxoByUtxoId>(
+	async fn await_tx_output<C: QueryUtxoByUtxoId>(
 		&self,
-		query: &Q,
+		client: &C,
 		utxo_id: UtxoId,
 	) -> anyhow::Result<()> {
 		let strategy = FixedInterval::new(self.delay).take(self.retries);
 		let _ = Retry::spawn(strategy, || async {
 			log::info!("Probing for transaction output '{}'", utxo_id);
-			let utxo = query.query_utxo_by_id(utxo_id).await.map_err(|_| ())?;
+			let utxo = client.query_utxo_by_id(utxo_id).await.map_err(|_| ())?;
 			utxo.ok_or(())
 		})
 		.await

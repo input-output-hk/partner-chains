@@ -1,4 +1,5 @@
 use crate::CmdRun;
+use crate::cmd_traits::{GetScriptsData, InitGovernance};
 use crate::config::config_fields::{BOOTNODES, SUBSTRATE_NODE_DATA_BASE_PATH};
 use crate::generate_keys::network_key_path;
 use crate::io::IOContext;
@@ -7,6 +8,15 @@ use crate::prepare_configuration::prepare_main_chain_config::prepare_main_chain_
 use crate::prepare_configuration::select_genesis_utxo::select_genesis_utxo;
 use anyhow::Context;
 use libp2p_identity::Keypair;
+use ogmios_client::query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId};
+use ogmios_client::query_network::QueryNetwork;
+use ogmios_client::transactions::Transactions;
+use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
+use partner_chains_cardano_offchain::cardano_keys::CardanoPaymentSigningKey;
+use partner_chains_cardano_offchain::csl::NetworkTypeExt;
+use partner_chains_cardano_offchain::governance::MultiSigParameters;
+use partner_chains_cardano_offchain::scripts_data::{ScriptsData, get_scripts_data};
+use sidechain_domain::{McTxHash, UtxoId};
 use std::net::Ipv4Addr;
 use std::str::FromStr;
 use std::vec;
@@ -198,6 +208,42 @@ fn peer_id_from_network_key(key_str: &str) -> anyhow::Result<String> {
 	let hex_vec = hex::decode(key_str).context("Invalid hex")?;
 	let keypair = Keypair::ed25519_from_bytes(hex_vec).context("Invalid Ed25519 bytes")?;
 	Ok(keypair.public().to_peer_id().to_base58())
+}
+
+impl<T> InitGovernance for T
+where
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+{
+	async fn init_governance(
+		&self,
+		await_tx: FixedDelayRetries,
+		governance_parameters: &MultiSigParameters,
+		payment_key: &CardanoPaymentSigningKey,
+		genesis_utxo_id: UtxoId,
+	) -> Result<McTxHash, String> {
+		partner_chains_cardano_offchain::init_governance::run_init_governance(
+			governance_parameters,
+			payment_key,
+			Some(genesis_utxo_id),
+			self,
+			await_tx,
+		)
+		.await
+		.map(|result| result.tx_hash)
+		.map_err(|e| e.to_string())
+	}
+}
+
+impl<T: QueryNetwork> GetScriptsData for T {
+	async fn get_scripts_data(&self, genesis_utxo: UtxoId) -> Result<ScriptsData, String> {
+		let network = self
+			.shelley_genesis_configuration()
+			.await
+			.map_err(|e| format!("Ogmios error: {e}"))?
+			.network
+			.to_csl();
+		get_scripts_data(genesis_utxo, network).map_err(|e| (e.to_string()))
+	}
 }
 
 #[cfg(test)]

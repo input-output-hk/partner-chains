@@ -7,6 +7,7 @@
       - shared-volume:/shared
       - partner-chains-node-1-data:/data
       - ./configurations/partner-chains-nodes/partner-chains-node-1/entrypoint.sh:/entrypoint.sh
+      - ./configurations/partner-chains-nodes/partner-chains-node-1/keystore:/keystore
     environment:
       DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/cexplorer"
       CARDANO_SECURITY_PARAMETER: "5"
@@ -35,6 +36,7 @@
       - partner-chains-node-2-data:/data
       - shared-volume:/shared
       - ./configurations/partner-chains-nodes/partner-chains-node-2/entrypoint.sh:/entrypoint.sh
+      - ./configurations/partner-chains-nodes/partner-chains-node-2/keystore:/keystore
     environment:
       DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/cexplorer"
       CARDANO_SECURITY_PARAMETER: "5"
@@ -63,6 +65,7 @@
       - partner-chains-node-3-data:/data
       - shared-volume:/shared
       - ./configurations/partner-chains-nodes/partner-chains-node-3/entrypoint.sh:/entrypoint.sh
+      - ./configurations/partner-chains-nodes/partner-chains-node-3/keystore:/keystore
     environment:
       DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/cexplorer"
       CARDANO_SECURITY_PARAMETER: "5"

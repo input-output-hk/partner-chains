@@ -3,11 +3,7 @@ use crate::csl::TransactionOutputAmountBuilderExt;
 use crate::csl::{
 	CostStore, Costs, InputsBuilderExt, TransactionBuilderExt, TransactionContext, unit_plutus_data,
 };
-use crate::{
-	OffchainError,
-	await_tx::{AwaitTx, FixedDelayRetries},
-	plutus_script::PlutusScript,
-};
+use crate::{await_tx::AwaitTx, plutus_script::PlutusScript};
 use anyhow::anyhow;
 use cardano_serialization_lib::{
 	PlutusData, Transaction, TransactionBuilder, TransactionOutputBuilder, TxInputsBuilder,
@@ -23,34 +19,12 @@ use partner_chains_plutus_data::registered_candidates::{
 };
 use sidechain_domain::*;
 
-pub trait Register {
-	#[allow(async_fn_in_trait)]
-	async fn register(
-		&self,
-		retries: FixedDelayRetries,
-		genesis_utxo: UtxoId,
-		candidate_registration: &CandidateRegistration,
-		payment_signing_key: &CardanoPaymentSigningKey,
-	) -> Result<Option<McTxHash>, OffchainError>;
-}
-
-impl<T> Register for T
-where
-	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
-{
-	async fn register(
-		&self,
-		retries: FixedDelayRetries,
-		genesis_utxo: UtxoId,
-		candidate_registration: &CandidateRegistration,
-		payment_signing_key: &CardanoPaymentSigningKey,
-	) -> Result<Option<McTxHash>, OffchainError> {
-		run_register(genesis_utxo, candidate_registration, payment_signing_key, self, retries)
-			.await
-			.map_err(|e| OffchainError::InternalError(e.to_string()))
-	}
-}
-
+/// Submits a transaction to register a registered candidate.
+/// Arguments:
+///  - `genesis_utxo`: UTxO identifying the Partner Chain.
+///  - `candidate_registration`: [CandidateRegistration] registration data.
+///  - `ogmios_client`: Ogmios client.
+///  - `await_tx`: [AwaitTx] strategy.
 pub async fn run_register<
 	C: QueryLedgerState + QueryNetwork + QueryUtxoByUtxoId + Transactions,
 	A: AwaitTx,
@@ -114,34 +88,11 @@ pub async fn run_register<
 	Ok(Some(McTxHash(result.transaction.id)))
 }
 
-pub trait Deregister {
-	#[allow(async_fn_in_trait)]
-	async fn deregister(
-		&self,
-		retries: FixedDelayRetries,
-		genesis_utxo: UtxoId,
-		payment_signing_key: &CardanoPaymentSigningKey,
-		stake_ownership_pub_key: StakePoolPublicKey,
-	) -> Result<Option<McTxHash>, OffchainError>;
-}
-
-impl<T> Deregister for T
-where
-	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
-{
-	async fn deregister(
-		&self,
-		retries: FixedDelayRetries,
-		genesis_utxo: UtxoId,
-		payment_signing_key: &CardanoPaymentSigningKey,
-		stake_ownership_pub_key: StakePoolPublicKey,
-	) -> Result<Option<McTxHash>, OffchainError> {
-		run_deregister(genesis_utxo, payment_signing_key, stake_ownership_pub_key, self, retries)
-			.await
-			.map_err(|e| OffchainError::InternalError(e.to_string()))
-	}
-}
-
+/// Submits a transaction to register a registered candidate.
+/// Arguments:
+///  - `genesis_utxo`: UTxO identifying the Partner Chain.
+///  - `stake_ownership_pub_key`: Stake pub key of the registered candidate to be deregistered.
+///  - `await_tx`: [AwaitTx] strategy.
 pub async fn run_deregister<
 	C: QueryLedgerState + QueryNetwork + QueryUtxoByUtxoId + Transactions,
 	A: AwaitTx,

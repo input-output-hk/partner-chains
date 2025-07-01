@@ -21,6 +21,7 @@ use sp_runtime::traits::{Block as BlockT, Zero};
 use sp_session_validator_management::{
 	CommitteeMember as CommitteeMemberT, SessionValidatorManagementApi,
 };
+#[allow(deprecated)]
 use sp_sidechain::{GetGenesisUtxo, GetSidechainStatus};
 use std::sync::Arc;
 use types::*;
@@ -129,6 +130,7 @@ where
 }
 
 #[async_trait]
+#[allow(deprecated)]
 impl<C, Block, CommitteeMember> SessionValidatorManagementQueryApi
 	for SessionValidatorManagementQuery<C, Block, CommitteeMember>
 where

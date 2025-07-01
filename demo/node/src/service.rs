@@ -3,8 +3,8 @@
 use crate::data_sources::DataSources;
 use crate::inherent_data::{CreateInherentDataConfig, ProposalCIDP, VerifierCIDP};
 use crate::rpc::GrandpaDeps;
-use partner_chains_db_sync_data_sources::metrics::McFollowerMetrics;
-use partner_chains_db_sync_data_sources::metrics::register_metrics_warn_errors;
+use partner_chains_db_sync_data_sources::McFollowerMetrics;
+use partner_chains_db_sync_data_sources::register_metrics_warn_errors;
 use partner_chains_demo_runtime::{self, RuntimeApi, opaque::Block};
 use sc_client_api::BlockBackend;
 use sc_consensus_aura::{ImportQueueParams, SlotProportion, StartAuraParams};

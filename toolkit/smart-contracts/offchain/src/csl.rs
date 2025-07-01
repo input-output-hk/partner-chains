@@ -14,10 +14,12 @@ use ogmios_client::{
 use sidechain_domain::{AssetId, NetworkType, UtxoId};
 use std::collections::HashMap;
 
+/// Constructs [Transaction] from CBOR bytes
 pub fn transaction_from_bytes(cbor: Vec<u8>) -> anyhow::Result<Transaction> {
 	Transaction::from_bytes(cbor).map_err(|e| anyhow::anyhow!(e))
 }
 
+/// Constructs [Vkeywitness] from CBOR bytes
 pub fn vkey_witness_from_bytes(cbor: Vec<u8>) -> anyhow::Result<Vkeywitness> {
 	Vkeywitness::from_bytes(cbor).map_err(|e| anyhow::anyhow!(e))
 }
@@ -29,7 +31,7 @@ pub(crate) fn plutus_script_hash(script_bytes: &[u8], language: Language) -> [u8
 	sidechain_domain::crypto::blake2b(buf.as_slice())
 }
 
-/// Builds an CSL `Address` for plutus script from the data obtained from smart contracts.
+/// Builds a CSL [Address] for plutus script from the data obtained from smart contracts.
 pub fn script_address(script_bytes: &[u8], network: NetworkIdKind, language: Language) -> Address {
 	let script_hash = plutus_script_hash(script_bytes, language);
 	EnterpriseAddress::new(
@@ -39,8 +41,9 @@ pub fn script_address(script_bytes: &[u8], network: NetworkIdKind, language: Lan
 	.to_address()
 }
 
-pub fn payment_address(key_bytes: &[u8], network: NetworkIdKind) -> Address {
-	let key_hash = sidechain_domain::crypto::blake2b(key_bytes);
+/// Builds a CSL [Address] for the specified network from Cardano verification key bytes.
+pub fn payment_address(cardano_verification_key_bytes: &[u8], network: NetworkIdKind) -> Address {
+	let key_hash = sidechain_domain::crypto::blake2b(cardano_verification_key_bytes);
 	EnterpriseAddress::new(
 		network_id_kind_to_u8(network),
 		&Credential::from_keyhash(&key_hash.into()),
@@ -48,12 +51,15 @@ pub fn payment_address(key_bytes: &[u8], network: NetworkIdKind) -> Address {
 	.to_address()
 }
 
+/// Builds a CSL [Address] for the specified network from a Cardano verification key hash.
 pub fn key_hash_address(pub_key_hash: &Ed25519KeyHash, network: NetworkIdKind) -> Address {
 	EnterpriseAddress::new(network_id_kind_to_u8(network), &Credential::from_keyhash(pub_key_hash))
 		.to_address()
 }
 
+/// Extension trait for [NetworkType].
 pub trait NetworkTypeExt {
+	/// Converts [NetworkType] to CSL [cardano_serialization_lib::Value].
 	fn to_csl(&self) -> NetworkIdKind;
 }
 impl NetworkTypeExt for NetworkType {
@@ -113,13 +119,14 @@ fn ratio_to_unit_interval(ratio: &fraction::Ratio<u64>) -> UnitInterval {
 	UnitInterval::new(&(*ratio.numer()).into(), &(*ratio.denom()).into())
 }
 
+/// Extension trait for [OgmiosValue].
 pub trait OgmiosValueExt {
+	/// Converts [OgmiosValue] to CSL [cardano_serialization_lib::Value].
+	/// It can fail if the input contains negative values, for example Ogmios values representing burn.
 	fn to_csl(&self) -> Result<Value, JsError>;
 }
 
 impl OgmiosValueExt for OgmiosValue {
-	/// Coverts ogmios value to CSL value.
-	/// It could fail if the input contains negative values, for example ogmios values representing burn.
 	fn to_csl(&self) -> Result<Value, JsError> {
 		if !self.native_tokens.is_empty() {
 			let mut multiasset = MultiAsset::new();
@@ -163,42 +170,34 @@ pub(crate) fn convert_reference_script_costs(
 	Ok(UnitInterval::new(&numerator, &denominator))
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct ScriptExUnits {
-	pub mint_ex_units: Vec<ExUnits>,
-	pub spend_ex_units: Vec<ExUnits>,
-}
-
-impl ScriptExUnits {
-	pub fn new() -> Self {
-		ScriptExUnits { mint_ex_units: Vec::new(), spend_ex_units: Vec::new() }
-	}
-	pub fn with_mint_ex_units(self, mint_ex_units: Vec<ExUnits>) -> Self {
-		Self { mint_ex_units, ..self }
-	}
-	pub fn with_spend_ex_units(self, spend_ex_units: Vec<ExUnits>) -> Self {
-		Self { spend_ex_units, ..self }
-	}
-}
-
 fn ex_units_from_response(resp: OgmiosEvaluateTransactionResponse) -> ExUnits {
 	ExUnits::new(&resp.budget.memory.into(), &resp.budget.cpu.into())
 }
 
-pub struct CostLookup {
-	mints: HashMap<cardano_serialization_lib::ScriptHash, ExUnits>,
-	spends: HashMap<u32, ExUnits>,
-}
-
-pub enum Costs {
-	Costs(CostLookup),
+/// Type representing transaction execution costs.
+pub(crate) enum Costs {
+	/// Zero costs. Used as a dummy value when submitting a transaction for cost calculation.
 	ZeroCosts,
+	/// Variant containing actual costs.
+	Costs {
+		/// Mapping script hashes to minting policy execution costs.
+		mints: HashMap<cardano_serialization_lib::ScriptHash, ExUnits>,
+		/// Mapping spend indices to validator script execution costs.
+		spends: HashMap<u32, ExUnits>,
+	},
 }
 
-pub trait CostStore {
+/// Interface for retrieving execution costs.
+pub(crate) trait CostStore {
+	/// Returns [ExUnits] cost of a minting policy for a given [PlutusScript].
 	fn get_mint(&self, script: &PlutusScript) -> ExUnits;
+	/// Returns [ExUnits] cost of a validator script for a given spend index.
 	fn get_spend(&self, spend_ix: u32) -> ExUnits;
+	/// Returns spend cost of the single validator script in a transaction.
+	/// It panics if there is not exactly one validator script execution.
 	fn get_one_spend(&self) -> ExUnits;
+	/// Returns indices of validator scripts as they appear in the CSL transaction.
+	/// These indices can be used in conjunction with [get_spend].
 	fn get_spend_indices(&self) -> Vec<u32>;
 }
 
@@ -206,8 +205,7 @@ impl CostStore for Costs {
 	fn get_mint(&self, script: &PlutusScript) -> ExUnits {
 		match self {
 			Costs::ZeroCosts => zero_ex_units(),
-			Costs::Costs(cost_lookup) => cost_lookup
-				.mints
+			Costs::Costs { mints, .. } => mints
 				.get(&script.csl_script_hash())
 				.expect("get_mint should not be called with an unknown script")
 				.clone(),
@@ -216,8 +214,7 @@ impl CostStore for Costs {
 	fn get_spend(&self, spend_ix: u32) -> ExUnits {
 		match self {
 			Costs::ZeroCosts => zero_ex_units(),
-			Costs::Costs(cost_lookup) => cost_lookup
-				.spends
+			Costs::Costs { spends, .. } => spends
 				.get(&spend_ix)
 				.expect("get_spend should not be called with an unknown spend index")
 				.clone(),
@@ -226,39 +223,46 @@ impl CostStore for Costs {
 	fn get_one_spend(&self) -> ExUnits {
 		match self {
 			Costs::ZeroCosts => zero_ex_units(),
-			Costs::Costs(cost_lookup) => {
-				match cost_lookup.spends.values().collect::<Vec<_>>()[..] {
-					[x] => x.clone(),
-					_ => panic!(
-						"get_one_spend should only be called when exacly one spend is expected to be present"
-					),
-				}
+			Costs::Costs { spends, .. } => match spends.values().collect::<Vec<_>>()[..] {
+				[x] => x.clone(),
+				_ => panic!(
+					"get_one_spend should only be called when exactly one spend is expected to be present"
+				),
 			},
 		}
 	}
 	fn get_spend_indices(&self) -> Vec<u32> {
 		match self {
 			Costs::ZeroCosts => vec![],
-			Costs::Costs(cost_lookup) => cost_lookup.spends.keys().cloned().collect(),
+			Costs::Costs { spends, .. } => spends.keys().cloned().collect(),
 		}
 	}
 }
 
 impl Costs {
-	pub fn new(
+	#[cfg(test)]
+	/// Constructs new [Costs] with given `mints` and `spends`.
+	pub(crate) fn new(
 		mints: HashMap<cardano_serialization_lib::ScriptHash, ExUnits>,
 		spends: HashMap<u32, ExUnits>,
 	) -> Costs {
-		Costs::Costs(CostLookup { mints, spends })
+		Costs::Costs { mints, spends }
 	}
 
-	pub async fn calculate_costs<T: Transactions, F>(
+	/// Creates a [Transaction] with correctly set script execution costs.
+	///
+	/// Arguments:
+	///  - `make_tx`: A function that takes a [Costs] value, and returns a [anyhow::Result<Transaction>].
+	///               This function is meant to describe which execution cost is used where in the transaction.
+	///  - `client`: Ogmios client
+	pub(crate) async fn calculate_costs<T: Transactions, F>(
 		make_tx: F,
 		client: &T,
 	) -> anyhow::Result<Transaction>
 	where
 		F: Fn(Costs) -> anyhow::Result<Transaction>,
 	{
+		// This double evaluation is needed to correctly set costs in some cases.
 		let tx = make_tx(Costs::ZeroCosts)?;
 		// stage 1
 		let costs = Self::from_ogmios(&tx, client).await?;
@@ -299,7 +303,7 @@ impl Costs {
 			}
 		}
 
-		Ok(Costs::Costs(CostLookup { mints, spends }))
+		Ok(Costs::Costs { mints, spends })
 	}
 }
 
@@ -307,7 +311,7 @@ pub(crate) fn empty_asset_name() -> AssetName {
 	AssetName::new(vec![]).expect("Hardcoded empty asset name is valid")
 }
 
-pub fn zero_ex_units() -> ExUnits {
+fn zero_ex_units() -> ExUnits {
 	ExUnits::new(&BigNum::zero(), &BigNum::zero())
 }
 
@@ -334,9 +338,10 @@ impl OgmiosUtxoExt for OgmiosUtxo {
 			&self.value.to_csl()?,
 		);
 		if let Some(script) = self.script.clone() {
-			let plutus_script_ref_opt = PlutusScript::from_ogmios(script.clone())
-				.ok()
-				.map(|plutus_script| ScriptRef::new_plutus_script(&plutus_script.to_csl()));
+			let plutus_script_ref_opt =
+				script.clone().try_into().ok().map(|plutus_script: PlutusScript| {
+					ScriptRef::new_plutus_script(&plutus_script.to_csl())
+				});
 			let script_ref_opt = plutus_script_ref_opt.or_else(|| {
 				NativeScript::from_bytes(script.cbor)
 					.ok()
@@ -374,7 +379,9 @@ impl OgmiosUtxoExt for OgmiosUtxo {
 	}
 }
 
+/// Extension trait for [UtxoId].
 pub trait UtxoIdExt {
+	/// Converts domain [UtxoId] to CSL [TransactionInput].
 	fn to_csl(&self) -> TransactionInput;
 }
 
@@ -495,7 +502,7 @@ pub(crate) trait TransactionBuilderExt {
 	/// Adds minting of tokens (with empty asset name) for the given script using reference input.
 	/// IMPORTANT: Because CSL doesn't properly calculate transaction fee if the script is Native,
 	/// this function adds reference input and regular native script, that is added to witnesses.
-	/// This native script has to be removed from witnesses, otherwise the transaction is rejectd!
+	/// This native script has to be removed from witnesses, otherwise the transaction is rejected!
 	fn add_mint_script_token_using_reference_script(
 		&mut self,
 		script: &Script,
@@ -507,7 +514,7 @@ pub(crate) trait TransactionBuilderExt {
 	/// Adds minting of 1 token (with empty asset name) for the given script using reference input.
 	/// IMPORTANT: Because CSL doesn't properly calculate transaction fee if the script is Native,
 	/// this function adds reference input and regular native script, that is added to witnesses.
-	/// This native script has to be removed from witnesses, otherwise the transaction is rejectd!
+	/// This native script has to be removed from witnesses, otherwise the transaction is rejected!
 	fn add_mint_one_script_token_using_reference_script(
 		&mut self,
 		script: &Script,
@@ -718,8 +725,11 @@ impl TransactionBuilderExt for TransactionBuilder {
 }
 
 #[derive(Clone, Debug)]
+/// Type representing a Cardano script.
 pub enum Script {
+	/// Plutus script
 	Plutus(PlutusScript),
+	/// Native script
 	Native(NativeScript),
 }
 

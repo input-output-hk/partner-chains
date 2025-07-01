@@ -1,25 +1,18 @@
 {
-    "endpoint": "GetAddrs",
-    "addresses": {
-        "CommitteeCandidateValidator": "addr_test1wp4sjcwh2n7qmtmjyzq70ax5sgk32krytkqu9vrg8vxp82g0lkps6",
-        "VersionOracleValidator": "addr_test1wzm7xhlxtuquuk6594sh4xuu874850vzrwh5x272yvdf3ngx5phw2",
-        "PermissionedCandidatesValidator": "addr_test1wpfs2kw8a8ry0svtmdexmqyjz67qxmssgufg688ykw7ruucjj3856",
-        "DParameterValidator": "addr_test1wpvtw0r3acskmgrphlz0m4c57djpxdvw9gdcwx0rwter9acadwzzc",
-        "ReserveValidator": "addr_test1wz6tjn546lnvjftl08mw8xhv8n3amr7rze6emn49wjnwn6qwqefww",
-        "IlliquidCirculationSupplyValidator": "addr_test1wzzjx5flq6xj5ydp62vn57v46e8hrspj7q693qtz2m7ya8qekdzlk"
-    },
-    "validatorHashes": {
-        "CommitteeCandidateValidator": "6b0961d754fc0daf722081e7f4d4822d1558645d81c2b0683b0c13a9",
-        "VersionOracleValidator": "b7e35fe65f01ce5b542d617a9b9c3faa7a3d821baf432bca231a98cd",
-        "PermissionedCandidatesValidator": "530559c7e9c647c18bdb726d809216bc036e1047128d1ce4b3bc3e73",
-        "DParameterValidator": "58b73c71ee216da061bfc4fdd714f36413358e2a1b8719e372f232f7",
-        "ReserveValidator": "b4b94e95d7e6c9257f79f6e39aec3ce3dd8fc316759dcea574a6e9e8",
-        "IlliquidCirculationSupplyValidator": "8523513f068d2a11a1d2993a7995d64f71c032f03458816256fc4e9c"
-    },
-    "mintingPolicies": {
-        "VersionOraclePolicy": "488996bae9a3a1c48183f47debef321c957028c9664a397dae7d8222",
-        "PermissionedCandidatesPolicy": "1c99b6b45338e56ef7765c4d38163acd40954f21d451e59d746a31f6",
-        "DParameterPolicy": "7c4678633cab3ab39fc5880e15c3bc4fb41a6ac6eb7d7deb71bc8b07",
-        "ReserveAuthPolicy": "41478956696ac58c8672723a245aab289fb40abb9bf71e17ada64f2b"
-    }
+  "addresses": {
+    "CommitteeCandidateValidator": "addr_test1wrqapxw2jtkmprufunmnjn668rklltdc2jfnc8svqeu536srk4ym0",
+    "DParameterValidator": "addr_test1wpa4hesf3q4k4zmvvtgexfw5wph9902t3mje06vf9kaqc9s9u79rv",
+    "GovernedMapValidator": "addr_test1wqn8lm63fj4l8s9jjt85pquwwc0pwqku5zyhmddjn3zckpgd59m47",
+    "IlliquidCirculationSupplyValidator": "addr_test1wqv2h6s4mry2h5r6a2lkkg9c6wd8cmkvsdtzjtt3faay9pqsvqwm2",
+    "PermissionedCandidatesValidator": "addr_test1wrmqwh7gg90aqkpnkvllvs9kuyws4vu2qgcqq4wveenns7qm96rd0",
+    "ReserveValidator": "addr_test1wpfw25d7gv0hteukgjtew72gnm64ujrmvujx3xjfgs3k4uga0mlcx",
+    "VersionOracleValidator": "addr_test1wz2mrjcstanm9ewkqftkws8cw8fzpdcnxzk6aq5u49t36wgr9nxuz"
+  },
+  "policyIds": {
+    "DParameter": "0x01c846cac21d5a99df626c7303d4e4bd3c9fca8c8483f05d47b4f2ca",
+    "GovernedMap": "0xbc9649a6ae88c3af77cd40c194a9b86127a8baee6c0046c13809a0c3",
+    "PermissionedCandidates": "0xdad0a2d5a3dac2d293c17e95e8a43fa35fc1b2dcb2b6bb4e0b038583",
+    "ReserveAuth": "0xf23ed687c3324f4a4d888e8dcf6acd59bcf07e93a23c3fdf997afe1c",
+    "VersionOracle": "0x95bd5463b8acfe1a13d175ae35e89fa48e361102eca5ce24182d5446"
+  }
 }

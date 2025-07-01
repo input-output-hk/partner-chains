@@ -11,10 +11,8 @@ from src.blockchain_api import BlockchainApi
 from src.db.models import Candidates, PermissionedCandidates, StakeDistributionCommittee
 from src.partner_chain_rpc import DParam
 from src.pc_epoch_calculator import PartnerChainEpochCalculator
-from src.pc_block_finder import BlockFinder
 from src.run_command import RunnerFactory
 
-block_finder: BlockFinder = None
 
 CANDIDATES_STABILITY_OFFSET_IN_MC_EPOCHS = 2
 
@@ -507,25 +505,16 @@ def get_block_authorship_keys_dict(config: ApiConfig) -> dict:
     return block_authorship_keys
 
 
-@fixture(scope="session", autouse=True)
-def blocks_dict() -> dict:
-    return {}
-
-
 @fixture(scope="session")
-def get_pc_epoch_blocks(
-    api: BlockchainApi, config: ApiConfig, blocks_dict, current_pc_epoch
-) -> Generator[dict, None, None]:
+def get_pc_epoch_blocks(api: BlockchainApi) -> Generator[dict, None, None]:
     """
     Fixture that stores the blocks of an epoch in a dictionary
     """
-    global block_finder
-    block_finder = BlockFinder(api, config)
-    next_epoch_timestamp = api.get_status()["sidechain"]["nextEpochTimestamp"]
+    blocks_dict = {}
 
-    def _get_pc_epoch_blocks(epoch, blocks_dict=blocks_dict, api=api):
+    def _get_pc_epoch_blocks(epoch):
         if epoch not in blocks_dict.keys():
-            block_range = block_finder.get_block_range(next_epoch_timestamp, current_pc_epoch, epoch)
+            block_range = api.get_pc_epoch_blocks(epoch)
             if type(block_range) is not range:
                 logging.error(f"Could not get block range for epoch {epoch}")
                 block_range = range(0, 0)

@@ -1,3 +1,5 @@
+//! Db-Sync data source serving information about Cardano stake delegation.
+//! Used by the Partner Chain Block Participation feature.
 use crate::db_model::{EpochNumber, StakePoolDelegationOutputRow};
 use crate::metrics::McFollowerMetrics;
 use crate::observed_async_trait;
@@ -10,13 +12,18 @@ use std::sync::{Arc, Mutex};
 #[cfg(test)]
 mod tests;
 
+/// Db-Sync data source serving data about Cardano delegations
 pub struct StakeDistributionDataSourceImpl {
+	/// Postgres connection poool
 	pub pool: PgPool,
+	/// Prometheus metrics client
 	metrics_opt: Option<McFollowerMetrics>,
+	/// Internal data cache
 	cache: Cache,
 }
 
 impl StakeDistributionDataSourceImpl {
+	/// Creates a Stake Distribution new data source instance
 	pub fn new(pool: PgPool, metrics_opt: Option<McFollowerMetrics>, cache_size: usize) -> Self {
 		StakeDistributionDataSourceImpl { pool, metrics_opt, cache: Cache::new(cache_size) }
 	}

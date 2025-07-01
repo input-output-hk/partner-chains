@@ -1,6 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
+#![allow(deprecated)]
 
 #[cfg(feature = "runtime-benchmarks")]
 #[macro_use]
@@ -295,7 +296,6 @@ impl frame_system::Config for Runtime {
 }
 
 impl pallet_native_token_management::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
 	type TokenTransferHandler = TestHelperPallet;
 	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
 	type WeightInfo = pallet_native_token_management::weights::SubstrateWeight<Runtime>;
@@ -348,7 +348,7 @@ impl pallet_balances::Config for Runtime {
 	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 	type FreezeIdentifier = ();
 	type MaxFreezes = ();
-	type RuntimeHoldReason = ();
+	type RuntimeHoldReason = RuntimeHoldReason;
 	type RuntimeFreezeReason = RuntimeFreezeReason;
 	type DoneSlashHandler = ();
 }
@@ -374,7 +374,6 @@ impl pallet_sudo::Config for Runtime {
 }
 
 impl pallet_partner_chains_session::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
 	type ShouldEndSession = ValidatorManagementSessionManager<Runtime>;
 	type NextSessionRotation = ();
@@ -388,7 +387,6 @@ parameter_types! {
 }
 
 impl pallet_session_validator_management::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
 	type MaxValidators = MaxValidators;
 	type AuthorityId = CrossChainPublic;
 	type AuthorityKeys = SessionKeys;

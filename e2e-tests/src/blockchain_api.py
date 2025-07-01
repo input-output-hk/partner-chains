@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from src.cardano_cli import CardanoCli
-from src.partner_chain_rpc import PartnerChainRpcResponse, DParam
+from src.partner_chain_rpc import PartnerChainRpc, PartnerChainRpcResponse, DParam
 from src.partner_chains_node.node import PartnerChainsNode
 from src.partner_chains_node.models import AddressAssociationSignature, BlockProducerMetadataSignature
 from config.api_config import Node
@@ -30,6 +30,7 @@ class Wallet:
 class BlockchainApi(ABC):
     cardano_cli: CardanoCli
     partner_chains_node: PartnerChainsNode
+    partner_chain_rpc: PartnerChainRpc
 
     @abstractmethod
     def close(self):
@@ -45,6 +46,10 @@ class BlockchainApi(ABC):
 
     @abstractmethod
     def get_pc_epoch(self) -> int:
+        pass
+
+    @abstractmethod
+    def get_pc_epoch_blocks(self, epoch: int) -> range:
         pass
 
     @abstractmethod
@@ -337,15 +342,15 @@ class BlockchainApi(ABC):
         pass
 
     @abstractmethod
-    def get_block_author(self, block, validator_set) -> str:
-        """Gets the author of a block.
+    def get_block_author_and_slot(self, block, validator_set) -> tuple:
+        """Gets the author of a block and its slot.
 
         Arguments:
             block -- block object
             validator_set -- validator set for given pc epoch
 
         Returns:
-            str -- block author public key
+            tuple -- (block author public key, block slot)
         """
         pass
 
@@ -500,6 +505,20 @@ class BlockchainApi(ABC):
         pass
 
     @abstractmethod
+    def set_block_producer_margin_fee(self, margin_fee: int, wallet: Wallet) -> Transaction:
+        """
+        Sets the block producer's margin fee.
+
+        Arguments:
+            margin_fee {int} -- integer from 0 to 10000, where 10000 is 100,00%
+            wallet {Wallet} -- Wallet used to sign the transaction
+
+        Returns:
+            Transaction
+        """
+        pass
+
+    @abstractmethod
     def get_initial_pc_epoch(self) -> int:
         """
         Returns initial PC epoch
@@ -570,5 +589,15 @@ class BlockchainApi(ABC):
             list | tuple | bool -- List of tuples or a single tuple with key and value of registered change
                                     True - if the governed map was reinitialized with 0 changes
                                     False - if no changes were observed during the timeout
+        """
+        pass
+
+    @abstractmethod
+    def subscribe_token_transfer(self) -> int:
+        """
+        Subscribes to token transfer events. Timeouts after <main_chain.security_param> blocks.
+
+        Returns:
+            int -- The number of token transfers observed
         """
         pass

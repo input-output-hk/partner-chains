@@ -1,9 +1,5 @@
 use crate::{
-	OffchainError,
-	await_tx::{AwaitTx, FixedDelayRetries},
-	cardano_keys::CardanoPaymentSigningKey,
-	csl::Costs,
-	csl::key_hash_address,
+	await_tx::AwaitTx, cardano_keys::CardanoPaymentSigningKey, csl::Costs, csl::key_hash_address,
 	governance::MultiSigParameters,
 };
 use anyhow::anyhow;
@@ -19,49 +15,17 @@ mod tests;
 
 pub(crate) mod transaction;
 
-pub trait InitGovernance {
-	/// Initializes goveranance mechanism with the authority being `governance_authority`,
-	/// for the chain identified by `genesis_utxo_id`.
-	#[allow(async_fn_in_trait)]
-	async fn init_governance(
-		&self,
-		retries: FixedDelayRetries,
-		governance_parameters: &MultiSigParameters,
-		payment_key: &CardanoPaymentSigningKey,
-		genesis_utxo_id: UtxoId,
-	) -> Result<McTxHash, OffchainError>;
-}
-
-impl<T> InitGovernance for T
-where
-	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
-{
-	async fn init_governance(
-		&self,
-		retries: FixedDelayRetries,
-		governance_parameters: &MultiSigParameters,
-		payment_key: &CardanoPaymentSigningKey,
-		genesis_utxo_id: UtxoId,
-	) -> Result<McTxHash, OffchainError> {
-		run_init_governance(
-			governance_parameters,
-			payment_key,
-			Some(genesis_utxo_id),
-			self,
-			retries,
-		)
-		.await
-		.map(|result| result.tx_hash)
-		.map_err(|e| OffchainError::InternalError(e.to_string()))
-	}
-}
-
 #[derive(serde::Serialize)]
+/// Result type of [run_init_governance].
 pub struct InitGovernanceResult {
+	/// Hash of submitted transaction.
 	pub tx_hash: McTxHash,
+	/// Genesis UTxO id identifying Partner Chain.
 	pub genesis_utxo: UtxoId,
 }
 
+/// Initializes multi-signature governance. Initialization spends provided `genesis_utxo_id` or picks one from the `payment_key`.
+/// This UTxO will identify the Partner Chain.
 pub async fn run_init_governance<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 	A: AwaitTx,
