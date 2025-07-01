@@ -56,6 +56,23 @@ pub enum RegisterValidatorDatum {
 		/// Registering SPO's GRANDPA public key
 		grandpa_pub_key: GrandpaPublicKey,
 	},
+	/// V1 datum with support for generic session keys
+	V1 {
+		/// Stake ownership information of registered candidate.
+		stake_ownership: AdaBasedStaking,
+		/// Sidechain public key of the candidate. See [SidechainPublicKey] for more details.
+		sidechain_pub_key: SidechainPublicKey,
+		/// Sidechain key signature of the registration message.
+		sidechain_signature: SidechainSignature,
+		/// UTxO id that is a part of the signed registration message.
+		/// It is spent during the registration process. Prevents replay attacks.
+		registration_utxo: UtxoId,
+		/// Hash of the registering SPO's Cardano public key.
+		/// Used by offchain code to find the registration UTXO when re-registering or de-registering.
+		own_pkh: MainchainKeyHash,
+		/// Session keys of registered candidate
+		session_keys: Vec<([u8; 4], Vec<u8>)>,
+	},
 }
 
 impl TryFrom<PlutusData> for RegisterValidatorDatum {
@@ -81,24 +98,24 @@ impl VersionedDatumWithLegacy for RegisterValidatorDatum {
 		match version {
 			0 => decode_v0_register_validator_datum(datum, appendix)
 				.ok_or("Can not parse appendix".to_string()),
-			1 => unimplemented!(),
+			1 => decode_v1_register_validator_datum(datum, appendix)
+				.ok_or("Can not parse appendix".to_string()),
 			_ => Err(format!("Unknown version: {version}")),
 		}
 	}
 }
 
-/// Converts [CandidateRegistration] domain type to [RegisterValidatorDatum::V0] encoded as [PlutusData].
+/// Converts [CandidateRegistration] domain type to [RegisterValidatorDatum::V1] encoded as [PlutusData].
 pub fn candidate_registration_to_plutus_data(
 	candidate_registration: &CandidateRegistration,
 ) -> PlutusData {
-	RegisterValidatorDatum::V0 {
+	RegisterValidatorDatum::V1 {
 		stake_ownership: candidate_registration.stake_ownership.clone(),
 		sidechain_pub_key: candidate_registration.partner_chain_pub_key.clone(),
 		sidechain_signature: candidate_registration.partner_chain_signature.clone(),
 		registration_utxo: candidate_registration.registration_utxo,
 		own_pkh: candidate_registration.own_pkh,
-		aura_pub_key: candidate_registration.aura_pub_key.clone(),
-		grandpa_pub_key: candidate_registration.grandpa_pub_key.clone(),
+		session_keys: candidate_registration.session_keys.clone(),
 	}
 	.into()
 }
@@ -114,14 +131,31 @@ impl From<RegisterValidatorDatum> for CandidateRegistration {
 				own_pkh,
 				aura_pub_key,
 				grandpa_pub_key,
+			} => {
+				let session_keys = vec![(*b"aura", aura_pub_key.0), (*b"gran", grandpa_pub_key.0)];
+				CandidateRegistration {
+					stake_ownership,
+					partner_chain_pub_key: sidechain_pub_key,
+					partner_chain_signature: sidechain_signature,
+					registration_utxo,
+					own_pkh,
+					session_keys,
+				}
+			},
+			RegisterValidatorDatum::V1 {
+				stake_ownership,
+				sidechain_pub_key,
+				sidechain_signature,
+				registration_utxo,
+				own_pkh,
+				session_keys,
 			} => CandidateRegistration {
 				stake_ownership,
 				partner_chain_pub_key: sidechain_pub_key,
 				partner_chain_signature: sidechain_signature,
 				registration_utxo,
 				own_pkh,
-				aura_pub_key,
-				grandpa_pub_key,
+				session_keys,
 			},
 		}
 	}
@@ -152,6 +186,45 @@ fn decode_v0_register_validator_datum(
 		own_pkh,
 		aura_pub_key,
 		grandpa_pub_key,
+	})
+}
+
+fn decode_v1_session_keys(datum: &PlutusData) -> Option<([u8; 4], Vec<u8>)> {
+	let datum = datum.as_list()?;
+
+	Some((datum.get(0).as_bytes().unwrap().try_into().ok()?, datum.get(1).as_bytes()?))
+}
+
+fn decode_v1_register_validator_datum(
+	datum: &PlutusData,
+	appendix: &PlutusData,
+) -> Option<RegisterValidatorDatum> {
+	let fields = appendix
+		.as_constr_plutus_data()
+		.filter(|datum| datum.alternative().is_zero())
+		.filter(|datum| datum.data().len() == 5)?
+		.data();
+
+	let stake_ownership = decode_ada_based_staking_datum(fields.get(0))?;
+	let sidechain_pub_key = fields.get(1).as_bytes().map(SidechainPublicKey)?;
+	let sidechain_signature = fields.get(2).as_bytes().map(SidechainSignature)?;
+	let registration_utxo = decode_utxo_id_datum(fields.get(3))?;
+
+	let session_keys = fields.get(4).as_list().and_then(|list_datums| {
+		list_datums
+			.into_iter()
+			.map(decode_v1_session_keys)
+			.collect::<Option<Vec<([u8; 4], Vec<u8>)>>>()
+	})?;
+
+	let own_pkh = MainchainKeyHash(datum.as_bytes()?.try_into().ok()?);
+	Some(RegisterValidatorDatum::V1 {
+		stake_ownership,
+		sidechain_pub_key,
+		sidechain_signature,
+		registration_utxo,
+		own_pkh,
+		session_keys,
 	})
 }
 
@@ -238,6 +311,35 @@ impl From<RegisterValidatorDatum> for PlutusData {
 				}
 				.into()
 			},
+			RegisterValidatorDatum::V1 {
+				stake_ownership,
+				sidechain_pub_key,
+				sidechain_signature,
+				registration_utxo,
+				own_pkh,
+				session_keys,
+			} => {
+				let mut appendix_fields = PlutusList::new();
+				appendix_fields.add(&stake_ownership_to_plutus_data(stake_ownership));
+				appendix_fields.add(&PlutusData::new_bytes(sidechain_pub_key.0));
+				appendix_fields.add(&PlutusData::new_bytes(sidechain_signature.0));
+				appendix_fields.add(&utxo_id_to_plutus_data(registration_utxo));
+				let mut plutus_session_keys = PlutusList::new();
+				for (key_type, key) in session_keys {
+					let mut key_type_with_key = PlutusList::new();
+					key_type_with_key.add(&PlutusData::new_bytes(key_type.to_vec()));
+					key_type_with_key.add(&PlutusData::new_bytes(key.to_vec()));
+					plutus_session_keys.add(&PlutusData::new_list(&key_type_with_key));
+				}
+				appendix_fields.add(&PlutusData::new_list(&plutus_session_keys));
+				let appendix = ConstrPlutusData::new(&BigNum::zero(), &appendix_fields);
+				VersionedGenericDatum {
+					datum: PlutusData::new_bytes(own_pkh.0.to_vec()),
+					appendix: PlutusData::new_constr_plutus_data(&appendix),
+					version: 1,
+				}
+				.into()
+			},
 		}
 	}
 }
@@ -284,6 +386,39 @@ mod tests {
 			own_pkh: MainchainKeyHash(hex!("aabbccddeeff00aabbccddeeff00aabbccddeeff00aabbccddeeff00")),
 			aura_pub_key: AuraPublicKey(hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d").into()),
 			grandpa_pub_key: GrandpaPublicKey(hex!("88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee").into()),
+		}
+	}
+
+	fn test_datum_v1() -> RegisterValidatorDatum {
+		RegisterValidatorDatum::V1 {
+			stake_ownership: AdaBasedStaking {
+				pub_key: StakePoolPublicKey(hex!("bfbee74ab533f40979101057f96de62e95233f2a5216eb16b54106f09fd7350d")),
+				signature: MainchainSignature(hex!("28d1c3b7df297a60d24a3f88bc53d7029a8af35e8dd876764fd9e7a24203a3482a98263cc8ba2ddc7dc8e7faea31c2e7bad1f00e28c43bc863503e3172dc6b0a").into()),
+			},
+			sidechain_pub_key: SidechainPublicKey(hex!("02fe8d1eb1bcb3432b1db5833ff5f2226d9cb5e65cee430558c18ed3a3c86ce1af").into()),
+			sidechain_signature: SidechainSignature(hex!("f8ec6c7f935d387aaa1693b3bf338cbb8f53013da8a5a234f9c488bacac01af259297e69aee0df27f553c0a1164df827d016125c16af93c99be2c19f36d2f66e").into()),
+			registration_utxo: UtxoId {
+				tx_hash: McTxHash(hex!("cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13")),
+				index: UtxoIndex(1),
+			},
+			own_pkh: MainchainKeyHash(hex!("aabbccddeeff00aabbccddeeff00aabbccddeeff00aabbccddeeff00")),
+			session_keys: vec![
+					(
+						*b"crch",
+						hex!("cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854")
+							.into(),
+					),
+					(
+						*b"aura",
+						hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d")
+							.into(),
+					),
+					(
+						*b"gran",
+						hex!("88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee")
+							.into(),
+					),
+				]
 		}
 	}
 

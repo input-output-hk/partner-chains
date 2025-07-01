@@ -143,8 +143,10 @@ impl<T: PartnerChainRuntime> CreateChainSpecCmd<T> {
 			.initial_permissioned_candidates_parsed
 			.iter()
 			.map(|c| -> anyhow::Result<serde_json::Value> {
-				let initial_member =
-					T::initial_member(c.sidechain.into(), c.session_keys::<T::AuthorityKeys>());
+				let initial_member = T::initial_member(
+					c.account_id_32().into(),
+					c.session_keys::<T::AuthorityKeys>(),
+				);
 				Ok(serde_json::to_value(initial_member)?)
 			})
 			.collect::<Result<Vec<serde_json::Value>, _>>()?;

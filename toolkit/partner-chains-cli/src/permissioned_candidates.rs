@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use sidechain_domain::{PermissionedCandidateData, UtxoId};
 use sp_core::crypto::AccountId32;
 use sp_core::{ecdsa, ed25519, sr25519};
-use sp_runtime::traits::IdentifyAccount;
+use sp_runtime::traits::{IdentifyAccount, OpaqueKeys};
 use std::fmt::{Display, Formatter};
 
 use crate::cmd_traits::{GetPermissionedCandidates, UpsertPermissionedCandidates};
@@ -66,14 +66,25 @@ pub(crate) struct ParsedPermissionedCandidatesKeysV1 {
 }
 
 impl ParsedPermissionedCandidatesKeys {
-	pub fn session_keys<SessionKeys: From<(sr25519::Public, ed25519::Public)>>(
-		&self,
-	) -> SessionKeys {
-		SessionKeys::from((sr25519::Public::from(self.aura), ed25519::Public::from(self.grandpa)))
+	pub fn session_keys<SessionKeys: OpaqueKeys>(&self) -> SessionKeys {
+		unimplemented!()
+		// SessionKeys::from((sr25519::Public::from(self.aura), ed25519::Public::from(self.grandpa)))
 	}
 
 	pub fn account_id_32(&self) -> AccountId32 {
 		sp_runtime::MultiSigner::from(self.sidechain).into_account()
+	}
+}
+
+impl From<ParsedPermissionedCandidatesKeysV0> for ParsedPermissionedCandidatesKeys {
+	fn from(value: ParsedPermissionedCandidatesKeysV0) -> Self {
+		Self::V0(value)
+	}
+}
+
+impl From<ParsedPermissionedCandidatesKeysV1> for ParsedPermissionedCandidatesKeys {
+	fn from(value: ParsedPermissionedCandidatesKeysV1) -> Self {
+		Self::V1(value)
 	}
 }
 
@@ -92,17 +103,13 @@ impl TryFrom<&PermissionedCandidateKeys> for ParsedPermissionedCandidatesKeys {
 			"{} is invalid Ed25519 public key",
 			value.grandpa_pub_key
 		)))?;
-		Ok(Self { sidechain, aura, grandpa })
+		Ok(ParsedPermissionedCandidatesKeysV0 { sidechain, aura, grandpa }.into())
 	}
 }
 
 impl From<&ParsedPermissionedCandidatesKeys> for sidechain_domain::PermissionedCandidateData {
 	fn from(value: &ParsedPermissionedCandidatesKeys) -> Self {
-		Self {
-			sidechain_public_key: sidechain_domain::SidechainPublicKey(value.sidechain.0.to_vec()),
-			aura_public_key: sidechain_domain::AuraPublicKey(value.aura.0.to_vec()),
-			grandpa_public_key: sidechain_domain::GrandpaPublicKey(value.grandpa.0.to_vec()),
-		}
+		value.clone().into()
 	}
 }
 

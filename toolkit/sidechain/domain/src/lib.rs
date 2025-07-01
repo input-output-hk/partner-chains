@@ -1058,6 +1058,15 @@ impl From<ed25519::Public> for GrandpaPublicKey {
 	}
 }
 
+/// Generic public key. Not validated
+#[derive(
+	Clone, PartialEq, Eq, Encode, Decode, DecodeWithMemTracking, TypeInfo, PartialOrd, Ord, Hash,
+)]
+pub struct GenericPublicKey {
+	key_type: [u8; 4],
+	key: Vec<u8>,
+}
+
 #[derive(
 	Debug,
 	Clone,
@@ -1192,10 +1201,8 @@ pub struct CandidateRegistration {
 	pub own_pkh: MainchainKeyHash,
 	/// UTxO containing the registration data
 	pub registration_utxo: UtxoId,
-	/// Registering SPO's Aura public key
-	pub aura_pub_key: AuraPublicKey,
-	/// Registering SPO's Grandpa public key
-	pub grandpa_pub_key: GrandpaPublicKey,
+	/// Session keys of a candidate
+	pub session_keys: Vec<([u8; 4], Vec<u8>)>,
 }
 
 impl CandidateRegistration {
@@ -1204,8 +1211,8 @@ impl CandidateRegistration {
 		self.stake_ownership == other.stake_ownership
 			&& self.partner_chain_pub_key == other.partner_chain_pub_key
 			&& self.partner_chain_signature == other.partner_chain_signature
-			&& self.aura_pub_key == other.aura_pub_key
-			&& self.grandpa_pub_key == other.grandpa_pub_key
+			// TODO: compared but without checking order/uniques
+			&& self.session_keys == other.session_keys
 	}
 }
 
