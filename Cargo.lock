@@ -200,6 +200,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "69f7f8c3906b62b754cd5326047894316021dcfe5a194c8ea52bdd94934a3457"
 
 [[package]]
+name = "ariadne-simulator"
+version = "1.7.0"
+dependencies = [
+ "clap",
+ "env_logger 0.11.8",
+ "itertools 0.14.0",
+ "log",
+ "rand 0.9.1",
+ "rand_chacha 0.9.0",
+ "selection",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "ark-bls12-377"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
