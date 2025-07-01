@@ -20,6 +20,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 mod config;
+pub(crate) mod runtime;
 
 #[derive(Debug)]
 #[allow(dead_code)]
@@ -722,19 +723,13 @@ macro_rules! verify_json {
 fn verify_cli() {
 	use crate::runtime_bindings::*;
 	use clap::CommandFactory;
-	use sp_core::{ecdsa, ed25519, sr25519};
 
 	struct MockRuntime;
 	impl PartnerChainRuntime for MockRuntime {
-		type AuthorityKeys = (sr25519::Public, ed25519::Public);
-		type AuthorityId = ecdsa::Public;
-		type CommitteeMember = (Self::AuthorityId, Self::AuthorityKeys);
-		fn initial_member(
-			id: Self::AuthorityId,
-			keys: Self::AuthorityKeys,
-		) -> Self::CommitteeMember {
-			(id, keys)
+		fn create_chain_spec(_: &crate::CreateChainSpecConfig) -> serde_json::Value {
+			serde_json::json!({})
 		}
 	}
+
 	crate::Command::<MockRuntime>::command().debug_assert()
 }

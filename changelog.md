@@ -15,6 +15,7 @@ locate the chain config and resources config files
 * Added `valid_before` argument to the signed message and all extrinsics in `pallet_block_producer_metadata`. This is to
 prevent unauthorized re-submission of metadata updates. The `sign-block-producer-metadata` command was updated to
 match this change.
+* `partner-chain-cli` (wizards) does not execute `<pc-node> build-spec` but creates the chain-spec.json file directly with a code injected into the command.
 
 ## Added
 
