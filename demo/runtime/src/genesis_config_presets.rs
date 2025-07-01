@@ -17,7 +17,7 @@
 
 use crate::{
 	AccountId, BalancesConfig, GovernedMapConfig, RuntimeGenesisConfig, SudoConfig,
-	test_helper_pallet, config::PartnerChainsConfig,
+	config::PartnerChainsConfig, test_helper_pallet,
 };
 use alloc::{vec, vec::Vec};
 use serde_json::Value;

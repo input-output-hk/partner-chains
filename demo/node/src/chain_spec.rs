@@ -1,6 +1,6 @@
 use partner_chains_demo_runtime::{
-	AccountId, CrossChainPublic, Signature, WASM_BINARY, opaque::SessionKeys,
-	config::PartnerChainsConfig,
+	AccountId, CrossChainPublic, Signature, WASM_BINARY, config::PartnerChainsConfig,
+	opaque::SessionKeys,
 };
 use sp_core::{Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
@@ -60,15 +60,14 @@ pub fn development_config_with_partner_chains_config() -> ChainSpec {
 /// Create local testnet chain spec with custom partner chains config
 pub fn local_testnet_config_with_partner_chains_config() -> ChainSpec {
 	let config = load_partner_chains_config();
-	ChainSpec::builder(
-		runtime_wasm(),
-		Default::default(),
-	)
-	.with_name("Local Testnet")
-	.with_id("local_testnet")
-	.with_chain_type(sc_service::ChainType::Local)
-	.with_genesis_config_patch(
-		partner_chains_demo_runtime::genesis_config_presets::local_config_genesis_with_config(config)
-	)
-	.build()
+	ChainSpec::builder(runtime_wasm(), Default::default())
+		.with_name("Local Testnet")
+		.with_id("local_testnet")
+		.with_chain_type(sc_service::ChainType::Local)
+		.with_genesis_config_patch(
+			partner_chains_demo_runtime::genesis_config_presets::local_config_genesis_with_config(
+				config,
+			),
+		)
+		.build()
 }
