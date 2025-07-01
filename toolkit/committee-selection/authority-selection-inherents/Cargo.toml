@@ -34,6 +34,8 @@ thiserror = { workspace = true, optional = true }
 serde = { workspace = true }
 sp-consensus-slots = { workspace = true }
 
+schnorr_jubjub = {workspace = true}
+
 [dev-dependencies]
 hex = { workspace = true }
 hex-literal = { workspace = true }

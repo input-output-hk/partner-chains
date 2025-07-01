@@ -1,0 +1,4 @@
+
+[
+  ./partner-chains-service.nix
+]

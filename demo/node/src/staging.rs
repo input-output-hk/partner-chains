@@ -14,15 +14,19 @@ use std::str::FromStr;
 
 pub fn authority_keys(
 	aura_pub_key: &str,
+	beefy_pub_key: &str,
 	grandpa_pub_key: &str,
 	sidechain_pub_key: &str,
 ) -> AuthorityKeys {
 	let aura_pk = sr25519::Public::from_raw(from_hex(aura_pub_key).unwrap().try_into().unwrap());
+	let beefy_pk = schnorr_jubjub::Public(schnorr_jubjub::InnerPublicBytes::from_raw(
+		from_hex(beefy_pub_key).unwrap().try_into().unwrap(),
+	));
 	let granda_pk =
 		ed25519::Public::from_raw(from_hex(grandpa_pub_key).unwrap().try_into().unwrap());
 	let sidechain_pk = sidechain_domain::SidechainPublicKey(from_hex(sidechain_pub_key).unwrap());
 
-	let session_keys = (aura_pk, granda_pk).into();
+	let session_keys = (aura_pk, beefy_pk, granda_pk).into();
 	AuthorityKeys { session: session_keys, cross_chain: sidechain_pk.try_into().unwrap() }
 }
 
@@ -31,30 +35,35 @@ pub fn staging_initial_authorities() -> Vec<AuthorityKeys> {
 		// validator-1
 		authority_keys(
 			"0xba94651de6279a38a416b97b9720c3df76224435e951ac73e9e302a4ee9fcf73",
+			"0x03b827f4da9711bab7292e5695576a841a4d20af9a07b1ba7a230168d2a78e9df4",
 			"0xdde2501588713ddad5daf5a898c19d82cd591609c9184679868640c8cfe8287d",
 			"0x03b827f4da9711bab7292e5695576a841a4d20af9a07b1ba7a230168d2a78e9df4",
 		),
 		// validator-2
 		authority_keys(
 			"0x36128fff2acc04f206ccaf4e9f8e9995998efced29075a58b7d76d3735c21208",
+			"0x02ef5bcd94d54a18ad199559782cd72ac3ccd850976aaaafbca8f9d2625afbf7c4",
 			"0x8f9a9856a27cc114ce85b64f41144f0c907c4bd8b3102b083b52b6b61aff6c47",
 			"0x02ef5bcd94d54a18ad199559782cd72ac3ccd850976aaaafbca8f9d2625afbf7c4",
 		),
 		// validator-3
 		authority_keys(
 			"0x9a32d3896a56e822321f7bc915befc8ce112c5d67e3c6497295bd3d7b020f94c",
+			"0x02f2762ab6e1a125dc03908a7b738f8023d13763f28a11d7633c6c8bc463478430",
 			"0x4f3c0ecc6dc474f27ad7967f5cdbd50da047ffedbc91b65f5cd247515489c98f",
 			"0x02f2762ab6e1a125dc03908a7b738f8023d13763f28a11d7633c6c8bc463478430",
 		),
 		// validator-4
 		authority_keys(
 			"0xc41992b8eb2f3a8a6c46211df584827f9eeb0175e2c75e1242392262b55b6874",
+			"0x025e19f82c5e2bac5e8869d49ff26359e442628bc5cfa38eeb5275f43d04015da8",
 			"0x34b71fdad96431bf115350d8ad21eec07a2b154ff32dc31125f988e308bebea8",
 			"0x025e19f82c5e2bac5e8869d49ff26359e442628bc5cfa38eeb5275f43d04015da8",
 		),
 		// validator-5
 		authority_keys(
 			"0x500d7ff6d903c85db5ee5624df9510c2a085cf30da260166bd370010d0bdc97a",
+			"0x03f38a062a4b372c045c1dddc4fe98a2c9cb1d6eec8bf02f973fd29b1096cd8155",
 			"0xa04d74c1539550876d04e4d2de4e0531087c3b6810ce96ddc16d78ccf4ac4f11",
 			"0x03f38a062a4b372c045c1dddc4fe98a2c9cb1d6eec8bf02f973fd29b1096cd8155",
 		),
@@ -123,6 +132,7 @@ pub fn staging_genesis(
 			dev_accounts: None,
 		},
 		aura: AuraConfig { authorities: vec![] },
+		beefy: Default::default(),
 		grandpa: GrandpaConfig { authorities: vec![], ..Default::default() },
 		sudo: SudoConfig {
 			// Assign network admin rights.

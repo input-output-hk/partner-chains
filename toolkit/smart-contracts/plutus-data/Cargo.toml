@@ -18,6 +18,8 @@ sidechain-domain = { workspace = true, features = ["std"] }
 cardano-serialization-lib = { workspace = true }
 thiserror = { workspace = true }
 
+schnorr_jubjub = { workspace = true }
+
 [dev-dependencies]
 raw-scripts = { workspace = true }
 serde_json = { workspace = true }

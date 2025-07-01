@@ -20,6 +20,10 @@ use partner_chains_demo_runtime::{
 	opaque::{Block, SessionKeys},
 };
 use partner_chains_demo_runtime::{BlockNumber, BlockProducerMetadataType, CrossChainPublic, Hash};
+use sc_consensus_beefy::communication::notification::{
+	BeefyBestBlockStream, BeefyVersionedFinalityProofStream,
+};
+use sc_consensus_beefy_rpc::Beefy;
 use sc_consensus_grandpa::{
 	FinalityProofProvider, GrandpaJustificationStream, SharedAuthoritySet, SharedVoterState,
 };
@@ -31,6 +35,7 @@ use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
+use sp_consensus_beefy::AuthorityIdBound;
 use sp_session_validator_management_query::SessionValidatorManagementQuery;
 use std::sync::Arc;
 use time_source::TimeSource;
@@ -49,14 +54,26 @@ pub struct GrandpaDeps<B> {
 	pub finality_provider: Arc<FinalityProofProvider<B, Block>>,
 }
 
+/// Dependencies for BEEFY
+pub struct BeefyDeps<AuthorityId: AuthorityIdBound> {
+	/// Receives notifications about finality proof events from BEEFY.
+	pub beefy_finality_proof_stream: BeefyVersionedFinalityProofStream<Block, AuthorityId>,
+	/// Receives notifications about best block events from BEEFY.
+	pub beefy_best_block_stream: BeefyBestBlockStream<Block>,
+	/// Executor to drive the subscription manager in the BEEFY RPC handler.
+	pub subscription_executor: sc_rpc::SubscriptionTaskExecutor,
+}
+
 /// Full client dependencies.
-pub struct FullDeps<C, P, B, T> {
+pub struct FullDeps<C, P, B, T, AuthorityId: AuthorityIdBound> {
 	/// The client instance to use.
 	pub client: Arc<C>,
 	/// Transaction pool instance.
 	pub pool: Arc<P>,
 	/// GRANDPA specific dependencies.
 	pub grandpa: GrandpaDeps<B>,
+	/// BEEFY specific dependencies.
+	pub beefy: BeefyDeps<AuthorityId>,
 	/// Data sources.
 	pub data_sources: DataSources,
 	/// Source of system time
@@ -64,8 +81,8 @@ pub struct FullDeps<C, P, B, T> {
 }
 
 /// Instantiate all full RPC extensions.
-pub fn create_full<C, P, B, T>(
-	deps: FullDeps<C, P, B, T>,
+pub fn create_full<C, P, B, T, AuthorityId: AuthorityIdBound>(
+	deps: FullDeps<C, P, B, T, AuthorityId>,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
 	C: ProvideRuntimeApi<Block>,
@@ -93,10 +110,11 @@ where
 	T: TimeSource + Send + Sync + 'static,
 {
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
+	use sc_consensus_beefy_rpc::BeefyApiServer;
 	use substrate_frame_rpc_system::{System, SystemApiServer};
 
 	let mut module = RpcModule::new(());
-	let FullDeps { client, pool, grandpa, data_sources, time_source } = deps;
+	let FullDeps { client, pool, grandpa, beefy, data_sources, time_source } = deps;
 
 	module.merge(System::new(client.clone(), pool.clone()).into_rpc())?;
 	module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
@@ -134,6 +152,15 @@ where
 			client.clone(),
 			data_sources.authority_selection.clone(),
 		)))
+		.into_rpc(),
+	)?;
+
+	module.merge(
+		Beefy::<Block, AuthorityId>::new(
+			beefy.beefy_finality_proof_stream,
+			beefy.beefy_best_block_stream,
+			beefy.subscription_executor,
+		)?
 		.into_rpc(),
 	)?;
 

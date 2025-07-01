@@ -35,6 +35,8 @@ ed25519-zebra = { workspace = true, optional = true }
 k256 = { workspace = true }
 derive-where = { workspace = true }
 
+schnorr_jubjub = { workspace = true }
+
 [dev-dependencies]
 serde_json = { workspace = true }
 hex-literal = { workspace = true }
@@ -55,5 +57,6 @@ std = [
 	"secp256k1/global-context",
 	"ed25519-zebra",
 	"ed25519-zebra/std",
+	"schnorr_jubjub/std",
 ]
 serde = ["dep:serde", "scale-info/serde", "sp-core/serde"]

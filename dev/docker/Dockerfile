@@ -8,13 +8,9 @@ RUN chown substrate:substrate /usr/local/bin/partner-chains-node && chmod +x /us
 
 USER substrate
 
-#p2p
 EXPOSE 30333
-#prometheus exporter
 EXPOSE 9615
-#JSON-RPC HTTP
 EXPOSE 9933
-#JSON-RPC WS
 EXPOSE 9944
 
 VOLUME ["/data"]

@@ -8,6 +8,7 @@
 extern crate frame_benchmarking;
 
 extern crate alloc;
+extern crate core;
 
 use alloc::collections::BTreeMap;
 use alloc::string::String;
@@ -20,6 +21,7 @@ use authority_selection_inherents::filter_invalid_candidates::{
 use authority_selection_inherents::select_authorities::select_authorities;
 use frame_support::genesis_builder_helper::{build_state, get_preset};
 use frame_support::inherent::ProvideInherent;
+use frame_support::traits::KeyOwnerProofSystem;
 use frame_support::weights::constants::RocksDbWeight as RuntimeDbWeight;
 use frame_support::{
 	BoundedVec, construct_runtime, parameter_types,
@@ -34,6 +36,9 @@ use pallet_session_validator_management::session_manager::ValidatorManagementSes
 use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier};
 use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
+use schnorr::{Public as BeefyId, Public, Signature as BeefySignature};
+use schnorr_jubjub as schnorr;
+use schnorr_jubjub::PoseidonJubjub;
 use serde::{Deserialize, Serialize};
 use sidechain_domain::byte_string::{BoundedString, ByteString, SizedByteString};
 use sidechain_domain::{
@@ -44,6 +49,7 @@ use sidechain_slots::Slot;
 use sp_api::impl_runtime_apis;
 use sp_block_participation::AsCardanoSPO;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
+use sp_consensus_beefy::mmr::MmrLeafVersion;
 #[cfg(feature = "runtime-benchmarks")]
 use sp_core::ByteArray;
 use sp_core::{OpaqueMetadata, crypto::KeyTypeId};
@@ -65,6 +71,12 @@ use sp_weights::Weight;
 // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
+
+#[cfg(all(not(feature = "std"), target_arch = "wasm32"))]
+#[panic_handler]
+fn panic(_info: &core::panic::PanicInfo) -> ! {
+	loop {}
+}
 
 pub mod genesis_config_presets;
 
@@ -164,12 +176,15 @@ pub mod opaque {
 		#[derive(MaxEncodedLen, PartialOrd, Ord)]
 		pub struct SessionKeys {
 			pub aura: Aura,
+			pub beefy: Beefy,
 			pub grandpa: Grandpa,
 		}
 	}
-	impl From<(sr25519::Public, ed25519::Public)> for SessionKeys {
-		fn from((aura, grandpa): (sr25519::Public, ed25519::Public)) -> Self {
-			Self { aura: aura.into(), grandpa: grandpa.into() }
+	impl From<(sr25519::Public, schnorr::Public, ed25519::Public)> for SessionKeys {
+		fn from(
+			(aura, beefy, grandpa): (sr25519::Public, schnorr::Public, ed25519::Public),
+		) -> Self {
+			Self { aura: aura.into(), beefy: beefy.into(), grandpa: grandpa.into() }
 		}
 	}
 
@@ -194,7 +209,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	//   `spec_version`, and `authoring_version` are the same between Wasm and native.
 	// This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
 	//   the compatible custom types.
-	spec_version: 170,
+	spec_version: 171,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -311,6 +326,12 @@ impl pallet_aura::Config for Runtime {
 }
 
 pallet_partner_chains_session::impl_pallet_session_config!(Runtime);
+
+impl pallet_session::historical::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type FullIdentification = ();
+	type FullIdentificationOf = ();
+}
 
 impl pallet_grandpa::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -669,6 +690,66 @@ impl pallet_governed_map::Config for Runtime {
 
 impl crate::test_helper_pallet::Config for Runtime {}
 
+parameter_types! {
+	pub const SessionsPerEra: sp_staking::SessionIndex = 6;
+	pub const BondingDuration: sp_staking::EraIndex = 24 * 28;
+}
+
+parameter_types! {
+	pub const BeefySetIdSessionEntries: u32 = BondingDuration::get() * SessionsPerEra::get();
+}
+
+impl pallet_beefy::Config for Runtime {
+	type BeefyId = BeefyId;
+	type SignatureHasher = PoseidonJubjub;
+	type MaxAuthorities = MaxValidators;
+	type MaxNominators = ConstU32<0>;
+	type MaxSetIdSessionEntries = BeefySetIdSessionEntries;
+	type OnNewValidatorSet = BeefyMmrLeaf;
+	type AncestryHelper = BeefyMmrLeaf;
+	type WeightInfo = ();
+	type KeyOwnerProof = sp_session::MembershipProof;
+	// TODO: disabled equivocations, they require additional modules like Offences and full Session pallet
+	// type EquivocationReportSystem =
+	// 	pallet_beefy::EquivocationReportSystem<Self, Offences, Historical, ReportLongevity>;
+	type EquivocationReportSystem = ();
+}
+
+/// MMR helper types.
+mod mmr {
+	use super::*;
+	pub use pallet_mmr::primitives::*;
+
+	pub type Leaf = <<Runtime as pallet_mmr::Config>::LeafData as LeafDataProvider>::LeafData;
+	pub type Hash = <Hashing as sp_runtime::traits::Hash>::Output;
+	pub type Hashing = <Runtime as pallet_mmr::Config>::Hashing;
+}
+
+impl pallet_mmr::Config for Runtime {
+	const INDEXING_PREFIX: &'static [u8] = b"mmr";
+	// TODO: Think about changing the leaf data (so that encode/decode can be efficient)
+	type Hashing = PoseidonJubjub;
+	type LeafData = pallet_mmr::ParentNumberAndHash<Self>;
+	type OnNewRoot = pallet_beefy_mmr::DepositBeefyDigest<Runtime>;
+	type BlockHashProvider = pallet_mmr::DefaultBlockHashProvider<Runtime>;
+	type WeightInfo = ();
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = ();
+}
+
+parameter_types! {
+	pub LeafVersion: MmrLeafVersion = MmrLeafVersion::new(0, 0);
+}
+
+impl pallet_beefy_mmr::Config for Runtime {
+	type LeafVersion = LeafVersion;
+	// todo: THIS SHOULD BE A FIELD ELEMENT IF WE USE POSEIDON
+	type BeefyAuthorityToMerkleLeaf = Public;
+	type LeafExtra = Vec<u8>;
+	type BeefyDataProvider = ();
+	type WeightInfo = ();
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub struct Runtime {
@@ -693,10 +774,16 @@ construct_runtime!(
 		// Partner Chains session_manager ValidatorManagementSessionManager writes to pallet_session::pallet::CurrentIndex.
 		// ValidatorManagementSessionManager is wired in by pallet_partner_chains_session.
 		PalletSession: pallet_session,
+		Historical: pallet_session::historical,
 		// The order matters!! pallet_partner_chains_session needs to come last for correct initialization order
 		Session: pallet_partner_chains_session,
 		NativeTokenManagement: pallet_native_token_management,
 		GovernedMap: pallet_governed_map,
+		Beefy: pallet_beefy,
+		Mmr: pallet_mmr,
+		// MMR leaf construction must be after session in order to have a leaf's next_auth_set
+		// refer to block<N>. See issue polkadot-fellows/runtimes#160 for details.
+		BeefyMmrLeaf: pallet_beefy_mmr,
 		TestHelperPallet: crate::test_helper_pallet,
 	}
 );
@@ -938,6 +1025,139 @@ impl_runtime_apis! {
 		}
 		fn query_length_to_fee(length: u32) -> Balance {
 			TransactionPayment::length_to_fee(length)
+		}
+	}
+
+
+	#[api_version(5)]
+	impl sp_consensus_beefy::BeefyApi<Block, BeefyId> for Runtime {
+		fn beefy_genesis() -> Option<BlockNumber> {
+			pallet_beefy::GenesisBlock::<Runtime>::get()
+		}
+
+		fn validator_set() -> Option<sp_consensus_beefy::ValidatorSet<BeefyId>> {
+			Beefy::validator_set()
+		}
+
+		fn submit_report_double_voting_unsigned_extrinsic(
+			equivocation_proof: sp_consensus_beefy::DoubleVotingProof<
+				BlockNumber,
+				BeefyId,
+				BeefySignature,
+			>,
+			key_owner_proof: sp_consensus_beefy::OpaqueKeyOwnershipProof,
+		) -> Option<()> {
+			let key_owner_proof = key_owner_proof.decode()?;
+
+			Beefy::submit_unsigned_double_voting_report(
+				equivocation_proof,
+				key_owner_proof,
+			)
+		}
+
+		fn submit_report_fork_voting_unsigned_extrinsic(
+			equivocation_proof:
+				sp_consensus_beefy::ForkVotingProof<
+					<Block as BlockT>::Header,
+					BeefyId,
+					sp_runtime::OpaqueValue
+				>,
+			key_owner_proof: sp_consensus_beefy::OpaqueKeyOwnershipProof,
+		) -> Option<()> {
+			Beefy::submit_unsigned_fork_voting_report(
+				equivocation_proof.try_into()?,
+				key_owner_proof.decode()?,
+			)
+		}
+
+		fn submit_report_future_block_voting_unsigned_extrinsic(
+			equivocation_proof: sp_consensus_beefy::FutureBlockVotingProof<BlockNumber, BeefyId>,
+			key_owner_proof: sp_consensus_beefy::OpaqueKeyOwnershipProof,
+		) -> Option<()> {
+			Beefy::submit_unsigned_future_block_voting_report(
+				equivocation_proof,
+				key_owner_proof.decode()?,
+			)
+		}
+
+		fn generate_key_ownership_proof(
+			_set_id: sp_consensus_beefy::ValidatorSetId,
+			authority_id: BeefyId,
+		) -> Option<sp_consensus_beefy::OpaqueKeyOwnershipProof> {
+			Historical::prove((sp_consensus_beefy::KEY_TYPE, authority_id))
+				.map(|p| p.encode())
+				.map(sp_consensus_beefy::OpaqueKeyOwnershipProof::new)
+		}
+
+		fn generate_ancestry_proof(
+			prev_block_number: BlockNumber,
+			best_known_block_number: Option<BlockNumber>,
+		) -> Option<sp_runtime::OpaqueValue> {
+			use sp_consensus_beefy::AncestryHelper;
+
+			BeefyMmrLeaf::generate_proof(prev_block_number, best_known_block_number)
+				.map(|p| p.encode())
+				.map(sp_runtime::OpaqueValue::new)
+		}
+	}
+
+	impl pallet_mmr::primitives::MmrApi<
+		Block,
+		mmr::Hash,
+		BlockNumber,
+	> for Runtime {
+		fn mmr_root() -> Result<mmr::Hash, mmr::Error> {
+			Ok(pallet_mmr::RootHash::<Runtime>::get())
+		}
+
+		fn mmr_leaf_count() -> Result<mmr::LeafIndex, mmr::Error> {
+			Ok(pallet_mmr::NumberOfLeaves::<Runtime>::get())
+		}
+
+		fn generate_proof(
+			block_numbers: Vec<BlockNumber>,
+			best_known_block_number: Option<BlockNumber>,
+		) -> Result<(Vec<mmr::EncodableOpaqueLeaf>, mmr::LeafProof<mmr::Hash>), mmr::Error> {
+			Mmr::generate_proof(block_numbers, best_known_block_number).map(
+				|(leaves, proof)| {
+					(
+						leaves
+							.into_iter()
+							.map(|leaf| mmr::EncodableOpaqueLeaf::from_leaf(&leaf))
+							.collect(),
+						proof,
+					)
+				},
+			)
+		}
+
+		fn verify_proof(leaves: Vec<mmr::EncodableOpaqueLeaf>, proof: mmr::LeafProof<mmr::Hash>)
+			-> Result<(), mmr::Error>
+		{
+			let leaves = leaves.into_iter().map(|leaf|
+				leaf.into_opaque_leaf()
+				.try_decode()
+				.ok_or(mmr::Error::Verify)).collect::<Result<Vec<mmr::Leaf>, mmr::Error>>()?;
+			Mmr::verify_leaves(leaves, proof)
+		}
+
+		fn verify_proof_stateless(
+			root: mmr::Hash,
+			leaves: Vec<mmr::EncodableOpaqueLeaf>,
+			proof: mmr::LeafProof<mmr::Hash>
+		) -> Result<(), mmr::Error> {
+			let nodes = leaves.into_iter().map(|leaf|mmr::DataOrHash::Data(leaf.into_opaque_leaf())).collect();
+			pallet_mmr::verify_leaves_proof::<mmr::Hashing, _>(root, nodes, proof)
+		}
+	}
+
+	impl pallet_beefy_mmr::BeefyMmrApi<Block, Hash> for RuntimeApi {
+		fn authority_set_proof() -> sp_consensus_beefy::mmr::BeefyAuthoritySet<Hash> {
+			BeefyMmrLeaf::authority_set_proof()
+		}
+
+		fn next_authority_set_proof() -> sp_consensus_beefy::mmr::BeefyNextAuthoritySet<Hash> {
+			BeefyMmrLeaf::next_authority_set_proof()
 		}
 	}
 

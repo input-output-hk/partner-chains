@@ -26,6 +26,8 @@ pub struct Register3Cmd {
 	#[arg(long)]
 	pub aura_pub_key: AuraPublicKey,
 	#[arg(long)]
+	pub beefy_pub_key: BeefyPublicKey,
+	#[arg(long)]
 	pub grandpa_pub_key: GrandpaPublicKey,
 	#[arg(long)]
 	pub partner_chain_signature: SidechainSignature,
@@ -65,6 +67,7 @@ impl CmdRun for Register3Cmd {
 			own_pkh: payment_signing_key.to_pub_key_hash(),
 			registration_utxo: self.registration_utxo,
 			aura_pub_key: self.aura_pub_key.clone(),
+			beefy_pub_key: self.beefy_pub_key.clone(),
 			grandpa_pub_key: self.grandpa_pub_key.clone(),
 		};
 		let offchain = context.offchain_impl(&ogmios_configuration)?;

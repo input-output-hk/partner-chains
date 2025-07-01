@@ -38,6 +38,9 @@ sp-consensus-aura = { workspace = true }
 sp-partner-chains-consensus-aura = { workspace = true }
 sp-consensus = { workspace = true }
 sc-consensus = { workspace = true }
+sc-consensus-beefy = { workspace = true }
+sc-consensus-beefy-rpc = { workspace = true }
+sp-consensus-beefy = { workspace = true }
 sc-consensus-grandpa = { workspace = true }
 sc-consensus-grandpa-rpc = { workspace = true }
 sp-consensus-grandpa = { workspace = true }
@@ -114,6 +117,9 @@ sp-block-participation = { workspace = true, features = ["std"] }
 sp-block-producer-metadata = { workspace = true, features = ["std"] }
 pallet-block-producer-metadata-rpc = { workspace = true }
 sp-governed-map = { workspace = true, features = ["std"] }
+
+# Dependency for Schnorr crypto
+schnorr_jubjub = { workspace = true, features = ["std"] }
 
 [build-dependencies]
 substrate-build-script-utils = { workspace = true }

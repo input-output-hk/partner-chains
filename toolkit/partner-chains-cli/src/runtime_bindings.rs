@@ -12,7 +12,11 @@ pub trait PartnerChainRuntime {
 	/// Partner Chain authority id type
 	type AuthorityId: Send + Sync + 'static + From<ecdsa::Public>;
 	/// Partner Chain authority key type
-	type AuthorityKeys: Send + Sync + 'static + From<(sr25519::Public, ed25519::Public)> + Serialize;
+	type AuthorityKeys: Send
+		+ Sync
+		+ 'static
+		+ From<(sr25519::Public, schnorr_jubjub::Public, ed25519::Public)>
+		+ Serialize;
 	/// Partner Chain committee member type
 	type CommitteeMember: Serialize;
 
