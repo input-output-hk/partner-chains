@@ -7,7 +7,7 @@
             "cardano_cli": {
                 "path": "cardano-cli",
                 "runner": {
-                    "podman": {
+                    "docker": {
                         "container": "cardano-node-1"
                     }
                 }
@@ -15,7 +15,7 @@
             "node": {
                 "path": "./partner-chains-node",
                 "runner": {
-                    "podman": {
+                    "docker": {
                         "container": "partner-chains-setup"
                     }
                 }
