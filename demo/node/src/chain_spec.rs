@@ -35,39 +35,3 @@ where
 pub fn runtime_wasm() -> &'static [u8] {
 	WASM_BINARY.expect("Runtime wasm not available")
 }
-
-/// Load partner chains configuration from environment or use defaults
-pub fn load_partner_chains_config() -> PartnerChainsConfig {
-	PartnerChainsConfig::from_env_or_default()
-}
-
-/// Create development chain spec with custom partner chains config
-pub fn development_config_with_partner_chains_config() -> ChainSpec {
-	let config = load_partner_chains_config();
-	ChainSpec::builder(
-		runtime_wasm(),
-		Default::default(),
-	)
-	.with_name("Development")
-	.with_id("dev")
-	.with_chain_type(sc_service::ChainType::Development)
-	.with_genesis_config_patch(
-		partner_chains_demo_runtime::genesis_config_presets::development_config_genesis_with_config(config)
-	)
-	.build()
-}
-
-/// Create local testnet chain spec with custom partner chains config
-pub fn local_testnet_config_with_partner_chains_config() -> ChainSpec {
-	let config = load_partner_chains_config();
-	ChainSpec::builder(runtime_wasm(), Default::default())
-		.with_name("Local Testnet")
-		.with_id("local_testnet")
-		.with_chain_type(sc_service::ChainType::Local)
-		.with_genesis_config_patch(
-			partner_chains_demo_runtime::genesis_config_presets::local_config_genesis_with_config(
-				config,
-			),
-		)
-		.build()
-}
