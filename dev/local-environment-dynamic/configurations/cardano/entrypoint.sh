@@ -180,6 +180,7 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     
     node_payment_address=$(cardano-cli address build \
         --payment-verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/payment.vkey" \
+        --stake-verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.vkey" \
         --testnet-magic 42)
     if [ -z "$node_payment_address" ]; then 
         echo "Error building payment address for registered-$i!"
@@ -1140,8 +1141,8 @@ done # End loop for registered nodes
 echo "[LOG] Completed SPO Registration and Delegation for all nodes."
 # --- END NEW: Register Nodes as Cardano SPOs and Delegate Stake ---
 
-echo "[LOG] Waiting 45 seconds for all delegation transactions to be confirmed on-chain..."
-sleep 45
+echo "[LOG] Waiting 90 seconds for all delegation transactions to be confirmed on-chain..."
+sleep 90
 
 echo "[LOG] Creating /shared/cardano.ready signal file."
 touch /shared/cardano.ready
