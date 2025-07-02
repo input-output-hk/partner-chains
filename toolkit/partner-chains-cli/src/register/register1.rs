@@ -99,7 +99,7 @@ fn get_ecdsa_pair_from_file<C: IOContext>(
 	let seed_phrase_file_path = format!("{keystore_path}/{seed_phrase_file_name}");
 	let seed = context
 		.read_file(&seed_phrase_file_path)
-		.ok_or_else(|| anyhow::anyhow!("seed phrase file not found"))?;
+		.ok_or_else(|| anyhow::anyhow!("seed phrase file {seed_phrase_file_path} not found"))?;
 	let stripped_quotes = seed.trim_matches('\"');
 	Ok(ecdsa::Pair::from_string(stripped_quotes, None)?)
 }
@@ -356,7 +356,7 @@ mod tests {
 					query_utxos_io(),
 					select_utxo_io(),
 					vec![MockIO::eprint(
-						"⚠️ Failed to read partner chain key from the keystore: seed phrase file not found",
+						"⚠️ Failed to read partner chain key from the keystore: seed phrase file /path/to/data/keystore/63726368031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6 not found",
 					)],
 				]
 				.into_iter()
