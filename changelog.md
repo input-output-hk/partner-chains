@@ -6,6 +6,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 * Added extra constant burn fee in `pallet-address-association` to discourage attacks on pallet storage.
 * Wizards don't require `generate-keys` for `prepare-configuration`. Altered recommended order of `create-chain-spec` and `setup-main-chain-state`.
+* `MainchainAddress` is now serialized as plain String instead of hexstring of its bytes
 
 ## Changed
 
