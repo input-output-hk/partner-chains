@@ -16,7 +16,10 @@ pub(crate) fn prompt_ogmios_configuration<C: IOContext>(
 	context: &C,
 ) -> anyhow::Result<ServiceConfig> {
 	let ogmios_protocol = OGMIOS_PROTOCOL
-		.select_options_with_default_from_file_and_save(OGMIOS_PROTOCOL.name, context)
+		.select_options_with_default_from_file_and_save(
+			&format!("Select {}", OGMIOS_PROTOCOL.name),
+			context,
+		)
 		.map_err(anyhow::Error::msg)?;
 	let ogmios_hostname = OGMIOS_HOSTNAME.prompt_with_default_from_file_and_save(context);
 	let ogmios_port = OGMIOS_PORT.prompt_with_default_from_file_parse_and_save(context)?;

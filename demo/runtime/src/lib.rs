@@ -349,7 +349,7 @@ impl pallet_balances::Config for Runtime {
 	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 	type FreezeIdentifier = ();
 	type MaxFreezes = ();
-	type RuntimeHoldReason = ();
+	type RuntimeHoldReason = RuntimeHoldReason;
 	type RuntimeFreezeReason = RuntimeFreezeReason;
 	type DoneSlashHandler = ();
 }
@@ -528,8 +528,19 @@ impl pallet_block_producer_metadata::benchmarking::BenchmarkHelper<BlockProducer
 				.to_vec(),
 		)
 	}
-	fn cross_chain_signature() -> sidechain_domain::CrossChainSignature {
-		sidechain_domain::CrossChainSignature(hex_literal::hex!("d1e02e4a5484c3b7202ce6b844577048e7578dc62901cf8f51e6d74bbd3adb091688feacedd8343d0b04a0f5862b2e06148934a75e678e42051fde5431eca33d").to_vec())
+	fn upsert_cross_chain_signature() -> sidechain_domain::CrossChainSignature {
+		sidechain_domain::CrossChainSignature(hex_literal::hex!("0892ab398baf72fb90c7e90147caea9b5aa642f082e8573877aba34aeb618c7e3c4a904ef5c12bdb6560d665a71584ea266279ba686ff7e4f886ca75e357fdff").to_vec())
+	}
+	fn delete_cross_chain_signature() -> sidechain_domain::CrossChainSignature {
+		sidechain_domain::CrossChainSignature(hex_literal::hex!("e891b42327fc5202f258b080d0a3f33d9a292693840dee5fa5e46033fe0b059b682597be65ac5678c182a65b46b621aaadcfb0811155f54e8d99c9e4394a1fe9").to_vec())
+	}
+
+	fn upsert_valid_before() -> u64 {
+		11751276163
+	}
+
+	fn delete_valid_before() -> u64 {
+		11751276230
 	}
 }
 
@@ -546,10 +557,17 @@ impl pallet_block_production_log::Config for Runtime {
 	type BenchmarkHelper = PalletBlockProductionLogBenchmarkHelper;
 }
 
+parameter_types! {
+	/// Amount of tokens to burn when making irreversible, forever association
+	pub const AddressAssociationBurnAmount: Balance = 1_000_000;
+}
+
 impl pallet_address_associations::Config for Runtime {
 	type WeightInfo = pallet_address_associations::weights::SubstrateWeight<Runtime>;
 
 	type PartnerChainAddress = AccountId;
+	type Currency = Balances;
+	type BurnAmount = AddressAssociationBurnAmount;
 
 	fn genesis_utxo() -> UtxoId {
 		Sidechain::genesis_utxo()
@@ -584,6 +602,11 @@ impl pallet_block_producer_fees::Config for Runtime {
 	type BenchmarkHelper = PalletBlockProducerFeesBenchmarkHelper;
 }
 
+parameter_types! {
+	/// Amount of tokens to hold when upserting block producer metadata.
+	pub const MetadataHoldAmount: Balance = 1_000_000;
+}
+
 impl pallet_block_producer_metadata::Config for Runtime {
 	type WeightInfo = pallet_block_producer_metadata::weights::SubstrateWeight<Runtime>;
 
@@ -592,6 +615,14 @@ impl pallet_block_producer_metadata::Config for Runtime {
 	fn genesis_utxo() -> UtxoId {
 		Sidechain::genesis_utxo()
 	}
+
+	fn current_time() -> u64 {
+		pallet_timestamp::Now::<Runtime>::get() / 1000
+	}
+
+	type Currency = Balances;
+	type HoldAmount = MetadataHoldAmount;
+	type RuntimeHoldReason = RuntimeHoldReason;
 
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = PalletBlockProducerMetadataBenchmarkHelper;

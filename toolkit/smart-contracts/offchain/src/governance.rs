@@ -53,6 +53,18 @@ impl GovernancePolicyScript {
 			},
 		}
 	}
+
+	/// Checks if given key hash is among authorities
+	pub(crate) fn contains_authority(&self, key_hash: &Ed25519KeyHash) -> bool {
+		match self {
+			Self::MultiSig(PartnerChainsMultisigPolicy { script: _, key_hashes, threshold: _ }) => {
+				key_hashes.iter().any(|h| &Ed25519KeyHash::from(*h) == key_hash)
+			},
+			Self::AtLeastNNativeScript(SimpleAtLeastN { threshold: _, key_hashes }) => {
+				key_hashes.iter().any(|h| &Ed25519KeyHash::from(*h) == key_hash)
+			},
+		}
+	}
 }
 
 /// Plutus MultiSig smart contract implemented in partner-chains-smart-contracts repo

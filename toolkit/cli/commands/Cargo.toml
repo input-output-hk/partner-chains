@@ -34,7 +34,9 @@ serde_json = { workspace = true }
 pallet-address-associations = { workspace = true, features = ["std"] }
 parity-scale-codec = { workspace = true }
 sp-block-producer-metadata = { workspace = true, features = ["std"] }
+time-source = { workspace = true }
 
 [dev-dependencies]
 assert_cmd = { workspace = true }
 pretty_assertions = { workspace = true }
+time-source = { workspace = true, features = ["mock"] }

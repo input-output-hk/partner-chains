@@ -39,7 +39,6 @@ impl<T: PartnerChainRuntime> CmdRun for CreateChainSpecCmd<T> {
 			context.print(
 				"If you are the governance authority, you can distribute it to the validators.",
 			);
-			context.print("Run 'setup-main-chain-state' command to set D-parameter and permissioned candidates on Cardano.");
 			Ok(())
 		} else {
 			context.print("Aborted.");

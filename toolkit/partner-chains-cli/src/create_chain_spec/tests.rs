@@ -411,8 +411,5 @@ fn show_outro() -> MockIO {
 		MockIO::print(
 			"If you are the governance authority, you can distribute it to the validators.",
 		),
-		MockIO::print(
-			"Run 'setup-main-chain-state' command to set D-parameter and permissioned candidates on Cardano.",
-		),
 	])
 }
