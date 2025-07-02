@@ -7,7 +7,9 @@
 extern crate alloc;
 
 mod beefy_structures;
-// mod keystore;
+
+#[cfg(feature = "std")]
+mod keystore;
 mod poseidon;
 mod primitive;
 mod runtime;
@@ -15,3 +17,6 @@ mod runtime;
 pub use beefy_structures::{InnerPublicBytes, Public, Signature};
 
 pub use poseidon::PoseidonJubjub;
+pub use runtime::generic_key_interface;
+#[cfg(feature = "std")]
+pub use keystore::SchnorrKeystore;

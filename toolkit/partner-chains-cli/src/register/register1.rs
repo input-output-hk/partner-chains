@@ -29,7 +29,7 @@ impl CmdRun for Register1Cmd {
 				"⚠️ Keystore not found. Please run the `generate-keys` command first"
 			))?;
 
-		let GeneratedKeysFileContent { sidechain_pub_key, aura_pub_key, grandpa_pub_key } =
+		let GeneratedKeysFileContent { sidechain_pub_key, aura_pub_key, grandpa_pub_key, beefy_pub_key } =
 			read_generated_keys(context).map_err(|e| {
 			    context.eprint("⚠️ The keys file `partner-chains-cli-keys.json` is missing or invalid. Please run the `generate-keys` command first");
 				anyhow!(e)
@@ -84,7 +84,7 @@ impl CmdRun for Register1Cmd {
 		let executable = context.current_executable()?;
 		context.print("Run the following command to generate signatures on the next step. It has to be executed on the machine with your SPO cold signing key.");
 		context.print("");
-		context.print(&format!("{executable} wizards register2 \\\n --genesis-utxo {genesis_utxo} \\\n --registration-utxo {registration_utxo} \\\n --aura-pub-key {aura_pub_key} \\\n --grandpa-pub-key {grandpa_pub_key} \\\n --sidechain-pub-key {sidechain_pub_key} \\\n --sidechain-signature {sidechain_signature}"));
+		context.print(&format!("{executable} wizards register2 \\\n --genesis-utxo {genesis_utxo} \\\n --registration-utxo {registration_utxo} \\\n --aura-pub-key {aura_pub_key} \\\n --beefy-pub-key {beefy_pub_key} --grandpa-pub-key {grandpa_pub_key} \\\n --sidechain-pub-key {sidechain_pub_key} \\\n --sidechain-signature {sidechain_signature}"));
 
 		Ok(())
 	}
@@ -120,6 +120,7 @@ pub struct GeneratedKeysFileContent {
 	pub sidechain_pub_key: String,
 	pub aura_pub_key: String,
 	pub grandpa_pub_key: String,
+	pub beefy_pub_key: String,
 }
 
 pub fn read_generated_keys<C: IOContext>(context: &C) -> anyhow::Result<GeneratedKeysFileContent> {

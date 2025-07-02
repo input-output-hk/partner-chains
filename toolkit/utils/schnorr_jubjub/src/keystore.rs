@@ -6,6 +6,7 @@
 //! support due to lack of genericity.
 
 use alloc::vec::Vec;
+use std::sync::Arc;
 use sc_keystore::LocalKeystore;
 use sp_application_crypto::Pair as TraitPair;
 use sp_core::{
@@ -20,7 +21,8 @@ use crate::{
 };
 
 /// Wrapper of the LocalKeystore
-pub struct SchnorrKeystore(pub LocalKeystore);
+// TRY TO CHANGE THIS TO KeyStorePtr
+pub struct SchnorrKeystore(pub Arc<LocalKeystore>);
 
 impl Keystore for SchnorrKeystore {
 	fn sr25519_public_keys(&self, key_type: KeyTypeId) -> Vec<sr25519::Public> {

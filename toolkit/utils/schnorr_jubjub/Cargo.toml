@@ -14,6 +14,7 @@ pallet-beefy-mmr = { workspace = true }
 parity-scale-codec = { workspace = true }
 rand_core = { workspace = true }
 scale-info = {workspace = true}
+sc-keystore = { workspace = true, optional = true }
 sp-core = { workspace = true, features = ["serde"] }
 sp-application-crypto = { workspace = true }
 sp-consensus-beefy = { workspace = true }
@@ -68,6 +69,7 @@ std = [
     "sp-trie/std",
     "rand/std",
     "rand_chacha/std",
+    "sc-keystore",
 ]
 
 [lints]

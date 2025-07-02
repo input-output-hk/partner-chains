@@ -40,6 +40,7 @@ sp-consensus = { workspace = true }
 sc-consensus = { workspace = true }
 sc-consensus-beefy = { workspace = true }
 sc-consensus-beefy-rpc = { workspace = true }
+sc-keystore = { workspace = true }
 sp-consensus-beefy = { workspace = true }
 sc-consensus-grandpa = { workspace = true }
 sc-consensus-grandpa-rpc = { workspace = true }
