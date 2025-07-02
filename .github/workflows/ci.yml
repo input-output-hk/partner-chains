@@ -31,15 +31,11 @@ jobs:
     steps:
       - name: Clean runner environment
         run: rm -rf ./*
-      - name: ls
-        run: ls -la
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           clean: true
-      - name: ls
-        run: ls -la
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
