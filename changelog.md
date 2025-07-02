@@ -18,6 +18,7 @@ match this change.
 ## Added
 
 * `delete_metadata` extrinsic in `pallet-block-producer-metadata`
+* Added litep2p networking stack support to pc demo node as default. libp2p can be set with explicitly `--network-backend` parameter.
 
 ## Fixed
 
