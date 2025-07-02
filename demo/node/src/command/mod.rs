@@ -140,7 +140,7 @@ pub fn run() -> sc_cli::Result<()> {
 		None => {
 			let runner = cli.create_runner(&cli.run)?;
 			runner.run_node_until_exit(|config| async move {
-				service::new_full::<sc_network::NetworkWorker<_, _>>(config)
+				service::new_full(config)
 					.await
 					.map_err(sc_cli::Error::Service)
 			})

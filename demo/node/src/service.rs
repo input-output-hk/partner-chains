@@ -3,6 +3,7 @@
 use crate::data_sources::DataSources;
 use crate::inherent_data::{CreateInherentDataConfig, ProposalCIDP, VerifierCIDP};
 use crate::rpc::GrandpaDeps;
+use futures::TryFutureExt;
 use partner_chains_db_sync_data_sources::McFollowerMetrics;
 use partner_chains_db_sync_data_sources::register_metrics_warn_errors;
 use partner_chains_demo_runtime::{self, RuntimeApi, opaque::Block};
@@ -161,7 +162,20 @@ pub fn new_partial(
 	})
 }
 
-pub async fn new_full<Network: sc_network::NetworkBackend<Block, <Block as BlockT>::Hash>>(
+pub async fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
+	let task_manager = match config.network.network_backend {
+		sc_network::config::NetworkBackendType::Libp2p => {
+			new_full_base::<sc_network::NetworkWorker<_, _>>(config).await?
+		},
+		sc_network::config::NetworkBackendType::Litep2p => {
+			new_full_base::<sc_network::Litep2pNetworkBackend>(config).await?
+		},
+	};
+	
+	Ok(task_manager)
+}
+
+pub async fn new_full_base<Network: sc_network::NetworkBackend<Block, <Block as BlockT>::Hash>>(
 	config: Configuration,
 ) -> Result<TaskManager, ServiceError> {
 	if let Some(git_hash) = std::option_env!("EARTHLY_GIT_HASH") {
