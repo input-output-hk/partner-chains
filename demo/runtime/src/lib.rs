@@ -223,7 +223,7 @@ const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// We allow for 2 seconds of compute with a 6 second average block time.
 pub const MAXIMUM_BLOCK_WEIGHT: Weight =
 	Weight::from_parts(WEIGHT_REF_TIME_PER_SECOND.saturating_mul(2), u64::MAX);
-pub const MAXIMUM_BLOCK_LENGTH: u32 = 5 * 1024 * 1024;
+pub const MAXIMUM_BLOCK_LENGTH: u32 = 50 * 1024 * 1024;
 
 parameter_types! {
 	pub const BlockHashCount: BlockNumber = 2400;
@@ -296,7 +296,6 @@ impl frame_system::Config for Runtime {
 }
 
 impl pallet_native_token_management::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
 	type TokenTransferHandler = TestHelperPallet;
 	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
 	type WeightInfo = pallet_native_token_management::weights::SubstrateWeight<Runtime>;
@@ -375,7 +374,6 @@ impl pallet_sudo::Config for Runtime {
 }
 
 impl pallet_partner_chains_session::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
 	type ShouldEndSession = ValidatorManagementSessionManager<Runtime>;
 	type NextSessionRotation = ();
@@ -389,7 +387,6 @@ parameter_types! {
 }
 
 impl pallet_session_validator_management::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
 	type MaxValidators = MaxValidators;
 	type AuthorityId = CrossChainPublic;
 	type AuthorityKeys = SessionKeys;
@@ -667,6 +664,12 @@ impl pallet_governed_map::Config for Runtime {
 	type BenchmarkHelper = ();
 }
 
+impl pallet_glutton::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = pallet_glutton::weights::SubstrateWeight<Runtime>;
+	type AdminOrigin = EnsureRoot<AccountId>;
+}
+
 impl crate::test_helper_pallet::Config for Runtime {}
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -697,6 +700,7 @@ construct_runtime!(
 		Session: pallet_partner_chains_session,
 		NativeTokenManagement: pallet_native_token_management,
 		GovernedMap: pallet_governed_map,
+		Glutton: pallet_glutton,
 		TestHelperPallet: crate::test_helper_pallet,
 	}
 );
