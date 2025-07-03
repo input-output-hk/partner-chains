@@ -21,11 +21,13 @@ anyhow = { workspace = true }
 clap = { workspace = true }
 hex = { workspace = true }
 inquire = { workspace = true }
+jsonrpsee = { workspace = true, features = ["http-client"] }
 libp2p-identity = { workspace = true, features = ["peerid", "ed25519"] }
 serde = { workspace = true }
 serde_json = { workspace = true, features = ["std"] }
 sp-core = { workspace = true, features = ["std"] }
 sp-runtime = { workspace = true, features = ["std"] }
+parity-scale-codec = { workspace = true, features = ["std"] }
 thiserror = { workspace = true }
 tempfile = { workspace = true }
 secp256k1 = { workspace = true, features = ["std"] }
@@ -40,7 +42,9 @@ plutus-datum-derive = { workspace = true }
 ed25519-zebra = { workspace = true }
 sp-session-validator-management = { workspace = true, features = ["std"] }
 pallet-session-validator-management = { workspace = true, features = ["std"] }
+reqwest = { version = "0.11", features = ["blocking", "json"] }
 
 [dev-dependencies]
 pretty_assertions = { workspace = true }
 hex-literal = { workspace = true }
+mockito = { workspace = true }
