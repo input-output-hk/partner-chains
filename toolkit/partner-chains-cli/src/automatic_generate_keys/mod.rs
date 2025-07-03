@@ -72,7 +72,7 @@ impl CmdRun for AutomaticGenerateKeysCmd {
 			let session_keys = hex::decode(&session_keys_hex[2..])
 				.map_err(|e| anyhow::anyhow!("Failed to decode session keys: {}", e))?;
 
-			// Step 2: Call Session_decodeSessionKeys runtime API.
+			// Step 2: Decode the session keys using the runtime API.
 			let block_hash: String = send_rpc_request(
 				&client,
 				&self.node_url,
@@ -83,45 +83,82 @@ impl CmdRun for AutomaticGenerateKeysCmd {
 			.map_err(|e| anyhow::anyhow!("Failed to get finalized block hash: {}", e))?;
 
 			let session_keys_param = format!("0x{}", hex::encode(&session_keys));
-			let params =
-				serde_json::json!(["Session_decodeSessionKeys", session_keys_param, block_hash]);
 
-			let decoded_keys_hex: String =
-				send_rpc_request(&client, &self.node_url, "state_call", params).await.map_err(
-					|e| anyhow::anyhow!("Failed to call Session_decodeSessionKeys: {}", e),
-				)?;
-			let decoded_keys_bytes = hex::decode(&decoded_keys_hex[2..])
-				.map_err(|e| anyhow::anyhow!("Failed to decode runtime API response: {}", e))?;
+			// Newer Substrate versions expose the method under `SessionKeys_decode_session_keys`.
+			// Some older versions still use `Session_decodeSessionKeys`. Try both.
+			let decode_methods = [
+				"Session_decodeSessionKeys",       // legacy (Polkadot/Substrate <= v0.9)
+				"SessionKeys_decode_session_keys", // newer API (after FRAME v1.0)
+			];
 
-			// Step 3: Decode the SCALE-encoded result.
-			let decoded_keys: Vec<(Vec<u8>, Vec<u8>)> =
-				Decode::decode(&mut &decoded_keys_bytes[..])
-					.map_err(|e| anyhow::anyhow!("Failed to SCALE decode keys: {}", e))?;
+			let mut decoded_keys: Vec<(Vec<u8>, Vec<u8>)> = Vec::new();
+			let mut last_err: Option<anyhow::Error> = None;
 
-			// Step 4: Process and save keys.
+			for decode_method in &decode_methods {
+				let params = serde_json::json!([decode_method, session_keys_param, block_hash]);
+				match send_rpc_request::<String>(&client, &self.node_url, "state_call", params)
+					.await
+				{
+					Ok(decoded_hex) => {
+						let bytes = hex::decode(&decoded_hex[2..]).map_err(|e| {
+							anyhow::anyhow!("Failed to decode runtime API response: {}", e)
+						})?;
+						decoded_keys = Decode::decode(&mut &bytes[..])
+							.map_err(|e| anyhow::anyhow!("Failed to SCALE decode keys: {}", e))?;
+						// Successfully decoded.
+						last_err = None;
+						break;
+					},
+					Err(e) => {
+						// Capture error and try the next variant.
+						last_err = Some(anyhow::anyhow!("{}", e));
+					},
+				}
+			}
+
+			// If no keys were decoded AND all RPC attempts errored, propagate the last error.
+			if decoded_keys.is_empty() {
+				if let Some(err) = last_err {
+					return Err(err);
+				}
+				// Otherwise (successful call but empty result) continue; downstream logic will
+				// handle the empty key map and emit a warning instead.
+			}
+
+			// Step 3: Process and save keys.
 			fs::create_dir_all(&keystore_path)
 				.map_err(|e| anyhow::anyhow!("Failed to create keystore directory: {}", e))?;
 
 			let mut key_map: BTreeMap<String, String> = BTreeMap::new();
-			for (key_type, public_key) in decoded_keys {
-				// Convert key type to string for JSON and display.
-				let key_type_str = String::from_utf8(key_type.clone())
+
+			for (first, second) in decoded_keys {
+				// The runtime can return (public_key, key_type) or (key_type, public_key)
+				// depending on its version. Determine which is which by length (key_type is 4 bytes).
+				let (key_type_bytes, public_key) = if first.len() == 4 {
+					(first.clone(), second.clone())
+				} else if second.len() == 4 {
+					(second.clone(), first.clone())
+				} else {
+					// Unknown tuple layout; skip.
+					continue;
+				};
+
+				let key_type_str = String::from_utf8(key_type_bytes.clone())
 					.map_err(|e| anyhow::anyhow!("Invalid key type encoding: {}", e))?;
 				let public_key_hex = format!("0x{}", hex::encode(&public_key));
 
 				// Save to keystore with key_type_hex + public_key format.
-				let key_type_hex = hex::encode(&key_type);
+				let key_type_hex = hex::encode(&key_type_bytes);
 				let store_path =
 					format!("{}/{}{}", keystore_path, key_type_hex, hex::encode(&public_key));
 				fs::write(&store_path, &public_key)
 					.map_err(|e| anyhow::anyhow!("Failed to write key to {}: {}", store_path, e))?;
 				context.print(&format!("Saved {} key to {}", key_type_str, store_path));
 
-				// Store in key map for JSON output.
 				key_map.insert(key_type_str, public_key_hex);
 			}
 
-			// Step 5: Save all keys to keys.json.
+			// Step 4: Save all keys to keys.json.
 			if !key_map.is_empty() {
 				if prompt_can_write("keys file", KEYS_FILE_PATH, context) {
 					let public_keys_json = serde_json::to_string_pretty(&key_map)
