@@ -44,3 +44,7 @@ pallet-session-validator-management = { workspace = true, features = ["std"] }
 [dev-dependencies]
 pretty_assertions = { workspace = true }
 hex-literal = { workspace = true }
+
+[features]
+default = ["std"]
+std = []

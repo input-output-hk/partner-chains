@@ -232,18 +232,18 @@ fn chain_parameters_json() -> serde_json::Value {
 fn cardano_addresses_json() -> serde_json::Value {
 	serde_json::json!({
 		"committee_candidates_address": "addr_test1wz5qc7fk2pat0058w4zwvkw35ytptej3nuc3je2kgtan5dq3rt4sc",
-		"d_parameter_policy_id": "d0ebb61e2ba362255a7c4a253c6578884603b56fb0a68642657602d6",
-		"permissioned_candidates_policy_id": "58b4ba68f641d58f7f1bba07182eca9386da1e88a34d47a14638c3fe",
+		"d_parameter_policy_id": "0xd0ebb61e2ba362255a7c4a253c6578884603b56fb0a68642657602d6",
+		"permissioned_candidates_policy_id": "0x58b4ba68f641d58f7f1bba07182eca9386da1e88a34d47a14638c3fe",
 		"native_token": {
 			"asset": {
-				"policy_id": "ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4",
-				"asset_name": "5043546f6b656e44656d6f",
+				"policy_id": "0xada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4",
+				"asset_name": "0x5043546f6b656e44656d6f",
 			},
 			"illiquid_supply_address": "addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz"
 		},
 		"governed_map": {
 			"validator_address": "addr_test1wqpjpjq08treyvmqjca0qy5kw8xgq4awgt945v46jsxgyhsafz4ws",
-			"policy_id": "c814db91bfaf7f0078e2c69d13443ffc46c9957393174f7baa8d0000"
+			"policy_id": "0xc814db91bfaf7f0078e2c69d13443ffc46c9957393174f7baa8d0000"
 		}
 	})
 }
@@ -263,15 +263,15 @@ fn show_chain_parameters() -> MockIO {
 			"- committee_candidate_address: addr_test1wz5qc7fk2pat0058w4zwvkw35ytptej3nuc3je2kgtan5dq3rt4sc",
 		),
 		MockIO::print(
-			"- d_parameter_policy_id: d0ebb61e2ba362255a7c4a253c6578884603b56fb0a68642657602d6",
+			"- d_parameter_policy_id: 0xd0ebb61e2ba362255a7c4a253c6578884603b56fb0a68642657602d6",
 		),
 		MockIO::print(
-			"- permissioned_candidates_policy_id: 58b4ba68f641d58f7f1bba07182eca9386da1e88a34d47a14638c3fe",
+			"- permissioned_candidates_policy_id: 0x58b4ba68f641d58f7f1bba07182eca9386da1e88a34d47a14638c3fe",
 		),
 		MockIO::print("Native Token Management Configuration (unused if empty):"),
-		MockIO::print("- asset name: 5043546f6b656e44656d6f"),
+		MockIO::print("- asset name: 0x5043546f6b656e44656d6f"),
 		MockIO::print(
-			"- asset policy ID: ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4",
+			"- asset policy ID: 0xada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4",
 		),
 		MockIO::print(
 			"- illiquid supply address: addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz",
@@ -281,7 +281,7 @@ fn show_chain_parameters() -> MockIO {
 			"- validator address: addr_test1wqpjpjq08treyvmqjca0qy5kw8xgq4awgt945v46jsxgyhsafz4ws",
 		),
 		MockIO::print(
-			"- asset policy ID: c814db91bfaf7f0078e2c69d13443ffc46c9957393174f7baa8d0000",
+			"- asset policy ID: 0xc814db91bfaf7f0078e2c69d13443ffc46c9957393174f7baa8d0000",
 		),
 	])
 }
@@ -310,17 +310,17 @@ fn set_env_vars_io() -> MockIO {
 		),
 		MockIO::set_env_var(
 			"D_PARAMETER_POLICY_ID",
-			"d0ebb61e2ba362255a7c4a253c6578884603b56fb0a68642657602d6",
+			"0xd0ebb61e2ba362255a7c4a253c6578884603b56fb0a68642657602d6",
 		),
 		MockIO::set_env_var(
 			"PERMISSIONED_CANDIDATES_POLICY_ID",
-			"58b4ba68f641d58f7f1bba07182eca9386da1e88a34d47a14638c3fe",
+			"0x58b4ba68f641d58f7f1bba07182eca9386da1e88a34d47a14638c3fe",
 		),
 		MockIO::set_env_var(
 			"NATIVE_TOKEN_POLICY_ID",
-			"ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4",
+			"0xada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4",
 		),
-		MockIO::set_env_var("NATIVE_TOKEN_ASSET_NAME", "5043546f6b656e44656d6f"),
+		MockIO::set_env_var("NATIVE_TOKEN_ASSET_NAME", "0x5043546f6b656e44656d6f"),
 		MockIO::set_env_var(
 			"ILLIQUID_SUPPLY_VALIDATOR_ADDRESS",
 			"addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz",
@@ -394,7 +394,7 @@ fn updated_chain_spec() -> serde_json::Value {
 						"governedMap": {
 							"mainChainScripts": {
 								"asset_policy_id": "0xc814db91bfaf7f0078e2c69d13443ffc46c9957393174f7baa8d0000",
-								"validator_address": "0x616464725f74657374317771706a706a71303874726579766d716a6361307179356b773878677134617767743934357634366a73786779687361667a347773"
+								"validator_address": "addr_test1wqpjpjq08treyvmqjca0qy5kw8xgq4awgt945v46jsxgyhsafz4ws"
 							}
 						}
 					}

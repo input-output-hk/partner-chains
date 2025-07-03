@@ -5,7 +5,7 @@ use crate::runtime_bindings::PartnerChainRuntime;
 use crate::{CmdRun, config::config_fields};
 use anyhow::{Context, anyhow};
 use serde_json::Value as JValue;
-use sidechain_domain::UtxoId;
+use sidechain_domain::{AssetName, MainchainAddress, PolicyId, UtxoId};
 use sp_runtime::DeserializeOwned;
 use std::marker::PhantomData;
 
@@ -56,18 +56,21 @@ impl<T: PartnerChainRuntime> CreateChainSpecCmd<T> {
 			format!("- committee_candidate_address: {}", config.committee_candidate_address)
 				.as_str(),
 		);
-		context
-			.print(format!("- d_parameter_policy_id: {}", config.d_parameter_policy_id).as_str());
+		context.print(
+			format!("- d_parameter_policy_id: {}", config.d_parameter_policy_id.to_hex_string())
+				.as_str(),
+		);
 		context.print(
 			format!(
 				"- permissioned_candidates_policy_id: {}",
-				config.permissioned_candidates_policy_id
+				config.permissioned_candidates_policy_id.to_hex_string()
 			)
 			.as_str(),
 		);
 		context.print("Native Token Management Configuration (unused if empty):");
-		context.print(&format!("- asset name: {}", config.native_token_asset_name));
-		context.print(&format!("- asset policy ID: {}", config.native_token_policy));
+		context.print(&format!("- asset name: {}", config.native_token_asset_name.to_hex_string()));
+		context
+			.print(&format!("- asset policy ID: {}", config.native_token_policy.to_hex_string()));
 		context.print(&format!("- illiquid supply address: {}", config.illiquid_supply_address));
 		context.print("Governed Map Configuration:");
 		context.print(&format!(
@@ -76,10 +79,10 @@ impl<T: PartnerChainRuntime> CreateChainSpecCmd<T> {
 		));
 		context.print(&format!(
 			"- asset policy ID: {}",
-			config.governed_map_asset_policy_id.clone().unwrap_or_default()
+			config.governed_map_asset_policy_id.clone().unwrap_or_default().to_hex_string()
 		));
 		use colored::Colorize;
-		if config.initial_permissioned_candidates_raw.is_empty() {
+		if config.initial_permissioned_candidates_parsed.is_empty() {
 			context.print("WARNING: The list of initial permissioned candidates is empty. Generated chain spec will not allow the chain to start.".red().to_string().as_str());
 			let update_msg = format!(
 				"Update 'initial_permissioned_candidates' field of {} file with keys of initial committee.",
@@ -105,14 +108,17 @@ impl<T: PartnerChainRuntime> CreateChainSpecCmd<T> {
 			"COMMITTEE_CANDIDATE_ADDRESS",
 			&config.committee_candidate_address.to_string(),
 		);
-		context.set_env_var("D_PARAMETER_POLICY_ID", &config.d_parameter_policy_id.to_string());
+		context.set_env_var("D_PARAMETER_POLICY_ID", &config.d_parameter_policy_id.to_hex_string());
 		context.set_env_var(
 			"PERMISSIONED_CANDIDATES_POLICY_ID",
-			&config.permissioned_candidates_policy_id.to_string(),
+			&config.permissioned_candidates_policy_id.to_hex_string(),
 		);
-		context.set_env_var("NATIVE_TOKEN_POLICY_ID", &config.native_token_policy);
-		context.set_env_var("NATIVE_TOKEN_ASSET_NAME", &config.native_token_asset_name);
-		context.set_env_var("ILLIQUID_SUPPLY_VALIDATOR_ADDRESS", &config.illiquid_supply_address);
+		context.set_env_var("NATIVE_TOKEN_POLICY_ID", &config.native_token_policy.to_hex_string());
+		context.set_env_var("NATIVE_TOKEN_ASSET_NAME", &config.native_token_asset_name.to_string());
+		context.set_env_var(
+			"ILLIQUID_SUPPLY_VALIDATOR_ADDRESS",
+			&config.illiquid_supply_address.to_string(),
+		);
 		context.run_command(
 			format!("{node_executable} build-spec --disable-default-bootnode > chain-spec.json")
 				.to_string()
@@ -158,7 +164,7 @@ impl<T: PartnerChainRuntime> CreateChainSpecCmd<T> {
 			Some(address) => Self::update_field(
 				&mut chain_spec,
 				GOVERNED_MAP_VALIDATOR_ADDRESS_PATH,
-				serde_json::Value::String(format!("0x{}", hex::encode(address.as_bytes()))),
+				serde_json::json!(address),
 			)?,
 			None => (),
 		}
@@ -166,7 +172,7 @@ impl<T: PartnerChainRuntime> CreateChainSpecCmd<T> {
 			Some(policy_id) => Self::update_field(
 				&mut chain_spec,
 				GOVERNED_MAP_ASSET_POLICY_ID_PATH,
-				serde_json::Value::String(format!("0x{policy_id}")),
+				serde_json::json!(policy_id),
 			)?,
 			None => (),
 		}
@@ -195,14 +201,14 @@ struct CreateChainSpecConfig {
 	genesis_utxo: UtxoId,
 	initial_permissioned_candidates_raw: Vec<PermissionedCandidateKeys>,
 	initial_permissioned_candidates_parsed: Vec<ParsedPermissionedCandidatesKeys>,
-	committee_candidate_address: String,
-	d_parameter_policy_id: String,
-	permissioned_candidates_policy_id: String,
-	native_token_policy: String,
-	native_token_asset_name: String,
-	illiquid_supply_address: String,
-	governed_map_validator_address: Option<String>,
-	governed_map_asset_policy_id: Option<String>,
+	committee_candidate_address: MainchainAddress,
+	d_parameter_policy_id: PolicyId,
+	permissioned_candidates_policy_id: PolicyId,
+	native_token_policy: PolicyId,
+	native_token_asset_name: AssetName,
+	illiquid_supply_address: MainchainAddress,
+	governed_map_validator_address: Option<MainchainAddress>,
+	governed_map_asset_policy_id: Option<PolicyId>,
 }
 
 impl CreateChainSpecConfig {
@@ -243,7 +249,7 @@ fn load_config_field<C: IOContext, T: DeserializeOwned>(
 ) -> Result<T, anyhow::Error> {
 	field.load_from_file(context).ok_or_else(|| {
 		context.eprint(format!("The '{}' configuration file is missing or invalid.\nIf you are the governance authority, please make sure you have run the `prepare-configuration` command to generate the chain configuration file.\nIf you are a validator, you can obtain the chain configuration file from the governance authority.", field.config_file).as_str());
-		anyhow!("failed to read '{}'", field.path.join("."))
+	anyhow!("failed to read '{}'", field.path.join("."))
 	})
 }
 

@@ -320,6 +320,13 @@ const POLICY_ID_LEN: usize = 28;
 /// Cardano Policy Id
 pub struct PolicyId(pub [u8; POLICY_ID_LEN]);
 
+#[cfg(feature = "std")]
+impl Display for PolicyId {
+	fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+		write!(f, "{}", self.to_hex_string())
+	}
+}
+
 /// Cardano script hash
 pub type ScriptHash = PolicyId;
 
@@ -331,12 +338,20 @@ pub const MAX_ASSET_NAME_LEN: u32 = 32;
 	Clone, Default, PartialEq, Eq, Encode, Decode, DecodeWithMemTracking, TypeInfo, MaxEncodedLen,
 )]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
+#[cfg_attr(feature = "std", byte_string(to_hex_string))]
 pub struct AssetName(pub BoundedVec<u8, ConstU32<MAX_ASSET_NAME_LEN>>);
 
 impl AssetName {
 	/// Constructs an empty [AssetName]
 	pub fn empty() -> Self {
 		Self(BoundedVec::new())
+	}
+}
+
+#[cfg(feature = "std")]
+impl Display for AssetName {
+	fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+		write!(f, "{}", self.to_hex_string())
 	}
 }
 

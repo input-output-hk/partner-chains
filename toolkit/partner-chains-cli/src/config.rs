@@ -398,9 +398,9 @@ pub(crate) fn load_chain_config(context: &impl IOContext) -> anyhow::Result<Chai
 
 pub(crate) mod config_fields {
 	use super::*;
-	use sidechain_domain::UtxoId;
+	use sidechain_domain::{AssetName, MainchainAddress, PolicyId, UtxoId};
 
-	pub(crate) const NATIVE_TOKEN_POLICY: ConfigFieldDefinition<'static, String> =
+	pub(crate) const NATIVE_TOKEN_POLICY: ConfigFieldDefinition<'static, PolicyId> =
 		ConfigFieldDefinition {
 			config_file: CHAIN_CONFIG_FILE_PATH,
 			path: &["cardano_addresses", "native_token", "asset", "policy_id"],
@@ -409,7 +409,7 @@ pub(crate) mod config_fields {
 			_marker: PhantomData,
 		};
 
-	pub(crate) const NATIVE_TOKEN_ASSET_NAME: ConfigFieldDefinition<'static, String> =
+	pub(crate) const NATIVE_TOKEN_ASSET_NAME: ConfigFieldDefinition<'static, AssetName> =
 		ConfigFieldDefinition {
 			config_file: CHAIN_CONFIG_FILE_PATH,
 			path: &["cardano_addresses", "native_token", "asset", "asset_name"],
@@ -418,7 +418,7 @@ pub(crate) mod config_fields {
 			_marker: PhantomData,
 		};
 
-	pub(crate) const ILLIQUID_SUPPLY_ADDRESS: ConfigFieldDefinition<'static, String> =
+	pub(crate) const ILLIQUID_SUPPLY_ADDRESS: ConfigFieldDefinition<'static, MainchainAddress> =
 		ConfigFieldDefinition {
 			config_file: CHAIN_CONFIG_FILE_PATH,
 			path: &["cardano_addresses", "native_token", "illiquid_supply_address"],
@@ -535,16 +535,18 @@ pub(crate) mod config_fields {
 			_marker: PhantomData,
 		};
 
-	pub(crate) const COMMITTEE_CANDIDATES_ADDRESS: ConfigFieldDefinition<'static, String> =
-		ConfigFieldDefinition {
-			config_file: CHAIN_CONFIG_FILE_PATH,
-			path: &["cardano_addresses", "committee_candidates_address"],
-			name: "Committee candidates address",
-			default: None,
-			_marker: PhantomData,
-		};
+	pub(crate) const COMMITTEE_CANDIDATES_ADDRESS: ConfigFieldDefinition<
+		'static,
+		MainchainAddress,
+	> = ConfigFieldDefinition {
+		config_file: CHAIN_CONFIG_FILE_PATH,
+		path: &["cardano_addresses", "committee_candidates_address"],
+		name: "Committee candidates address",
+		default: None,
+		_marker: PhantomData,
+	};
 
-	pub(crate) const D_PARAMETER_POLICY_ID: ConfigFieldDefinition<'static, String> =
+	pub(crate) const D_PARAMETER_POLICY_ID: ConfigFieldDefinition<'static, PolicyId> =
 		ConfigFieldDefinition {
 			config_file: CHAIN_CONFIG_FILE_PATH,
 			path: &["cardano_addresses", "d_parameter_policy_id"],
@@ -553,7 +555,7 @@ pub(crate) mod config_fields {
 			_marker: PhantomData,
 		};
 
-	pub(crate) const PERMISSIONED_CANDIDATES_POLICY_ID: ConfigFieldDefinition<'static, String> =
+	pub(crate) const PERMISSIONED_CANDIDATES_POLICY_ID: ConfigFieldDefinition<'static, PolicyId> =
 		ConfigFieldDefinition {
 			config_file: CHAIN_CONFIG_FILE_PATH,
 			path: &["cardano_addresses", "permissioned_candidates_policy_id"],
@@ -562,16 +564,18 @@ pub(crate) mod config_fields {
 			_marker: PhantomData,
 		};
 
-	pub(crate) const GOVERNED_MAP_VALIDATOR_ADDRESS: ConfigFieldDefinition<'static, String> =
-		ConfigFieldDefinition {
-			config_file: CHAIN_CONFIG_FILE_PATH,
-			path: &["cardano_addresses", "governed_map", "validator_address"],
-			name: "Governed Map Validator Address",
-			default: None,
-			_marker: PhantomData,
-		};
+	pub(crate) const GOVERNED_MAP_VALIDATOR_ADDRESS: ConfigFieldDefinition<
+		'static,
+		MainchainAddress,
+	> = ConfigFieldDefinition {
+		config_file: CHAIN_CONFIG_FILE_PATH,
+		path: &["cardano_addresses", "governed_map", "validator_address"],
+		name: "Governed Map Validator Address",
+		default: None,
+		_marker: PhantomData,
+	};
 
-	pub(crate) const GOVERNED_MAP_POLICY_ID: ConfigFieldDefinition<'static, String> =
+	pub(crate) const GOVERNED_MAP_POLICY_ID: ConfigFieldDefinition<'static, PolicyId> =
 		ConfigFieldDefinition {
 			config_file: CHAIN_CONFIG_FILE_PATH,
 			path: &["cardano_addresses", "governed_map", "policy_id"],
