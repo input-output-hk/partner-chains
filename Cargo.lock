@@ -7037,6 +7037,7 @@ dependencies = [
  "mockito",
  "ogmios-client",
  "pallet-session-validator-management",
+ "parity-scale-codec",
  "partner-chains-cardano-offchain",
  "plutus",
  "plutus-datum-derive",
