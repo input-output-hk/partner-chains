@@ -17,25 +17,25 @@ shelley_systemStart=$(date --utc +"%Y-%m-%dT%H:%M:%SZ" --date="@$target_time")
 echo "[LOG] Target time calculated: $target_time. Byron StartTime: $byron_startTime, Shelley systemStart: $shelley_systemStart"
 
 /busybox sed "s/\"startTime\": [0-9]*/\"startTime\": $byron_startTime/" /shared/byron/genesis.json.base > /shared/byron/genesis.json
-echo "Updated startTime value in Byron genesis.json to: $byron_startTime"
+echo "[LOG] Updated startTime value in Byron genesis.json to: $byron_startTime"
 
 /busybox sed "s/\"systemStart\": \"[^\"]*\"/\"systemStart\": \"$shelley_systemStart\"/" /shared/shelley/genesis.json.base > /shared/shelley/genesis.json
-echo "Updated systemStart value in Shelley genesis.json to: $shelley_systemStart"
+echo "[LOG] Updated systemStart value in Shelley genesis.json to: $shelley_systemStart"
 
 echo "[LOG] Updated Byron and Shelley genesis files with new start times."
 
-echo "Parsing epochLength and slotLength from Shelley genesis.json..."
+echo "[LOG] Parsing epochLength and slotLength from Shelley genesis.json..."
 /busybox awk -F':|,' '/"epochLength"/ {print $2}' /shared/shelley/genesis.json.base > /shared/mc-epoch-length
-echo "Created /shared/mc-epoch-length with value: $(cat /shared/mc-epoch-length)"
+echo "[LOG] Created /shared/mc-epoch-length with value: $(cat /shared/mc-epoch-length)"
 
 /busybox awk -F':|,' '/"slotLength"/ {print $2}' /shared/shelley/genesis.json.base > /shared/mc-slot-length
-echo "Created /shared/mc-slot-length with value: $(cat /shared/mc-slot-length)"
+echo "[LOG] Created /shared/mc-slot-length with value: $(cat /shared/mc-slot-length)"
 
 echo "[LOG] Extracted mc-epoch-length and mc-slot-length."
 
 cp /shared/conway/genesis.conway.json.base /shared/conway/genesis.conway.json
 cp /shared/shelley/genesis.alonzo.json.base /shared/shelley/genesis.alonzo.json
-echo "Created /shared/conway/genesis.conway.json and /shared/shelley/genesis.alonzo.json"
+echo "[LOG] Created /shared/conway/genesis.conway.json and /shared/shelley/genesis.alonzo.json"
 
 echo "[LOG] Copied Conway and Alonzo genesis files."
 
@@ -55,9 +55,9 @@ echo "[LOG] Calculated Byron, Shelley, Alonzo, Conway genesis hashes."
 /busybox sed "s/\"ConwayGenesisHash\": \"[^\"]*\"/\"ConwayGenesisHash\": \"$conway_hash\"/" /shared/node-1-config.json.base.conway > /shared/node-1-config.json
 /busybox sed "s/\"ConwayGenesisHash\": \"[^\"]*\"/\"ConwayGenesisHash\": \"$conway_hash\"/" /shared/db-sync-config.json.base.conway > /shared/db-sync-config.json
 
-echo "Updated ByronGenesisHash value in config files to: $byron_hash"
-echo "Updated ShelleyGenesisHash value in config files to: $shelley_hash"
-echo "Updated ConwayGenesisHash value in config files to: $conway_hash"
+echo "[LOG] Updated ByronGenesisHash value in config files to: $byron_hash"
+echo "[LOG] Updated ShelleyGenesisHash value in config files to: $shelley_hash"
+echo "[LOG] Updated ConwayGenesisHash value in config files to: $conway_hash"
 
 echo "[LOG] Updated node and db-sync config files with genesis hashes."
 
@@ -100,7 +100,7 @@ reward_token_policy_id=$(cardano-cli latest transaction policyid --script-file .
 # hex of "Reward token"
 reward_token_asset_name="52657761726420746f6b656e"
 echo "[LOG] Native token policy ID: $reward_token_policy_id, Asset Name: $reward_token_asset_name"
-echo "Generating new address and funding it with 2x1000 Ada and 10 Ada + 1000000 reward token ($reward_token_policy_id.$reward_token_asset_name)"
+echo "[LOG] Generating new address and funding it with 2x1000 Ada and 10 Ada + 1000000 reward token ($reward_token_policy_id.$reward_token_asset_name)"
 
 new_address=$(cardano-cli latest address build \
   --payment-verification-key-file /keys/funded_address.vkey \
@@ -122,7 +122,7 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
         --verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/kes.vkey" \
         --signing-key-file "${NODE_SPECIFIC_KEYS_DIR}/kes.skey"
     if [ $? -ne 0 ]; then
-        echo "Error generating KES keys for registered-$i!"
+        echo "[WARN] Error generating KES keys for registered-$i!"
     fi
 
     echo "[LOG] Generating VRF keys for registered-$i in $NODE_SPECIFIC_KEYS_DIR..."
@@ -130,7 +130,7 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
         --verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/vrf.vkey" \
         --signing-key-file "${NODE_SPECIFIC_KEYS_DIR}/vrf.skey"
     if [ $? -ne 0 ]; then
-        echo "Error generating VRF keys for registered-$i!"
+        echo "[WARN] Error generating VRF keys for registered-$i!"
     fi
 
     echo "[LOG] Generating Stake keys for registered-$i in $NODE_SPECIFIC_KEYS_DIR..."
@@ -138,7 +138,7 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
         --verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.vkey" \
         --signing-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.skey"
     if [ $? -ne 0 ]; then
-        echo "Error generating Stake keys for registered-$i!"
+        echo "[WARN] Error generating Stake keys for registered-$i!"
     fi
 done
 echo "[LOG] Completed generation of KES, VRF, and Stake keypairs for $NUM_REGISTERED_NODES_TO_PROCESS registered nodes."
@@ -155,7 +155,7 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
         --testnet-magic 42)
 
     if [ -z "$node_stake_address" ]; then
-        echo "Error building stake address for registered-$i!"
+        echo "[WARN] Error building stake address for registered-$i!"
     else
         registered_node_stake_addresses+=("$node_stake_address")
         echo "[LOG] Generated stake address for registered-$i: $node_stake_address"
@@ -174,7 +174,7 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
         --verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/payment.vkey" \
         --signing-key-file "${NODE_SPECIFIC_KEYS_DIR}/payment.skey"
     if [ $? -ne 0 ]; then 
-        echo "Error generating payment keys for registered-$i!"
+        echo "[WARN] Error generating payment keys for registered-$i!"
         continue
     fi
     
@@ -707,7 +707,7 @@ echo "[LOG] Completed all $num_batches batch funding transactions for registered
 
 echo "[LOG] Saving FUNDED_ADDRESS to /shared/FUNDED_ADDRESS: $new_address"
 echo "$new_address" > /shared/FUNDED_ADDRESS
-echo "Created /shared/FUNDED_ADDRESS with value: $new_address"
+echo "[LOG] Created /shared/FUNDED_ADDRESS with value: $new_address"
 
 echo "[LOG] Generating Mainchain Cold Keys for Registered Nodes..."
 for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
@@ -721,7 +721,7 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     if [ $? -eq 0 ]; then
         echo "[LOG] Successfully generated cold keys for registered-$i."
     else
-        echo "Error generating cold keys for registered-$i!"
+        echo "[WARN] Error generating cold keys for registered-$i!"
     fi
 done
 echo "[LOG] Finished generating mainchain cold keys."
@@ -1145,7 +1145,7 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
         echo "[LOG] Querying stake address info for $NODE_LOG_NAME to verify delegation..."
         cardano-cli latest query stake-address-info \
             --address "$NODE_STAKE_ADDRESS" \
-            --testnet-magic 42 --out-file /dev/stdout || echo "Query stake-address-info failed for $NODE_LOG_NAME"
+            --testnet-magic 42 --out-file /dev/stdout || echo "[WARN] Query stake-address-info failed for $NODE_LOG_NAME"
     fi
 
     echo "[LOG] Completed SPO registration and delegation process for $NODE_LOG_NAME."
