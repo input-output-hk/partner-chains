@@ -2,7 +2,7 @@ use crate::generate_keys::GenerateKeysConfig;
 use crate::keystore::keystore_path;
 use crate::{CmdRun, IOContext};
 use clap::Parser;
-use parity_scale_codec::Decode;
+use parity_scale_codec::{Decode, Encode};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -82,10 +82,13 @@ impl CmdRun for AutomaticGenerateKeysCmd {
 			.await
 			.map_err(|e| anyhow::anyhow!("Failed to get finalized block hash: {}", e))?;
 
-			let session_keys_param = format!("0x{}", hex::encode(&session_keys));
+			let session_keys_param_raw = format!("0x{}", hex::encode(&session_keys));
+			// For the new API we need SCALE-encode the Vec<u8> first (compact length prefix).
+			let session_keys_param_scale = format!("0x{}", hex::encode(session_keys.encode()));
 
 			// Newer Substrate versions expose the method under `SessionKeys_decode_session_keys`.
-			// Some older versions still use `Session_decodeSessionKeys`. Try both.
+			// Some older versions still use `Session_decodeSessionKeys`. Try both. We call the
+			// legacy one first to remain compatible with existing tests and most nodes.
 			let decode_methods = [
 				"Session_decodeSessionKeys",       // legacy (Polkadot/Substrate <= v0.9)
 				"SessionKeys_decode_session_keys", // newer API (after FRAME v1.0)
@@ -95,7 +98,13 @@ impl CmdRun for AutomaticGenerateKeysCmd {
 			let mut last_err: Option<anyhow::Error> = None;
 
 			for decode_method in &decode_methods {
-				let params = serde_json::json!([decode_method, session_keys_param, block_hash]);
+				let param = if *decode_method == "Session_decodeSessionKeys" {
+					&session_keys_param_raw
+				} else {
+					&session_keys_param_scale
+				};
+
+				let params = serde_json::json!([decode_method, param, block_hash]);
 				match send_rpc_request::<String>(&client, &self.node_url, "state_call", params)
 					.await
 				{
@@ -103,8 +112,27 @@ impl CmdRun for AutomaticGenerateKeysCmd {
 						let bytes = hex::decode(&decoded_hex[2..]).map_err(|e| {
 							anyhow::anyhow!("Failed to decode runtime API response: {}", e)
 						})?;
-						decoded_keys = Decode::decode(&mut &bytes[..])
-							.map_err(|e| anyhow::anyhow!("Failed to SCALE decode keys: {}", e))?;
+						// The runtime API may return either Vec<(key_type, key)> directly
+						// or Option<Vec<..>> (introduced in newer FRAME versions). Handle both.
+						decoded_keys = {
+							// Attempt direct Vec decode first.
+							let mut cursor = &bytes[..];
+							match <Vec<(Vec<u8>, Vec<u8>)>>::decode(&mut cursor) {
+								Ok(vec) if cursor.is_empty() => vec,
+								_ => {
+									// Fallback: try Option<Vec<..>>
+									let mut cursor_opt = &bytes[..];
+									<Option<Vec<(Vec<u8>, Vec<u8>)>>>::decode(&mut cursor_opt)
+										.map_err(|e| {
+											anyhow::anyhow!(
+												"Failed to SCALE decode Option<Vec> keys: {}",
+												e
+											)
+										})?
+										.unwrap_or_default()
+								},
+							}
+						};
 						// Successfully decoded.
 						last_err = None;
 						break;
