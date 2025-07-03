@@ -402,8 +402,15 @@ def db_sync(init_db_sync) -> Generator[Session, None, None]:
         yield session
 
 
-@fixture(scope="session")
+@fixture(scope="function")
 def api(blockchain, config, secrets, db_sync) -> Generator[BlockchainApi, None, None]:
+    class_name = BlockchainTypes.__getitem__(blockchain).value
+    api: BlockchainApi = class_name(config, secrets, db_sync)
+    yield api
+    api.close()
+
+@fixture(scope="session")
+def static_api(blockchain, config, secrets, db_sync) -> Generator[BlockchainApi, None, None]:
     class_name = BlockchainTypes.__getitem__(blockchain).value
     api: BlockchainApi = class_name(config, secrets, db_sync)
     yield api
@@ -421,30 +428,30 @@ def teardown(request, api: BlockchainApi):
 
 
 @fixture(scope="session", autouse=True)
-def check_mc_sync_progress(api: BlockchainApi, decrypt_keys) -> Wallet:
+def check_mc_sync_progress(static_api: BlockchainApi, decrypt_keys) -> Wallet:
     logging.info("Checking if cardano node is fully synced")
-    sync_progress = api.get_mc_sync_progress()
+    sync_progress = static_api.get_mc_sync_progress()
     if float(sync_progress) != 100.00:
         logging.warning(f"Main chain node is not fully synced yet. Current status: {sync_progress}%")
 
 
 @fixture(scope="session")
-def current_mc_epoch(api: BlockchainApi) -> int:
-    epoch = api.get_mc_epoch()
+def current_mc_epoch(static_api: BlockchainApi) -> int:
+    epoch = static_api.get_mc_epoch()
     logging.info(f"Setting current MC epoch {epoch} with session scope.")
     return epoch
 
 
 @fixture(scope="session")
-def current_pc_epoch(api: BlockchainApi) -> int:
-    epoch = api.get_pc_epoch()
+def current_pc_epoch(static_api: BlockchainApi) -> int:
+    epoch = static_api.get_pc_epoch()
     logging.info(f"Setting current SC epoch {epoch} with session scope.")
     return epoch
 
 
 @fixture(scope="session")
-def initial_pc_epoch(api: BlockchainApi, config: ApiConfig) -> int:
-    initial_pc_epoch = api.get_initial_pc_epoch()
+def initial_pc_epoch(static_api: BlockchainApi, config: ApiConfig) -> int:
+    initial_pc_epoch = static_api.get_initial_pc_epoch()
     if not config.initial_pc_epoch:
         logging.info(f"Setting initial SC epoch {initial_pc_epoch}.")
         config.initial_pc_epoch = initial_pc_epoch
@@ -468,21 +475,21 @@ def new_wallet(api: BlockchainApi) -> Wallet:
 
 
 @fixture(scope="session")
-def get_wallet(api: BlockchainApi, secrets) -> Wallet:
+def get_wallet(static_api: BlockchainApi, secrets) -> Wallet:
     faucet = secrets["wallets"]["faucet-0"]
     address = faucet["address"]
     public_key = faucet["public_key"]
     secret = faucet["secret_seed"]
     scheme = faucet["scheme"]
-    return api.get_wallet(address=address, public_key=public_key, secret=secret, scheme=scheme)
+    return static_api.get_wallet(address=address, public_key=public_key, secret=secret, scheme=scheme)
 
 @fixture(scope="session")
-def genesis_utxo(api: BlockchainApi):
-	return api.get_params()["genesis_utxo"]
+def genesis_utxo(static_api: BlockchainApi):
+	return static_api.get_params()["genesis_utxo"]
 
 @fixture(scope="session")
-def get_scripts(genesis_utxo, api: BlockchainApi):
-    return api.partner_chains_node.smart_contracts.get_scripts(genesis_utxo).json
+def get_scripts(genesis_utxo, static_api: BlockchainApi):
+    return static_api.partner_chains_node.smart_contracts.get_scripts(genesis_utxo).json
 
 
 @fixture(scope="session")
@@ -587,7 +594,7 @@ def write_file():
 
 
 @fixture(scope="session")
-def governance_skey_with_cli(config: ApiConfig, api: BlockchainApi, write_file):
+def governance_skey_with_cli(config: ApiConfig, static_api: BlockchainApi, write_file):
     """
     Securely copy the governance authority's init skey (a secret key used by the smart-contracts to authorize admin
     operations) to a temporary file on the remote machine and update the path in the configuration.
@@ -602,7 +609,7 @@ def governance_skey_with_cli(config: ApiConfig, api: BlockchainApi, write_file):
     :param config: The API configuration object.
     """
     if config.stack_config.tools.node.runner.copy_secrets:
-        runner = api.partner_chains_node.run_command
+        runner = static_api.partner_chains_node.run_command
         path = config.nodes_config.governance_authority.mainchain_key
         with open(path, "r") as f:
             content = json.load(f)
@@ -625,7 +632,7 @@ def additional_governance_authorities(config: ApiConfig):
 
 
 @fixture(scope="session", autouse=True)
-def set_governance_to_multisig(multisig, api: BlockchainApi, genesis_utxo, governance_authority, additional_governance_authorities):
+def set_governance_to_multisig(multisig, static_api: BlockchainApi, genesis_utxo, governance_authority, additional_governance_authorities):
     if not multisig:
         yield
         return
@@ -639,7 +646,7 @@ def set_governance_to_multisig(multisig, api: BlockchainApi, genesis_utxo, gover
     )
     threshold = 2
 
-    response = api.partner_chains_node.smart_contracts.governance.update(
+    response = static_api.partner_chains_node.smart_contracts.governance.update(
         genesis_utxo,
         payment_key=governance_authority.mainchain_key,
         new_governance_authorities=all_authorities,
@@ -648,7 +655,7 @@ def set_governance_to_multisig(multisig, api: BlockchainApi, genesis_utxo, gover
 
     yield response
 
-    response = api.partner_chains_node.smart_contracts.governance.update(
+    response = static_api.partner_chains_node.smart_contracts.governance.update(
         genesis_utxo,
         payment_key=governance_authority.mainchain_key,
         new_governance_authorities=[governance_authority.mainchain_pub_key_hash],
