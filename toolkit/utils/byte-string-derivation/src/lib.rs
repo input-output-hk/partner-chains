@@ -131,7 +131,7 @@ fn gen_debug(name: &syn::Ident, generics: &Generics) -> impl ToTokens {
 	quote! {
 		impl #impl_generics core::fmt::Debug for #name #ty_generics #where_clause {
 			fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-				let hex = sp_core::bytes::to_hex(&self.0, true);
+				let hex = sp_core::bytes::to_hex(&self.0, false);
 				return f.write_str(&alloc::format!(#format_str));
 			}
 		}
