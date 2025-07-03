@@ -5,7 +5,7 @@ use clap::Parser;
 use parity_scale_codec::Decode;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::fs;
 
 #[cfg(test)]
@@ -102,7 +102,7 @@ impl CmdRun for AutomaticGenerateKeysCmd {
 			fs::create_dir_all(&keystore_path)
 				.map_err(|e| anyhow::anyhow!("Failed to create keystore directory: {}", e))?;
 
-			let mut key_map: HashMap<String, String> = HashMap::new();
+			let mut key_map: BTreeMap<String, String> = BTreeMap::new();
 			for (key_type, public_key) in decoded_keys {
 				// Convert key type to string for JSON and display.
 				let key_type_str = String::from_utf8(key_type.clone())
