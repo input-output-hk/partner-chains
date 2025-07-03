@@ -30,7 +30,7 @@ def payment_key(config: ApiConfig, governance_skey_with_cli):
     return config.nodes_config.governance_authority.mainchain_key
 
 
-@fixture(scope="session")
+@fixture(scope="function")
 def cardano_payment_key(config: ApiConfig, api: BlockchainApi, write_file):
     payment_key_path = config.nodes_config.governance_authority.mainchain_key
     if api.cardano_cli.run_command.copy_secrets:
