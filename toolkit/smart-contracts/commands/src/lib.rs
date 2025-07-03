@@ -181,22 +181,35 @@ impl From<GenesisUtxo> for UtxoId {
 	}
 }
 
-// Parses public keys in formatted as SIDECHAIN_KEY:AURA_KEY:GRANDPA_KEY
+// Parses public key pair in a format keyt:KEY
+fn try_parse_public_key(key_pair: &str) -> CmdResult<([u8; 4], Vec<u8>)> {
+	let [key_type, key] = key_pair
+		.split(":")
+		.collect::<Vec<_>>()
+		.try_into()
+		.map_err(|e| format!("Expected key with identifier, keyt:KEY, {:?}", e))?;
+
+	let key_type: [u8; 4] = key_type
+		.as_bytes()
+		.try_into()
+		.map_err(|e| format!("Expected 4 character identifier. {:?}", e))?;
+	let key = hex::decode(key)?;
+
+	Ok((key_type, key))
+}
+
+// Parses public keys formatted as crch:SIDECHAIN_KEY,aura:AURA_KEY,gran:GRANDPA_KEY
 pub(crate) fn parse_partnerchain_public_keys(
 	partner_chain_public_keys: &str,
 ) -> CmdResult<PermissionedCandidateData> {
 	let partner_chain_public_keys = partner_chain_public_keys.replace("0x", "");
-	if let [sidechain_pub_key, aura_pub_key, grandpa_pub_key] =
-		partner_chain_public_keys.split(":").collect::<Vec<_>>()[..]
-	{
-		Ok(PermissionedCandidateData {
-			sidechain_public_key: SidechainPublicKey(hex::decode(sidechain_pub_key)?),
-			aura_public_key: AuraPublicKey(hex::decode(aura_pub_key)?),
-			grandpa_public_key: GrandpaPublicKey(hex::decode(grandpa_pub_key)?),
-		})
-	} else {
-		Err("Failed to parse partner chain public keys.".into())
-	}
+
+	let keys = partner_chain_public_keys
+		.split(',')
+		.map(try_parse_public_key)
+		.collect::<CmdResult<Vec<_>>>()?;
+
+	Ok(PermissionedCandidateDataV1 { keys }.into())
 }
 
 #[cfg(test)]

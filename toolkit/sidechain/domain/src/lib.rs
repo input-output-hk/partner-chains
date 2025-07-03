@@ -1006,10 +1006,8 @@ pub struct RegistrationData {
 	pub utxo_info: UtxoInfo,
 	/// List of inputs to the registration transaction
 	pub tx_inputs: Vec<UtxoId>,
-	/// Registering SPO's Aura public key
-	pub aura_pub_key: AuraPublicKey,
-	/// Registering SPO's Grandpa public key
-	pub grandpa_pub_key: GrandpaPublicKey,
+	/// Registering SPO's Session public keys with key type identifiers
+	pub session_keys: Vec<([u8; 4], Vec<u8>)>,
 }
 
 /// Information about an Authority Candidate's Registrations at some block.
@@ -1083,6 +1081,15 @@ impl From<ed25519::Public> for GrandpaPublicKey {
 	}
 }
 
+/// Generic public key. Not validated
+#[derive(
+	Clone, PartialEq, Eq, Encode, Decode, DecodeWithMemTracking, TypeInfo, PartialOrd, Ord, Hash,
+)]
+pub struct GenericPublicKey {
+	key_type: [u8; 4],
+	key: Vec<u8>,
+}
+
 #[derive(
 	Debug,
 	Clone,
@@ -1135,13 +1142,73 @@ impl DParameter {
 /// Permissioned candidates are nominated by the Partner Chain's governance authority to be
 /// eligible for participation in block producer committee without controlling any ADA stake
 /// on Cardano and registering as SPOs.
-pub struct PermissionedCandidateData {
+pub enum PermissionedCandidateData {
+	/// Initial/legacy permissioned candidate schema
+	V0(PermissionedCandidateDataV0),
+	/// Permissioned candidate with universal keys
+	V1(PermissionedCandidateDataV1),
+}
+
+#[derive(
+	Debug,
+	Clone,
+	PartialEq,
+	Eq,
+	Decode,
+	DecodeWithMemTracking,
+	Encode,
+	TypeInfo,
+	PartialOrd,
+	Ord,
+	Hash,
+)]
+/// Information about a permissioned committee member candidate
+///
+/// Permissioned candidates are nominated by the Partner Chain's governance authority to be
+/// eligible for participation in block producer committee without controlling any ADA stake
+/// on Cardano and registering as SPOs.
+pub struct PermissionedCandidateDataV0 {
 	/// Sidechain public key of the trustless candidate
 	pub sidechain_public_key: SidechainPublicKey,
 	/// Aura public key of the trustless candidate
 	pub aura_public_key: AuraPublicKey,
 	/// Grandpa public key of the trustless candidate
 	pub grandpa_public_key: GrandpaPublicKey,
+}
+
+#[derive(
+	Debug,
+	Clone,
+	PartialEq,
+	Eq,
+	Decode,
+	DecodeWithMemTracking,
+	Encode,
+	TypeInfo,
+	PartialOrd,
+	Ord,
+	Hash,
+)]
+/// Information about a permissioned committee member candidate
+///
+/// Permissioned candidates are nominated by the Partner Chain's governance authority to be
+/// eligible for participation in block producer committee without controlling any ADA stake
+/// on Cardano and registering as SPOs.
+pub struct PermissionedCandidateDataV1 {
+	/// Arbitrary set of keys with associated key type
+	pub keys: Vec<([u8; 4], Vec<u8>)>,
+}
+
+impl From<PermissionedCandidateDataV0> for PermissionedCandidateData {
+	fn from(value: PermissionedCandidateDataV0) -> Self {
+		PermissionedCandidateData::V0(value)
+	}
+}
+
+impl From<PermissionedCandidateDataV1> for PermissionedCandidateData {
+	fn from(value: PermissionedCandidateDataV1) -> Self {
+		PermissionedCandidateData::V1(value)
+	}
 }
 
 /// Cardano SPO registration. This is a stripped-down version of [RegistrationData].
@@ -1157,10 +1224,8 @@ pub struct CandidateRegistration {
 	pub own_pkh: MainchainKeyHash,
 	/// UTxO containing the registration data
 	pub registration_utxo: UtxoId,
-	/// Registering SPO's Aura public key
-	pub aura_pub_key: AuraPublicKey,
-	/// Registering SPO's Grandpa public key
-	pub grandpa_pub_key: GrandpaPublicKey,
+	/// Session keys of a candidate
+	pub session_keys: Vec<([u8; 4], Vec<u8>)>,
 }
 
 impl CandidateRegistration {
@@ -1169,8 +1234,8 @@ impl CandidateRegistration {
 		self.stake_ownership == other.stake_ownership
 			&& self.partner_chain_pub_key == other.partner_chain_pub_key
 			&& self.partner_chain_signature == other.partner_chain_signature
-			&& self.aura_pub_key == other.aura_pub_key
-			&& self.grandpa_pub_key == other.grandpa_pub_key
+			// TODO: compared but without checking order/uniques
+			&& self.session_keys == other.session_keys
 	}
 }
 

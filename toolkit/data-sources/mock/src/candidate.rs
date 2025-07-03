@@ -108,11 +108,11 @@ impl From<MockPermissionedCandidate> for RawPermissionedCandidateData {
 			grandpa_pub_key,
 		}: MockPermissionedCandidate,
 	) -> Self {
-		Self {
+		RawPermissionedCandidateData::V0(RawPermissionedCandidateDataV0 {
 			sidechain_public_key: SidechainPublicKey(sidechain_pub_key.0),
 			aura_public_key: AuraPublicKey(aura_pub_key.0),
 			grandpa_public_key: GrandpaPublicKey(grandpa_pub_key.0),
-		}
+		})
 	}
 }
 

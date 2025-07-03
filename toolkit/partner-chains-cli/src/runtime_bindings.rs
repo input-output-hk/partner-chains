@@ -1,5 +1,6 @@
 use serde::Serialize;
 use sp_core::{ecdsa, ed25519, sr25519};
+use sp_runtime::traits::OpaqueKeys;
 
 /// Trait wrapping Substrate runtime type. Should be implemented for the runtime of the node.
 pub trait RuntimeTypeWrapper {
@@ -12,7 +13,7 @@ pub trait PartnerChainRuntime {
 	/// Partner Chain authority id type
 	type AuthorityId: Send + Sync + 'static + From<ecdsa::Public>;
 	/// Partner Chain authority key type
-	type AuthorityKeys: Send + Sync + 'static + From<(sr25519::Public, ed25519::Public)> + Serialize;
+	type AuthorityKeys: Send + Sync + OpaqueKeys + Serialize;
 	/// Partner Chain committee member type
 	type CommitteeMember: Serialize;
 

@@ -55,8 +55,6 @@ impl RegisterCmd {
 			partner_chain_signature: self.partner_chain_signature,
 			own_pkh: payment_key.to_pub_key_hash(),
 			registration_utxo: self.registration_utxo,
-			aura_pub_key: self.partner_chain_public_keys.aura_public_key,
-			grandpa_pub_key: self.partner_chain_public_keys.grandpa_public_key,
 		};
 
 		let result = run_register(
