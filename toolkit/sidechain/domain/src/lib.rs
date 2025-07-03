@@ -246,7 +246,6 @@ const MAX_MAINCHAIN_ADDRESS_BYTES: u32 = 120;
 	Clone, Default, PartialEq, Eq, Encode, Decode, DecodeWithMemTracking, TypeInfo, MaxEncodedLen,
 )]
 #[byte_string(debug)]
-#[cfg_attr(feature = "serde", byte_string(hex_serialize, hex_deserialize))]
 pub struct MainchainAddress(BoundedVec<u8, ConstU32<MAX_MAINCHAIN_ADDRESS_BYTES>>);
 
 impl MainchainAddress {
@@ -272,6 +271,32 @@ impl Display for MainchainAddress {
 		let s = String::from_utf8(self.0.to_vec())
 			.expect("MainchainAddressString is always properly encoded UTF-8");
 		write!(f, "{}", s)
+	}
+}
+
+#[cfg(feature = "serde")]
+impl serde::Serialize for MainchainAddress {
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: serde::Serializer,
+	{
+		let s = String::from_utf8(self.0.to_vec()).expect("MainchainAddress is always valid UTF-8");
+		serializer.serialize_str(&s)
+	}
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for MainchainAddress {
+	/// Deserialized MainchainAddress from both hexstring of ASCII bytes and plain String
+	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+	where
+		D: serde::Deserializer<'de>,
+	{
+		let s = String::deserialize(deserializer)?;
+		let bytes = sp_core::bytes::from_hex(&s).unwrap_or_else(|_| s.as_bytes().to_vec());
+		let bounded = BoundedVec::try_from(bytes)
+			.map_err(|_| serde::de::Error::custom("MainchainAddress is too long"))?;
+		Ok(MainchainAddress(bounded))
 	}
 }
 
@@ -1175,12 +1200,19 @@ mod tests {
 		let serialized = serde_json::to_value(&address).unwrap();
 		assert_eq!(
 			serialized,
-			serde_json::json!(
-				"0x616464725f7465737431777a35716337666b327061743030353877347a77766b77333579747074656a336e7563336a65326b6774616e356471337274347363"
-			)
+			serde_json::json!("addr_test1wz5qc7fk2pat0058w4zwvkw35ytptej3nuc3je2kgtan5dq3rt4sc")
 		);
 		let deserialized = serde_json::from_value(serialized).unwrap();
 		assert_eq!(address, deserialized);
+	}
+
+	#[test]
+	fn main_chain_address_deserialization_of_hex_encoded_bytes() {
+		let address = MainchainAddress::from_str("addr_test1wz5q").unwrap();
+		let serialized = serde_json::json!("0x616464725f7465737431777a3571");
+		assert_eq!(address, serde_json::from_value(serialized).unwrap());
+		let serialized = serde_json::json!("616464725f7465737431777a3571");
+		assert_eq!(address, serde_json::from_value(serialized).unwrap());
 	}
 
 	#[test]
