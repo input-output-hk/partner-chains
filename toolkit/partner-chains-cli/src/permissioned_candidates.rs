@@ -1,3 +1,4 @@
+use crate::cmd_traits::{GetPermissionedCandidates, UpsertPermissionedCandidates};
 use ogmios_client::query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId};
 use ogmios_client::query_network::QueryNetwork;
 use ogmios_client::transactions::Transactions;
@@ -14,8 +15,6 @@ use sp_core::crypto::AccountId32;
 use sp_core::{ecdsa, ed25519, sr25519};
 use sp_runtime::traits::IdentifyAccount;
 use std::fmt::{Display, Formatter};
-
-use crate::cmd_traits::{GetPermissionedCandidates, UpsertPermissionedCandidates};
 
 #[derive(Debug, Deserialize, Eq, PartialEq, PartialOrd, Ord, Serialize)]
 pub(crate) struct PermissionedCandidateKeys {
@@ -47,10 +46,14 @@ impl From<&sidechain_domain::PermissionedCandidateData> for PermissionedCandidat
 	}
 }
 
+/// Groups together keys of permissioned candidates. Expected to turn into a more generic type.
 #[derive(Debug, Deserialize, Eq, PartialEq, Ord, PartialOrd, Serialize)]
 pub(crate) struct ParsedPermissionedCandidatesKeys {
+	/// Polkadot identity of the permissioned candidate (aka. partner-chain key)
 	pub sidechain: ecdsa::Public,
+	/// AURA key of the permissioned candidate
 	pub aura: sr25519::Public,
+	/// Grandpa key of the permissioned candidate
 	pub grandpa: ed25519::Public,
 }
 
