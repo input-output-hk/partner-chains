@@ -1215,17 +1215,39 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
         echo "[LOG] Updating final UTXO in /shared/registered-${i}.utxo to: $NEW_REGISTRATION_UTXO"
         echo "$NEW_REGISTRATION_UTXO" > "/shared/registered-${i}.utxo"
 
-        echo "[LOG] Waiting for stake delegation for $NODE_LOG_NAME to become active (2 epochs)..."
-        sleep 250
+        echo "[LOG] Waiting for stake delegation for $NODE_LOG_NAME to become active..."
+        DELEGATION_ACTIVE=false
+        # Try for up to 5 minutes (30 * 10s)
+        for attempt in {1..30}; do
+            echo "[LOG] Checking stake address info for $NODE_LOG_NAME (Attempt $attempt)..."
+            stake_info=$(cardano-cli latest query stake-address-info \
+                --address "$NODE_STAKE_ADDRESS" \
+                --testnet-magic 42 2>/dev/null)
 
-        echo "[LOG] Querying stake address info for $NODE_LOG_NAME to verify delegation..."
-        cardano-cli latest query stake-address-info \
-            --address "$NODE_STAKE_ADDRESS" \
-            --testnet-magic 42 --out-file /dev/stdout || echo "[WARN] Query stake-address-info failed for $NODE_LOG_NAME"
+            if [ -n "$stake_info" ]; then
+                balance=$(echo "$stake_info" | /busybox grep '"rewardAccountBalance":' | /busybox grep -o '[0-9]\+')
+                
+                if [[ "$balance" =~ ^[0-9]+$ ]] && [ "$balance" -ge "$TRANSFER_AMOUNT" ]; then
+                    echo "[LOG] Stake is active for $NODE_LOG_NAME. Balance: $balance"
+                    DELEGATION_ACTIVE=true
+                    break
+                else
+                    echo "[WARN] Stake not yet active for $NODE_LOG_NAME. Current balance: ${balance:-0}. Retrying in 10s..."
+                fi
+            else
+                echo "[WARN] Could not query stake address info for $NODE_LOG_NAME. Retrying in 10s..."
+            fi
+            sleep 10
+        done
+
+        if [ "$DELEGATION_ACTIVE" = false ]; then
+            echo "[DEBUG] CRITICAL ERROR: Stake delegation for $NODE_LOG_NAME did not become active after 5 minutes."
+            cardano-cli latest query stake-address-info --address "$NODE_STAKE_ADDRESS" --testnet-magic 42 --out-file /dev/stdout || echo "Final verification query failed."
+        fi
     fi
 
     echo "[LOG] Completed SPO registration and delegation process for $NODE_LOG_NAME."
-    echo "---" # Separator for logs
+    echo "---" 
 
 done # End loop for registered nodes
 
