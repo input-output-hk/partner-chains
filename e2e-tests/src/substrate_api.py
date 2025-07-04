@@ -786,7 +786,7 @@ class SubstrateApi(BlockchainApi):
         if result == None:
             return None
         else:
-            logger.debug(f"definitely not none: {result}")
+            logger.debug(f"block_producer_metadata for {cross_chain_public_key_hash}: {result}")
         result = result[0]
         logger.debug(f"Block producer metadata for {cross_chain_public_key_hash}: {result}")
         return result.value
