@@ -121,9 +121,11 @@ impl<T: PartnerChainRuntime> CreateChainSpecCmd<T> {
 			&config.illiquid_supply_address.to_string(),
 		);
 		context.run_command(
-			format!("{node_executable} build-spec --disable-default-bootnode > chain-spec.json")
-				.to_string()
-				.as_str(),
+			format!(
+				"{node_executable} build-spec --chain template --disable-default-bootnode > chain-spec.json"
+			)
+			.to_string()
+			.as_str(),
 		)
 	}
 

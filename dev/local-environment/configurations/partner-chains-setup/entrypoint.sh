@@ -192,7 +192,7 @@ else
 fi
 
 echo "Generating chain-spec.json file for Partner chain Nodes..."
-./partner-chains-node build-spec --disable-default-bootnode > chain-spec.json
+./partner-chains-node build-spec --chain template --disable-default-bootnode > chain-spec.json
 
 echo "Configuring Initial Validators..."
 jq '.genesis.runtimeGenesis.config.session.initialValidators = [

@@ -332,7 +332,7 @@ fn run_build_spec_io(output: Result<String, anyhow::Error>) -> MockIO {
 		set_env_vars_io(),
 		MockIO::RunCommand {
 			expected_cmd:
-				"<mock executable> build-spec --disable-default-bootnode > chain-spec.json"
+				"<mock executable> build-spec --chain template --disable-default-bootnode > chain-spec.json"
 					.to_string(),
 			output,
 		},

@@ -123,7 +123,7 @@ export NATIVE_TOKEN_ASSET_NAME=''
 Native token policy and asset name are out of partner chains control, they should be known by the chain builder.
 For chains that do not intend to use them, it is assumed that `pc-node build-spec` will not need them.
 
-Run `pc-node build-spec --disable-default-bootnode > chain-spec.json`.
+Run `pc-node build-spec --chain template --disable-default-bootnode > chain-spec.json`.
 As stated above, the content of the file depends mostly on `pc-node`.
 
 Please consult our [intro doc chain-spec](../intro.md#chain-spec.json) section and update all the required fields, most notably:

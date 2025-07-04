@@ -39,7 +39,11 @@ impl SubstrateCli for Cli {
 			"dev" => testnet::development_config(),
 			"staging" => staging::staging_config(),
 			"local" => testnet::local_testnet_config(),
-			"" => template_chain_spec::chain_spec(),
+			"template" => template_chain_spec::chain_spec(),
+			"" => {
+				return Err("Please provide --chain dev|staging|local|template|<path> parameter"
+					.to_string());
+			},
 			path => match chain_spec::ChainSpec::from_json_file(std::path::PathBuf::from(path)) {
 				Ok(parsed) => Ok(parsed),
 				Err(err) => return Err(format!("Parsing chain spec file failed: {}", err)),
