@@ -1,9 +1,11 @@
-use crate::config::{CHAIN_CONFIG_FILE_PATH, RESOURCES_CONFIG_FILE_PATH};
 use crate::deregister::DeregisterCmd;
 use crate::ogmios::config::tests::{
 	default_ogmios_config_json, default_ogmios_service_config, establish_ogmios_configuration_io,
 };
-use crate::tests::{MockIO, MockIOContext, OffchainMock, OffchainMocks};
+use crate::tests::{
+	CHAIN_CONFIG_FILE_PATH, MockIO, MockIOContext, OffchainMock, OffchainMocks,
+	RESOURCES_CONFIG_FILE_PATH,
+};
 use crate::{CmdRun, CommonArguments, verify_json};
 use hex_literal::hex;
 use serde_json::json;
@@ -72,7 +74,7 @@ fn fails_when_chain_config_is_not_valid() {
 	let result = deregister_cmd().run(&mock_context);
 	assert_eq!(
 		result.err().unwrap().to_string(),
-		"Couldn't parse chain configuration file pc-chain-config.json. The chain configuration file that was used for registration is required in the working directory."
+		"Couldn't parse chain configuration file test-pc-chain-config.json. The chain configuration file that was used for registration is required in the working directory."
 	);
 }
 

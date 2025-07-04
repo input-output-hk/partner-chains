@@ -4,12 +4,13 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 # Unreleased
 
+## Changed
+
 * Added extra constant burn fee in `pallet-address-association` to discourage attacks on pallet storage.
 * Wizards don't require `generate-keys` for `prepare-configuration`. Altered recommended order of `create-chain-spec` and `setup-main-chain-state`.
 * `MainchainAddress` is now serialized as plain String instead of hexstring of its bytes
-
-## Changed
-
+* Wizards use optional env vars: PC_CHAIN_CONFIG_FILE and PC_RESOURCES_CONFIG_FILE env variables to
+locate the chain config and resources config files
 * `pallet-block-producer-metadata` is updated with a configurable fee for inserting the metadata, to make attacks on unbounded storage economically infeasible
 * Added `valid_before` argument to the signed message and all extrinsics in `pallet_block_producer_metadata`. This is to
 prevent unauthorized re-submission of metadata updates. The `sign-block-producer-metadata` command was updated to

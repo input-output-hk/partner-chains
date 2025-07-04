@@ -1,8 +1,7 @@
-use crate::tests::{MockIO, MockIOContext};
+use crate::tests::{CHAIN_CONFIG_FILE_PATH, MockIO, MockIOContext, RESOURCES_CONFIG_FILE_PATH};
 
 use super::*;
 
-const RESOURCES_CONFIG_PATH: &str = "pc-resources-config.json";
 const DATA_PATH: &str = "/path/to/data";
 const CHAIN_SPEC_FILE: &str = "chain-spec.json";
 const DB_CONNECTION_STRING: &str =
@@ -113,16 +112,16 @@ fn happy_path() {
 	];
 
 	let context = MockIOContext::new()
-		.with_json_file(RESOURCES_CONFIG_PATH, default_resources_config_json())
+		.with_json_file(RESOURCES_CONFIG_FILE_PATH, default_resources_config_json())
         .with_json_file(CHAIN_CONFIG_FILE_PATH, default_chain_config())
 		.with_file(CHAIN_SPEC_FILE, "irrelevant")
 		.with_expected_io(vec![
 			MockIO::eprint(&format!(
-				"🛠️ Loaded node base path from config ({RESOURCES_CONFIG_PATH}): {DATA_PATH}"
+				"🛠️ Loaded node base path from config ({RESOURCES_CONFIG_FILE_PATH}): {DATA_PATH}"
 			)),
 			MockIO::list_dir(&keystore_path(), Some(keystore_files.clone())),
 			MockIO::eprint(&format!(
-				"🛠️ Loaded DB-Sync Postgres connection string from config ({RESOURCES_CONFIG_PATH}): {DB_CONNECTION_STRING}"
+				"🛠️ Loaded DB-Sync Postgres connection string from config ({RESOURCES_CONFIG_FILE_PATH}): {DB_CONNECTION_STRING}"
 			)),
 			value_check_prompt(),
 			MockIO::run_command(&default_chain_config_run_command(), "irrelevant")
@@ -131,7 +130,7 @@ fn happy_path() {
 	let result = StartNodeCmd { silent: false }.run(&context);
 
 	result.expect("should succeed");
-	verify_json!(context, RESOURCES_CONFIG_PATH, expected_final_resources_config_json());
+	verify_json!(context, RESOURCES_CONFIG_FILE_PATH, expected_final_resources_config_json());
 }
 
 mod check_chain_spec {
@@ -204,9 +203,8 @@ mod check_keystore {
 
 mod load_chain_config {
 	use crate::{
-		config::CHAIN_CONFIG_FILE_PATH,
 		start_node::load_chain_config,
-		tests::{MockIO, MockIOContext},
+		tests::{CHAIN_CONFIG_FILE_PATH, MockIO, MockIOContext},
 	};
 
 	use super::default_chain_config;

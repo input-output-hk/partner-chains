@@ -1,8 +1,7 @@
 use crate::CmdRun;
 use crate::cardano_key::get_mc_payment_signing_key_from_file;
-use crate::config;
-use crate::config::CHAIN_CONFIG_FILE_PATH;
 use crate::config::config_fields;
+use crate::config::{self, ConfigFile};
 use crate::data_source::set_data_sources_env;
 use crate::io::IOContext;
 use crate::ogmios::config::establish_ogmios_configuration;
@@ -41,7 +40,7 @@ impl CmdRun for Register3Cmd {
 		context.print("This command will submit the registration message to the mainchain.");
 
 		config_fields::GENESIS_UTXO.load_from_file(context).ok_or_else(|| {
-			context.eprint(&format!("⚠️ The chain configuration file `{CHAIN_CONFIG_FILE_PATH}` is missing or invalid.\n"));
+			context.eprint(&format!("⚠️ The chain configuration file `{}` is missing or invalid.\n", context.config_file_path(ConfigFile::Chain)));
 			context.eprint("⚠️ If you are the governance authority, please make sure you have run the `prepare-configuration` command to generate the chain configuration file.\n");
 			context.eprint("⚠️ If you are a validator, you can obtain the chain configuration file from the governance authority.\n");
 			anyhow::anyhow!("Chain config missing or invalid")
@@ -136,9 +135,10 @@ struct McEpochConfigJson {
 }
 
 fn get_current_mainchain_epoch(context: &impl IOContext) -> Result<McEpochNumber, anyhow::Error> {
-	let chain_config_json = context.read_file(config::CHAIN_CONFIG_FILE_PATH).ok_or_else(|| {
+	let config_file_path = context.config_file_path(ConfigFile::Chain);
+	let chain_config_json = context.read_file(&config_file_path).ok_or_else(|| {
 		anyhow::anyhow!(
-			"⚠️ The chain configuration file `{CHAIN_CONFIG_FILE_PATH}` is missing or invalid."
+			"⚠️ The chain configuration file `{config_file_path}` is missing or invalid."
 		)
 	})?;
 
@@ -153,15 +153,15 @@ fn get_current_mainchain_epoch(context: &impl IOContext) -> Result<McEpochNumber
 mod tests {
 	use super::*;
 	use crate::{
-		config::{
-			CHAIN_CONFIG_FILE_PATH, RESOURCES_CONFIG_FILE_PATH,
-			config_fields::POSTGRES_CONNECTION_STRING,
-		},
+		config::config_fields::POSTGRES_CONNECTION_STRING,
 		ogmios::config::tests::{
 			default_ogmios_config_json, default_ogmios_service_config,
 			establish_ogmios_configuration_io,
 		},
-		tests::{MockIO, MockIOContext, OffchainMock, OffchainMocks},
+		tests::{
+			CHAIN_CONFIG_FILE_PATH, MockIO, MockIOContext, OffchainMock, OffchainMocks,
+			RESOURCES_CONFIG_FILE_PATH,
+		},
 		verify_json,
 	};
 	use hex_literal::hex;

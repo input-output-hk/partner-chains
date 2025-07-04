@@ -86,7 +86,8 @@ impl<T: PartnerChainRuntime> CreateChainSpecCmd<T> {
 			context.print("WARNING: The list of initial permissioned candidates is empty. Generated chain spec will not allow the chain to start.".red().to_string().as_str());
 			let update_msg = format!(
 				"Update 'initial_permissioned_candidates' field of {} file with keys of initial committee.",
-				config_fields::INITIAL_PERMISSIONED_CANDIDATES.config_file
+				context
+					.config_file_path(config_fields::INITIAL_PERMISSIONED_CANDIDATES.config_file)
 			);
 			context.print(update_msg.red().to_string().as_str());
 			context.print(INITIAL_PERMISSIONED_CANDIDATES_EXAMPLE.yellow().to_string().as_str());
@@ -248,8 +249,8 @@ fn load_config_field<C: IOContext, T: DeserializeOwned>(
 	field: &ConfigFieldDefinition<T>,
 ) -> Result<T, anyhow::Error> {
 	field.load_from_file(context).ok_or_else(|| {
-		context.eprint(format!("The '{}' configuration file is missing or invalid.\nIf you are the governance authority, please make sure you have run the `prepare-configuration` command to generate the chain configuration file.\nIf you are a validator, you can obtain the chain configuration file from the governance authority.", field.config_file).as_str());
-	anyhow!("failed to read '{}'", field.path.join("."))
+		context.eprint(format!("The '{}' configuration file is missing or invalid.\nIf you are the governance authority, please make sure you have run the `prepare-configuration` command to generate the chain configuration file.\nIf you are a validator, you can obtain the chain configuration file from the governance authority.", context.config_file_path(field.config_file)).as_str());
+		anyhow!("failed to read '{}'", field.path.join("."))
 	})
 }
 

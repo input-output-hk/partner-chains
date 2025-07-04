@@ -121,12 +121,14 @@ After setting up the permissioned candidates, execute the 'setup-main-chain-stat
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::config::config_fields::{GENESIS_UTXO, OGMIOS_PROTOCOL};
-	use crate::config::{CHAIN_CONFIG_FILE_PATH, NetworkProtocol};
+	use crate::config::NetworkProtocol;
 	use crate::ogmios::test_values::{preprod_eras_summaries, preprod_shelley_config};
 	use crate::ogmios::{OgmiosRequest, OgmiosResponse};
 	use crate::prepare_configuration::prepare_cardano_params::tests::PREPROD_CARDANO_PARAMS;
-	use crate::tests::{MockIO, MockIOContext, OffchainMock, OffchainMocks};
+	use crate::tests::{
+		CHAIN_CONFIG_FILE_PATH, MockIO, MockIOContext, OffchainMock, OffchainMocks,
+		RESOURCES_CONFIG_FILE_PATH,
+	};
 	use crate::verify_json;
 	use partner_chains_cardano_offchain::scripts_data::{Addresses, PolicyIds, ScriptsData};
 	use serde_json::Value;
@@ -207,8 +209,8 @@ mod tests {
 	#[test]
 	fn happy_path() {
 		let mock_context = MockIOContext::new()
-			.with_json_file(GENESIS_UTXO.config_file, serde_json::json!({}))
-			.with_json_file(OGMIOS_PROTOCOL.config_file, serde_json::json!({}))
+			.with_json_file(CHAIN_CONFIG_FILE_PATH, serde_json::json!({}))
+			.with_json_file(RESOURCES_CONFIG_FILE_PATH, serde_json::json!({}))
 			.with_json_file("payment.skey", payment_key_content())
 			.with_offchain_mocks(preprod_offchain_mocks())
 			.with_expected_io(vec![
@@ -239,11 +241,11 @@ mod tests {
 	fn happy_path_with_initial_permissioned_candidates() {
 		let mock_context = MockIOContext::new()
 			.with_json_file(
-				INITIAL_PERMISSIONED_CANDIDATES.config_file,
+				CHAIN_CONFIG_FILE_PATH,
 				json!({"initial_permissioned_candidates": initial_permissioned_candidates_json()}),
 			)
 			.with_json_file("payment.skey", payment_key_content())
-			.with_json_file(OGMIOS_PROTOCOL.config_file, serde_json::json!({}))
+			.with_json_file(RESOURCES_CONFIG_FILE_PATH, serde_json::json!({}))
 			.with_offchain_mocks(preprod_offchain_mocks())
 			.with_expected_io(vec![
 				MockIO::ogmios_request(

@@ -1,12 +1,13 @@
-use crate::config::CHAIN_CONFIG_FILE_PATH;
-use crate::config::RESOURCES_CONFIG_FILE_PATH;
 use crate::config::config_fields::CARDANO_PAYMENT_SIGNING_KEY_FILE;
 use crate::ogmios::config::tests::{
 	default_ogmios_config_json, default_ogmios_service_config, prompt_ogmios_configuration_io,
 };
 use crate::prepare_configuration::tests::{prompt, prompt_with_default};
 use crate::setup_main_chain_state::SetupMainChainStateCmd;
-use crate::tests::{MockIO, MockIOContext, OffchainMock, OffchainMocks};
+use crate::tests::{
+	CHAIN_CONFIG_FILE_PATH, MockIO, MockIOContext, OffchainMock, OffchainMocks,
+	RESOURCES_CONFIG_FILE_PATH,
+};
 use crate::{CmdRun, CommonArguments, verify_json};
 use hex_literal::hex;
 use partner_chains_cardano_offchain::multisig::MultiSigSmartContractResult;
@@ -295,7 +296,7 @@ fn update_d_parameter_io() -> MockIO {
 fn print_main_chain_and_configuration_candidates_difference_io() -> MockIO {
 	MockIO::Group(vec![
 		MockIO::print(
-			"Permissioned candidates in the pc-chain-config.json file does not match the most recent on-chain initial permissioned candidates.",
+			"Permissioned candidates in the test-pc-chain-config.json file does not match the most recent on-chain initial permissioned candidates.",
 		),
 		MockIO::print("The most recent on-chain initial permissioned candidates are:"),
 		MockIO::print(
@@ -316,7 +317,7 @@ fn print_main_chain_and_configuration_candidates_difference_io() -> MockIO {
 
 fn print_main_chain_and_configuration_candidates_are_equal_io() -> MockIO {
 	MockIO::Group(vec![MockIO::print(
-		"Permissioned candidates in the pc-chain-config.json file match the most recent on-chain initial permissioned candidates.",
+		"Permissioned candidates in the test-pc-chain-config.json file match the most recent on-chain initial permissioned candidates.",
 	)])
 }
 

@@ -1,5 +1,5 @@
 use crate::cmd_traits::*;
-use crate::config::ServiceConfig;
+use crate::config::{ConfigFile, ServiceConfig};
 use crate::ogmios::{OgmiosRequest, OgmiosResponse, ogmios_request};
 use anyhow::{Context, anyhow};
 use inquire::InquireError;
@@ -50,6 +50,11 @@ pub trait IOContext {
 		req: OgmiosRequest,
 	) -> anyhow::Result<OgmiosResponse>;
 	fn offchain_impl(&self, ogmios_config: &ServiceConfig) -> anyhow::Result<Self::Offchain>;
+	fn config_file_path(&self, file: ConfigFile) -> String;
+
+	fn chain_config_file_path(&self) -> String {
+		self.config_file_path(ConfigFile::Chain)
+	}
 }
 
 /// Default context implementation using standard IO.
@@ -201,6 +206,16 @@ impl IOContext for DefaultCmdRunContext {
 			.map_err(|_| {
 				anyhow!(format!("Couldn't open connection to Ogmios at {}", ogmios_address))
 			})
+	}
+
+	fn config_file_path(&self, file: ConfigFile) -> String {
+		match file {
+			ConfigFile::Chain => {
+				std::env::var("PC_CHAIN_CONFIG_PATH").unwrap_or("pc-chain-config.json".to_owned())
+			},
+			ConfigFile::Resources => std::env::var("PC_RESOURCES_CONFIG_PATH")
+				.unwrap_or("pc-resources-config.json".to_owned()),
+		}
 	}
 }
 
