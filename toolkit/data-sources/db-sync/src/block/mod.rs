@@ -1,7 +1,6 @@
 //! Db-Sync data source implementation that queries Cardano block information
 use crate::{
 	DataSourceError::*,
-	data_sources::read_mc_epoch_config,
 	db_model::{self, Block, BlockNumber, SlotNumber},
 };
 use chrono::{DateTime, NaiveDateTime, TimeDelta};
@@ -146,7 +145,7 @@ impl BlockDataSourceImpl {
 		Ok(Self::from_config(
 			pool,
 			DbSyncBlockDataSourceConfig::from_env()?,
-			&read_mc_epoch_config()?,
+			&crate::data_sources::read_mc_epoch_config()?,
 		))
 	}
 

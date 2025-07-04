@@ -1,0 +1,6 @@
+{
+  "securityParam": 2160,
+  "activeSlotsCoeff": 0.05,
+  "epochLength": 432000,
+  "slotLength": 1000
+}
