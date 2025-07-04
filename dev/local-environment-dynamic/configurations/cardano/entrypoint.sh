@@ -8,7 +8,7 @@ chmod 777 /shared
 
 echo "[LOG] Calculating target time for synchronised chain start..."
 
-# Local env Partner Chains epochs are 30 seconds long. PC and MC epochs have to align. The following line makes MC epoch 0 start at some PC epoch start.
+# Local env Partner Chains epochs are 30 seconds long. For the current e2e-tests PC and MC epochs have to align. The following line makes MC epoch 0 start at some PC epoch start.
 target_time=$(( ($(date +%s) / 30 + 1) * 30 ))
 echo "$target_time" > /shared/cardano.start
 byron_startTime=$target_time
@@ -88,9 +88,6 @@ while true; do
         sleep 1
     fi
 done
-
-echo "[LOG] Waiting 10 seconds to ensure node.socket is ready..."
-sleep 10
 
 echo "[LOG] node.socket found."
 
