@@ -7,8 +7,8 @@ pytestmark = [mark.xdist_group(name="governance_action")]
 
 class TestUpdate:
     @fixture(scope="class", autouse=True)
-    def update_data(self, api: BlockchainApi, insert_data, genesis_utxo, random_key, new_value_hex_bytes, payment_key):
-        result = api.partner_chains_node.smart_contracts.governed_map.update(
+    def update_data(self, static_api: BlockchainApi, insert_data, genesis_utxo, random_key, new_value_hex_bytes, payment_key):
+        result = static_api.partner_chains_node.smart_contracts.governed_map.update(
             genesis_utxo,
             random_key,
             new_value_hex_bytes,
@@ -26,8 +26,8 @@ class TestUpdate:
 
 class TestUpdateWithTheSameValue:
     @fixture(scope="class", autouse=True)
-    def update_data(self, api: BlockchainApi, insert_data, genesis_utxo, random_key, random_value, payment_key):
-        result = api.partner_chains_node.smart_contracts.governed_map.update(
+    def update_data(self, static_api: BlockchainApi, insert_data, genesis_utxo, random_key, random_value, payment_key):
+        result = static_api.partner_chains_node.smart_contracts.governed_map.update(
             genesis_utxo,
             random_key,
             string_to_hex_bytes(random_value),
@@ -46,8 +46,8 @@ class TestUpdateWithTheSameValue:
 
 class TestUpdateWithExpectedCurrentValue:
     @fixture(scope="class", autouse=True)
-    def update_data(self, api: BlockchainApi, insert_data, genesis_utxo, random_key, random_value, new_value_hex_bytes, payment_key):
-        result = api.partner_chains_node.smart_contracts.governed_map.update(
+    def update_data(self, static_api: BlockchainApi, insert_data, genesis_utxo, random_key, random_value, new_value_hex_bytes, payment_key):
+        result = static_api.partner_chains_node.smart_contracts.governed_map.update(
             genesis_utxo,
             random_key,
             new_value_hex_bytes,
@@ -66,8 +66,8 @@ class TestUpdateWithExpectedCurrentValue:
 
 class TestUpdateWithExpectedCurrentValueAndTheSameValue:
     @fixture(scope="class", autouse=True)
-    def update_data(self, api: BlockchainApi, insert_data, genesis_utxo, random_key, random_value, payment_key):
-        result = api.partner_chains_node.smart_contracts.governed_map.update(
+    def update_data(self, static_api: BlockchainApi, insert_data, genesis_utxo, random_key, random_value, payment_key):
+        result = static_api.partner_chains_node.smart_contracts.governed_map.update(
             genesis_utxo,
             random_key,
             string_to_hex_bytes(random_value),
@@ -87,8 +87,8 @@ class TestUpdateWithExpectedCurrentValueAndTheSameValue:
 
 class TestUpdateWithNonMatchingCurrentValue:
     @fixture(scope="class", autouse=True)
-    def update_data(self, api: BlockchainApi, insert_data, genesis_utxo, random_key, new_value_hex_bytes, payment_key):
-        result = api.partner_chains_node.smart_contracts.governed_map.update(
+    def update_data(self, static_api: BlockchainApi, insert_data, genesis_utxo, random_key, new_value_hex_bytes, payment_key):
+        result = static_api.partner_chains_node.smart_contracts.governed_map.update(
             genesis_utxo,
             random_key,
             new_value_hex_bytes,
@@ -110,8 +110,8 @@ class TestUpdateWithNonMatchingCurrentValue:
 
 class TestUpdateWithNonExistentKey:
     @fixture(scope="class", autouse=True)
-    def update_data(self, api: BlockchainApi, genesis_utxo, random_key, new_value_hex_bytes, payment_key):
-        result = api.partner_chains_node.smart_contracts.governed_map.update(
+    def update_data(self, static_api: BlockchainApi, genesis_utxo, random_key, new_value_hex_bytes, payment_key):
+        result = static_api.partner_chains_node.smart_contracts.governed_map.update(
             genesis_utxo,
             random_key,
             new_value_hex_bytes,

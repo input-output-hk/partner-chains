@@ -30,13 +30,13 @@ def payment_key(config: ApiConfig, governance_skey_with_cli):
     return config.nodes_config.governance_authority.mainchain_key
 
 
-@fixture(scope="function")
-def cardano_payment_key(config: ApiConfig, api: BlockchainApi, write_file):
+@fixture(scope="session")
+def cardano_payment_key(config: ApiConfig, static_api: BlockchainApi, write_file):
     payment_key_path = config.nodes_config.governance_authority.mainchain_key
-    if api.cardano_cli.run_command.copy_secrets:
+    if static_api.cardano_cli.run_command.copy_secrets:
         with open(payment_key_path, "r") as f:
             content = json.load(f)
-            path = write_file(api.cardano_cli.run_command, content)
+            path = write_file(static_api.cardano_cli.run_command, content)
         return path
     else:
         return payment_key_path
@@ -63,16 +63,16 @@ def v_function(v_function_factory, config: ApiConfig):
 
 
 @fixture(scope="package")
-def minting_policy_filepath(api: BlockchainApi, governance_vkey_bech32, write_file):
-    key_hash = api.cardano_cli.get_address_key_hash(governance_vkey_bech32)
+def minting_policy_filepath(static_api: BlockchainApi, governance_vkey_bech32, write_file):
+    key_hash = static_api.cardano_cli.get_address_key_hash(governance_vkey_bech32)
     policy_script = {"keyHash": key_hash, "type": "sig"}
-    policy_script_filepath = write_file(api.cardano_cli.run_command, policy_script)
+    policy_script_filepath = write_file(static_api.cardano_cli.run_command, policy_script)
     return policy_script_filepath
 
 
 @fixture(scope="package")
-def minting_policy_id(api: BlockchainApi, minting_policy_filepath):
-    policy_id = api.cardano_cli.get_policy_id(minting_policy_filepath)
+def minting_policy_id(static_api: BlockchainApi, minting_policy_filepath):
+    policy_id = static_api.cardano_cli.get_policy_id(minting_policy_filepath)
     return policy_id
 
 
@@ -90,14 +90,14 @@ def mint_token(
     reserve_asset_id: str,
     transaction_input: str,
     minting_policy_filepath,
-    api: BlockchainApi,
+    static_api: BlockchainApi,
     cardano_payment_key,
 ):
     lovelace_amount = MIN_LOVELACE_FOR_TX - MIN_LOVELACE_TO_COVER_FEES
 
     def _mint_token(amount: int):
         logging.info(f"Minting {amount} native tokens...")
-        _, tx_filepath = api.cardano_cli.build_mint_tx(
+        _, tx_filepath = static_api.cardano_cli.build_mint_tx(
             tx_in=transaction_input(),
             address=governance_address,
             lovelace=lovelace_amount,
@@ -106,9 +106,9 @@ def mint_token(
             policy_script_filepath=minting_policy_filepath,
         )
 
-        signed_tx_filepath = api.cardano_cli.sign_transaction(tx_filepath=tx_filepath, signing_key=cardano_payment_key)
+        signed_tx_filepath = static_api.cardano_cli.sign_transaction(tx_filepath=tx_filepath, signing_key=cardano_payment_key)
 
-        result = api.cardano_cli.submit_transaction(signed_tx_filepath)
+        result = static_api.cardano_cli.submit_transaction(signed_tx_filepath)
         return result
 
     return _mint_token
@@ -125,16 +125,16 @@ def read_v_function_script_file():
 
 
 @fixture(scope="package")
-def v_function_address(api: BlockchainApi):
-    _, verification_key = api.cardano_cli.generate_payment_keys()
+def v_function_address(static_api: BlockchainApi):
+    _, verification_key = static_api.cardano_cli.generate_payment_keys()
     bech32_vkey = cbor_to_bech32(verification_key["cborHex"], "addr_vk")
-    address = api.cardano_cli.build_address(payment_vkey=bech32_vkey)
+    address = static_api.cardano_cli.build_address(payment_vkey=bech32_vkey)
     return address
 
 
 @fixture(scope="package")
 def v_function_factory(
-    api: BlockchainApi,
+    static_api: BlockchainApi,
     read_v_function_script_file,
     write_file,
     v_function_address,
@@ -147,8 +147,8 @@ def v_function_factory(
         logging.info(f"Creating V-function from {v_function_path}...")
         v_function_script = read_v_function_script_file(v_function_path)
         v_function_cbor = v_function_script["cborHex"]
-        script_path = write_file(api.cardano_cli.run_command, v_function_script)
-        script_hash = api.cardano_cli.get_policy_id(script_path)
+        script_path = write_file(static_api.cardano_cli.run_command, v_function_script)
+        script_hash = static_api.cardano_cli.get_policy_id(script_path)
         attach_v_function_to_utxo(v_function_address, script_path)
         utxo = wait_until(reference_utxo, v_function_address, v_function_cbor, timeout=config.timeouts.main_chain_tx)
         v_function = VFunction(
@@ -169,10 +169,10 @@ MIN_LOVELACE_TO_COVER_FEES = 10_000_000
 
 
 @fixture(scope="package")
-def transaction_input(governance_address: str, api: BlockchainApi):
+def transaction_input(governance_address: str, static_api: BlockchainApi):
 
     def _transaction_input():
-        utxo_dict = api.cardano_cli.get_utxos(governance_address)
+        utxo_dict = static_api.cardano_cli.get_utxos(governance_address)
         tx_in = next(filter(lambda utxo: utxo_dict[utxo]["value"]["lovelace"] > MIN_LOVELACE_FOR_TX, utxo_dict), None)
         return tx_in
 
@@ -180,11 +180,11 @@ def transaction_input(governance_address: str, api: BlockchainApi):
 
 
 @fixture(scope="package")
-def attach_v_function_to_utxo(transaction_input, governance_address, cardano_payment_key, api: BlockchainApi):
+def attach_v_function_to_utxo(transaction_input, governance_address, cardano_payment_key, static_api: BlockchainApi):
     def _attach_v_function_to_utxo(address, filepath):
         logging.info(f"Attaching V-function to {address}...")
         lovelace_amount = MIN_LOVELACE_FOR_TX - MIN_LOVELACE_TO_COVER_FEES
-        _, raw_tx_filepath = api.cardano_cli.build_tx_with_reference_script(
+        _, raw_tx_filepath = static_api.cardano_cli.build_tx_with_reference_script(
             tx_in=transaction_input(),
             address=address,
             lovelace=lovelace_amount,
@@ -192,21 +192,21 @@ def attach_v_function_to_utxo(transaction_input, governance_address, cardano_pay
             change_address=governance_address,
         )
 
-        signed_tx_filepath = api.cardano_cli.sign_transaction(
+        signed_tx_filepath = static_api.cardano_cli.sign_transaction(
             tx_filepath=raw_tx_filepath, signing_key=cardano_payment_key
         )
 
-        result = api.cardano_cli.submit_transaction(signed_tx_filepath)
+        result = static_api.cardano_cli.submit_transaction(signed_tx_filepath)
         return result
 
     return _attach_v_function_to_utxo
 
 
 @fixture(scope="package")
-def reference_utxo(api: BlockchainApi):
+def reference_utxo(static_api: BlockchainApi):
 
     def _reference_utxo(v_function_address, cbor):
-        utxo_dict = api.cardano_cli.get_utxos(v_function_address)
+        utxo_dict = static_api.cardano_cli.get_utxos(v_function_address)
         reference_utxo = next(
             filter(lambda utxo: utxo_dict[utxo]["referenceScript"]["script"]["cborHex"] == cbor, utxo_dict), None
         )

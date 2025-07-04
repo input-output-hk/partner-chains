@@ -403,6 +403,16 @@ const STAKE_POOL_PUBLIC_KEY_LEN: usize = 32;
 /// Cardano stake pool public key (ed25519)
 pub struct StakePoolPublicKey(pub [u8; STAKE_POOL_PUBLIC_KEY_LEN]);
 
+#[test]
+fn padding() {
+	use hex_literal::hex;
+	let key = StakePoolPublicKey(hex!(
+		"0000000000000000000000000000000000000000000000000000000000000001"
+	));
+
+	assert_eq!(format!("{key:?}"), "StakePoolPublicKey(0x01)")
+}
+
 impl StakePoolPublicKey {
 	/// Computes the blake2b_224 hash of this Cardano stake pool public key
 	pub fn hash(&self) -> MainchainKeyHash {

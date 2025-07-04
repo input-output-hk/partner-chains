@@ -36,17 +36,17 @@ class TestGet:
 
 class TestInsertTwice:
     @fixture(scope="class")
-    def insert_twice_with_the_same_value(self, api: BlockchainApi, insert_data, genesis_utxo, random_key, random_value, payment_key):
+    def insert_twice_with_the_same_value(self, static_api: BlockchainApi, insert_data, genesis_utxo, random_key, random_value, payment_key):
         hex_data = string_to_hex_bytes(random_value)
-        result = api.partner_chains_node.smart_contracts.governed_map.insert(genesis_utxo, random_key, hex_data, payment_key)
+        result = static_api.partner_chains_node.smart_contracts.governed_map.insert(genesis_utxo, random_key, hex_data, payment_key)
         return result
 
     @fixture(scope="class")
     def insert_twice_with_different_value(
-        self, api: BlockchainApi, insert_data, genesis_utxo, random_key, new_value_hex_bytes, payment_key
+        self, static_api: BlockchainApi, insert_data, genesis_utxo, random_key, new_value_hex_bytes, payment_key
     ):
         hex_data = string_to_hex_bytes(new_value_hex_bytes)
-        result = api.partner_chains_node.smart_contracts.governed_map.insert(genesis_utxo, random_key, hex_data, payment_key)
+        result = static_api.partner_chains_node.smart_contracts.governed_map.insert(genesis_utxo, random_key, hex_data, payment_key)
         return result
 
     def test_insert_with_the_same_value(self, insert_twice_with_the_same_value):
@@ -77,8 +77,8 @@ class TestInsertTwice:
 
 class TestRemove:
     @fixture(scope="class")
-    def remove_data(self, api: BlockchainApi, insert_data, genesis_utxo, random_key, payment_key):
-        result = api.partner_chains_node.smart_contracts.governed_map.remove(genesis_utxo, random_key, payment_key)
+    def remove_data(self, static_api: BlockchainApi, insert_data, genesis_utxo, random_key, payment_key):
+        result = static_api.partner_chains_node.smart_contracts.governed_map.remove(genesis_utxo, random_key, payment_key)
         return result
 
     def test_remove_returncode(self, remove_data):

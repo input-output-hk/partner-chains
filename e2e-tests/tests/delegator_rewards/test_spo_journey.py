@@ -20,8 +20,8 @@ PARTICIPATION_DATA_SLOT_RANGE = 30
 
 
 @fixture(scope="module")
-def block_to_query_storage(api: BlockchainApi):
-    block = api.get_block()
+def block_to_query_storage(static_api: BlockchainApi):
+    block = static_api.get_block()
     block_no = block["header"]["number"]
     if block_no <= PARTICIPATION_DATA_SLOT_RANGE:
         skip(f"Participation data is released after {PARTICIPATION_DATA_SLOT_RANGE} slots, current block {block_no}.")
@@ -30,20 +30,20 @@ def block_to_query_storage(api: BlockchainApi):
 
 
 @fixture(scope="module")
-def block_participation(block_to_query_storage, api: BlockchainApi):
-    block_participation = api.get_block_participation_data(block_hash=block_to_query_storage["header"]["hash"])
+def block_participation(block_to_query_storage, static_api: BlockchainApi):
+    block_participation = static_api.get_block_participation_data(block_hash=block_to_query_storage["header"]["hash"])
     return block_participation
 
 
 @fixture(scope="module")
-def block_production_log(block_to_query_storage, api: BlockchainApi):
+def block_production_log(block_to_query_storage, static_api: BlockchainApi):
     block_no = block_to_query_storage["header"]["number"]
     block_no_matching_participation_data = block_no - len(
-        api.get_block_production_log(block_hash=block_to_query_storage["header"]["hash"])
+        static_api.get_block_production_log(block_hash=block_to_query_storage["header"]["hash"])
     )
     logging.info(f"Block number matching participation data slots range: {block_no_matching_participation_data}")
-    block_matching_participation_data = api.get_block(block_no_matching_participation_data)
-    block_production_log = api.get_block_production_log(block_hash=block_matching_participation_data["header"]["hash"])
+    block_matching_participation_data = static_api.get_block(block_no_matching_participation_data)
+    block_production_log = static_api.get_block_production_log(block_hash=block_matching_participation_data["header"]["hash"])
     return block_production_log
 
 
@@ -212,8 +212,8 @@ class TestMarginFee:
         return random.randint(0, 10000)
 
     @fixture(scope="class", autouse=True)
-    def set_margin_fee(self, api: BlockchainApi, get_wallet: Wallet, random_margin_fee) -> Transaction:
-        result = api.set_block_producer_margin_fee(random_margin_fee, wallet=get_wallet)
+    def set_margin_fee(self, static_api: BlockchainApi, get_wallet: Wallet, random_margin_fee) -> Transaction:
+        result = static_api.set_block_producer_margin_fee(random_margin_fee, wallet=get_wallet)
         return result
 
     def test_set_margin_fee(self, set_margin_fee: Transaction):

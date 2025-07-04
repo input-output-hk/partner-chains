@@ -9,9 +9,9 @@ pytestmark = [mark.xdist_group(name="governance_action")]
 
 
 @fixture(scope="session")
-def sudo(api: BlockchainApi, secrets):
+def sudo(static_api: BlockchainApi, secrets):
     sudo_config = secrets["wallets"]["sudo"]
-    sudo = api.get_wallet(
+    sudo = static_api.get_wallet(
         address=sudo_config["address"],
         public_key=sudo_config["public_key"],
         secret=sudo_config["secret_seed"],
@@ -21,14 +21,14 @@ def sudo(api: BlockchainApi, secrets):
 
 
 @fixture(scope="session", autouse=True)
-def set_governed_map_scripts(api: BlockchainApi, addresses, policy_ids, sudo):
-    tx = api.set_governed_map_main_chain_scripts(addresses["GovernedMapValidator"], policy_ids["GovernedMap"], sudo)
+def set_governed_map_scripts(static_api: BlockchainApi, addresses, policy_ids, sudo):
+    tx = static_api.set_governed_map_main_chain_scripts(addresses["GovernedMapValidator"], policy_ids["GovernedMap"], sudo)
     return tx
 
 
 @fixture(scope="session", autouse=True)
-def observe_governed_map_initialization(api: BlockchainApi, set_governed_map_scripts):
-    result = api.subscribe_governed_map_initialization()
+def observe_governed_map_initialization(static_api: BlockchainApi, set_governed_map_scripts):
+    result = static_api.subscribe_governed_map_initialization()
     return result
 
 
@@ -81,30 +81,30 @@ class TestObserveMapChanges:
 
 class TestReinitializeMap:
     @fixture(scope="class")
-    def insert_data_and_wait_until_observed(self, insert_data, api: BlockchainApi, random_key, random_value):
-        api.subscribe_governed_map_change(key_value=(random_key, random_value))
-        return api.get_governed_map()
+    def insert_data_and_wait_until_observed(self, insert_data, static_api: BlockchainApi, random_key, random_value):
+        static_api.subscribe_governed_map_change(key_value=(random_key, random_value))
+        return static_api.get_governed_map()
 
     @fixture(scope="session")
-    def create_new_governed_map_address(self, api: BlockchainApi):
-        _, vkey = api.cardano_cli.generate_payment_keys()
+    def create_new_governed_map_address(self, static_api: BlockchainApi):
+        _, vkey = static_api.cardano_cli.generate_payment_keys()
         logging.info(f"Generated new payment key: {vkey}")
         bech32_vkey = cbor_to_bech32(vkey["cborHex"], "addr_vk")
-        new_address = api.cardano_cli.build_address(bech32_vkey)
+        new_address = static_api.cardano_cli.build_address(bech32_vkey)
         logging.info(f"New address for Governed Map: {new_address}")
         return new_address
 
     @fixture(scope="class", autouse=True)
     def set_new_governed_map_scripts(
-        self, create_new_governed_map_address, insert_data_and_wait_until_observed, api: BlockchainApi, policy_ids, sudo
+        self, create_new_governed_map_address, insert_data_and_wait_until_observed, static_api: BlockchainApi, policy_ids, sudo
     ):
         new_address = create_new_governed_map_address
-        tx = api.set_governed_map_main_chain_scripts(new_address, policy_ids["GovernedMap"], sudo)
+        tx = static_api.set_governed_map_main_chain_scripts(new_address, policy_ids["GovernedMap"], sudo)
         return tx
 
     @fixture(scope="class", autouse=True)
-    def observe_governed_map_reinitialization(self, api: BlockchainApi, set_new_governed_map_scripts):
-        result = api.subscribe_governed_map_initialization()
+    def observe_governed_map_reinitialization(self, static_api: BlockchainApi, set_new_governed_map_scripts):
+        result = static_api.subscribe_governed_map_initialization()
         return result
 
     def test_set_new_governed_map_address(self, set_new_governed_map_scripts):

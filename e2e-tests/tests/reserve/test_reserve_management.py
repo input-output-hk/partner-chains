@@ -12,20 +12,20 @@ INITIAL_RESERVE_DEPOSIT = 1000
 
 
 @fixture(scope="module", autouse=True)
-def init_reserve(api: BlockchainApi, genesis_utxo, payment_key):
-    response = api.partner_chains_node.smart_contracts.reserve.init(genesis_utxo, payment_key)
+def init_reserve(static_api: BlockchainApi, genesis_utxo, payment_key):
+    response = static_api.partner_chains_node.smart_contracts.reserve.init(genesis_utxo, payment_key)
     return response
 
 
 @fixture(scope="module", autouse=True)
 def native_token_initial_balance(
-    api: BlockchainApi, governance_address, reserve_asset_id, mint_token, wait_until, config: ApiConfig
+    static_api: BlockchainApi, governance_address, reserve_asset_id, mint_token, wait_until, config: ApiConfig
 ):
-    balance = api.get_mc_balance(governance_address, reserve_asset_id)
+    balance = static_api.get_mc_balance(governance_address, reserve_asset_id)
     if balance < INITIAL_RESERVE_DEPOSIT:
         mint_token(INITIAL_RESERVE_DEPOSIT)
         wait_until(
-            lambda: api.get_mc_balance(governance_address, reserve_asset_id) == balance + INITIAL_RESERVE_DEPOSIT,
+            lambda: static_api.get_mc_balance(governance_address, reserve_asset_id) == balance + INITIAL_RESERVE_DEPOSIT,
             timeout=config.timeouts.main_chain_tx,
         )
         balance = balance + INITIAL_RESERVE_DEPOSIT
@@ -34,8 +34,8 @@ def native_token_initial_balance(
 
 
 @fixture(scope="module")
-def create_reserve(api: BlockchainApi, reserve, genesis_utxo, payment_key):
-    response = api.partner_chains_node.smart_contracts.reserve.create(
+def create_reserve(static_api: BlockchainApi, reserve, genesis_utxo, payment_key):
+    response = static_api.partner_chains_node.smart_contracts.reserve.create(
         genesis_utxo,
         v_function_hash=reserve.v_function.script_hash,
         initial_deposit=INITIAL_RESERVE_DEPOSIT,
@@ -45,18 +45,18 @@ def create_reserve(api: BlockchainApi, reserve, genesis_utxo, payment_key):
     logging.info(f"Reserve created with initial deposit of {INITIAL_RESERVE_DEPOSIT} tokens")
     yield response
     logging.info("Cleaning up reserve (handover)...")
-    api.partner_chains_node.smart_contracts.reserve.handover(genesis_utxo, payment_key)
+    static_api.partner_chains_node.smart_contracts.reserve.handover(genesis_utxo, payment_key)
 
 
 @fixture(scope="class")
-def reserve_initial_balance(create_reserve, api: BlockchainApi, addresses, reserve_asset_id):
-    balance = api.get_mc_balance(addresses["ReserveValidator"], reserve_asset_id)
+def reserve_initial_balance(create_reserve, static_api: BlockchainApi, addresses, reserve_asset_id):
+    balance = static_api.get_mc_balance(addresses["ReserveValidator"], reserve_asset_id)
     return balance
 
 
 @fixture(scope="class")
-def circulation_supply_initial_balance(create_reserve, api: BlockchainApi, reserve_asset_id, addresses):
-    circulation_balance = api.get_mc_balance(addresses["IlliquidCirculationSupplyValidator"], reserve_asset_id)
+def circulation_supply_initial_balance(create_reserve, static_api: BlockchainApi, reserve_asset_id, addresses):
+    circulation_balance = static_api.get_mc_balance(addresses["IlliquidCirculationSupplyValidator"], reserve_asset_id)
     return circulation_balance
 
 
@@ -100,13 +100,13 @@ class TestReleaseFunds:
         self,
         amount_to_release,
         circulation_supply_initial_balance,
-        api: BlockchainApi,
+        static_api: BlockchainApi,
         v_function: VFunction,
         genesis_utxo,
         payment_key,
     ):
         logging.info(f"Releasing {amount_to_release} tokens from reserve...")
-        response = api.partner_chains_node.smart_contracts.reserve.release(
+        response = static_api.partner_chains_node.smart_contracts.reserve.release(
             genesis_utxo,
             reference_utxo=v_function.reference_utxo,
             amount=amount_to_release,
@@ -143,8 +143,8 @@ class TestReleaseFunds:
 
 class TestDepositFunds:
     @fixture(scope="class")
-    def native_token_balance(self, api: BlockchainApi, governance_address, reserve_asset_id):
-        balance = api.get_mc_balance(governance_address, reserve_asset_id)
+    def native_token_balance(self, static_api: BlockchainApi, governance_address, reserve_asset_id):
+        balance = static_api.get_mc_balance(governance_address, reserve_asset_id)
         logging.info(f"Native token balance: {balance}")
         return balance
 
@@ -153,8 +153,8 @@ class TestDepositFunds:
         return random.randint(1, min(reserve_initial_balance, 100))
 
     @fixture(scope="class", autouse=True)
-    def deposit_funds(self, native_token_balance, amount_to_deposit, api: BlockchainApi, genesis_utxo, payment_key):
-        response = api.partner_chains_node.smart_contracts.reserve.deposit(
+    def deposit_funds(self, native_token_balance, amount_to_deposit, static_api: BlockchainApi, genesis_utxo, payment_key):
+        response = static_api.partner_chains_node.smart_contracts.reserve.deposit(
             genesis_utxo,
             amount=amount_to_deposit,
             payment_key=payment_key
@@ -192,8 +192,8 @@ class TestUpdateVFunction:
         return v_function
 
     @fixture(scope="class", autouse=True)
-    def update_v_function(self, create_reserve, new_v_function: VFunction, api: BlockchainApi, genesis_utxo, payment_key):
-        response = api.partner_chains_node.smart_contracts.reserve.update_settings(
+    def update_v_function(self, create_reserve, new_v_function: VFunction, static_api: BlockchainApi, genesis_utxo, payment_key):
+        response = static_api.partner_chains_node.smart_contracts.reserve.update_settings(
             genesis_utxo,
             v_function_hash=new_v_function.script_hash,
             payment_key=payment_key
@@ -228,8 +228,8 @@ class TestUpdateVFunction:
 
 class TestHandoverReserve:
     @fixture(scope="class", autouse=True)
-    def handover_reserve(self, create_reserve, api: BlockchainApi, genesis_utxo, payment_key):
-        response = api.partner_chains_node.smart_contracts.reserve.handover(genesis_utxo, payment_key)
+    def handover_reserve(self, create_reserve, static_api: BlockchainApi, genesis_utxo, payment_key):
+        response = static_api.partner_chains_node.smart_contracts.reserve.handover(genesis_utxo, payment_key)
         return response
 
     def test_handover_reserve(self, handover_reserve):
