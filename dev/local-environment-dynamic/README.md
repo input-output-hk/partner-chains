@@ -2,7 +2,7 @@
 
 This document outlines the setup and operation of the dynamic local test environment for Partner Chains. This environment is designed for flexibility, allowing developers to easily configure and launch a large-scale network of Partner Chains nodes with automated setup and registration.
 
-Unlike the previous static `local-environment`, which used a fixed number of validators with pre-generated keys, this dynamic environment automates the entire lifecycle, including key generation, funding, and on-chain registration.
+Unlike the static `local-environment`, which used a fixed number of validators with pre-generated keys, this dynamic environment automates the entire lifecycle, including key generation, funding, and on-chain registration.
 
 ## Key Features
 
