@@ -26,7 +26,8 @@ impl CmdRun for Register1Cmd {
 		let node_data_base_path = config_fields::SUBSTRATE_NODE_DATA_BASE_PATH
 			.load_from_file(context)
 			.ok_or(anyhow::anyhow!(
-				"⚠️ Keystore not found. Please run the `generate-keys` command first"
+				"⚠️ Keystore not found ({}). Please run the `generate-keys` command first",
+				config_fields::SUBSTRATE_NODE_DATA_BASE_PATH.config_file_path(context)
 			))?;
 
 		let GeneratedKeysFileContent { sidechain_pub_key: pc_pub_key, aura_pub_key, grandpa_pub_key } =

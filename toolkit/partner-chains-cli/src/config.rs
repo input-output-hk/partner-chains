@@ -188,6 +188,10 @@ impl<'a, T> ConfigFieldDefinition<'a, T> {
 		));
 		exit(-1)
 	}
+
+	pub(crate) fn config_file_path<C: IOContext>(&self, context: &C) -> String {
+		context.config_file_path(self.config_file)
+	}
 }
 
 #[derive(Clone, Debug)]
