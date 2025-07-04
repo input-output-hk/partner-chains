@@ -242,7 +242,7 @@ for ((i=1; i<=NUM_REGISTERED_NODES_TO_PROCESS; i++)); do
     echo "[DEBUG] Value of NODE_REGISTRATION_UTXO variable: [$NODE_REGISTRATION_UTXO]"
 
     # Define and read the specific mainchain cold signing key for this node
-    NODE_MAINCHAIN_SKEY_FILE="/shared/node-keys/registered-${i}/keys/stake.skey"
+    NODE_MAINCHAIN_SKEY_FILE="/shared/node-keys/registered-${i}/keys/cold.skey"
     if [ ! -f "$NODE_MAINCHAIN_SKEY_FILE" ]; then
         echo "Error: Mainchain signing key file $NODE_MAINCHAIN_SKEY_FILE not found for $node_name!"
         exit 1 # This is a critical failure
