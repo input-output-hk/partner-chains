@@ -23,7 +23,7 @@ def test_block_producer_can_update_their_metadata(genesis_utxo, api: BlockchainA
     assert signature.cross_chain_pub_key == f"0x{vkey_hex}"
 
     logger.info("Submitting block producer metadata...")
-    tx = api.submit_block_producer_metadata_insert(metadata, signature, wallet=get_wallet)
+    tx = api.submit_block_producer_metadata_upsert(metadata, signature, wallet=get_wallet)
     assert tx.hash, "Could not submit block producer metadata"
 
     logger.info("Verifying block producer metadata...")
@@ -46,7 +46,7 @@ def test_block_producer_can_update_their_metadata(genesis_utxo, api: BlockchainA
     assert signature.cross_chain_pub_key == f"0x{vkey_hex}"
 
     logger.info("Submitting block producer metadata...")
-    tx = api.submit_block_producer_metadata_insert(metadata, signature, wallet=get_wallet)
+    tx = api.submit_block_producer_metadata_upsert(metadata, signature, wallet=get_wallet)
     assert tx.hash, "Could not submit block producer metadata"
 
     logger.info("Verifying block producer metadata...")
@@ -77,7 +77,7 @@ def test_block_producer_can_delete_their_metadata(genesis_utxo, api: BlockchainA
     assert signature.cross_chain_pub_key == f"0x{vkey_hex}"
 
     logger.info("Submitting block producer metadata...")
-    tx = api.submit_block_producer_metadata_insert(metadata, signature, wallet=get_wallet)
+    tx = api.submit_block_producer_metadata_upsert(metadata, signature, wallet=get_wallet)
     assert tx.hash, "Could not submit block producer metadata"
 
     logger.info("Verifying block producer metadata...")

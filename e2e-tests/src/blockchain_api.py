@@ -446,7 +446,7 @@ class BlockchainApi(ABC):
         pass
 
     @abstractmethod
-    def submit_block_producer_metadata_insert(self, signature: BlockProducerMetadataSignature, wallet: Wallet) -> Transaction:
+    def submit_block_producer_metadata_upsert(self, signature: BlockProducerMetadataSignature, wallet: Wallet) -> Transaction:
         """
         Submits an extrinsic for upserting a block producer's metadata.
 

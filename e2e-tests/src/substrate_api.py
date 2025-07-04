@@ -722,7 +722,7 @@ class SubstrateApi(BlockchainApi):
         return tx
 
     @long_running_function
-    def submit_block_producer_metadata_insert(self, metadata, signature, wallet):
+    def submit_block_producer_metadata_upsert(self, metadata, signature, wallet):
         tx = Transaction()
         tx._unsigned = self.substrate.compose_call(
             call_module="BlockProducerMetadata",
