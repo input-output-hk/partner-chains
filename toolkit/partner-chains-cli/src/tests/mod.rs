@@ -1,5 +1,5 @@
 use crate::cmd_traits::*;
-use crate::config::ServiceConfig;
+use crate::config::{ConfigFile, ServiceConfig};
 use crate::io::IOContext;
 use crate::ogmios::{OgmiosRequest, OgmiosResponse};
 use anyhow::anyhow;
@@ -20,6 +20,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 mod config;
+pub(crate) mod runtime;
 
 #[derive(Debug)]
 #[allow(dead_code)]
@@ -159,6 +160,10 @@ pub struct MockIOContext {
 	pub offchain_mocks: OffchainMocks,
 }
 
+pub(crate) const CHAIN_CONFIG_FILE_PATH: &str = "test-pc-chain-config.json";
+
+pub(crate) const RESOURCES_CONFIG_FILE_PATH: &str = "test-pc-resources-config.json";
+
 impl MockIOContext {
 	pub fn new() -> Self {
 		Self {
@@ -167,6 +172,7 @@ impl MockIOContext {
 			offchain_mocks: Default::default(),
 		}
 	}
+
 	pub fn with_file(self, path: &str, content: &str) -> Self {
 		self.files.lock().unwrap().insert(path.into(), content.into());
 		self
@@ -681,6 +687,13 @@ impl IOContext for MockIOContext {
 		})?;
 		Ok(mock.clone())
 	}
+
+	fn config_file_path(&self, file: ConfigFile) -> String {
+		match file {
+			ConfigFile::Chain => CHAIN_CONFIG_FILE_PATH.to_owned(),
+			ConfigFile::Resources => RESOURCES_CONFIG_FILE_PATH.to_owned(),
+		}
+	}
 }
 
 #[macro_export]
@@ -710,19 +723,13 @@ macro_rules! verify_json {
 fn verify_cli() {
 	use crate::runtime_bindings::*;
 	use clap::CommandFactory;
-	use sp_core::{ecdsa, ed25519, sr25519};
 
 	struct MockRuntime;
 	impl PartnerChainRuntime for MockRuntime {
-		type AuthorityKeys = (sr25519::Public, ed25519::Public);
-		type AuthorityId = ecdsa::Public;
-		type CommitteeMember = (Self::AuthorityId, Self::AuthorityKeys);
-		fn initial_member(
-			id: Self::AuthorityId,
-			keys: Self::AuthorityKeys,
-		) -> Self::CommitteeMember {
-			(id, keys)
+		fn create_chain_spec(_: &crate::CreateChainSpecConfig) -> serde_json::Value {
+			serde_json::json!({})
 		}
 	}
+
 	crate::Command::<MockRuntime>::command().debug_assert()
 }

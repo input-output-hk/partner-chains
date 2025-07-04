@@ -6,9 +6,7 @@ if [ -z "$GOVERNED_MAP_VALIDATOR_ADDRESS" ]
 then
     echo "GOVERNED_MAP_VALIDATOR_ADDRESS is not set. Not attempting to update chain-spec value for it."
 else
-    # -p for plain output, -c 128 to prevent wrapping lines
-    export ADDRESS_HEX="0x$(echo -n $GOVERNED_MAP_VALIDATOR_ADDRESS | xxd -p -c 128)"
-    jq --arg value $ADDRESS_HEX '.genesis.runtimeGenesis.config.governedMap.mainChainScripts.validator_address |= $value' $1 > chain-spec.json.tmp
+    jq --arg value $GOVERNED_MAP_VALIDATOR_ADDRESS '.genesis.runtimeGenesis.config.governedMap.mainChainScripts.validator_address |= $value' $1 > chain-spec.json.tmp
     mv chain-spec.json.tmp $1
 fi
 
