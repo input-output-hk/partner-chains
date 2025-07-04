@@ -186,84 +186,84 @@ derive-where = { version = "1.2.7", default-features = false }
 once_cell = { version = "1.21.3", default-features = false }
 
 # substrate dependencies
-frame-benchmarking = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-frame-executive = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-frame-support = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-frame-system = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-frame-system-benchmarking = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-frame-system-rpc-runtime-api = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-frame-try-runtime = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-pallet-aura = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-pallet-balances = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-pallet-beefy = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-pallet-beefy-mmr = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-pallet-grandpa = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-pallet-mmr = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-pallet-session = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-pallet-sudo = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-pallet-timestamp = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-pallet-transaction-payment = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-pallet-transaction-payment-rpc = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-pallet-transaction-payment-rpc-runtime-api = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sc-basic-authorship = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sc-block-builder = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sc-consensus-slots = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sc-cli = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sc-client-api = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sc-client-db = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sc-consensus = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sc-consensus-aura = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sc-consensus-beefy = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sc-consensus-beefy-rpc = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sc-consensus-grandpa = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sc-consensus-grandpa-rpc = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sc-executor = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sc-keystore = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sc-network = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sc-network-test = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sc-rpc = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sc-rpc-api = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sc-service = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sc-telemetry = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sc-transaction-pool = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sc-transaction-pool-api = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sc-offchain = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sp-api = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sp-arithmetic = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sp-application-crypto = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sp-block-builder = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sp-blockchain = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sp-consensus = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sp-consensus-aura = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sp-consensus-beefy = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sp-consensus-grandpa = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sp-consensus-slots = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sp-core = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sp-crypto-hashing = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sp-externalities = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sp-genesis-builder = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sp-inherents = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sp-io = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sp-keyring = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sp-keystore = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sp-offchain = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sp-runtime = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sp-runtime-interface = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sp-session = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sp-tracing = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sp-trie = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sp-staking = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sp-std = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sp-timestamp = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sp-transaction-pool = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sp-version = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sp-storage = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-sp-weights = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-substrate-build-script-utils = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-substrate-frame-rpc-system = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-substrate-prometheus-endpoint = { package = "substrate-prometheus-endpoint", git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-substrate-test-runtime-client = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
-substrate-wasm-builder = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", rev = "00f6412b122795daa5e19c073802bcb1aa419113" }
+frame-benchmarking = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+frame-executive = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+frame-support = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+frame-system = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+frame-system-benchmarking = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+frame-system-rpc-runtime-api = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+frame-try-runtime = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+pallet-aura = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+pallet-balances = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+pallet-beefy = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+pallet-beefy-mmr = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+pallet-grandpa = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+pallet-mmr = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+pallet-session = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+pallet-sudo = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+pallet-timestamp = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+pallet-transaction-payment = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+pallet-transaction-payment-rpc = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+pallet-transaction-payment-rpc-runtime-api = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sc-basic-authorship = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sc-block-builder = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sc-consensus-slots = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sc-cli = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sc-client-api = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sc-client-db = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sc-consensus = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sc-consensus-aura = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sc-consensus-beefy = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sc-consensus-beefy-rpc = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sc-consensus-grandpa = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sc-consensus-grandpa-rpc = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sc-executor = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sc-keystore = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sc-network = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sc-network-test = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sc-rpc = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sc-rpc-api = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sc-service = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sc-telemetry = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sc-transaction-pool = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sc-transaction-pool-api = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sc-offchain = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sp-api = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sp-arithmetic = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sp-application-crypto = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sp-block-builder = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sp-blockchain = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sp-consensus = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sp-consensus-aura = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sp-consensus-beefy = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sp-consensus-grandpa = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sp-consensus-slots = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sp-core = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sp-crypto-hashing = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sp-externalities = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sp-genesis-builder = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sp-inherents = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sp-io = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sp-keyring = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sp-keystore = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sp-offchain = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sp-runtime = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sp-runtime-interface = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sp-session = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sp-tracing = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sp-trie = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sp-staking = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sp-std = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sp-timestamp = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sp-transaction-pool = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sp-version = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sp-storage = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+sp-weights = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+substrate-build-script-utils = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+substrate-frame-rpc-system = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+substrate-prometheus-endpoint = { package = "substrate-prometheus-endpoint", git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+substrate-test-runtime-client = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
+substrate-wasm-builder = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", branch = "beefy_all_features_branch" }
 
 raw-scripts = { git = "https://github.com/input-output-hk/partner-chains-smart-contracts.git", tag = "v7.2.2" }
 # local dependencies
@@ -344,3 +344,9 @@ partner-chains-demo-runtime = { path = "demo/runtime" }
 # Schnorr experiments
 schnorr_jubjub = { path = "toolkit/utils/schnorr_jubjub", default-features = false }
 hash256-std-hasher = { version = "0.15.2", default-features = false }
+ark-ed-on-bls12-381 = { version = "0.5.0", default-features = false }
+ark-ff = { version = "0.5.0", default-features = false }
+ark-ec = { version = "0.5.0", default-features = false }
+ark-serialize = { version = "0.5.0", default-features = false }
+rand_core = { version = "0.6.4", default-features = false }
+sha2 = { version = "0.10.9", default-features = false }
