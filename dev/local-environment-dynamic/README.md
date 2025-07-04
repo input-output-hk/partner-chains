@@ -7,7 +7,7 @@ Unlike the previous static `local-environment`, which used a fixed number of val
 ## Key Features
 
 - **Dynamic Configuration**: Easily set the number of "permissioned" and "registered" validator nodes to launch.
-- **Automated Lifecycle Management**: Handles the entire process of key generation, Cardano address funding, and SPO registration for all validators.
+- **Automated Lifecycle Management**: Handles the entire process of key generation, Cardano address funding, and SPO registration for all registered validators.
 - **Dynamic Node Discovery**: Nodes use dynamic node-keys, PeerIDs, and public addresses for automatic peer discovery within the Substrate network.
 - **Comprehensive Stack**: Includes all necessary components for a fully functional test environment: Cardano node, DB-Sync, Ogmios, and the Partner Chains nodes.
 
@@ -65,16 +65,16 @@ A key feature of the generated configurations is the use of dynamic discovery fl
 This script bootstraps the Cardano side of the environment.
 
 1.  **Starts Cardano Node**: It waits for configuration files from the setup container, then starts the `cardano-node`.
-2.  **SPO Registration**: It runs a loop that watches the `/shared/spo-certs/` directory. When a new validator's `.cert` file appears, it submits it to the Cardano network, officially registering the validator as an SPO.
+2.  **SPO Registration**: It runs a loop that watches the `/shared/spo-certs/` directory. When a new registered validator's `.cert` file appears, it submits it to the Cardano network, officially registering the node as an SPO.
 
 ### 3. `partner-chains-setup/entrypoint.sh` (inside `partner-chains-setup`)
 
 This is the core script for automating the validator lifecycle.
 
 1.  **Setup**: It waits for the Cardano node and Ogmios, then generates the dynamic Cardano genesis files.
-2.  **Key Generation**: It programmatically generates all necessary keys (payment, stake, cold, VRF, keystore) for every configured validator.
-3.  **Funding**: It builds and submits Cardano transactions to fund the payment addresses of all validators from a genesis UTXO.
-4.  **Certificate Generation**: For each validator, it generates the necessary stake address and stake pool registration certificates, placing the final certificate in `/shared/spo-certs/` to be picked up by the Cardano node.
+2.  **Key Generation**: It programmatically generates sidechain keys for all validators, and the necessary Cardano keys (payment, stake, cold, VRF) for all registered validators.
+3.  **Funding**: It builds and submits Cardano transactions to fund the payment addresses of all registered validators from a genesis UTXO.
+4.  **Certificate Generation**: For each registered validator, it generates the necessary stake address and stake pool registration certificates, placing the final certificate in `/shared/spo-certs/` to be picked up by the Cardano node.
 5.  **Ready Signal**: Once complete, it creates a `partner-chains-setup.ready` file, signaling the Partner Chains nodes that they can start.
 
 ## Usage
