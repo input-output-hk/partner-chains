@@ -44,7 +44,7 @@ dev/local-environment-dynamic/docker-compose.yml.bak
 dev/local-environment-dynamic/configurations/tests/e2e-tests
 dev/local-environment-dynamic/configurations/partner-chains-node/overrides
 dev/local-environment-dynamic/runtime-values/*
-dev/local-environment-dynamic/configurations/partner-chains-node/*
+dev/local-environment-dynamic/configurations/partner-chains-nodes/*
 
 ogmios_client.log
 
