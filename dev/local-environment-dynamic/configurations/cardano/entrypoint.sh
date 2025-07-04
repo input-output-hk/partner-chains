@@ -1139,6 +1139,82 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
             sleep 5
         done
 
+        echo "[LOG] Funding the stake for $NODE_LOG_NAME to activate delegation..."
+
+        NODE_FUNDING_UTXO_FOR_STAKE_TRANSFER=$(cat "/shared/registered-${i}.utxo")
+        if [ -z "$NODE_FUNDING_UTXO_FOR_STAKE_TRANSFER" ]; then
+            echo "[DEBUG] CRITICAL ERROR: Cannot find UTXO in /shared/registered-${i}.utxo to fund the stake. Skipping."
+            continue
+        fi
+
+        echo "[LOG] Creating combined address for $NODE_LOG_NAME..."
+        NODE_COMBINED_ADDRESS=$(cardano-cli latest address build \
+            --payment-verification-key-file "$NODE_SPECIFIC_KEYS_DIR/payment.vkey" \
+            --stake-verification-key-file "$NODE_STAKE_VKEY" \
+            --testnet-magic 42)
+
+        TRANSFER_TX_FILE="/data/${NODE_LOG_NAME}_stake_fund.tx"
+        TRANSFER_TX_SIGNED_FILE="/data/${NODE_LOG_NAME}_stake_fund.signed"
+        TRANSFER_AMOUNT=5000000 # 5 ADA
+
+        echo "[LOG] Building stake funding transaction for $NODE_LOG_NAME..."
+
+        if ! cardano-cli latest transaction build \
+            --tx-in "$NODE_FUNDING_UTXO_FOR_STAKE_TRANSFER" \
+            --tx-out "$NODE_COMBINED_ADDRESS+$TRANSFER_AMOUNT" \
+            --change-address "$NODE_PAYMENT_ADDRESS" \
+            --testnet-magic 42 \
+            --out-file "$TRANSFER_TX_FILE"; then
+            echo "[DEBUG] CRITICAL ERROR: Failed to build stake funding transaction for $NODE_LOG_NAME. Skipping node."
+            continue
+        fi
+
+        echo "[LOG] Signing stake funding transaction for $NODE_LOG_NAME..."
+        if ! cardano-cli latest transaction sign \
+            --tx-body-file "$TRANSFER_TX_FILE" \
+            --signing-key-file "$NODE_PAYMENT_SKEY" \
+            --testnet-magic 42 \
+            --out-file "$TRANSFER_TX_SIGNED_FILE"; then
+            echo "[DEBUG] CRITICAL ERROR: Failed to sign stake funding transaction for $NODE_LOG_NAME. Skipping node."
+            continue
+        fi
+
+        echo "[LOG] Submitting stake funding transaction for $NODE_LOG_NAME..."
+        if ! cardano-cli latest transaction submit --tx-file "$TRANSFER_TX_SIGNED_FILE" --testnet-magic 42; then
+             echo "[DEBUG] CRITICAL ERROR: Failed to submit stake funding transaction for $NODE_LOG_NAME. Skipping node."
+            continue
+        fi
+
+        TRANSFER_TX_ID=$(cardano-cli latest transaction txid --tx-file "$TRANSFER_TX_SIGNED_FILE")
+        echo "[LOG] Stake funding transaction submitted for $NODE_LOG_NAME. TxID: $TRANSFER_TX_ID"
+
+        echo "[LOG] Waiting 15s for funding transaction to confirm..."
+        sleep 15
+        
+        NEW_REGISTRATION_UTXO=""
+        for attempt in {1..10}; do
+            echo "[LOG] Querying for new change UTXO for $NODE_LOG_NAME from TxID $TRANSFER_TX_ID (Attempt $attempt)..."
+            utxo_info_final=$(cardano-cli latest query utxo \
+                --testnet-magic 42 --address "$NODE_PAYMENT_ADDRESS" --out-file /dev/stdout 2>&1)
+            # Specifically look for a UTXO at the payment address that was created by our funding transaction.
+            NEW_REGISTRATION_UTXO=$(echo "$utxo_info_final" | /busybox grep "$TRANSFER_TX_ID" | /busybox grep -o '[a-f0-9]\{64\}#[0-9]\+')
+            if [ -n "$NEW_REGISTRATION_UTXO" ]; then
+                echo "[LOG] Found new final UTXO for $NODE_LOG_NAME: $NEW_REGISTRATION_UTXO"
+                break
+            else
+                echo "[WARN] No new change UTXO from TxID $TRANSFER_TX_ID found for $NODE_LOG_NAME at $NODE_PAYMENT_ADDRESS. Waiting 5s..."
+                sleep 5
+            fi
+        done
+
+        if [ -z "$NEW_REGISTRATION_UTXO" ]; then
+            echo "[DEBUG] CRITICAL ERROR: Failed to find the new final UTXO for $NODE_LOG_NAME after stake funding. Can't proceed."
+            continue
+        fi
+
+        echo "[LOG] Updating final UTXO in /shared/registered-${i}.utxo to: $NEW_REGISTRATION_UTXO"
+        echo "$NEW_REGISTRATION_UTXO" > "/shared/registered-${i}.utxo"
+
         echo "[LOG] Waiting for stake delegation for $NODE_LOG_NAME to become active (2 epochs)..."
         sleep 250
 
