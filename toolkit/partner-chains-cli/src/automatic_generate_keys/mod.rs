@@ -112,24 +112,40 @@ impl CmdRun for AutomaticGenerateKeysCmd {
 						let bytes = hex::decode(&decoded_hex[2..]).map_err(|e| {
 							anyhow::anyhow!("Failed to decode runtime API response: {}", e)
 						})?;
-						// The runtime API may return either Vec<(key_type, key)> directly
-						// or Option<Vec<..>> (introduced in newer FRAME versions). Handle both.
+						// The runtime API may return:
+						// 1. Vec<(Vec<u8>, Vec<u8>)>  – legacy order (key_type bytes, pubkey)
+						// 2. Vec<(Vec<u8>, KeyTypeId)> – current sp_session order (pubkey, KeyTypeId)
+						// 3. Option<Vec<..>> wrapper  – newer FRAME versions add Option
+						// Try each pattern progressively.
 						decoded_keys = {
 							// Attempt direct Vec decode first.
 							let mut cursor = &bytes[..];
 							match <Vec<(Vec<u8>, Vec<u8>)>>::decode(&mut cursor) {
 								Ok(vec) if cursor.is_empty() => vec,
 								_ => {
-									// Fallback: try Option<Vec<..>>
-									let mut cursor_opt = &bytes[..];
-									<Option<Vec<(Vec<u8>, Vec<u8>)>>>::decode(&mut cursor_opt)
-										.map_err(|e| {
-											anyhow::anyhow!(
-												"Failed to SCALE decode Option<Vec> keys: {}",
-												e
-											)
-										})?
-										.unwrap_or_default()
+									// Try Vec<(Vec<u8>, u32)> where u32 is KeyTypeId
+									let mut cursor_alt = &bytes[..];
+									if let Ok(vec_u32) =
+										<Vec<(Vec<u8>, u32)>>::decode(&mut cursor_alt)
+									{
+										vec_u32
+											.into_iter()
+											.map(|(pubkey, key_type)| {
+												(key_type.to_le_bytes().to_vec(), pubkey)
+											})
+											.collect::<Vec<_>>()
+									} else {
+										// Fallback: try Option<Vec<(Vec<u8>, Vec<u8>)>>
+										let mut cursor_opt = &bytes[..];
+										<Option<Vec<(Vec<u8>, Vec<u8>)>>>::decode(&mut cursor_opt)
+											.map_err(|e| {
+												anyhow::anyhow!(
+													"Failed to SCALE decode Option<Vec> keys: {}",
+													e
+												)
+											})?
+											.unwrap_or_default()
+									}
 								},
 							}
 						};
