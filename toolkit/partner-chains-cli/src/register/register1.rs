@@ -23,12 +23,8 @@ impl CmdRun for Register1Cmd {
 		context.print("⚙️ Registering as a committee candidate (step 1/3)");
 		let genesis_utxo = load_chain_config_field(context, &config_fields::GENESIS_UTXO)?;
 
-		let node_data_base_path = config_fields::SUBSTRATE_NODE_DATA_BASE_PATH
-			.load_from_file(context)
-			.ok_or(anyhow::anyhow!(
-				"⚠️ Keystore not found ({}). Please run the `generate-keys` command first",
-				config_fields::SUBSTRATE_NODE_DATA_BASE_PATH.config_file_path(context)
-			))?;
+		let node_data_base_path =
+			config_fields::SUBSTRATE_NODE_DATA_BASE_PATH.load_or_prompt_and_save(context);
 
 		let GeneratedKeysFileContent { sidechain_pub_key: pc_pub_key, aura_pub_key, grandpa_pub_key } =
 			read_generated_keys(context).map_err(|e| {
@@ -190,6 +186,7 @@ mod tests {
 			.with_expected_io(
 				vec![
 					intro_msg_io(),
+					load_base_path_value(),
 					derive_address_io(),
 					query_utxos_io(),
 					select_utxo_io(),
@@ -252,6 +249,7 @@ mod tests {
 			.with_expected_io(
 				vec![
 					intro_msg_io(),
+					load_base_path_value(),
 					derive_address_io(),
 					query_utxos_io(),
 					select_utxo_io(),
@@ -274,7 +272,7 @@ mod tests {
 			.with_json_file(KEYS_FILE_PATH, generated_keys_file_content())
 			.with_file(PAYMENT_VKEY_PATH, "invalid content")
 			.with_expected_io(
-				vec![intro_msg_io(), derive_address_io()]
+				vec![intro_msg_io(), load_base_path_value(), derive_address_io()]
 					.into_iter()
 					.flatten()
 					.collect::<Vec<MockIO>>(),
@@ -300,6 +298,7 @@ mod tests {
 			.with_expected_io(
 				vec![
 					intro_msg_io(),
+					load_base_path_value(),
 					derive_address_io(),
 					vec![
 
@@ -332,6 +331,7 @@ mod tests {
 			.with_expected_io(
 				vec![
 					intro_msg_io(),
+					load_base_path_value(),
 					vec![MockIO::eprint("⚠️ The keys file `partner-chains-cli-keys.json` is missing or invalid. Please run the `generate-keys` command first")],
 				]
 				.into_iter()
@@ -353,6 +353,7 @@ mod tests {
 			.with_expected_io(
 				vec![
 					intro_msg_io(),
+					load_base_path_value(),
 					derive_address_io(),
 					query_utxos_io(),
 					select_utxo_io(),
@@ -380,6 +381,7 @@ mod tests {
 			.with_expected_io(
 				vec![
 					intro_msg_io(),
+					load_base_path_value(),
 					derive_address_io(),
 					query_utxos_io(),
 					select_utxo_io(),
@@ -435,6 +437,12 @@ mod tests {
 
 	fn intro_msg_io() -> Vec<MockIO> {
 		vec![MockIO::print("⚙️ Registering as a committee candidate (step 1/3)")]
+	}
+
+	fn load_base_path_value() -> Vec<MockIO> {
+		vec![MockIO::eprint(
+			"🛠️ Loaded node base path from config (test-pc-resources-config.json): /path/to/data",
+		)]
 	}
 
 	fn address_and_utxo_msg_io() -> MockIO {
