@@ -102,7 +102,7 @@ static REGISTRATION_STATUS_AFTER_HELP: once_cell::sync::Lazy<String> = once_cell
 #[allow(clippy::large_enum_variant)]
 /// Entry point for all Partner Chains specific subcommand.
 pub enum PartnerChainsSubcommand<
-	RuntimeBindings: PartnerChainRuntime,
+	RuntimeBindings: PartnerChainRuntime + Send + Sync,
 	PartnerchainAddress: Clone + Sync + Send + FromStr + 'static,
 > {
 	/// Returns sidechain parameters.
@@ -151,7 +151,7 @@ pub fn run<
 	CommitteeMember,
 	Client,
 	BlockProducerMetadata,
-	RuntimeBindings: PartnerChainRuntime,
+	RuntimeBindings: PartnerChainRuntime + Send + Sync,
 	PartnerchainAddress,
 >(
 	cli: &Cli,

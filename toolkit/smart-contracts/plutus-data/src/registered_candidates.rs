@@ -140,10 +140,7 @@ impl From<RegisterValidatorDatum> for CandidateRegistration {
 				partner_chain_signature: sidechain_signature,
 				registration_utxo,
 				own_pkh,
-				keys: CandidateKeys(vec![
-					CandidateKey::new(AURA, aura_pub_key.0),
-					CandidateKey::new(GRANDPA, grandpa_pub_key.0),
-				]),
+				keys: CandidateKeys(vec![aura_pub_key.into(), grandpa_pub_key.into()]),
 			},
 			RegisterValidatorDatum::V1 {
 				stake_ownership,

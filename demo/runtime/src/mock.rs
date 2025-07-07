@@ -1,3 +1,4 @@
+use authority_selection_inherents::ConvertForImplOpaqueKeys;
 use authority_selection_inherents::ariadne_inherent_data_provider::AriadneInherentDataProvider;
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 use authority_selection_inherents::filter_invalid_candidates::{
@@ -175,6 +176,7 @@ impl pallet_session_validator_management::Config for Test {
 		let candidates: Vec<_> = filter_trustless_candidates_registrations::<
 			Self::AuthorityId,
 			Self::AuthorityKeys,
+			ConvertForImplOpaqueKeys,
 		>(input.registered_candidates, Sidechain::genesis_utxo())
 		.into_iter()
 		.map(|(c, _)| (c.account_id().clone(), c.account_keys().clone()))

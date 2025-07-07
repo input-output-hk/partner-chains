@@ -1,3 +1,4 @@
+use crate::MaybeFromCandidateKeys;
 use crate::authority_selection_inputs::AuthoritySelectionInputs;
 use crate::filter_invalid_candidates::RegisterValidatorSignedMessage;
 use crate::select_authorities::select_authorities;
@@ -109,15 +110,13 @@ impl AccountKeys {
 	}
 }
 
-impl TryFrom<CandidateKeys> for AccountKeys {
-	type Error = &'static str;
+pub struct TestConvertKeys;
 
-	fn try_from(value: CandidateKeys) -> Result<Self, Self::Error> {
-		let aura =
-			<[u8; 32]>::try_from(value.find_or_empty(AURA)).map_err(|_| "invalid AURA key")?;
-		let grandpa = <[u8; 32]>::try_from(value.find_or_empty(GRANDPA))
-			.map_err(|_| "invalid Grandpa key")?;
-		Ok(Self { aura, grandpa })
+impl MaybeFromCandidateKeys<AccountKeys> for TestConvertKeys {
+	fn maybe_from(keys: &CandidateKeys) -> Option<AccountKeys> {
+		let aura = <[u8; 32]>::try_from(keys.find_or_empty(AURA)).ok()?;
+		let grandpa = <[u8; 32]>::try_from(keys.find_or_empty(GRANDPA)).ok()?;
+		Some(AccountKeys { aura, grandpa })
 	}
 }
 
@@ -210,7 +209,7 @@ fn ariadne_all_permissioned_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee = select_authorities::<AccountId, AccountKeys>(
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, TestConvertKeys>(
 		UtxoId::default(),
 		authority_selection_inputs,
 		ScEpochNumber::zero(),
@@ -242,7 +241,7 @@ fn ariadne_only_permissioned_candidates_are_present_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee = select_authorities::<AccountId, AccountKeys>(
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, TestConvertKeys>(
 		UtxoId::default(),
 		authority_selection_inputs,
 		ScEpochNumber::zero(),
@@ -274,7 +273,7 @@ fn ariadne_3_to_2_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee = select_authorities::<AccountId, AccountKeys>(
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, TestConvertKeys>(
 		UtxoId::default(),
 		authority_selection_inputs,
 		ScEpochNumber::zero(),
@@ -305,7 +304,7 @@ fn ariadne_3_to_2_with_more_available_candidates_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee = select_authorities::<AccountId, AccountKeys>(
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, TestConvertKeys>(
 		UtxoId::default(),
 		authority_selection_inputs,
 		ScEpochNumber::zero(),
@@ -343,7 +342,7 @@ fn ariadne_4_to_7_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee = select_authorities::<AccountId, AccountKeys>(
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, TestConvertKeys>(
 		UtxoId::default(),
 		authority_selection_inputs,
 		ScEpochNumber::zero(),
@@ -370,7 +369,7 @@ fn ariadne_does_not_return_empty_committee() {
 		&[],
 		DParameter { num_permissioned_candidates: 1, num_registered_candidates: 1 },
 	);
-	let calculated_committee = select_authorities::<AccountId, AccountKeys>(
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, TestConvertKeys>(
 		UtxoId::default(),
 		authority_selection_inputs,
 		ScEpochNumber::zero(),
@@ -444,5 +443,50 @@ pub fn create_authority_selection_inputs(
 		permissioned_candidates: permissioned_candidates_data,
 		registered_candidates: epoch_candidates,
 		epoch_nonce: EpochNonce(DUMMY_EPOCH_NONCE.to_vec()),
+	}
+}
+
+mod maybe_from_candidate_keys_tests {
+	use crate::{ConvertForImplOpaqueKeys, MaybeFromCandidateKeys};
+	use sidechain_domain::{CandidateKey, CandidateKeys};
+	use sp_runtime::{BoundToRuntimeAppPublic, RuntimeAppPublic, impl_opaque_keys};
+
+	pub struct KeyModule;
+	impl BoundToRuntimeAppPublic for KeyModule {
+		type Public = sp_runtime::app_crypto::ed25519::AppPublic;
+	}
+
+	pub struct KeyModule2;
+	impl BoundToRuntimeAppPublic for KeyModule2 {
+		type Public = sp_runtime::app_crypto::sr25519::AppPublic;
+	}
+
+	impl_opaque_keys! {
+		pub struct Keys {
+			pub k1: KeyModule,
+			pub k2: KeyModule2,
+		}
+	}
+
+	#[test]
+	fn convert_for_impl_opaque_keys_extracts_keys_by_opaque_keys_order() {
+		let keys: Keys = ConvertForImplOpaqueKeys::maybe_from(&CandidateKeys(vec![
+			CandidateKey {
+				id: <KeyModule as BoundToRuntimeAppPublic>::Public::ID.0,
+				bytes: [1u8; 32].to_vec(),
+			},
+			CandidateKey {
+				id: <KeyModule2 as BoundToRuntimeAppPublic>::Public::ID.0,
+				bytes: [2u8; 32].to_vec(),
+			},
+		]))
+		.unwrap();
+		assert_eq!(
+			keys,
+			Keys {
+				k1: sp_core::ed25519::Public::from([1u8; 32]).into(),
+				k2: sp_core::sr25519::Public::from([2u8; 32]).into(),
+			}
+		)
 	}
 }

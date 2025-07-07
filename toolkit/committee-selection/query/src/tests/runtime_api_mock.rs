@@ -1,8 +1,11 @@
 use super::*;
 use crate::tests::query_mock::TestRuntimeApi;
-use authority_selection_inherents::filter_invalid_candidates::{
-	PermissionedCandidateDataError, RegistrationDataError, StakeError,
-	validate_permissioned_candidate_data, validate_registration_data,
+use authority_selection_inherents::{
+	MaybeFromCandidateKeys,
+	filter_invalid_candidates::{
+		PermissionedCandidateDataError, RegistrationDataError, StakeError,
+		validate_permissioned_candidate_data, validate_registration_data,
+	},
 };
 use mock::*;
 use sidechain_domain::*;
@@ -21,12 +24,12 @@ pub type Block = sp_runtime::generic::Block<
 #[derive(Clone, Decode, Encode)]
 pub(crate) struct SessionKeys(u64);
 
-impl TryFrom<CandidateKeys> for SessionKeys {
-	type Error = ();
+struct TestConvertKeys;
 
-	fn try_from(value: CandidateKeys) -> Result<Self, Self::Error> {
-		Ok(Self(u64::from_be_bytes(
-			value.find_or_empty(KeyTypeId(*b"test")).try_into().map_err(|_| ())?,
+impl MaybeFromCandidateKeys<SessionKeys> for TestConvertKeys {
+	fn maybe_from(keys: &CandidateKeys) -> Option<SessionKeys> {
+		Some(SessionKeys(u64::from_be_bytes(
+			keys.find_or_empty(KeyTypeId(*b"test")).try_into().ok()?,
 		)))
 	}
 }
@@ -96,13 +99,13 @@ sp_api::mock_impl_runtime_apis! {
 
 	impl CandidateValidationApi<Block> for TestRuntimeApi {
 		fn validate_registered_candidate_data(mainchain_pub_key: &StakePoolPublicKey, registration_data: &RegistrationData) -> Option<RegistrationDataError> {
-			validate_registration_data::<SessionKeys>(mainchain_pub_key, registration_data, TEST_UTXO_ID).err()
+			validate_registration_data::<SessionKeys, TestConvertKeys>(mainchain_pub_key, registration_data, TEST_UTXO_ID).err()
 		}
 		fn validate_stake(stake: Option<StakeDelegation>) -> Option<StakeError> {
 			authority_selection_inherents::filter_invalid_candidates::validate_stake(stake).err()
 		}
 		fn validate_permissioned_candidate_data(candidate: sidechain_domain::PermissionedCandidateData) -> Option<PermissionedCandidateDataError> {
-			validate_permissioned_candidate_data::<SessionKeys>(candidate).err()
+			validate_permissioned_candidate_data::<SessionKeys, TestConvertKeys>(candidate).err()
 		}
 	}
 }

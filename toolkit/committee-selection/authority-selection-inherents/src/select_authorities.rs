@@ -1,5 +1,6 @@
 //! Functionality related to selecting the validators from the valid candidates
 
+use crate::MaybeFromCandidateKeys;
 use crate::authority_selection_inputs::AuthoritySelectionInputs;
 use crate::filter_invalid_candidates::{
 	Candidate, filter_invalid_permissioned_candidates, filter_trustless_candidates_registrations,
@@ -12,8 +13,9 @@ use sp_core::{U256, ecdsa};
 /// Selects authorities using the Ariadne selection algorithm and data sourced from Partner Chains smart contracts on Cardano.
 /// Seed is constructed from the MC epoch nonce and the sidechain epoch.
 pub fn select_authorities<
-	TAccountId: Clone + Ord + TryFrom<sidechain_domain::SidechainPublicKey> + From<ecdsa::Public>,
-	TAccountKeys: Clone + Ord + TryFrom<sidechain_domain::CandidateKeys>,
+	TAccountId: Clone + Ord + From<ecdsa::Public>,
+	TAccountKeys: Clone + Ord,
+	ConvertKeys: MaybeFromCandidateKeys<TAccountKeys>,
 >(
 	genesis_utxo: UtxoId,
 	input: AuthoritySelectionInputs,
@@ -22,9 +24,12 @@ pub fn select_authorities<
 	let valid_registered_candidates = filter_trustless_candidates_registrations::<
 		TAccountId,
 		TAccountKeys,
+		ConvertKeys,
 	>(input.registered_candidates, genesis_utxo);
 	let valid_permissioned_candidates =
-		filter_invalid_permissioned_candidates(input.permissioned_candidates);
+		filter_invalid_permissioned_candidates::<TAccountId, TAccountKeys, ConvertKeys>(
+			input.permissioned_candidates,
+		);
 	let valid_permissioned_count = valid_permissioned_candidates.len();
 	let valid_registered_count = valid_registered_candidates.len();
 

@@ -6,8 +6,9 @@ extern crate alloc;
 
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
-use sidechain_domain::StakePoolPublicKey;
-use sp_core::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
+use sidechain_domain::{CandidateKeys, StakePoolPublicKey};
+use sp_core::{ConstU32, Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
+use sp_runtime::traits::OpaqueKeys;
 use sp_session_validator_management::CommitteeMember as CommitteeMemberT;
 
 pub mod ariadne_inherent_data_provider;
@@ -89,5 +90,28 @@ impl<AuthorityId: Clone, AuthorityKeys: Clone> CommitteeMemberT
 			Self::Permissioned { keys, .. } => keys.clone(),
 			Self::Registered { keys, .. } => keys.clone(),
 		}
+	}
+}
+
+/// Trait to try extract [T] from [CandidateKeys].
+pub trait MaybeFromCandidateKeys<T> {
+	/// Converts [CandidateKeys] to T
+	fn maybe_from(keys: &CandidateKeys) -> Option<T>;
+}
+
+/// Implements [MaybeFromCandidateKeys], suitable for keys generated with `impl_opaque_keys!`
+pub struct ConvertForImplOpaqueKeys;
+
+impl<T: OpaqueKeys + Decode> MaybeFromCandidateKeys<T> for ConvertForImplOpaqueKeys {
+	/// Depends on `Encode` that is derived by `impl_opaque_keys!`
+	fn maybe_from(keys: &CandidateKeys) -> Option<T> {
+		let required_keys = T::key_ids();
+
+		let mut encoded_keys = sp_runtime::BoundedVec::<u8, ConstU32<1024>>::new();
+		for key_id in required_keys {
+			let key = keys.0.iter().find(|key| key.id == key_id.0)?;
+			encoded_keys.try_append(&mut key.bytes.clone()).ok()?;
+		}
+		T::decode(&mut &encoded_keys[..]).ok()
 	}
 }
