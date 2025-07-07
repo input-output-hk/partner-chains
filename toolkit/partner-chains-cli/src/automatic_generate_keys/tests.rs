@@ -24,7 +24,7 @@ fn mock_config_loaded_from_file() -> MockIO {
 fn mock_intro_messages() -> MockIO {
 	MockIO::Group(vec![
 		MockIO::eprint(
-			"This 🧙 wizard will generate session keys by calling author_rotateKeys on the node, decode them, and save them to the keystore and keys.json file:",
+			"This 🧙 wizard will generate session keys by calling author_rotateKeys on the node, decode them, and save them to the keystore and partner-chains-public-keys.json file:",
 		),
 		MockIO::enewline(),
 	])
@@ -50,7 +50,7 @@ fn test_successful_key_generation() {
 			MockIO::print("Raw session keys (hex): 0x1234567890abcdef1234567890abcdef5678901234567890ab5678901234567890ab"),
 			MockIO::print("Saved aura key to ./test_data/keystore/617572611234567890abcdef1234567890abcdef"),
 			MockIO::print("Saved gran key to ./test_data/keystore/6772616e5678901234567890ab5678901234567890ab"),
-			MockIO::print("🔑 Public keys saved to ./keys.json:\n{\n  \"aura\": \"0x1234567890abcdef1234567890abcdef\",\n  \"gran\": \"0x5678901234567890ab5678901234567890ab\"\n}"),
+			MockIO::print("🔑 Public keys saved to partner-chains-public-keys.json:\n{\n  \"aura\": \"0x1234567890abcdef1234567890abcdef\",\n  \"gran\": \"0x5678901234567890ab5678901234567890ab\"\n}"),
 			MockIO::print("You may share these public keys with your chain governance authority."),
 			MockIO::print("Decoded session keys: {\"aura\": \"0x1234567890abcdef1234567890abcdef\", \"gran\": \"0x5678901234567890ab5678901234567890ab\"}"),
 			MockIO::print("🚀 All done!"),
@@ -168,7 +168,7 @@ fn test_no_keys_decoded() {
 			MockIO::eprint("curl -X POST -H 'Content-Type: application/json' -d '{\"jsonrpc\":\"2.0\",\"method\":\"state_getMetadata\",\"id\":1}' http://localhost:9933 > metadata.json"),
 			MockIO::eprint("Look for the Session pallet and SessionKeys type to determine key order (e.g., aura, gran, imon)."),
 			MockIO::print("Saved raw session keys to ./test_data/keystore/raw1234"),
-			MockIO::print("🔑 Public keys saved to ./keys.json:\n{\n  \"raw\": \"0x1234\"\n}"),
+			MockIO::print("🔑 Public keys saved to partner-chains-public-keys.json:\n{\n  \"raw\": \"0x1234\"\n}"),
 			MockIO::print("You may share these public keys with your chain governance authority."),
 			MockIO::print("Decoded session keys: {\"raw\": \"0x1234\"}"),
 			MockIO::print("🚀 All done!"),
@@ -236,7 +236,7 @@ fn test_file_overwrite_declined() {
 			mock_keystore_path_message(),
 			MockIO::print("Raw session keys (hex): 0x1234567890abcdef1234567890abcdef5678901234567890ab5678901234567890ab"),
 			MockIO::print("Saved aura key to ./test_data/keystore/617572611234567890abcdef1234567890abcdef"),
-			MockIO::prompt_yes_no("A keys file already exists at ./keys.json - overwrite it?", false, false),
+			MockIO::prompt_yes_no("A keys file already exists at partner-chains-public-keys.json - overwrite it?", false, false),
 			MockIO::print("Refusing to overwrite keys file - skipping JSON save"),
 			MockIO::print("Decoded session keys: {\"aura\": \"0x1234567890abcdef1234567890abcdef\"}"),
 			MockIO::print("🚀 All done!"),
@@ -300,7 +300,7 @@ fn test_prompts_for_config_when_missing() {
 			mock_keystore_path_message(),
 			MockIO::print("Raw session keys (hex): 0x1234567890abcdef1234567890abcdef5678901234567890ab5678901234567890ab"),
 			MockIO::print("Saved aura key to ./test_data/keystore/617572611234567890abcdef1234567890abcdef"),
-			MockIO::print("🔑 Public keys saved to ./keys.json:\n{\n  \"aura\": \"0x1234567890abcdef1234567890abcdef\"\n}"),
+			MockIO::print("🔑 Public keys saved to partner-chains-public-keys.json:\n{\n  \"aura\": \"0x1234567890abcdef1234567890abcdef\"\n}"),
 			MockIO::print("You may share these public keys with your chain governance authority."),
 			MockIO::print("Decoded session keys: {\"aura\": \"0x1234567890abcdef1234567890abcdef\"}"),
 			MockIO::print("🚀 All done!"),
