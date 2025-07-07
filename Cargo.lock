@@ -10077,6 +10077,7 @@ dependencies = [
  "frame-support",
  "hash256-std-hasher",
  "hex",
+ "num-bigint",
  "pallet-beefy-mmr",
  "parity-scale-codec",
  "rand 0.8.5",

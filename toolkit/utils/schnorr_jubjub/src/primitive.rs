@@ -18,6 +18,10 @@ use ark_ec::AffineRepr;
 use ark_ed_on_bls12_381::{EdwardsAffine as Point, Fq as Scalar, Fr};
 use ark_ff::{Field, UniformRand};
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
+use num_bigint::BigUint;
+use alloc::str::FromStr;
+use alloc::string::ToString;
+
 
 /// A Schnorr private key is a scalar from the Jubjub scalar field.
 #[derive(Clone, Debug)]
@@ -63,16 +67,11 @@ impl KeyPair {
 		VerifyingKey(self.1)
 	}
 
-	/// Generate a Schnorr keypair from a random number generator.
-	pub fn generate<R: RngCore>(rng: &mut R) -> Self {
-		let sk = Fr::rand(rng);
-		let pk = Point::generator() * sk;
-		Self(sk, pk.into())
-	}
-
 	/// Generates a Schnorr keypair from a seed.
-	pub fn generate_from_seed(seed: [u8; 64]) -> Self {
-		let sk = Fr::from_random_bytes(&seed)
+	pub fn generate_from_seed(seed: &[u8]) -> Self {
+		let hashed_seed: [u8; 64] = sha2::Sha512::digest(&seed).as_slice().try_into().unwrap();
+		let biguint = BigUint::from_bytes_be(&hashed_seed);
+		let sk = Fr::from_str(&biguint.to_string())
 			.expect("Failed to construct Fr from bytes. This is a bug.");
 		let pk = Point::generator() * sk;
 		Self(sk, pk.into())
@@ -212,48 +211,60 @@ fn hash_to_jj_scalar(input: &[Scalar]) -> Fr {
 	Fr::from_random_bytes(&bytes_wide).expect("Failed to compute Fr from bytes. This is a bug.")
 }
 
-// #[cfg(test)]
-// mod tests {
-// 	use rand_core::OsRng;
-//
-// 	use super::*;
-//
-// 	#[test]
-// 	fn schnorr_jubjub() {
-// 		let mut rng = OsRng;
-//
-// 		let signing_key = Pair::generate(&mut rng);
-// 		let msg = Scalar::random(&mut rng);
-//
-// 		let sig = signing_key.sign(&[msg], &mut rng);
-//
-// 		assert!(sig.verify(&[msg], &signing_key.vk()).is_ok());
-// 	}
-//
-// 	#[test]
-// 	fn schnorr_jubjub_bytes() {
-// 		let mut rng = OsRng;
-//
-// 		let signing_key = Pair::generate(&mut rng);
-// 		let msg = Scalar::random(&mut rng).to_bytes_le();
-//
-// 		let sig =
-// 			signing_key.sign(&SchnorrSignature::msg_from_bytes(&msg, true).unwrap(), &mut rng);
-//
-// 		assert!(
-// 			sig.verify(&SchnorrSignature::msg_from_bytes(&msg, true).unwrap(), &signing_key.vk())
-// 				.is_ok()
-// 		);
-//
-// 		let mut msg = [0u8; 100];
-// 		rng.fill_bytes(&mut msg);
-//
-// 		let sig =
-// 			signing_key.sign(&SchnorrSignature::msg_from_bytes(&msg, false).unwrap(), &mut rng);
-//
-// 		assert!(
-// 			sig.verify(&SchnorrSignature::msg_from_bytes(&msg, false).unwrap(), &signing_key.vk())
-// 				.is_ok()
-// 		);
-// 	}
-// }
+#[cfg(test)]
+mod tests {
+	use rand_core::OsRng;
+	use sp_core::crypto::Ss58Codec;
+
+	use super::*;
+
+	#[test]
+	// fn schnorr_jubjub() {
+	// 	let mut rng = OsRng;
+	//
+	// 	let signing_key = Pair::generate(&mut rng);
+	// 	let msg = Scalar::random(&mut rng);
+	//
+	// 	let sig = signing_key.sign(&[msg], &mut rng);
+	//
+	// 	assert!(sig.verify(&[msg], &signing_key.vk()).is_ok());
+	// }
+	//
+	// #[test]
+	// fn schnorr_jubjub_bytes() {
+	// 	let signing_key = Pair::generate(&mut rng);
+	// 	let msg = Scalar::random(&mut rng).to_bytes_le();
+	//
+	// 	let sig =
+	// 		signing_key.sign(&SchnorrSignature::msg_from_bytes(&msg, true).unwrap(), &mut rng);
+	//
+	// 	assert!(
+	// 		sig.verify(&SchnorrSignature::msg_from_bytes(&msg, true).unwrap(), &signing_key.vk())
+	// 			.is_ok()
+	// 	);
+	//
+	// 	let mut msg = [0u8; 100];
+	// 	rng.fill_bytes(&mut msg);
+	//
+	// 	let sig =
+	// 		signing_key.sign(&SchnorrSignature::msg_from_bytes(&msg, false).unwrap(), &mut rng);
+	//
+	// 	assert!(
+	// 		sig.verify(&SchnorrSignature::msg_from_bytes(&msg, false).unwrap(), &signing_key.vk())
+	// 			.is_ok()
+	// 	);
+	// }
+
+	#[test]
+	fn print_data() {
+		let seed = b"cradle mansion zoo flavor glance orbit curtain lava envelope jewel honey task";
+		println!("{:?}", hex::encode(seed));
+		let keypair = KeyPair::generate_from_seed(seed);
+
+		let vk = keypair.vk();
+		println!("{}", hex::encode(vk.to_bytes()));
+
+		// let ss58 = vk.to_ss58check();
+		// println!("{}", ss58);
+	}
+}

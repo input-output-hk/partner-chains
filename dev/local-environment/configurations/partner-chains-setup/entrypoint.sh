@@ -203,7 +203,7 @@ jq '.genesis.runtimeGenesis.config.session.initialValidators = [
          "5FnXTMg8UnfeGsMaGg24o3NY21VRFRDRdgxuLGmXuYLeZmin",
          {
              "aura": "5Cyx94iyji8namhRxvs4mAbURtPsvwjWCb68ZihNzfRysGLZ",
-             "beefy": "5GvJgb9y6TAZpiuv3cd4VNU9JKVKptpomd3qBEBhGVtQsgbQ",
+             "beefy": "5H1gBHkF8KaSXpNsfKy8DFswcwB9bXoTooYCsG8qxSvwDPbt",
              "grandpa": "5Cc5eQhbPw4CjwZpWqZkWWumMiuZywfWRK2Rh9guXUJ3U89s"
          }
      ],
@@ -211,7 +211,7 @@ jq '.genesis.runtimeGenesis.config.session.initialValidators = [
          "5FJMH4MeZgd4fpiiAVLnr4uRop2EDFgzAFcvLmcduQ2cofCi",
          {
              "aura": "5E4op92Z2Di1GoVS9KqnoGVKQXG2R9x1vdh3RW892YLFsLrc",
-             "beefy": "5CVywsHN9SJJkJXCRsrLMZvKVNZir1A7exGPnKvBZRvVdYRP",
+             "beefy": "5G8iZCqAUsVzK2GVEhkLwwJsrj8W28wfeYSui3n773AkPjxy",
              "grandpa": "5Ha53RXoJjXtcTThFA5XNW7H6f5L39HnTuVSXimxAyhoYLeL"
          }
      ]
@@ -224,7 +224,7 @@ jq '.genesis.runtimeGenesis.config.sessionCommitteeManagement.initialAuthorities
       "id": "KW4wALva83fvah66ufXSxg6r84tTpJmDXna8A1PCYdbZdVL95",
       "keys": {
         "aura": "5Cyx94iyji8namhRxvs4mAbURtPsvwjWCb68ZihNzfRysGLZ",
-        "beefy": "5GvJgb9y6TAZpiuv3cd4VNU9JKVKptpomd3qBEBhGVtQsgbQ",
+        "beefy": "5H1gBHkF8KaSXpNsfKy8DFswcwB9bXoTooYCsG8qxSvwDPbt",
         "grandpa": "5Cc5eQhbPw4CjwZpWqZkWWumMiuZywfWRK2Rh9guXUJ3U89s"
       }
     }
@@ -234,7 +234,7 @@ jq '.genesis.runtimeGenesis.config.sessionCommitteeManagement.initialAuthorities
       "id": "KW92jBDRydnbyojCVF3USNFgEsrEvDGV3gvdgDvpfnbXvC13q",
       "keys": {
         "aura": "5E4op92Z2Di1GoVS9KqnoGVKQXG2R9x1vdh3RW892YLFsLrc",
-        "beefy": "5CVywsHN9SJJkJXCRsrLMZvKVNZir1A7exGPnKvBZRvVdYRP",
+        "beefy": "5G8iZCqAUsVzK2GVEhkLwwJsrj8W28wfeYSui3n773AkPjxy",
         "grandpa": "5Ha53RXoJjXtcTThFA5XNW7H6f5L39HnTuVSXimxAyhoYLeL"
       }
     }

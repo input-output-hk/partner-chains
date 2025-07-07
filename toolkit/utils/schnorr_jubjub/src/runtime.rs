@@ -9,19 +9,13 @@
 use alloc::vec::Vec;
 use sp_core::{
 	ByteArray, Pair as TraitPair,
-	crypto::{CryptoTypeId, KeyTypeId},
+	crypto::KeyTypeId,
 };
-use sp_externalities::ExternalitiesExt;
-use sp_keystore::KeystoreExt;
 use sp_runtime::app_crypto::RuntimePublic;
-use sp_runtime_interface::{
-	pass_by::{AllocateAndReturnByCodec, PassFatPointerAndRead, PassPointerAndReadCopy},
-	runtime_interface,
-};
 
 use crate::poseidon::PoseidonJubjub;
 use crate::{
-	beefy_structures::{CRYPTO_ID, InnerPublicBytes, Public, Signature},
+	beefy_structures::{CRYPTO_ID, Public, Signature},
 	primitive::{SchnorrSignature, VerifyingKey},
 };
 
@@ -37,13 +31,9 @@ impl RuntimePublic for Public {
 	}
 
 	fn generate_pair(key_type: KeyTypeId, seed: Option<Vec<u8>>) -> Self {
-		let seed: [u8; 64] = seed
-			.expect("Only support key generation from given seed.")
-			.try_into()
-			.expect("Invalid seed size.");
+		let unwrapped_seed = core::str::from_utf8(&seed.clone().expect("Only support key generation from given seed.")).expect("Seed contains non-UTF8 characters");
 
-		let keypair = crate::primitive::KeyPair::generate_from_seed(seed);
-		let seed = core::str::from_utf8(&seed).expect("Seed contains non-UTF8 characters");
+		let keypair = crate::primitive::KeyPair::generate_from_seed(unwrapped_seed.as_bytes());
 		sp_io::generic_crypto::insert(key_type, seed, &keypair.public().0);
 
 		keypair.public()
@@ -81,3 +71,44 @@ impl RuntimePublic for Public {
 		self.as_slice().to_vec()
 	}
 }
+
+// #[runtime_interface]
+// pub trait GenericKeyInterface {
+// 	fn keys(
+// 		&mut self,
+// 		id: PassPointerAndReadCopy<KeyTypeId, 4>,
+// 	) -> AllocateAndReturnByCodec<Vec<Vec<u8>>> {
+// 		self.extension::<KeystoreExt>()
+// 			.expect("No `keystore` associated for the current context!")
+// 			.keys(id)
+// 			.expect("Key type not found in keystore")
+// 	}
+//
+// 	fn insert(
+// 		&mut self,
+// 		id: PassPointerAndReadCopy<KeyTypeId, 4>,
+// 		suri: PassFatPointerAndDecode<Option<Vec<u8>>>,
+// 		public: PassPointerAndReadCopy<InnerPublicBytes, 32>,
+// 	) {
+// 		let seed = suri.expect("Jubjub only working with provided seed");
+// 		let seed = core::str::from_utf8(&seed).expect("Seed is valid utf8!");
+// 		self.extension::<KeystoreExt>()
+// 			.expect("No `keystore` associated for the current context!")
+// 			.insert(id, seed, public.as_ref())
+// 			.expect("Failed to insert key in keystore")
+// 	}
+//
+// 	fn sign_with(
+// 		&mut self,
+// 		id: PassPointerAndReadCopy<KeyTypeId, 4>,
+// 		crypto_id: PassPointerAndReadCopy<[u8; 4], 4>,
+// 		public: PassPointerAndReadCopy<InnerPublicBytes, 32>,
+// 		msg: PassFatPointerAndRead<&[u8]>,
+// 	) -> AllocateAndReturnByCodec<Option<Vec<u8>>> {
+// 		self.extension::<KeystoreExt>()
+// 			.expect("No `keystore` associated for the current context!")
+// 			.sign_with(id, CryptoTypeId(crypto_id), public.as_ref(), msg)
+// 			.expect("Failed to produce valid signature")
+// 	}
+// }
+

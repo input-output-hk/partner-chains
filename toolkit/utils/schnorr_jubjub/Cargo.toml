@@ -36,6 +36,7 @@ ark-ed-on-bls12-381 = { workspace = true }
 ark-ff = { workspace = true }
 ark-ec = { workspace = true }
 ark-serialize = { workspace = true }
+num-bigint = { workspace = true }
 
 
 [features]
@@ -50,6 +51,7 @@ std = [
     "ark-ec/std",
     "ark-serialize/std",
     "frame-support/std",
+    "num-bigint/std",
     "pallet-beefy-mmr/std",
     "parity-scale-codec/std",
     "rand_core/std",

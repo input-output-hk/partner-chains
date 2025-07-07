@@ -108,7 +108,8 @@ impl<'de> Deserialize<'de> for Public {
 
 impl Debug for Public {
 	fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-		write!(f, "Public({:?})", self.as_slice())
+		let s = self.to_ss58check();
+		write!(f, "{} ({}...)", sp_core::hexdisplay::HexDisplay::from(&self.as_ref()), &s[0..8])
 	}
 }
 
@@ -269,10 +270,6 @@ impl TraitPair for crate::primitive::KeyPair {
 	}
 
 	fn from_seed_slice(seed: &[u8]) -> Result<Self, SecretStringError> {
-		if seed.len() != SEED_SERIALIZED_SIZE {
-			return Err(SecretStringError::InvalidSeedLength);
-		}
-
 		let h = sha2::Sha512::digest(&seed);
 
 		let secret = Fr::from_random_bytes(h.as_slice())

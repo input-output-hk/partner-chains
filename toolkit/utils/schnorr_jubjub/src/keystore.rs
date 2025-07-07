@@ -132,7 +132,26 @@ impl Keystore for SchnorrKeystore {
 	///
 	/// Returns `true` iff all private keys could be found.
 	fn has_keys(&self, public_keys: &[(Vec<u8>, KeyTypeId)]) -> bool {
-		self.0.has_keys(public_keys)
+		dbg!("===================> USING THE SCHNORR KEYSTORE");
+		for (key, key_id) in public_keys {
+			dbg!("===================> {}", key_id);
+			// dbg!("===================> {}", key);
+			let pk_bytes: [u8; 32] = key.clone().try_into().expect("Invalid PK format");
+			let grandpa_key = ed25519::Public::from_slice(key.as_slice()).expect("Failed to create aura key");
+			dbg!(&grandpa_key);
+			// dbg!("===================> {}", self.0.key_pair::<sp_application_crypto::ed25519::AppPair>(key.as_slice()).unwrap().is_some());
+
+			let pk = Public(InnerPublicBytes::from_slice(&pk_bytes).expect("Failed to create key from slice"));
+			dbg!(&pk);
+			dbg!("===================> {}", self.0.key_pair::<Pair>(&pk).unwrap());
+
+			let pk: Vec<u8> = <Public as AsRef<[u8]>>::as_ref(&pk).to_vec();
+			let res = self.0.has_keys(&[(pk, key_id.clone())]);
+			dbg!("Has keys (inner) {}", res);
+		}
+		let res = self.0.has_keys(public_keys);
+		dbg!("Has keys {}", res);
+		res
 	}
 
 	fn sign_with(
@@ -145,12 +164,14 @@ impl Keystore for SchnorrKeystore {
 		let signature = match crypto_id {
 			CRYPTO_ID => {
 				let pk_bytes: [u8; 32] = public.try_into().expect("Invalid PK format");
-				let pk = Public(InnerPublicBytes::from(pk_bytes));
-				if let Some(pair) = self.0.key_pair(&pk).unwrap() {
+				let pk = Public(InnerPublicBytes::from_slice(&pk_bytes).expect("Failed to create key from slice"));
+				if let Some(pair) = self.0.key_pair(&pk)? {
+					dbg!("Producing signature");
 					let shcnorr_sig: Vec<u8> =
 						<Pair as TraitPair>::sign(&pair, msg).as_slice().to_vec();
 					Some(shcnorr_sig)
 				} else {
+					dbg!("NOT Producing signature");
 					None
 				}
 			},
