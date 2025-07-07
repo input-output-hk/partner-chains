@@ -7,7 +7,9 @@ use crate::config::config_fields::{
 };
 use crate::io::IOContext;
 use crate::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
-use sidechain_domain::{PolicyId, UtxoId};
+use anyhow::anyhow;
+use sidechain_domain::{AssetName, MainchainAddress, PolicyId, UtxoId};
+use std::str::FromStr;
 
 pub fn prepare_main_chain_config<C: IOContext>(
 	context: &C,
@@ -37,13 +39,18 @@ fn set_up_cardano_addresses<C: IOContext>(
 		.block_on(offchain_impl.get_scripts_data(genesis_utxo))
 		.map_err(|e| anyhow::anyhow!("Offchain call failed: {e:?}!"))?;
 
-	let committee_candidate_validator_addr = scripts_data.addresses.committee_candidate_validator;
-	let d_parameter_policy_id = hex::encode(scripts_data.policy_ids.d_parameter.0);
-	let permissioned_candidates_policy_id =
-		hex::encode(scripts_data.policy_ids.permissioned_candidates.0);
-	let illiquid_supply_addr = scripts_data.addresses.illiquid_circulation_supply_validator;
-	let governed_map_validator_addr = scripts_data.addresses.governed_map_validator;
-	let governed_map_policy_id = hex::encode(scripts_data.policy_ids.governed_map.0);
+	let committee_candidate_validator_addr =
+		MainchainAddress::from_str(&scripts_data.addresses.committee_candidate_validator)
+			.map_err(|e| anyhow!("Internal error: invalid address '{e}' in scripts data"))?;
+	let d_parameter_policy_id = scripts_data.policy_ids.d_parameter;
+	let permissioned_candidates_policy_id = scripts_data.policy_ids.permissioned_candidates;
+	let illiquid_supply_addr =
+		MainchainAddress::from_str(&scripts_data.addresses.illiquid_circulation_supply_validator)
+			.map_err(|e| anyhow!("Internal error: invalid address '{e}' in scripts data"))?;
+	let governed_map_validator_addr =
+		MainchainAddress::from_str(&scripts_data.addresses.governed_map_validator)
+			.map_err(|e| anyhow!("Internal error: invalid address '{e}' in scripts data"))?;
+	let governed_map_policy_id = scripts_data.policy_ids.governed_map;
 	COMMITTEE_CANDIDATES_ADDRESS.save_to_file(&committee_candidate_validator_addr, context);
 	D_PARAMETER_POLICY_ID.save_to_file(&d_parameter_policy_id, context);
 	PERMISSIONED_CANDIDATES_POLICY_ID.save_to_file(&permissioned_candidates_policy_id, context);
@@ -69,11 +76,21 @@ fn prepare_native_token<C: IOContext>(context: &C) -> anyhow::Result<()> {
 	context.print("Creation of the native token is not supported by this wizard and must be performed manually before this step.");
 	if context.prompt_yes_no("Do you want to configure a native token for you Partner Chain?", true)
 	{
-		NATIVE_TOKEN_POLICY.prompt_with_default_from_file_and_save(context);
-		NATIVE_TOKEN_ASSET_NAME.prompt_with_default_from_file_and_save(context);
+		NATIVE_TOKEN_POLICY
+			.prompt_with_default_from_file_parse_and_save(context)
+			.map_err(|e| {
+				anyhow!(
+					"Could not parse PolicyId, expected hex string representing 28 bytes. Error: '{e}'."
+				)
+			})?;
+		NATIVE_TOKEN_ASSET_NAME
+			.prompt_with_default_from_file_parse_and_save(context)
+			.map_err(|e| {
+				anyhow!("Could not parse AssetName, expected valid hex string. Error: '{e}'")
+			})?;
 	} else {
-		NATIVE_TOKEN_POLICY.save_to_file(&PolicyId::default().to_hex_string(), context);
-		NATIVE_TOKEN_ASSET_NAME.save_to_file(&"0x".into(), context);
+		NATIVE_TOKEN_POLICY.save_to_file(&PolicyId::default(), context);
+		NATIVE_TOKEN_ASSET_NAME.save_to_file(&AssetName::empty(), context);
 	}
 
 	Ok(())
@@ -104,12 +121,14 @@ After setting up the permissioned candidates, execute the 'setup-main-chain-stat
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::config::config_fields::{GENESIS_UTXO, OGMIOS_PROTOCOL};
-	use crate::config::{CHAIN_CONFIG_FILE_PATH, NetworkProtocol};
+	use crate::config::NetworkProtocol;
 	use crate::ogmios::test_values::{preprod_eras_summaries, preprod_shelley_config};
 	use crate::ogmios::{OgmiosRequest, OgmiosResponse};
 	use crate::prepare_configuration::prepare_cardano_params::tests::PREPROD_CARDANO_PARAMS;
-	use crate::tests::{MockIO, MockIOContext, OffchainMock, OffchainMocks};
+	use crate::tests::{
+		CHAIN_CONFIG_FILE_PATH, MockIO, MockIOContext, OffchainMock, OffchainMocks,
+		RESOURCES_CONFIG_FILE_PATH,
+	};
 	use crate::verify_json;
 	use partner_chains_cardano_offchain::scripts_data::{Addresses, PolicyIds, ScriptsData};
 	use serde_json::Value;
@@ -120,17 +139,17 @@ mod tests {
 	const TEST_GENESIS_UTXO: &str =
 		"0000000000000000000000000000000000000000000000000000000000000000#0";
 	const TEST_D_PARAMETER_POLICY_ID: &str =
-		"623cc9d41321674962b8599bf2baf0f34b8df8ad9d549f7ba3b1fdbb";
+		"0x623cc9d41321674962b8599bf2baf0f34b8df8ad9d549f7ba3b1fdbb";
 	const TEST_COMMITTEE_CANDIDATES_ADDRESS: &str =
 		"addr_test1wz5fe8fmxx4v83gzfsdlnhgxm8x7zpldegrqh2wakl3wteqe834r4";
 	const TEST_PERMISSIONED_CANDIDATES_POLICY_ID: &str =
-		"13db1ba564b3b264f45974fece44b2beb0a2326b10e65a0f7f300dfb";
+		"0x13db1ba564b3b264f45974fece44b2beb0a2326b10e65a0f7f300dfb";
 	const TEST_ILLIQUID_SUPPLY_ADDRESS: &str =
 		"addr_test1wqn2pkvvmesmxtfa4tz7w8gh8vumr52lpkrhcs4dkg30uqq77h5z4";
 	const TEST_GOVERNED_MAP_VALIDATOR_ADDRESS: &str =
 		"addr_test1wqcyptcm4ueft86vjnqng0k70gdazzukmyknuhmsjhmvfts7c0000";
 	const TEST_GOVERNED_MAP_POLICY_ID: &str =
-		"c814db91bfaf7f0078e2c69d13443ffc46c9957393174f7baa8d0000";
+		"0xc814db91bfaf7f0078e2c69d13443ffc46c9957393174f7baa8d0000";
 
 	fn ogmios_config() -> ServiceConfig {
 		ServiceConfig {
@@ -165,7 +184,7 @@ mod tests {
 				MockIO::prompt(
 					&format!("Enter the {}", NATIVE_TOKEN_ASSET_NAME.name),
 					None,
-					"5043546f6b656e44656d6f",
+					"0x5043546f6b656e44656d6f",
 				),
 			])
 		}
@@ -190,8 +209,8 @@ mod tests {
 	#[test]
 	fn happy_path() {
 		let mock_context = MockIOContext::new()
-			.with_json_file(GENESIS_UTXO.config_file, serde_json::json!({}))
-			.with_json_file(OGMIOS_PROTOCOL.config_file, serde_json::json!({}))
+			.with_json_file(CHAIN_CONFIG_FILE_PATH, serde_json::json!({}))
+			.with_json_file(RESOURCES_CONFIG_FILE_PATH, serde_json::json!({}))
 			.with_json_file("payment.skey", payment_key_content())
 			.with_offchain_mocks(preprod_offchain_mocks())
 			.with_expected_io(vec![
@@ -222,11 +241,11 @@ mod tests {
 	fn happy_path_with_initial_permissioned_candidates() {
 		let mock_context = MockIOContext::new()
 			.with_json_file(
-				INITIAL_PERMISSIONED_CANDIDATES.config_file,
+				CHAIN_CONFIG_FILE_PATH,
 				json!({"initial_permissioned_candidates": initial_permissioned_candidates_json()}),
 			)
 			.with_json_file("payment.skey", payment_key_content())
-			.with_json_file(OGMIOS_PROTOCOL.config_file, serde_json::json!({}))
+			.with_json_file(RESOURCES_CONFIG_FILE_PATH, serde_json::json!({}))
 			.with_offchain_mocks(preprod_offchain_mocks())
 			.with_expected_io(vec![
 				MockIO::ogmios_request(
@@ -313,8 +332,8 @@ mod tests {
 				"native_token": {
 					"illiquid_supply_address": TEST_ILLIQUID_SUPPLY_ADDRESS,
 					"asset": {
-						"policy_id":"ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4",
-						"asset_name":"5043546f6b656e44656d6f"
+						"policy_id":"0xada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4",
+						"asset_name":"0x5043546f6b656e44656d6f"
 					}
 				}
 			},

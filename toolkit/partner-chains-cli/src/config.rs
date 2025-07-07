@@ -17,7 +17,7 @@ pub(crate) struct ConfigFieldDefinition<'a, T> {
 	/// Config field name
 	pub(crate) name: &'a str,
 	/// Config file name
-	pub(crate) config_file: &'a str,
+	pub(crate) config_file: ConfigFile,
 	/// Path to config field in config file
 	pub(crate) path: &'a [&'a str],
 	/// Optional default value for config field
@@ -29,7 +29,7 @@ pub(crate) struct ConfigFieldDefinition<'a, T> {
 impl<'a, T> ConfigFieldDefinition<'a, T> {
 	pub(crate) fn new(
 		name: &'a str,
-		config_file: &'a str,
+		config_file: ConfigFile,
 		path: &'a [&'a str],
 		default: Option<&'a str>,
 	) -> Self {
@@ -110,7 +110,11 @@ impl<'a, T> ConfigFieldDefinition<'a, T> {
 		T: DeserializeOwned + std::fmt::Display,
 	{
 		let value = self.load_from_file(context)?;
-		context.eprint(&self.loaded_from_config_msg(&value));
+		context.eprint(&format!(
+			"🛠️ Loaded {} from config ({}): {value}",
+			self.name,
+			context.config_file_path(self.config_file)
+		));
 		Some(value)
 	}
 
@@ -131,7 +135,10 @@ impl<'a, T> ConfigFieldDefinition<'a, T> {
 			head = &mut head[field];
 		}
 		*head = serde_json::to_value(value).unwrap();
-		context.write_file(self.config_file, &serde_json::to_string_pretty(&json).unwrap());
+		context.write_file(
+			&context.config_file_path(self.config_file),
+			&serde_json::to_string_pretty(&json).unwrap(),
+		);
 	}
 
 	pub(crate) fn save_if_empty<C: IOContext>(&self, value: T, context: &C) -> T
@@ -164,33 +171,22 @@ impl<'a, T> ConfigFieldDefinition<'a, T> {
 
 	/// loads the whole content of the config fields relevant config file
 	pub(crate) fn load_file<C: IOContext>(&self, context: &C) -> Option<serde_json::Value> {
-		if !context.file_exists(self.config_file) {
+		let path = context.config_file_path(self.config_file);
+		if !context.file_exists(&path) {
 			return None;
 		}
 
-		if let Some(file_content_string) = context.read_file(self.config_file) {
+		if let Some(file_content_string) = context.read_file(&path) {
 			if let Ok(value) = serde_json::from_str(&file_content_string) {
 				return Some(value);
 			}
 		}
 
-		self.report_corrupted_file_and_quit()
-	}
-
-	/// Print error message and exit.
-	fn report_corrupted_file_and_quit(&self) -> ! {
-		eprintln!(
+		context.eprint(&format!(
 			"Config file {} is broken. Delete it or fix manually and restart this wizard",
-			self.config_file
-		);
+			path
+		));
 		exit(-1)
-	}
-
-	fn loaded_from_config_msg(&self, value: &T) -> String
-	where
-		T: std::fmt::Display,
-	{
-		format!("🛠️ Loaded {} from config ({}): {value}", self.name, self.config_file)
 	}
 }
 
@@ -380,47 +376,52 @@ pub(crate) struct ChainConfig {
 	pub(crate) cardano_addresses: MainChainAddresses,
 }
 
+#[derive(Copy, Clone)]
+pub enum ConfigFile {
+	Chain,
+	Resources,
+}
+
 pub(crate) const KEYS_FILE_PATH: &str = "partner-chains-public-keys.json";
-pub(crate) const CHAIN_CONFIG_FILE_PATH: &str = "pc-chain-config.json";
-pub(crate) const RESOURCES_CONFIG_FILE_PATH: &str = "pc-resources-config.json";
 pub(crate) const CHAIN_SPEC_PATH: &str = "chain-spec.json";
 
 pub(crate) fn load_chain_config(context: &impl IOContext) -> anyhow::Result<ChainConfig> {
-	if let Some(chain_config_file) = context.read_file(CHAIN_CONFIG_FILE_PATH) {
+	let chain_config_file_path = context.config_file_path(ConfigFile::Chain);
+	if let Some(chain_config_file) = context.read_file(&chain_config_file_path) {
 		serde_json::from_str::<ChainConfig>(&chain_config_file)
-			.map_err(|err| anyhow::anyhow!(format!("⚠️ Chain config file {CHAIN_CONFIG_FILE_PATH} is invalid: {err}. Run prepare-configuration wizard or fix errors manually.")))
+			.map_err(|err| anyhow::anyhow!(format!("⚠️ Chain config file {chain_config_file_path} is invalid: {err}. Run prepare-configuration wizard or fix errors manually.")))
 	} else {
 		Err(anyhow::anyhow!(format!(
-			"⚠️ Chain config file {CHAIN_CONFIG_FILE_PATH} does not exists. Run prepare-configuration wizard first."
+			"⚠️ Chain config file {chain_config_file_path} does not exists. Run prepare-configuration wizard first."
 		)))
 	}
 }
 
 pub(crate) mod config_fields {
 	use super::*;
-	use sidechain_domain::UtxoId;
+	use sidechain_domain::{AssetName, MainchainAddress, PolicyId, UtxoId};
 
-	pub(crate) const NATIVE_TOKEN_POLICY: ConfigFieldDefinition<'static, String> =
+	pub(crate) const NATIVE_TOKEN_POLICY: ConfigFieldDefinition<'static, PolicyId> =
 		ConfigFieldDefinition {
-			config_file: CHAIN_CONFIG_FILE_PATH,
+			config_file: ConfigFile::Chain,
 			path: &["cardano_addresses", "native_token", "asset", "policy_id"],
 			name: "native token policy ID",
 			default: None,
 			_marker: PhantomData,
 		};
 
-	pub(crate) const NATIVE_TOKEN_ASSET_NAME: ConfigFieldDefinition<'static, String> =
+	pub(crate) const NATIVE_TOKEN_ASSET_NAME: ConfigFieldDefinition<'static, AssetName> =
 		ConfigFieldDefinition {
-			config_file: CHAIN_CONFIG_FILE_PATH,
+			config_file: ConfigFile::Chain,
 			path: &["cardano_addresses", "native_token", "asset", "asset_name"],
 			name: "native token asset name in hex",
 			default: None,
 			_marker: PhantomData,
 		};
 
-	pub(crate) const ILLIQUID_SUPPLY_ADDRESS: ConfigFieldDefinition<'static, String> =
+	pub(crate) const ILLIQUID_SUPPLY_ADDRESS: ConfigFieldDefinition<'static, MainchainAddress> =
 		ConfigFieldDefinition {
-			config_file: CHAIN_CONFIG_FILE_PATH,
+			config_file: ConfigFile::Chain,
 			path: &["cardano_addresses", "native_token", "illiquid_supply_address"],
 			name: "native token illiquid token supply address",
 			default: None,
@@ -429,7 +430,7 @@ pub(crate) mod config_fields {
 
 	pub(crate) const SUBSTRATE_NODE_DATA_BASE_PATH: ConfigFieldDefinition<'static, String> =
 		ConfigFieldDefinition {
-			config_file: RESOURCES_CONFIG_FILE_PATH,
+			config_file: ConfigFile::Resources,
 			path: &["substrate_node_base_path"],
 			name: "node base path",
 			default: Some("./data"),
@@ -438,7 +439,7 @@ pub(crate) mod config_fields {
 
 	pub(crate) const CARDANO_PAYMENT_VERIFICATION_KEY_FILE: ConfigFieldDefinition<'static, String> =
 		ConfigFieldDefinition {
-			config_file: RESOURCES_CONFIG_FILE_PATH,
+			config_file: ConfigFile::Resources,
 			path: &["cardano_payment_verification_key_file"],
 			name: "path to the payment verification file",
 			default: Some("payment.vkey"),
@@ -447,7 +448,7 @@ pub(crate) mod config_fields {
 
 	pub(crate) const CARDANO_PAYMENT_SIGNING_KEY_FILE: ConfigFieldDefinition<'static, String> =
 		ConfigFieldDefinition {
-			config_file: RESOURCES_CONFIG_FILE_PATH,
+			config_file: ConfigFile::Resources,
 			path: &["cardano_payment_signing_key_file"],
 			name: "path to the payment signing key file",
 			default: Some("payment.skey"),
@@ -456,7 +457,7 @@ pub(crate) mod config_fields {
 
 	pub(crate) const CARDANO_COLD_VERIFICATION_KEY_FILE: ConfigFieldDefinition<'static, String> =
 		ConfigFieldDefinition {
-			config_file: RESOURCES_CONFIG_FILE_PATH,
+			config_file: ConfigFile::Resources,
 			path: &["cardano_cold_verification_key_file"],
 			name: "path to the cold verification key file",
 			default: Some("cold.vkey"),
@@ -464,7 +465,7 @@ pub(crate) mod config_fields {
 		};
 
 	pub(crate) const GENESIS_UTXO: ConfigFieldDefinition<'static, UtxoId> = ConfigFieldDefinition {
-		config_file: CHAIN_CONFIG_FILE_PATH,
+		config_file: ConfigFile::Chain,
 		path: &["chain_parameters", "genesis_utxo"],
 		name: "genesis utxo",
 		default: None,
@@ -473,7 +474,7 @@ pub(crate) mod config_fields {
 
 	pub(crate) const BOOTNODES: ConfigFieldDefinition<'static, Vec<String>> =
 		ConfigFieldDefinition {
-			config_file: CHAIN_CONFIG_FILE_PATH,
+			config_file: ConfigFile::Chain,
 			path: &["bootnodes"],
 			name: "bootnodes",
 			default: None,
@@ -484,7 +485,7 @@ pub(crate) mod config_fields {
 		'static,
 		Vec<crate::permissioned_candidates::PermissionedCandidateKeys>,
 	> = ConfigFieldDefinition {
-		config_file: CHAIN_CONFIG_FILE_PATH,
+		config_file: ConfigFile::Chain,
 		path: &["initial_permissioned_candidates"],
 		name: "initial permissioned candidates",
 		default: None,
@@ -493,7 +494,7 @@ pub(crate) mod config_fields {
 
 	pub(crate) const POSTGRES_CONNECTION_STRING: ConfigFieldDefinition<'static, String> =
 		ConfigFieldDefinition {
-			config_file: RESOURCES_CONFIG_FILE_PATH,
+			config_file: ConfigFile::Resources,
 			path: &["db_sync_postgres_connection_string"],
 			name: "DB-Sync Postgres connection string",
 			default: Some("postgresql://postgres-user:postgres-password@localhost:5432/cexplorer"),
@@ -502,7 +503,7 @@ pub(crate) mod config_fields {
 
 	pub(crate) const OGMIOS_PROTOCOL: ConfigFieldDefinition<'static, NetworkProtocol> =
 		ConfigFieldDefinition {
-			config_file: RESOURCES_CONFIG_FILE_PATH,
+			config_file: ConfigFile::Resources,
 			path: &["ogmios", "protocol"],
 			name: "Ogmios protocol (http/https)",
 			default: Some("http"),
@@ -511,7 +512,7 @@ pub(crate) mod config_fields {
 
 	pub(crate) const OGMIOS_HOSTNAME: ConfigFieldDefinition<'static, String> =
 		ConfigFieldDefinition {
-			config_file: RESOURCES_CONFIG_FILE_PATH,
+			config_file: ConfigFile::Resources,
 			path: &["ogmios", "hostname"],
 			name: "Ogmios hostname",
 			default: Some("localhost"),
@@ -519,7 +520,7 @@ pub(crate) mod config_fields {
 		};
 
 	pub(crate) const OGMIOS_PORT: ConfigFieldDefinition<'static, u16> = ConfigFieldDefinition {
-		config_file: RESOURCES_CONFIG_FILE_PATH,
+		config_file: ConfigFile::Resources,
 		path: &["ogmios", "port"],
 		name: "Ogmios port",
 		default: Some("1337"),
@@ -528,52 +529,56 @@ pub(crate) mod config_fields {
 
 	pub(crate) const OGMIOS_REQUEST_TIMEOUT: ConfigFieldDefinition<'static, u64> =
 		ConfigFieldDefinition {
-			config_file: RESOURCES_CONFIG_FILE_PATH,
+			config_file: ConfigFile::Resources,
 			path: &["ogmios", "request_timeout"],
 			name: "Ogmios request timeout [seconds]",
 			default: Some("180"),
 			_marker: PhantomData,
 		};
 
-	pub(crate) const COMMITTEE_CANDIDATES_ADDRESS: ConfigFieldDefinition<'static, String> =
-		ConfigFieldDefinition {
-			config_file: CHAIN_CONFIG_FILE_PATH,
-			path: &["cardano_addresses", "committee_candidates_address"],
-			name: "Committee candidates address",
-			default: None,
-			_marker: PhantomData,
-		};
+	pub(crate) const COMMITTEE_CANDIDATES_ADDRESS: ConfigFieldDefinition<
+		'static,
+		MainchainAddress,
+	> = ConfigFieldDefinition {
+		config_file: ConfigFile::Chain,
+		path: &["cardano_addresses", "committee_candidates_address"],
+		name: "Committee candidates address",
+		default: None,
+		_marker: PhantomData,
+	};
 
-	pub(crate) const D_PARAMETER_POLICY_ID: ConfigFieldDefinition<'static, String> =
+	pub(crate) const D_PARAMETER_POLICY_ID: ConfigFieldDefinition<'static, PolicyId> =
 		ConfigFieldDefinition {
-			config_file: CHAIN_CONFIG_FILE_PATH,
+			config_file: ConfigFile::Chain,
 			path: &["cardano_addresses", "d_parameter_policy_id"],
 			name: "D parameter policy id",
 			default: None,
 			_marker: PhantomData,
 		};
 
-	pub(crate) const PERMISSIONED_CANDIDATES_POLICY_ID: ConfigFieldDefinition<'static, String> =
+	pub(crate) const PERMISSIONED_CANDIDATES_POLICY_ID: ConfigFieldDefinition<'static, PolicyId> =
 		ConfigFieldDefinition {
-			config_file: CHAIN_CONFIG_FILE_PATH,
+			config_file: ConfigFile::Chain,
 			path: &["cardano_addresses", "permissioned_candidates_policy_id"],
 			name: "permissioned candidates policy id",
 			default: None,
 			_marker: PhantomData,
 		};
 
-	pub(crate) const GOVERNED_MAP_VALIDATOR_ADDRESS: ConfigFieldDefinition<'static, String> =
-		ConfigFieldDefinition {
-			config_file: CHAIN_CONFIG_FILE_PATH,
-			path: &["cardano_addresses", "governed_map", "validator_address"],
-			name: "Governed Map Validator Address",
-			default: None,
-			_marker: PhantomData,
-		};
+	pub(crate) const GOVERNED_MAP_VALIDATOR_ADDRESS: ConfigFieldDefinition<
+		'static,
+		MainchainAddress,
+	> = ConfigFieldDefinition {
+		config_file: ConfigFile::Chain,
+		path: &["cardano_addresses", "governed_map", "validator_address"],
+		name: "Governed Map Validator Address",
+		default: None,
+		_marker: PhantomData,
+	};
 
-	pub(crate) const GOVERNED_MAP_POLICY_ID: ConfigFieldDefinition<'static, String> =
+	pub(crate) const GOVERNED_MAP_POLICY_ID: ConfigFieldDefinition<'static, PolicyId> =
 		ConfigFieldDefinition {
-			config_file: CHAIN_CONFIG_FILE_PATH,
+			config_file: ConfigFile::Chain,
 			path: &["cardano_addresses", "governed_map", "policy_id"],
 			name: "Governed Map Policy Id",
 			default: None,
@@ -582,7 +587,7 @@ pub(crate) mod config_fields {
 
 	pub(crate) const CARDANO_SECURITY_PARAMETER: ConfigFieldDefinition<'static, u64> =
 		ConfigFieldDefinition {
-			config_file: CHAIN_CONFIG_FILE_PATH,
+			config_file: ConfigFile::Chain,
 			path: &["cardano", "security_parameter"],
 			name: "cardano security parameter",
 			default: None,
@@ -591,7 +596,7 @@ pub(crate) mod config_fields {
 
 	pub(crate) const CARDANO_ACTIVE_SLOTS_COEFF: ConfigFieldDefinition<'static, f64> =
 		ConfigFieldDefinition {
-			config_file: CHAIN_CONFIG_FILE_PATH,
+			config_file: ConfigFile::Chain,
 			path: &["cardano", "active_slots_coeff"],
 			name: "cardano active slot coefficient",
 			default: None,
@@ -600,7 +605,7 @@ pub(crate) mod config_fields {
 
 	pub(crate) const CARDANO_FIRST_EPOCH_NUMBER: ConfigFieldDefinition<'static, u32> =
 		ConfigFieldDefinition {
-			config_file: CHAIN_CONFIG_FILE_PATH,
+			config_file: ConfigFile::Chain,
 			path: &["cardano", "first_epoch_number"],
 			name: "cardano first epoch number in shelley era",
 			default: None,
@@ -609,7 +614,7 @@ pub(crate) mod config_fields {
 
 	pub(crate) const CARDANO_FIRST_SLOT_NUMBER: ConfigFieldDefinition<'static, u64> =
 		ConfigFieldDefinition {
-			config_file: CHAIN_CONFIG_FILE_PATH,
+			config_file: ConfigFile::Chain,
 			path: &["cardano", "first_slot_number"],
 			name: "cardano first slot number in shelley era",
 			default: None,
@@ -618,7 +623,7 @@ pub(crate) mod config_fields {
 
 	pub(crate) const CARDANO_EPOCH_DURATION_MILLIS: ConfigFieldDefinition<'static, u64> =
 		ConfigFieldDefinition {
-			config_file: CHAIN_CONFIG_FILE_PATH,
+			config_file: ConfigFile::Chain,
 			path: &["cardano", "epoch_duration_millis"],
 			name: "cardano epoch duration in millis",
 			default: None,
@@ -627,7 +632,7 @@ pub(crate) mod config_fields {
 
 	pub(crate) const CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS: ConfigFieldDefinition<'static, u64> =
 		ConfigFieldDefinition {
-			config_file: CHAIN_CONFIG_FILE_PATH,
+			config_file: ConfigFile::Chain,
 			path: &["cardano", "first_epoch_timestamp_millis"],
 			name: "cardano first shelley epoch timestamp in millis",
 			default: None,
@@ -636,7 +641,7 @@ pub(crate) mod config_fields {
 
 	pub(crate) const CARDANO_SLOT_DURATION_MILLIS: ConfigFieldDefinition<'static, u64> =
 		ConfigFieldDefinition {
-			config_file: CHAIN_CONFIG_FILE_PATH,
+			config_file: ConfigFile::Chain,
 			path: &["cardano", "slot_duration_millis"],
 			name: "cardano slot duration in millis",
 			default: Some("1000"),
@@ -644,7 +649,7 @@ pub(crate) mod config_fields {
 		};
 
 	pub(crate) const NODE_P2P_PORT: ConfigFieldDefinition<'static, u16> = ConfigFieldDefinition {
-		config_file: RESOURCES_CONFIG_FILE_PATH,
+		config_file: ConfigFile::Resources,
 		path: &["node_p2p_port"],
 		name: "substrate-node p2p protocol TCP port",
 		default: Some("30333"),
@@ -655,7 +660,7 @@ pub(crate) mod config_fields {
 		'static,
 		GovernanceAuthoritiesKeyHashes,
 	> = ConfigFieldDefinition {
-		config_file: CHAIN_CONFIG_FILE_PATH,
+		config_file: ConfigFile::Chain,
 		path: &["initial_governance", "authorities"],
 		name: "space separated keys hashes of the initial Multisig Governance Authorities",
 		default: Some("[]"),
@@ -664,7 +669,7 @@ pub(crate) mod config_fields {
 
 	pub(crate) const INITIAL_GOVERNANCE_THRESHOLD: ConfigFieldDefinition<'static, u8> =
 		ConfigFieldDefinition {
-			config_file: CHAIN_CONFIG_FILE_PATH,
+			config_file: ConfigFile::Chain,
 			path: &["initial_governance", "threshold"],
 			name: "Initial Multisig Governance Threshold",
 			default: Some("1"),

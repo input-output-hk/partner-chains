@@ -8,7 +8,7 @@ pub struct Test(pub Vec<u8>);
 #[test]
 fn debug() {
 	let t = Test(vec![1, 2, 3, 4, 5, 6, 7, 8]);
-	assert_eq!(format!("{:?}", t), "Test(0x102030405060708)")
+	assert_eq!(format!("{:?}", t), "Test(0x0102030405060708)")
 }
 
 #[test]

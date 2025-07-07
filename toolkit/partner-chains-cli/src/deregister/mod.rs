@@ -6,7 +6,6 @@ use crate::cardano_key::{
 	get_mc_payment_signing_key_from_file, get_stake_pool_verification_key_from_file,
 };
 use crate::cmd_traits::Deregister;
-use crate::config::CHAIN_CONFIG_FILE_PATH;
 use crate::config::config_fields::{
 	CARDANO_COLD_VERIFICATION_KEY_FILE, CARDANO_PAYMENT_SIGNING_KEY_FILE,
 };
@@ -68,7 +67,7 @@ fn read_chain_config_file<C: IOContext>(
 	chain_config
 		.map_err(|_|anyhow!(
 			"Couldn't parse chain configuration file {}. The chain configuration file that was used for registration is required in the working directory.",
-			CHAIN_CONFIG_FILE_PATH))
+			context.chain_config_file_path()))
 }
 
 impl<T> Deregister for T

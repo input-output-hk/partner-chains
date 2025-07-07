@@ -111,7 +111,7 @@ fn configure_bootnode(peer_id: String, context: &impl IOContext) -> anyhow::Resu
 	};
 
 	BOOTNODES.save_to_file(&vec![bootnode], context);
-	context.eprint(&outro());
+	context.eprint(&outro(context.chain_config_file_path()));
 	Ok(())
 }
 
@@ -202,10 +202,10 @@ const INTRO: &str =
 * initialize Partner Chains Governance on Cardano
 * establish Partner Chains Smart Contracts addresses and policies (to be later included in chain-spec file)";
 
-fn outro() -> String {
+fn outro(chain_config_file_path: String) -> String {
 	format!(
 		"Bootnode saved successfully. Keep in mind that you can manually modify {}, to edit bootnodes.",
-		BOOTNODES.config_file
+		chain_config_file_path
 	)
 }
 
@@ -270,12 +270,9 @@ impl<T: QueryNetwork> GetScriptsData for T {
 #[cfg(test)]
 pub mod tests {
 	use super::*;
-	use crate::config::config_fields::BOOTNODES;
-	use crate::config::{
-		CHAIN_CONFIG_FILE_PATH, ConfigFieldDefinition, RESOURCES_CONFIG_FILE_PATH, SelectOptions,
-	};
+	use crate::config::{ConfigFieldDefinition, SelectOptions};
 	use crate::prepare_configuration::Protocol::{Dns, Ipv4};
-	use crate::tests::{MockIO, MockIOContext};
+	use crate::tests::{CHAIN_CONFIG_FILE_PATH, MockIO, MockIOContext, RESOURCES_CONFIG_FILE_PATH};
 	use crate::{CommonArguments, verify_json};
 
 	const KEY: &str = "962515971a22aa95706c2109ba6e9502c7f39b33bdf63024f46f77894424f1fe";
@@ -407,7 +404,7 @@ pub mod tests {
 			scenarios::read_config(),
 			scenarios::choose_to_configure_bootnode(true),
 			scenarios::pick_ip_protocol_with_defaults(),
-			MockIO::eprint(&outro()),
+			MockIO::eprint(&outro(CHAIN_CONFIG_FILE_PATH.to_owned())),
 		]);
 
 		let result = establish_bootnodes(&mock_context);
@@ -426,7 +423,7 @@ pub mod tests {
 			scenarios::read_config(),
 			scenarios::choose_to_configure_bootnode(true),
 			scenarios::pick_dns_protocol_with_defaults(),
-			MockIO::eprint(&outro()),
+			MockIO::eprint(&outro(CHAIN_CONFIG_FILE_PATH.to_owned())),
 		]);
 
 		let result = establish_bootnodes(&mock_context);
@@ -454,7 +451,7 @@ pub mod tests {
 	fn propose_saved_defaults_but_pick_different() {
 		let mock_context = context_with_config(KEY)
 			.with_json_file(
-				BOOTNODES.config_file,
+				CHAIN_CONFIG_FILE_PATH,
 				serde_json::json!({
 					"bootnodes": ["/ip4/ip_address/tcp/3034/p2p/12D3KooWWi9ys81fpG9ibuVWh6w6egfcTUM8L1iSJSpfFtMLMLG8"]
 				}),
@@ -467,7 +464,7 @@ pub mod tests {
 					3034,
 					Dns.default_address().to_string(),
 				),
-				MockIO::eprint(&outro()),
+				MockIO::eprint(&outro(CHAIN_CONFIG_FILE_PATH.to_owned())),
 			]);
 
 		let result = establish_bootnodes(&mock_context);
@@ -480,7 +477,7 @@ pub mod tests {
 	fn propose_saved_defaults_and_pick_it() {
 		let mock_context = context_with_config(KEY)
 			.with_json_file(
-				BOOTNODES.config_file,
+				CHAIN_CONFIG_FILE_PATH,
 				serde_json::json!({
 					"bootnodes": ["/ip4/ip_address/tcp/3034/p2p/12D3KooWWi9ys81fpG9ibuVWh6w6egfcTUM8L1iSJSpfFtMLMLG8"]
 				}),
@@ -493,7 +490,7 @@ pub mod tests {
 					3034,
 					"ip_address".to_string(),
 				),
-				MockIO::eprint(&outro()),
+				MockIO::eprint(&outro(CHAIN_CONFIG_FILE_PATH.to_owned())),
 			]);
 
 		let result = establish_bootnodes(&mock_context);
@@ -505,7 +502,7 @@ pub mod tests {
 	#[test]
 	fn continue_without_network_key_file_when_user_agrees() {
 		let mock_context = MockIOContext::new()
-			.with_json_file(RESOURCES_CONFIG_FILE_PATH, serde_json::json!({}))
+			.with_json_file(CHAIN_CONFIG_FILE_PATH, serde_json::json!({}))
 			.with_expected_io(vec![
 				scenarios::read_config(),
 				MockIO::print(&format!("Could not read network key from {}", network_key_file())),
@@ -528,7 +525,7 @@ pub mod tests {
 				scenarios::read_config(),
 				scenarios::choose_to_configure_bootnode(true),
 				scenarios::pick_ip_protocol_with_defaults(),
-				MockIO::eprint(&outro()),
+				MockIO::eprint(&outro(CHAIN_CONFIG_FILE_PATH.to_owned())),
 			]);
 
 		let result = establish_bootnodes(&mock_context);

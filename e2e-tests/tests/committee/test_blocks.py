@@ -18,12 +18,12 @@ def test_block_producer_can_update_their_metadata(genesis_utxo, api: BlockchainA
     }
     metadata_filepath = write_file(api.partner_chains_node.run_command, metadata)
 
-    signature = api.sign_block_producer_metadata(genesis_utxo, metadata_filepath, skey)
+    signature = api.sign_block_producer_metadata_upsert(genesis_utxo, metadata_filepath, skey)
     assert signature.signature, "Signature is empty"
     assert signature.cross_chain_pub_key == f"0x{vkey_hex}"
 
     logger.info("Submitting block producer metadata...")
-    tx = api.submit_block_producer_metadata(metadata, signature, wallet=get_wallet)
+    tx = api.submit_block_producer_metadata_upsert(metadata, signature, wallet=get_wallet)
     assert tx.hash, "Could not submit block producer metadata"
 
     logger.info("Verifying block producer metadata...")
@@ -41,12 +41,12 @@ def test_block_producer_can_update_their_metadata(genesis_utxo, api: BlockchainA
         "hash": "0x0000000000000000000000000000000000000000000000000000000000000002",
     }
     metadata_filepath = write_file(api.partner_chains_node.run_command, metadata)
-    signature = api.sign_block_producer_metadata(genesis_utxo, metadata_filepath, skey)
+    signature = api.sign_block_producer_metadata_upsert(genesis_utxo, metadata_filepath, skey)
     assert signature.signature, "Signature is empty"
     assert signature.cross_chain_pub_key == f"0x{vkey_hex}"
 
     logger.info("Submitting block producer metadata...")
-    tx = api.submit_block_producer_metadata(metadata, signature, wallet=get_wallet)
+    tx = api.submit_block_producer_metadata_upsert(metadata, signature, wallet=get_wallet)
     assert tx.hash, "Could not submit block producer metadata"
 
     logger.info("Verifying block producer metadata...")
@@ -57,6 +57,55 @@ def test_block_producer_can_update_their_metadata(genesis_utxo, api: BlockchainA
 
     rpc_metadata = api.partner_chain_rpc.partner_chain_get_block_producer_metadata(vkey_hex).result
     assert rpc_metadata == metadata, "RPC did not return block producer metadata or it is incorrect"
+
+
+@mark.xdist_group("faucet_tx")
+def test_block_producer_can_delete_their_metadata(genesis_utxo, api: BlockchainApi, get_wallet: Wallet, write_file):
+    logger.info("Signing block producer metadata...")
+    skey, vkey_hex, vkey_hash = api.cardano_cli.generate_cross_chain_keys()
+
+
+    logger.info("Starting upsert")
+    metadata = {
+        "url": "http://test.example",
+        "hash": "0x0000000000000000000000000000000000000000000000000000000000000001",
+    }
+    metadata_filepath = write_file(api.partner_chains_node.run_command, metadata)
+
+    signature = api.sign_block_producer_metadata_upsert(genesis_utxo, metadata_filepath, skey)
+    assert signature.signature, "Signature is empty"
+    assert signature.cross_chain_pub_key == f"0x{vkey_hex}"
+
+    logger.info("Submitting block producer metadata...")
+    tx = api.submit_block_producer_metadata_upsert(metadata, signature, wallet=get_wallet)
+    assert tx.hash, "Could not submit block producer metadata"
+
+    logger.info("Verifying block producer metadata...")
+
+    logger.info(f"Public key: {vkey_hex}")
+    storage_metadata = api.get_block_producer_metadata(vkey_hash)
+    assert storage_metadata == metadata, "Block producer metadata not found in storage or incorrect"
+
+    rpc_metadata = api.partner_chain_rpc.partner_chain_get_block_producer_metadata(vkey_hex).result
+    assert rpc_metadata == metadata, "RPC did not return block producer metadata or it is incorrect"
+
+    logger.info("Starting delete")
+    signature = api.sign_block_producer_metadata_delete(genesis_utxo, skey)
+    assert signature.signature, "Signature is empty"
+    assert signature.cross_chain_pub_key == f"0x{vkey_hex}"
+
+    logger.info("Submitting block producer metadata...")
+    tx = api.submit_block_producer_metadata_delete(signature, wallet=get_wallet)
+    assert tx.hash, "Could not submit block producer metadata"
+
+    logger.info("Verifying block producer metadata...")
+
+    logger.info(f"Public key: {vkey_hex}")
+    storage_metadata = api.get_block_producer_metadata(vkey_hash)
+    assert storage_metadata == None, "Block producer metadata not deleted from storage"
+
+    rpc_metadata = api.partner_chain_rpc.partner_chain_get_block_producer_metadata(vkey_hex).result
+    assert rpc_metadata == None, "RPC returned block producer metadata after deletion"
 
 
 @mark.skip_on_new_chain
