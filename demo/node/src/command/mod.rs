@@ -72,7 +72,7 @@ pub fn run() -> sc_cli::Result<()> {
 				_,
 				_,
 				BlockProducerMetadataType,
-				WizardBindings,
+				WizardBindings<partner_chains_demo_runtime::opaque::SessionKeys>,
 				AccountId32,
 			>(&cli, make_dependencies, cmd.clone())
 		},

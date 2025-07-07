@@ -4,6 +4,7 @@ use partner_chains_node_commands::{
 };
 use sc_cli::RunCmd;
 use sp_runtime::AccountId32;
+use std::marker::PhantomData;
 
 #[derive(Debug, clap::Parser)]
 pub struct Cli {
@@ -15,11 +16,14 @@ pub struct Cli {
 }
 
 #[derive(Debug, Clone)]
-pub struct WizardBindings;
-impl RuntimeTypeWrapper for WizardBindings {
+pub struct WizardBindings<T> {
+	_marker: PhantomData<T>,
+}
+impl<T> RuntimeTypeWrapper for WizardBindings<T> {
 	type Runtime = partner_chains_demo_runtime::Runtime;
 }
-impl PartnerChainRuntime for WizardBindings {
+
+impl<T> PartnerChainRuntime for WizardBindings<T> {
 	fn create_chain_spec(config: &partner_chains_cli::CreateChainSpecConfig) -> serde_json::Value {
 		crate::chain_spec::pc_create_chain_spec(config)
 	}
@@ -32,7 +36,12 @@ pub enum Subcommand {
 	Key(sc_cli::KeySubcommand),
 
 	#[clap(flatten)]
-	PartnerChains(PartnerChainsSubcommand<WizardBindings, AccountId32>),
+	PartnerChains(
+		PartnerChainsSubcommand<
+			WizardBindings<partner_chains_demo_runtime::opaque::SessionKeys>,
+			AccountId32,
+		>,
+	),
 
 	/// Build a chain specification.
 	BuildSpec(sc_cli::BuildSpecCmd),

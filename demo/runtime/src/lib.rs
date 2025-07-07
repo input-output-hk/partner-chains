@@ -11,13 +11,13 @@ extern crate alloc;
 
 use alloc::collections::BTreeMap;
 use alloc::string::String;
-use authority_selection_inherents::CommitteeMember;
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 use authority_selection_inherents::filter_invalid_candidates::{
 	PermissionedCandidateDataError, RegistrationDataError, StakeError,
 	validate_permissioned_candidate_data,
 };
 use authority_selection_inherents::select_authorities::select_authorities;
+use authority_selection_inherents::{CommitteeMember, ConvertForImplOpaqueKeys};
 use frame_support::genesis_builder_helper::{build_state, get_preset};
 use frame_support::inherent::ProvideInherent;
 use frame_support::weights::constants::RocksDbWeight as RuntimeDbWeight;
@@ -102,10 +102,8 @@ pub type Hash = sp_core::H256;
 pub mod opaque {
 	use super::*;
 	use parity_scale_codec::MaxEncodedLen;
-	use sidechain_domain::CandidateKeys;
 	use sp_core::{ed25519, sr25519};
 	pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
-	use sp_runtime::key_types::{AURA, GRANDPA};
 
 	/// Opaque block header type.
 	pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
@@ -172,19 +170,6 @@ pub mod opaque {
 	impl From<(sr25519::Public, ed25519::Public)> for SessionKeys {
 		fn from((aura, grandpa): (sr25519::Public, ed25519::Public)) -> Self {
 			Self { aura: aura.into(), grandpa: grandpa.into() }
-		}
-	}
-
-	impl TryFrom<CandidateKeys> for SessionKeys {
-		type Error = KeyTypeId;
-		fn try_from(value: CandidateKeys) -> Result<Self, Self::Error> {
-			let aura: sr25519::Public = <[u8; 32]>::try_from(value.find_or_empty(AURA))
-				.map_err(|_| AURA)
-				.map(sr25519::Public::from)?;
-			let grandpa: ed25519::Public = <[u8; 32]>::try_from(value.find_or_empty(GRANDPA))
-				.map_err(|_| GRANDPA)
-				.map(ed25519::Public::from)?;
-			Ok(Self { aura: aura.into(), grandpa: grandpa.into() })
 		}
 	}
 
@@ -419,10 +404,14 @@ impl pallet_session_validator_management::Config for Runtime {
 		sidechain_epoch: ScEpochNumber,
 	) -> Option<BoundedVec<Self::CommitteeMember, Self::MaxValidators>> {
 		Some(BoundedVec::truncate_from(
-			select_authorities(Sidechain::genesis_utxo(), input, sidechain_epoch)?
-				.into_iter()
-				.map(|member| member.into())
-				.collect(),
+			select_authorities::<
+				opaque::cross_chain_app::Public,
+				SessionKeys,
+				ConvertForImplOpaqueKeys,
+			>(Sidechain::genesis_utxo(), input, sidechain_epoch)?
+			.into_iter()
+			.map(|member| member.into())
+			.collect(),
 		))
 	}
 
@@ -1088,13 +1077,13 @@ impl_runtime_apis! {
 
 	impl authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi<Block> for Runtime {
 		fn validate_registered_candidate_data(stake_pool_public_key: &StakePoolPublicKey, registration_data: &RegistrationData) -> Option<RegistrationDataError> {
-			authority_selection_inherents::filter_invalid_candidates::validate_registration_data::<SessionKeys>(stake_pool_public_key, registration_data, Sidechain::genesis_utxo()).err()
+			authority_selection_inherents::filter_invalid_candidates::validate_registration_data::<SessionKeys, ConvertForImplOpaqueKeys>(stake_pool_public_key, registration_data, Sidechain::genesis_utxo()).err()
 		}
 		fn validate_stake(stake: Option<StakeDelegation>) -> Option<StakeError> {
 			authority_selection_inherents::filter_invalid_candidates::validate_stake(stake).err()
 		}
 		fn validate_permissioned_candidate_data(candidate: PermissionedCandidateData) -> Option<PermissionedCandidateDataError> {
-			validate_permissioned_candidate_data::<SessionKeys>(candidate).err()
+			validate_permissioned_candidate_data::<SessionKeys, ConvertForImplOpaqueKeys>(candidate).err()
 		}
 	}
 

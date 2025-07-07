@@ -1,3 +1,4 @@
+use crate::MaybeFromCandidateKeys;
 use crate::authority_selection_inputs::AuthoritySelectionInputs;
 use crate::filter_invalid_candidates::RegisterValidatorSignedMessage;
 use crate::select_authorities::select_authorities;
@@ -109,15 +110,13 @@ impl AccountKeys {
 	}
 }
 
-impl TryFrom<CandidateKeys> for AccountKeys {
-	type Error = &'static str;
+pub struct TestConvertKeys;
 
-	fn try_from(value: CandidateKeys) -> Result<Self, Self::Error> {
-		let aura =
-			<[u8; 32]>::try_from(value.find_or_empty(AURA)).map_err(|_| "invalid AURA key")?;
-		let grandpa = <[u8; 32]>::try_from(value.find_or_empty(GRANDPA))
-			.map_err(|_| "invalid Grandpa key")?;
-		Ok(Self { aura, grandpa })
+impl MaybeFromCandidateKeys<AccountKeys> for TestConvertKeys {
+	fn to_opaque_keys(keys: &CandidateKeys) -> Option<AccountKeys> {
+		let aura = <[u8; 32]>::try_from(keys.find_or_empty(AURA)).ok()?;
+		let grandpa = <[u8; 32]>::try_from(keys.find_or_empty(GRANDPA)).ok()?;
+		Some(AccountKeys { aura, grandpa })
 	}
 }
 
@@ -210,7 +209,7 @@ fn ariadne_all_permissioned_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee = select_authorities::<AccountId, AccountKeys>(
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, TestConvertKeys>(
 		UtxoId::default(),
 		authority_selection_inputs,
 		ScEpochNumber::zero(),
@@ -242,7 +241,7 @@ fn ariadne_only_permissioned_candidates_are_present_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee = select_authorities::<AccountId, AccountKeys>(
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, TestConvertKeys>(
 		UtxoId::default(),
 		authority_selection_inputs,
 		ScEpochNumber::zero(),
@@ -274,7 +273,7 @@ fn ariadne_3_to_2_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee = select_authorities::<AccountId, AccountKeys>(
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, TestConvertKeys>(
 		UtxoId::default(),
 		authority_selection_inputs,
 		ScEpochNumber::zero(),
@@ -305,7 +304,7 @@ fn ariadne_3_to_2_with_more_available_candidates_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee = select_authorities::<AccountId, AccountKeys>(
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, TestConvertKeys>(
 		UtxoId::default(),
 		authority_selection_inputs,
 		ScEpochNumber::zero(),
@@ -343,7 +342,7 @@ fn ariadne_4_to_7_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee = select_authorities::<AccountId, AccountKeys>(
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, TestConvertKeys>(
 		UtxoId::default(),
 		authority_selection_inputs,
 		ScEpochNumber::zero(),
@@ -370,7 +369,7 @@ fn ariadne_does_not_return_empty_committee() {
 		&[],
 		DParameter { num_permissioned_candidates: 1, num_registered_candidates: 1 },
 	);
-	let calculated_committee = select_authorities::<AccountId, AccountKeys>(
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, TestConvertKeys>(
 		UtxoId::default(),
 		authority_selection_inputs,
 		ScEpochNumber::zero(),

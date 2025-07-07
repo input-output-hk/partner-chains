@@ -12,7 +12,7 @@ use std::marker::PhantomData;
 mod tests;
 
 #[derive(Clone, Debug, clap::Parser)]
-pub struct GenerateKeysCmd<T: PartnerChainRuntime> {
+pub struct GenerateKeysCmd<T> {
 	#[clap(skip)]
 	_phantom: PhantomData<T>,
 }
@@ -46,7 +46,7 @@ pub(crate) fn network_key_path(substrate_node_base_path: &str) -> String {
 	format!("{}/secret_ed25519", network_key_directory(substrate_node_base_path))
 }
 
-impl<T: PartnerChainRuntime> CmdRun for GenerateKeysCmd<T> {
+impl<T: PartnerChainRuntime + Send + Sync> CmdRun for GenerateKeysCmd<T> {
 	fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
 		context.eprint(
 			"This 🧙 wizard will generate the following keys and save them to your node's keystore:",
@@ -63,7 +63,8 @@ impl<T: PartnerChainRuntime> CmdRun for GenerateKeysCmd<T> {
 		let config = GenerateKeysConfig::load(context);
 		context.enewline();
 
-		generate_spo_keys(&config, &chain_spec_path, context)?;
+		generate_spo_keys::<C>(&config, &chain_spec_path, context)?;
+
 		context.enewline();
 
 		generate_network_key(&config, &chain_spec_path, context)?;
