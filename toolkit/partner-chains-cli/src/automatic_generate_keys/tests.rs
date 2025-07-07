@@ -1,6 +1,5 @@
 use super::*;
-use crate::config::RESOURCES_CONFIG_FILE_PATH;
-use crate::tests::{MockIO, MockIOContext};
+use crate::tests::{MockIO, MockIOContext, RESOURCES_CONFIG_FILE_PATH};
 use mockito;
 use serde_json::json;
 

@@ -57,14 +57,16 @@ impl CmdRun for AutomaticGenerateKeysCmd {
 			let client = Client::new();
 
 			// Step 1: Call author_rotateKeys RPC to get session keys
-			let session_keys_hex = call_author_rotate_keys(&client, &self.node_url, context).await?;
-			
+			let session_keys_hex =
+				call_author_rotate_keys(&client, &self.node_url, context).await?;
+
 			// Step 2: Decode session keys using runtime API
-			let decoded_keys = decode_session_keys(&client, &self.node_url, &session_keys_hex, context).await?;
-			
+			let decoded_keys =
+				decode_session_keys(&client, &self.node_url, &session_keys_hex, context).await?;
+
 			// Step 3: Save keys to keystore and JSON file
 			save_keys_to_storage(&decoded_keys, &session_keys_hex, &keystore_path, context).await?;
-			
+
 			context.print("🚀 All done!");
 			Ok(())
 		})
@@ -77,15 +79,11 @@ async fn call_author_rotate_keys<C: IOContext>(
 	node_url: &str,
 	context: &C,
 ) -> anyhow::Result<String> {
-	let session_keys_hex: String = send_rpc_request(
-		client,
-		node_url,
-		"author_rotateKeys",
-		serde_json::json!([]),
-	)
-	.await
-	.map_err(|e| anyhow::anyhow!("Failed to call author_rotateKeys: {}", e))?;
-	
+	let session_keys_hex: String =
+		send_rpc_request(client, node_url, "author_rotateKeys", serde_json::json!([]))
+			.await
+			.map_err(|e| anyhow::anyhow!("Failed to call author_rotateKeys: {}", e))?;
+
 	context.print(&format!("Raw session keys (hex): {}", session_keys_hex));
 	Ok(session_keys_hex)
 }
@@ -102,30 +100,31 @@ async fn decode_session_keys<C: IOContext>(
 		.map_err(|e| anyhow::anyhow!("Failed to decode session keys: {}", e))?;
 
 	// Get finalized block hash
-	let block_hash: String = send_rpc_request(
-		client,
-		node_url,
-		"chain_getFinalizedHead",
-		serde_json::json!([]),
-	)
-	.await
-	.map_err(|e| anyhow::anyhow!("Failed to get finalized block hash: {}", e))?;
+	let block_hash: String =
+		send_rpc_request(client, node_url, "chain_getFinalizedHead", serde_json::json!([]))
+			.await
+			.map_err(|e| anyhow::anyhow!("Failed to get finalized block hash: {}", e))?;
 
 	// Use SCALE-encoded parameter for modern Polkadot SDK method
 	let session_keys_param = format!("0x{}", hex::encode(session_keys.encode()));
-	let params = serde_json::json!(["SessionKeys_decode_session_keys", session_keys_param, block_hash]);
+	let params =
+		serde_json::json!(["SessionKeys_decode_session_keys", session_keys_param, block_hash]);
 
-	let decoded_keys: Vec<(Vec<u8>, Vec<u8>)> = match send_rpc_request::<String>(client, node_url, "state_call", params).await {
-		Ok(decoded_hex) => {
-			let bytes = hex::decode(&decoded_hex[2..])
-				.map_err(|e| anyhow::anyhow!("Failed to decode runtime API response: {}", e))?;
+	let decoded_keys: Vec<(Vec<u8>, Vec<u8>)> =
+		match send_rpc_request::<String>(client, node_url, "state_call", params).await {
+			Ok(decoded_hex) => {
+				let bytes = hex::decode(&decoded_hex[2..])
+					.map_err(|e| anyhow::anyhow!("Failed to decode runtime API response: {}", e))?;
 
-			parse_decoded_keys_response(&bytes)?
-		}
-		Err(e) => {
-			return Err(anyhow::anyhow!("Failed to call SessionKeys_decode_session_keys: {}", e));
-		}
-	};
+				parse_decoded_keys_response(&bytes)?
+			},
+			Err(e) => {
+				return Err(anyhow::anyhow!(
+					"Failed to call SessionKeys_decode_session_keys: {}",
+					e
+				));
+			},
+		};
 
 	Ok(decoded_keys)
 }
@@ -136,14 +135,15 @@ fn parse_decoded_keys_response(bytes: &[u8]) -> anyhow::Result<Vec<(Vec<u8>, Vec
 	let mut cursor = &bytes[..];
 	match <Option<Vec<(Vec<u8>, u32)>>>::decode(&mut cursor) {
 		Ok(Some(vec)) if cursor.is_empty() => {
-			return Ok(vec.into_iter()
+			return Ok(vec
+				.into_iter()
 				.map(|(pubkey, key_type)| (key_type.to_le_bytes().to_vec(), pubkey))
 				.collect());
-		}
+		},
 		Ok(None) if cursor.is_empty() => {
 			// Successfully decoded as None (empty result)
 			return Ok(Vec::new());
-		}
+		},
 		_ => {
 			// Try Vec<(Vec<u8>, Vec<u8>)> (legacy format)
 			let mut cursor_alt = &bytes[..];
@@ -157,11 +157,11 @@ fn parse_decoded_keys_response(bytes: &[u8]) -> anyhow::Result<Vec<(Vec<u8>, Vec
 						Ok(None) if cursor_opt.is_empty() => return Ok(Vec::new()),
 						_ => {
 							return Err(anyhow::anyhow!("Failed to SCALE decode keys"));
-						}
+						},
 					}
-				}
+				},
 			}
-		}
+		},
 	}
 }
 
@@ -176,7 +176,7 @@ async fn save_keys_to_storage<C: IOContext>(
 		.map_err(|e| anyhow::anyhow!("Failed to create keystore directory: {}", e))?;
 
 	let mut key_map: BTreeMap<String, String> = BTreeMap::new();
-	
+
 	if !decoded_keys.is_empty() {
 		save_decoded_keys(decoded_keys, keystore_path, &mut key_map, context)?;
 	} else {
@@ -184,10 +184,10 @@ async fn save_keys_to_storage<C: IOContext>(
 	}
 
 	save_keys_to_json_file(&key_map, context)?;
-	
+
 	// Print decoded keys for reference
 	context.print(&format!("Decoded session keys: {:?}", key_map));
-	
+
 	Ok(())
 }
 
@@ -231,14 +231,14 @@ fn save_raw_keys_as_fallback<C: IOContext>(
 
 	let session_keys = hex::decode(&session_keys_hex[2..])
 		.map_err(|e| anyhow::anyhow!("Failed to decode session keys: {}", e))?;
-	
+
 	let raw_key_hex = format!("0x{}", hex::encode(&session_keys));
 	let store_path = format!("{}/raw{}", keystore_path, hex::encode(&session_keys));
 	fs::write(&store_path, &session_keys)
 		.map_err(|e| anyhow::anyhow!("Failed to write raw key to {}: {}", store_path, e))?;
 	context.print(&format!("Saved raw session keys to {}", store_path));
 	key_map.insert("raw".to_string(), raw_key_hex);
-	
+
 	Ok(())
 }
 
@@ -285,12 +285,8 @@ async fn send_rpc_request<T: for<'de> Deserialize<'de>>(
 	method: &str,
 	params: serde_json::Value,
 ) -> Result<T, Box<dyn std::error::Error>> {
-	let request = JsonRpcRequest {
-		jsonrpc: "2.0".to_string(),
-		method: method.to_string(),
-		params,
-		id: 1,
-	};
+	let request =
+		JsonRpcRequest { jsonrpc: "2.0".to_string(), method: method.to_string(), params, id: 1 };
 
 	let response = client
 		.post(url)
