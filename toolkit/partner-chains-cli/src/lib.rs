@@ -24,9 +24,11 @@ mod start_node;
 mod tests;
 
 use clap::Parser;
+pub use create_chain_spec::CreateChainSpecConfig;
 pub use io::DefaultCmdRunContext;
 use io::*;
 use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
+pub use permissioned_candidates::{ParsedPermissionedCandidatesKeys, PermissionedCandidateKeys};
 pub use runtime_bindings::{PartnerChainRuntime, RuntimeTypeWrapper};
 use std::time::Duration;
 
@@ -55,11 +57,11 @@ pub enum Command<T: PartnerChainRuntime> {
 	GenerateKeys(generate_keys::GenerateKeysCmd),
 	/// Wizard to obtain the configuration needed for the partner-chain governance authority. This configuration should be shared with chain participants and used to create the chain spec json file.
 	PrepareConfiguration(prepare_configuration::PrepareConfigurationCmd),
-	/// Wizard for creating a chain spec json file based on the chain configuration (see `prepare-configuration`).
-	CreateChainSpec(create_chain_spec::CreateChainSpecCmd<T>),
 	/// Wizard for setting D-parameter and Permissioned Candidates list on the main chain.
 	/// Uses 'chain config' obtained after running `prepare-configuration`.
 	SetupMainChainState(setup_main_chain_state::SetupMainChainStateCmd),
+	/// Wizard for creating a chain spec json file based on the chain configuration (see `prepare-configuration`).
+	CreateChainSpec(create_chain_spec::CreateChainSpecCmd<T>),
 	/// Wizard for starting a substrate node in the environment set up by `generate-keys`,
 	/// `prepare-config`, and `create-chain-spec`. It also assists in setting the `resources configuration`.
 	StartNode(start_node::StartNodeCmd),
@@ -107,8 +109,8 @@ const HELP_EXAMPLES: &str = r#"
 ║ Governance Authority:                                                          ║
 ║   1. generate-keys         : generate necessary cryptographic keys             ║
 ║   2. prepare-configuration : set up the partner chain configuration            ║
-║   3. create-chain-spec     : create the chain specification file               ║
-║   4. setup-main-chain-state: configure the main chain parameters               ║
+║   3. setup-main-chain-state: configure the main chain parameters               ║
+║   4. create-chain-spec     : create the chain specification file               ║
 ║   5. start-node            : start the validator node                          ║
 ╟────────────────────────────────────────────────────────────────────────────────╢
 ║ Registered Validator:                                                          ║

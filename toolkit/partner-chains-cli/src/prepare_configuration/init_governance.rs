@@ -68,7 +68,7 @@ fn prompt_initial_governance<C: IOContext>(
 		|err| anyhow!(
 			"Initial Governance data is invalid: '{}'. Please run the wizard again and provide correct value or edit values in '{}' and the run the wizard again. Example: '{}'",
 			err,
-			INITIAL_GOVERNANCE_AUTHORITIES.config_file,
+			context.config_file_path(INITIAL_GOVERNANCE_AUTHORITIES.config_file),
 			&example_governance_auth()
 		)
 	)
@@ -91,11 +91,11 @@ fn example_governance_auth() -> serde_json::Value {
 mod tests {
 	use super::run_init_governance;
 	use crate::{
-		config::{
-			CHAIN_CONFIG_FILE_PATH, NetworkProtocol, ServiceConfig,
-			config_fields::{GENESIS_UTXO, OGMIOS_PROTOCOL},
+		config::{NetworkProtocol, ServiceConfig},
+		tests::{
+			CHAIN_CONFIG_FILE_PATH, MockIO, MockIOContext, OffchainMock, OffchainMocks,
+			RESOURCES_CONFIG_FILE_PATH,
 		},
-		tests::{MockIO, MockIOContext, OffchainMock, OffchainMocks},
 		verify_json,
 	};
 	use hex_literal::hex;
@@ -109,18 +109,18 @@ mod tests {
 	#[test]
 	fn happy_path() {
 		let mock_context = MockIOContext::new()
-			.with_json_file(GENESIS_UTXO.config_file, serde_json::json!({}))
-			.with_json_file(OGMIOS_PROTOCOL.config_file, serde_json::json!({}))
+			.with_json_file(CHAIN_CONFIG_FILE_PATH, serde_json::json!({}))
+			.with_json_file(RESOURCES_CONFIG_FILE_PATH, serde_json::json!({}))
 			.with_offchain_mocks(preprod_offchain_mocks())
 			.with_expected_io(vec![
 				MockIO::eprint("Please provide the initial chain governance key hashes:"),
 				MockIO::prompt(
-					"Space separated keys hashes of the initial Multisig Governance Authorities",
+					"Enter the space separated keys hashes of the initial Multisig Governance Authorities",
 					Some(test_private_key_hash()),
 					"00000000000000000000000000000000000000000000000000000000  \n\t0x01010101010101010101010101010101010101010101010101010101",
 				),
 				MockIO::prompt(
-					"Initial Multisig Governance Threshold",
+					"Enter the Initial Multisig Governance Threshold",
 					Some("1"),
 					"2",
 				),

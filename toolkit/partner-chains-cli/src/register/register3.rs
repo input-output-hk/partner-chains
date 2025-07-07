@@ -1,8 +1,7 @@
 use crate::CmdRun;
 use crate::cardano_key::get_mc_payment_signing_key_from_file;
-use crate::config;
-use crate::config::CHAIN_CONFIG_FILE_PATH;
 use crate::config::config_fields;
+use crate::config::{self, ConfigFile};
 use crate::data_source::set_data_sources_env;
 use crate::io::IOContext;
 use crate::ogmios::config::establish_ogmios_configuration;
@@ -41,7 +40,7 @@ impl CmdRun for Register3Cmd {
 		context.print("This command will submit the registration message to the mainchain.");
 
 		config_fields::GENESIS_UTXO.load_from_file(context).ok_or_else(|| {
-			context.eprint(&format!("⚠️ The chain configuration file `{CHAIN_CONFIG_FILE_PATH}` is missing or invalid.\n"));
+			context.eprint(&format!("⚠️ The chain configuration file `{}` is missing or invalid.\n", context.config_file_path(ConfigFile::Chain)));
 			context.eprint("⚠️ If you are the governance authority, please make sure you have run the `prepare-configuration` command to generate the chain configuration file.\n");
 			context.eprint("⚠️ If you are a validator, you can obtain the chain configuration file from the governance authority.\n");
 			anyhow::anyhow!("Chain config missing or invalid")
@@ -136,9 +135,10 @@ struct McEpochConfigJson {
 }
 
 fn get_current_mainchain_epoch(context: &impl IOContext) -> Result<McEpochNumber, anyhow::Error> {
-	let chain_config_json = context.read_file(config::CHAIN_CONFIG_FILE_PATH).ok_or_else(|| {
+	let config_file_path = context.config_file_path(ConfigFile::Chain);
+	let chain_config_json = context.read_file(&config_file_path).ok_or_else(|| {
 		anyhow::anyhow!(
-			"⚠️ The chain configuration file `{CHAIN_CONFIG_FILE_PATH}` is missing or invalid."
+			"⚠️ The chain configuration file `{config_file_path}` is missing or invalid."
 		)
 	})?;
 
@@ -153,15 +153,15 @@ fn get_current_mainchain_epoch(context: &impl IOContext) -> Result<McEpochNumber
 mod tests {
 	use super::*;
 	use crate::{
-		config::{
-			CHAIN_CONFIG_FILE_PATH, RESOURCES_CONFIG_FILE_PATH,
-			config_fields::POSTGRES_CONNECTION_STRING,
-		},
+		config::config_fields::POSTGRES_CONNECTION_STRING,
 		ogmios::config::tests::{
 			default_ogmios_config_json, default_ogmios_service_config,
 			establish_ogmios_configuration_io,
 		},
-		tests::{MockIO, MockIOContext, OffchainMock, OffchainMocks},
+		tests::{
+			CHAIN_CONFIG_FILE_PATH, MockIO, MockIOContext, OffchainMock, OffchainMocks,
+			RESOURCES_CONFIG_FILE_PATH,
+		},
 		verify_json,
 	};
 	use hex_literal::hex;
@@ -274,7 +274,7 @@ mod tests {
 
 	fn prompt_mc_payment_key_path_io() -> Vec<MockIO> {
 		vec![MockIO::prompt(
-			"path to the payment signing key file",
+			"Enter the path to the payment signing key file",
 			Some("payment.skey"),
 			"/path/to/payment.skey",
 		)]
@@ -301,7 +301,7 @@ mod tests {
 			),
 			MockIO::current_timestamp(mock_timestamp()),
 			MockIO::prompt(
-				"DB-Sync Postgres connection string",
+				"Enter the DB-Sync Postgres connection string",
 				POSTGRES_CONNECTION_STRING.default,
 				POSTGRES_CONNECTION_STRING.default.unwrap(),
 			),
@@ -376,12 +376,12 @@ mod tests {
 			},
 			"cardano_addresses": {
 				"committee_candidates_address": "addr_test1wz5qc7fk2pat0058w4zwvkw35ytptej3nuc3je2kgtan5dq3rt4sc",
-				"d_parameter_policy_id": "d0ebb61e2ba362255a7c4a253c6578884603b56fb0a68642657602d6",
-				"permissioned_candidates_policy_id": "58b4ba68f641d58f7f1bba07182eca9386da1e88a34d47a14638c3fe",
+				"d_parameter_policy_id": "0xd0ebb61e2ba362255a7c4a253c6578884603b56fb0a68642657602d6",
+				"permissioned_candidates_policy_id": "0x58b4ba68f641d58f7f1bba07182eca9386da1e88a34d47a14638c3fe",
 				"native_token": {
 					"asset": {
-						"policy_id": "ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4",
-						"asset_name": "5043546f6b656e44656d6f",
+						"policy_id": "0xada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4",
+						"asset_name": "0x5043546f6b656e44656d6f",
 					},
 					"illiquid_supply_address": "addr_test1wqn2pkvvmesmxtfa4tz7w8gh8vumr52lpkrhcs4dkg30uqq77h5z4"
 				},

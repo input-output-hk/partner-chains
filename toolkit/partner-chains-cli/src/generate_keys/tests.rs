@@ -1,6 +1,5 @@
 use super::*;
 use crate::CmdRun;
-use crate::config::RESOURCES_CONFIG_FILE_PATH;
 use crate::tests::*;
 use scenarios::key_file_content;
 use scenarios::resources_file_content;
@@ -39,7 +38,7 @@ pub mod scenarios {
 	}
 
 	pub fn prompt_all_config_fields() -> MockIO {
-		MockIO::prompt("node base path", Some("./data"), DATA_PATH)
+		MockIO::prompt("Enter the node base path", Some("./data"), DATA_PATH)
 	}
 
 	pub fn resources_file_content() -> serde_json::Value {

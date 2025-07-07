@@ -200,6 +200,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "69f7f8c3906b62b754cd5326047894316021dcfe5a194c8ea52bdd94934a3457"
 
 [[package]]
+name = "ariadne-simulator"
+version = "1.7.0"
+dependencies = [
+ "clap",
+ "env_logger 0.11.8",
+ "itertools 0.14.0",
+ "log",
+ "rand 0.9.1",
+ "rand_chacha 0.9.0",
+ "selection",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "ark-bls12-377"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1484,6 +1499,7 @@ dependencies = [
  "sp-runtime",
  "sp-sidechain",
  "thiserror 2.0.12",
+ "time-source",
 ]
 
 [[package]]
@@ -6272,6 +6288,7 @@ dependencies = [
  "frame-system",
  "hex-literal 1.0.0",
  "log",
+ "pallet-balances",
  "parity-scale-codec",
  "scale-info",
  "sidechain-domain",
@@ -6408,7 +6425,9 @@ dependencies = [
  "hex-literal 1.0.0",
  "k256",
  "log",
+ "pallet-balances",
  "parity-scale-codec",
+ "pretty_assertions",
  "scale-info",
  "sidechain-domain",
  "sp-block-producer-metadata",
@@ -6894,22 +6913,33 @@ dependencies = [
  "clap",
  "colored",
  "ed25519-zebra",
+ "frame-support",
+ "frame-system",
  "hex",
  "hex-literal 1.0.0",
  "inquire",
  "libp2p-identity",
  "log",
  "ogmios-client",
+ "pallet-governed-map",
+ "pallet-native-token-management",
+ "pallet-partner-chains-session",
  "pallet-session-validator-management",
+ "pallet-sidechain",
+ "parity-scale-codec",
  "partner-chains-cardano-offchain",
  "plutus",
  "plutus-datum-derive",
  "pretty_assertions",
+ "scale-info",
  "secp256k1 0.30.0",
  "serde",
  "serde_json",
  "sidechain-domain",
+ "sidechain-slots",
  "sp-core",
+ "sp-governed-map",
+ "sp-native-token-management",
  "sp-runtime",
  "sp-session-validator-management",
  "tempfile",
@@ -6997,6 +7027,7 @@ dependencies = [
  "pallet-sidechain-rpc",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc",
+ "partner-chains-cli",
  "partner-chains-db-sync-data-sources",
  "partner-chains-demo-runtime",
  "partner-chains-mock-data-sources",

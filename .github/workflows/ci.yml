@@ -30,16 +30,12 @@ jobs:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
     steps:
       - name: Clean runner environment
-        run: rm -rf *
-      - name: ls
-        run: ls -la
+        run: rm -rf ./*
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           clean: true
-      - name: ls
-        run: ls -la
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -230,6 +226,8 @@ jobs:
     outputs:
       sha: ${{ steps.get_sha.outputs.sha }}
     steps:
+      - name: Clean runner environment
+        run: rm -rf ./*
       - name: Checkout master branch code
         uses: actions/checkout@v4
         with:
@@ -462,7 +460,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     steps:
       - name: Clean runner environment
-        run: rm -rf *
+        run: rm -rf ./*
       - name: Checkout target code to build
         uses: actions/checkout@v4
         with:

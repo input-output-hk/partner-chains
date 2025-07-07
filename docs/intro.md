@@ -596,7 +596,7 @@ config fields.
 The partner chain node needs three different keys to be present in a Substrate key store accessible
 by the partner chain node.
 
-1. `sidechain_pub_key`: The sidechain public key (ECDSA)
+1. `partner_chain_pub_key`: The partner-chain public key (ECDSA), also called sidechain key
 1. `aura_pub_key`: The aura public key (sr25519)
 1. `grandpa_pub_key`: The grandpa public key (Ed25519)
 
@@ -1038,7 +1038,7 @@ pc-node wizards generate-keys
 **Output Files**
 
 * `pc-resources-config.json` Contains basic networking, ports and path settings
-* `partner-chains-public-keys.json` Contains aura, grandpa and sidechain public keys
+* `partner-chains-public-keys.json` Contains aura, grandpa and partner-chain public keys
 
 #### prepare-configuration
 
@@ -1167,10 +1167,10 @@ the machine where `register1` was executed before to conclude the registration.
 ```shell
 $ pc-node wizards register2 --genesis-utxo <GENESIS_UTXO>
       --registration-utxo <REGISTRATION_UTXO>
-      --sidechain-pub-key <SIDECHAIN_PUB_KEY>
+      --partner-chain-pub-key <PARTNER_CHAIN_PUB_KEY>
       --aura-pub-key <AURA_PUB_KEY>
       --grandpa-pub-key <GRANDPA_PUB_KEY>
-      --sidechain-signature <SIDECHAIN_SIGNATURE>
+      --partner-chain-signature <PARTNER_CHAIN_SIGNATURE>
 ```
 
 :information_source: The actual values will be provided in the `register1` output.
@@ -1188,10 +1188,10 @@ The `register3` wizard is the third and final step in registering a node as comm
 ```shell
 $ pc-node wizards register3 --genesis-utxo <GENESIS_UTXO>
  --registration-utxo <REGISTRATION_UTXO>
- --sidechain-pub-key <SIDECHAIN_PUB_KEY>
+ --partner-chain-pub-key <PARTNER_CHAIN_PUB_KEY>
  --aura-pub-key <AURA_PUB_KEY>
  --grandpa-pub-key <GRANDPA_PUB_KEY>
- --sidechain-signature <SIDECHAIN_SIGNATURE>
+ --partner-chain-signature <PARTNER_CHAIN_SIGNATURE>
 ```
 
 :information_source: The actual values will be provided in the `register2` output.

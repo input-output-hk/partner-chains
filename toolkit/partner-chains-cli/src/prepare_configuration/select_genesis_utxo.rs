@@ -55,8 +55,6 @@ const INTRO: &str = "Now, let's set up the genesis UTXO. It identifies the partn
 
 #[cfg(test)]
 mod tests {
-	use crate::config::config_fields::GENESIS_UTXO;
-	use crate::config::{CHAIN_CONFIG_FILE_PATH, RESOURCES_CONFIG_FILE_PATH};
 	use crate::ogmios::config::tests::{
 		default_ogmios_config_json, default_ogmios_service_config, prompt_ogmios_configuration_io,
 	};
@@ -64,7 +62,7 @@ mod tests {
 	use crate::ogmios::{OgmiosRequest, OgmiosResponse};
 	use crate::prepare_configuration::select_genesis_utxo::{INTRO, select_genesis_utxo};
 	use crate::select_utxo::tests::{mock_7_valid_utxos_rows, mock_result_7_valid, query_utxos_io};
-	use crate::tests::{MockIO, MockIOContext};
+	use crate::tests::{CHAIN_CONFIG_FILE_PATH, MockIO, MockIOContext, RESOURCES_CONFIG_FILE_PATH};
 	use crate::verify_json;
 
 	fn payment_key_content() -> serde_json::Value {
@@ -102,7 +100,7 @@ mod tests {
 		result.expect("should succeed");
 		verify_json!(
 			mock_context,
-			GENESIS_UTXO.config_file,
+			CHAIN_CONFIG_FILE_PATH,
 			serde_json::json!({"chain_parameters": {"genesis_utxo": "4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93"}})
 		);
 		verify_json!(
@@ -131,6 +129,10 @@ mod tests {
 	}
 
 	fn prompt_payment_vkey_and_read_it_to_derive_address() -> MockIO {
-		MockIO::prompt("path to the payment signing key file", Some("payment.skey"), "payment.skey")
+		MockIO::prompt(
+			"Enter the path to the payment signing key file",
+			Some("payment.skey"),
+			"payment.skey",
+		)
 	}
 }
