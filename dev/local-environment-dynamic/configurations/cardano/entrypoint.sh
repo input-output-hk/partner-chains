@@ -367,6 +367,12 @@ echo "[LOG] Main funding transaction submitted."
 echo "[LOG] Waiting 45 seconds for the main transaction to process and be confirmed..."
 sleep 45
 
+echo "[LOG] Querying and saving the first UTXO details for new address to /shared/genesis.utxo:"
+# Query UTXOs and extract the first UTXO key from JSON format
+cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" --out-file /dev/stdout | /busybox grep -o '"[a-f0-9]\{64\}#[0-9]\+":' | head -1 | /busybox sed 's/"//g' | /busybox sed 's/://g' > /shared/genesis.utxo
+cp /shared/genesis.utxo /runtime-values/genesis.utxo
+echo "[LOG] Created /shared/genesis.utxo with value: $(cat /shared/genesis.utxo)"
+
 echo "[LOG] Main transaction submitted. Determining initial UTXO for batch funding registered nodes."
 
 # Determine the TxId of the main transaction
@@ -722,12 +728,6 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     fi
 done
 echo "[LOG] Finished generating mainchain cold keys."
-
-echo "[LOG] Querying and saving the first UTXO details for new address to /shared/genesis.utxo:"
-# Query UTXOs and extract the first UTXO key from JSON format
-cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" --out-file /dev/stdout | /busybox grep -o '"[a-f0-9]\{64\}#[0-9]\+":' | head -1 | /busybox sed 's/"//g' | /busybox sed 's/://g' > /shared/genesis.utxo
-cp /shared/genesis.utxo /runtime-values/genesis.utxo
-echo "[LOG] Created /shared/genesis.utxo with value: $(cat /shared/genesis.utxo)"
 
 
 # --- NEW: Register Nodes as Cardano SPOs and Delegate Stake ---
