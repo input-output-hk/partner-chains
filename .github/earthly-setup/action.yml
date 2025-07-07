@@ -1,0 +1,36 @@
+name: 'Earthly Setup'
+description: 'Install Earthly, and configure SSH & mTLS'
+
+inputs:
+  ssh_key:
+    description: 'SSH key for setting up known_hosts and ssh-agent'
+    required: false
+  config_tar:
+    description: 'Tarball containing earthly certs and configuration'
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - name: Setup earthly
+      uses: earthly/actions-setup@v1
+      with:
+        github-token: ${{ github.token }}
+        use-cache: false
+        version: ^0.8.0
+
+    - name: Configure Secrets
+      shell: bash
+      env:
+        EARTHLY_TAR: ${{ inputs.config_tar }}
+      run: |
+        if [[ "${{ inputs.config_tar }}" != "" ]]; then
+          mkdir -p ~/.earthly
+          printf "%s" "$EARTHLY_TAR" | base64 -d | tar -C ~/.earthly --zstd -x
+        fi
+        if [[ "${{ inputs.ssh_key }}" != "" ]]; then
+          mkdir -p ~/.ssh
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          ssh-agent -a "$SSH_AUTH_SOCK" > /dev/null || true
+          ssh-add - <<< "${{ inputs.ssh_key }}"
+        fi
