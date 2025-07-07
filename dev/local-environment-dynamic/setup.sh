@@ -119,7 +119,7 @@ function validate_memory_limit() {
       echo "$mem_limit"
       break
     else
-      echo "Invalid memory limit. Please enter a valid value (e.g., 500M for 500 MB, 2G for 2 GB)."
+      echo "Invalid memory limit. Please enter a valid value (e.g., 500m for 500 MB, 2g for 2 GB)."
     fi
   done
 }
