@@ -274,20 +274,19 @@ pub fn validate_registration_data<SessionKeys: OpaqueKeys + Decode>(
 	registration_data: &RegistrationData,
 	genesis_utxo: UtxoId,
 ) -> Result<(ecdsa::Public, SessionKeys), RegistrationDataError> {
-	let key_ids = SessionKeys::key_ids();
+	let required_keys = SessionKeys::key_ids();
 
-	let mut bytes = vec![0_u8; 32];
-
-	// TODO: finish me
-	for key_id in key_ids {
+	let mut encoded_keys = vec![];
+	for key_id in required_keys {
 		let key = registration_data
 			.session_keys
 			.iter()
 			.find(|key| &KeyTypeId(key.0) == key_id)
 			.ok_or(RegistrationDataError::MissingSessionKey)?;
+		encoded_keys.extend(key.1.clone());
 	}
 
-	let sessions_keys = SessionKeys::decode(&mut &bytes[..])
+	let sessions_keys = SessionKeys::decode(&mut &encoded_keys[..])
 		.map_err(|_e| RegistrationDataError::InvalidSessionKeys)?;
 
 	let sidechain_pub_key = ecdsa::Public::from(

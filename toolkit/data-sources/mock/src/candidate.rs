@@ -44,6 +44,9 @@ impl From<MockRegistration> for CandidateRegistrations {
 		let stake_pool_public_key = StakePoolPublicKey(mock.mainchain_pub_key.0.try_into().expect(
 			"Invalid mock configuration. 'mainchain_pub_key' public key should be 32 bytes.",
 		));
+		let session_keys =
+			vec![(*b"aura", mock.aura_pub_key.0), (*b"gran", mock.grandpa_pub_key.0)];
+
 		let registrations = vec![RegistrationData {
 			registration_utxo: mock.registration_utxo,
 			sidechain_signature: SidechainSignature(mock.sidechain_signature.0.clone()),
@@ -66,8 +69,7 @@ impl From<MockRegistration> for CandidateRegistrations {
 				tx_index_within_block: McTxIndexInBlock(12),
 			},
 			tx_inputs: vec![mock.registration_utxo],
-			aura_pub_key: AuraPublicKey(mock.aura_pub_key.0),
-			grandpa_pub_key: GrandpaPublicKey(mock.grandpa_pub_key.0),
+			session_keys,
 		}];
 		let stake_delegation = Some(StakeDelegation(333));
 		CandidateRegistrations { stake_pool_public_key, registrations, stake_delegation }

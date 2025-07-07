@@ -37,10 +37,8 @@ pub struct CandidateRegistrationEntry {
 	pub mainchain_pub_key: String,
 	/// Cross chain public key of the candidate. See [sidechain_domain::CrossChainPublicKey] for more details.
 	pub cross_chain_pub_key: String,
-	/// Aura public key of the candidate
-	pub aura_pub_key: String,
-	/// Grandpa public key of the candidate
-	pub grandpa_pub_key: String,
+	/// Session public keys of the candidate
+	pub session_keys: Vec<(String, String)>,
 	/// Sidechain key signature of the registration message
 	pub sidechain_signature: String,
 	/// Signature made with Stake Pool key
@@ -79,6 +77,11 @@ impl CandidateRegistrationEntry {
 			.unwrap_or("Invalid Sidechain Public Key. Could not decode...".into()),
 			mainchain_pub_key: to_hex(&stake_pool_public_key.0.clone(), false),
 			cross_chain_pub_key: to_hex(&registration_data.cross_chain_pub_key.0, false),
+			session_keys: registration_data
+				.session_keys
+				.iter()
+				.map(|key| to_hex(&key[..], false))
+				.collect(),
 			aura_pub_key: to_hex(&registration_data.aura_pub_key.0, false),
 			grandpa_pub_key: to_hex(&registration_data.grandpa_pub_key.0, false),
 			sidechain_signature: to_hex(&registration_data.sidechain_signature.0, false),

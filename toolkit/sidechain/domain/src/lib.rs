@@ -1056,15 +1056,6 @@ impl From<ed25519::Public> for GrandpaPublicKey {
 	}
 }
 
-/// Generic public key. Not validated
-#[derive(
-	Clone, PartialEq, Eq, Encode, Decode, DecodeWithMemTracking, TypeInfo, PartialOrd, Ord, Hash,
-)]
-pub struct GenericPublicKey {
-	key_type: [u8; 4],
-	key: Vec<u8>,
-}
-
 #[derive(
 	Debug,
 	Clone,
