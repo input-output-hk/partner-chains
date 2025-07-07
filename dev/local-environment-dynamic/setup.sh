@@ -112,7 +112,7 @@ function validate_cpu_limit() {
 }
 
 function validate_memory_limit() {
-  local pattern_mem='^[0-9]+[KMG]$'
+  local pattern_mem='^[0-9]+[kmg]$'
   while true; do
     read -p "$1" mem_limit
     if [[ $mem_limit =~ $pattern_mem ]]; then
