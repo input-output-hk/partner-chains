@@ -290,17 +290,17 @@ jobs:
           cp ./partner-chains-demo-node partner-chains-node-${{ steps.get_sha.outputs.sha }}-x86_64-linux
           chmod +x ./partner-chains-node-${{ steps.get_sha.outputs.sha }}-x86_64-linux
           cp ./partner-chains-node-${{ steps.get_sha.outputs.sha }}-x86_64-linux partner-chains-node-binary
-      - name: Copy to binary-host
-        uses: ./.github/actions/artifacts/copy-to-binary-host
-        with:
-          sha: ${{ steps.get_sha.outputs.sha }}
-          env: "ci-preview"
-        env:
-          AWS_REGION: "eu-central-1"
-          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
-          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
-          K8S_SERVER: ${{ secrets.K8S_SERVER }}
-          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
+      #- name: Copy to binary-host
+      #  uses: ./.github/actions/artifacts/copy-to-binary-host
+      #  with:
+      #    sha: ${{ steps.get_sha.outputs.sha }}
+      #    env: "ci-preview"
+      #  env:
+      #    AWS_REGION: "eu-central-1"
+      #    AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+      #    kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+      #    K8S_SERVER: ${{ secrets.K8S_SERVER }}
+      #    K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
       - name: Upload partner-chains-node artifact
         uses: actions/upload-artifact@v4
         with:
