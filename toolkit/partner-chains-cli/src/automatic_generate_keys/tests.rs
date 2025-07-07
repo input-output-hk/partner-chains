@@ -80,14 +80,14 @@ fn test_successful_key_generation() {
 		.with_body(r#"{"jsonrpc":"2.0","result":"0xabcdef1234567890","id":1}"#)
 		.create();
 
-	// Mock state_call for Session_decodeSessionKeys
+	// Mock state_call for SessionKeys_decode_session_keys
 	let decode_keys_mock = server
 		.mock("POST", "/")
 		.match_body(mockito::Matcher::JsonString(
 			json!({
 				"jsonrpc": "2.0",
 				"method": "state_call",
-				"params": ["Session_decodeSessionKeys", "0x1234567890abcdef1234567890abcdef5678901234567890ab5678901234567890ab", "0xabcdef1234567890"],
+				"params": ["SessionKeys_decode_session_keys", "0x881234567890abcdef1234567890abcdef5678901234567890ab5678901234567890ab", "0xabcdef1234567890"],
 				"id": 1
 			}).to_string()
 		))
@@ -163,8 +163,14 @@ fn test_no_keys_decoded() {
 			mock_config_loaded_from_file(),
 			mock_keystore_path_message(),
 			MockIO::print("Raw session keys (hex): 0x1234"),
-			MockIO::print("Warning: No keys decoded, skipping JSON save"),
-			MockIO::print("Decoded session keys: {}"),
+			MockIO::eprint("⚠️ No session keys decoded. Saving raw keys as fallback."),
+			MockIO::eprint("Please verify the node's runtime configuration by fetching metadata:"),
+			MockIO::eprint("curl -X POST -H 'Content-Type: application/json' -d '{\"jsonrpc\":\"2.0\",\"method\":\"state_getMetadata\",\"id\":1}' http://localhost:9933 > metadata.json"),
+			MockIO::eprint("Look for the Session pallet and SessionKeys type to determine key order (e.g., aura, gran, imon)."),
+			MockIO::print("Saved raw session keys to ./test_data/keystore/raw1234"),
+			MockIO::print("🔑 Public keys saved to ./keys.json:\n{\n  \"raw\": \"0x1234\"\n}"),
+			MockIO::print("You may share these public keys with your chain governance authority."),
+			MockIO::print("Decoded session keys: {\"raw\": \"0x1234\"}"),
 			MockIO::print("🚀 All done!"),
 		]);
 
@@ -199,7 +205,7 @@ fn test_no_keys_decoded() {
 			json!({
 				"jsonrpc": "2.0",
 				"method": "state_call",
-				"params": ["Session_decodeSessionKeys", "0x1234", "0xabcdef1234567890"],
+				"params": ["SessionKeys_decode_session_keys", "0x081234", "0xabcdef1234567890"],
 				"id": 1
 			})
 			.to_string(),
@@ -265,7 +271,7 @@ fn test_file_overwrite_declined() {
 			json!({
 				"jsonrpc": "2.0",
 				"method": "state_call",
-				"params": ["Session_decodeSessionKeys", "0x1234567890abcdef1234567890abcdef5678901234567890ab5678901234567890ab", "0xabcdef1234567890"],
+				"params": ["SessionKeys_decode_session_keys", "0x881234567890abcdef1234567890abcdef5678901234567890ab5678901234567890ab", "0xabcdef1234567890"],
 				"id": 1
 			}).to_string()
 		))
@@ -329,7 +335,7 @@ fn test_prompts_for_config_when_missing() {
 			json!({
 				"jsonrpc": "2.0",
 				"method": "state_call",
-				"params": ["Session_decodeSessionKeys", "0x1234567890abcdef1234567890abcdef5678901234567890ab5678901234567890ab", "0xabcdef1234567890"],
+				"params": ["SessionKeys_decode_session_keys", "0x881234567890abcdef1234567890abcdef5678901234567890ab5678901234567890ab", "0xabcdef1234567890"],
 				"id": 1
 			}).to_string()
 		))

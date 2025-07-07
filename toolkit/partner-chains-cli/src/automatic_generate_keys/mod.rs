@@ -55,179 +55,140 @@ impl CmdRun for AutomaticGenerateKeysCmd {
 
 		let rt = tokio::runtime::Runtime::new()?;
 		rt.block_on(async {
-			let client = Client::new();
+            let client = Client::new();
 
-			// Step 1: Call author_rotateKeys RPC.
-			let session_keys_hex: String = send_rpc_request(
-				&client,
-				&self.node_url,
-				"author_rotateKeys",
-				serde_json::json!([]),
-			)
-			.await
-			.map_err(|e| anyhow::anyhow!("Failed to call author_rotateKeys: {}", e))?;
-			context.print(&format!("Raw session keys (hex): {}", session_keys_hex));
+            // Step 1: Call author_rotateKeys RPC.
+            let session_keys_hex: String = send_rpc_request(
+                &client,
+                &self.node_url,
+                "author_rotateKeys",
+                serde_json::json!([]),
+            )
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to call author_rotateKeys: {}", e))?;
+            context.print(&format!("Raw session keys (hex): {}", session_keys_hex));
 
-			// Decode hex string to bytes (remove "0x" prefix).
-			let session_keys = hex::decode(&session_keys_hex[2..])
-				.map_err(|e| anyhow::anyhow!("Failed to decode session keys: {}", e))?;
+            // Decode hex string to bytes (remove "0x" prefix).
+            let session_keys = hex::decode(&session_keys_hex[2..])
+                .map_err(|e| anyhow::anyhow!("Failed to decode session keys: {}", e))?;
 
-			// Step 2: Decode the session keys using the runtime API.
-			let block_hash: String = send_rpc_request(
-				&client,
-				&self.node_url,
-				"chain_getFinalizedHead",
-				serde_json::json!([]),
-			)
-			.await
-			.map_err(|e| anyhow::anyhow!("Failed to get finalized block hash: {}", e))?;
+            // Step 2: Call SessionKeys_decode_session_keys runtime API.
+            let block_hash: String = send_rpc_request(
+                &client,
+                &self.node_url,
+                "chain_getFinalizedHead",
+                serde_json::json!([]),
+            )
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to get finalized block hash: {}", e))?;
 
-			let session_keys_param_raw = format!("0x{}", hex::encode(&session_keys));
-			// For the new API we need SCALE-encode the Vec<u8> first (compact length prefix).
-			let session_keys_param_scale = format!("0x{}", hex::encode(session_keys.encode()));
+            // Use SCALE-encoded parameter for modern Polkadot SDK method
+            let session_keys_param = format!("0x{}", hex::encode(session_keys.encode()));
+            let params = serde_json::json!(["SessionKeys_decode_session_keys", session_keys_param, block_hash]);
 
-			// Newer Substrate versions expose the method under `SessionKeys_decode_session_keys`.
-			// Some older versions still use `Session_decodeSessionKeys`. Try both. We call the
-			// legacy one first to remain compatible with existing tests and most nodes.
-			let decode_methods = [
-				"Session_decodeSessionKeys",       // legacy (Polkadot/Substrate <= v0.9)
-				"SessionKeys_decode_session_keys", // newer API (after FRAME v1.0)
-			];
+            let decoded_keys: Vec<(Vec<u8>, Vec<u8>)> = match send_rpc_request::<String>(&client, &self.node_url, "state_call", params).await {
+                Ok(decoded_hex) => {
+                    let bytes = hex::decode(&decoded_hex[2..])
+                        .map_err(|e| anyhow::anyhow!("Failed to decode runtime API response: {}", e))?;
 
-			let mut decoded_keys: Vec<(Vec<u8>, Vec<u8>)> = Vec::new();
-			let mut last_err: Option<anyhow::Error> = None;
+                    // Try decoding as Option<Vec<(Vec<u8>, u32)>> (newer Polkadot SDK).
+                    let mut cursor = &bytes[..];
+                    match <Option<Vec<(Vec<u8>, u32)>>>::decode(&mut cursor) {
+                        Ok(Some(vec)) if cursor.is_empty() => {
+                            vec.into_iter()
+                                .map(|(pubkey, key_type)| (key_type.to_le_bytes().to_vec(), pubkey))
+                                .collect()
+                        }
+                        Ok(None) if cursor.is_empty() => {
+                            // Successfully decoded as None (empty result)
+                            Vec::new()
+                        }
+                        _ => {
+                            // Try Vec<(Vec<u8>, Vec<u8>)> (legacy format).
+                            let mut cursor_alt = &bytes[..];
+                            match <Vec<(Vec<u8>, Vec<u8>)>>::decode(&mut cursor_alt) {
+                                Ok(vec) if cursor_alt.is_empty() => vec,
+                                _ => {
+                                    // Try Option<Vec<(Vec<u8>, Vec<u8>)>> (alternative legacy).
+                                    let mut cursor_opt = &bytes[..];
+                                    match <Option<Vec<(Vec<u8>, Vec<u8>)>>>::decode(&mut cursor_opt) {
+                                        Ok(Some(vec)) if cursor_opt.is_empty() => vec,
+                                        Ok(None) if cursor_opt.is_empty() => Vec::new(),
+                                        _ => {
+                                            return Err(anyhow::anyhow!("Failed to SCALE decode keys"));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                Err(e) => {
+                    return Err(anyhow::anyhow!("Failed to call SessionKeys_decode_session_keys: {}", e));
+                }
+            };
 
-			for decode_method in &decode_methods {
-				let param = if *decode_method == "Session_decodeSessionKeys" {
-					&session_keys_param_raw
-				} else {
-					&session_keys_param_scale
-				};
+            // Step 3: Process and save keys.
+            fs::create_dir_all(&keystore_path)
+                .map_err(|e| anyhow::anyhow!("Failed to create keystore directory: {}", e))?;
 
-				let params = serde_json::json!([decode_method, param, block_hash]);
-				match send_rpc_request::<String>(&client, &self.node_url, "state_call", params)
-					.await
-				{
-					Ok(decoded_hex) => {
-						let bytes = hex::decode(&decoded_hex[2..]).map_err(|e| {
-							anyhow::anyhow!("Failed to decode runtime API response: {}", e)
-						})?;
-						// The runtime API may return:
-						// 1. Vec<(Vec<u8>, Vec<u8>)>  – legacy order (key_type bytes, pubkey)
-						// 2. Vec<(Vec<u8>, KeyTypeId)> – current sp_session order (pubkey, KeyTypeId)
-						// 3. Option<Vec<..>> wrapper  – newer FRAME versions add Option
-						// Try each pattern progressively.
-						decoded_keys = {
-							// Attempt direct Vec decode first.
-							let mut cursor = &bytes[..];
-							match <Vec<(Vec<u8>, Vec<u8>)>>::decode(&mut cursor) {
-								Ok(vec) if cursor.is_empty() => vec,
-								_ => {
-									// Try Vec<(Vec<u8>, u32)> where u32 is KeyTypeId
-									let mut cursor_alt = &bytes[..];
-									if let Ok(vec_u32) =
-										<Vec<(Vec<u8>, u32)>>::decode(&mut cursor_alt)
-									{
-										vec_u32
-											.into_iter()
-											.map(|(pubkey, key_type)| {
-												(key_type.to_le_bytes().to_vec(), pubkey)
-											})
-											.collect::<Vec<_>>()
-									} else {
-										// Fallback: try Option<Vec<(Vec<u8>, Vec<u8>)>>
-										let mut cursor_opt = &bytes[..];
-										<Option<Vec<(Vec<u8>, Vec<u8>)>>>::decode(&mut cursor_opt)
-											.map_err(|e| {
-												anyhow::anyhow!(
-													"Failed to SCALE decode Option<Vec> keys: {}",
-													e
-												)
-											})?
-											.unwrap_or_default()
-									}
-								},
-							}
-						};
-						// Successfully decoded.
-						last_err = None;
-						break;
-					},
-					Err(e) => {
-						// Capture error and try the next variant.
-						last_err = Some(anyhow::anyhow!("{}", e));
-					},
-				}
-			}
+            let mut key_map: BTreeMap<String, String> = BTreeMap::new();
+            if !decoded_keys.is_empty() {
+                for (key_type, public_key) in decoded_keys {
+                    // Convert key type to string for JSON and display.
+                    let key_type_str = String::from_utf8(key_type.clone())
+                        .map_err(|e| anyhow::anyhow!("Invalid key type encoding: {}", e))?;
+                    let public_key_hex = format!("0x{}", hex::encode(&public_key));
 
-			// If no keys were decoded AND all RPC attempts errored, propagate the last error.
-			if decoded_keys.is_empty() {
-				if let Some(err) = last_err {
-					return Err(err);
-				}
-				// Otherwise (successful call but empty result) continue; downstream logic will
-				// handle the empty key map and emit a warning instead.
-			}
+                    // Save to keystore with key_type_hex + public_key format.
+                    let key_type_hex = hex::encode(&key_type);
+                    let store_path = format!("{}/{}{}", keystore_path, key_type_hex, hex::encode(&public_key));
+                    fs::write(&store_path, &public_key)
+                        .map_err(|e| anyhow::anyhow!("Failed to write key to {}: {}", store_path, e))?;
+                    context.print(&format!("Saved {} key to {}", key_type_str, store_path));
 
-			// Step 3: Process and save keys.
-			fs::create_dir_all(&keystore_path)
-				.map_err(|e| anyhow::anyhow!("Failed to create keystore directory: {}", e))?;
+                    // Store in key map for JSON output.
+                    key_map.insert(key_type_str, public_key_hex);
+                }
+            } else {
+                // Fallback: Save raw session keys.
+                context.eprint("⚠️ No session keys decoded. Saving raw keys as fallback.");
+                context.eprint("Please verify the node's runtime configuration by fetching metadata:");
+                context.eprint("curl -X POST -H 'Content-Type: application/json' -d '{\"jsonrpc\":\"2.0\",\"method\":\"state_getMetadata\",\"id\":1}' http://localhost:9933 > metadata.json");
+                context.eprint("Look for the Session pallet and SessionKeys type to determine key order (e.g., aura, gran, imon).");
 
-			let mut key_map: BTreeMap<String, String> = BTreeMap::new();
+                let raw_key_hex = format!("0x{}", hex::encode(&session_keys));
+                let store_path = format!("{}/raw{}", keystore_path, hex::encode(&session_keys));
+                fs::write(&store_path, &session_keys)
+                    .map_err(|e| anyhow::anyhow!("Failed to write raw key to {}: {}", store_path, e))?;
+                context.print(&format!("Saved raw session keys to {}", store_path));
+                key_map.insert("raw".to_string(), raw_key_hex);
+            }
 
-			for (first, second) in decoded_keys {
-				// The runtime can return (public_key, key_type) or (key_type, public_key)
-				// depending on its version. Determine which is which by length (key_type is 4 bytes).
-				let (key_type_bytes, public_key) = if first.len() == 4 {
-					(first.clone(), second.clone())
-				} else if second.len() == 4 {
-					(second.clone(), first.clone())
-				} else {
-					// Unknown tuple layout; skip.
-					continue;
-				};
+            // Step 4: Save all keys to keys.json.
+            if !key_map.is_empty() {
+                if prompt_can_write("keys file", KEYS_FILE_PATH, context) {
+                    let public_keys_json = serde_json::to_string_pretty(&key_map)
+                        .map_err(|e| anyhow::anyhow!("Failed to serialize public keys: {}", e))?;
+                    context.write_file(KEYS_FILE_PATH, &public_keys_json);
+                    context.print(&format!(
+                        "🔑 Public keys saved to {}:\n{}",
+                        KEYS_FILE_PATH, public_keys_json
+                    ));
+                    context.print("You may share these public keys with your chain governance authority.");
+                } else {
+                    context.print("Refusing to overwrite keys file - skipping JSON save");
+                }
+            } else {
+                context.print("Warning: No keys decoded, skipping JSON save");
+            }
 
-				let key_type_str = String::from_utf8(key_type_bytes.clone())
-					.map_err(|e| anyhow::anyhow!("Invalid key type encoding: {}", e))?;
-				let public_key_hex = format!("0x{}", hex::encode(&public_key));
+            // Print decoded keys for reference.
+            context.print(&format!("Decoded session keys: {:?}", key_map));
 
-				// Save to keystore with key_type_hex + public_key format.
-				let key_type_hex = hex::encode(&key_type_bytes);
-				let store_path =
-					format!("{}/{}{}", keystore_path, key_type_hex, hex::encode(&public_key));
-				fs::write(&store_path, &public_key)
-					.map_err(|e| anyhow::anyhow!("Failed to write key to {}: {}", store_path, e))?;
-				context.print(&format!("Saved {} key to {}", key_type_str, store_path));
-
-				key_map.insert(key_type_str, public_key_hex);
-			}
-
-			// Step 4: Save all keys to keys.json.
-			if !key_map.is_empty() {
-				if prompt_can_write("keys file", KEYS_FILE_PATH, context) {
-					let public_keys_json = serde_json::to_string_pretty(&key_map)
-						.map_err(|e| anyhow::anyhow!("Failed to serialize public keys: {}", e))?;
-					context.write_file(KEYS_FILE_PATH, &public_keys_json);
-					context.print(&format!(
-						"🔑 Public keys saved to {}:\n{}",
-						KEYS_FILE_PATH, public_keys_json
-					));
-					context.print(
-						"You may share these public keys with your chain governance authority.",
-					);
-				} else {
-					context.print("Refusing to overwrite keys file - skipping JSON save");
-				}
-			} else {
-				context.print("Warning: No keys decoded, skipping JSON save");
-			}
-
-			// Print decoded keys for reference.
-			context.print(&format!("Decoded session keys: {:?}", key_map));
-
-			context.print("🚀 All done!");
-			Ok(())
-		})
+            context.print("🚀 All done!");
+            Ok(())
+        })
 	}
 }
 
