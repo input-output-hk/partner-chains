@@ -24,9 +24,11 @@ mod start_node;
 mod tests;
 
 use clap::Parser;
+pub use create_chain_spec::CreateChainSpecConfig;
 pub use io::DefaultCmdRunContext;
 use io::*;
 use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
+pub use permissioned_candidates::{ParsedPermissionedCandidatesKeys, PermissionedCandidateKeys};
 pub use runtime_bindings::{PartnerChainRuntime, RuntimeTypeWrapper};
 use std::time::Duration;
 

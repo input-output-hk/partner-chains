@@ -63,14 +63,14 @@ fn get_first_epoch_era(eras_summaries: Vec<EraSummary>) -> Result<EraSummary, an
 pub mod tests {
 
 	use super::*;
-	use crate::config::{CHAIN_CONFIG_FILE_PATH, NetworkProtocol};
+	use crate::config::NetworkProtocol;
 	use crate::ogmios::EraSummary;
 	use crate::ogmios::test_values::{
 		preprod_eras_summaries, preprod_shelley_config, preview_eras_summaries,
 		preview_shelley_config,
 	};
 	use crate::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
-	use crate::tests::{MockIO, MockIOContext};
+	use crate::tests::{CHAIN_CONFIG_FILE_PATH, MockIO, MockIOContext};
 
 	pub(crate) const PREPROD_CARDANO_PARAMS: CardanoParameters = CardanoParameters {
 		security_parameter: 2160,

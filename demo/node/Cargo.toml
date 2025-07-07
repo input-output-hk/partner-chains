@@ -68,6 +68,7 @@ substrate-prometheus-endpoint = { workspace = true }
 thiserror = { workspace = true }
 time-source = { workspace = true }
 derive-new = { workspace = true }
+partner-chains-cli = { workspace = true }
 partner-chains-node-commands = { workspace = true }
 envy = { workspace = true }
 

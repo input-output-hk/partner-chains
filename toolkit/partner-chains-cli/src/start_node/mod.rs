@@ -1,5 +1,5 @@
 use crate::config::config_fields::{NODE_P2P_PORT, POSTGRES_CONNECTION_STRING};
-use crate::config::{CHAIN_CONFIG_FILE_PATH, CHAIN_SPEC_PATH, CardanoParameters};
+use crate::config::{CHAIN_SPEC_PATH, CardanoParameters};
 use crate::generate_keys::network_key_path;
 use crate::io::IOContext;
 use crate::keystore::*;
@@ -63,14 +63,15 @@ impl CmdRun for StartNodeCmd {
 }
 
 fn load_chain_config<C: IOContext>(context: &C) -> anyhow::Result<Option<StartNodeChainConfig>> {
-	let Some(chain_config_file) = context.read_file(CHAIN_CONFIG_FILE_PATH) else {
-		context.eprint(&format!("⚠️ Chain config file {CHAIN_CONFIG_FILE_PATH} does not exists. Run prepare-configuration wizard first."));
+	let chain_config_file_path = context.chain_config_file_path();
+	let Some(chain_config_file) = context.read_file(&chain_config_file_path) else {
+		context.eprint(&format!("⚠️ Chain config file {chain_config_file_path} does not exists. Run prepare-configuration wizard first."));
 		return Ok(None);
 	};
 	let chain_config = match serde_json::from_str::<StartNodeChainConfig>(&chain_config_file) {
 		Ok(chain_config) => chain_config,
 		Err(err) => {
-			context.eprint(&format!("⚠️ Chain config file {CHAIN_CONFIG_FILE_PATH} is invalid: {err}. Run prepare-configuration wizard or fix errors manually."));
+			context.eprint(&format!("⚠️ Chain config file {chain_config_file_path} is invalid: {err}. Run prepare-configuration wizard or fix errors manually."));
 			return Ok(None);
 		},
 	};

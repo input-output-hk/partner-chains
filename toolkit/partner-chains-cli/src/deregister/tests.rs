@@ -1,9 +1,11 @@
-use crate::config::{CHAIN_CONFIG_FILE_PATH, RESOURCES_CONFIG_FILE_PATH};
 use crate::deregister::DeregisterCmd;
 use crate::ogmios::config::tests::{
 	default_ogmios_config_json, default_ogmios_service_config, establish_ogmios_configuration_io,
 };
-use crate::tests::{MockIO, MockIOContext, OffchainMock, OffchainMocks};
+use crate::tests::{
+	CHAIN_CONFIG_FILE_PATH, MockIO, MockIOContext, OffchainMock, OffchainMocks,
+	RESOURCES_CONFIG_FILE_PATH,
+};
 use crate::{CmdRun, CommonArguments, verify_json};
 use hex_literal::hex;
 use serde_json::json;
@@ -72,7 +74,7 @@ fn fails_when_chain_config_is_not_valid() {
 	let result = deregister_cmd().run(&mock_context);
 	assert_eq!(
 		result.err().unwrap().to_string(),
-		"Couldn't parse chain configuration file pc-chain-config.json. The chain configuration file that was used for registration is required in the working directory."
+		"Couldn't parse chain configuration file test-pc-chain-config.json. The chain configuration file that was used for registration is required in the working directory."
 	);
 }
 
@@ -170,12 +172,12 @@ fn test_chain_config_content() -> serde_json::Value {
 		},
 		"cardano_addresses": {
 			"committee_candidates_address": "addr_test1wz5qc7fk2pat0058w4zwvkw35ytptej3nuc3je2kgtan5dq3rt4sc",
-			"d_parameter_policy_id": "d0ebb61e2ba362255a7c4a253c6578884603b56fb0a68642657602d6",
-			"permissioned_candidates_policy_id": "58b4ba68f641d58f7f1bba07182eca9386da1e88a34d47a14638c3fe",
+			"d_parameter_policy_id": "0xd0ebb61e2ba362255a7c4a253c6578884603b56fb0a68642657602d6",
+			"permissioned_candidates_policy_id": "0x58b4ba68f641d58f7f1bba07182eca9386da1e88a34d47a14638c3fe",
 			"native_token": {
 				"asset": {
-					"policy_id": "ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4",
-					"asset_name": "5043546f6b656e44656d6f",
+					"policy_id": "0xada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4",
+					"asset_name": "0x5043546f6b656e44656d6f",
 				},
 				"illiquid_supply_address": "addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz"
 			},
