@@ -137,12 +137,6 @@ configure_ogmios() {
 
 resource_limits_setup() {
   echo "===== RESOURCE LIMITS SETUP ========"
-  echo "WARNING: Running 310 nodes requires significant system resources."
-  echo "Recommended minimum system requirements:"
-  echo "- CPU: 32 cores"
-  echo "- RAM: 64GB"
-  echo "- Storage: 500GB SSD"
-  echo
   read -p "Do you want to restrict CPU and Memory limits for the stack? (Y/N) " restrict_resources
   if [[ $restrict_resources == [Yy]* ]]; then
     if [[ $cardano_node_enabled == true ]]; then
