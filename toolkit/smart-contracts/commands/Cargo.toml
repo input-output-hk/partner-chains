@@ -11,9 +11,10 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
-clap = { workspace = true, features = [ "derive", "env" ] }
+clap = { workspace = true, features = ["derive", "env"] }
 sidechain-domain = { workspace = true }
 partner-chains-cardano-offchain = { workspace = true }
+sp-core = { workspace = true }
 hex = { workspace = true }
 ogmios-client = { workspace = true }
 tokio = { workspace = true }

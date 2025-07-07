@@ -31,6 +31,7 @@ use partner_chains_cardano_offchain::{
 };
 use serde::Serialize;
 use sidechain_domain::*;
+use sp_core::ecdsa;
 use std::time::Duration;
 
 pub mod assemble_tx;
@@ -209,7 +210,19 @@ pub(crate) fn parse_partnerchain_public_keys(
 		.map(try_parse_public_key)
 		.collect::<CmdResult<Vec<_>>>()?;
 
-	Ok(PermissionedCandidateDataV1 { keys }.into())
+	let (_sidechain_key_type, sidechain_key) = keys
+		.iter()
+		.find(|key| key.0 == *b"crch")
+		.ok_or(anyhow::Error::msg(format!("Missing ECDSA sidechain key")))
+		.cloned()?;
+
+	let sidechain_key = <[u8; 33]>::try_from(sidechain_key).map_err(|sidechain_key| {
+		anyhow::Error::msg(format!("{:?} is invalid ECDSA public key", sidechain_key))
+	})?;
+
+	let sidechain_key = ecdsa::Public::from(sidechain_key).into();
+
+	Ok(PermissionedCandidateDataV1 { keys, sidechain_key }.into())
 }
 
 #[cfg(test)]

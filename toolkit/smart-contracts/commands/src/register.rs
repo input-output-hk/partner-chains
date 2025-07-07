@@ -51,10 +51,13 @@ impl RegisterCmd {
 				pub_key: self.spo_public_key,
 				signature: self.spo_signature,
 			},
-			partner_chain_pub_key: self.partner_chain_public_keys.sidechain_public_key,
+			partner_chain_pub_key: sidechain_domain::SidechainPublicKey(
+				self.partner_chain_public_keys.sidechain_key(),
+			),
 			partner_chain_signature: self.partner_chain_signature,
 			own_pkh: payment_key.to_pub_key_hash(),
 			registration_utxo: self.registration_utxo,
+			session_keys: self.partner_chain_public_keys.session_keys(),
 		};
 
 		let result = run_register(

@@ -34,11 +34,18 @@ impl TryFrom<PermissionedCandidateData> for ParsedPermissionedCandidatesKeys {
 	type Error = anyhow::Error;
 
 	fn try_from(value: PermissionedCandidateData) -> Result<Self, Self::Error> {
-		let keys = PermissionedCandidateKeys {
-			sidechain_pub_key: hex::encode(value.sidechain_public_key.0),
-			aura_pub_key: hex::encode(value.aura_public_key.0),
-			grandpa_pub_key: hex::encode(value.grandpa_public_key.0),
+		let keys = match value {
+			PermissionedCandidateData::V0(v0) => PermissionedCandidateKeys {
+				keys: vec![
+					// TODO: is hex::encode needed?
+					(*b"crch", v0.sidechain_public_key.0),
+					(*b"aura", v0.aura_public_key.0),
+					(*b"gran", v0.grandpa_public_key.0),
+				],
+			},
+			PermissionedCandidateData::V1(v1) => PermissionedCandidateKeys { keys: v1.keys },
 		};
+
 		TryFrom::try_from(&keys)
 	}
 }

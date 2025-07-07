@@ -110,12 +110,16 @@ pub(crate) fn generate_spo_keys<C: IOContext>(
 		let aura_key = generate_or_load_key(config, context, &AURA)?;
 		context.enewline();
 
-		let public_keys_json = serde_json::to_string_pretty(&PermissionedCandidateKeys {
-			sidechain_pub_key: cross_chain_key,
-			aura_pub_key: aura_key,
-			grandpa_pub_key: grandpa_key,
-		})
-		.expect("Failed to serialize public keys");
+		let keys = PermissionedCandidateKeys {
+			keys: vec![
+				(*b"crch", cross_chain_key.as_bytes().to_vec()),
+				(*b"aura", aura_key.as_bytes().to_vec()),
+				(*b"gran", grandpa_key.as_bytes().to_vec()),
+			],
+		};
+
+		let public_keys_json =
+			serde_json::to_string_pretty(&keys).expect("Failed to serialize public keys");
 		context.write_file(KEYS_FILE_PATH, &public_keys_json);
 
 		context.eprint(&format!(

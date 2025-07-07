@@ -39,15 +39,13 @@ pub fn runtime_wasm() -> &'static [u8] {
 fn permissioned_candidate_to_committee_member(
 	keys: &ParsedPermissionedCandidatesKeys,
 ) -> CommitteeMember<CrossChainPublic, SessionKeys> {
-	let session_keys = (keys.aura, keys.grandpa).into();
-	CommitteeMember::permissioned(keys.sidechain.try_into().unwrap(), session_keys)
+	CommitteeMember::permissioned(keys.sidechain_key().into(), keys.session_keys())
 }
 
 fn permissioned_candidate_to_pallet_partner_chains_session_keys(
 	keys: &ParsedPermissionedCandidatesKeys,
 ) -> (AccountId, SessionKeys) {
-	let session_keys = (keys.aura, keys.grandpa).into();
-	(keys.account_id_32(), session_keys)
+	(keys.account_id_32(), keys.session_keys())
 }
 
 /// Creates chain-spec according to the config obtained by wizards.

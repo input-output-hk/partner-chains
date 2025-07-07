@@ -1155,6 +1155,31 @@ pub enum PermissionedCandidateData {
 	V1(PermissionedCandidateDataV1),
 }
 
+impl PermissionedCandidateData {
+	/// Provides associated cross chain key
+	pub fn sidechain_key(&self) -> Vec<u8> {
+		match self {
+			Self::V0(value) => value.sidechain_public_key.0.clone(),
+			// TODO: convert me to ecdsa::Public
+			Self::V1(value) => value.sidechain_key.to_vec(),
+		}
+	}
+
+	/// Provides associated list of session keys
+	pub fn session_keys(&self) -> Vec<([u8; 4], Vec<u8>)> {
+		match self {
+			Self::V0(value) => {
+				vec![
+					(*b"crch", value.sidechain_public_key.0.clone()),
+					(*b"aura", value.aura_public_key.0.clone()),
+					(*b"gran", value.grandpa_public_key.0.clone()),
+				]
+			},
+			Self::V1(value) => value.keys.clone(),
+		}
+	}
+}
+
 #[derive(
 	Debug,
 	Clone,
@@ -1201,6 +1226,8 @@ pub struct PermissionedCandidateDataV0 {
 /// eligible for participation in block producer committee without controlling any ADA stake
 /// on Cardano and registering as SPOs.
 pub struct PermissionedCandidateDataV1 {
+	/// Cross chain identifier key
+	pub sidechain_key: ecdsa::Public,
 	/// Arbitrary set of keys with associated key type
 	pub keys: Vec<([u8; 4], Vec<u8>)>,
 }

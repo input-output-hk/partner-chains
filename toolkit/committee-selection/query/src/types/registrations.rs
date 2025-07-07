@@ -80,10 +80,8 @@ impl CandidateRegistrationEntry {
 			session_keys: registration_data
 				.session_keys
 				.iter()
-				.map(|key| to_hex(&key[..], false))
+				.map(|(key_type, key)| (to_hex(&key_type[..], false), to_hex(&key[..], false)))
 				.collect(),
-			aura_pub_key: to_hex(&registration_data.aura_pub_key.0, false),
-			grandpa_pub_key: to_hex(&registration_data.grandpa_pub_key.0, false),
 			sidechain_signature: to_hex(&registration_data.sidechain_signature.0, false),
 			mainchain_signature: to_hex(&registration_data.mainchain_signature.0, false),
 			cross_chain_signature: to_hex(&registration_data.cross_chain_signature.0, false),

@@ -3,6 +3,7 @@ use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode};
 use plutus::*;
 use scale_info::TypeInfo;
 use sidechain_domain::*;
+use sp_core::ecdsa;
 
 /// The part of data for selection of authorities that comes from the main chain.
 /// It is unfiltered, so the selection algorithm should filter out invalid candidates.
@@ -71,6 +72,8 @@ pub struct RawPermissionedCandidateDataV0 {
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 /// Permissioned candidate data from Cardano main chain
 pub struct RawPermissionedCandidateDataV1 {
+	/// Cross chain identifier key
+	pub sidechain_key: ecdsa::Public,
 	/// Unvalidated set of session keys with identifiers
 	pub keys: Vec<([u8; 4], Vec<u8>)>,
 }
@@ -96,7 +99,9 @@ impl From<PermissionedCandidateDataV0> for RawPermissionedCandidateDataV0 {
 
 impl From<PermissionedCandidateDataV1> for RawPermissionedCandidateDataV1 {
 	fn from(value: PermissionedCandidateDataV1) -> Self {
-		Self { keys: value.keys }
+		let PermissionedCandidateDataV1 { keys, sidechain_key } = value;
+
+		Self { sidechain_key, keys }
 	}
 }
 
@@ -196,9 +201,11 @@ impl AuthoritySelectionInputs {
 						grandpa_public_key: data.grandpa_public_key,
 					}
 					.into(),
-					RawPermissionedCandidateData::V1(data) => {
-						PermissionedCandidateDataV1 { keys: data.keys }.into()
-					},
+					RawPermissionedCandidateData::V1(data) => PermissionedCandidateDataV1 {
+						keys: data.keys,
+						sidechain_key: data.sidechain_key,
+					}
+					.into(),
 				})
 				.collect::<Vec<PermissionedCandidateData>>(),
 		};

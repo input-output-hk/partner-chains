@@ -248,8 +248,11 @@ where
 						.into()
 					},
 					RawPermissionedCandidateData::V1(data) => {
-						sidechain_domain::PermissionedCandidateDataV1 { keys: data.keys.clone() }
-							.into()
+						sidechain_domain::PermissionedCandidateDataV1 {
+							keys: data.keys.clone(),
+							sidechain_key: data.sidechain_key.clone(),
+						}
+						.into()
 					},
 				},
 			)

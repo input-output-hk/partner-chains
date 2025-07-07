@@ -1,6 +1,7 @@
 //! Plutus data types for permissioned candidates.
 use cardano_serialization_lib::{BigNum, PlutusData, PlutusList};
 use sidechain_domain::*;
+use sp_core::ecdsa;
 
 use crate::{
 	DataDecodingError, DecodingResult, VersionedDatum, VersionedDatumWithLegacy,
@@ -46,13 +47,17 @@ impl From<PermissionedCandidateDatumV0> for PermissionedCandidateData {
 
 impl From<PermissionedCandidateDatumV1> for PermissionedCandidateData {
 	fn from(value: PermissionedCandidateDatumV1) -> Self {
-		Self::V1(PermissionedCandidateDataV1 { keys: value.keys })
+		let PermissionedCandidateDatumV1 { sidechain_key, keys } = value;
+
+		Self::V1(PermissionedCandidateDataV1 { sidechain_key, keys })
 	}
 }
 
 #[derive(Clone, Debug, PartialEq)]
 /// Datum representing a premissioned candidate with arbitraty set of keys
 pub struct PermissionedCandidateDatumV1 {
+	/// Cross chain identifier key
+	pub sidechain_key: ecdsa::Public,
 	/// Represents arbitrary set of keys with 4 character identifier
 	pub keys: Vec<([u8; 4], Vec<u8>)>,
 }
@@ -182,7 +187,7 @@ fn decode_legacy_candidate_datum(datum: &PlutusData) -> Option<PermissionedCandi
 }
 
 fn decode_v1_candidate_datum(datum: &PlutusData) -> Option<PermissionedCandidateDatumV1> {
-	let keys = datum
+	let keys: Vec<([u8; 4], Vec<u8>)> = datum
 		.as_list()
 		.iter()
 		.map(|datum| {
@@ -190,7 +195,11 @@ fn decode_v1_candidate_datum(datum: &PlutusData) -> Option<PermissionedCandidate
 		})
 		.collect();
 
-	Some(PermissionedCandidateDatumV1 { keys })
+	let sidechain_key = keys.iter().find(|(key_type, _key)| key_type == b"crch")?.1.clone();
+	let sidechain_key = <[u8; 33]>::try_from(sidechain_key).ok()?;
+	let sidechain_key = ecdsa::Public::try_from(sidechain_key).ok()?;
+
+	Some(PermissionedCandidateDatumV1 { keys, sidechain_key })
 }
 
 #[cfg(test)]
