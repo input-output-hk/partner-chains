@@ -4,8 +4,10 @@ use crate::permissioned_candidates::{ParsedPermissionedCandidatesKeys, Permissio
 use crate::runtime_bindings::PartnerChainRuntime;
 use crate::{CmdRun, config::config_fields};
 use anyhow::anyhow;
+use parity_scale_codec::Decode;
 use sidechain_domain::{AssetName, MainchainAddress, PolicyId, UtxoId};
 use sp_runtime::DeserializeOwned;
+use sp_runtime::traits::OpaqueKeys;
 use std::marker::PhantomData;
 
 #[cfg(test)]
@@ -108,7 +110,7 @@ pub struct CreateChainSpecConfig<AuthorityKeys> {
 	pub governed_map_asset_policy_id: Option<PolicyId>,
 }
 
-impl<AuthorityKeys> CreateChainSpecConfig<AuthorityKeys> {
+impl<AuthorityKeys: OpaqueKeys + Decode> CreateChainSpecConfig<AuthorityKeys> {
 	pub(crate) fn load<C: IOContext>(c: &C) -> Result<Self, anyhow::Error> {
 		let initial_permissioned_candidates_raw =
 			load_config_field(c, &config_fields::INITIAL_PERMISSIONED_CANDIDATES)?;

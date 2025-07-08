@@ -1,4 +1,3 @@
-use std::convert::Infallible;
 use std::marker::PhantomData;
 
 use crate::cmd_traits::{
@@ -37,7 +36,7 @@ pub struct SetupMainChainStateCmd<T: PartnerChainRuntime> {
 	_phantom: PhantomData<T>,
 }
 
-impl<AuthorityKeys> TryFrom<PermissionedCandidateData>
+impl<AuthorityKeys: OpaqueKeys + Decode> TryFrom<PermissionedCandidateData>
 	for ParsedPermissionedCandidatesKeys<AuthorityKeys>
 {
 	type Error = anyhow::Error;
@@ -118,7 +117,10 @@ impl<T: PartnerChainRuntime> CmdRun for SetupMainChainStateCmd<T> {
 	}
 }
 
-fn initial_permissioned_candidates_from_chain_config<C: IOContext, AuthorityKeys>(
+fn initial_permissioned_candidates_from_chain_config<
+	C: IOContext,
+	AuthorityKeys: OpaqueKeys + Decode,
+>(
 	context: &C,
 ) -> anyhow::Result<SortedPermissionedCandidates> {
 	// Requirements state "read from 'chain config' (or chain-spec).

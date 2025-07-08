@@ -1,4 +1,5 @@
 use crate::CreateChainSpecConfig;
+use parity_scale_codec::Decode;
 use serde::Serialize;
 use sp_core::ecdsa;
 use sp_runtime::traits::OpaqueKeys;
@@ -14,7 +15,7 @@ pub trait PartnerChainRuntime {
 	/// Partner Chain authority id type
 	type AuthorityId: Send + Sync + 'static + From<ecdsa::Public>;
 	/// Partner Chain authority key type
-	type AuthorityKeys: Send + Sync + OpaqueKeys + Serialize;
+	type AuthorityKeys: Send + Sync + OpaqueKeys + Serialize + Decode;
 	/// Partner Chain committee member type
 	type CommitteeMember: Serialize;
 

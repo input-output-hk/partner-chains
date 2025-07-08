@@ -1,4 +1,5 @@
 use crate::cmd_traits::{GetPermissionedCandidates, UpsertPermissionedCandidates};
+use anyhow::bail;
 use ogmios_client::query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId};
 use ogmios_client::query_network::QueryNetwork;
 use ogmios_client::transactions::Transactions;
@@ -13,10 +14,10 @@ use partner_chains_cardano_offchain::permissioned_candidates::{
 use serde::{Deserialize, Serialize};
 use sidechain_domain::{PermissionedCandidateData, UtxoId};
 use sp_core::crypto::AccountId32;
-use sp_core::{ecdsa, ed25519, sr25519};
+use sp_core::ecdsa;
+use sp_runtime::KeyTypeId;
 use sp_runtime::traits::{IdentifyAccount, OpaqueKeys};
 use std::fmt::{Display, Formatter};
-use std::marker::PhantomData;
 
 /// Struct that holds permissioned candidates keys in raw string format
 #[derive(Debug, Deserialize, Eq, PartialEq, PartialOrd, Ord, Serialize)]
@@ -54,30 +55,13 @@ impl From<&sidechain_domain::PermissionedCandidateData> for PermissionedCandidat
 #[derive(Debug, Deserialize, Eq, PartialEq, Ord, PartialOrd, Serialize)]
 pub struct ParsedPermissionedCandidatesKeys<AuthorityKeys> {
 	sidechain_key: ecdsa::Public,
-	keys: Vec<u8>,
-	_phantom: PhantomData<AuthorityKeys>,
+	keys: AuthorityKeys,
 }
 
-impl<AuthorityKeys> ParsedPermissionedCandidatesKeys<AuthorityKeys> {
+impl<AuthorityKeys: OpaqueKeys + Decode> ParsedPermissionedCandidatesKeys<AuthorityKeys> {
 	/// Permissioned candidate set of session keys
-	pub fn session_keys(&self) -> AuthorityKeys {
-		// let encoded =
-		// 	self.session_keysss().iter().fold(Vec::new(), |mut encoded, (_key_type, key)| {
-		// 		encoded.extend(key);
-		// 		encoded
-		// 	});
-
-		// let sessions_keys = SessionKeys::decode(&mut &encoded[..]).ok()?;
-
-		unimplemented!();
-
-		// Some(sessions_keys)
-	}
-
-	/// Permissioned candidate set of session keys
-	pub fn session_keysss(&self) -> Vec<([u8; 4], Vec<u8>)> {
-		// self.keys.clone()
-		unimplemented!()
+	pub fn session_keys(&self) -> &AuthorityKeys {
+		&self.keys
 	}
 
 	/// Permissioned Candidate partner-chain (sidechain) key
@@ -91,36 +75,57 @@ impl<AuthorityKeys> ParsedPermissionedCandidatesKeys<AuthorityKeys> {
 	}
 }
 
-impl<AuthorityKeys> TryFrom<&PermissionedCandidateKeys>
+impl<AuthorityKeys: OpaqueKeys + Decode> TryFrom<&PermissionedCandidateKeys>
 	for ParsedPermissionedCandidatesKeys<AuthorityKeys>
 {
 	type Error = anyhow::Error;
 
 	fn try_from(value: &PermissionedCandidateKeys) -> Result<Self, Self::Error> {
-		let (_sidechain_key_type, sidechain_key) = value
-			.keys
-			.iter()
-			.find(|key| key.0 == *b"crch")
-			.ok_or(anyhow::Error::msg(format!("Missing ECDSA sidechain key")))
-			.cloned()?;
+		let expected_keys = AuthorityKeys::key_ids();
 
-		let sidechain_key = <[u8; 33]>::try_from(sidechain_key).map_err(|sidechain_key| {
-			anyhow::Error::msg(format!("{:?} is invalid ECDSA public key", sidechain_key))
-		})?;
+		if expected_keys.len() != value.keys.len() + 1 {
+			bail!(
+				"Invalid number of keys, expeced sidechain key and {} session keys, provided {} session keys",
+				expected_keys.len(),
+				value.keys.len()
+			);
+		}
 
-		// let sidechain_key = ecdsa::Public::from(sidechain_key).into();
+		let sidechain_key = {
+			// TODO: we are not verifying if there is only one crch key, also try to aggregate 2 steps into one
+			let (_sidechain_key_type, sidechain_key) = value
+				.keys
+				.iter()
+				.find(|key| key.0 == *b"crch")
+				.ok_or(anyhow::Error::msg(format!("Missing ECDSA sidechain key")))
+				.cloned()?;
 
-		unimplemented!();
+			let sidechain_key = <[u8; 33]>::try_from(sidechain_key).map_err(|sidechain_key| {
+				anyhow::Error::msg(format!("{:?} is invalid ECDSA public key", sidechain_key))
+			})?;
 
-		// TODO: should we filter out crch key?
-		// let keys = value
-		// 	.keys
-		// 	.iter()
-		// 	.filter(|(key_type, _key)| key_type != b"crch")
-		// 	.cloned()
-		// 	.collect();
+			let sidechain_key = ecdsa::Public::from(sidechain_key).into();
+			sidechain_key
+		};
 
-		// Ok(Self { sidechain_key, keys })
+		let keys = {
+			let mut encoded_keys = vec![];
+
+			// TODO: we are not handling duplicates or reordering, question rather if we should allow for it due we can handle it there
+			for key_type in expected_keys {
+				let key = value.keys.iter().find(|key| &KeyTypeId(key.0) == key_type).ok_or_else(
+					|| anyhow::Error::msg(format!("Missing session key {:?}", key_type)),
+				)?;
+				encoded_keys.extend(key.1.clone());
+			}
+
+			let sessions_keys = AuthorityKeys::decode(&mut &encoded_keys[..])
+				.map_err(|_e| anyhow::Error::msg(format!("Invalid session keys")))?;
+
+			sessions_keys
+		};
+
+		Ok(Self { sidechain_key, keys })
 	}
 }
 
