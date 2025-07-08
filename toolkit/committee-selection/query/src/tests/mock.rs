@@ -59,10 +59,10 @@ pub fn create_valid_registration_data(
 		cross_chain_signature: CrossChainSignature(vec![]),
 		sidechain_pub_key: SidechainPublicKey(sidechain_account.public().0.to_vec()),
 		cross_chain_pub_key: CrossChainPublicKey(vec![]),
-		keys: CandidateKeys(vec![
-			AuraPublicKey(vec![1; 32]).into(),
-			GrandpaPublicKey(vec![3; 32]).into(),
-		]),
+		keys: CandidateKeys(vec![CandidateKey {
+			id: *b"test",
+			bytes: 1u64.to_be_bytes().to_vec(),
+		}]),
 		utxo_info: UtxoInfo {
 			utxo_id: UtxoId { tx_hash: McTxHash([7u8; 32]), index: UtxoIndex(7) },
 			epoch_number: McEpochNumber(7),
