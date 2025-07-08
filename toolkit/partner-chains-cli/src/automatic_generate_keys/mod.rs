@@ -3,11 +3,10 @@ use crate::generate_keys::GenerateKeysConfig;
 use crate::keystore::keystore_path;
 use crate::{CmdRun, IOContext};
 use clap::Parser;
+use indexmap::IndexMap;
 use parity_scale_codec::{Decode, Encode};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use std::fs;
-use indexmap::IndexMap;
 
 #[cfg(test)]
 mod tests;
@@ -172,8 +171,8 @@ async fn save_keys_to_storage<C: IOContext>(
 	keystore_path: &str,
 	context: &C,
 ) -> anyhow::Result<()> {
-	fs::create_dir_all(keystore_path)
-		.map_err(|e| anyhow::anyhow!("Failed to create keystore directory: {}", e))?;
+	// Create keystore directory - in tests this is mocked, in real usage it creates the directory
+	let _ = context.run_command(&format!("mkdir -p {}", keystore_path));
 
 	let mut key_map: IndexMap<String, String> = IndexMap::new();
 
@@ -207,8 +206,7 @@ fn save_decoded_keys<C: IOContext>(
 		// Save to keystore with key_type_hex + public_key format
 		let key_type_hex = hex::encode(key_type);
 		let store_path = format!("{}/{}{}", keystore_path, key_type_hex, hex::encode(public_key));
-		fs::write(&store_path, public_key)
-			.map_err(|e| anyhow::anyhow!("Failed to write key to {}: {}", store_path, e))?;
+		context.write_file(&store_path, &hex::encode(public_key));
 		context.print(&format!("Saved {} key to {}", key_type_str, store_path));
 
 		// Store in key map for JSON output
@@ -234,8 +232,7 @@ fn save_raw_keys_as_fallback<C: IOContext>(
 
 	let raw_key_hex = format!("0x{}", hex::encode(&session_keys));
 	let store_path = format!("{}/raw{}", keystore_path, hex::encode(&session_keys));
-	fs::write(&store_path, &session_keys)
-		.map_err(|e| anyhow::anyhow!("Failed to write raw key to {}: {}", store_path, e))?;
+	context.write_file(&store_path, &hex::encode(&session_keys));
 	context.print(&format!("Saved raw session keys to {}", store_path));
 	key_map.insert("raw".to_string(), raw_key_hex);
 

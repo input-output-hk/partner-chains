@@ -2,6 +2,7 @@
 //! Interacts with Smart Contracts using [`partner_chains_cardano_offchain`] crate.
 #![deny(missing_docs)]
 
+mod automatic_generate_keys;
 mod cardano_key;
 mod cmd_traits;
 mod config;
@@ -9,7 +10,6 @@ mod create_chain_spec;
 mod data_source;
 mod deregister;
 mod generate_keys;
-mod automatic_generate_keys;
 mod io;
 mod keystore;
 mod ogmios;
