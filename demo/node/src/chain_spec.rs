@@ -37,23 +37,21 @@ pub fn runtime_wasm() -> &'static [u8] {
 }
 
 fn permissioned_candidate_to_committee_member(
-	keys: &ParsedPermissionedCandidatesKeys,
+	keys: &ParsedPermissionedCandidatesKeys<SessionKeys>,
 ) -> CommitteeMember<CrossChainPublic, SessionKeys> {
-	let session_keys = (keys.aura, keys.grandpa).into();
-	CommitteeMember::permissioned(keys.sidechain.try_into().unwrap(), session_keys)
+	CommitteeMember::permissioned(keys.sidechain_key().into(), keys.session_keys().clone())
 }
 
 fn permissioned_candidate_to_pallet_partner_chains_session_keys(
-	keys: &ParsedPermissionedCandidatesKeys,
+	keys: &ParsedPermissionedCandidatesKeys<SessionKeys>,
 ) -> (AccountId, SessionKeys) {
-	let session_keys = (keys.aura, keys.grandpa).into();
-	(keys.account_id_32(), session_keys)
+	(keys.account_id_32(), keys.session_keys().clone())
 }
 
 /// Creates chain-spec according to the config obtained by wizards.
 /// [JValue] is returned instead of [sc_service::GenericChainSpec] in order to avoid
 /// GPL code in the toolkit.
-pub fn pc_create_chain_spec(config: &CreateChainSpecConfig) -> serde_json::Value {
+pub fn pc_create_chain_spec(config: &CreateChainSpecConfig<SessionKeys>) -> serde_json::Value {
 	let runtime_genesis_config = partner_chains_demo_runtime::RuntimeGenesisConfig {
 		system: partner_chains_demo_runtime::SystemConfig::default(),
 		balances: partner_chains_demo_runtime::BalancesConfig::default(),

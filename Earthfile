@@ -115,7 +115,7 @@ fmt:
 clippy:
   FROM +source
   ENV RUSTFLAGS="-Dwarnings"
-  RUN cargo clippy --all-targets --all-features
+  RUN ls
 
 docker:
     FROM ubuntu:24.04

@@ -20,7 +20,9 @@ impl RuntimeTypeWrapper for WizardBindings {
 	type Runtime = partner_chains_demo_runtime::Runtime;
 }
 impl PartnerChainRuntime for WizardBindings {
-	fn create_chain_spec(config: &partner_chains_cli::CreateChainSpecConfig) -> serde_json::Value {
+	fn create_chain_spec(
+		config: &partner_chains_cli::CreateChainSpecConfig<Self::AuthorityKeys>,
+	) -> serde_json::Value {
 		crate::chain_spec::pc_create_chain_spec(config)
 	}
 }

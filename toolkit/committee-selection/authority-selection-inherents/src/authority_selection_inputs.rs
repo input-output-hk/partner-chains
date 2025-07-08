@@ -3,6 +3,7 @@ use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode};
 use plutus::*;
 use scale_info::TypeInfo;
 use sidechain_domain::*;
+use sp_core::ecdsa;
 
 /// The part of data for selection of authorities that comes from the main chain.
 /// It is unfiltered, so the selection algorithm should filter out invalid candidates.
@@ -48,15 +49,60 @@ pub enum AuthoritySelectionInputsCreationError {
 	GetEpochNonceQuery(McEpochNumber, Box<dyn std::error::Error + Send + Sync>),
 }
 
-#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 /// Permissioned candidate data from Cardano main chain
-pub struct RawPermissionedCandidateData {
+pub enum RawPermissionedCandidateData {
+	/// Unvalidated Partner Chain, Aura and Grandpa key set
+	V0(RawPermissionedCandidateDataV0),
+	/// Unvalidated list of candidate keys with identifiers
+	V1(RawPermissionedCandidateDataV1),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+/// Permissioned legacy candidate data from Cardano main chain
+pub struct RawPermissionedCandidateDataV0 {
 	/// Unvalidated Partner Chain public key of permissioned candidate
 	pub sidechain_public_key: SidechainPublicKey,
 	/// Unvalidated Aura public key of permissioned candidate
 	pub aura_public_key: AuraPublicKey,
 	/// Unvalidated Grandpa public key of permissioned candidate
 	pub grandpa_public_key: GrandpaPublicKey,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+/// Permissioned candidate data from Cardano main chain
+pub struct RawPermissionedCandidateDataV1 {
+	/// Cross chain identifier key
+	pub sidechain_key: ecdsa::Public,
+	/// Unvalidated set of session keys with identifiers
+	pub keys: Vec<([u8; 4], Vec<u8>)>,
+}
+
+impl From<PermissionedCandidateData> for RawPermissionedCandidateData {
+	fn from(value: PermissionedCandidateData) -> Self {
+		match value {
+			PermissionedCandidateData::V0(data) => Self::V0(data.into()),
+			PermissionedCandidateData::V1(data) => Self::V1(data.into()),
+		}
+	}
+}
+
+impl From<PermissionedCandidateDataV0> for RawPermissionedCandidateDataV0 {
+	fn from(value: PermissionedCandidateDataV0) -> Self {
+		Self {
+			sidechain_public_key: value.sidechain_public_key,
+			aura_public_key: value.aura_public_key,
+			grandpa_public_key: value.grandpa_public_key,
+		}
+	}
+}
+
+impl From<PermissionedCandidateDataV1> for RawPermissionedCandidateDataV1 {
+	fn from(value: PermissionedCandidateDataV1) -> Self {
+		let PermissionedCandidateDataV1 { keys, sidechain_key } = value;
+
+		Self { sidechain_key, keys }
+	}
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize)]
@@ -148,10 +194,18 @@ impl AuthoritySelectionInputs {
 			},
 			Some(permissioned_candidates) => permissioned_candidates
 				.into_iter()
-				.map(|candidate| PermissionedCandidateData {
-					sidechain_public_key: candidate.sidechain_public_key,
-					aura_public_key: candidate.aura_public_key,
-					grandpa_public_key: candidate.grandpa_public_key,
+				.map(|candidate| match candidate {
+					RawPermissionedCandidateData::V0(data) => PermissionedCandidateDataV0 {
+						sidechain_public_key: data.sidechain_public_key,
+						aura_public_key: data.aura_public_key,
+						grandpa_public_key: data.grandpa_public_key,
+					}
+					.into(),
+					RawPermissionedCandidateData::V1(data) => PermissionedCandidateDataV1 {
+						keys: data.keys,
+						sidechain_key: data.sidechain_key,
+					}
+					.into(),
 				})
 				.collect::<Vec<PermissionedCandidateData>>(),
 		};

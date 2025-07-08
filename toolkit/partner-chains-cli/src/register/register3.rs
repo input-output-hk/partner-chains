@@ -63,8 +63,11 @@ impl CmdRun for Register3Cmd {
 			partner_chain_signature: self.partner_chain_signature.clone(),
 			own_pkh: payment_signing_key.to_pub_key_hash(),
 			registration_utxo: self.registration_utxo,
-			aura_pub_key: self.aura_pub_key.clone(),
-			grandpa_pub_key: self.grandpa_pub_key.clone(),
+			// TODO: FIX me
+			session_keys: vec![
+				(*b"aura", self.aura_pub_key.0.clone()),
+				(*b"gran", self.grandpa_pub_key.0.clone()),
+			],
 		};
 		let offchain = context.offchain_impl(&ogmios_configuration)?;
 

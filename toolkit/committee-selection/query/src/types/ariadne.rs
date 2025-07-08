@@ -2,7 +2,6 @@ use crate::types::GetRegistrationsResponseMap;
 use authority_selection_inherents::authority_selection_inputs::RawPermissionedCandidateData;
 use authority_selection_inherents::filter_invalid_candidates::PermissionedCandidateDataError;
 use serde::{Deserialize, Serialize};
-use sidechain_domain::{AuraPublicKey, GrandpaPublicKey, SidechainPublicKey};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -41,12 +40,8 @@ impl From<sidechain_domain::DParameter> for DParameter {
 #[serde(rename_all = "camelCase")]
 /// Represents data associated with a permissioned candidate
 pub struct PermissionedCandidateData {
-	/// Sidechain public key of the candidate
-	pub sidechain_public_key: SidechainPublicKey,
-	/// Aura public key of the candidate
-	pub aura_public_key: AuraPublicKey,
-	/// Grandpa public key of the candidate
-	pub grandpa_public_key: GrandpaPublicKey,
+	/// Associated data of a candidate
+	data: RawPermissionedCandidateData,
 	/// Is the registration valid
 	pub is_valid: bool,
 	/// Human-readable reasons of registration being invalid. Present only for invalid entries.
@@ -60,12 +55,6 @@ impl PermissionedCandidateData {
 		data: RawPermissionedCandidateData,
 		invalid_reasons: Option<PermissionedCandidateDataError>,
 	) -> Self {
-		Self {
-			sidechain_public_key: data.sidechain_public_key,
-			aura_public_key: data.aura_public_key,
-			grandpa_public_key: data.grandpa_public_key,
-			is_valid: invalid_reasons.is_none(),
-			invalid_reasons,
-		}
+		Self { data, is_valid: invalid_reasons.is_none(), invalid_reasons }
 	}
 }

@@ -115,13 +115,6 @@ impl_opaque_keys! {
 		pub grandpa: Grandpa,
 	}
 }
-impl From<(sr25519::Public, ed25519::Public)> for TestSessionKeys {
-	fn from((aura, grandpa): (sr25519::Public, ed25519::Public)) -> Self {
-		let aura = AuraId::from(aura);
-		let grandpa = GrandpaId::from(grandpa);
-		Self { aura, grandpa }
-	}
-}
 
 pallet_partner_chains_session::impl_pallet_session_config!(Test);
 

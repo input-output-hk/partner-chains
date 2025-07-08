@@ -8,8 +8,11 @@ use plutus_datum_derive::ToDatum;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sidechain_domain::*;
-use sp_core::{ecdsa, ed25519, sr25519};
-use sp_runtime::traits::Verify;
+use sp_core::{ecdsa, ed25519, hexdisplay::AsBytesRef, sr25519};
+use sp_runtime::{
+	KeyTypeId,
+	traits::{OpaqueKeys, Verify},
+};
 
 /// Signed Message of the Authority Candidate to register
 /// It's ToDatum implementation has to produce datum that has to match main chain structure,
@@ -106,7 +109,7 @@ pub fn filter_trustless_candidates_registrations<TAccountId, TAccountKeys>(
 	genesis_utxo: UtxoId,
 ) -> Vec<(Candidate<TAccountId, TAccountKeys>, selection::Weight)>
 where
-	TAccountKeys: From<(sr25519::Public, ed25519::Public)>,
+	TAccountKeys: OpaqueKeys + Decode,
 	TAccountId: From<ecdsa::Public>,
 {
 	candidate_registrations
@@ -125,15 +128,14 @@ pub fn filter_invalid_permissioned_candidates<TAccountId, TAccountKeys>(
 	permissioned_candidates: Vec<PermissionedCandidateData>,
 ) -> Vec<Candidate<TAccountId, TAccountKeys>>
 where
-	TAccountKeys: From<(sr25519::Public, ed25519::Public)>,
+	TAccountKeys: OpaqueKeys + Decode,
 	TAccountId: TryFrom<sidechain_domain::SidechainPublicKey>,
 {
 	permissioned_candidates
 		.into_iter()
 		.filter_map(|candidate| {
-			let (account_id, aura_key, grandpa_key) =
+			let (account_id, account_keys) =
 				validate_permissioned_candidate_data(candidate).ok()?;
-			let account_keys = (aura_key, grandpa_key).into();
 			Some(Candidate::Permissioned(PermissionedCandidate { account_id, account_keys }))
 		})
 		.collect()
@@ -145,7 +147,7 @@ fn select_latest_valid_candidate<TAccountId, TAccountKeys>(
 ) -> Option<CandidateWithStake<TAccountId, TAccountKeys>>
 where
 	TAccountId: From<ecdsa::Public>,
-	TAccountKeys: From<(sr25519::Public, ed25519::Public)>,
+	TAccountKeys: OpaqueKeys + Decode,
 {
 	let stake_delegation = validate_stake(candidate_registrations.stake_delegation).ok()?;
 	let stake_pool_pub_key = candidate_registrations.stake_pool_public_key;
@@ -154,8 +156,11 @@ where
 		.registrations
 		.into_iter()
 		.filter_map(|registration_data| {
-			match validate_registration_data(&stake_pool_pub_key, &registration_data, genesis_utxo)
-			{
+			match validate_registration_data::<TAccountKeys>(
+				&stake_pool_pub_key,
+				&registration_data,
+				genesis_utxo,
+			) {
 				Ok(candidate) => Some((candidate, registration_data.utxo_info)),
 				Err(_) => None,
 			}
@@ -213,6 +218,12 @@ pub enum RegistrationDataError {
 	/// Registration with invalid GRANDPA key
 	#[cfg_attr(feature = "std", error("Registration with invalid GRANDPA key"))]
 	InvalidGrandpaKey,
+	/// Registration with missing session key
+	#[cfg_attr(feature = "std", error("Registration with missing session key"))]
+	MissingSessionKey,
+	/// Registration with invalid set of session keys
+	#[cfg_attr(feature = "std", error("Registration with invalid set of session keys"))]
+	InvalidSessionKeys,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Encode, Decode, TypeInfo)]
@@ -231,45 +242,56 @@ pub enum PermissionedCandidateDataError {
 }
 
 /// Validates Aura, GRANDPA, and Partner Chain public keys of [PermissionedCandidateData].
-pub fn validate_permissioned_candidate_data<AccountId: TryFrom<SidechainPublicKey>>(
+pub fn validate_permissioned_candidate_data<
+	AuthorityId: TryFrom<SidechainPublicKey>,
+	AuthorityKeys: OpaqueKeys + Decode,
+>(
 	candidate: PermissionedCandidateData,
-) -> Result<(AccountId, sr25519::Public, ed25519::Public), PermissionedCandidateDataError> {
-	Ok((
-		candidate
-			.sidechain_public_key
-			.try_into()
-			.map_err(|_| PermissionedCandidateDataError::InvalidSidechainPubKey)?,
-		candidate
-			.aura_public_key
-			.try_into_sr25519()
-			.ok_or(PermissionedCandidateDataError::InvalidAuraKey)?,
-		candidate
-			.grandpa_public_key
-			.try_into_ed25519()
-			.ok_or(PermissionedCandidateDataError::InvalidGrandpaKey)?,
-	))
+) -> Result<(AuthorityId, AuthorityKeys), PermissionedCandidateDataError> {
+	unimplemented!()
+	// match candidate {
+	// 	PermissionedCandidateData::V0(data) => Ok((
+	// 		data.sidechain_public_key
+	// 			.try_into()
+	// 			.map_err(|_| PermissionedCandidateDataError::InvalidSidechainPubKey)?,
+	// 		data.aura_public_key
+	// 			.try_into_sr25519()
+	// 			.ok_or(PermissionedCandidateDataError::InvalidAuraKey)?,
+	// 		data.grandpa_public_key
+	// 			.try_into_ed25519()
+	// 			.ok_or(PermissionedCandidateDataError::InvalidGrandpaKey)?,
+	// 	)),
+	// 	PermissionedCandidateData::V1(data) => unimplemented!(),
+	// }
 }
 
 /// Validates registration data provided by the authority candidate.
 ///
 /// Validates:
-/// * Aura, GRANDPA, and Partner Chain public keys of the candidate
+/// * Session and Partner Chain public keys of the candidate
 /// * stake pool signature
 /// * sidechain signature
 /// * transaction inputs contain correct registration utxo
-pub fn validate_registration_data(
+pub fn validate_registration_data<SessionKeys: OpaqueKeys + Decode>(
 	stake_pool_pub_key: &StakePoolPublicKey,
 	registration_data: &RegistrationData,
 	genesis_utxo: UtxoId,
-) -> Result<(ecdsa::Public, (sr25519::Public, ed25519::Public)), RegistrationDataError> {
-	let aura_pub_key = registration_data
-		.aura_pub_key
-		.try_into_sr25519()
-		.ok_or(RegistrationDataError::InvalidAuraKey)?;
-	let grandpa_pub_key = registration_data
-		.grandpa_pub_key
-		.try_into_ed25519()
-		.ok_or(RegistrationDataError::InvalidGrandpaKey)?;
+) -> Result<(ecdsa::Public, SessionKeys), RegistrationDataError> {
+	let required_keys = SessionKeys::key_ids();
+
+	let mut encoded_keys = vec![];
+	for key_id in required_keys {
+		let key = registration_data
+			.session_keys
+			.iter()
+			.find(|key| &KeyTypeId(key.0) == key_id)
+			.ok_or(RegistrationDataError::MissingSessionKey)?;
+		encoded_keys.extend(key.1.clone());
+	}
+
+	let sessions_keys = SessionKeys::decode(&mut &encoded_keys[..])
+		.map_err(|_e| RegistrationDataError::InvalidSessionKeys)?;
+
 	let sidechain_pub_key = ecdsa::Public::from(
 		<[u8; 33]>::try_from(registration_data.sidechain_pub_key.0.clone())
 			.map_err(|_| RegistrationDataError::InvalidSidechainPubKey)?,
@@ -292,7 +314,7 @@ pub fn validate_registration_data(
 	)?;
 	verify_tx_inputs(registration_data)?;
 
-	Ok((sidechain_pub_key, (aura_pub_key, grandpa_pub_key)))
+	Ok((sidechain_pub_key, sessions_keys))
 }
 
 /// Validates stake delegation. Stake must be known and positive.

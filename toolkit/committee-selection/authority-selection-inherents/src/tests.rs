@@ -92,12 +92,6 @@ pub struct AccountKeys {
 	pub grandpa: [u8; 32],
 }
 
-impl From<(sr25519::Public, ed25519::Public)> for AccountKeys {
-	fn from((aura, grandpa): (sr25519::Public, ed25519::Public)) -> Self {
-		Self { aura: aura.0, grandpa: grandpa.0 }
-	}
-}
-
 impl AccountKeys {
 	pub fn from_seed(seed: &str) -> AccountKeys {
 		let mut aura = format!("aura-{seed}").into_bytes();

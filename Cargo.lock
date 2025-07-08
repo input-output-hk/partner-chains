@@ -7212,12 +7212,14 @@ name = "partner-chains-plutus-data"
 version = "1.7.0"
 dependencies = [
  "cardano-serialization-lib",
+ "hex",
  "hex-literal 1.0.0",
  "log",
  "pretty_assertions",
  "raw-scripts",
  "serde_json",
  "sidechain-domain",
+ "sp-core",
  "thiserror 2.0.12",
 ]
 
@@ -7234,6 +7236,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sidechain-domain",
+ "sp-core",
  "tokio",
 ]
 

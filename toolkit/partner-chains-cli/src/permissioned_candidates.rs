@@ -1,7 +1,9 @@
 use crate::cmd_traits::{GetPermissionedCandidates, UpsertPermissionedCandidates};
+use anyhow::bail;
 use ogmios_client::query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId};
 use ogmios_client::query_network::QueryNetwork;
 use ogmios_client::transactions::Transactions;
+use parity_scale_codec::Decode;
 use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
 use partner_chains_cardano_offchain::cardano_keys::CardanoPaymentSigningKey;
 use partner_chains_cardano_offchain::csl::NetworkTypeExt;
@@ -12,101 +14,127 @@ use partner_chains_cardano_offchain::permissioned_candidates::{
 use serde::{Deserialize, Serialize};
 use sidechain_domain::{PermissionedCandidateData, UtxoId};
 use sp_core::crypto::AccountId32;
-use sp_core::{ecdsa, ed25519, sr25519};
-use sp_runtime::traits::IdentifyAccount;
+use sp_core::ecdsa;
+use sp_runtime::KeyTypeId;
+use sp_runtime::traits::{IdentifyAccount, OpaqueKeys};
 use std::fmt::{Display, Formatter};
 
 /// Struct that holds permissioned candidates keys in raw string format
 #[derive(Debug, Deserialize, Eq, PartialEq, PartialOrd, Ord, Serialize)]
 pub struct PermissionedCandidateKeys {
-	/// 0x prefixed hex representation of the ECDSA public key
-	pub sidechain_pub_key: String,
-	/// 0x prefixed hex representation of the sr25519 public key
-	pub aura_pub_key: String,
-	/// 0x prefixed hex representation of the Ed25519 public key
-	pub grandpa_pub_key: String,
+	/// All keys associated with given candidate
+	pub keys: Vec<([u8; 4], Vec<u8>)>,
 }
 
 impl Display for PermissionedCandidateKeys {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		write!(
-			f,
-			"Partner Chains Key: {}, AURA: {}, GRANDPA: {}",
-			self.sidechain_pub_key, self.aura_pub_key, self.grandpa_pub_key
-		)
+		write!(f, "Keys with key type: {:?}", self.keys)
 	}
 }
 
 impl From<&sidechain_domain::PermissionedCandidateData> for PermissionedCandidateKeys {
 	fn from(value: &sidechain_domain::PermissionedCandidateData) -> Self {
-		Self {
-			sidechain_pub_key: sp_core::bytes::to_hex(&value.sidechain_public_key.0, false),
-			aura_pub_key: sp_core::bytes::to_hex(&value.aura_public_key.0, false),
-			grandpa_pub_key: sp_core::bytes::to_hex(&value.grandpa_public_key.0, false),
+		match value {
+			PermissionedCandidateData::V0(permissioned_candidate_data_v0) => {
+				PermissionedCandidateKeys {
+					keys: vec![
+						(*b"crch", permissioned_candidate_data_v0.sidechain_public_key.0.clone()),
+						(*b"aura", permissioned_candidate_data_v0.aura_public_key.0.clone()),
+						(*b"gran", permissioned_candidate_data_v0.grandpa_public_key.0.clone()),
+					],
+				}
+			},
+			PermissionedCandidateData::V1(permissioned_candidate_data_v1) => {
+				PermissionedCandidateKeys { keys: permissioned_candidate_data_v1.keys.clone() }
+			},
 		}
 	}
 }
 
-/// Groups together keys of permissioned candidates. Expected to turn into a more generic type.
+/// Groups together keys of permissioned candidates.
 #[derive(Debug, Deserialize, Eq, PartialEq, Ord, PartialOrd, Serialize)]
-pub struct ParsedPermissionedCandidatesKeys {
-	/// Polkadot identity of the permissioned candidate (aka. partner-chain key)
-	pub sidechain: ecdsa::Public,
-	/// AURA key of the permissioned candidate
-	pub aura: sr25519::Public,
-	/// Grandpa key of the permissioned candidate
-	pub grandpa: ed25519::Public,
+pub struct ParsedPermissionedCandidatesKeys<AuthorityKeys> {
+	sidechain_key: ecdsa::Public,
+	keys: AuthorityKeys,
 }
 
-impl ParsedPermissionedCandidatesKeys {
+impl<AuthorityKeys: OpaqueKeys + Decode> ParsedPermissionedCandidatesKeys<AuthorityKeys> {
+	/// Permissioned candidate set of session keys
+	pub fn session_keys(&self) -> &AuthorityKeys {
+		&self.keys
+	}
+
+	/// Permissioned Candidate partner-chain (sidechain) key
+	pub fn sidechain_key(&self) -> ecdsa::Public {
+		self.sidechain_key
+	}
+
 	/// Permissioned Candidate partner-chain (sidechain) key mapped to AccountId32
 	pub fn account_id_32(&self) -> AccountId32 {
-		sp_runtime::MultiSigner::from(self.sidechain).into_account()
+		sp_runtime::MultiSigner::from(self.sidechain_key()).into_account()
 	}
 }
 
-impl TryFrom<&PermissionedCandidateKeys> for ParsedPermissionedCandidatesKeys {
+impl<AuthorityKeys: OpaqueKeys + Decode> TryFrom<&PermissionedCandidateKeys>
+	for ParsedPermissionedCandidatesKeys<AuthorityKeys>
+{
 	type Error = anyhow::Error;
 
 	fn try_from(value: &PermissionedCandidateKeys) -> Result<Self, Self::Error> {
-		let sidechain = parse_ecdsa(&value.sidechain_pub_key).ok_or(anyhow::Error::msg(
-			format!("{} is invalid ECDSA public key", value.sidechain_pub_key),
-		))?;
-		let aura = parse_sr25519(&value.aura_pub_key).ok_or(anyhow::Error::msg(format!(
-			"{} is invalid sr25519 public key",
-			value.aura_pub_key
-		)))?;
-		let grandpa = parse_ed25519(&value.grandpa_pub_key).ok_or(anyhow::Error::msg(format!(
-			"{} is invalid Ed25519 public key",
-			value.grandpa_pub_key
-		)))?;
-		Ok(Self { sidechain, aura, grandpa })
-	}
-}
+		let expected_keys = AuthorityKeys::key_ids();
 
-impl From<&ParsedPermissionedCandidatesKeys> for sidechain_domain::PermissionedCandidateData {
-	fn from(value: &ParsedPermissionedCandidatesKeys) -> Self {
-		Self {
-			sidechain_public_key: sidechain_domain::SidechainPublicKey(value.sidechain.0.to_vec()),
-			aura_public_key: sidechain_domain::AuraPublicKey(value.aura.0.to_vec()),
-			grandpa_public_key: sidechain_domain::GrandpaPublicKey(value.grandpa.0.to_vec()),
+		if expected_keys.len() != value.keys.len() + 1 {
+			bail!(
+				"Invalid number of keys, expeced sidechain key and {} session keys, provided {} session keys",
+				expected_keys.len(),
+				value.keys.len()
+			);
 		}
+
+		let sidechain_key = {
+			// TODO: we are not verifying if there is only one crch key, also try to aggregate 2 steps into one
+			let (_sidechain_key_type, sidechain_key) = value
+				.keys
+				.iter()
+				.find(|key| key.0 == *b"crch")
+				.ok_or(anyhow::Error::msg(format!("Missing ECDSA sidechain key")))
+				.cloned()?;
+
+			let sidechain_key = <[u8; 33]>::try_from(sidechain_key).map_err(|sidechain_key| {
+				anyhow::Error::msg(format!("{:?} is invalid ECDSA public key", sidechain_key))
+			})?;
+
+			let sidechain_key = ecdsa::Public::from(sidechain_key).into();
+			sidechain_key
+		};
+
+		let keys = {
+			let mut encoded_keys = vec![];
+
+			// TODO: we are not handling duplicates or reordering, question rather if we should allow for it due we can handle it there
+			for key_type in expected_keys {
+				let key = value.keys.iter().find(|key| &KeyTypeId(key.0) == key_type).ok_or_else(
+					|| anyhow::Error::msg(format!("Missing session key {:?}", key_type)),
+				)?;
+				encoded_keys.extend(key.1.clone());
+			}
+
+			let sessions_keys = AuthorityKeys::decode(&mut &encoded_keys[..])
+				.map_err(|_e| anyhow::Error::msg(format!("Invalid session keys")))?;
+
+			sessions_keys
+		};
+
+		Ok(Self { sidechain_key, keys })
 	}
 }
 
-fn parse_ecdsa(value: &str) -> Option<ecdsa::Public> {
-	let bytes = sp_core::bytes::from_hex(value).ok()?;
-	Some(ecdsa::Public::from(<[u8; 33]>::try_from(bytes).ok()?))
-}
-
-fn parse_sr25519(value: &str) -> Option<sr25519::Public> {
-	let bytes = sp_core::bytes::from_hex(value).ok()?;
-	Some(sr25519::Public::from(<[u8; 32]>::try_from(bytes).ok()?))
-}
-
-fn parse_ed25519(value: &str) -> Option<ed25519::Public> {
-	let bytes = sp_core::bytes::from_hex(value).ok()?;
-	Some(ed25519::Public::from(<[u8; 32]>::try_from(bytes).ok()?))
+impl<AuthorityKeys> From<&ParsedPermissionedCandidatesKeys<AuthorityKeys>>
+	for sidechain_domain::PermissionedCandidateData
+{
+	fn from(value: &ParsedPermissionedCandidatesKeys<AuthorityKeys>) -> Self {
+		value.into()
+	}
 }
 
 impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId>

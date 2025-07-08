@@ -102,7 +102,6 @@ pub type Hash = sp_core::H256;
 pub mod opaque {
 	use super::*;
 	use parity_scale_codec::MaxEncodedLen;
-	use sp_core::{ed25519, sr25519};
 	pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
 
 	/// Opaque block header type.
@@ -165,11 +164,6 @@ pub mod opaque {
 		pub struct SessionKeys {
 			pub aura: Aura,
 			pub grandpa: Grandpa,
-		}
-	}
-	impl From<(sr25519::Public, ed25519::Public)> for SessionKeys {
-		fn from((aura, grandpa): (sr25519::Public, ed25519::Public)) -> Self {
-			Self { aura: aura.into(), grandpa: grandpa.into() }
 		}
 	}
 
@@ -1073,13 +1067,13 @@ impl_runtime_apis! {
 
 	impl authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi<Block> for Runtime {
 		fn validate_registered_candidate_data(stake_pool_public_key: &StakePoolPublicKey, registration_data: &RegistrationData) -> Option<RegistrationDataError> {
-			authority_selection_inherents::filter_invalid_candidates::validate_registration_data(stake_pool_public_key, registration_data, Sidechain::genesis_utxo()).err()
+			authority_selection_inherents::filter_invalid_candidates::validate_registration_data::<SessionKeys>(stake_pool_public_key, registration_data, Sidechain::genesis_utxo()).err()
 		}
 		fn validate_stake(stake: Option<StakeDelegation>) -> Option<StakeError> {
 			authority_selection_inherents::filter_invalid_candidates::validate_stake(stake).err()
 		}
 		fn validate_permissioned_candidate_data(candidate: PermissionedCandidateData) -> Option<PermissionedCandidateDataError> {
-			validate_permissioned_candidate_data::<CrossChainPublic>(candidate).err()
+			validate_permissioned_candidate_data::<CrossChainPublic, SessionKeys>(candidate).err()
 		}
 	}
 
