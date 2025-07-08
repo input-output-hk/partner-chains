@@ -15,7 +15,7 @@ use sp_externalities::ExternalitiesExt;
 use sp_keystore::KeystoreExt;
 use sp_runtime::app_crypto::RuntimePublic;
 use sp_runtime_interface::{
-	pass_by::{AllocateAndReturnByCodec, PassFatPointerAndRead, PassPointerAndReadCopy},
+	pass_by::{AllocateAndReturnByCodec, PassFatPointerAndRead, PassFatPointerAndDecode, PassPointerAndReadCopy},
 	runtime_interface,
 };
 
@@ -40,12 +40,14 @@ pub trait GenericKeyInterface {
 	fn insert(
 		&mut self,
 		id: PassPointerAndReadCopy<KeyTypeId, 4>,
-		suri: PassPointerAndReadCopy<[u8; 64], 64>,
+		suri: PassFatPointerAndDecode<Option<Vec<u8>>>,
 		public: PassPointerAndReadCopy<InnerPublicBytes, 32>,
 	) {
+		let unwrapped_seed = suri.expect("Only support insertion of keys with seed");
+		let seed = core::str::from_utf8(&unwrapped_seed).expect("Seed is valid utf8!");
 		self.extension::<KeystoreExt>()
 			.expect("No `keystore` associated for the current context!")
-			.insert(id, &hex::encode(&suri), public.as_ref())
+			.insert(id, &seed, public.as_ref())
 			.expect("Failed to insert key in keystore")
 	}
 
@@ -75,9 +77,9 @@ impl RuntimePublic for Public {
 	}
 
 	fn generate_pair(key_type: KeyTypeId, seed: Option<Vec<u8>>) -> Self {
-		let unwrapped_seed = core::str::from_utf8(&seed.clone().expect("Only support key generation from given seed.")).expect("Seed contains non-UTF8 characters");
+		let unwrapped_seed = seed.clone().expect("Only support key generation from given seed.");
 
-		let keypair = crate::primitive::KeyPair::generate_from_seed(seed);
+		let keypair = crate::primitive::KeyPair::generate_from_seed(&unwrapped_seed);
 		generic_key_interface::insert(key_type, seed, keypair.public().0);
 
 		keypair.public()
