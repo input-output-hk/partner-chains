@@ -318,8 +318,8 @@ mod get_registration_tests {
 		}
 	}
 
-	fn valid_permissioned_candidate() -> RawPermissionedCandidateData {
-		RawPermissionedCandidateData {
+	fn valid_permissioned_candidate() -> sidechain_domain::PermissionedCandidateData {
+		sidechain_domain::PermissionedCandidateData {
 			sidechain_public_key: SidechainPublicKey(vec![1; 33]),
 			aura_public_key: AuraPublicKey(vec![2; 32]),
 			grandpa_public_key: GrandpaPublicKey(vec![3; 32]),
@@ -380,15 +380,15 @@ mod get_registration_tests {
 	#[tokio::test]
 	async fn validate_permissioned_candidate_data_should_return_error_if_invalid() {
 		let invalid_permissioned_candidates = vec![
-			RawPermissionedCandidateData {
+			sidechain_domain::PermissionedCandidateData {
 				sidechain_public_key: SidechainPublicKey(vec![1; 32]),
 				..valid_permissioned_candidate()
 			},
-			RawPermissionedCandidateData {
+			sidechain_domain::PermissionedCandidateData {
 				aura_public_key: AuraPublicKey(vec![1; 37]),
 				..valid_permissioned_candidate()
 			},
-			RawPermissionedCandidateData {
+			sidechain_domain::PermissionedCandidateData {
 				grandpa_public_key: GrandpaPublicKey(vec![1; 33]),
 				..valid_permissioned_candidate()
 			},

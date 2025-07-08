@@ -1,5 +1,4 @@
 use crate::types::GetRegistrationsResponseMap;
-use authority_selection_inherents::authority_selection_inputs::RawPermissionedCandidateData;
 use authority_selection_inherents::filter_invalid_candidates::PermissionedCandidateDataError;
 use serde::{Deserialize, Serialize};
 use sidechain_domain::{AuraPublicKey, GrandpaPublicKey, SidechainPublicKey};
@@ -57,7 +56,7 @@ pub struct PermissionedCandidateData {
 impl PermissionedCandidateData {
 	/// Constructor for [PermissionedCandidateData]
 	pub fn new(
-		data: RawPermissionedCandidateData,
+		data: sidechain_domain::PermissionedCandidateData,
 		invalid_reasons: Option<PermissionedCandidateDataError>,
 	) -> Self {
 		Self {

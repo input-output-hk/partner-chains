@@ -11,7 +11,7 @@ pub struct MockAuthoritySelectionDataSource {
 	/// Permissioned candidates that are returned when queried for an epoch equal to its index.
 	/// For example `permissioned_candidates[0]` is the list of permissioned_candidates that will be returned for epoch 0.
 	/// If an index is set to `None` it means that a permissioned candidates list is not set in that epoch.
-	pub permissioned_candidates: Vec<Option<Vec<RawPermissionedCandidateData>>>,
+	pub permissioned_candidates: Vec<Option<Vec<PermissionedCandidateData>>>,
 	/// Number of permissioned candidates.
 	pub num_permissioned_candidates: u16,
 }
@@ -35,7 +35,7 @@ impl MockAuthoritySelectionDataSource {
 	/// Sets permissioned candidates per epoch for [MockAuthoritySelectionDataSource].
 	pub fn with_permissioned_candidates(
 		self,
-		permissioned_candidates: Vec<Option<Vec<RawPermissionedCandidateData>>>,
+		permissioned_candidates: Vec<Option<Vec<PermissionedCandidateData>>>,
 	) -> Self {
 		Self { permissioned_candidates, ..self }
 	}
