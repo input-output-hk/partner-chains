@@ -54,7 +54,7 @@ impl CommonArguments {
 /// Partner Chains text "wizards" for setting up a chain.
 pub enum Command<T: PartnerChainRuntime> {
 	/// This wizard generates the keys required for operating a partner-chains node, stores them in the keystore directory, and prints the public keys and keystore location.
-	GenerateKeys(generate_keys::GenerateKeysCmd),
+	GenerateKeys(generate_keys::GenerateKeysCmd<T>),
 	/// Wizard to obtain the configuration needed for the partner-chain governance authority. This configuration should be shared with chain participants and used to create the chain spec json file.
 	PrepareConfiguration(prepare_configuration::PrepareConfigurationCmd),
 	/// Wizard for setting D-parameter and Permissioned Candidates list on the main chain.

@@ -31,7 +31,6 @@ pub enum MockIO {
 	Prompt { prompt: String, default: Option<String>, input: String },
 	PromptYN { prompt: String, default: bool, choice: bool },
 	PromptMultiOption { prompt: String, options: Vec<String>, choice: String },
-	NewTmpFile { content: String },
 	NewTmpDir,
 	ListDirectory { path: String, result: Option<Vec<String>> },
 	DeleteFile { path: String },
@@ -82,11 +81,6 @@ impl MockIO {
 			input: input.into(),
 		}
 		.with_location()
-	}
-
-	#[track_caller]
-	pub fn new_tmp_file(content: &str) -> Self {
-		Self::NewTmpFile { content: content.into() }.with_location()
 	}
 
 	#[track_caller]

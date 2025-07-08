@@ -1,5 +1,7 @@
+#![cfg(not(feature = "runtime-benchmarks"))]
 use super::*;
 use crate::CmdRun;
+use crate::tests::runtime::MockRuntime;
 use crate::tests::*;
 use scenarios::key_file_content;
 use scenarios::resources_file_content;
@@ -60,7 +62,7 @@ pub mod scenarios {
 			MockIO::eprint("💾 Inserting Cross-chain (ecdsa) key"),
 			MockIO::run_command(
 				&format!(
-					"<mock executable> key insert --keystore-path {} --scheme ecdsa --key-type crch --suri 'cross-chain secret phrase'",
+					"<mock executable> key insert --chain /tmp/MockIOContext_tmp_dir/chain-spec.json --keystore-path {} --scheme ecdsa --key-type crch --suri 'cross-chain secret phrase'",
 					keystore_path()
 				),
 				"",
@@ -79,7 +81,7 @@ pub mod scenarios {
 			MockIO::eprint("💾 Inserting Grandpa (ed25519) key"),
 			MockIO::run_command(
 				&format!(
-					"<mock executable> key insert --keystore-path {} --scheme ed25519 --key-type gran --suri 'grandpa secret phrase'",
+					"<mock executable> key insert --chain /tmp/MockIOContext_tmp_dir/chain-spec.json --keystore-path {} --scheme ed25519 --key-type gran --suri 'grandpa secret phrase'",
 					keystore_path()
 				),
 				"",
@@ -98,7 +100,7 @@ pub mod scenarios {
 			MockIO::eprint("💾 Inserting Aura (sr25519) key"),
 			MockIO::run_command(
 				&format!(
-					"<mock executable> key insert --keystore-path {} --scheme sr25519 --key-type aura --suri 'aura secret phrase'",
+					"<mock executable> key insert --chain /tmp/MockIOContext_tmp_dir/chain-spec.json --keystore-path {} --scheme sr25519 --key-type aura --suri 'aura secret phrase'",
 					keystore_path()
 				),
 				"",
@@ -116,7 +118,10 @@ pub mod scenarios {
 			MockIO::eprint("⚙️ Generating network key"),
 			MockIO::run_command(&format!("mkdir -p {DATA_PATH}/network"), "irrelevant"),
 			MockIO::run_command(
-				&format!("<mock executable> key generate-node-key --file {}", network_key_file()),
+				&format!(
+					"<mock executable> key generate-node-key --chain /tmp/MockIOContext_tmp_dir/chain-spec.json --file {}",
+					network_key_file()
+				),
 				"irrelevant",
 			),
 		])
@@ -145,34 +150,8 @@ pub mod scenarios {
 		])
 	}
 
-	pub fn set_dummy_env() -> MockIO {
-		MockIO::Group(vec![
-			MockIO::set_env_var(
-				"GENESIS_UTXO",
-				"0000000000000000000000000000000000000000000000000000000000000000#0",
-			),
-			MockIO::set_env_var("COMMITTEE_CANDIDATE_ADDRESS", "addr_10000"),
-			MockIO::set_env_var(
-				"D_PARAMETER_POLICY_ID",
-				"00000000000000000000000000000000000000000000000000000000",
-			),
-			MockIO::set_env_var(
-				"PERMISSIONED_CANDIDATES_POLICY_ID",
-				"00000000000000000000000000000000000000000000000000000000",
-			),
-			MockIO::set_env_var(
-				"NATIVE_TOKEN_POLICY_ID",
-				"00000000000000000000000000000000000000000000000000000000",
-			),
-			MockIO::set_env_var(
-				"NATIVE_TOKEN_ASSET_NAME",
-				"00000000000000000000000000000000000000000000000000000000",
-			),
-			MockIO::set_env_var(
-				"ILLIQUID_SUPPLY_VALIDATOR_ADDRESS",
-				"00000000000000000000000000000000000000000000000000000000",
-			),
-		])
+	pub fn create_temp_chain_spec() -> MockIO {
+		MockIO::Group(vec![MockIO::new_tmp_dir()])
 	}
 }
 
@@ -181,7 +160,7 @@ fn happy_path() {
 	let mock_context = MockIOContext::new().with_expected_io(vec![
 		scenarios::show_intro(),
 		MockIO::enewline(),
-		scenarios::set_dummy_env(),
+		scenarios::create_temp_chain_spec(),
 		scenarios::prompt_all_config_fields(),
 		MockIO::enewline(),
 		scenarios::generate_all_spo_keys("aura-pub-key", "grandpa-pub-key", "cross-chain-pub-key"),
@@ -190,9 +169,11 @@ fn happy_path() {
 		scenarios::generate_network_key(),
 		MockIO::enewline(),
 		MockIO::eprint("🚀 All done!"),
+		MockIO::delete_file("/tmp/MockIOContext_tmp_dir/chain-spec.json"),
 	]);
 
-	let result = GenerateKeysCmd {}.run(&mock_context);
+	let result =
+		GenerateKeysCmd::<MockRuntime> { _phantom: std::marker::PhantomData }.run(&mock_context);
 
 	result.expect("should succeed");
 	verify_json!(
@@ -278,7 +259,7 @@ mod generate_spo_keys {
 				scenarios::write_key_file("0xaura-key", "0xgrandpa-key", "0xcross-chain-key"),
 			]);
 
-		let result = generate_spo_keys(&default_config(), &mock_context);
+		let result = generate_spo_keys(&default_config(), "irrelevant.json", &mock_context);
 
 		result.expect("should succeed");
 		verify_json!(
@@ -307,7 +288,7 @@ mod generate_spo_keys {
 				MockIO::eprint("Refusing to overwrite keys file - skipping"),
 			]);
 
-		let result = generate_spo_keys(&default_config(), &mock_context);
+		let result = generate_spo_keys(&default_config(), "irrelevant.json", &mock_context);
 
 		result.expect("should succeed");
 	}
@@ -322,12 +303,15 @@ mod generate_network_key {
 			MockIO::eprint("⚙️ Generating network key"),
 			MockIO::run_command(&format!("mkdir -p {DATA_PATH}/network"), "irrelevant"),
 			MockIO::run_command(
-				&format!("<mock executable> key generate-node-key --file {}", network_key_file()),
+				&format!(
+					"<mock executable> key generate-node-key --chain path/to/chain-spec.json --file {}",
+					network_key_file()
+				),
 				"irrelevant",
 			),
 		]);
 
-		let result = generate_network_key(&default_config(), &context);
+		let result = generate_network_key(&default_config(), "path/to/chain-spec.json", &context);
 
 		assert!(result.is_ok());
 	}
@@ -344,7 +328,7 @@ mod generate_network_key {
 				),
 			]);
 
-		let result = generate_network_key(&default_config(), &context);
+		let result = generate_network_key(&default_config(), "irrelevant.json", &context);
 
 		assert!(result.is_ok());
 	}
@@ -364,14 +348,14 @@ mod generate_network_key {
 				MockIO::run_command(&format!("mkdir -p {DATA_PATH}/network"), "irrelevant"),
 				MockIO::run_command(
 					&format!(
-						"<mock executable> key generate-node-key --file {}",
+						"<mock executable> key generate-node-key --chain path/to/chain-spec.json --file {}",
 						network_key_file()
 					),
 					"irrelevant",
 				),
 			]);
 
-		let result = generate_network_key(&default_config(), &context);
+		let result = generate_network_key(&default_config(), "path/to/chain-spec.json", &context);
 
 		assert!(result.is_ok());
 	}
