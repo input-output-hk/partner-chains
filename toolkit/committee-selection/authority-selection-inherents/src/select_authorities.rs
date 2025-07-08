@@ -8,14 +8,14 @@ use log::{info, warn};
 use parity_scale_codec::Decode;
 use plutus::*;
 use sidechain_domain::{EpochNonce, ScEpochNumber, UtxoId};
-use sp_core::{U256, ecdsa, ed25519, sr25519};
+use sp_core::{U256, ecdsa};
 use sp_runtime::traits::OpaqueKeys;
 
 /// Selects authorities using the Ariadne selection algorithm and data sourced from Partner Chains smart contracts on Cardano.
 /// Seed is constructed from the MC epoch nonce and the sidechain epoch.
 pub fn select_authorities<
 	TAccountId: Clone + Ord + TryFrom<sidechain_domain::SidechainPublicKey> + From<ecdsa::Public>,
-	TAccountKeys: Clone + Ord + From<(sr25519::Public, ed25519::Public)> + OpaqueKeys + Decode,
+	TAccountKeys: Clone + Ord + OpaqueKeys + Decode,
 >(
 	genesis_utxo: UtxoId,
 	input: AuthoritySelectionInputs,

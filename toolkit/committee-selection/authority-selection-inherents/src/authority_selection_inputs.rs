@@ -54,7 +54,7 @@ pub enum AuthoritySelectionInputsCreationError {
 pub enum RawPermissionedCandidateData {
 	/// Unvalidated Partner Chain, Aura and Grandpa key set
 	V0(RawPermissionedCandidateDataV0),
-	/// Unvalidated list of session keys with identifiers
+	/// Unvalidated list of candidate keys with identifiers
 	V1(RawPermissionedCandidateDataV1),
 }
 

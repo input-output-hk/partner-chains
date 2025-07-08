@@ -1,5 +1,6 @@
 use crate::chain_spec::*;
 use authority_selection_inherents::CommitteeMember;
+use partner_chains_demo_runtime::opaque::SessionKeys;
 use partner_chains_demo_runtime::{
 	AccountId, AuraConfig, BalancesConfig, GovernedMapConfig, GrandpaConfig,
 	NativeTokenManagementConfig, RuntimeGenesisConfig, SessionCommitteeManagementConfig,
@@ -17,12 +18,13 @@ pub fn authority_keys(
 	grandpa_pub_key: &str,
 	sidechain_pub_key: &str,
 ) -> AuthorityKeys {
-	let aura_pk = sr25519::Public::from_raw(from_hex(aura_pub_key).unwrap().try_into().unwrap());
-	let granda_pk =
-		ed25519::Public::from_raw(from_hex(grandpa_pub_key).unwrap().try_into().unwrap());
+	let aura =
+		sr25519::Public::from_raw(from_hex(aura_pub_key).unwrap().try_into().unwrap()).into();
+	let grandpa =
+		ed25519::Public::from_raw(from_hex(grandpa_pub_key).unwrap().try_into().unwrap()).into();
 	let sidechain_pk = sidechain_domain::SidechainPublicKey(from_hex(sidechain_pub_key).unwrap());
 
-	let session_keys = (aura_pk, granda_pk).into();
+	let session_keys = SessionKeys { aura, grandpa };
 	AuthorityKeys { session: session_keys, cross_chain: sidechain_pk.try_into().unwrap() }
 }
 

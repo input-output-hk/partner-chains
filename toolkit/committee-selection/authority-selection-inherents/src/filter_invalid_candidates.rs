@@ -109,7 +109,7 @@ pub fn filter_trustless_candidates_registrations<TAccountId, TAccountKeys>(
 	genesis_utxo: UtxoId,
 ) -> Vec<(Candidate<TAccountId, TAccountKeys>, selection::Weight)>
 where
-	TAccountKeys: From<(sr25519::Public, ed25519::Public)> + OpaqueKeys + Decode,
+	TAccountKeys: OpaqueKeys + Decode,
 	TAccountId: From<ecdsa::Public>,
 {
 	candidate_registrations
@@ -128,15 +128,14 @@ pub fn filter_invalid_permissioned_candidates<TAccountId, TAccountKeys>(
 	permissioned_candidates: Vec<PermissionedCandidateData>,
 ) -> Vec<Candidate<TAccountId, TAccountKeys>>
 where
-	TAccountKeys: From<(sr25519::Public, ed25519::Public)>,
+	TAccountKeys: OpaqueKeys + Decode,
 	TAccountId: TryFrom<sidechain_domain::SidechainPublicKey>,
 {
 	permissioned_candidates
 		.into_iter()
 		.filter_map(|candidate| {
-			let (account_id, aura_key, grandpa_key) =
+			let (account_id, account_keys) =
 				validate_permissioned_candidate_data(candidate).ok()?;
-			let account_keys = (aura_key, grandpa_key).into();
 			Some(Candidate::Permissioned(PermissionedCandidate { account_id, account_keys }))
 		})
 		.collect()
@@ -148,7 +147,7 @@ fn select_latest_valid_candidate<TAccountId, TAccountKeys>(
 ) -> Option<CandidateWithStake<TAccountId, TAccountKeys>>
 where
 	TAccountId: From<ecdsa::Public>,
-	TAccountKeys: From<(sr25519::Public, ed25519::Public)> + OpaqueKeys + Decode,
+	TAccountKeys: OpaqueKeys + Decode,
 {
 	let stake_delegation = validate_stake(candidate_registrations.stake_delegation).ok()?;
 	let stake_pool_pub_key = candidate_registrations.stake_pool_public_key;
@@ -243,23 +242,27 @@ pub enum PermissionedCandidateDataError {
 }
 
 /// Validates Aura, GRANDPA, and Partner Chain public keys of [PermissionedCandidateData].
-pub fn validate_permissioned_candidate_data<AccountId: TryFrom<SidechainPublicKey>>(
+pub fn validate_permissioned_candidate_data<
+	AuthorityId: TryFrom<SidechainPublicKey>,
+	AuthorityKeys: OpaqueKeys + Decode,
+>(
 	candidate: PermissionedCandidateData,
-) -> Result<(AccountId, sr25519::Public, ed25519::Public), PermissionedCandidateDataError> {
-	match candidate {
-		PermissionedCandidateData::V0(data) => Ok((
-			data.sidechain_public_key
-				.try_into()
-				.map_err(|_| PermissionedCandidateDataError::InvalidSidechainPubKey)?,
-			data.aura_public_key
-				.try_into_sr25519()
-				.ok_or(PermissionedCandidateDataError::InvalidAuraKey)?,
-			data.grandpa_public_key
-				.try_into_ed25519()
-				.ok_or(PermissionedCandidateDataError::InvalidGrandpaKey)?,
-		)),
-		PermissionedCandidateData::V1(data) => unimplemented!(),
-	}
+) -> Result<(AuthorityId, AuthorityKeys), PermissionedCandidateDataError> {
+	unimplemented!()
+	// match candidate {
+	// 	PermissionedCandidateData::V0(data) => Ok((
+	// 		data.sidechain_public_key
+	// 			.try_into()
+	// 			.map_err(|_| PermissionedCandidateDataError::InvalidSidechainPubKey)?,
+	// 		data.aura_public_key
+	// 			.try_into_sr25519()
+	// 			.ok_or(PermissionedCandidateDataError::InvalidAuraKey)?,
+	// 		data.grandpa_public_key
+	// 			.try_into_ed25519()
+	// 			.ok_or(PermissionedCandidateDataError::InvalidGrandpaKey)?,
+	// 	)),
+	// 	PermissionedCandidateData::V1(data) => unimplemented!(),
+	// }
 }
 
 /// Validates registration data provided by the authority candidate.
