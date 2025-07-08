@@ -41,7 +41,7 @@ match this change.
   - Connects to running Partner Chain nodes via RPC to generate and decode session keys
   - Eliminates manual key parsing by using node's built-in `sessionKeys_decodeSessionKeys` RPC
   - Outputs JSON file with accurate key types (e.g., "gran", "imon", "aura") and public keys
-  - Configurable node URL via `--url` parameter (default: `http://localhost:9944`)
+  - Configurable node URL via `--url` parameter (default: `http://localhost:9933`)
 * `partner-chains-db-sync-data-sources` and `partner-chains-mock-data-sources` crates now exports all its public members from the root
 * `partner-chains-db-sync-data-sources` crate now exports all its public members from the root
 * `smart-contracts` commands can accept parameter to configure Ogmios requests timeout
