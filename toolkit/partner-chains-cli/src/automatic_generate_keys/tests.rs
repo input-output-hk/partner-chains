@@ -10,7 +10,7 @@ fn keystore_path() -> String {
 }
 
 fn mock_config_loading() -> MockIO {
-	MockIO::prompt("node base path", Some("./data"), DATA_PATH)
+	MockIO::prompt("Enter the node base path", Some("./data"), DATA_PATH)
 }
 
 fn mock_config_loaded_from_file() -> MockIO {
