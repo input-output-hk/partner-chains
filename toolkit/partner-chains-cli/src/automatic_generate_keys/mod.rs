@@ -38,7 +38,7 @@ struct JsonRpcError {
 #[derive(Clone, Debug, Parser)]
 pub struct AutomaticGenerateKeysCmd {
 	/// URL of the Substrate node RPC endpoint (e.g., http://localhost:9933).
-	#[arg(long, default_value = "http://localhost:9933")]
+	#[arg(long = "url", default_value = "http://localhost:9933")]
 	node_url: String,
 }
 
