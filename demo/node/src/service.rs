@@ -30,7 +30,10 @@ use tokio::task;
 /// The host functions Substrate provides for the Wasm runtime environment.
 ///
 /// All these host functions will be callable from inside the Wasm environment.
-pub type HostFunctions = sp_io::SubstrateHostFunctions;
+pub type HostFunctions = (
+	sp_io::SubstrateHostFunctions,
+	schnorr_jubjub::generic_key_interface::HostFunctions,
+);
 
 pub(crate) type FullClient =
 	sc_service::TFullClient<Block, RuntimeApi, WasmExecutor<HostFunctions>>;
@@ -406,8 +409,7 @@ pub async fn new_full<Network: sc_network::NetworkBackend<Block, <Block as Block
 	// if the node isn't actively participating in consensus then it doesn't
 	// need a keystore, regardless of which protocol we use below.
 	let keystore_opt = if role.is_authority() {
-		Some(Arc::new(schnorr_jubjub::SchnorrKeystore(keystore_container.local_keystore()))
-			as Arc<dyn sc_keystore::Keystore>)
+		Some(Arc::new(schnorr_jubjub::SchnorrKeystore(keystore_container.local_keystore())) as Arc<dyn sc_keystore::Keystore>)
 	} else {
 		None
 	};
