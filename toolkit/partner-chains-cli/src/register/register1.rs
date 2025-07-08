@@ -23,11 +23,8 @@ impl CmdRun for Register1Cmd {
 		context.print("⚙️ Registering as a committee candidate (step 1/3)");
 		let genesis_utxo = load_chain_config_field(context, &config_fields::GENESIS_UTXO)?;
 
-		let node_data_base_path = config_fields::SUBSTRATE_NODE_DATA_BASE_PATH
-			.load_from_file(context)
-			.ok_or(anyhow::anyhow!(
-				"⚠️ Keystore not found. Please run the `generate-keys` command first"
-			))?;
+		let node_data_base_path =
+			config_fields::SUBSTRATE_NODE_DATA_BASE_PATH.load_or_prompt_and_save(context);
 
 		let GeneratedKeysFileContent { sidechain_pub_key: pc_pub_key, aura_pub_key, grandpa_pub_key } =
 			read_generated_keys(context).map_err(|e| {
@@ -99,7 +96,7 @@ fn get_ecdsa_pair_from_file<C: IOContext>(
 	let seed_phrase_file_path = format!("{keystore_path}/{seed_phrase_file_name}");
 	let seed = context
 		.read_file(&seed_phrase_file_path)
-		.ok_or_else(|| anyhow::anyhow!("seed phrase file not found"))?;
+		.ok_or_else(|| anyhow::anyhow!("seed phrase file {seed_phrase_file_path} not found"))?;
 	let stripped_quotes = seed.trim_matches('\"');
 	Ok(ecdsa::Pair::from_string(stripped_quotes, None)?)
 }
@@ -189,6 +186,7 @@ mod tests {
 			.with_expected_io(
 				vec![
 					intro_msg_io(),
+					load_base_path_value(),
 					derive_address_io(),
 					query_utxos_io(),
 					select_utxo_io(),
@@ -251,6 +249,7 @@ mod tests {
 			.with_expected_io(
 				vec![
 					intro_msg_io(),
+					load_base_path_value(),
 					derive_address_io(),
 					query_utxos_io(),
 					select_utxo_io(),
@@ -273,7 +272,7 @@ mod tests {
 			.with_json_file(KEYS_FILE_PATH, generated_keys_file_content())
 			.with_file(PAYMENT_VKEY_PATH, "invalid content")
 			.with_expected_io(
-				vec![intro_msg_io(), derive_address_io()]
+				vec![intro_msg_io(), load_base_path_value(), derive_address_io()]
 					.into_iter()
 					.flatten()
 					.collect::<Vec<MockIO>>(),
@@ -299,6 +298,7 @@ mod tests {
 			.with_expected_io(
 				vec![
 					intro_msg_io(),
+					load_base_path_value(),
 					derive_address_io(),
 					vec![
 
@@ -331,6 +331,7 @@ mod tests {
 			.with_expected_io(
 				vec![
 					intro_msg_io(),
+					load_base_path_value(),
 					vec![MockIO::eprint("⚠️ The keys file `partner-chains-cli-keys.json` is missing or invalid. Please run the `generate-keys` command first")],
 				]
 				.into_iter()
@@ -352,11 +353,12 @@ mod tests {
 			.with_expected_io(
 				vec![
 					intro_msg_io(),
+					load_base_path_value(),
 					derive_address_io(),
 					query_utxos_io(),
 					select_utxo_io(),
 					vec![MockIO::eprint(
-						"⚠️ Failed to read partner chain key from the keystore: seed phrase file not found",
+						"⚠️ Failed to read partner chain key from the keystore: seed phrase file /path/to/data/keystore/63726368031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6 not found",
 					)],
 				]
 				.into_iter()
@@ -379,6 +381,7 @@ mod tests {
 			.with_expected_io(
 				vec![
 					intro_msg_io(),
+					load_base_path_value(),
 					derive_address_io(),
 					query_utxos_io(),
 					select_utxo_io(),
@@ -434,6 +437,12 @@ mod tests {
 
 	fn intro_msg_io() -> Vec<MockIO> {
 		vec![MockIO::print("⚙️ Registering as a committee candidate (step 1/3)")]
+	}
+
+	fn load_base_path_value() -> Vec<MockIO> {
+		vec![MockIO::eprint(
+			"🛠️ Loaded node base path from config (test-pc-resources-config.json): /path/to/data",
+		)]
 	}
 
 	fn address_and_utxo_msg_io() -> MockIO {
