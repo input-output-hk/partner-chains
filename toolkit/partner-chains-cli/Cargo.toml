@@ -20,6 +20,7 @@ sidechain-domain = { workspace = true, features = ["std"] }
 anyhow = { workspace = true }
 clap = { workspace = true }
 hex = { workspace = true }
+indexmap = { workspace = true }
 inquire = { workspace = true }
 jsonrpsee = { workspace = true, features = ["http-client"] }
 libp2p-identity = { workspace = true, features = ["peerid", "ed25519"] }

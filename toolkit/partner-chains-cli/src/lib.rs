@@ -2,7 +2,6 @@
 //! Interacts with Smart Contracts using [`partner_chains_cardano_offchain`] crate.
 #![deny(missing_docs)]
 
-mod automatic_generate_keys;
 mod cardano_key;
 mod cmd_traits;
 mod config;
@@ -10,6 +9,7 @@ mod create_chain_spec;
 mod data_source;
 mod deregister;
 mod generate_keys;
+mod automatic_generate_keys;
 mod io;
 mod keystore;
 mod ogmios;
@@ -112,6 +112,7 @@ const HELP_EXAMPLES: &str = r#"
 ╟────────────────────────────────────────────────────────────────────────────────╢
 ║ Governance Authority:                                                          ║
 ║   1. generate-keys         : generate necessary cryptographic keys             ║
+║      OR automatic-generate-keys : auto-generate keys via node RPC              ║
 ║   2. prepare-configuration : set up the partner chain configuration            ║
 ║   3. setup-main-chain-state: configure the main chain parameters               ║
 ║   4. create-chain-spec     : create the chain specification file               ║
@@ -119,6 +120,7 @@ const HELP_EXAMPLES: &str = r#"
 ╟────────────────────────────────────────────────────────────────────────────────╢
 ║ Registered Validator:                                                          ║
 ║   1. generate-keys         : generate validator keys                           ║
+║      OR automatic-generate-keys : auto-generate keys via node RPC              ║
 ║   2. register1             : initiate the registration process                 ║
 ║   3. register2             : complete registration with cold keys              ║
 ║   4. register3             : finalize registration                             ║
@@ -131,6 +133,7 @@ const HELP_EXAMPLES: &str = r#"
 ╟────────────────────────────────────────────────────────────────────────────────╢
 ║ Permissioned Validator:                                                        ║
 ║   1. generate-keys         : generate validator keys                           ║
+║      OR automatic-generate-keys : auto-generate keys via node RPC              ║
 ║   2. start-node            : start the validator node                          ║
 ║                                                                                ║
 ║   Note: After executing 'generate-keys', the generated keys must be shared     ║

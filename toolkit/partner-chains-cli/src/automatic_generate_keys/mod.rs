@@ -6,8 +6,8 @@ use clap::Parser;
 use parity_scale_codec::{Decode, Encode};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
 use std::fs;
+use indexmap::IndexMap;
 
 #[cfg(test)]
 mod tests;
@@ -175,7 +175,7 @@ async fn save_keys_to_storage<C: IOContext>(
 	fs::create_dir_all(keystore_path)
 		.map_err(|e| anyhow::anyhow!("Failed to create keystore directory: {}", e))?;
 
-	let mut key_map: BTreeMap<String, String> = BTreeMap::new();
+	let mut key_map: IndexMap<String, String> = IndexMap::new();
 
 	if !decoded_keys.is_empty() {
 		save_decoded_keys(decoded_keys, keystore_path, &mut key_map, context)?;
@@ -195,7 +195,7 @@ async fn save_keys_to_storage<C: IOContext>(
 fn save_decoded_keys<C: IOContext>(
 	decoded_keys: &[(Vec<u8>, Vec<u8>)],
 	keystore_path: &str,
-	key_map: &mut BTreeMap<String, String>,
+	key_map: &mut IndexMap<String, String>,
 	context: &C,
 ) -> anyhow::Result<()> {
 	for (key_type, public_key) in decoded_keys {
@@ -221,7 +221,7 @@ fn save_decoded_keys<C: IOContext>(
 fn save_raw_keys_as_fallback<C: IOContext>(
 	session_keys_hex: &str,
 	keystore_path: &str,
-	key_map: &mut BTreeMap<String, String>,
+	key_map: &mut IndexMap<String, String>,
 	context: &C,
 ) -> anyhow::Result<()> {
 	context.eprint("⚠️ No session keys decoded. Saving raw keys as fallback.");
@@ -244,7 +244,7 @@ fn save_raw_keys_as_fallback<C: IOContext>(
 
 /// Save keys to JSON file
 fn save_keys_to_json_file<C: IOContext>(
-	key_map: &BTreeMap<String, String>,
+	key_map: &IndexMap<String, String>,
 	context: &C,
 ) -> anyhow::Result<()> {
 	if !key_map.is_empty() {

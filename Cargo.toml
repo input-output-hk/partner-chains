@@ -140,8 +140,6 @@ proptest = { version = "1.5.0" }
 scale-info = { version = "2.11.1", default-features = false, features = [
 	"derive",
 ] }
-scale-decode = { version = "0.16.0" }
-subxt = { version = "0.35" }
 testcontainers = { version = "0.15.0" }
 quickcheck_macros = { version = "1" }
 quote = "1.0"
@@ -172,6 +170,7 @@ bigdecimal = { version = "0.4.8" }
 blake2b_simd = { version = "1.0.2", default-features = false }
 sealed_test = { version = "1.0.0" }
 derive-new = { version = "0.7.0" }
+indexmap = { version = "2.0", default-features = false, features = ["serde"] }
 inquire = { version = "0.7.5" }
 parking_lot = { version = "0.12.3", default-features = false }
 envy = { version = "0.4.2" }

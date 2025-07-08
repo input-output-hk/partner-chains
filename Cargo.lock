@@ -4231,6 +4231,7 @@ checksum = "cea70ddb795996207ad57735b50c5982d8844f38ba9ee5f1aedcfb708a2aa11e"
 dependencies = [
  "equivalent",
  "hashbrown 0.15.3",
+ "serde",
 ]
 
 [[package]]
@@ -7049,6 +7050,7 @@ dependencies = [
  "frame-system",
  "hex",
  "hex-literal 1.0.0",
+ "indexmap 2.9.0",
  "inquire",
  "jsonrpsee",
  "libp2p-identity",
