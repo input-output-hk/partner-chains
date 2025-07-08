@@ -17,6 +17,7 @@ workspace = true
 
 [dependencies]
 sidechain-domain = { workspace = true, features = ["std"] }
+parity-scale-codec = { workspace = true }
 anyhow = { workspace = true }
 clap = { workspace = true }
 hex = { workspace = true }

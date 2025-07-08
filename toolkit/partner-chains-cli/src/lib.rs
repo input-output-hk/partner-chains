@@ -59,7 +59,7 @@ pub enum Command<T: PartnerChainRuntime> {
 	PrepareConfiguration(prepare_configuration::PrepareConfigurationCmd),
 	/// Wizard for setting D-parameter and Permissioned Candidates list on the main chain.
 	/// Uses 'chain config' obtained after running `prepare-configuration`.
-	SetupMainChainState(setup_main_chain_state::SetupMainChainStateCmd),
+	SetupMainChainState(setup_main_chain_state::SetupMainChainStateCmd<T>),
 	/// Wizard for creating a chain spec json file based on the chain configuration (see `prepare-configuration`).
 	CreateChainSpec(create_chain_spec::CreateChainSpecCmd<T>),
 	/// Wizard for starting a substrate node in the environment set up by `generate-keys`,

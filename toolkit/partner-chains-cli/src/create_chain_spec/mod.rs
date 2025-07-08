@@ -38,7 +38,7 @@ impl<T: PartnerChainRuntime> CmdRun for CreateChainSpecCmd<T> {
 }
 
 impl<T: PartnerChainRuntime> CreateChainSpecCmd<T> {
-	fn print_config<C: IOContext>(context: &C, config: &CreateChainSpecConfig) {
+	fn print_config<C: IOContext>(context: &C, config: &CreateChainSpecConfig<T::AuthorityKeys>) {
 		context.print("Chain parameters:");
 		context.print(format!("- Genesis UTXO: {}", config.genesis_utxo).as_str());
 		context.print("SessionValidatorManagement Main Chain Configuration:");
@@ -93,10 +93,11 @@ impl<T: PartnerChainRuntime> CreateChainSpecCmd<T> {
 #[allow(missing_docs)]
 #[derive(Debug)]
 /// Configuration that contains all Partner Chain specific data required to create the chain spec
-pub struct CreateChainSpecConfig {
+pub struct CreateChainSpecConfig<AuthorityKeys> {
 	pub genesis_utxo: UtxoId,
 	pub initial_permissioned_candidates_raw: Vec<PermissionedCandidateKeys>,
-	pub initial_permissioned_candidates_parsed: Vec<ParsedPermissionedCandidatesKeys>,
+	pub initial_permissioned_candidates_parsed:
+		Vec<ParsedPermissionedCandidatesKeys<AuthorityKeys>>,
 	pub committee_candidate_address: MainchainAddress,
 	pub d_parameter_policy_id: PolicyId,
 	pub permissioned_candidates_policy_id: PolicyId,
@@ -107,15 +108,17 @@ pub struct CreateChainSpecConfig {
 	pub governed_map_asset_policy_id: Option<PolicyId>,
 }
 
-impl CreateChainSpecConfig {
+impl<AuthorityKeys> CreateChainSpecConfig<AuthorityKeys> {
 	pub(crate) fn load<C: IOContext>(c: &C) -> Result<Self, anyhow::Error> {
 		let initial_permissioned_candidates_raw =
 			load_config_field(c, &config_fields::INITIAL_PERMISSIONED_CANDIDATES)?;
-		let initial_permissioned_candidates_parsed: Vec<ParsedPermissionedCandidatesKeys> =
-			initial_permissioned_candidates_raw
-				.iter()
-				.map(TryFrom::try_from)
-				.collect::<Result<Vec<ParsedPermissionedCandidatesKeys>, anyhow::Error>>()?;
+		let initial_permissioned_candidates_parsed: Vec<
+			ParsedPermissionedCandidatesKeys<AuthorityKeys>,
+		> = initial_permissioned_candidates_raw
+			.iter()
+			.map(ParsedPermissionedCandidatesKeys::try_from)
+			.collect::<Result<Vec<ParsedPermissionedCandidatesKeys<AuthorityKeys>>, anyhow::Error>>(
+			)?;
 		Ok(Self {
 			genesis_utxo: load_config_field(c, &config_fields::GENESIS_UTXO)?,
 			initial_permissioned_candidates_raw,
@@ -154,7 +157,7 @@ impl CreateChainSpecConfig {
 	/// as initial validators
 	pub fn pallet_partner_chains_session_config<
 		T: pallet_partner_chains_session::Config,
-		F: Fn(&ParsedPermissionedCandidatesKeys) -> (T::ValidatorId, T::Keys),
+		F: Fn(&ParsedPermissionedCandidatesKeys<AuthorityKeys>) -> (T::ValidatorId, T::Keys),
 	>(
 		&self,
 		f: F,
@@ -172,7 +175,7 @@ impl CreateChainSpecConfig {
 	/// as initial authorities
 	pub fn pallet_session_validator_management_config<
 		T: pallet_session_validator_management::Config,
-		F: Fn(&ParsedPermissionedCandidatesKeys) -> T::CommitteeMember,
+		F: Fn(&ParsedPermissionedCandidatesKeys<AuthorityKeys>) -> T::CommitteeMember,
 	>(
 		&self,
 		f: F,

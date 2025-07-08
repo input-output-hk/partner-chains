@@ -1,6 +1,6 @@
 use crate::CreateChainSpecConfig;
 use serde::Serialize;
-use sp_core::{ecdsa, ed25519, sr25519};
+use sp_core::ecdsa;
 use sp_runtime::traits::OpaqueKeys;
 
 /// Trait wrapping Substrate runtime type. Should be implemented for the runtime of the node.
@@ -21,5 +21,5 @@ pub trait PartnerChainRuntime {
 	/// Should construct initial [CommitteeMember] of the chain. Used for creating chain spec.
 	fn initial_member(id: Self::AuthorityId, keys: Self::AuthorityKeys) -> Self::CommitteeMember;
 	/// User defined function to create a chain spec given the PC configuration
-	fn create_chain_spec(config: &CreateChainSpecConfig) -> serde_json::Value;
+	fn create_chain_spec(config: &CreateChainSpecConfig<Self::AuthorityKeys>) -> serde_json::Value;
 }
