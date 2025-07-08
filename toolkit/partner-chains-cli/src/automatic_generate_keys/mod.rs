@@ -131,7 +131,7 @@ async fn decode_session_keys<C: IOContext>(
 /// Parse the SCALE-encoded response from the runtime API
 fn parse_decoded_keys_response(bytes: &[u8]) -> anyhow::Result<Vec<(Vec<u8>, Vec<u8>)>> {
 	// Try decoding as Option<Vec<(Vec<u8>, u32)>> (newer Polkadot SDK)
-	let mut cursor = &bytes[..];
+	let mut cursor = bytes;
 	match <Option<Vec<(Vec<u8>, u32)>>>::decode(&mut cursor) {
 		Ok(Some(vec)) if cursor.is_empty() => {
 			return Ok(vec
@@ -145,12 +145,12 @@ fn parse_decoded_keys_response(bytes: &[u8]) -> anyhow::Result<Vec<(Vec<u8>, Vec
 		},
 		_ => {
 			// Try Vec<(Vec<u8>, Vec<u8>)> (legacy format)
-			let mut cursor_alt = &bytes[..];
+			let mut cursor_alt = bytes;
 			match <Vec<(Vec<u8>, Vec<u8>)>>::decode(&mut cursor_alt) {
 				Ok(vec) if cursor_alt.is_empty() => return Ok(vec),
 				_ => {
 					// Try Option<Vec<(Vec<u8>, Vec<u8>)>> (alternative legacy)
-					let mut cursor_opt = &bytes[..];
+					let mut cursor_opt = bytes;
 					match <Option<Vec<(Vec<u8>, Vec<u8>)>>>::decode(&mut cursor_opt) {
 						Ok(Some(vec)) if cursor_opt.is_empty() => return Ok(vec),
 						Ok(None) if cursor_opt.is_empty() => return Ok(Vec::new()),
