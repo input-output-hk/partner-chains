@@ -13,6 +13,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 * Wizards use optional env vars: PC_CHAIN_CONFIG_FILE and PC_RESOURCES_CONFIG_FILE env variables to
 locate the chain config and resources config files
 * `pallet-block-producer-metadata` is updated with a configurable fee for inserting the metadata, to make attacks on unbounded storage economically infeasible
+* Removed redundant `RawPermissionedCandidateData` type.
 * Added `valid_before` argument to the signed message and all extrinsics in `pallet_block_producer_metadata`. This is to
 prevent unauthorized re-submission of metadata updates. The `sign-block-producer-metadata` command was updated to
 match this change.
@@ -21,6 +22,7 @@ match this change.
 
 ## Added
 
+* Parsing of V1 datum of Permissioned Candidate
 * `delete_metadata` extrinsic in `pallet-block-producer-metadata`
 * Added litep2p networking stack support to pc demo node as default. libp2p can be set with explicitly `--network-backend` parameter.
 

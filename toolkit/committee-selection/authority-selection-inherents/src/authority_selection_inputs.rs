@@ -49,24 +49,13 @@ pub enum AuthoritySelectionInputsCreationError {
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize)]
-/// Permissioned candidate data from Cardano main chain
-pub struct RawPermissionedCandidateData {
-	/// Unvalidated Partner Chain public key of permissioned candidate
-	pub sidechain_public_key: SidechainPublicKey,
-	/// Unvalidated Aura public key of permissioned candidate
-	pub aura_public_key: AuraPublicKey,
-	/// Unvalidated Grandpa public key of permissioned candidate
-	pub grandpa_public_key: GrandpaPublicKey,
-}
-
-#[derive(Debug, Clone, PartialEq, serde::Serialize)]
 /// Ariadne selection algorithm parameters owned by the Partner Chain Governance Authority.
 pub struct AriadneParameters {
 	/// D-parameter for Ariadne committee selection. See [DParameter] for details.
 	pub d_parameter: DParameter,
 	/// List of permissioned candidates for committee selection.
 	/// [None] means that a list of permissioned candidates has not been set on the mainchain.
-	pub permissioned_candidates: Option<Vec<RawPermissionedCandidateData>>,
+	pub permissioned_candidates: Option<Vec<PermissionedCandidateData>>,
 }
 
 /// Queries about the Authority Candidates

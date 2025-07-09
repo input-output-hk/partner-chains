@@ -7212,6 +7212,7 @@ name = "partner-chains-plutus-data"
 version = "1.7.0"
 dependencies = [
  "cardano-serialization-lib",
+ "hex",
  "hex-literal 1.0.0",
  "log",
  "pretty_assertions",

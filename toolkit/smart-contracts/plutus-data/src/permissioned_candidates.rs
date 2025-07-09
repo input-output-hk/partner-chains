@@ -5,6 +5,9 @@ use sidechain_domain::*;
 use crate::{
 	DataDecodingError, DecodingResult, VersionedDatum, VersionedDatumWithLegacy,
 	VersionedGenericDatum,
+	candidate_keys::{
+		KeyTypeIdAndBytes, decode_key_id_and_bytes, decode_key_id_and_bytes_list, find_or_empty,
+	},
 };
 
 #[derive(Clone, Debug, PartialEq)]
@@ -12,6 +15,8 @@ use crate::{
 pub enum PermissionedCandidateDatums {
 	/// Initial/legacy datum schema. If a datum doesn't contain a version, it is assumed to be V0
 	V0(Vec<PermissionedCandidateDatumV0>),
+	/// Schema with generic set of keys
+	V1(Vec<PermissionedCandidateDatumV1>),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -23,6 +28,28 @@ pub struct PermissionedCandidateDatumV0 {
 	pub aura_public_key: AuraPublicKey,
 	/// GRANDPA public key of the trustless candidate
 	pub grandpa_public_key: GrandpaPublicKey,
+}
+
+impl From<PermissionedCandidateDatumV1> for PermissionedCandidateData {
+	// In the follow-up PermissionedCandidateData will become parametrized
+	// with T: OpaqueKeys, this function will be re-implemented.
+	fn from(value: PermissionedCandidateDatumV1) -> Self {
+		let PermissionedCandidateDatumV1 { partner_chains_key, keys } = value;
+		let sidechain_public_key = SidechainPublicKey(partner_chains_key.1);
+		let aura_public_key = AuraPublicKey(find_or_empty(&keys, b"aura"));
+		let grandpa_public_key = GrandpaPublicKey(find_or_empty(&keys, b"gran"));
+
+		PermissionedCandidateData { sidechain_public_key, aura_public_key, grandpa_public_key }
+	}
+}
+
+#[derive(Clone, Debug, PartialEq)]
+/// Datum representing a permissioned candidate with arbitrary set of keys
+pub struct PermissionedCandidateDatumV1 {
+	/// Partner Chains key identifier and bytes
+	pub partner_chains_key: KeyTypeIdAndBytes,
+	/// Represents arbitrary set of keys with 4 character identifier
+	pub keys: Vec<KeyTypeIdAndBytes>,
 }
 
 impl TryFrom<PlutusData> for PermissionedCandidateDatums {
@@ -46,6 +73,7 @@ impl From<PermissionedCandidateDatums> for Vec<PermissionedCandidateData> {
 	fn from(value: PermissionedCandidateDatums) -> Self {
 		match value {
 			PermissionedCandidateDatums::V0(v) => v.into_iter().map(|d| d.into()).collect(),
+			PermissionedCandidateDatums::V1(v) => v.into_iter().map(|d| d.into()).collect(),
 		}
 	}
 }
@@ -89,6 +117,22 @@ pub fn permissioned_candidates_to_plutus_data(
 	.into()
 }
 
+impl PermissionedCandidateDatums {
+	/// Parses plutus data schema in accordance with V1 schema
+	fn decode_v1(data: &PlutusData) -> Result<Self, String> {
+		let permissioned_candidates = data
+			.as_list()
+			.and_then(|list_datums| {
+				list_datums
+					.into_iter()
+					.map(decode_v1_candidate_datum)
+					.collect::<Option<Vec<PermissionedCandidateDatumV1>>>()
+			})
+			.ok_or("Expected [[ByteString, ByteString], [[ByteString, ByteString], ... ]]")?;
+		Ok(Self::V1(permissioned_candidates))
+	}
+}
+
 impl VersionedDatumWithLegacy for PermissionedCandidateDatums {
 	const NAME: &str = "PermissionedCandidateDatums";
 
@@ -115,11 +159,14 @@ impl VersionedDatumWithLegacy for PermissionedCandidateDatums {
 		match version {
 			0 => PermissionedCandidateDatums::decode_legacy(appendix)
 				.map_err(|msg| format!("Cannot parse appendix: {msg}")),
+			1 => PermissionedCandidateDatums::decode_v1(appendix)
+				.map_err(|msg| format!("Cannot parse appendix: {msg}")),
 			_ => Err(format!("Unknown version: {version}")),
 		}
 	}
 }
 
+/// Decodes whatever looks syntactically correct, leaving validation for runtime.
 fn decode_legacy_candidate_datum(datum: &PlutusData) -> Option<PermissionedCandidateDatumV0> {
 	let datums = datum.as_list().filter(|datums| datums.len() == 3)?;
 
@@ -132,6 +179,15 @@ fn decode_legacy_candidate_datum(datum: &PlutusData) -> Option<PermissionedCandi
 		aura_public_key: AuraPublicKey(aura),
 		grandpa_public_key: GrandpaPublicKey(grandpa),
 	})
+}
+
+/// Decodes whatever looks syntactically correct, leaving validation for runtime.
+fn decode_v1_candidate_datum(datum: &PlutusData) -> Option<PermissionedCandidateDatumV1> {
+	// The first element has Partner Chains key, second contains all other keys
+	let outer_list = datum.as_list().filter(|l| l.len() == 2)?;
+	let partner_chains_key = decode_key_id_and_bytes(&outer_list.get(0))?;
+	let keys = decode_key_id_and_bytes_list(&outer_list.get(1))?;
+	Some(PermissionedCandidateDatumV1 { partner_chains_key, keys })
 }
 
 #[cfg(test)]
@@ -205,6 +261,31 @@ mod tests {
 		})
 	}
 
+	fn v1_datum_json() -> serde_json::Value {
+		serde_json::json!({
+			"list": [
+				{ "constructor": 0, "fields": [] },
+				{"list": [
+					{"list":[
+						{"list": [{"bytes": hex::encode(b"crch")}, {"bytes": "cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854"}]},
+						{"list": [
+							{"list": [{"bytes": hex::encode(b"aura")}, {"bytes": "bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec"}]},
+							{"list": [{"bytes": hex::encode(b"gran")}, {"bytes": "9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d"}]}
+						]}
+					]},
+					{"list":[
+						{"list": [{"bytes": hex::encode(b"crch")}, {"bytes": "79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf"}]},
+						{"list": [
+							{"list": [{"bytes": hex::encode(b"aura")}, {"bytes": "56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19"}]},
+							{"list": [{"bytes": hex::encode(b"gran")}, {"bytes": "7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32"}]}
+						]}
+					]}
+				]},
+				{ "int": 1 }
+			]
+		})
+	}
+
 	#[test]
 	fn test_permissioned_candidates_to_plutus_data() {
 		let expected_plutus_data = json_to_plutus_data(v0_datum_json());
@@ -268,6 +349,52 @@ mod tests {
 				grandpa_public_key: GrandpaPublicKey(
 					hex!("7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32").into(),
 				),
+			},
+		]);
+
+		assert_eq!(PermissionedCandidateDatums::try_from(plutus_data).unwrap(), expected_datum)
+	}
+
+	#[test]
+	fn valid_v1_permissioned_candidates() {
+		let plutus_data = json_to_plutus_data(v1_datum_json());
+
+		let expected_datum = PermissionedCandidateDatums::V1(vec![
+			PermissionedCandidateDatumV1 {
+				partner_chains_key: (
+					*b"crch",
+					hex!("cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854").into(),
+				),
+				keys: vec![
+					(
+						*b"aura",
+						hex!("bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec")
+							.into(),
+					),
+					(
+						*b"gran",
+						hex!("9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d")
+							.into(),
+					),
+				],
+			},
+			PermissionedCandidateDatumV1 {
+				partner_chains_key: (
+					*b"crch",
+					hex!("79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf").into(),
+				),
+				keys: vec![
+					(
+						*b"aura",
+						hex!("56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19")
+							.into(),
+					),
+					(
+						*b"gran",
+						hex!("7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32")
+							.into(),
+					),
+				],
 			},
 		]);
 
