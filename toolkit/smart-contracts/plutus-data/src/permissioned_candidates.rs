@@ -155,11 +155,13 @@ mod tests {
 			{"list": [
 				{"bytes": "cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854"},
 				{"bytes": "bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec"},
+				{"bytes": "0261eca4c3c2a8d93b14624b28b08fc4d7ba3ad95e4fc4ca2eec48eaac68b0b988"},
 				{"bytes": "9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d"}
 			]},
 			{"list": [
 				{"bytes": "79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf"},
 				{"bytes": "56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19"},
+				{"bytes": "0361eca4c3c2a8d93b14624b28b08fc4d7ba3ad95e4fc4ca2eec48eaac68b0b988"},
 				{"bytes": "7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32"}
 			]}
 		]});
@@ -172,6 +174,9 @@ mod tests {
 				aura_public_key: AuraPublicKey(
 					hex!("bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec").into(),
 				),
+				beefy_public_key: BeefyPublicKey(
+					hex!("0261eca4c3c2a8d93b14624b28b08fc4d7ba3ad95e4fc4ca2eec48eaac68b0b988").into(),
+				),
 				grandpa_public_key: GrandpaPublicKey(
 					hex!("9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d").into(),
 				),
@@ -182,6 +187,9 @@ mod tests {
 				),
 				aura_public_key: AuraPublicKey(
 					hex!("56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19").into(),
+				),
+				beefy_public_key: BeefyPublicKey(
+					hex!("0361eca4c3c2a8d93b14624b28b08fc4d7ba3ad95e4fc4ca2eec48eaac68b0b988").into(),
 				),
 				grandpa_public_key: GrandpaPublicKey(
 					hex!("7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32").into(),
@@ -200,11 +208,13 @@ mod tests {
 					{"list": [
 						{"bytes": "cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854"},
 						{"bytes": "bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec"},
+						{"bytes": "0261eca4c3c2a8d93b14624b28b08fc4d7ba3ad95e4fc4ca2eec48eaac68b0b988"},
 						{"bytes": "9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d"}
 					]},
 					{"list": [
 						{"bytes": "79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf"},
 						{"bytes": "56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19"},
+						{"bytes": "0361eca4c3c2a8d93b14624b28b08fc4d7ba3ad95e4fc4ca2eec48eaac68b0b988"},
 						{"bytes": "7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32"}
 					]}
 				]},
@@ -227,6 +237,10 @@ mod tests {
 					hex!("bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec")
 						.to_vec(),
 				),
+				beefy_public_key: BeefyPublicKey(
+					hex!("0261eca4c3c2a8d93b14624b28b08fc4d7ba3ad95e4fc4ca2eec48eaac68b0b988")
+						.to_vec(),
+				),
 				grandpa_public_key: GrandpaPublicKey(
 					hex!("9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d")
 						.to_vec(),
@@ -239,6 +253,10 @@ mod tests {
 				),
 				aura_public_key: AuraPublicKey(
 					hex!("56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19")
+						.to_vec(),
+				),
+				beefy_public_key: BeefyPublicKey(
+					hex!("0361eca4c3c2a8d93b14624b28b08fc4d7ba3ad95e4fc4ca2eec48eaac68b0b988")
 						.to_vec(),
 				),
 				grandpa_public_key: GrandpaPublicKey(
@@ -262,6 +280,9 @@ mod tests {
 				aura_public_key: AuraPublicKey(
 					hex!("bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec").into(),
 				),
+				beefy_public_key: BeefyPublicKey(
+					hex!("0261eca4c3c2a8d93b14624b28b08fc4d7ba3ad95e4fc4ca2eec48eaac68b0b988").into(),
+				),
 				grandpa_public_key: GrandpaPublicKey(
 					hex!("9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d").into(),
 				),
@@ -272,6 +293,9 @@ mod tests {
 				),
 				aura_public_key: AuraPublicKey(
 					hex!("56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19").into(),
+				),
+				beefy_public_key: BeefyPublicKey(
+					hex!("0361eca4c3c2a8d93b14624b28b08fc4d7ba3ad95e4fc4ca2eec48eaac68b0b988").into(),
 				),
 				grandpa_public_key: GrandpaPublicKey(
 					hex!("7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32").into(),
