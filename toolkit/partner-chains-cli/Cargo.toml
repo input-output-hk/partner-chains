@@ -20,12 +20,15 @@ sidechain-domain = { workspace = true, features = ["std"] }
 anyhow = { workspace = true }
 clap = { workspace = true }
 hex = { workspace = true }
+indexmap = { workspace = true }
 inquire = { workspace = true }
+jsonrpsee = { workspace = true, features = ["http-client"] }
 libp2p-identity = { workspace = true, features = ["peerid", "ed25519"] }
 serde = { workspace = true }
 serde_json = { workspace = true, features = ["std"] }
 sp-core = { workspace = true, features = ["std"] }
 sp-runtime = { workspace = true, features = ["std"] }
+parity-scale-codec = { workspace = true, features = ["std"] }
 thiserror = { workspace = true }
 tempfile = { workspace = true }
 secp256k1 = { workspace = true, features = ["std"] }
@@ -47,6 +50,7 @@ pallet-sidechain = { workspace = true, features = ["std"] }
 pallet-governed-map = { workspace = true, features = ["std"] }
 sp-governed-map = { workspace = true, features = ["std"] }
 sidechain-slots = { workspace = true }
+reqwest = { version = "0.11", features = ["blocking", "json"] }
 
 [dev-dependencies]
 frame-system = { workspace = true }
@@ -57,6 +61,7 @@ pretty_assertions = { workspace = true }
 scale-info = { workspace = true }
 sp-core = { workspace = true }
 sp-runtime = { workspace = true }
+mockito = { workspace = true }
 
 [features]
 default = ["std"]
