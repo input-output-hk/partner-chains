@@ -65,14 +65,7 @@ pub fn run() -> sc_cli::Result<()> {
 	match &cli.subcommand {
 		Some(Subcommand::Key(cmd)) => cmd.run(&cli),
 		Some(Subcommand::PartnerChains(cmd)) => {
-			let make_dependencies = |config| {
-				let components = service::new_partial(&config)?;
-				Ok((
-					components.client,
-					components.task_manager,
-					components.other.3.authority_selection,
-				))
-			};
+			let make_dependencies = |config| service::new_pc_command_deps(&config);
 			partner_chains_node_commands::run::<
 				_,
 				_,
