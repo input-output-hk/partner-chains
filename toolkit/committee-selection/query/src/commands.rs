@@ -52,6 +52,7 @@ mod tests {
 	use sidechain_domain::{
 		AuraPublicKey, GrandpaPublicKey, McBlockNumber, McSlotNumber, McTxHash, McTxIndexInBlock,
 		SidechainPublicKey, StakePoolPublicKey, UtxoId, UtxoIndex, UtxoInfo,
+		byte_string::ByteString,
 	};
 
 	struct MockSessionValidatorManagementQuery {
@@ -99,6 +100,22 @@ mod tests {
 			grandpa_public_key: GrandpaPublicKey(
 				hex!("439660b36c6c03afafca027b910b4fecf99801834c62a5e6006f27d978de234f").to_vec(),
 			),
+			keys: vec![
+				(
+					"aura".to_string(),
+					ByteString::from_hex_unsafe(
+						"90b5ab205c6974c9ea841be688864633dc9ca8a357843eeacf2314649965fe22",
+					),
+				),
+				(
+					"gran".to_string(),
+					ByteString::from_hex_unsafe(
+						"439660b36c6c03afafca027b910b4fecf99801834c62a5e6006f27d978de234f",
+					),
+				),
+			]
+			.into_iter()
+			.collect(),
 			is_valid: true,
 			invalid_reasons: None,
 		}];
@@ -129,6 +146,7 @@ mod tests {
 						"auraPublicKey": "0x90b5ab205c6974c9ea841be688864633dc9ca8a357843eeacf2314649965fe22",
 						"grandpaPublicKey": "0x439660b36c6c03afafca027b910b4fecf99801834c62a5e6006f27d978de234f",
 						"sidechainPublicKey": "0x0389411795514af1627765eceffcbd002719f031604fadd7d188e2dc585b4e1afb",
+						"keys": {"aura":"0x90b5ab205c6974c9ea841be688864633dc9ca8a357843eeacf2314649965fe22", "gran": "0x439660b36c6c03afafca027b910b4fecf99801834c62a5e6006f27d978de234f"},
 						"isValid": true
 					}
 				]
@@ -138,13 +156,17 @@ mod tests {
 
 	#[tokio::test]
 	async fn cli_get_registration_status_returns_correct_json_string() {
+		let aura = "90b5ab205c6974c9ea841be688864633dc9ca8a357843eeacf2314649965fe22".to_string();
+		let grandpa =
+			"439660b36c6c03afafca027b910b4fecf99801834c62a5e6006f27d978de234f".to_string();
 		let response = vec![CandidateRegistrationEntry {
 			sidechain_pub_key: "0x0389411795514af1627765eceffcbd002719f031604fadd7d188e2dc585b4e1afb".to_string(),
 			sidechain_account_id: "5EP2cMaCxLzhfD3aFAqqgu3kfXH7GcwweEv6JXZRP6ysRHkQ".to_string(),
 			mainchain_pub_key: "0x7521303029fc73ea2dd6a410c4c3cf570bf294a7e02942e049d50ba117acec22".to_string(),
 			cross_chain_pub_key: "0x0389411795514af1627765eceffcbd002719f031604fadd7d188e2dc585b4e1afb".to_string(),
-			aura_pub_key: "90b5ab205c6974c9ea841be688864633dc9ca8a357843eeacf2314649965fe22".to_string(),
-			grandpa_pub_key: "439660b36c6c03afafca027b910b4fecf99801834c62a5e6006f27d978de234f".to_string(),
+			aura_pub_key: aura.clone(),
+			grandpa_pub_key: grandpa.clone(),
+			keys: vec![("aura".to_string(), aura),("gran".to_string(), grandpa)].into_iter().collect(),
 			sidechain_signature: "0x3da1014f1ba4ece29a82b98e2ee4e707bd062523f558e84857cd97d95c525ebd4762812bc1baaf92117861d41acd8641d474f1b30367f0c1ebcf0d280ec44338".to_string(),
 			mainchain_signature: "0x37a45144a24ddd0ded388b7b39441b4ceb7abd1935d02fe6abf07f14025b663e81b53678b3f6701a7c76af7981246537eeee6a790aac18445bb8494bea38990f".to_string(),
 			cross_chain_signature: "0x3da1014f1ba4ece29a82b98e2ee4e707bd062523f558e84857cd97d95c525ebd4762812bc1baaf92117861d41acd8641d474f1b30367f0c1ebcf0d280ec44338".to_string(),
@@ -187,6 +209,7 @@ mod tests {
 				"crossChainPubKey": "0x0389411795514af1627765eceffcbd002719f031604fadd7d188e2dc585b4e1afb",
 				"auraPubKey": "90b5ab205c6974c9ea841be688864633dc9ca8a357843eeacf2314649965fe22",
 				"grandpaPubKey": "439660b36c6c03afafca027b910b4fecf99801834c62a5e6006f27d978de234f",
+				"keys": {"aura":"90b5ab205c6974c9ea841be688864633dc9ca8a357843eeacf2314649965fe22", "gran":"439660b36c6c03afafca027b910b4fecf99801834c62a5e6006f27d978de234f"},
 				"sidechainSignature": "0x3da1014f1ba4ece29a82b98e2ee4e707bd062523f558e84857cd97d95c525ebd4762812bc1baaf92117861d41acd8641d474f1b30367f0c1ebcf0d280ec44338",
 				"mainchainSignature": "0x37a45144a24ddd0ded388b7b39441b4ceb7abd1935d02fe6abf07f14025b663e81b53678b3f6701a7c76af7981246537eeee6a790aac18445bb8494bea38990f",
 				"crossChainSignature": "0x3da1014f1ba4ece29a82b98e2ee4e707bd062523f558e84857cd97d95c525ebd4762812bc1baaf92117861d41acd8641d474f1b30367f0c1ebcf0d280ec44338",

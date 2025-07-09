@@ -66,8 +66,10 @@ impl From<MockRegistration> for CandidateRegistrations {
 				tx_index_within_block: McTxIndexInBlock(12),
 			},
 			tx_inputs: vec![mock.registration_utxo],
-			aura_pub_key: AuraPublicKey(mock.aura_pub_key.0),
-			grandpa_pub_key: GrandpaPublicKey(mock.grandpa_pub_key.0),
+			keys: CandidateKeys(vec![
+				AuraPublicKey(mock.aura_pub_key.0).into(),
+				GrandpaPublicKey(mock.grandpa_pub_key.0).into(),
+			]),
 		}];
 		let stake_delegation = Some(StakeDelegation(333));
 		CandidateRegistrations { stake_pool_public_key, registrations, stake_delegation }
@@ -110,8 +112,10 @@ impl From<MockPermissionedCandidate> for PermissionedCandidateData {
 	) -> Self {
 		Self {
 			sidechain_public_key: SidechainPublicKey(sidechain_pub_key.0),
-			aura_public_key: AuraPublicKey(aura_pub_key.0),
-			grandpa_public_key: GrandpaPublicKey(grandpa_pub_key.0),
+			keys: CandidateKeys(vec![
+				AuraPublicKey(aura_pub_key.0).into(),
+				GrandpaPublicKey(grandpa_pub_key.0).into(),
+			]),
 		}
 	}
 }

@@ -1,7 +1,11 @@
+use std::collections::HashMap;
+
 use crate::types::GetRegistrationsResponseMap;
 use authority_selection_inherents::filter_invalid_candidates::PermissionedCandidateDataError;
 use serde::{Deserialize, Serialize};
-use sidechain_domain::{AuraPublicKey, GrandpaPublicKey, SidechainPublicKey};
+use sidechain_domain::{
+	AuraPublicKey, GrandpaPublicKey, SidechainPublicKey, byte_string::ByteString,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -42,10 +46,12 @@ impl From<sidechain_domain::DParameter> for DParameter {
 pub struct PermissionedCandidateData {
 	/// Sidechain public key of the candidate
 	pub sidechain_public_key: SidechainPublicKey,
-	/// Aura public key of the candidate
+	/// Aura public key of the candidate. Superseded by 'keys' field. Will be removed in the future releases.
 	pub aura_public_key: AuraPublicKey,
-	/// Grandpa public key of the candidate
+	/// Grandpa public key of the candidate. Superseded by 'keys' field. Will be removed in the future releases.
 	pub grandpa_public_key: GrandpaPublicKey,
+	/// All keys specific to the particular partner chain
+	pub keys: HashMap<String, ByteString>,
 	/// Is the registration valid
 	pub is_valid: bool,
 	/// Human-readable reasons of registration being invalid. Present only for invalid entries.
@@ -61,8 +67,19 @@ impl PermissionedCandidateData {
 	) -> Self {
 		Self {
 			sidechain_public_key: data.sidechain_public_key,
-			aura_public_key: data.aura_public_key,
-			grandpa_public_key: data.grandpa_public_key,
+			aura_public_key: AuraPublicKey(data.keys.find(b"aura").unwrap_or_default()),
+			grandpa_public_key: GrandpaPublicKey(data.keys.find(b"gran").unwrap_or_default()),
+			keys: data
+				.keys
+				.0
+				.into_iter()
+				.map(|(id, bytes)| {
+					(
+						String::from_utf8(id.to_vec()).unwrap_or("<invalid>".to_string()),
+						ByteString(bytes),
+					)
+				})
+				.collect(),
 			is_valid: invalid_reasons.is_none(),
 			invalid_reasons,
 		}

@@ -33,10 +33,8 @@ impl From<PermissionedCandidateDatumV1> for PermissionedCandidateData {
 	fn from(value: PermissionedCandidateDatumV1) -> Self {
 		let PermissionedCandidateDatumV1 { partner_chains_key, keys } = value;
 		let sidechain_public_key = SidechainPublicKey(partner_chains_key.1);
-		let aura_public_key = AuraPublicKey(find_or_empty(&keys, AURA_TYPE_ID));
-		let grandpa_public_key = GrandpaPublicKey(find_or_empty(&keys, GRANDPA_TYPE_ID));
-
-		PermissionedCandidateData { sidechain_public_key, aura_public_key, grandpa_public_key }
+		let keys = CandidateKeys(keys);
+		PermissionedCandidateData { sidechain_public_key, keys }
 	}
 }
 
@@ -60,8 +58,10 @@ impl From<PermissionedCandidateDatumV0> for PermissionedCandidateData {
 	fn from(value: PermissionedCandidateDatumV0) -> Self {
 		Self {
 			sidechain_public_key: value.sidechain_public_key,
-			aura_public_key: value.aura_public_key,
-			grandpa_public_key: value.grandpa_public_key,
+			keys: CandidateKeys(vec![
+				(*b"aura", value.aura_public_key.0),
+				(*b"gran", value.grandpa_public_key.0),
+			]),
 		}
 	}
 }
@@ -101,8 +101,9 @@ pub fn permissioned_candidates_to_plutus_data(
 	for candidate in candidates {
 		let mut candidate_datum = PlutusList::new();
 		candidate_datum.add(&PlutusData::new_bytes(candidate.sidechain_public_key.0.clone()));
-		candidate_datum.add(&PlutusData::new_bytes(candidate.aura_public_key.0.clone()));
-		candidate_datum.add(&PlutusData::new_bytes(candidate.grandpa_public_key.0.clone()));
+		for key in candidate.keys.0.iter() {
+			candidate_datum.add(&PlutusData::new_bytes(key.1.clone()));
+		}
 		list.add(&PlutusData::new_list(&candidate_datum));
 	}
 	let appendix = PlutusData::new_list(&list);
@@ -293,28 +294,36 @@ mod tests {
 					hex!("cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854")
 						.to_vec(),
 				),
-				aura_public_key: AuraPublicKey(
-					hex!("bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec")
-						.to_vec(),
-				),
-				grandpa_public_key: GrandpaPublicKey(
-					hex!("9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d")
-						.to_vec(),
-				),
+				keys: CandidateKeys(vec![
+					(
+						*GRANDPA_TYPE_ID,
+						hex!("bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec")
+							.to_vec(),
+					),
+					(
+						*AURA_TYPE_ID,
+						hex!("9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d")
+							.to_vec(),
+					),
+				]),
 			},
 			PermissionedCandidateData {
 				sidechain_public_key: SidechainPublicKey(
 					hex!("79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf")
 						.to_vec(),
 				),
-				aura_public_key: AuraPublicKey(
-					hex!("56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19")
-						.to_vec(),
-				),
-				grandpa_public_key: GrandpaPublicKey(
-					hex!("7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32")
-						.to_vec(),
-				),
+				keys: CandidateKeys(vec![
+					(
+						*AURA_TYPE_ID,
+						hex!("56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19")
+							.to_vec(),
+					),
+					(
+						*GRANDPA_TYPE_ID,
+						hex!("7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32")
+							.to_vec(),
+					),
+				]),
 			},
 		];
 		assert_eq!(permissioned_candidates_to_plutus_data(&domain_data), expected_plutus_data)

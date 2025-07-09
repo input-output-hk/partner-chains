@@ -80,8 +80,8 @@ sp_api::mock_impl_runtime_apis! {
 					let registration = candidate.registrations().first().unwrap().clone();
 					let cross_chain_pub_slice: [u8; 33] = registration.cross_chain_pub_key.0.try_into().unwrap();
 					let cross_chain_public: CrossChainPublic = CrossChainPublic::from(ecdsa::Public::from(cross_chain_pub_slice));
-					let aura_pub_key = registration.aura_pub_key.try_into_sr25519().unwrap();
-					let grandpa_pub_key = registration.grandpa_pub_key.try_into_ed25519().unwrap();
+					let aura_pub_key = AuraPublicKey(registration.keys.find(b"aura").unwrap()).try_into_sr25519().unwrap();
+					let grandpa_pub_key = GrandpaPublicKey(registration.keys.find(b"gran").unwrap()).try_into_ed25519().unwrap();
 					let session_keys = (aura_pub_key, grandpa_pub_key).into();
 					CommitteeMember::permissioned(cross_chain_public, session_keys)
 				}).collect();

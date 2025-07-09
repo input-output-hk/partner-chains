@@ -116,8 +116,12 @@ pub fn candidate_registration_to_plutus_data(
 		sidechain_signature: candidate_registration.partner_chain_signature.clone(),
 		registration_utxo: candidate_registration.registration_utxo,
 		own_pkh: candidate_registration.own_pkh,
-		aura_pub_key: candidate_registration.aura_pub_key.clone(),
-		grandpa_pub_key: candidate_registration.grandpa_pub_key.clone(),
+		aura_pub_key: AuraPublicKey(
+			candidate_registration.keys.find(AURA_TYPE_ID).unwrap_or_default(),
+		),
+		grandpa_pub_key: GrandpaPublicKey(
+			candidate_registration.keys.find(GRANDPA_TYPE_ID).unwrap_or_default(),
+		),
 	}
 	.into()
 }
@@ -139,8 +143,10 @@ impl From<RegisterValidatorDatum> for CandidateRegistration {
 				partner_chain_signature: sidechain_signature,
 				registration_utxo,
 				own_pkh,
-				aura_pub_key,
-				grandpa_pub_key,
+				keys: CandidateKeys(vec![
+					(*AURA_TYPE_ID, aura_pub_key.0),
+					(*GRANDPA_TYPE_ID, grandpa_pub_key.0),
+				]),
 			},
 			RegisterValidatorDatum::V1 {
 				stake_ownership,
@@ -155,8 +161,7 @@ impl From<RegisterValidatorDatum> for CandidateRegistration {
 				partner_chain_signature: sidechain_signature,
 				registration_utxo,
 				own_pkh,
-				aura_pub_key: AuraPublicKey(find_or_empty(&keys, AURA_TYPE_ID)),
-				grandpa_pub_key: GrandpaPublicKey(find_or_empty(&keys, GRANDPA_TYPE_ID)),
+				keys: CandidateKeys(keys),
 			},
 		}
 	}

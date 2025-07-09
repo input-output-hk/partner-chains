@@ -10,7 +10,7 @@ use partner_chains_cardano_offchain::permissioned_candidates::{
 	get_permissioned_candidates, upsert_permissioned_candidates,
 };
 use serde::{Deserialize, Serialize};
-use sidechain_domain::{PermissionedCandidateData, UtxoId};
+use sidechain_domain::{CandidateKeys, PermissionedCandidateData, UtxoId};
 use sp_core::crypto::AccountId32;
 use sp_core::{ecdsa, ed25519, sr25519};
 use sp_runtime::traits::IdentifyAccount;
@@ -41,8 +41,14 @@ impl From<&sidechain_domain::PermissionedCandidateData> for PermissionedCandidat
 	fn from(value: &sidechain_domain::PermissionedCandidateData) -> Self {
 		Self {
 			sidechain_pub_key: sp_core::bytes::to_hex(&value.sidechain_public_key.0, false),
-			aura_pub_key: sp_core::bytes::to_hex(&value.aura_public_key.0, false),
-			grandpa_pub_key: sp_core::bytes::to_hex(&value.grandpa_public_key.0, false),
+			aura_pub_key: sp_core::bytes::to_hex(
+				&value.keys.find(b"aura").unwrap_or_default(),
+				false,
+			),
+			grandpa_pub_key: sp_core::bytes::to_hex(
+				&value.keys.find(b"gran").unwrap_or_default(),
+				false,
+			),
 		}
 	}
 }
@@ -88,8 +94,10 @@ impl From<&ParsedPermissionedCandidatesKeys> for sidechain_domain::PermissionedC
 	fn from(value: &ParsedPermissionedCandidatesKeys) -> Self {
 		Self {
 			sidechain_public_key: sidechain_domain::SidechainPublicKey(value.sidechain.0.to_vec()),
-			aura_public_key: sidechain_domain::AuraPublicKey(value.aura.0.to_vec()),
-			grandpa_public_key: sidechain_domain::GrandpaPublicKey(value.grandpa.0.to_vec()),
+			keys: CandidateKeys(vec![
+				sidechain_domain::AuraPublicKey(value.aura.0.to_vec()).into(),
+				sidechain_domain::GrandpaPublicKey(value.grandpa.0.to_vec()).into(),
+			]),
 		}
 	}
 }
