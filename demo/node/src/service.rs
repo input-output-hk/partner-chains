@@ -3,6 +3,7 @@
 use crate::data_sources::DataSources;
 use crate::inherent_data::{CreateInherentDataConfig, ProposalCIDP, VerifierCIDP};
 use crate::rpc::GrandpaDeps;
+use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
 use partner_chains_db_sync_data_sources::McFollowerMetrics;
 use partner_chains_db_sync_data_sources::register_metrics_warn_errors;
 use partner_chains_demo_runtime::{self, RuntimeApi, opaque::Block};
@@ -33,6 +34,27 @@ type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 /// The minimum period of blocks on which justifications will be
 /// imported and generated.
 const GRANDPA_JUSTIFICATION_PERIOD: u32 = 512;
+
+/// This function provides dependencies of [partner_chains_nodes_command::PartnerChainsSubcommand].
+/// It is not mandatory to have such a dedicated function, [partial_service] could be enough,
+/// however using such a specialized function decreases number of possible failures and wiring time.
+pub fn new_pc_command_deps(
+	config: &Configuration,
+) -> Result<
+	(Arc<FullClient>, TaskManager, Arc<dyn AuthoritySelectionDataSource + Send + Sync>),
+	ServiceError,
+> {
+	let data_sources = task::block_in_place(|| {
+		config
+			.tokio_handle
+			.block_on(crate::data_sources::create_cached_data_sources(None))
+	})?;
+	let executor = sc_service::new_wasm_executor(&config.executor);
+	let (client, _, _, task_manager) =
+		sc_service::new_full_parts::<Block, RuntimeApi, _>(config, None, executor)?;
+	let client = Arc::new(client);
+	Ok((client, task_manager, data_sources.authority_selection))
+}
 
 #[allow(clippy::type_complexity)]
 pub fn new_partial(
