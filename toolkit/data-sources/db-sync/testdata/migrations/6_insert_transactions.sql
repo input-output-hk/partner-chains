@@ -269,9 +269,16 @@ DO $$
         INSERT INTO ma_tx_out (id   , quantity , tx_out_id , ident)
         VALUES                (8000 , 1        , 8000      , 8000)
         ;
-
+        -- uses versioned v0 format of datum
         INSERT INTO datum ( id   , hash        , tx_id , value                                                                                                                         )
-        VALUES            ( 8000 , datum1_hash , tx1_id, '{"list": [{"list": [{"bytes": "bb11"}, {"bytes": "cc11"}, {"bytes": "dd11"}]}, {"list": [{"bytes": "bb22"}, {"bytes": "cc22"}, {"bytes": "dd22"}]}]}' )
+        VALUES            ( 8000 , datum1_hash , tx1_id, '{"list": [
+        	{"constructor": 0, "fields": [] },
+         	{"list": [
+         		{"list": [{"bytes": "bb11"}, {"bytes": "cc11"}, {"bytes": "dd11"}]},
+          		{"list": [{"bytes": "bb22"}, {"bytes": "cc22"}, {"bytes": "dd22"}]}
+            ]},
+            {"int": 0}
+        ]}' )
         ;
 END $$;
 
@@ -293,8 +300,27 @@ DO $$
         INSERT INTO ma_tx_out (id   , quantity , tx_out_id , ident)
         VALUES                (9000 , 1        , 9000      , 8000)
         ;
-
+        -- uses versioned v1 format
         INSERT INTO datum ( id   , hash        , tx_id , value                                                                                                                         )
-        VALUES            ( 9000 , datum1_hash , tx1_id, '{"list": [{"list": [{"bytes": "cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854"}, {"bytes": "bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec"}, {"bytes": "9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d"}]}, {"list": [{"bytes": "79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf"}, {"bytes": "56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19"}, {"bytes": "7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32"}]}]}' )
+        VALUES            ( 9000 , datum1_hash , tx1_id, '{"list": [
+        	{"constructor": 0, "fields": [] },
+         	{"list": [
+            	{"list": [
+             		{"list":[{"bytes": "63726368"}, {"bytes": "cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854"}]},
+               		{"list":[
+                 		{"list":[{"bytes": "61757261"}, {"bytes": "bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec"}]},
+                   		{"list":[{"bytes": "6772616e"}, {"bytes": "9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d"}]}
+                    ]}
+                ]},
+                {"list": [
+                	{"list":[{"bytes": "63726368"}, {"bytes": "79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf"}]},
+                 	{"list":[
+                 		{"list":[{"bytes": "61757261"}, {"bytes": "56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19"}]},
+                   		{"list":[{"bytes": "6772616e"}, {"bytes": "7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32"}]}
+                    ]}
+                ]}
+            ]},
+          	{"int": 1}
+        ]}' )
         ;
 END $$;
