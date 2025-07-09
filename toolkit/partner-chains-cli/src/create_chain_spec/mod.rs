@@ -91,7 +91,7 @@ impl<T: PartnerChainRuntime> CreateChainSpecCmd<T> {
 }
 
 #[allow(missing_docs)]
-#[derive(Debug)]
+#[derive(Debug, Default)]
 /// Configuration that contains all Partner Chain specific data required to create the chain spec
 pub struct CreateChainSpecConfig {
 	pub genesis_utxo: UtxoId,
