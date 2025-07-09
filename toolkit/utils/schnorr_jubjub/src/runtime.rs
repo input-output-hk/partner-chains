@@ -7,69 +7,20 @@
 // use std::convert::TryInto;
 
 use alloc::vec::Vec;
-use sp_core::{
-	ByteArray, Pair as TraitPair,
-	crypto::{CryptoTypeId, KeyTypeId},
-};
-use sp_externalities::ExternalitiesExt;
-use sp_keystore::KeystoreExt;
+use sp_core::{ByteArray, Pair as TraitPair, crypto::KeyTypeId};
 use sp_runtime::app_crypto::RuntimePublic;
-use sp_runtime_interface::{
-	pass_by::{AllocateAndReturnByCodec, PassFatPointerAndRead, PassFatPointerAndDecode, PassPointerAndReadCopy},
-	runtime_interface,
-};
 
 use crate::poseidon::PoseidonJubjub;
 use crate::{
-	beefy_structures::{CRYPTO_ID, InnerPublicBytes, Public, Signature},
+	beefy_structures::{CRYPTO_ID, Public, Signature},
 	primitive::{SchnorrSignature, VerifyingKey},
 };
-
-#[runtime_interface]
-pub trait GenericKeyInterface {
-	fn keys(
-		&mut self,
-		id: PassPointerAndReadCopy<KeyTypeId, 4>,
-	) -> AllocateAndReturnByCodec<Vec<Vec<u8>>> {
-		self.extension::<KeystoreExt>()
-			.expect("No `keystore` associated for the current context!")
-			.keys(id)
-			.expect("Key type not found in keystore")
-	}
-
-	fn insert(
-		&mut self,
-		id: PassPointerAndReadCopy<KeyTypeId, 4>,
-		suri: PassFatPointerAndDecode<Option<Vec<u8>>>,
-		public: PassPointerAndReadCopy<InnerPublicBytes, 32>,
-	) {
-		let unwrapped_seed = suri.expect("Only support insertion of keys with seed");
-		let seed = core::str::from_utf8(&unwrapped_seed).expect("Seed is valid utf8!");
-		self.extension::<KeystoreExt>()
-			.expect("No `keystore` associated for the current context!")
-			.insert(id, &seed, public.as_ref())
-			.expect("Failed to insert key in keystore")
-	}
-
-	fn sign_with(
-		&mut self,
-		id: PassPointerAndReadCopy<KeyTypeId, 4>,
-		crypto_id: PassPointerAndReadCopy<[u8; 4], 4>,
-		public: PassPointerAndReadCopy<InnerPublicBytes, 32>,
-		msg: PassFatPointerAndRead<&[u8]>,
-	) -> AllocateAndReturnByCodec<Option<Vec<u8>>> {
-		self.extension::<KeystoreExt>()
-			.expect("No `keystore` associated for the current context!")
-			.sign_with(id, CryptoTypeId(crypto_id), public.as_ref(), msg)
-			.expect("Failed to produce valid signature")
-	}
-}
 
 impl RuntimePublic for Public {
 	type Signature = Signature;
 
 	fn all(key_type: KeyTypeId) -> Vec<Self> {
-		let all = generic_key_interface::keys(key_type);
+		let all = sp_io::generic_crypto::keys(key_type);
 
 		all.iter()
 			.map(|bytes| Public::try_from(bytes.as_slice()).expect("Invalid format in keystore"))
@@ -77,17 +28,21 @@ impl RuntimePublic for Public {
 	}
 
 	fn generate_pair(key_type: KeyTypeId, seed: Option<Vec<u8>>) -> Self {
-		let unwrapped_seed = seed.clone().expect("Only support key generation from given seed.");
+		let seed: [u8; 64] = seed
+			.expect("Only support key generation from given seed.")
+			.try_into()
+			.expect("Invalid seed size.");
 
-		let keypair = crate::primitive::KeyPair::generate_from_seed(&unwrapped_seed);
-		generic_key_interface::insert(key_type, seed, keypair.public().0);
+		let keypair = crate::primitive::KeyPair::generate_from_seed(&seed);
+		let seed = core::str::from_utf8(&seed).expect("Seed contains non-UTF8 characters");
+		sp_io::generic_crypto::insert(key_type, seed, &keypair.public().0);
 
 		keypair.public()
 	}
 
 	fn sign<M: AsRef<[u8]>>(&self, key_type: KeyTypeId, msg: &M) -> Option<Self::Signature> {
 		let crypto_id = CRYPTO_ID;
-		let bytes = generic_key_interface::sign_with(key_type, crypto_id.0, self.0, msg.as_ref())?;
+		let bytes = sp_io::generic_crypto::sign_with(key_type, crypto_id.0, &self.0, msg.as_ref())?;
 
 		Signature::try_from(bytes.as_ref()).ok()
 	}
