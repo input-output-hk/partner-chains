@@ -24,6 +24,7 @@
 
   outputs =
     {
+      self,
       nixpkgs,
       fenix,
       flake-utils,
@@ -53,9 +54,9 @@
         pname = "partner-chains";
         version = "1.7";
         src = ./.;
-        # preBuild = ''
-        #   export SUBSTRATE_CLI_GIT_COMMIT_HASH=${dirtyShortRev or shortRev}
-        # '';
+        preBuild = ''
+          export SUBSTRATE_CLI_GIT_COMMIT_HASH=${self.dirtyShortRev or self.shortRev}
+        '';
 
         useFetchCargoVendor = true;
         cargoHash = "sha256-QKBT22BsnBTCHZ8NuZPVxOnatPybZ+gt/9vg6HxNApc=";
