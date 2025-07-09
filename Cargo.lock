@@ -10090,6 +10090,7 @@ dependencies = [
  "sp-application-crypto",
  "sp-consensus-beefy",
  "sp-core",
+ "sp-crypto-hashing",
  "sp-externalities",
  "sp-io",
  "sp-keystore",

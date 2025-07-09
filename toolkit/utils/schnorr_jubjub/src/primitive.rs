@@ -10,18 +10,15 @@
 use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt::Debug;
-use rand_chacha::rand_core::RngCore;
 use sha2::Digest;
 
 use crate::poseidon::{PoseidonError, PoseidonJubjub};
-use ark_ec::AffineRepr;
-use ark_ed_on_bls12_381::{EdwardsAffine as Point, Fq as Scalar, Fr};
-use ark_ff::{Field, UniformRand};
-use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
-use num_bigint::BigUint;
 use alloc::str::FromStr;
 use alloc::string::ToString;
-
+use ark_ec::AffineRepr;
+use ark_ed_on_bls12_381::{EdwardsAffine as Point, Fq as Scalar, Fr};
+use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
+use num_bigint::BigUint;
 
 /// A Schnorr private key is a scalar from the Jubjub scalar field.
 #[derive(Clone, Debug)]
@@ -61,6 +58,14 @@ impl From<PoseidonError> for SchnorrError {
 	}
 }
 
+/// Helper function to reduce little endian bytes modulo the order
+/// of `Fr`
+pub(crate) fn mod_p(bytes: &[u8]) -> Fr {
+	let biguint = BigUint::from_bytes_le(bytes);
+	Fr::from_str(&biguint.to_string())
+		.expect("Failed to reduce bytes modulo Fr::MODULUS. This is a bug.")
+}
+
 impl KeyPair {
 	/// Returns the verifying key
 	pub fn vk(&self) -> VerifyingKey {
@@ -69,22 +74,14 @@ impl KeyPair {
 
 	/// Generates a Schnorr keypair from a seed.
 	pub fn generate_from_seed(seed: &[u8]) -> Self {
-		let hashed_seed: [u8; 64] = sha2::Sha512::digest(&seed).as_slice().try_into().unwrap();
-		let biguint = BigUint::from_bytes_be(&hashed_seed);
-		let sk = Fr::from_str(&biguint.to_string())
-			.expect("Failed to construct Fr from bytes. This is a bug.");
+		let hashed_seed = sha2::Sha512::digest(&seed);
+
+		let sk = mod_p(hashed_seed.as_slice());
 		let pk = Point::generator() * sk;
 		Self(sk, pk.into())
 	}
 
 	/// Sign a message using this private key.
-	///
-	/// # Arguments
-	/// - `msg`: byte slice representing the message
-	/// - `poseidon`: instance of the Poseidon hash function (preconfigured)
-	///
-	/// # Returns
-	/// A Schnorr `Signature`.
 	pub fn sign(&self, msg: &[Scalar]) -> SchnorrSignature {
 		let mut bytes_nonce = [0u8; 32];
 		self.0
@@ -100,12 +97,16 @@ impl KeyPair {
 		// Generate a random nonce
 		// TODO: We compute it deterministically (as done in ed25519) to avoid needing a RNG
 		let h = sha2::Sha512::digest(&bytes_nonce);
-		let a = Fr::from_random_bytes(&h)
-			.expect("Failed to generate number from bytes. This is a bug.");
+
+		let a = mod_p(h.as_slice());
 		let A = (Point::generator() * a).into();
 
 		// Compute challenge e = H(R || PK || msg)
-		let c_input = [&to_coords(&A), &to_coords(&self.1), msg].concat();
+		let c_input = [
+			&to_coords(&A).expect("Shouldn't produce a signature with nonce = 0."),
+			&to_coords(&self.1).expect("Your verifying key is the identity! This is a bug."),
+			msg
+		].concat();
 		let c = hash_to_jj_scalar(&c_input);
 
 		// Compute the response, r = a + c * sk
@@ -118,15 +119,15 @@ impl KeyPair {
 impl SchnorrSignature {
 	/// Verify a Schnorr signature.
 	///
-	/// # Arguments
-	/// - `msg`: byte slice of the original signed message
-	/// - `sig`: the `Signature` object to verify
-	/// - `poseidon`: Poseidon hash function instance
-	///
 	/// # Error
 	/// Function fails if the signature is not valid
 	pub fn verify(&self, msg: &[Scalar], pk: &VerifyingKey) -> Result<(), SchnorrError> {
-		let c_input = [&to_coords(&self.A), &to_coords(&pk.0), msg].concat();
+		let c_input = [
+			&to_coords(&self.A).ok_or(SchnorrError::InvalidSignature)?,
+			&to_coords(&pk.0).ok_or(SchnorrError::InvalidSignature)?,
+			msg
+		].concat();
+
 		let c = hash_to_jj_scalar(&c_input);
 
 		if Point::generator() * self.r == self.A + pk.0 * c {
@@ -142,7 +143,7 @@ impl SchnorrSignature {
 	pub fn to_bytes(&self) -> [u8; 64] {
 		let mut out = [0u8; 64];
 		self.A.serialize_compressed(out.as_mut_slice()).expect("Failed to serialize.");
-		self.r.serialize_compressed(out.as_mut_slice()).expect("Failed to serialize.");
+		self.r.serialize_compressed(&mut out[32..]).expect("Failed to serialize.");
 
 		out
 	}
@@ -152,10 +153,6 @@ impl SchnorrSignature {
 	/// # Error
 	/// if the bytes do not represent a canonical `(Point, Scalar)` pair.
 	pub fn from_bytes(bytes: &[u8]) -> Result<Self, SchnorrError> {
-		if bytes.len() != 64 {
-			return Err(SchnorrError::InvalidSignatureFormat);
-		}
-
 		let A = Point::deserialize_compressed(&bytes[..32])
 			.map_err(|_| SchnorrError::InvalidSignatureFormat)?;
 		let r = Fr::deserialize_compressed(&bytes[32..])
@@ -178,10 +175,6 @@ impl VerifyingKey {
 	/// # Error
 	/// if the bytes do not represent a canonical `Point` pair.
 	pub fn from_bytes(bytes: &[u8]) -> Result<Self, SchnorrError> {
-		if bytes.len() != 32 {
-			return Err(SchnorrError::InvalidPkFormat);
-		}
-
 		let pk = Point::deserialize_compressed(bytes).map_err(|_| SchnorrError::InvalidPkFormat)?;
 
 		Ok(Self(pk))
@@ -189,11 +182,10 @@ impl VerifyingKey {
 }
 
 /// Helper function that converts a `JubJubSubgroup` point to its coordinates
-fn to_coords(point: &Point) -> Vec<Scalar> {
-	// TODO: is this a reasonable assumption?
-	let (x, y) = point.xy().expect("We shouldn't have the identity");
+fn to_coords(point: &Point) -> Option<Vec<Scalar>> {
+	let (x, y) = point.xy()?;
 
-	vec![x, y]
+	Some(vec![x, y])
 }
 
 /// Helper function that hashes into a JubJub scalar, by taking the mod
@@ -208,63 +200,100 @@ fn hash_to_jj_scalar(input: &[Scalar]) -> Fr {
 	let mut bytes_wide = [0u8; 64];
 	e.serialize_compressed(bytes_wide.as_mut_slice()).expect("Failed to serialize");
 
-	Fr::from_random_bytes(&bytes_wide).expect("Failed to compute Fr from bytes. This is a bug.")
+	mod_p(&bytes_wide)
 }
 
 #[cfg(test)]
 mod tests {
-	use rand_core::OsRng;
-	use sp_core::crypto::Ss58Codec;
+	use rand_core::{OsRng, RngCore};
+	use ark_ff::UniformRand;
 
 	use super::*;
 
 	#[test]
-	// fn schnorr_jubjub() {
-	// 	let mut rng = OsRng;
-	//
-	// 	let signing_key = Pair::generate(&mut rng);
-	// 	let msg = Scalar::random(&mut rng);
-	//
-	// 	let sig = signing_key.sign(&[msg], &mut rng);
-	//
-	// 	assert!(sig.verify(&[msg], &signing_key.vk()).is_ok());
-	// }
-	//
-	// #[test]
-	// fn schnorr_jubjub_bytes() {
-	// 	let signing_key = Pair::generate(&mut rng);
-	// 	let msg = Scalar::random(&mut rng).to_bytes_le();
-	//
-	// 	let sig =
-	// 		signing_key.sign(&SchnorrSignature::msg_from_bytes(&msg, true).unwrap(), &mut rng);
-	//
-	// 	assert!(
-	// 		sig.verify(&SchnorrSignature::msg_from_bytes(&msg, true).unwrap(), &signing_key.vk())
-	// 			.is_ok()
-	// 	);
-	//
-	// 	let mut msg = [0u8; 100];
-	// 	rng.fill_bytes(&mut msg);
-	//
-	// 	let sig =
-	// 		signing_key.sign(&SchnorrSignature::msg_from_bytes(&msg, false).unwrap(), &mut rng);
-	//
-	// 	assert!(
-	// 		sig.verify(&SchnorrSignature::msg_from_bytes(&msg, false).unwrap(), &signing_key.vk())
-	// 			.is_ok()
-	// 	);
-	// }
+	fn schnorr_jubjub() {
+		let mut rng = OsRng;
+		let mut seed = [0u8; 32];
+		rng.fill_bytes(&mut seed);
+
+		let signing_key = KeyPair::generate_from_seed(&seed);
+		let msg = Scalar::rand(&mut rng);
+
+		let sig = signing_key.sign(&[msg]);
+
+		assert!(sig.verify(&[msg], &signing_key.vk()).is_ok());
+	}
 
 	#[test]
-	fn print_data() {
-		let seed = b"cradle mansion zoo flavor glance orbit curtain lava envelope jewel honey task";
-		println!("{:?}", hex::encode(seed));
-		let keypair = KeyPair::generate_from_seed(seed);
+	fn schnorr_jubjub_bytes() {
+		let mut rng = OsRng;
+		let mut seed = [0u8; 32];
+		rng.fill_bytes(&mut seed);
 
-		let vk = keypair.vk();
-		println!("{}", hex::encode(vk.to_bytes()));
+		let signing_key = KeyPair::generate_from_seed(&seed);
 
-		// let ss58 = vk.to_ss58check();
-		// println!("{}", ss58);
+		let mut msg = [0u8; 32];
+		Scalar::rand(&mut rng).serialize_compressed(msg.as_mut_slice()).unwrap();
+		let msg = PoseidonJubjub::msg_from_bytes(&msg, true).unwrap();
+
+		let sig =
+			signing_key.sign(&msg);
+
+		assert!(
+			sig.verify(&msg, &signing_key.vk())
+				.is_ok()
+		);
+
+		let mut msg = [0u8; 100];
+		rng.fill_bytes(&mut msg);
+		let msg = PoseidonJubjub::msg_from_bytes(&msg, false)
+			.expect("With flag set to false, this should not fail. Report a bug.");
+
+		let sig =
+			signing_key.sign(&msg);
+
+		assert!(
+			sig.verify(&msg, &signing_key.vk())
+				.is_ok()
+		);
 	}
+
+	#[test]
+	fn serde() {
+		let mut rng = OsRng;
+		let mut seed = [0u8; 32];
+		rng.fill_bytes(&mut seed);
+
+		let signing_key = KeyPair::generate_from_seed(&seed);
+		let msg = Scalar::rand(&mut rng);
+
+		let sig = signing_key.sign(&[msg]);
+
+		let vk = signing_key.vk();
+		let ser_vk = vk.to_bytes();
+		let deser_vk = VerifyingKey::from_bytes(&ser_vk).unwrap();
+
+		assert!(sig.verify(&[msg], &deser_vk).is_ok());
+
+		let ser_sig = sig.to_bytes();
+		let deser_sig = SchnorrSignature::from_bytes(&ser_sig).unwrap();
+
+		assert!(deser_sig.verify(&[msg], &vk).is_ok());
+	}
+
+
+	// Helper test to generate test-vectors
+	// #[test]
+	// fn print_data() {
+	// 	let seed =
+	// 		b"belt hurt material survey skate group illness health electric frown live sword";
+	// 	println!("{:?}", hex::encode(seed));
+	// 	let keypair = KeyPair::generate_from_seed(seed);
+	//
+	// 	let vk = keypair.vk();
+	// 	println!("{}", hex::encode(vk.to_bytes()));
+	//
+	// 	// let ss58 = vk.to_ss58check();
+	// 	// println!("{}", ss58);
+	// }
 }

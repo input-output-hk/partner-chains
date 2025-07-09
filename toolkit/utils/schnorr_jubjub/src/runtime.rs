@@ -4,11 +4,16 @@
 //! primitives and keystore functionality into the Substrate runtime
 //! environment, enabling their use in on-chain logic and consensus mechanisms.
 
-// use std::convert::TryInto;
-
 use alloc::vec::Vec;
 use sp_core::{ByteArray, Pair as TraitPair, crypto::KeyTypeId};
 use sp_runtime::app_crypto::RuntimePublic;
+use sp_runtime_interface::{
+	pass_by::{
+		AllocateAndReturnByCodec, PassFatPointerAndDecode, PassFatPointerAndRead,
+		PassPointerAndReadCopy,
+	},
+	runtime_interface,
+};
 
 use crate::poseidon::PoseidonJubjub;
 use crate::{
@@ -41,8 +46,7 @@ impl RuntimePublic for Public {
 	}
 
 	fn sign<M: AsRef<[u8]>>(&self, key_type: KeyTypeId, msg: &M) -> Option<Self::Signature> {
-		let crypto_id = CRYPTO_ID;
-		let bytes = sp_io::generic_crypto::sign_with(key_type, crypto_id.0, &self.0, msg.as_ref())?;
+		let bytes = sp_io::generic_crypto::sign_with(key_type, CRYPTO_ID.0, &self.0, msg.as_ref())?;
 
 		Signature::try_from(bytes.as_ref()).ok()
 	}

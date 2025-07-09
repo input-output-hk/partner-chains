@@ -18,6 +18,7 @@ sc-keystore = { workspace = true, optional = true }
 sp-core = { workspace = true, features = ["serde"] }
 sp-application-crypto = { workspace = true }
 sp-consensus-beefy = { workspace = true }
+sp-crypto-hashing = { workspace = true }
 sp-runtime = { workspace = true }
 sp-runtime-interface = { workspace = true }
 sp-io = { workspace = true }
@@ -59,6 +60,7 @@ std = [
     "sp-core/std",
     "sp-application-crypto/std",
     "sp-consensus-beefy/std",
+    "sp-crypto-hashing/std",
     "sp-runtime/std",
     "sp-runtime-interface/std",
     "sp-io/std",

@@ -6,17 +6,21 @@
 //! protocol, ensuring compatibility with Substrate's runtime and cryptographic
 //! infrastructure.
 
-use alloc::{format, vec::Vec, string::String};
+use alloc::{format, string::String, vec::Vec};
 use core::fmt::{Debug, Display, Formatter};
 
+use crate::alloc::string::ToString;
 use crate::poseidon::PoseidonJubjub;
 use ark_ec::AffineRepr;
 use ark_ed_on_bls12_381::{EdwardsAffine, Fr};
 use ark_ff::fields::Field;
 use ark_serialize::CanonicalSerialize;
-use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use core::str::FromStr;
+use num_bigint::BigUint;
+use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
 use sha2::Digest;
 use sp_consensus_beefy::{AuthorityIdBound, BeefyAuthorityId};
+use sp_core::crypto::key_types::BEEFY;
 use sp_core::{
 	ByteArray, Decode, DecodeWithMemTracking, DeriveJunction, Encode, MaxEncodedLen,
 	Pair as TraitPair,
@@ -33,16 +37,10 @@ use sp_runtime::{
 
 use sp_core::crypto::Ss58Codec;
 
-use crate::primitive::{SchnorrSignature, VerifyingKey};
+use crate::primitive::{mod_p, SchnorrSignature, VerifyingKey};
 
 /// Constant to represent the primitive of Schnorr over JubJub
 pub const CRYPTO_ID: CryptoTypeId = CryptoTypeId(*b"jubP");
-
-/// Constant to represent the primitive of Schnorr over JubJub
-pub const SCHNORR_KEYTYPE_ID: KeyTypeId = KeyTypeId(*b"jubP");
-
-/// The byte length of secret key seed.
-pub const SEED_SERIALIZED_SIZE: usize = 32;
 
 /// The byte length of serialized public key.
 pub const PUBLIC_SERIALIZED_SIZE: usize = 32;
@@ -99,10 +97,6 @@ impl<'de> Deserialize<'de> for Public {
 	{
 		Public::from_ss58check(&String::deserialize(deserializer)?)
 			.map_err(|e| de::Error::custom(format!("{:?}", e)))
-		// let bytes: &[u8] = Deserialize::deserialize(deserializer)?;
-		// let key = Self::try_from(bytes)
-		// 	.map_err(|_| serde::de::Error::custom("invalid public key bytes"))?;
-		// Ok(key)
 	}
 }
 
@@ -152,7 +146,7 @@ impl CryptoType for Public {
 }
 
 impl AppCrypto for Public {
-	const ID: KeyTypeId = SCHNORR_KEYTYPE_ID;
+	const ID: KeyTypeId = BEEFY;
 	const CRYPTO_ID: CryptoTypeId = CRYPTO_ID;
 	type Public = Public;
 	type Signature = Signature;
@@ -227,7 +221,7 @@ impl<'a> TryFrom<&'a [u8]> for Signature {
 }
 
 impl AppCrypto for Signature {
-	const ID: KeyTypeId = SCHNORR_KEYTYPE_ID;
+	const ID: KeyTypeId = BEEFY;
 	const CRYPTO_ID: CryptoTypeId = CRYPTO_ID;
 	type Public = Public;
 	type Signature = Signature;
@@ -263,35 +257,43 @@ impl TraitPair for crate::primitive::KeyPair {
 
 	fn derive<Iter: Iterator<Item = DeriveJunction>>(
 		&self,
-		_path: Iter,
-		_seed: Option<Self::Seed>,
+		path: Iter,
+		seed: Option<Self::Seed>,
 	) -> Result<(Self, Option<Self::Seed>), DeriveError> {
-		unimplemented!()
+		let mut acc =
+			seed.expect("Well this was unexpected. We are assuming we are given the seed.");
+
+		for j in path {
+			match j {
+				DeriveJunction::Soft(_cc) => return Err(DeriveError::SoftKeyInPath),
+				DeriveJunction::Hard(cc) => {
+					acc = ("SchnorrJubJubHDKD", acc, cc)
+						.using_encoded(sp_crypto_hashing::blake2_256)
+						.to_vec();
+				},
+			}
+		}
+		Ok((Self::from_seed(&acc), Some(acc)))
 	}
 
 	fn from_seed_slice(seed: &[u8]) -> Result<Self, SecretStringError> {
-		let h = sha2::Sha512::digest(&seed);
+		let hashed_seed: [u8; 64] = sha2::Sha512::digest(&seed).as_slice().try_into().unwrap();
 
-		let secret = Fr::from_random_bytes(h.as_slice())
-			.expect("Failed to deserialize random bytes. This is a bug.");
+		let secret = mod_p(&hashed_seed);
 		Ok(Self { 0: secret, 1: (EdwardsAffine::generator() * &secret).into() })
 	}
 
 	#[cfg(feature = "full_crypto")]
 	fn sign(&self, message: &[u8]) -> Self::Signature {
 		let msg = PoseidonJubjub::msg_from_bytes(message, false)
-			.expect("With flag set to false, this should not fail. Report a bug.");
+			.expect("With flag set to false, this should not fail. Please report a bug.");
 
-		let shcnorr_sig = self.sign(&msg);
-
-		let bytes = shcnorr_sig.to_bytes();
-
-		Signature(SignatureBytes::from_raw(bytes))
+		Signature(SignatureBytes::from_raw(self.sign(&msg).to_bytes()))
 	}
 
 	fn verify<M: AsRef<[u8]>>(sig: &Self::Signature, message: M, pubkey: &Self::Public) -> bool {
 		let msg = PoseidonJubjub::msg_from_bytes(message.as_ref(), false)
-			.expect("With flag set to false, this should not fail. Report a bug.");
+			.expect("With flag set to false, this should not fail. Please report a bug.");
 
 		let sig = SchnorrSignature::from_bytes(sig.as_ref());
 		let pubkey = VerifyingKey::from_bytes(pubkey.as_ref());
@@ -312,6 +314,14 @@ impl TraitPair for crate::primitive::KeyPair {
 		Public(PublicBytes::from(bytes))
 	}
 
+	fn from_string_with_seed(
+		s: &str,
+		_password_override: Option<&str>,
+	) -> Result<(Self, Option<Self::Seed>), SecretStringError> {
+		// TODO: unsure what we need to do here
+		Ok((Self::from_seed_slice(s.as_bytes())?, Some(s.as_bytes().to_vec())))
+	}
+
 	fn to_raw_vec(&self) -> Vec<u8> {
 		let mut res = Vec::with_capacity(64);
 		self.0.serialize_compressed(&mut res).expect("Failed to serialize.");
@@ -322,7 +332,7 @@ impl TraitPair for crate::primitive::KeyPair {
 }
 
 impl AppCrypto for crate::primitive::KeyPair {
-	const ID: KeyTypeId = SCHNORR_KEYTYPE_ID;
+	const ID: KeyTypeId = BEEFY;
 	const CRYPTO_ID: CryptoTypeId = CRYPTO_ID;
 	type Public = Public;
 	type Signature = Signature;
@@ -347,7 +357,7 @@ impl AppPair for crate::primitive::KeyPair {
 
 /// The raw secret seed, which can be used to reconstruct the secret
 /// [`crate::primitive::KeyPair`].
-type Seed = [u8; SEED_SERIALIZED_SIZE];
+type Seed = Vec<u8>;
 
 impl BeefyAuthorityId<PoseidonJubjub> for Public {
 	fn verify(&self, signature: &<Self as RuntimeAppPublic>::Signature, msg: &[u8]) -> bool {
