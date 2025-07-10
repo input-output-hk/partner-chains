@@ -10,6 +10,10 @@ use sp_core::{ed25519, sr25519};
 use sp_runtime::AccountId32;
 
 impl PartnerChainRuntime for MockRuntime {
+	type AuthorityId = sp_core::ecdsa::Public;
+	type AuthorityKeys = (sr25519::Public, sp_core::ecdsa::Public, ed25519::Public);
+	type CommitteeMember = (sp_core::ecdsa::Public, (sr25519::Public, sp_core::ecdsa::Public, ed25519::Public));
+
 	fn create_chain_spec(config: &super::CreateChainSpecConfig) -> serde_json::Value {
 		serde_json::json!({
 			"session":config.pallet_partner_chains_session_config::<MockRuntime, _>(to_test_session_keys),
@@ -23,12 +27,12 @@ impl PartnerChainRuntime for MockRuntime {
 
 fn to_committee_member(
 	keys: &ParsedPermissionedCandidatesKeys,
-) -> (AccountId32, (sr25519::Public, ed25519::Public)) {
-	(keys.account_id_32(), (keys.aura, keys.grandpa))
+) -> (sp_core::ecdsa::Public, (sr25519::Public, sp_core::ecdsa::Public, ed25519::Public)) {
+	(keys.sidechain, (keys.aura, keys.beefy, keys.grandpa))
 }
 
-fn to_test_session_keys(keys: &ParsedPermissionedCandidatesKeys) -> (AccountId32, TestSessionKeys) {
-	(keys.account_id_32(), TestSessionKeys { aura: keys.aura.into(), grandpa: keys.grandpa.into() })
+fn to_test_session_keys(keys: &ParsedPermissionedCandidatesKeys) -> (sp_core::ecdsa::Public, TestSessionKeys) {
+	(keys.sidechain, TestSessionKeys { aura: keys.aura.into(), beefy: keys.beefy.into(), grandpa: keys.grandpa.into() })
 }
 
 fn create_chain_spec_cmd() -> CreateChainSpecCmd<MockRuntime> {
@@ -101,11 +105,13 @@ fn test_config_content() -> serde_json::Value {
 		"initial_permissioned_candidates": [
 			{
 			  "aura_pub_key": "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d",
+			  "beefy_pub_key": "0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1",
 			  "grandpa_pub_key": "0x88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee",
 			  "sidechain_pub_key": "0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1"
 			},
 			{
 			  "aura_pub_key": "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
+			  "beefy_pub_key": "0x0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27",
 			  "grandpa_pub_key": "0xd17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69",
 			  "sidechain_pub_key": "0x0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27"
 			}

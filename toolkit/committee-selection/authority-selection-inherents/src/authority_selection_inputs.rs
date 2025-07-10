@@ -48,6 +48,18 @@ pub enum AuthoritySelectionInputsCreationError {
 	GetEpochNonceQuery(McEpochNumber, Box<dyn std::error::Error + Send + Sync>),
 }
 
+/// Permissioned candidate data from Cardano main chain
+pub struct RawPermissionedCandidateData {
+	/// Unvalidated Partner Chain public key of permissioned candidate
+	pub sidechain_public_key: SidechainPublicKey,
+	/// Unvalidated Aura public key of permissioned candidate
+	pub aura_public_key: AuraPublicKey,
+	/// Unvalidated Beefy public key of permissioned candidate
+	pub beefy_public_key: BeefyPublicKey,
+	/// Unvalidated Grandpa public key of permissioned candidate
+	pub grandpa_public_key: GrandpaPublicKey,
+}
+
 #[derive(Debug, Clone, PartialEq, serde::Serialize)]
 /// Ariadne selection algorithm parameters owned by the Partner Chain Governance Authority.
 pub struct AriadneParameters {
@@ -140,6 +152,7 @@ impl AuthoritySelectionInputs {
 				.map(|candidate| PermissionedCandidateData {
 					sidechain_public_key: candidate.sidechain_public_key,
 					aura_public_key: candidate.aura_public_key,
+					beefy_public_key: candidate.beefy_public_key,
 					grandpa_public_key: candidate.grandpa_public_key,
 				})
 				.collect::<Vec<PermissionedCandidateData>>(),

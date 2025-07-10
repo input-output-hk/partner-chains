@@ -720,10 +720,14 @@ fn verify_cli() {
 
 	struct MockRuntime;
 	impl PartnerChainRuntime for MockRuntime {
-		fn create_chain_spec(_: &crate::CreateChainSpecConfig) -> serde_json::Value {
-			serde_json::json!({})
-		}
+	type AuthorityId = sp_core::ecdsa::Public;
+	type AuthorityKeys = (sp_core::sr25519::Public, sp_core::ecdsa::Public, sp_core::ed25519::Public);
+	type CommitteeMember = (sp_core::ecdsa::Public, (sp_core::sr25519::Public, sp_core::ecdsa::Public, sp_core::ed25519::Public));
+
+	fn create_chain_spec(_: &crate::CreateChainSpecConfig) -> serde_json::Value {
+		serde_json::json!({})
 	}
+}
 
 	crate::Command::<MockRuntime>::command().debug_assert()
 }

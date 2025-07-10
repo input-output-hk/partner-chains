@@ -14,6 +14,7 @@ use hex_literal::hex;
 use plutus::ToDatum;
 use sidechain_domain::*;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
+use sp_consensus_beefy::ecdsa_crypto::AuthorityId as BeefyId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
 use sp_core::crypto::CryptoType;
 use sp_core::sr25519;
@@ -111,15 +112,19 @@ pub const SLOTS_PER_EPOCH: u32 = 7;
 impl_opaque_keys! {
 	#[derive(MaxEncodedLen, PartialOrd, Ord)]
 	pub struct TestSessionKeys {
-		pub aura: Aura,
-		pub grandpa: Grandpa,
+		pub aura: AuraId,
+		pub beefy: BeefyId,
+		pub grandpa: GrandpaId,
 	}
 }
-impl From<(sr25519::Public, ed25519::Public)> for TestSessionKeys {
-	fn from((aura, grandpa): (sr25519::Public, ed25519::Public)) -> Self {
+impl From<(sr25519::Public, sp_core::ecdsa::Public, ed25519::Public)> for TestSessionKeys {
+	fn from(
+		(aura, beefy, grandpa): (sr25519::Public, sp_core::ecdsa::Public, ed25519::Public),
+	) -> Self {
 		let aura = AuraId::from(aura);
+		let beefy = BeefyId::from(beefy);
 		let grandpa = GrandpaId::from(grandpa);
-		Self { aura, grandpa }
+		Self { aura, beefy, grandpa }
 	}
 }
 
@@ -342,6 +347,7 @@ pub fn create_inherent_data_struct(
 				),
 				cross_chain_pub_key: CrossChainPublicKey(vec![]),
 				aura_pub_key: AuraPublicKey(validator.aura.public().as_slice().into()),
+				beefy_pub_key: BeefyPublicKey(validator.beefy.public().as_slice().into()),
 				grandpa_pub_key: GrandpaPublicKey(validator.grandpa.public().as_slice().into()),
 				utxo_info: UtxoInfo::default(),
 				tx_inputs: vec![signed_message.registration_utxo],
@@ -377,18 +383,28 @@ const BOB_SEED: &str = "//2";
 pub struct TestKeys {
 	pub cross_chain: CrossChainPair,
 	pub aura: sp_consensus_aura::sr25519::AuthorityPair,
+	pub beefy: sp_core::ecdsa::Pair,
 	pub grandpa: sp_consensus_grandpa::AuthorityPair,
 }
 
 impl TestKeys {
 	pub fn from_seed(s: &str) -> Self {
-		Self { cross_chain: pair_from_seed(s), aura: pair_from_seed(s), grandpa: pair_from_seed(s) }
+		Self {
+			cross_chain: pair_from_seed(s),
+			aura: pair_from_seed(s),
+			beefy: pair_from_seed(s),
+			grandpa: pair_from_seed(s),
+		}
 	}
 	pub fn account(&self) -> AccountId32 {
 		MultiSigner::from(sp_core::ecdsa::Public::from(self.cross_chain.public())).into_account()
 	}
 	pub fn session(&self) -> TestSessionKeys {
-		TestSessionKeys { aura: self.aura.public(), grandpa: self.grandpa.public() }
+		TestSessionKeys {
+			aura: self.aura.public(),
+			beefy: self.beefy.public(),
+			grandpa: self.grandpa.public(),
+		}
 	}
 }
 

@@ -7,9 +7,9 @@ use frame_system::EnsureRoot;
 use pallet_partner_chains_session::{SessionHandler, ShouldEndSession};
 use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sidechain_domain::{ScEpochNumber, ScSlotNumber};
-use sp_core::{ConstU16, ConstU32, ConstU64, H256, ed25519, sr25519};
+use sp_core::{ConstU16, ConstU32, ConstU64, H256, ecdsa, ed25519, sr25519};
 use sp_runtime::{AccountId32, traits::OpaqueKeys};
 
 #[derive(
@@ -30,6 +30,7 @@ use sp_runtime::{AccountId32, traits::OpaqueKeys};
 )]
 pub struct TestSessionKeys {
 	pub aura: sr25519::Public,
+	pub beefy: ecdsa::Public,
 	pub grandpa: ed25519::Public,
 }
 
@@ -141,11 +142,11 @@ pub(crate) type MaxValidators = ConstU32<137>;
 impl pallet_session_validator_management::Config for MockRuntime {
 	type RuntimeEvent = RuntimeEvent;
 	type MaxValidators = MaxValidators;
-	type AuthorityId = AccountId32;
-	type AuthorityKeys = (sr25519::Public, ed25519::Public);
+	type AuthorityId = sr25519::Public;
+	type AuthorityKeys = (sr25519::Public, ecdsa::Public, ed25519::Public);
 	type AuthoritySelectionInputs = ();
 	type ScEpochNumber = ScEpochNumber;
-	type CommitteeMember = (AccountId32, (sr25519::Public, ed25519::Public));
+	type CommitteeMember = (sr25519::Public, (sr25519::Public, ecdsa::Public, ed25519::Public));
 	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
 	type WeightInfo = ();
 
@@ -163,7 +164,7 @@ impl pallet_session_validator_management::Config for MockRuntime {
 
 impl pallet_partner_chains_session::Config for MockRuntime {
 	type RuntimeEvent = RuntimeEvent;
-	type ValidatorId = AccountId32;
+	type ValidatorId = sr25519::Public;
 	type ShouldEndSession = Mock;
 	type NextSessionRotation = ();
 	type SessionManager = ();
@@ -177,15 +178,15 @@ impl ShouldEndSession<u64> for Mock {
 	}
 }
 
-impl SessionHandler<AccountId32> for Mock {
+impl SessionHandler<sr25519::Public> for Mock {
 	const KEY_TYPE_IDS: &'static [sp_runtime::KeyTypeId] = &[];
 
-	fn on_genesis_session<Ks: sp_runtime::traits::OpaqueKeys>(_: &[(AccountId32, Ks)]) {}
+	fn on_genesis_session<Ks: sp_runtime::traits::OpaqueKeys>(_: &[(sr25519::Public, Ks)]) {}
 
 	fn on_new_session<Ks: sp_runtime::traits::OpaqueKeys>(
 		_changed: bool,
-		_validators: &[(AccountId32, Ks)],
-		_queued_validators: &[(AccountId32, Ks)],
+		_validators: &[(sr25519::Public, Ks)],
+		_queued_validators: &[(sr25519::Public, Ks)],
 	) {
 	}
 

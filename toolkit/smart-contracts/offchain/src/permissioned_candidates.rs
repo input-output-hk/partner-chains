@@ -26,7 +26,7 @@ use ogmios_client::types::OgmiosUtxo;
 use partner_chains_plutus_data::permissioned_candidates::{
 	PermissionedCandidateDatums, permissioned_candidates_to_plutus_data,
 };
-use sidechain_domain::{PermissionedCandidateData, UtxoId};
+use sidechain_domain::*;
 
 /// Upserts permissioned candidates list.
 /// Arguments:
@@ -298,7 +298,8 @@ mod tests {
 	use ogmios_client::types::{Asset as OgmiosAsset, OgmiosTx, OgmiosUtxo, OgmiosValue};
 	use partner_chains_plutus_data::permissioned_candidates::permissioned_candidates_to_plutus_data;
 	use sidechain_domain::{
-		AuraPublicKey, GrandpaPublicKey, PermissionedCandidateData, SidechainPublicKey,
+		AuraPublicKey, BeefyPublicKey, GrandpaPublicKey, PermissionedCandidateData,
+		SidechainPublicKey,
 	};
 
 	#[test]
@@ -535,6 +536,10 @@ mod tests {
 				aura_public_key: AuraPublicKey(
 					hex!("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb").into(),
 				),
+				beefy_public_key: BeefyPublicKey(
+					hex!("03bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
+						.into(),
+				),
 				grandpa_public_key: GrandpaPublicKey(
 					hex!("cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc").into(),
 				),
@@ -546,6 +551,10 @@ mod tests {
 				),
 				aura_public_key: AuraPublicKey(
 					hex!("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee").into(),
+				),
+				beefy_public_key: BeefyPublicKey(
+					hex!("03eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
+						.into(),
 				),
 				grandpa_public_key: GrandpaPublicKey(
 					hex!("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").into(),

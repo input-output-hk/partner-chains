@@ -31,10 +31,10 @@ use partner_chains_cardano_offchain::{
 };
 use partner_chains_plutus_data::reserve::ReserveDatum;
 use sidechain_domain::{
-	AdaBasedStaking, AssetId, AssetName, AuraPublicKey, CandidateRegistration, DParameter,
-	GrandpaPublicKey, MainchainKeyHash, MainchainSignature, McTxHash, PermissionedCandidateData,
-	PolicyId, SidechainPublicKey, SidechainSignature, StakePoolPublicKey, UtxoId, UtxoIndex,
-	byte_string::ByteString,
+	AdaBasedStaking, AssetId, AssetName, AuraPublicKey, BeefyPublicKey, CandidateRegistration,
+	DParameter, GrandpaPublicKey, MainchainKeyHash, MainchainSignature, McTxHash,
+	PermissionedCandidateData, PolicyId, SidechainPublicKey, SidechainSignature,
+	StakePoolPublicKey, UtxoId, UtxoIndex, byte_string::ByteString,
 };
 use std::time::Duration;
 use testcontainers::{Container, GenericImage, clients::Cli};
@@ -548,6 +548,7 @@ fn make_candidate(n: u8) -> PermissionedCandidateData {
 	PermissionedCandidateData {
 		sidechain_public_key: SidechainPublicKey([n; 33].to_vec()),
 		aura_public_key: AuraPublicKey([n; 32].to_vec()),
+		beefy_public_key: BeefyPublicKey([n; 33].to_vec()),
 		grandpa_public_key: GrandpaPublicKey([n; 32].to_vec()),
 	}
 }
@@ -693,6 +694,7 @@ async fn run_register<T: QueryLedgerState + Transactions + QueryNetwork + QueryU
 			own_pkh: EVE_PUBLIC_KEY_HASH,
 			registration_utxo,
 			aura_pub_key: AuraPublicKey([22u8; 32].to_vec()),
+			beefy_pub_key: BeefyPublicKey([21u8; 33].to_vec()),
 			grandpa_pub_key: GrandpaPublicKey([23u8; 32].to_vec()),
 		},
 		&eve_payment_key(),

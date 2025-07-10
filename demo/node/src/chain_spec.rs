@@ -39,14 +39,14 @@ pub fn runtime_wasm() -> &'static [u8] {
 fn permissioned_candidate_to_committee_member(
 	keys: &ParsedPermissionedCandidatesKeys,
 ) -> CommitteeMember<CrossChainPublic, SessionKeys> {
-	let session_keys = (keys.aura, keys.grandpa).into();
+	let session_keys = (keys.aura, keys.beefy, keys.grandpa).into();
 	CommitteeMember::permissioned(keys.sidechain.try_into().unwrap(), session_keys)
 }
 
 fn permissioned_candidate_to_pallet_partner_chains_session_keys(
 	keys: &ParsedPermissionedCandidatesKeys,
 ) -> (AccountId, SessionKeys) {
-	let session_keys = (keys.aura, keys.grandpa).into();
+	let session_keys = (keys.aura, keys.beefy, keys.grandpa).into();
 	(keys.account_id_32(), session_keys)
 }
 
@@ -59,6 +59,7 @@ pub fn pc_create_chain_spec(config: &CreateChainSpecConfig) -> serde_json::Value
 		balances: partner_chains_demo_runtime::BalancesConfig::default(),
 		aura: partner_chains_demo_runtime::AuraConfig::default(),
 		grandpa: partner_chains_demo_runtime::GrandpaConfig::default(),
+		beefy: partner_chains_demo_runtime::BeefyConfig::default(),
 		sudo: partner_chains_demo_runtime::SudoConfig::default(),
 		transaction_payment: Default::default(),
 		session: config.pallet_partner_chains_session_config(

@@ -322,6 +322,7 @@ mod get_registration_tests {
 		sidechain_domain::PermissionedCandidateData {
 			sidechain_public_key: SidechainPublicKey(vec![1; 33]),
 			aura_public_key: AuraPublicKey(vec![2; 32]),
+			beefy_public_key: BeefyPublicKey(vec![4; 33]),
 			grandpa_public_key: GrandpaPublicKey(vec![3; 32]),
 		}
 	}

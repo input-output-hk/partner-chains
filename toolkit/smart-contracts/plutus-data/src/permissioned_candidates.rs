@@ -7,6 +7,8 @@ use crate::{
 	VersionedGenericDatum, candidate_keys::*,
 };
 
+const BEEFY_TYPE_ID: [u8; 4] = *b"beef";
+
 #[derive(Clone, Debug, PartialEq)]
 /// Datum representing a list of permissioned candidates.
 pub enum PermissionedCandidateDatums {
@@ -23,6 +25,8 @@ pub struct PermissionedCandidateDatumV0 {
 	pub sidechain_public_key: SidechainPublicKey,
 	/// Aura public key of the trustless candidate
 	pub aura_public_key: AuraPublicKey,
+	/// BEEFY public key of the trustless candidate
+	pub beefy_public_key: BeefyPublicKey,
 	/// GRANDPA public key of the trustless candidate
 	pub grandpa_public_key: GrandpaPublicKey,
 }
@@ -35,8 +39,14 @@ impl From<PermissionedCandidateDatumV1> for PermissionedCandidateData {
 		let sidechain_public_key = SidechainPublicKey(partner_chains_key.1);
 		let aura_public_key = AuraPublicKey(find_or_empty(&keys, AURA_TYPE_ID));
 		let grandpa_public_key = GrandpaPublicKey(find_or_empty(&keys, GRANDPA_TYPE_ID));
+		let beefy_public_key = BeefyPublicKey(find_or_empty(&keys, &BEEFY_TYPE_ID));
 
-		PermissionedCandidateData { sidechain_public_key, aura_public_key, grandpa_public_key }
+		PermissionedCandidateData {
+			sidechain_public_key,
+			aura_public_key,
+			grandpa_public_key,
+			beefy_public_key,
+		}
 	}
 }
 
@@ -61,6 +71,7 @@ impl From<PermissionedCandidateDatumV0> for PermissionedCandidateData {
 		Self {
 			sidechain_public_key: value.sidechain_public_key,
 			aura_public_key: value.aura_public_key,
+			beefy_public_key: value.beefy_public_key,
 			grandpa_public_key: value.grandpa_public_key,
 		}
 	}
@@ -84,11 +95,13 @@ impl From<PermissionedCandidateDatums> for Vec<PermissionedCandidateData> {
 ///     [
 ///       [ candidates[0].sidechain_public_key
 ///       , candidates[0].aura_public_key
+///       , candidates[0].beefy_public_key
 ///       , candidates[0].grandpa_public_key
 ///       ]
 ///     ,
 ///       [ candidates[1].sidechain_public_key
 ///       , candidates[1].aura_public_key
+///       , candidates[1].beefy_public_key
 ///       , candidates[1].grandpa_public_key
 ///       ]
 ///       // etc.
@@ -102,6 +115,7 @@ pub fn permissioned_candidates_to_plutus_data(
 		let mut candidate_datum = PlutusList::new();
 		candidate_datum.add(&PlutusData::new_bytes(candidate.sidechain_public_key.0.clone()));
 		candidate_datum.add(&PlutusData::new_bytes(candidate.aura_public_key.0.clone()));
+		candidate_datum.add(&PlutusData::new_bytes(candidate.beefy_public_key.0.clone()));
 		candidate_datum.add(&PlutusData::new_bytes(candidate.grandpa_public_key.0.clone()));
 		list.add(&PlutusData::new_list(&candidate_datum));
 	}
@@ -143,7 +157,7 @@ impl VersionedDatumWithLegacy for PermissionedCandidateDatums {
 					.map(decode_legacy_candidate_datum)
 					.collect::<Option<Vec<PermissionedCandidateDatumV0>>>()
 			})
-			.ok_or("Expected [[ByteString, ByteString, ByteString]]")?;
+			.ok_or("Expected [[ByteString, ByteString, ByteString, ByteString]]")?;
 
 		Ok(Self::V0(permissioned_candidates))
 	}
@@ -165,15 +179,17 @@ impl VersionedDatumWithLegacy for PermissionedCandidateDatums {
 
 /// Decodes whatever looks syntactically correct, leaving validation for runtime.
 fn decode_legacy_candidate_datum(datum: &PlutusData) -> Option<PermissionedCandidateDatumV0> {
-	let datums = datum.as_list().filter(|datums| datums.len() == 3)?;
+	let datums = datum.as_list().filter(|datums| datums.len() == 4)?;
 
 	let sc = datums.get(0).as_bytes()?;
 	let aura = datums.get(1).as_bytes()?;
-	let grandpa = datums.get(2).as_bytes()?;
+	let beefy = datums.get(2).as_bytes()?;
+	let grandpa = datums.get(3).as_bytes()?;
 
 	Some(PermissionedCandidateDatumV0 {
 		sidechain_public_key: SidechainPublicKey(sc),
 		aura_public_key: AuraPublicKey(aura),
+		beefy_public_key: BeefyPublicKey(beefy),
 		grandpa_public_key: GrandpaPublicKey(grandpa),
 	})
 }
@@ -217,6 +233,10 @@ mod tests {
 				aura_public_key: AuraPublicKey(
 					hex!("bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec").into(),
 				),
+				beefy_public_key: BeefyPublicKey(
+					hex!("0261eca4c3c2a8d93b14624b28b08fc4d7ba3ad95e4fc4ca2eec48eaac68b0b988")
+						.into(),
+				),
 				grandpa_public_key: GrandpaPublicKey(
 					hex!("9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d").into(),
 				),
@@ -227,6 +247,10 @@ mod tests {
 				),
 				aura_public_key: AuraPublicKey(
 					hex!("56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19").into(),
+				),
+				beefy_public_key: BeefyPublicKey(
+					hex!("0361eca4c3c2a8d93b14624b28b08fc4d7ba3ad95e4fc4ca2eec48eaac68b0b988")
+						.into(),
 				),
 				grandpa_public_key: GrandpaPublicKey(
 					hex!("7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32").into(),
@@ -297,6 +321,10 @@ mod tests {
 					hex!("bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec")
 						.to_vec(),
 				),
+				beefy_public_key: BeefyPublicKey(
+					hex!("0261eca4c3c2a8d93b14624b28b08fc4d7ba3ad95e4fc4ca2eec48eaac68b0b988")
+						.to_vec(),
+				),
 				grandpa_public_key: GrandpaPublicKey(
 					hex!("9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d")
 						.to_vec(),
@@ -309,6 +337,10 @@ mod tests {
 				),
 				aura_public_key: AuraPublicKey(
 					hex!("56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19")
+						.to_vec(),
+				),
+				beefy_public_key: BeefyPublicKey(
+					hex!("0361eca4c3c2a8d93b14624b28b08fc4d7ba3ad95e4fc4ca2eec48eaac68b0b988")
 						.to_vec(),
 				),
 				grandpa_public_key: GrandpaPublicKey(
@@ -332,6 +364,10 @@ mod tests {
 				aura_public_key: AuraPublicKey(
 					hex!("bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec").into(),
 				),
+				beefy_public_key: BeefyPublicKey(
+					hex!("0261eca4c3c2a8d93b14624b28b08fc4d7ba3ad95e4fc4ca2eec48eaac68b0b988")
+						.into(),
+				),
 				grandpa_public_key: GrandpaPublicKey(
 					hex!("9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d").into(),
 				),
@@ -342,6 +378,10 @@ mod tests {
 				),
 				aura_public_key: AuraPublicKey(
 					hex!("56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19").into(),
+				),
+				beefy_public_key: BeefyPublicKey(
+					hex!("0361eca4c3c2a8d93b14624b28b08fc4d7ba3ad95e4fc4ca2eec48eaac68b0b988")
+						.into(),
 				),
 				grandpa_public_key: GrandpaPublicKey(
 					hex!("7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32").into(),
