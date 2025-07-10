@@ -32,16 +32,8 @@ impl PlutusScript {
 		Self { bytes: cbor.into(), language }
 	}
 
-	/// This function is needed to create [PlutusScript] from scripts in [raw_scripts],
-	/// which are encoded as a cbor byte string containing the cbor of the script
-	/// itself. This function removes this layer of wrapping.
-	/// Language for all scrips in [raw_scripts] is [LanguageKind::PlutusV2].
-	pub fn from_wrapped_cbor(plutus_script_raw_cbor: &[u8]) -> anyhow::Result<Self> {
-		let plutus_script_bytes: uplc::PlutusData = minicbor::decode(plutus_script_raw_cbor)?;
-		let plutus_script_bytes = match plutus_script_bytes {
-			uplc::PlutusData::BoundedBytes(bb) => Ok(bb),
-			_ => Err(anyhow!("expected validator raw to be BoundedBytes")),
-		}?;
+	/// Constructs a V2 [PlutusScript].
+	pub fn v2_from_cbor(plutus_script_bytes: &[u8]) -> anyhow::Result<Self> {
 		Ok(Self::from_cbor(&plutus_script_bytes, Language::new_plutus_v2()))
 	}
 
@@ -184,7 +176,7 @@ impl From<PlutusScript> for ogmios_client::types::OgmiosScript {
 
 impl From<raw_scripts::RawScript> for PlutusScript {
 	fn from(value: raw_scripts::RawScript) -> Self {
-		PlutusScript::from_wrapped_cbor(value.0).expect("raw_scripts provides valid scripts")
+		PlutusScript::v2_from_cbor(value.0).expect("raw_scripts provides valid scripts")
 	}
 }
 

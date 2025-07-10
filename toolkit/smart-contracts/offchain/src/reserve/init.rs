@@ -90,7 +90,7 @@ struct ScriptData {
 impl ScriptData {
 	fn new(name: &str, raw_bytes: Vec<u8>, id: ScriptId) -> Self {
 		let plutus_script =
-			PlutusScript::from_wrapped_cbor(&raw_bytes).expect("Plutus script should be valid");
+			PlutusScript::v2_from_cbor(&raw_bytes).expect("Plutus script should be valid");
 		Self { name: name.to_string(), plutus_script, id: id as u32 }
 	}
 
