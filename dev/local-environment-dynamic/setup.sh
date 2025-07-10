@@ -287,22 +287,6 @@ EOF
     fi
 }
 
-choose_deployment_option() {
-  echo "===== CUSTOM STACK MODIFICATIONS ========"
-  read -p "Make custom modification to the stack? (Y/N): " modify_stack
-  if [[ $modify_stack =~ ^[Yy]$ ]]; then
-    echo "Choose your deployment option:"
-    echo "1) Include only Cardano testnet"
-    echo "2) Include Cardano testnet with Ogmios"
-    echo "3) Include Cardano testnet, Ogmios, DB-Sync and Postgres"
-    echo "4) Deploy a single Partner Chains node with network_mode: "host" for external connections (adjust partner-chains-external-node.txt before running this script)"
-    read -p "Enter your choice (1/2/3/4): " deployment_option
-  else
-    deployment_option=0
-  fi
-  echo
-}
-
 generate_node_configurations() {
     # Create directories for node configurations
     mkdir -p configurations/partner-chains-nodes
@@ -563,7 +547,7 @@ EOF
 
 create_docker_compose() {
     local mode=$1
-    local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    local script_dir; script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
     if [ "$mode" == "interactive" ]; then
         echo "===== DOCKER-COMPOSE.YML CREATION ============"
@@ -600,12 +584,13 @@ networks:
     driver: bridge
 EOF
 
-    echo -e "docker-compose.yml file created successfully.\n"
+    if [ "$mode" != "non-interactive" ]; then
+      echo -e "docker-compose.yml file created successfully.\n"
+    fi
 }
 
 parse_arguments() {
     non_interactive=0
-    deployment_option=0
     postgres_password=""
 
     while [[ $# -gt 0 ]]; do
@@ -613,15 +598,6 @@ parse_arguments() {
             -n|--non-interactive)
                 non_interactive=1
                 shift
-                ;;
-            -d|--deployment-option)
-                if [[ -n "$2" && "$2" =~ ^[1-4]$ ]]; then
-                    deployment_option="$2"
-                    shift 2
-                else
-                    echo "Error: Invalid deployment option '$2'. Valid options are 1, 2, 3, or 4."
-                    exit 1
-                fi
                 ;;
             -p|--postgres-password)
                 if [[ -n "$2" ]]; then
@@ -645,7 +621,6 @@ parse_arguments() {
                 echo "Usage: $0 [OPTION]..."
                 echo "Initialize and configure the Docker environment."
                 echo "  -n, --non-interactive     Run with no interactive prompts and accept sensible default configuration settings."
-                echo "  -d, --deployment-option   Specify one of the custom deployment options (1, 2, 3, or 4)."
                 echo "  -p, --postgres-password   Set a specific password for PostgreSQL (overrides automatic generation)."
                 echo "  -i, --node-image          Specify a custom Partner Chains Node image."
                 echo "  -h, --help                Display this help dialogue and exit."
@@ -663,7 +638,6 @@ parse_arguments() {
     done
 
     export non_interactive
-    export deployment_option
     export postgres_password
     export node_image
 }
@@ -685,11 +659,6 @@ main() {
         configure_postgres "interactive"
         configure_ogmios
         resource_limits_setup
-
-        if [ "$deployment_option" -eq 0 ]; then
-            choose_deployment_option
-        fi
-
         configure_env "interactive"
         create_docker_compose "interactive"
     fi
