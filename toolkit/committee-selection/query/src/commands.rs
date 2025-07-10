@@ -50,8 +50,8 @@ mod tests {
 	use hex_literal::hex;
 	use serde_json::Value;
 	use sidechain_domain::{
-		AuraPublicKey, GrandpaPublicKey, McBlockNumber, McSlotNumber, McTxHash, McTxIndexInBlock,
-		SidechainPublicKey, StakePoolPublicKey, UtxoId, UtxoIndex, UtxoInfo,
+		AuraPublicKey, BeefyPublicKey, GrandpaPublicKey, McBlockNumber, McSlotNumber, McTxHash,
+		McTxIndexInBlock, SidechainPublicKey, StakePoolPublicKey, UtxoId, UtxoIndex, UtxoInfo,
 	};
 
 	struct MockSessionValidatorManagementQuery {
@@ -95,6 +95,9 @@ mod tests {
 			),
 			aura_public_key: AuraPublicKey(
 				hex!("90b5ab205c6974c9ea841be688864633dc9ca8a357843eeacf2314649965fe22").to_vec(),
+			),
+			beefy_public_key: BeefyPublicKey(
+				hex!("0344dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee").to_vec(),
 			),
 			grandpa_public_key: GrandpaPublicKey(
 				hex!("439660b36c6c03afafca027b910b4fecf99801834c62a5e6006f27d978de234f").to_vec(),

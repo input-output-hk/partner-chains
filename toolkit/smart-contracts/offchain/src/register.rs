@@ -254,8 +254,9 @@ mod tests {
 	};
 
 	use sidechain_domain::{
-		AdaBasedStaking, AuraPublicKey, CandidateRegistration, GrandpaPublicKey, MainchainKeyHash,
-		MainchainSignature, McTxHash, SidechainPublicKey, SidechainSignature, UtxoId, UtxoIndex,
+		AdaBasedStaking, AuraPublicKey, BeefyPublicKey, CandidateRegistration, GrandpaPublicKey,
+		MainchainKeyHash, MainchainSignature, McTxHash, SidechainPublicKey, SidechainSignature,
+		UtxoId, UtxoIndex,
 	};
 
 	fn sum_lovelace(utxos: &[OgmiosUtxo]) -> u64 {
@@ -279,6 +280,7 @@ mod tests {
 			registration_utxo,
 			own_pkh: own_pkh(),
 			aura_pub_key: AuraPublicKey(Vec::new()),
+			beefy_pub_key: BeefyPublicKey(Vec::new()),
 			grandpa_pub_key: GrandpaPublicKey(Vec::new()),
 		}
 	}

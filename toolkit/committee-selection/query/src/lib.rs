@@ -235,12 +235,10 @@ where
 		let candidate_registrations = self
 			.candidates_registrations_for_epoch(epoch_number, scripts.committee_candidate_address)
 			.await?;
-		let validate_permissioned_candidate = |candidate: &sidechain_domain::PermissionedCandidateData| {
-			api.validate_permissioned_candidate_data(
-				best_block,
-				candidate.clone(),
-			)
-		};
+		let validate_permissioned_candidate =
+			|candidate: &sidechain_domain::PermissionedCandidateData| {
+				api.validate_permissioned_candidate_data(best_block, candidate.clone())
+			};
 
 		let permissioned_candidates = match ariadne_parameters_response.permissioned_candidates {
 			None => None,

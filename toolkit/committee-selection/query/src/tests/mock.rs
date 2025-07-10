@@ -60,6 +60,7 @@ pub fn create_valid_registration_data(
 		sidechain_pub_key: SidechainPublicKey(sidechain_account.public().0.to_vec()),
 		cross_chain_pub_key: CrossChainPublicKey(vec![]),
 		aura_pub_key: AuraPublicKey(vec![1; 32]),
+		beefy_pub_key: BeefyPublicKey(vec![2; 33]),
 		grandpa_pub_key: GrandpaPublicKey(vec![3; 32]),
 		utxo_info: UtxoInfo {
 			utxo_id: UtxoId { tx_hash: McTxHash([7u8; 32]), index: UtxoIndex(7) },

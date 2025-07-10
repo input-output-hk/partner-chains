@@ -83,18 +83,18 @@ impl TryFrom<SidechainPublicKey> for AccountId {
 	Encode,
 	Decode,
 	TypeInfo,
-	MaxEncodedLen,
 	Serialize,
 	Deserialize,
 )]
 pub struct AccountKeys {
 	pub aura: [u8; 32],
+	pub beefy: Vec<u8>,
 	pub grandpa: [u8; 32],
 }
 
-impl From<(sr25519::Public, ed25519::Public)> for AccountKeys {
-	fn from((aura, grandpa): (sr25519::Public, ed25519::Public)) -> Self {
-		Self { aura: aura.0, grandpa: grandpa.0 }
+impl From<(sr25519::Public, ecdsa::Public, ed25519::Public)> for AccountKeys {
+	fn from((aura, beefy, grandpa): (sr25519::Public, ecdsa::Public, ed25519::Public)) -> Self {
+		Self { aura: aura.0, beefy: beefy.0.to_vec(), grandpa: grandpa.0 }
 	}
 }
 
@@ -102,9 +102,15 @@ impl AccountKeys {
 	pub fn from_seed(seed: &str) -> AccountKeys {
 		let mut aura = format!("aura-{seed}").into_bytes();
 		aura.resize(32, 0);
+		let mut beefy = format!("beefy-{seed}").into_bytes();
+		beefy.resize(33, 0);
 		let mut grandpa = format!("grandpa-{seed}").into_bytes();
 		grandpa.resize(32, 0);
-		AccountKeys { aura: aura.try_into().unwrap(), grandpa: grandpa.try_into().unwrap() }
+		AccountKeys { 
+			aura: aura.try_into().unwrap(), 
+			beefy,
+			grandpa: grandpa.try_into().unwrap() 
+		}
 	}
 }
 
@@ -176,6 +182,10 @@ impl MockValidator {
 
 	pub fn grandpa_pub_key(&self) -> GrandpaPublicKey {
 		GrandpaPublicKey(self.session_keys().grandpa.to_vec())
+	}
+
+	pub fn beefy_pub_key(&self) -> BeefyPublicKey {
+		BeefyPublicKey(self.session_keys().beefy.clone())
 	}
 }
 
@@ -392,6 +402,7 @@ fn create_epoch_candidates_idp(validators: &[MockValidator]) -> Vec<CandidateReg
 				cross_chain_signature: CrossChainSignature(sidechain_signature_bytes_no_recovery),
 				sidechain_pub_key: validator.sidechain_pub_key(),
 				aura_pub_key: validator.aura_pub_key(),
+				beefy_pub_key: validator.beefy_pub_key(),
 				grandpa_pub_key: validator.grandpa_pub_key(),
 				cross_chain_pub_key: CrossChainPublicKey(validator.sidechain_pub_key().0),
 				utxo_info: UtxoInfo::default(),
@@ -421,6 +432,7 @@ pub fn create_authority_selection_inputs(
 		.map(|c| PermissionedCandidateData {
 			sidechain_public_key: c.sidechain_pub_key(),
 			aura_public_key: c.aura_pub_key(),
+			beefy_public_key: c.beefy_pub_key(),
 			grandpa_public_key: c.grandpa_pub_key(),
 		})
 		.collect();

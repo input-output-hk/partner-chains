@@ -1,7 +1,5 @@
 use clap::command;
-use partner_chains_node_commands::{
-	PartnerChainRuntime, PartnerChainsSubcommand,
-};
+use partner_chains_node_commands::{PartnerChainRuntime, PartnerChainsSubcommand};
 use sc_cli::RunCmd;
 use sp_runtime::AccountId32;
 
@@ -20,7 +18,8 @@ pub struct WizardBindings;
 impl PartnerChainRuntime for WizardBindings {
 	type AuthorityId = partner_chains_demo_runtime::opaque::cross_chain_app::Public;
 	type AuthorityKeys = partner_chains_demo_runtime::opaque::SessionKeys;
-	type CommitteeMember = authority_selection_inherents::CommitteeMember<Self::AuthorityId, Self::AuthorityKeys>;
+	type CommitteeMember =
+		authority_selection_inherents::CommitteeMember<Self::AuthorityId, Self::AuthorityKeys>;
 
 	fn create_chain_spec(config: &partner_chains_cli::CreateChainSpecConfig) -> serde_json::Value {
 		crate::chain_spec::pc_create_chain_spec(config)

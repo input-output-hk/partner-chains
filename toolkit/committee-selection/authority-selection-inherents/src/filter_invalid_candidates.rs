@@ -435,6 +435,9 @@ mod tests {
 			aura_pub_key: AuraPublicKey(hex!(
 					"d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"
 				).to_vec()),
+			beefy_pub_key: BeefyPublicKey(hex!(
+					"020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1"
+				).to_vec()),
 			grandpa_pub_key: GrandpaPublicKey(hex!(
 					"88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee"
 				).to_vec()),
@@ -503,6 +506,7 @@ mod tests {
 				sidechain_pub_key: SidechainPublicKey(sidechain_pub_key),
 				cross_chain_pub_key: CrossChainPublicKey(vec![]),
 				aura_pub_key: AuraPublicKey(vec![1; 32]),
+				beefy_pub_key: BeefyPublicKey(vec![3; 33]),
 				grandpa_pub_key: GrandpaPublicKey(vec![2; 32]),
 				utxo_info: UtxoInfo {
 					utxo_id: UtxoId { tx_hash: McTxHash([7u8; 32]), index: UtxoIndex(7) },
@@ -658,6 +662,9 @@ mod tests {
 			sidechain_public_key: valid_sidechain_pub_key.clone(),
 			aura_public_key: AuraPublicKey(
 				hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d").into(),
+			),
+			beefy_public_key: BeefyPublicKey(
+				hex!("020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1").into(),
 			),
 			grandpa_public_key: GrandpaPublicKey(
 				hex!("88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee").into(),

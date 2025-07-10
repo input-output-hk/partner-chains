@@ -205,18 +205,18 @@ mod test {
 	use crate::parse_partnerchain_public_keys;
 	use hex_literal::hex;
 	use sidechain_domain::{
-		AuraPublicKey, GrandpaPublicKey, PermissionedCandidateData, SidechainPublicKey,
+		AuraPublicKey, BeefyPublicKey, GrandpaPublicKey, PermissionedCandidateData, SidechainPublicKey,
 	};
 
 	#[test]
 	fn parse_partnerchain_public_keys_with_0x_prefix() {
-		let input = "039799ff93d184146deacaa455dade51b13ed16f23cdad11d1ad6af20103391180:e85534c93315d60f808568d1dce5cb9e8ba6ed0b204209c5cc8f3bec56c10b73:cdf3e5b33f53c8b541bbaea383225c45654f24de38c585725f3cff25b2802f55";
+		let input = "039799ff93d184146deacaa455dade51b13ed16f23cdad11d1ad6af20103391180:e85534c93315d60f808568d1dce5cb9e8ba6ed0b204209c5cc8f3bec56c10b73:039799ff93d184146deacaa455dade51b13ed16f23cdad11d1ad6af20103391180:cdf3e5b33f53c8b541bbaea383225c45654f24de38c585725f3cff25b2802f55";
 		assert_eq!(parse_partnerchain_public_keys(input).unwrap(), expected_public_keys())
 	}
 
 	#[test]
 	fn parse_partnerchain_public_keys_without_0x_prefix() {
-		let input = "0x039799ff93d184146deacaa455dade51b13ed16f23cdad11d1ad6af20103391180:0xe85534c93315d60f808568d1dce5cb9e8ba6ed0b204209c5cc8f3bec56c10b73:0xcdf3e5b33f53c8b541bbaea383225c45654f24de38c585725f3cff25b2802f55";
+		let input = "0x039799ff93d184146deacaa455dade51b13ed16f23cdad11d1ad6af20103391180:0xe85534c93315d60f808568d1dce5cb9e8ba6ed0b204209c5cc8f3bec56c10b73:0x039799ff93d184146deacaa455dade51b13ed16f23cdad11d1ad6af20103391180:0xcdf3e5b33f53c8b541bbaea383225c45654f24de38c585725f3cff25b2802f55";
 		assert_eq!(parse_partnerchain_public_keys(input).unwrap(), expected_public_keys())
 	}
 
@@ -227,6 +227,9 @@ mod test {
 			),
 			aura_public_key: AuraPublicKey(
 				hex!("e85534c93315d60f808568d1dce5cb9e8ba6ed0b204209c5cc8f3bec56c10b73").to_vec(),
+			),
+			beefy_public_key: BeefyPublicKey(
+				hex!("039799ff93d184146deacaa455dade51b13ed16f23cdad11d1ad6af20103391180").to_vec(),
 			),
 			grandpa_public_key: GrandpaPublicKey(
 				hex!("cdf3e5b33f53c8b541bbaea383225c45654f24de38c585725f3cff25b2802f55").to_vec(),
