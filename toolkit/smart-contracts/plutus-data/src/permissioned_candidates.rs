@@ -41,7 +41,12 @@ impl From<PermissionedCandidateDatumV1> for PermissionedCandidateData {
 		let grandpa_public_key = GrandpaPublicKey(find_or_empty(&keys, GRANDPA_TYPE_ID));
 		let beefy_public_key = BeefyPublicKey(find_or_empty(&keys, &BEEFY_TYPE_ID));
 
-		PermissionedCandidateData { sidechain_public_key, aura_public_key, grandpa_public_key, beefy_public_key }
+		PermissionedCandidateData {
+			sidechain_public_key,
+			aura_public_key,
+			grandpa_public_key,
+			beefy_public_key,
+		}
 	}
 }
 
@@ -229,7 +234,8 @@ mod tests {
 					hex!("bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec").into(),
 				),
 				beefy_public_key: BeefyPublicKey(
-					hex!("0261eca4c3c2a8d93b14624b28b08fc4d7ba3ad95e4fc4ca2eec48eaac68b0b988").into(),
+					hex!("0261eca4c3c2a8d93b14624b28b08fc4d7ba3ad95e4fc4ca2eec48eaac68b0b988")
+						.into(),
 				),
 				grandpa_public_key: GrandpaPublicKey(
 					hex!("9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d").into(),
@@ -243,7 +249,8 @@ mod tests {
 					hex!("56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19").into(),
 				),
 				beefy_public_key: BeefyPublicKey(
-					hex!("0361eca4c3c2a8d93b14624b28b08fc4d7ba3ad95e4fc4ca2eec48eaac68b0b988").into(),
+					hex!("0361eca4c3c2a8d93b14624b28b08fc4d7ba3ad95e4fc4ca2eec48eaac68b0b988")
+						.into(),
 				),
 				grandpa_public_key: GrandpaPublicKey(
 					hex!("7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32").into(),
@@ -358,7 +365,8 @@ mod tests {
 					hex!("bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec").into(),
 				),
 				beefy_public_key: BeefyPublicKey(
-					hex!("0261eca4c3c2a8d93b14624b28b08fc4d7ba3ad95e4fc4ca2eec48eaac68b0b988").into(),
+					hex!("0261eca4c3c2a8d93b14624b28b08fc4d7ba3ad95e4fc4ca2eec48eaac68b0b988")
+						.into(),
 				),
 				grandpa_public_key: GrandpaPublicKey(
 					hex!("9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d").into(),
@@ -372,7 +380,8 @@ mod tests {
 					hex!("56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19").into(),
 				),
 				beefy_public_key: BeefyPublicKey(
-					hex!("0361eca4c3c2a8d93b14624b28b08fc4d7ba3ad95e4fc4ca2eec48eaac68b0b988").into(),
+					hex!("0361eca4c3c2a8d93b14624b28b08fc4d7ba3ad95e4fc4ca2eec48eaac68b0b988")
+						.into(),
 				),
 				grandpa_public_key: GrandpaPublicKey(
 					hex!("7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32").into(),

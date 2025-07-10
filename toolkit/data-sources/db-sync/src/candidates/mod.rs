@@ -8,7 +8,9 @@ use crate::observed_async_trait;
 use authority_selection_inherents::authority_selection_inputs::*;
 use itertools::Itertools;
 use log::error;
-use partner_chains_plutus_data::candidate_keys::{AURA_TYPE_ID, BEEFY_TYPE_ID, GRANDPA_TYPE_ID, find_or_empty};
+use partner_chains_plutus_data::candidate_keys::{
+	AURA_TYPE_ID, BEEFY_TYPE_ID, GRANDPA_TYPE_ID, find_or_empty,
+};
 use partner_chains_plutus_data::{
 	d_param::DParamDatum, permissioned_candidates::PermissionedCandidateDatums,
 	registered_candidates::RegisterValidatorDatum,

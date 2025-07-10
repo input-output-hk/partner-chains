@@ -17,14 +17,17 @@ pub trait CommitteePaletConfig {
 
 /// Trait defining Partner Chain governance related types.
 pub trait PartnerChainRuntime {
+	/// Authority identifier type
 	type AuthorityId: Send + Sync + 'static + From<ecdsa::Public>;
+	/// Authority keys type containing session keys
 	type AuthorityKeys: Send
 		+ Sync
 		+ 'static
 		+ From<(sr25519::Public, ecdsa::Public, ed25519::Public)>
 		+ Serialize;
+	/// Committee member type
 	type CommitteeMember: Serialize;
-	
+
 	/// User defined function to create a chain spec given the PC configuration
 	fn create_chain_spec(config: &CreateChainSpecConfig) -> serde_json::Value;
 }
@@ -36,15 +39,15 @@ pub trait PartnerChainRuntimeBindings: PartnerChainRuntime {
 impl<T: RuntimeTypeWrapper<Runtime = R>, R> PartnerChainRuntime for T
 where
 	R: CommitteePaletConfig,
-	<R as CommitteePaletConfig>::AuthorityId: From<ecdsa::Public>,
+	<R as CommitteePaletConfig>::AuthorityId: From<ecdsa::Public> + Send + Sync + 'static,
 	<R as CommitteePaletConfig>::AuthorityKeys:
-		From<(sr25519::Public, ecdsa::Public, ed25519::Public)>,
+		From<(sr25519::Public, ecdsa::Public, ed25519::Public)> + Send + Sync + 'static + Serialize,
 	<R as CommitteePaletConfig>::CommitteeMember: Serialize,
 {
 	type AuthorityId = <R as CommitteePaletConfig>::AuthorityId;
 	type AuthorityKeys = <R as CommitteePaletConfig>::AuthorityKeys;
 	type CommitteeMember = <R as CommitteePaletConfig>::CommitteeMember;
-	
+
 	fn create_chain_spec(_config: &CreateChainSpecConfig) -> serde_json::Value {
 		unimplemented!("create_chain_spec must be implemented by the specific runtime")
 	}

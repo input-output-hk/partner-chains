@@ -161,6 +161,7 @@ impl From<RegisterValidatorDatum> for CandidateRegistration {
 				registration_utxo,
 				own_pkh,
 				aura_pub_key: AuraPublicKey(find_or_empty(&keys, AURA_TYPE_ID)),
+				beefy_pub_key: BeefyPublicKey(find_or_empty(&keys, BEEFY_TYPE_ID)),
 				grandpa_pub_key: GrandpaPublicKey(find_or_empty(&keys, GRANDPA_TYPE_ID)),
 			},
 		}
@@ -379,6 +380,7 @@ mod tests {
 			},
 			own_pkh: MainchainKeyHash(hex!("aabbccddeeff00aabbccddeeff00aabbccddeeff00aabbccddeeff00")),
 			aura_pub_key: AuraPublicKey(hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d").into()),
+			beefy_pub_key: BeefyPublicKey(hex!("0261eca4c3c2a8d93b14624b28b08fc4d7ba3ad95e4fc4ca2eec48eaac68b0b988").into()),
 			grandpa_pub_key: GrandpaPublicKey(hex!("88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee").into()),
 		}
 	}
@@ -400,6 +402,11 @@ mod tests {
 					(
 						*b"aura",
 						hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d")
+							.into(),
+					),
+					(
+						*b"beef",
+						hex!("0261eca4c3c2a8d93b14624b28b08fc4d7ba3ad95e4fc4ca2eec48eaac68b0b988")
 							.into(),
 					),
 					(
@@ -437,6 +444,7 @@ mod tests {
 				},
 				{ "bytes": "aabbccddeeff00aabbccddeeff00aabbccddeeff00aabbccddeeff00" },
 				{ "bytes": "d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d" },
+				{ "bytes": "0261eca4c3c2a8d93b14624b28b08fc4d7ba3ad95e4fc4ca2eec48eaac68b0b988" },
 				{ "bytes": "88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee" }
 			]
 		});
@@ -470,6 +478,7 @@ mod tests {
 							"constructor": 0
 						},
 						{ "bytes": "d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d" },
+						{ "bytes": "0261eca4c3c2a8d93b14624b28b08fc4d7ba3ad95e4fc4ca2eec48eaac68b0b988" },
 						{ "bytes": "88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee" }
 					]
 				},
@@ -506,6 +515,7 @@ mod tests {
 						},
 						{"list": [
 							{"list": [{"bytes": "61757261"}, {"bytes": "d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d" }]},
+							{"list": [{"bytes": "62656566"}, {"bytes": "0261eca4c3c2a8d93b14624b28b08fc4d7ba3ad95e4fc4ca2eec48eaac68b0b988" }]},
 							{"list": [{"bytes": "6772616e"}, {"bytes": "88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee" }]}
 						]}
 					]

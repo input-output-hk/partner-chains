@@ -1119,8 +1119,6 @@ impl From<ed25519::Public> for GrandpaPublicKey {
 	}
 }
 
-
-
 #[derive(
 	Debug,
 	Clone,

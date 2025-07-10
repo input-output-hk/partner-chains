@@ -6,6 +6,8 @@ pub(crate) type KeyTypeIdAndBytes = (KeyTypeId, Vec<u8>);
 
 /// Well known polkadot-sdk id of AURA key type
 pub const AURA_TYPE_ID: &KeyTypeId = b"aura";
+/// Well known polkadot-sdk id of BEEFY key type
+pub const BEEFY_TYPE_ID: &KeyTypeId = b"beef";
 /// Well known polkadot-sdk id of Grandpa key type
 pub const GRANDPA_TYPE_ID: &KeyTypeId = b"gran";
 /// Key type id of Partner Chains cross-chain key, used with ECDSA cryptography

@@ -1,7 +1,7 @@
 use crate::types::GetRegistrationsResponseMap;
 use authority_selection_inherents::filter_invalid_candidates::PermissionedCandidateDataError;
 use serde::{Deserialize, Serialize};
-use sidechain_domain::{AuraPublicKey, GrandpaPublicKey, SidechainPublicKey};
+use sidechain_domain::{AuraPublicKey, BeefyPublicKey, GrandpaPublicKey, SidechainPublicKey};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -44,6 +44,8 @@ pub struct PermissionedCandidateData {
 	pub sidechain_public_key: SidechainPublicKey,
 	/// Aura public key of the candidate
 	pub aura_public_key: AuraPublicKey,
+	/// Beefy public key of the candidate
+	pub beefy_public_key: BeefyPublicKey,
 	/// Grandpa public key of the candidate
 	pub grandpa_public_key: GrandpaPublicKey,
 	/// Is the registration valid
@@ -62,6 +64,7 @@ impl PermissionedCandidateData {
 		Self {
 			sidechain_public_key: data.sidechain_public_key,
 			aura_public_key: data.aura_public_key,
+			beefy_public_key: data.beefy_public_key,
 			grandpa_public_key: data.grandpa_public_key,
 			is_valid: invalid_reasons.is_none(),
 			invalid_reasons,

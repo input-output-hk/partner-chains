@@ -64,6 +64,7 @@ pub struct ParsedPermissionedCandidatesKeys {
 }
 
 impl ParsedPermissionedCandidatesKeys {
+	/// Converts the candidate keys to session keys format
 	pub fn session_keys<SessionKeys: From<(sr25519::Public, ecdsa::Public, ed25519::Public)>>(
 		&self,
 	) -> SessionKeys {
