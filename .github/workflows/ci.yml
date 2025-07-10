@@ -81,6 +81,8 @@ jobs:
             rsync -a ~/.cargo/registry/ /tmp/rust-cache/cargo-registry/
             rsync -a ./target/ /tmp/rust-cache/target/
           "
+          echo "--- Verifying cache contents ---"
+          ls -laR /tmp/rust-cache
       #- name: Run cargo-deny to check licenses
       #  uses: EmbarkStudios/cargo-deny-action@v1
       #  with:
@@ -320,6 +322,8 @@ jobs:
             rsync -a ~/.cargo/registry/ /tmp/rust-cache/cargo-registry/
             rsync -a ./target/ /tmp/rust-cache/target/
           "
+          echo "--- Verifying cache contents ---"
+          ls -laR /tmp/rust-cache
       - name: Rename artifact
         run: |
           cp ./partner-chains-demo-node partner-chains-node-${{ steps.get_sha.outputs.sha }}-x86_64-linux
@@ -547,6 +551,8 @@ jobs:
             rsync -a ~/.cargo/registry/ /tmp/rust-cache/cargo-registry/
             rsync -a ./target/ /tmp/rust-cache/target/
           "
+          echo "--- Verifying cache contents ---"
+          ls -laR /tmp/rust-cache
       #- name: Run cargo-deny to check licenses
       #  uses: EmbarkStudios/cargo-deny-action@v1
       #  with:
