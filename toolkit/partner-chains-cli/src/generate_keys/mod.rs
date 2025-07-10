@@ -6,12 +6,16 @@ use crate::{config::config_fields, *};
 use anyhow::{Context, anyhow};
 use serde::Deserialize;
 use sp_core::{Pair, ed25519};
+use std::marker::PhantomData;
 
 #[cfg(test)]
 mod tests;
 
 #[derive(Clone, Debug, clap::Parser)]
-pub struct GenerateKeysCmd {}
+pub struct GenerateKeysCmd<T: PartnerChainRuntime> {
+	#[clap(skip)]
+	_phantom: PhantomData<T>,
+}
 
 #[derive(Debug)]
 pub struct GenerateKeysConfig {
@@ -42,7 +46,7 @@ pub(crate) fn network_key_path(substrate_node_base_path: &str) -> String {
 	format!("{}/secret_ed25519", network_key_directory(substrate_node_base_path))
 }
 
-impl CmdRun for GenerateKeysCmd {
+impl<T: PartnerChainRuntime> CmdRun for GenerateKeysCmd<T> {
 	fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
 		context.eprint(
 			"This 🧙 wizard will generate the following keys and save them to your node's keystore:",
@@ -53,61 +57,44 @@ impl CmdRun for GenerateKeysCmd {
 		context.eprint("It will also generate a network key for your node if needed.");
 		context.enewline();
 
-		set_dummy_env_vars(context);
+		let chain_spec_path =
+			write_temp_chain_spec(context, T::create_chain_spec(&CreateChainSpecConfig::default()));
 
 		let config = GenerateKeysConfig::load(context);
 		context.enewline();
 
-		generate_spo_keys(&config, context)?;
+		generate_spo_keys(&config, &chain_spec_path, context)?;
 		context.enewline();
 
-		generate_network_key(&config, context)?;
+		generate_network_key(&config, &chain_spec_path, context)?;
 		context.enewline();
 
 		context.eprint("🚀 All done!");
-
+		context.delete_file(&chain_spec_path)?;
 		Ok(())
 	}
 }
 
-fn set_dummy_env_vars<C: IOContext>(context: &C) {
-	context.set_env_var(
-		"GENESIS_UTXO",
-		"0000000000000000000000000000000000000000000000000000000000000000#0",
-	);
-	context.set_env_var("COMMITTEE_CANDIDATE_ADDRESS", "addr_10000");
-	context.set_env_var(
-		"D_PARAMETER_POLICY_ID",
-		"00000000000000000000000000000000000000000000000000000000",
-	);
-	context.set_env_var(
-		"PERMISSIONED_CANDIDATES_POLICY_ID",
-		"00000000000000000000000000000000000000000000000000000000",
-	);
-	context.set_env_var(
-		"NATIVE_TOKEN_POLICY_ID",
-		"00000000000000000000000000000000000000000000000000000000",
-	);
-	context.set_env_var(
-		"NATIVE_TOKEN_ASSET_NAME",
-		"00000000000000000000000000000000000000000000000000000000",
-	);
-	context.set_env_var(
-		"ILLIQUID_SUPPLY_VALIDATOR_ADDRESS",
-		"00000000000000000000000000000000000000000000000000000000",
-	);
+fn write_temp_chain_spec<C: IOContext>(context: &C, chain_spec: serde_json::Value) -> String {
+	let dir_path = context.new_tmp_dir();
+	let dir_path = dir_path.to_str().expect("temp dir path is correct utf-8");
+	let path = format!("{dir_path}/chain-spec.json");
+	let content = format!("{chain_spec}");
+	context.write_file(&path, &content);
+	path
 }
 
 pub(crate) fn generate_spo_keys<C: IOContext>(
 	config: &GenerateKeysConfig,
+	chain_spec_path: &str,
 	context: &C,
 ) -> anyhow::Result<()> {
 	if prompt_can_write("keys file", KEYS_FILE_PATH, context) {
-		let cross_chain_key = generate_or_load_key(config, context, &CROSS_CHAIN)?;
+		let cross_chain_key = generate_or_load_key(config, context, chain_spec_path, &CROSS_CHAIN)?;
 		context.enewline();
-		let grandpa_key = generate_or_load_key(config, context, &GRANDPA)?;
+		let grandpa_key = generate_or_load_key(config, context, chain_spec_path, &GRANDPA)?;
 		context.enewline();
-		let aura_key = generate_or_load_key(config, context, &AURA)?;
+		let aura_key = generate_or_load_key(config, context, chain_spec_path, &AURA)?;
 		context.enewline();
 
 		let public_keys_json = serde_json::to_string_pretty(&PermissionedCandidateKeys {
@@ -133,6 +120,7 @@ pub(crate) fn generate_spo_keys<C: IOContext>(
 
 pub(crate) fn generate_network_key<C: IOContext>(
 	config: &GenerateKeysConfig,
+	chain_spec_path: &str,
 	context: &C,
 ) -> anyhow::Result<()> {
 	let maybe_existing_key =
@@ -145,7 +133,7 @@ pub(crate) fn generate_network_key<C: IOContext>(
 		},
 		None => {
 			context.eprint("⚙️ Generating network key");
-			run_generate_network_key(config, context)?;
+			run_generate_network_key(config, chain_spec_path, context)?;
 		},
 		Some(Err(err)) => {
 			context.eprint(&format!(
@@ -154,7 +142,7 @@ pub(crate) fn generate_network_key<C: IOContext>(
 			));
 			context.eprint("⚙️ Regenerating the network key");
 			context.delete_file(&config.network_key_path())?;
-			run_generate_network_key(config, context)?;
+			run_generate_network_key(config, chain_spec_path, context)?;
 		},
 	};
 	Ok(())
@@ -162,6 +150,7 @@ pub(crate) fn generate_network_key<C: IOContext>(
 
 fn run_generate_network_key<C: IOContext>(
 	config: &GenerateKeysConfig,
+	chain_spec_path: &str,
 	context: &C,
 ) -> anyhow::Result<()> {
 	let node_executable = context.current_executable()?;
@@ -169,7 +158,7 @@ fn run_generate_network_key<C: IOContext>(
 	let network_key_path = config.network_key_path();
 	context.run_command(&format!("mkdir -p {network_key_directory}"))?;
 	context.run_command(&format!(
-		"{node_executable} key generate-node-key --file {network_key_path}"
+		"{node_executable} key generate-node-key --chain {chain_spec_path} --file {network_key_path}"
 	))?;
 	Ok(())
 }
@@ -205,13 +194,14 @@ fn store_keys<C: IOContext>(
 	GenerateKeysConfig { substrate_node_base_path: base_path }: &GenerateKeysConfig,
 	key_def: &KeyDefinition,
 	KeyGenerationOutput { secret_phrase, public_key }: &KeyGenerationOutput,
+	chain_spec_file_path: &str,
 ) -> anyhow::Result<()> {
 	let node_executable = context.current_executable()?;
 	let KeyDefinition { scheme, key_type, name } = key_def;
 	context.eprint(&format!("💾 Inserting {name} ({scheme}) key"));
 	let keystore_path = keystore_path(base_path);
 	let cmd = format!(
-		"{node_executable} key insert --keystore-path {keystore_path} --scheme {scheme} --key-type {key_type} --suri '{secret_phrase}'"
+		"{node_executable} key insert --chain {chain_spec_file_path} --keystore-path {keystore_path} --scheme {scheme} --key-type {key_type} --suri '{secret_phrase}'"
 	);
 	let _ = context.run_command(&cmd)?;
 	let store_path = format!("{}/{}{public_key}", keystore_path, key_def.key_type_hex(),);
@@ -222,6 +212,7 @@ fn store_keys<C: IOContext>(
 fn generate_or_load_key<C: IOContext>(
 	config: &GenerateKeysConfig,
 	context: &C,
+	chain_spec_path: &str,
 	key_def: &KeyDefinition,
 ) -> anyhow::Result<String> {
 	let keystore_path = config.keystore_path();
@@ -233,7 +224,7 @@ fn generate_or_load_key<C: IOContext>(
 			false,
 		) {
 			let new_key = generate_keys(context, key_def)?;
-			store_keys(context, config, key_def, &new_key)?;
+			store_keys(context, config, key_def, &new_key, chain_spec_path)?;
 
 			let old_key_path = format!("{keystore_path}/{}{key}", key_def.key_type_hex());
 			context
@@ -246,7 +237,7 @@ fn generate_or_load_key<C: IOContext>(
 		}
 	} else {
 		let new_key = generate_keys(context, key_def)?;
-		store_keys(context, config, key_def, &new_key)?;
+		store_keys(context, config, key_def, &new_key, chain_spec_path)?;
 
 		Ok(new_key.public_key)
 	}

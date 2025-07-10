@@ -2,6 +2,7 @@
 #![deny(missing_docs)]
 use cardano_serialization_lib::{PlutusData, PlutusList};
 
+pub mod candidate_keys;
 pub mod d_param;
 pub mod governed_map;
 pub mod permissioned_candidates;

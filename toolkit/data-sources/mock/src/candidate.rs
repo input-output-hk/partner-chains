@@ -99,7 +99,7 @@ impl MockPermissionedCandidate {
 	}
 }
 
-impl From<MockPermissionedCandidate> for RawPermissionedCandidateData {
+impl From<MockPermissionedCandidate> for PermissionedCandidateData {
 	fn from(
 		MockPermissionedCandidate {
 			name: _,
@@ -255,7 +255,7 @@ impl AuthoritySelectionDataSource for AuthoritySelectionDataSourceMock {
 			candidates.iter().cloned().map(|c| c.info_string()).collect::<Vec<_>>()
 		);
 
-		let permissioned_candidates: Option<Vec<RawPermissionedCandidateData>> =
+		let permissioned_candidates: Option<Vec<PermissionedCandidateData>> =
 			Some(candidates.into_iter().map(|p| p.into()).collect());
 
 		Ok(AriadneParameters { d_parameter: d_parameter.into(), permissioned_candidates })

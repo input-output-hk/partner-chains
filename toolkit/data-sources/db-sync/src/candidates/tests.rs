@@ -1,9 +1,7 @@
 use crate::candidates::CandidatesDataSourceImpl;
 use crate::db_model::index_exists_unsafe;
 use crate::metrics::mock::test_metrics;
-use authority_selection_inherents::authority_selection_inputs::{
-	AuthoritySelectionDataSource, RawPermissionedCandidateData,
-};
+use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
 use hex_literal::hex;
 use sidechain_domain::*;
 use sqlx::PgPool;
@@ -286,9 +284,9 @@ fn permissioned_candidates_policy() -> PolicyId {
 	PolicyId(PERMISSIONED_CANDIDATES_POLICY)
 }
 
-fn latest_permissioned_candidates() -> Vec<RawPermissionedCandidateData> {
+fn latest_permissioned_candidates() -> Vec<PermissionedCandidateData> {
 	vec![
-		RawPermissionedCandidateData {
+		PermissionedCandidateData {
 			sidechain_public_key: SidechainPublicKey(
 				hex!("cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854").to_vec(),
 			),
@@ -299,7 +297,7 @@ fn latest_permissioned_candidates() -> Vec<RawPermissionedCandidateData> {
 				hex!("9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d").to_vec(),
 			),
 		},
-		RawPermissionedCandidateData {
+		PermissionedCandidateData {
 			sidechain_public_key: SidechainPublicKey(
 				hex!("79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf").to_vec(),
 			),
