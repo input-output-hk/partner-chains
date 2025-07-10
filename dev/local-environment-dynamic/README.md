@@ -124,12 +124,11 @@ The `setup.sh` script provides several flags for more advanced configurations. T
 
 ```bash
 $ bash setup.sh --help
-Usage: ./setup.sh [OPTION]...
+Usage: setup.sh [OPTION]...
 Initialize and configure the Docker environment.
   -n, --non-interactive     Run with no interactive prompts and accept sensible default configuration settings.
   -d, --deployment-option   Specify one of the custom deployment options (1, 2, 3, or 4).
   -p, --postgres-password   Set a specific password for PostgreSQL (overrides automatic generation).
   -i, --node-image          Specify a custom Partner Chains Node image.
-  -t, --tests               Include tests container.
   -h, --help                Display this help dialogue and exit.
 ```
