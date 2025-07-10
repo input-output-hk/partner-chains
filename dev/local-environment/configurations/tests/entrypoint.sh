@@ -8,19 +8,25 @@ else
   exit 1
 fi
 
-# Install Docker CLI for running Docker commands in other containers
-apt-get update && apt-get install -y docker.io
-
-# Install pytest dependencies
-apt-get update && \
-apt-get install -y curl && \
-curl -L --silent https://github.com/getsops/sops/releases/download/v3.7.3/sops_3.7.3_amd64.deb > sops.deb && \
-dpkg -i sops.deb && \
-rm sops.deb && \
-apt-get clean && \
+# 1) Purge any stale lists
+apt-get clean
 rm -rf /var/lib/apt/lists/*
 
-# Create and initialize the virtual environment
+# 2) Update with a few retries to work around mirror glitches
+apt-get update -o Acquire::Retries=5
+
+# 3) Install core bits, allowing missing/fixed-missing
+apt-get install -y --fix-missing \
+    docker.io curl
+
+# 4) Download & install SOPS, then clean up again
+curl -L https://github.com/getsops/sops/releases/download/v3.7.3/sops_3.7.3_amd64.deb -o /tmp/sops.deb
+dpkg -i /tmp/sops.deb
+rm /tmp/sops.deb
+apt-get clean
+rm -rf /var/lib/apt/lists/*
+
+# 5) Create and initialize the virtual environment
 python -m venv venv
 source venv/bin/activate
 pip install --upgrade pip
