@@ -7,7 +7,7 @@
 //! 2. The transaction should have two outputs:
 //!   * Reserve Validator output that:
 //!   * * has Reward Tokens and minted Reserve Auth Policy Token
-//!   * * has Plutus Data (in our "versioned format"): `[[[Int(t0), <Encoded Token>], [Bytes(v_function_hash), Int(initial_incentive)], [Int(0)]], Constr(0, []), Int(0)]`,
+//!   * * has Plutus Data (in our "versioned format"): `[[[<Encoded Token>], [Bytes(v_function_hash), Int(initial_incentive)], [Int(0)]], Constr(0, []), Int(0)]`,
 //!       where `<Encoded Token>` is `Constr(0, [Bytes(policy_id), Bytes(asset_name)])`.
 //!   * Change output that keeps the Governance Token and change of other tokens
 //! 3. The transaction should have three script reference inputs:
@@ -80,10 +80,7 @@ pub struct ReserveParameters {
 impl From<&ReserveParameters> for ReserveDatum {
 	fn from(value: &ReserveParameters) -> Self {
 		ReserveDatum {
-			// `t0` field is not used by on-chain code of partner-chains smart-contracts,
-			// but only gave a possibility for user to store "t0" for his own V-function.
-			// Not configurable anymore, hardcoded to 0. If users need "t0" for their V-function, they are responsible for storing it somewhere.
-			immutable_settings: ReserveImmutableSettings { t0: 0, token: value.token.clone() },
+			immutable_settings: ReserveImmutableSettings { token: value.token.clone() },
 			mutable_settings: ReserveMutableSettings {
 				total_accrued_function_asset_name: value.total_accrued_function_script_hash.clone(),
 				// this value is hard-coded to zero as a temporary fix because of a vulnerability in the on-chain
