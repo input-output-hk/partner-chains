@@ -7,8 +7,10 @@ use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode};
 pub use registrations::*;
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
+use sidechain_domain::{CandidateKeys, byte_string::ByteString};
 use sp_core::bytes::to_hex;
 use sp_session_validator_management::CommitteeMember as CommitteeMemberT;
+use std::collections::HashMap;
 
 #[derive(
 	Clone,
@@ -85,6 +87,18 @@ impl CommitteeMember {
 	pub fn new<T: AsRef<[u8]>>(bytes: T) -> Self {
 		Self { sidechain_pub_key: to_hex(bytes.as_ref(), false) }
 	}
+}
+
+fn keys_to_map(keys: &CandidateKeys) -> HashMap<String, ByteString> {
+	keys.0
+		.iter()
+		.map(|(id, bytes)| {
+			(
+				String::from_utf8(id.to_vec()).unwrap_or("<invalid>".to_string()),
+				ByteString(bytes.clone()),
+			)
+		})
+		.collect()
 }
 
 #[cfg(test)]

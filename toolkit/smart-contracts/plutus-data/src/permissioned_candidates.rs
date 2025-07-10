@@ -59,8 +59,8 @@ impl From<PermissionedCandidateDatumV0> for PermissionedCandidateData {
 		Self {
 			sidechain_public_key: value.sidechain_public_key,
 			keys: CandidateKeys(vec![
-				(*b"aura", value.aura_public_key.0),
-				(*b"gran", value.grandpa_public_key.0),
+				value.aura_public_key.into(),
+				value.grandpa_public_key.into(),
 			]),
 		}
 	}
@@ -295,16 +295,16 @@ mod tests {
 						.to_vec(),
 				),
 				keys: CandidateKeys(vec![
-					(
-						*GRANDPA_TYPE_ID,
+					AuraPublicKey(
 						hex!("bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec")
 							.to_vec(),
-					),
-					(
-						*AURA_TYPE_ID,
+					)
+					.into(),
+					GrandpaPublicKey(
 						hex!("9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d")
 							.to_vec(),
-					),
+					)
+					.into(),
 				]),
 			},
 			PermissionedCandidateData {
@@ -313,16 +313,16 @@ mod tests {
 						.to_vec(),
 				),
 				keys: CandidateKeys(vec![
-					(
-						*AURA_TYPE_ID,
+					AuraPublicKey(
 						hex!("56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19")
 							.to_vec(),
-					),
-					(
-						*GRANDPA_TYPE_ID,
+					)
+					.into(),
+					GrandpaPublicKey(
 						hex!("7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32")
 							.to_vec(),
-					),
+					)
+					.into(),
 				]),
 			},
 		];

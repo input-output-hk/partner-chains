@@ -116,11 +116,9 @@ pub fn candidate_registration_to_plutus_data(
 		sidechain_signature: candidate_registration.partner_chain_signature.clone(),
 		registration_utxo: candidate_registration.registration_utxo,
 		own_pkh: candidate_registration.own_pkh,
-		aura_pub_key: AuraPublicKey(
-			candidate_registration.keys.find(AURA_TYPE_ID).unwrap_or_default(),
-		),
+		aura_pub_key: AuraPublicKey(candidate_registration.keys.find_or_empty(AURA_TYPE_ID)),
 		grandpa_pub_key: GrandpaPublicKey(
-			candidate_registration.keys.find(GRANDPA_TYPE_ID).unwrap_or_default(),
+			candidate_registration.keys.find_or_empty(GRANDPA_TYPE_ID),
 		),
 	}
 	.into()

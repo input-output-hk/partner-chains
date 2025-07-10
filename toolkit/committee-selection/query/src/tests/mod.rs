@@ -111,6 +111,7 @@ mod get_registration_tests {
 	use authority_selection_inherents::filter_invalid_candidates::{
 		PermissionedCandidateDataError, RegistrationDataError, StakeError,
 	};
+	use sidechain_domain::byte_string::ByteString;
 
 	const SEED: [u8; 32] = [7u8; 32];
 	const SEED2: [u8; 32] = [8u8; 32];
@@ -150,8 +151,8 @@ mod get_registration_tests {
 			.await
 			.unwrap();
 
-		let expected_aura = to_hex(&registration.keys.find(b"aura").unwrap(), false);
-		let expected_grandpa = to_hex(&registration.keys.find(b"gran").unwrap(), false);
+		let aura = registration.keys.find_or_empty(b"aura");
+		let grandpa = registration.keys.find_or_empty(b"gran");
 		let expected_entry = CandidateRegistrationEntry {
 			sidechain_pub_key: to_hex(&registration.sidechain_pub_key.0, false),
 			sidechain_account_id: MultiSigner::Ecdsa(ecdsa::Public::from(
@@ -161,11 +162,14 @@ mod get_registration_tests {
 			.to_ss58check(),
 			mainchain_pub_key: to_hex(&candidate.mainchain_pub_key().0, false),
 			cross_chain_pub_key: to_hex(&registration.cross_chain_pub_key.0, false),
-			aura_pub_key: expected_aura.clone(),
-			grandpa_pub_key: expected_grandpa.clone(),
-			keys: vec![("aura".to_string(), expected_aura), ("gran".to_string(), expected_grandpa)]
-				.into_iter()
-				.collect(),
+			aura_pub_key: to_hex(&aura, false),
+			grandpa_pub_key: to_hex(&grandpa, false),
+			keys: vec![
+				("aura".to_string(), ByteString(aura)),
+				("gran".to_string(), ByteString(grandpa)),
+			]
+			.into_iter()
+			.collect(),
 			sidechain_signature: to_hex(&registration.sidechain_signature.0, false),
 			mainchain_signature: to_hex(&registration.mainchain_signature.0, false),
 			cross_chain_signature: to_hex(&registration.cross_chain_signature.0, false),

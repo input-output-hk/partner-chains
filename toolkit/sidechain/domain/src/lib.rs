@@ -1142,7 +1142,7 @@ impl DParameter {
 	}
 }
 
-/// Key bytes with an identifier
+/// Opaque key bytes with a 4 bytes identifier
 type CandidateKey = ([u8; 4], Vec<u8>);
 
 #[derive(

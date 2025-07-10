@@ -192,8 +192,8 @@ pub(crate) fn parse_partnerchain_public_keys(
 		Ok(PermissionedCandidateData {
 			sidechain_public_key: SidechainPublicKey(hex::decode(sidechain_pub_key)?),
 			keys: CandidateKeys(vec![
-				(*b"aura", hex::decode(aura_pub_key)?),
-				(*b"gran", hex::decode(grandpa_pub_key)?),
+				AuraPublicKey(hex::decode(aura_pub_key)?).into(),
+				GrandpaPublicKey(hex::decode(grandpa_pub_key)?).into(),
 			]),
 		})
 	} else {

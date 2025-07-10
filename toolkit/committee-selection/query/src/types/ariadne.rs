@@ -1,11 +1,11 @@
-use std::collections::HashMap;
-
-use crate::types::GetRegistrationsResponseMap;
+use crate::types::{GetRegistrationsResponseMap, keys_to_map};
 use authority_selection_inherents::filter_invalid_candidates::PermissionedCandidateDataError;
 use serde::{Deserialize, Serialize};
 use sidechain_domain::{
 	AuraPublicKey, GrandpaPublicKey, SidechainPublicKey, byte_string::ByteString,
 };
+use sp_runtime::key_types::{AURA, GRANDPA};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -67,19 +67,9 @@ impl PermissionedCandidateData {
 	) -> Self {
 		Self {
 			sidechain_public_key: data.sidechain_public_key,
-			aura_public_key: AuraPublicKey(data.keys.find(b"aura").unwrap_or_default()),
-			grandpa_public_key: GrandpaPublicKey(data.keys.find(b"gran").unwrap_or_default()),
-			keys: data
-				.keys
-				.0
-				.into_iter()
-				.map(|(id, bytes)| {
-					(
-						String::from_utf8(id.to_vec()).unwrap_or("<invalid>".to_string()),
-						ByteString(bytes),
-					)
-				})
-				.collect(),
+			aura_public_key: AuraPublicKey(data.keys.find(&AURA.0).unwrap_or_default()),
+			grandpa_public_key: GrandpaPublicKey(data.keys.find(&GRANDPA.0).unwrap_or_default()),
+			keys: keys_to_map(&data.keys),
 			is_valid: invalid_reasons.is_none(),
 			invalid_reasons,
 		}

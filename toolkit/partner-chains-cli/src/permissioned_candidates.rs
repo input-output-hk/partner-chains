@@ -42,11 +42,11 @@ impl From<&sidechain_domain::PermissionedCandidateData> for PermissionedCandidat
 		Self {
 			sidechain_pub_key: sp_core::bytes::to_hex(&value.sidechain_public_key.0, false),
 			aura_pub_key: sp_core::bytes::to_hex(
-				&value.keys.find(b"aura").unwrap_or_default(),
+				&value.keys.find_or_empty(&sp_core::crypto::key_types::AURA.0),
 				false,
 			),
 			grandpa_pub_key: sp_core::bytes::to_hex(
-				&value.keys.find(b"gran").unwrap_or_default(),
+				&value.keys.find_or_empty(&sp_core::crypto::key_types::GRANDPA.0),
 				false,
 			),
 		}
