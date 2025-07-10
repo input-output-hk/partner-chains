@@ -51,6 +51,7 @@ def test_upsert_permissioned_candidates(
                 "sidechainPublicKey": candidate.public_key,
                 "auraPublicKey": candidate.aura_public_key,
                 "grandpaPublicKey": candidate.grandpa_public_key,
+                "keys": { "aura": candidate.aura_public_key, "gran": candidate.grandpa_public_key },
                 "isValid": True,
             }
         )
