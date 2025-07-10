@@ -43,9 +43,11 @@ jobs:
           if [ -d /tmp/rust-cache ]; then
             echo "Rust cache found. Restoring..."
             mkdir -p ~/.cargo/git ~/.cargo/registry ./target
-            rsync -a /tmp/rust-cache/cargo-git/ ~/.cargo/git/
-            rsync -a /tmp/rust-cache/cargo-registry/ ~/.cargo/registry/
-            rsync -a /tmp/rust-cache/target/ ./target/
+            nix shell nixpkgs#rsync -c bash -c "
+              rsync -a /tmp/rust-cache/cargo-git/ ~/.cargo/git/
+              rsync -a /tmp/rust-cache/cargo-registry/ ~/.cargo/registry/
+              rsync -a /tmp/rust-cache/target/ ./target/
+            "
           else
             echo "No Rust cache found. Will be created after build."
           fi
@@ -74,9 +76,11 @@ jobs:
           set -e
           echo "--- Saving Rust cache to host cache ---"
           mkdir -p /tmp/rust-cache
-          rsync -a ~/.cargo/git/ /tmp/rust-cache/cargo-git/
-          rsync -a ~/.cargo/registry/ /tmp/rust-cache/cargo-registry/
-          rsync -a ./target/ /tmp/rust-cache/target/
+          nix shell nixpkgs#rsync -c bash -c "
+            rsync -a ~/.cargo/git/ /tmp/rust-cache/cargo-git/
+            rsync -a ~/.cargo/registry/ /tmp/rust-cache/cargo-registry/
+            rsync -a ./target/ /tmp/rust-cache/target/
+          "
       #- name: Run cargo-deny to check licenses
       #  uses: EmbarkStudios/cargo-deny-action@v1
       #  with:
@@ -256,9 +260,11 @@ jobs:
           if [ -d /tmp/rust-cache ]; then
             echo "Rust cache found. Restoring..."
             mkdir -p ~/.cargo/git ~/.cargo/registry ./target
-            rsync -a /tmp/rust-cache/cargo-git/ ~/.cargo/git/
-            rsync -a /tmp/rust-cache/cargo-registry/ ~/.cargo/registry/
-            rsync -a /tmp/rust-cache/target/ ./target/
+            nix shell nixpkgs#rsync -c bash -c "
+              rsync -a /tmp/rust-cache/cargo-git/ ~/.cargo/git/
+              rsync -a /tmp/rust-cache/cargo-registry/ ~/.cargo/registry/
+              rsync -a /tmp/rust-cache/target/ ./target/
+            "
           else
             echo "No Rust cache found. Will be created after build."
           fi
@@ -309,9 +315,11 @@ jobs:
           set -e
           echo "--- Saving Rust cache to host cache ---"
           mkdir -p /tmp/rust-cache
-          rsync -a ~/.cargo/git/ /tmp/rust-cache/cargo-git/
-          rsync -a ~/.cargo/registry/ /tmp/rust-cache/cargo-registry/
-          rsync -a ./target/ /tmp/rust-cache/target/
+          nix shell nixpkgs#rsync -c bash -c "
+            rsync -a ~/.cargo/git/ /tmp/rust-cache/cargo-git/
+            rsync -a ~/.cargo/registry/ /tmp/rust-cache/cargo-registry/
+            rsync -a ./target/ /tmp/rust-cache/target/
+          "
       - name: Rename artifact
         run: |
           cp ./partner-chains-demo-node partner-chains-node-${{ steps.get_sha.outputs.sha }}-x86_64-linux
@@ -503,9 +511,11 @@ jobs:
           if [ -d /tmp/rust-cache ]; then
             echo "Rust cache found. Restoring..."
             mkdir -p ~/.cargo/git ~/.cargo/registry ./target
-            rsync -a /tmp/rust-cache/cargo-git/ ~/.cargo/git/
-            rsync -a /tmp/rust-cache/cargo-registry/ ~/.cargo/registry/
-            rsync -a /tmp/rust-cache/target/ ./target/
+            nix shell nixpkgs#rsync -c bash -c "
+              rsync -a /tmp/rust-cache/cargo-git/ ~/.cargo/git/
+              rsync -a /tmp/rust-cache/cargo-registry/ ~/.cargo/registry/
+              rsync -a /tmp/rust-cache/target/ ./target/
+            "
           else
             echo "No Rust cache found. Will be created after build."
           fi
@@ -532,9 +542,11 @@ jobs:
           set -e
           echo "--- Saving Rust cache to host cache ---"
           mkdir -p /tmp/rust-cache
-          rsync -a ~/.cargo/git/ /tmp/rust-cache/cargo-git/
-          rsync -a ~/.cargo/registry/ /tmp/rust-cache/cargo-registry/
-          rsync -a ./target/ /tmp/rust-cache/target/
+          nix shell nixpkgs#rsync -c bash -c "
+            rsync -a ~/.cargo/git/ /tmp/rust-cache/cargo-git/
+            rsync -a ~/.cargo/registry/ /tmp/rust-cache/cargo-registry/
+            rsync -a ./target/ /tmp/rust-cache/target/
+          "
       #- name: Run cargo-deny to check licenses
       #  uses: EmbarkStudios/cargo-deny-action@v1
       #  with:
