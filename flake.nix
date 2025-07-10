@@ -24,6 +24,7 @@
 
   outputs =
     {
+      self,
       nixpkgs,
       fenix,
       flake-utils,
@@ -51,14 +52,14 @@
       {
         packages.partner-chains = customRustPlatform.buildRustPackage rec {
         pname = "partner-chains";
-        version = "1.7";
+        version = "1.7.0";
         src = ./.;
-        # preBuild = ''
-        #   export SUBSTRATE_CLI_GIT_COMMIT_HASH=${dirtyShortRev or shortRev}
-        # '';
+        preBuild = ''
+          export SUBSTRATE_CLI_GIT_COMMIT_HASH=${self.dirtyShortRev or self.shortRev}
+        '';
 
         useFetchCargoVendor = true;
-        cargoHash = "sha256-evSP89WBwPl2jL43/ddZWyt+CgxRR9Xst1mGn8bKKgo=";
+        cargoHash = "sha256-xPR27bJ1kShWt6N6i7xQlU5scfGlIU0wYA5B/TPBGfU=";
         buildType = "production";
         #buildAndTestSubdir = dir;
         doCheck = false;
