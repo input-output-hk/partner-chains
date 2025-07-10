@@ -4,10 +4,7 @@ use sidechain_domain::*;
 
 use crate::{
 	DataDecodingError, DecodingResult, VersionedDatum, VersionedDatumWithLegacy,
-	VersionedGenericDatum,
-	candidate_keys::{
-		KeyTypeIdAndBytes, decode_key_id_and_bytes, decode_key_id_and_bytes_list, find_or_empty,
-	},
+	VersionedGenericDatum, candidate_keys::*,
 };
 
 #[derive(Clone, Debug, PartialEq)]
@@ -36,8 +33,8 @@ impl From<PermissionedCandidateDatumV1> for PermissionedCandidateData {
 	fn from(value: PermissionedCandidateDatumV1) -> Self {
 		let PermissionedCandidateDatumV1 { partner_chains_key, keys } = value;
 		let sidechain_public_key = SidechainPublicKey(partner_chains_key.1);
-		let aura_public_key = AuraPublicKey(find_or_empty(&keys, b"aura"));
-		let grandpa_public_key = GrandpaPublicKey(find_or_empty(&keys, b"gran"));
+		let aura_public_key = AuraPublicKey(find_or_empty(&keys, AURA_TYPE_ID));
+		let grandpa_public_key = GrandpaPublicKey(find_or_empty(&keys, GRANDPA_TYPE_ID));
 
 		PermissionedCandidateData { sidechain_public_key, aura_public_key, grandpa_public_key }
 	}

@@ -1,7 +1,15 @@
+//! Functions related to PlutusData decoding and encoding of candidates keys
 use cardano_serialization_lib::{PlutusData, PlutusList};
 
 pub(crate) type KeyTypeId = [u8; 4];
 pub(crate) type KeyTypeIdAndBytes = (KeyTypeId, Vec<u8>);
+
+/// Well known polkadot-sdk id of AURA key type
+pub const AURA_TYPE_ID: &KeyTypeId = b"aura";
+/// Well known polkadot-sdk id of Grandpa key type
+pub const GRANDPA_TYPE_ID: &KeyTypeId = b"gran";
+/// Key type id of Partner Chains cross-chain key, used with ECDSA cryptography
+pub const CROSS_CHAIN_TYPE_ID: &KeyTypeId = b"crch";
 
 pub(crate) fn decode_key_id_and_bytes_list(data: &PlutusData) -> Option<Vec<KeyTypeIdAndBytes>> {
 	let outer_list: PlutusList = data.as_list()?;
@@ -21,6 +29,22 @@ pub(crate) fn decode_key_id_and_bytes(data: &PlutusData) -> Option<KeyTypeIdAndB
 	Some((key_id, key_bytes))
 }
 
-pub(crate) fn find_or_empty(keys: &[KeyTypeIdAndBytes], id: &KeyTypeId) -> Vec<u8> {
+pub(crate) fn key_id_and_bytes_list_to_plutus(keys: &[KeyTypeIdAndBytes]) -> PlutusData {
+	let mut plutus_keys = PlutusList::new();
+	for (key_type, key) in keys {
+		plutus_keys.add(&key_id_and_bytes_to_plutus(&key_type, &key));
+	}
+	PlutusData::new_list(&plutus_keys)
+}
+
+pub(crate) fn key_id_and_bytes_to_plutus(key_type_id: &KeyTypeId, value: &[u8]) -> PlutusData {
+	let mut l = PlutusList::new();
+	l.add(&PlutusData::new_bytes(key_type_id.to_vec()));
+	l.add(&PlutusData::new_bytes(value.to_vec()));
+	PlutusData::new_list(&l)
+}
+
+/// Returns bytes of key with given id or empty vec if key wasn't found
+pub fn find_or_empty(keys: &[KeyTypeIdAndBytes], id: &KeyTypeId) -> Vec<u8> {
 	keys.iter().find(|(k, _)| k == id).map(|(_, v)| v.clone()).unwrap_or_default()
 }
