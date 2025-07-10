@@ -37,7 +37,7 @@ use sp_runtime::{
 
 use sp_core::crypto::Ss58Codec;
 
-use crate::primitive::{mod_p, SchnorrSignature, VerifyingKey};
+use crate::primitive::{SchnorrSignature, VerifyingKey, mod_p};
 
 /// Constant to represent the primitive of Schnorr over JubJub
 pub const CRYPTO_ID: CryptoTypeId = CryptoTypeId(*b"jubP");

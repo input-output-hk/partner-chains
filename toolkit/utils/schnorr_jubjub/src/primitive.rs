@@ -61,7 +61,7 @@ impl From<PoseidonError> for SchnorrError {
 /// Helper function to reduce little endian bytes modulo the order
 /// of `Fr`
 pub(crate) fn mod_p(bytes: &[u8]) -> Fr {
-	let biguint = BigUint::from_bytes_le(bytes);
+	let biguint = BigUint::from_bytes_be(bytes);
 	Fr::from_str(&biguint.to_string())
 		.expect("Failed to reduce bytes modulo Fr::MODULUS. This is a bug.")
 }
@@ -105,8 +105,9 @@ impl KeyPair {
 		let c_input = [
 			&to_coords(&A).expect("Shouldn't produce a signature with nonce = 0."),
 			&to_coords(&self.1).expect("Your verifying key is the identity! This is a bug."),
-			msg
-		].concat();
+			msg,
+		]
+		.concat();
 		let c = hash_to_jj_scalar(&c_input);
 
 		// Compute the response, r = a + c * sk
@@ -125,8 +126,9 @@ impl SchnorrSignature {
 		let c_input = [
 			&to_coords(&self.A).ok_or(SchnorrError::InvalidSignature)?,
 			&to_coords(&pk.0).ok_or(SchnorrError::InvalidSignature)?,
-			msg
-		].concat();
+			msg,
+		]
+		.concat();
 
 		let c = hash_to_jj_scalar(&c_input);
 
@@ -205,8 +207,8 @@ fn hash_to_jj_scalar(input: &[Scalar]) -> Fr {
 
 #[cfg(test)]
 mod tests {
-	use rand_core::{OsRng, RngCore};
 	use ark_ff::UniformRand;
+	use rand_core::{OsRng, RngCore};
 
 	use super::*;
 
@@ -236,26 +238,18 @@ mod tests {
 		Scalar::rand(&mut rng).serialize_compressed(msg.as_mut_slice()).unwrap();
 		let msg = PoseidonJubjub::msg_from_bytes(&msg, true).unwrap();
 
-		let sig =
-			signing_key.sign(&msg);
+		let sig = signing_key.sign(&msg);
 
-		assert!(
-			sig.verify(&msg, &signing_key.vk())
-				.is_ok()
-		);
+		assert!(sig.verify(&msg, &signing_key.vk()).is_ok());
 
 		let mut msg = [0u8; 100];
 		rng.fill_bytes(&mut msg);
 		let msg = PoseidonJubjub::msg_from_bytes(&msg, false)
 			.expect("With flag set to false, this should not fail. Report a bug.");
 
-		let sig =
-			signing_key.sign(&msg);
+		let sig = signing_key.sign(&msg);
 
-		assert!(
-			sig.verify(&msg, &signing_key.vk())
-				.is_ok()
-		);
+		assert!(sig.verify(&msg, &signing_key.vk()).is_ok());
 	}
 
 	#[test]
@@ -280,7 +274,6 @@ mod tests {
 
 		assert!(deser_sig.verify(&[msg], &vk).is_ok());
 	}
-
 
 	// Helper test to generate test-vectors
 	// #[test]
