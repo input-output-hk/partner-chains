@@ -1145,6 +1145,7 @@ impl DParameter {
 	Ord,
 	Hash,
 )]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 /// Information about a permissioned committee member candidate
 ///
 /// Permissioned candidates are nominated by the Partner Chain's governance authority to be

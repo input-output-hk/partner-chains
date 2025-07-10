@@ -6,7 +6,7 @@ pub mod types;
 
 use async_trait::async_trait;
 use authority_selection_inherents::authority_selection_inputs::{
-	AuthoritySelectionDataSource, AuthoritySelectionInputs, RawPermissionedCandidateData,
+	AuthoritySelectionDataSource, AuthoritySelectionInputs,
 };
 use authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
 use derive_new::new;
@@ -235,16 +235,10 @@ where
 		let candidate_registrations = self
 			.candidates_registrations_for_epoch(epoch_number, scripts.committee_candidate_address)
 			.await?;
-		let validate_permissioned_candidate = |candidate: &RawPermissionedCandidateData| {
-			api.validate_permissioned_candidate_data(
-				best_block,
-				sidechain_domain::PermissionedCandidateData {
-					sidechain_public_key: candidate.sidechain_public_key.clone(),
-					aura_public_key: candidate.aura_public_key.clone(),
-					grandpa_public_key: candidate.grandpa_public_key.clone(),
-				},
-			)
-		};
+		let validate_permissioned_candidate =
+			|candidate: &sidechain_domain::PermissionedCandidateData| {
+				api.validate_permissioned_candidate_data(best_block, candidate.clone())
+			};
 
 		let permissioned_candidates = match ariadne_parameters_response.permissioned_candidates {
 			None => None,

@@ -6,7 +6,6 @@ use crate::db_model::{
 use crate::metrics::McFollowerMetrics;
 use crate::observed_async_trait;
 use authority_selection_inherents::authority_selection_inputs::*;
-use datum::raw_permissioned_candidate_data_vec_from;
 use itertools::Itertools;
 use log::error;
 use partner_chains_plutus_data::{
@@ -19,7 +18,6 @@ use std::collections::HashMap;
 use std::error::Error;
 
 mod cached;
-mod datum;
 
 #[cfg(test)]
 mod tests;
@@ -86,10 +84,7 @@ impl AuthoritySelectionDataSource for CandidatesDataSourceImpl {
 				let candidates_datum = candidates_output.datum.ok_or(
 					ExpectedDataNotFound("Permissioned Candidates List Datum".to_string()),
 				)?;
-
-				Some(raw_permissioned_candidate_data_vec_from(
-					PermissionedCandidateDatums::try_from(candidates_datum.0)?
-				))
+				Some(PermissionedCandidateDatums::try_from(candidates_datum.0)?.into())
 			},
 		};
 
