@@ -36,17 +36,9 @@ jobs:
         with:
           fetch-depth: 0
           clean: true
-      - name: Restore caches from host
+      - name: Restore Rust cache from host
         run: |
           set -e
-          echo "--- Restoring Nix cache from host ---"
-          if [ -d /tmp/nix-cache/store ]; then
-            echo "Nix cache found. Restoring..."
-            sudo rsync -a /tmp/nix-cache/ /nix/
-          else
-            echo "No Nix cache found. Will be created after build."
-          fi
-
           echo "--- Restoring Rust cache from host ---"
           if [ -d /tmp/rust-cache ]; then
             echo "Rust cache found. Restoring..."
@@ -74,20 +66,17 @@ jobs:
         run: nix develop -c bash -c "RUSTFLAGS=-Dwarnings cargo clippy --all-targets --all-features"
       - name: formatting
         run: nix develop -c bash -c "cargo fmt --check"
-      - name: Save caches to host
+      - name: ls -la
+        run: ls -la
+      - name: Save Rust cache to host
         if: always()
         run: |
           set -e
-          echo "--- Saving Nix store to host cache ---"
-          sudo mkdir -p /tmp/nix-cache
-          sudo nix-store --gc
-          sudo rsync -a --delete /nix/store/ /tmp/nix-cache/store/
-
           echo "--- Saving Rust cache to host cache ---"
           mkdir -p /tmp/rust-cache
-          rsync -a --delete ~/.cargo/git/ /tmp/rust-cache/cargo-git/
-          rsync -a --delete ~/.cargo/registry/ /tmp/rust-cache/cargo-registry/
-          rsync -a --delete ./target/ /tmp/rust-cache/target/
+          rsync -a ~/.cargo/git/ /tmp/rust-cache/cargo-git/
+          rsync -a ~/.cargo/registry/ /tmp/rust-cache/cargo-registry/
+          rsync -a ./target/ /tmp/rust-cache/target/
       #- name: Run cargo-deny to check licenses
       #  uses: EmbarkStudios/cargo-deny-action@v1
       #  with:
@@ -260,6 +249,19 @@ jobs:
           fetch-depth: 0
           ref: master
           clean: true
+      - name: Restore Rust cache from host
+        run: |
+          set -e
+          echo "--- Restoring Rust cache from host ---"
+          if [ -d /tmp/rust-cache ]; then
+            echo "Rust cache found. Restoring..."
+            mkdir -p ~/.cargo/git ~/.cargo/registry ./target
+            rsync -a /tmp/rust-cache/cargo-git/ ~/.cargo/git/
+            rsync -a /tmp/rust-cache/cargo-registry/ ~/.cargo/registry/
+            rsync -a /tmp/rust-cache/target/ ./target/
+          else
+            echo "No Rust cache found. Will be created after build."
+          fi
       - name: Get current commit SHA
         id: get_sha
         run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
@@ -278,21 +280,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Cache cargo build
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/registry/
-            ~/.cargo/git
-          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
-      - name: Cache cargo target dir
-        uses: actions/cache@v3
-        with:
-          path: |
-            target
-          key: ${{ runner.os }}-cargo-target-${{ hashFiles('Cargo.lock') }}
       - name: Build
         run: nix develop -c bash -c "cargo build --locked --profile=release"
       - name: Build chain specs
@@ -316,7 +303,15 @@ jobs:
           docker push ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ steps.get_sha.outputs.sha }}
           docker push ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:latest
           docker push ghcr.io/${{ github.repository }}/partner-chains-node-unstable:latest
-
+      - name: Save Rust cache to host
+        if: always()
+        run: |
+          set -e
+          echo "--- Saving Rust cache to host cache ---"
+          mkdir -p /tmp/rust-cache
+          rsync -a ~/.cargo/git/ /tmp/rust-cache/cargo-git/
+          rsync -a ~/.cargo/registry/ /tmp/rust-cache/cargo-registry/
+          rsync -a ./target/ /tmp/rust-cache/target/
       - name: Rename artifact
         run: |
           cp ./partner-chains-demo-node partner-chains-node-${{ steps.get_sha.outputs.sha }}-x86_64-linux
@@ -501,6 +496,19 @@ jobs:
           fetch-depth: 0
           ref: ${{ inputs.sha }}
           clean: true
+      - name: Restore Rust cache from host
+        run: |
+          set -e
+          echo "--- Restoring Rust cache from host ---"
+          if [ -d /tmp/rust-cache ]; then
+            echo "Rust cache found. Restoring..."
+            mkdir -p ~/.cargo/git ~/.cargo/registry ./target
+            rsync -a /tmp/rust-cache/cargo-git/ ~/.cargo/git/
+            rsync -a /tmp/rust-cache/cargo-registry/ ~/.cargo/registry/
+            rsync -a /tmp/rust-cache/target/ ./target/
+          else
+            echo "No Rust cache found. Will be created after build."
+          fi
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -510,21 +518,6 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ${{ secrets.ECR_REGISTRY_SECRET }}
-      - name: Cache cargo build
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/registry/
-            ~/.cargo/git
-          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
-      - name: Cache cargo target dir
-        uses: actions/cache@v3
-        with:
-          path: |
-            target
-          key: ${{ runner.os }}-cargo-target-${{ hashFiles('Cargo.lock') }}
       - name: Build
         run: nix develop -c bash -c "cargo build --locked --profile=release"
       - name: Test
@@ -533,6 +526,15 @@ jobs:
         run: nix develop -c bash -c "RUSTFLAGS=-Dwarnings cargo clippy --all-targets --all-features"
       - name: Formatting
         run: nix develop -c bash -c "cargo fmt --check"
+      - name: Save Rust cache to host
+        if: always()
+        run: |
+          set -e
+          echo "--- Saving Rust cache to host cache ---"
+          mkdir -p /tmp/rust-cache
+          rsync -a ~/.cargo/git/ /tmp/rust-cache/cargo-git/
+          rsync -a ~/.cargo/registry/ /tmp/rust-cache/cargo-registry/
+          rsync -a ./target/ /tmp/rust-cache/target/
       #- name: Run cargo-deny to check licenses
       #  uses: EmbarkStudios/cargo-deny-action@v1
       #  with:
