@@ -40,8 +40,6 @@
 //! );
 //! ```
 
-#![cfg_attr(not(feature = "std"), no_std)]
-
 use crate::CommitteeMember;
 use core::marker::PhantomData;
 use derive_new::new;
