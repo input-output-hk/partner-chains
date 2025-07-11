@@ -22,6 +22,9 @@ match this change.
 * Generic candidates keys:
 * * getAriadneParameters and getRegistrations results format has changed, `auraPubKey` and `grandpaPubKey` are replaced by `"keys": {"aura": "...", "gran": "..."}`
 * * toolkit user should provide a way of mapping `CandidateKeys` from and into their chain session keys
+* `authority-selection-inherents` crate now exports all its public members from the crate root
+* `select_authorities` in `authority-selection-inherents` crate now returns a `BoundedVec` of `CommitteeMembers`. Projects that used the old version no longer
+need to transform the data in their own runtime code
 
 ## Added
 

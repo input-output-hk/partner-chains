@@ -6,9 +6,8 @@
 #![warn(missing_docs)]
 
 use crate::data_sources::DataSources;
-use authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
 use authority_selection_inherents::{
-	CommitteeMember, authority_selection_inputs::AuthoritySelectionInputs,
+	AuthoritySelectionInputs, CandidateValidationApi, CommitteeMember,
 };
 use jsonrpsee::RpcModule;
 use pallet_block_producer_fees_rpc::*;

@@ -1,6 +1,5 @@
 use super::mock::mock_genesis_utxo;
-use authority_selection_inherents::CommitteeMember;
-use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
+use authority_selection_inherents::{AuthoritySelectionInputs, CommitteeMember};
 use hex_literal::hex;
 use partner_chains_demo_runtime::opaque::SessionKeys;
 use partner_chains_demo_runtime::{BlockAuthor, CrossChainPublic};

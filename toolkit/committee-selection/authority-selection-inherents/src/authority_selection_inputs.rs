@@ -4,6 +4,7 @@ use plutus::*;
 use scale_info::TypeInfo;
 use sidechain_domain::*;
 
+/// Inherent data type provided by [AriadneInherentDataProvider].
 /// The part of data for selection of authorities that comes from the main chain.
 /// It is unfiltered, so the selection algorithm should filter out invalid candidates.
 #[derive(Clone, Debug, Encode, Decode, DecodeWithMemTracking, TypeInfo, PartialEq, Eq)]

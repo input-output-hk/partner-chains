@@ -1,4 +1,4 @@
-use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
+use authority_selection_inherents::AuthoritySelectionDataSource;
 use pallet_sidechain_rpc::SidechainRpcDataSource;
 use partner_chains_db_sync_data_sources::{
 	BlockDataSourceImpl, CandidatesDataSourceImpl, GovernedMapDataSourceCachedImpl,

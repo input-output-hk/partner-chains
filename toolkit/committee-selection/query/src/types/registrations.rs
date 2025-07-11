@@ -1,7 +1,7 @@
 //! Types for Candidates Registrations returned by RPC endpoints
 
 use crate::types::keys_to_map;
-use authority_selection_inherents::filter_invalid_candidates::{RegistrationDataError, StakeError};
+use authority_selection_inherents::{RegistrationDataError, StakeError};
 use parity_scale_codec::Decode;
 use serde::{Deserialize, Serialize};
 use sidechain_domain::{

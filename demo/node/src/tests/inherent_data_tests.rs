@@ -3,7 +3,7 @@ use crate::tests::mock::{test_client, test_create_inherent_data_config};
 use crate::tests::runtime_api_mock;
 use crate::tests::runtime_api_mock::{TestApi, mock_header};
 use authority_selection_inherents::{
-	authority_selection_inputs::AuthoritySelectionInputs, mock::MockAuthoritySelectionDataSource,
+	AuthoritySelectionInputs, mock::MockAuthoritySelectionDataSource,
 };
 use hex_literal::hex;
 use partner_chains_demo_runtime::BlockAuthor;

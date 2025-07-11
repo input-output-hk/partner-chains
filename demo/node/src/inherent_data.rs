@@ -1,7 +1,6 @@
-use authority_selection_inherents::CommitteeMember;
-use authority_selection_inherents::ariadne_inherent_data_provider::AriadneInherentDataProvider as AriadneIDP;
-use authority_selection_inherents::authority_selection_inputs::{
-	AuthoritySelectionDataSource, AuthoritySelectionInputs,
+use authority_selection_inherents::{
+	AriadneInherentDataProvider as AriadneIDP, AuthoritySelectionDataSource,
+	AuthoritySelectionInputs, CommitteeMember,
 };
 use derive_new::new;
 use jsonrpsee::core::async_trait;

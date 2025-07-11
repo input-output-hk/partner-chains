@@ -6,9 +6,8 @@ use parity_scale_codec::{Decode, Encode};
 #[cfg(feature = "std")]
 use {
 	crate::authority_selection_inputs::AuthoritySelectionInputsCreationError,
-	sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation},
+	sidechain_domain::mainchain_epoch::MainchainEpochDerivation,
 	sidechain_domain::*,
-	sidechain_slots::ScSlotConfig,
 	sp_api::ProvideRuntimeApi,
 	sp_consensus_slots::Slot,
 	sp_inherents::{InherentData, InherentIdentifier},
@@ -19,8 +18,8 @@ use {
 	},
 };
 
-/// Inherent data type provided by [AriadneInherentDataProvider].
-pub type InherentType = AuthoritySelectionInputs;
+#[cfg(feature = "std")]
+pub use {sidechain_domain::mainchain_epoch::MainchainEpochConfig, sidechain_slots::ScSlotConfig};
 
 #[derive(Clone, Debug, Encode, Decode)]
 /// Inherent data provider providing inputs for authority selection.

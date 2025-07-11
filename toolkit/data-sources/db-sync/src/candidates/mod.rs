@@ -5,7 +5,7 @@ use crate::db_model::{
 };
 use crate::metrics::McFollowerMetrics;
 use crate::observed_async_trait;
-use authority_selection_inherents::authority_selection_inputs::*;
+use authority_selection_inherents::*;
 use itertools::Itertools;
 use log::error;
 use partner_chains_plutus_data::{
