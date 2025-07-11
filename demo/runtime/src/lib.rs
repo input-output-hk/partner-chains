@@ -11,13 +11,15 @@ extern crate alloc;
 
 use alloc::collections::BTreeMap;
 use alloc::string::String;
-use authority_selection_inherents::CommitteeMember;
-use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
-use authority_selection_inherents::filter_invalid_candidates::{
-	PermissionedCandidateDataError, RegistrationDataError, StakeError,
-	validate_permissioned_candidate_data,
+use authority_selection_inherents::{
+	CommitteeMember,
+	authority_selection_inputs::AuthoritySelectionInputs,
+	filter_invalid_candidates::{
+		PermissionedCandidateDataError, RegistrationDataError, StakeError,
+		validate_permissioned_candidate_data,
+	},
+	select_authorities,
 };
-use authority_selection_inherents::select_authorities::select_authorities;
 use frame_support::genesis_builder_helper::{build_state, get_preset};
 use frame_support::inherent::ProvideInherent;
 use frame_support::weights::constants::RocksDbWeight as RuntimeDbWeight;

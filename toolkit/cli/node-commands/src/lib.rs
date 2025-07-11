@@ -2,9 +2,8 @@
 //! and a [run] function for running these commands.
 //! [PartnerChainsSubcommand] is meant to be used by a command line argument parser library.
 #![deny(missing_docs)]
-use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
-use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 use authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
+use authority_selection_inherents::{AuthoritySelectionDataSource, AuthoritySelectionInputs};
 use clap::Parser;
 use cli_commands::address_association_signatures::AddressAssociationSignaturesCmd;
 use cli_commands::block_producer_metadata_signatures::BlockProducerMetadataSignatureCmd;

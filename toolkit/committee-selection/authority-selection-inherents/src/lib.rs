@@ -13,7 +13,14 @@ use sp_session_validator_management::CommitteeMember as CommitteeMemberT;
 pub mod ariadne_inherent_data_provider;
 pub mod authority_selection_inputs;
 pub mod filter_invalid_candidates;
-pub mod select_authorities;
+mod select_authorities;
+
+#[cfg(feature = "std")]
+pub use authority_selection_inputs::AuthoritySelectionDataSource;
+pub use {
+	ariadne_inherent_data_provider::AriadneInherentDataProvider,
+	authority_selection_inputs::AuthoritySelectionInputs, select_authorities::select_authorities,
+};
 
 #[cfg(test)]
 mod runtime_api_mock;
