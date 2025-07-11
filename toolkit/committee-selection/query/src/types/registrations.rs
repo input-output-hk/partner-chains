@@ -39,10 +39,6 @@ pub struct CandidateRegistrationEntry {
 	pub mainchain_pub_key: String,
 	/// Cross chain public key of the candidate. See [sidechain_domain::CrossChainPublicKey] for more details.
 	pub cross_chain_pub_key: String,
-	/// Aura public key of the candidate. Superseded by 'keys'. Will be removed in the future releases.
-	pub aura_pub_key: String,
-	/// Grandpa public key of the candidate. Superseded by 'keys'. Will be removed in the future releases.
-	pub grandpa_pub_key: String,
 	/// All user-defined keys that are read from Cardano
 	pub keys: HashMap<String, ByteString>,
 	/// Sidechain key signature of the registration message
@@ -83,11 +79,6 @@ impl CandidateRegistrationEntry {
 			.unwrap_or("Invalid Sidechain Public Key. Could not decode...".into()),
 			mainchain_pub_key: to_hex(&stake_pool_public_key.0.clone(), false),
 			cross_chain_pub_key: to_hex(&registration_data.cross_chain_pub_key.0, false),
-			aura_pub_key: to_hex(&registration_data.keys.find(b"aura").unwrap_or_default(), false),
-			grandpa_pub_key: to_hex(
-				&registration_data.keys.find(b"gran").unwrap_or_default(),
-				false,
-			),
 			keys: keys_to_map(&registration_data.keys),
 			sidechain_signature: to_hex(&registration_data.sidechain_signature.0, false),
 			mainchain_signature: to_hex(&registration_data.mainchain_signature.0, false),
@@ -128,8 +119,6 @@ mod tests {
 				sidechain_account_id: "5EP2cMaCxLzhfD3aFAqqgu3kfXH7GcwweEv6JXZRP6ysRHkQ".to_string(),
 				mainchain_pub_key: "0x7521303029fc73ea2dd6a410c4c3cf570bf294a7e02942e049d50ba117acec22".to_string(),
 				cross_chain_pub_key: "0x0389411795514af1627765eceffcbd002719f031604fadd7d188e2dc585b4e1afb".to_string(),
-				aura_pub_key: "90b5ab205c6974c9ea841be688864633dc9ca8a357843eeacf2314649965fe22".to_string(),
-				grandpa_pub_key: "439660b36c6c03afafca027b910b4fecf99801834c62a5e6006f27d978de234f".to_string(),
 				keys: vec![("aura".to_string(), ByteString::from_hex_unsafe("0x90b5ab205c6974c9ea841be688864633dc9ca8a357843eeacf2314649965fe22")), ("gran".to_string(),ByteString::from_hex_unsafe("439660b36c6c03afafca027b910b4fecf99801834c62a5e6006f27d978de234f"))].into_iter().collect(),
 				sidechain_signature: "0x3da1014f1ba4ece29a82b98e2ee4e707bd062523f558e84857cd97d95c525ebd4762812bc1baaf92117861d41acd8641d474f1b30367f0c1ebcf0d280ec44338".to_string(),
 				mainchain_signature: "0x37a45144a24ddd0ded388b7b39441b4ceb7abd1935d02fe6abf07f14025b663e81b53678b3f6701a7c76af7981246537eeee6a790aac18445bb8494bea38990f".to_string(),
@@ -157,8 +146,6 @@ mod tests {
 					"sidechainAccountId": "5EP2cMaCxLzhfD3aFAqqgu3kfXH7GcwweEv6JXZRP6ysRHkQ",
 					"mainchainPubKey": "0x7521303029fc73ea2dd6a410c4c3cf570bf294a7e02942e049d50ba117acec22",
 					"crossChainPubKey": "0x0389411795514af1627765eceffcbd002719f031604fadd7d188e2dc585b4e1afb",
-					"auraPubKey": "90b5ab205c6974c9ea841be688864633dc9ca8a357843eeacf2314649965fe22",
-					"grandpaPubKey": "439660b36c6c03afafca027b910b4fecf99801834c62a5e6006f27d978de234f",
 					"keys": {"aura":"0x90b5ab205c6974c9ea841be688864633dc9ca8a357843eeacf2314649965fe22", "gran": "0x439660b36c6c03afafca027b910b4fecf99801834c62a5e6006f27d978de234f"},
 					"sidechainSignature": "0x3da1014f1ba4ece29a82b98e2ee4e707bd062523f558e84857cd97d95c525ebd4762812bc1baaf92117861d41acd8641d474f1b30367f0c1ebcf0d280ec44338",
 					"mainchainSignature": "0x37a45144a24ddd0ded388b7b39441b4ceb7abd1935d02fe6abf07f14025b663e81b53678b3f6701a7c76af7981246537eeee6a790aac18445bb8494bea38990f",

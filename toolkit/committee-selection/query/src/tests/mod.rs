@@ -162,8 +162,6 @@ mod get_registration_tests {
 			.to_ss58check(),
 			mainchain_pub_key: to_hex(&candidate.mainchain_pub_key().0, false),
 			cross_chain_pub_key: to_hex(&registration.cross_chain_pub_key.0, false),
-			aura_pub_key: to_hex(&aura, false),
-			grandpa_pub_key: to_hex(&grandpa, false),
 			keys: vec![
 				("aura".to_string(), ByteString(aura)),
 				("gran".to_string(), ByteString(grandpa)),

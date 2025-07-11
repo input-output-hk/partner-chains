@@ -117,8 +117,8 @@ def check_registration_data(registrations):
     assert registrations[0]["sidechainAccountId"] is not None
     assert registrations[0]["mainchainPubKey"] is not None
     assert registrations[0]["crossChainPubKey"] is not None
-    assert registrations[0]["auraPubKey"] is not None
-    assert registrations[0]["grandpaPubKey"] is not None
+    assert registrations[0]["keys"]["aura"] is not None
+    assert registrations[0]["keys"]["gran"] is not None
     assert registrations[0]["sidechainSignature"] is not None
     assert registrations[0]["mainchainSignature"] is not None
     assert registrations[0]["crossChainSignature"] is not None
