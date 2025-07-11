@@ -177,6 +177,10 @@ impl MockValidator {
 	pub fn grandpa_pub_key(&self) -> GrandpaPublicKey {
 		GrandpaPublicKey(self.session_keys().grandpa.to_vec())
 	}
+
+	pub fn keys(&self) -> CandidateKeys {
+		CandidateKeys(vec![self.aura_pub_key().into(), self.grandpa_pub_key().into()])
+	}
 }
 
 #[test]
@@ -391,8 +395,7 @@ fn create_epoch_candidates_idp(validators: &[MockValidator]) -> Vec<CandidateReg
 				mainchain_signature: MainchainSignature(mainchain_signature.0),
 				cross_chain_signature: CrossChainSignature(sidechain_signature_bytes_no_recovery),
 				sidechain_pub_key: validator.sidechain_pub_key(),
-				aura_pub_key: validator.aura_pub_key(),
-				grandpa_pub_key: validator.grandpa_pub_key(),
+				keys: validator.keys(),
 				cross_chain_pub_key: CrossChainPublicKey(validator.sidechain_pub_key().0),
 				utxo_info: UtxoInfo::default(),
 				tx_inputs: vec![signed_message.registration_utxo],
@@ -420,8 +423,7 @@ pub fn create_authority_selection_inputs(
 		.iter()
 		.map(|c| PermissionedCandidateData {
 			sidechain_public_key: c.sidechain_pub_key(),
-			aura_public_key: c.aura_pub_key(),
-			grandpa_public_key: c.grandpa_pub_key(),
+			keys: c.keys(),
 		})
 		.collect();
 	AuthoritySelectionInputs {

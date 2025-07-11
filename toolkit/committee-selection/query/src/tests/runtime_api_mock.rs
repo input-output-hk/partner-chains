@@ -89,7 +89,7 @@ sp_api::mock_impl_runtime_apis! {
 			authority_selection_inherents::filter_invalid_candidates::validate_stake(stake).err()
 		}
 		fn validate_permissioned_candidate_data(candidate: sidechain_domain::PermissionedCandidateData) -> Option<PermissionedCandidateDataError> {
-			validate_permissioned_candidate_data::<CrossChainPublic>(candidate).err()
+			validate_permissioned_candidate_data(candidate).err()
 		}
 	}
 }

@@ -101,7 +101,7 @@ runs:
             .result.dParameter.numPermissionedCandidates and
             .result.dParameter.numRegisteredCandidates and
             (.result.permissionedCandidates | type == "array") and
-            all(.result.permissionedCandidates[]; .sidechainPublicKey and .auraPublicKey and .grandpaPublicKey) and
+            all(.result.permissionedCandidates[]; .sidechainPublicKey and .keys.aura and .keys.gran) and
             (.result.candidateRegistrations | type == "object")
           ' || { echo "❌ Invalid Ariadne parameters"; exit 1; }
 
@@ -138,7 +138,7 @@ runs:
           -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getRegistrations\",\"params\":[$MC_EPOCH,\"$MAINCHAIN_KEY\"],\"id\":1}" \
           http://localhost:9933 | tee /dev/stderr | jq -e '
             (.result | length > 0) and
-            (.result[0] | 
+            (.result[0] |
               .sidechainPubKey and
               .sidechainAccountId and
               .mainchainPubKey and

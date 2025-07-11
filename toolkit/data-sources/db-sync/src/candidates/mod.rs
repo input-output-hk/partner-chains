@@ -8,7 +8,6 @@ use crate::observed_async_trait;
 use authority_selection_inherents::authority_selection_inputs::*;
 use itertools::Itertools;
 use log::error;
-use partner_chains_plutus_data::candidate_keys::{AURA_TYPE_ID, GRANDPA_TYPE_ID, find_or_empty};
 use partner_chains_plutus_data::{
 	d_param::DParamDatum, permissioned_candidates::PermissionedCandidateDatums,
 	registered_candidates::RegisterValidatorDatum,
@@ -40,8 +39,7 @@ struct RegisteredCandidate {
 	cross_chain_signature: CrossChainSignature,
 	sidechain_pub_key: SidechainPublicKey,
 	cross_chain_pub_key: CrossChainPublicKey,
-	aura_pub_key: AuraPublicKey,
-	grandpa_pub_key: GrandpaPublicKey,
+	keys: CandidateKeys,
 	utxo_info: UtxoInfo,
 }
 
@@ -176,8 +174,7 @@ impl CandidatesDataSourceImpl {
 			cross_chain_signature: c.cross_chain_signature,
 			sidechain_pub_key: c.sidechain_pub_key,
 			cross_chain_pub_key: c.cross_chain_pub_key,
-			aura_pub_key: c.aura_pub_key,
-			grandpa_pub_key: c.grandpa_pub_key,
+			keys: c.keys,
 			utxo_info: c.utxo_info,
 			tx_inputs: c.tx_inputs,
 		}
@@ -233,8 +230,7 @@ impl CandidatesDataSourceImpl {
 						cross_chain_signature: CrossChainSignature(sidechain_signature.0.clone()),
 						sidechain_signature,
 						sidechain_pub_key,
-						aura_pub_key,
-						grandpa_pub_key,
+						keys: CandidateKeys(vec![aura_pub_key.into(), grandpa_pub_key.into()]),
 						registration_utxo,
 						tx_inputs: c.tx_inputs,
 						utxo_info: c.utxo_info,
@@ -254,8 +250,7 @@ impl CandidatesDataSourceImpl {
 						cross_chain_signature: CrossChainSignature(sidechain_signature.0.clone()),
 						sidechain_signature,
 						sidechain_pub_key,
-						aura_pub_key: AuraPublicKey(find_or_empty(&keys, AURA_TYPE_ID)),
-						grandpa_pub_key: GrandpaPublicKey(find_or_empty(&keys, GRANDPA_TYPE_ID)),
+						keys,
 						registration_utxo,
 						tx_inputs: c.tx_inputs,
 						utxo_info: c.utxo_info,

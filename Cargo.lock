@@ -7344,6 +7344,7 @@ dependencies = [
  "raw-scripts",
  "serde_json",
  "sidechain-domain",
+ "sp-core",
  "thiserror 2.0.12",
 ]
 
