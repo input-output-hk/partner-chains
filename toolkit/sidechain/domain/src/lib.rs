@@ -1268,8 +1268,7 @@ impl CandidateRegistration {
 		self.stake_ownership == other.stake_ownership
 			&& self.partner_chain_pub_key == other.partner_chain_pub_key
 			&& self.partner_chain_signature == other.partner_chain_signature
-			// TODO: sort before comparisone
-			&& self.keys == other.keys
+			&& self.keys.0.iter().all(|key| other.keys.0.contains(key))
 	}
 }
 
