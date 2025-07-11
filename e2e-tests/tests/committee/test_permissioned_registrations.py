@@ -67,7 +67,7 @@ def test_upsert_permissioned_candidates(
 
 def compare_lists_of_dicts(list1, list2):
     def sort_key(d):
-        return tuple(sorted(d.items()))
+        return d["sidechainPublicKey"]
 
     sorted_list1 = sorted(list1, key=sort_key)
     sorted_list2 = sorted(list2, key=sort_key)
