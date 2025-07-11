@@ -403,12 +403,7 @@ impl pallet_session_validator_management::Config for Runtime {
 		input: AuthoritySelectionInputs,
 		sidechain_epoch: ScEpochNumber,
 	) -> Option<BoundedVec<Self::CommitteeMember, Self::MaxValidators>> {
-		Some(BoundedVec::truncate_from(
-			select_authorities(Sidechain::genesis_utxo(), input, sidechain_epoch)?
-				.into_iter()
-				.map(|member| member.into())
-				.collect(),
-		))
+		select_authorities(Sidechain::genesis_utxo(), input, sidechain_epoch)
 	}
 
 	fn current_epoch_number() -> ScEpochNumber {
