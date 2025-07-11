@@ -18,6 +18,8 @@ use sp_consensus_grandpa::AuthorityId as GrandpaId;
 use sp_core::crypto::CryptoType;
 use sp_core::sr25519;
 use sp_core::{ByteArray, ConstU128, H256, Pair, crypto::AccountId32, ed25519};
+use sp_runtime::KeyTypeId;
+use sp_runtime::key_types::{AURA, GRANDPA};
 use sp_runtime::{
 	BuildStorage, Digest, DigestItem, MultiSigner, impl_opaque_keys,
 	traits::{BlakeTwo256, IdentifyAccount, IdentityLookup, OpaqueKeys},
@@ -120,6 +122,19 @@ impl From<(sr25519::Public, ed25519::Public)> for TestSessionKeys {
 		let aura = AuraId::from(aura);
 		let grandpa = GrandpaId::from(grandpa);
 		Self { aura, grandpa }
+	}
+}
+
+impl TryFrom<CandidateKeys> for TestSessionKeys {
+	type Error = KeyTypeId;
+	fn try_from(value: CandidateKeys) -> Result<Self, Self::Error> {
+		let aura = <[u8; 32]>::try_from(value.find_or_empty(AURA))
+			.map_err(|_| AURA)
+			.map(|bytes| AuraId::from(sr25519::Public::from(bytes)))?;
+		let grandpa = <[u8; 32]>::try_from(value.find_or_empty(GRANDPA))
+			.map_err(|_| GRANDPA)
+			.map(|bytes| GrandpaId::from(ed25519::Public::from(bytes)))?;
+		Ok(Self { aura, grandpa })
 	}
 }
 

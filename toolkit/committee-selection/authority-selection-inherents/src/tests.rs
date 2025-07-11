@@ -10,6 +10,7 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sidechain_domain::*;
 use sp_core::{Pair, ecdsa, ed25519, sr25519};
+use sp_runtime::key_types::{AURA, GRANDPA};
 use sp_runtime::traits::Zero;
 
 #[test]
@@ -105,6 +106,18 @@ impl AccountKeys {
 		let mut grandpa = format!("grandpa-{seed}").into_bytes();
 		grandpa.resize(32, 0);
 		AccountKeys { aura: aura.try_into().unwrap(), grandpa: grandpa.try_into().unwrap() }
+	}
+}
+
+impl TryFrom<CandidateKeys> for AccountKeys {
+	type Error = &'static str;
+
+	fn try_from(value: CandidateKeys) -> Result<Self, Self::Error> {
+		let aura =
+			<[u8; 32]>::try_from(value.find_or_empty(AURA)).map_err(|_| "invalid AURA key")?;
+		let grandpa = <[u8; 32]>::try_from(value.find_or_empty(GRANDPA))
+			.map_err(|_| "invalid Grandpa key")?;
+		Ok(Self { aura, grandpa })
 	}
 }
 
