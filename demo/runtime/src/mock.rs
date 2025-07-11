@@ -394,7 +394,7 @@ impl TestKeys {
 			self.session()
 				.into_raw_public_keys()
 				.into_iter()
-				.map(|(value, key_type_id)| (key_type_id.0, value))
+				.map(|(value, key_type_id)| CandidateKey::new(key_type_id, value))
 				.collect(),
 		)
 	}

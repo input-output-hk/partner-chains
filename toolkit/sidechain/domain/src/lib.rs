@@ -29,7 +29,15 @@ use num_derive::*;
 use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen, WrapperTypeEncode};
 use plutus_datum_derive::*;
 use scale_info::TypeInfo;
-use sp_core::{ConstU32, bounded::BoundedVec, ecdsa, ed25519, sr25519};
+use sp_core::{
+	ConstU32,
+	bounded::BoundedVec,
+	crypto::{
+		KeyTypeId,
+		key_types::{AURA, GRANDPA},
+	},
+	ecdsa, ed25519, sr25519,
+};
 #[cfg(feature = "serde")]
 use {
 	derive_more::FromStr,
@@ -1079,7 +1087,7 @@ impl From<sr25519::Public> for AuraPublicKey {
 
 impl From<AuraPublicKey> for CandidateKey {
 	fn from(value: AuraPublicKey) -> Self {
-		(*b"aura", value.0)
+		Self { id: AURA.0, bytes: value.0 }
 	}
 }
 
@@ -1104,7 +1112,7 @@ impl From<ed25519::Public> for GrandpaPublicKey {
 
 impl From<GrandpaPublicKey> for CandidateKey {
 	fn from(value: GrandpaPublicKey) -> Self {
-		(*b"gran", value.0)
+		Self { id: GRANDPA.0, bytes: value.0 }
 	}
 }
 
@@ -1143,7 +1151,36 @@ impl DParameter {
 }
 
 /// Opaque key bytes with a 4 bytes identifier
-type CandidateKey = ([u8; 4], Vec<u8>);
+#[derive(
+	Debug,
+	Clone,
+	PartialEq,
+	Eq,
+	Decode,
+	DecodeWithMemTracking,
+	Encode,
+	TypeInfo,
+	PartialOrd,
+	Ord,
+	Hash,
+)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
+pub struct CandidateKey {
+	/// Key type id
+	pub id: [u8; 4],
+	/// Bytes of the key
+	pub bytes: Vec<u8>,
+}
+
+/// Key type id of Partner Chains cross-chain key, used with ECDSA cryptography
+pub const CROSS_CHAIN_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"crch");
+
+impl CandidateKey {
+	/// Constructor
+	pub fn new(id: KeyTypeId, bytes: Vec<u8>) -> Self {
+		Self { id: id.0, bytes }
+	}
+}
 
 #[derive(
 	Debug,
@@ -1164,13 +1201,21 @@ pub struct CandidateKeys(pub Vec<CandidateKey>);
 
 impl CandidateKeys {
 	/// Gets copy of key bytes identified by given id
-	pub fn find(&self, id: &[u8; 4]) -> Option<Vec<u8>> {
-		self.0.iter().find(|(k, _)| k == id).map(|(_, v)| v.clone())
+	pub fn find(&self, id: KeyTypeId) -> Option<Vec<u8>> {
+		self.0
+			.iter()
+			.find_map(|e| if e.id == id.0 { Some(e.bytes.clone()) } else { None })
 	}
 
 	/// Gets copy of key bytes identified by given id or empty bytes if key is not present
-	pub fn find_or_empty(&self, id: &[u8; 4]) -> Vec<u8> {
+	pub fn find_or_empty(&self, id: KeyTypeId) -> Vec<u8> {
 		self.find(id).unwrap_or_default()
+	}
+}
+
+impl From<Vec<([u8; 4], Vec<u8>)>> for CandidateKeys {
+	fn from(value: Vec<([u8; 4], Vec<u8>)>) -> Self {
+		Self(value.into_iter().map(|(id, bytes)| CandidateKey { id, bytes }).collect())
 	}
 }
 

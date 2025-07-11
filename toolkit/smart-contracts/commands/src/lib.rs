@@ -205,7 +205,10 @@ pub(crate) fn parse_partnerchain_public_keys(
 mod test {
 	use crate::parse_partnerchain_public_keys;
 	use hex_literal::hex;
-	use sidechain_domain::{CandidateKeys, PermissionedCandidateData, SidechainPublicKey};
+	use sidechain_domain::{
+		AuraPublicKey, CandidateKeys, GrandpaPublicKey, PermissionedCandidateData,
+		SidechainPublicKey,
+	};
 
 	#[test]
 	fn parse_partnerchain_public_keys_with_0x_prefix() {
@@ -225,16 +228,16 @@ mod test {
 				hex!("039799ff93d184146deacaa455dade51b13ed16f23cdad11d1ad6af20103391180").to_vec(),
 			),
 			keys: CandidateKeys(vec![
-				(
-					*b"aura",
+				AuraPublicKey(
 					hex!("e85534c93315d60f808568d1dce5cb9e8ba6ed0b204209c5cc8f3bec56c10b73")
 						.to_vec(),
-				),
-				(
-					*b"gran",
+				)
+				.into(),
+				GrandpaPublicKey(
 					hex!("cdf3e5b33f53c8b541bbaea383225c45654f24de38c585725f3cff25b2802f55")
 						.to_vec(),
-				),
+				)
+				.into(),
 			]),
 		}
 	}

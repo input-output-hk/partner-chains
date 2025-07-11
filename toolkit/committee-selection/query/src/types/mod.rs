@@ -92,10 +92,10 @@ impl CommitteeMember {
 fn keys_to_map(keys: &CandidateKeys) -> HashMap<String, ByteString> {
 	keys.0
 		.iter()
-		.map(|(id, bytes)| {
+		.map(|key| {
 			(
-				String::from_utf8(id.to_vec()).unwrap_or("<invalid>".to_string()),
-				ByteString(bytes.clone()),
+				String::from_utf8(key.id.to_vec()).unwrap_or("<invalid>".to_string()),
+				ByteString(key.bytes.clone()),
 			)
 		})
 		.collect()

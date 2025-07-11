@@ -247,12 +247,12 @@ pub fn validate_permissioned_candidate_data(
 		ecdsa_bytes.into(),
 		candidate
 			.keys
-			.find(&AURA.0)
+			.find(AURA)
 			.and_then(|v| AuraPublicKey(v).try_into_sr25519())
 			.ok_or(PermissionedCandidateDataError::InvalidAuraKey)?,
 		candidate
 			.keys
-			.find(&GRANDPA.0)
+			.find(GRANDPA)
 			.and_then(|v| GrandpaPublicKey(v).try_into_ed25519())
 			.ok_or(PermissionedCandidateDataError::InvalidGrandpaKey)?,
 	))
@@ -272,12 +272,12 @@ pub fn validate_registration_data(
 ) -> Result<(ecdsa::Public, (sr25519::Public, ed25519::Public)), RegistrationDataError> {
 	let aura_pub_key = registration_data
 		.keys
-		.find(&AURA.0)
+		.find(AURA)
 		.and_then(|v| AuraPublicKey(v).try_into_sr25519())
 		.ok_or(RegistrationDataError::InvalidAuraKey)?;
 	let grandpa_pub_key = registration_data
 		.keys
-		.find(&GRANDPA.0)
+		.find(GRANDPA)
 		.and_then(|v| GrandpaPublicKey(v).try_into_ed25519())
 		.ok_or(RegistrationDataError::InvalidGrandpaKey)?;
 	let sidechain_pub_key = ecdsa::Public::from(
@@ -425,8 +425,8 @@ mod tests {
 				hex!("020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1").to_vec()
 			),
 			keys: CandidateKeys(vec![
-				(*b"aura", hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d").to_vec()),
-				(*b"gran", hex!("88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee").to_vec()),
+				AuraPublicKey(hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d").to_vec()).into(),
+				GrandpaPublicKey(hex!("88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee").to_vec()).into(),
 			]),
 			utxo_info: UtxoInfo {
 				utxo_id: UtxoId {
@@ -492,7 +492,10 @@ mod tests {
 				cross_chain_signature: CrossChainSignature(vec![]),
 				sidechain_pub_key: SidechainPublicKey(sidechain_pub_key),
 				cross_chain_pub_key: CrossChainPublicKey(vec![]),
-				keys: CandidateKeys(vec![(*b"aura", vec![1; 32]), (*b"gran", vec![2; 32])]),
+				keys: CandidateKeys(vec![
+					AuraPublicKey(vec![1; 32]).into(),
+					GrandpaPublicKey(vec![2; 32]).into(),
+				]),
 				utxo_info: UtxoInfo {
 					utxo_id: UtxoId { tx_hash: McTxHash([7u8; 32]), index: UtxoIndex(7) },
 					epoch_number: McEpochNumber(7),
@@ -551,8 +554,10 @@ mod tests {
 				ecdsa::Pair::from_seed_slice(&[123u8; 32]).unwrap().public().0.to_vec();
 			let (mainchain_pub_key, mut registration_data, genesis_utxo) =
 				create_parameters(signing_sidechain_account, sidechain_pub_key);
-			registration_data.keys =
-				CandidateKeys(vec![(*b"aura", vec![1; 32]), (*b"gran", vec![3; 4])]);
+			registration_data.keys = CandidateKeys(vec![
+				AuraPublicKey(vec![1; 32]).into(),
+				GrandpaPublicKey(vec![3; 4]).into(),
+			]);
 			assert_eq!(
 				validate_registration_data(&mainchain_pub_key, &registration_data, genesis_utxo,),
 				Err(RegistrationDataError::InvalidGrandpaKey)
@@ -566,8 +571,10 @@ mod tests {
 				ecdsa::Pair::from_seed_slice(&[123u8; 32]).unwrap().public().0.to_vec();
 			let (mainchain_pub_key, mut registration_data, genesis_utxo) =
 				create_parameters(signing_sidechain_account, sidechain_pub_key);
-			registration_data.keys =
-				CandidateKeys(vec![(*b"aura", vec![3; 4]), (*b"gran", vec![2; 32])]);
+			registration_data.keys = CandidateKeys(vec![
+				CandidateKey::new(AURA, vec![3; 4]),
+				CandidateKey::new(GRANDPA, vec![2; 32]),
+			]);
 			assert_eq!(
 				validate_registration_data(&mainchain_pub_key, &registration_data, genesis_utxo),
 				Err(RegistrationDataError::InvalidAuraKey)

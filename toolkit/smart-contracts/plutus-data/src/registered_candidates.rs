@@ -5,6 +5,7 @@ use crate::{
 };
 use cardano_serialization_lib::*;
 use sidechain_domain::*;
+use sp_core::crypto::key_types::{AURA, GRANDPA};
 
 use crate::{DataDecodingError, DecodingResult};
 
@@ -72,7 +73,7 @@ pub enum RegisterValidatorDatum {
 		/// Used by offchain code to find the registration UTXO when re-registering or de-registering.
 		own_pkh: MainchainKeyHash,
 		/// Additional keys of the registered candidate, these are specific to the keys used by the partner chain
-		keys: Vec<KeyTypeIdAndBytes>,
+		keys: CandidateKeys,
 	},
 }
 
@@ -116,10 +117,8 @@ pub fn candidate_registration_to_plutus_data(
 		sidechain_signature: candidate_registration.partner_chain_signature.clone(),
 		registration_utxo: candidate_registration.registration_utxo,
 		own_pkh: candidate_registration.own_pkh,
-		aura_pub_key: AuraPublicKey(candidate_registration.keys.find_or_empty(AURA_TYPE_ID)),
-		grandpa_pub_key: GrandpaPublicKey(
-			candidate_registration.keys.find_or_empty(GRANDPA_TYPE_ID),
-		),
+		aura_pub_key: AuraPublicKey(candidate_registration.keys.find_or_empty(AURA)),
+		grandpa_pub_key: GrandpaPublicKey(candidate_registration.keys.find_or_empty(GRANDPA)),
 	}
 	.into()
 }
@@ -142,8 +141,8 @@ impl From<RegisterValidatorDatum> for CandidateRegistration {
 				registration_utxo,
 				own_pkh,
 				keys: CandidateKeys(vec![
-					(*AURA_TYPE_ID, aura_pub_key.0),
-					(*GRANDPA_TYPE_ID, grandpa_pub_key.0),
+					CandidateKey::new(AURA, aura_pub_key.0),
+					CandidateKey::new(GRANDPA, grandpa_pub_key.0),
 				]),
 			},
 			RegisterValidatorDatum::V1 {
@@ -159,7 +158,7 @@ impl From<RegisterValidatorDatum> for CandidateRegistration {
 				partner_chain_signature: sidechain_signature,
 				registration_utxo,
 				own_pkh,
-				keys: CandidateKeys(keys),
+				keys,
 			},
 		}
 	}
@@ -204,10 +203,10 @@ fn decode_v1_register_validator_datum(
 		.data();
 
 	let stake_ownership = decode_ada_based_staking_datum(fields.get(0))?;
-	let sidechain_pub_key = SidechainPublicKey(decode_key_id_and_bytes(&fields.get(1))?.1);
+	let sidechain_pub_key = SidechainPublicKey(decode_candidate_key(&fields.get(1))?.bytes);
 	let sidechain_signature = fields.get(2).as_bytes().map(SidechainSignature)?;
 	let registration_utxo = decode_utxo_id_datum(fields.get(3))?;
-	let keys = decode_key_id_and_bytes_list(&fields.get(4))?;
+	let keys = decode_candidate_keys(&fields.get(4))?;
 
 	let own_pkh = MainchainKeyHash(datum.as_bytes()?.try_into().ok()?);
 	Some(RegisterValidatorDatum::V1 {
@@ -313,11 +312,13 @@ impl From<RegisterValidatorDatum> for PlutusData {
 			} => {
 				let mut appendix_fields = PlutusList::new();
 				appendix_fields.add(&stake_ownership_to_plutus_data(stake_ownership));
-				appendix_fields
-					.add(&key_id_and_bytes_to_plutus(CROSS_CHAIN_TYPE_ID, &sidechain_pub_key.0));
+				appendix_fields.add(&candidate_key_to_plutus(&CandidateKey::new(
+					CROSS_CHAIN_KEY_TYPE_ID,
+					sidechain_pub_key.0,
+				)));
 				appendix_fields.add(&PlutusData::new_bytes(sidechain_signature.0));
 				appendix_fields.add(&utxo_id_to_plutus_data(registration_utxo));
-				appendix_fields.add(&key_id_and_bytes_list_to_plutus(&keys));
+				appendix_fields.add(&candidate_keys_to_plutus(&keys));
 				let appendix = ConstrPlutusData::new(&BigNum::zero(), &appendix_fields);
 				VersionedGenericDatum {
 					datum: PlutusData::new_bytes(own_pkh.0.to_vec()),
@@ -388,18 +389,17 @@ mod tests {
 				index: UtxoIndex(1),
 			},
 			own_pkh: MainchainKeyHash(hex!("aabbccddeeff00aabbccddeeff00aabbccddeeff00aabbccddeeff00")),
-			keys: vec![
-					(
-						*b"aura",
+			keys: CandidateKeys(vec![
+					CandidateKey::new(AURA,
 						hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d")
 							.into(),
 					),
-					(
-						*b"gran",
+					CandidateKey::new(
+						GRANDPA,
 						hex!("88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee")
 							.into(),
 					),
-				]
+				])
 		}
 	}
 

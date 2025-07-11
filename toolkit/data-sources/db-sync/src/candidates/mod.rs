@@ -250,7 +250,7 @@ impl CandidatesDataSourceImpl {
 						cross_chain_signature: CrossChainSignature(sidechain_signature.0.clone()),
 						sidechain_signature,
 						sidechain_pub_key,
-						keys: CandidateKeys(keys),
+						keys,
 						registration_utxo,
 						tx_inputs: c.tx_inputs,
 						utxo_info: c.utxo_info,

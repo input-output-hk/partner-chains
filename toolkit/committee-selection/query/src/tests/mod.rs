@@ -112,6 +112,7 @@ mod get_registration_tests {
 		PermissionedCandidateDataError, RegistrationDataError, StakeError,
 	};
 	use sidechain_domain::byte_string::ByteString;
+	use sp_runtime::key_types::{AURA, GRANDPA};
 
 	const SEED: [u8; 32] = [7u8; 32];
 	const SEED2: [u8; 32] = [8u8; 32];
@@ -151,8 +152,8 @@ mod get_registration_tests {
 			.await
 			.unwrap();
 
-		let aura = registration.keys.find_or_empty(b"aura");
-		let grandpa = registration.keys.find_or_empty(b"gran");
+		let aura = registration.keys.find_or_empty(AURA);
+		let grandpa = registration.keys.find_or_empty(GRANDPA);
 		let expected_entry = CandidateRegistrationEntry {
 			sidechain_pub_key: to_hex(&registration.sidechain_pub_key.0, false),
 			sidechain_account_id: MultiSigner::Ecdsa(ecdsa::Public::from(
