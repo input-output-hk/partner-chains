@@ -3,7 +3,7 @@
 use crate::data_sources::DataSources;
 use crate::inherent_data::{CreateInherentDataConfig, ProposalCIDP, VerifierCIDP};
 use crate::rpc::GrandpaDeps;
-use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
+use authority_selection_inherents::AuthoritySelectionDataSource;
 use partner_chains_db_sync_data_sources::McFollowerMetrics;
 use partner_chains_db_sync_data_sources::register_metrics_warn_errors;
 use partner_chains_demo_runtime::{self, RuntimeApi, opaque::Block};

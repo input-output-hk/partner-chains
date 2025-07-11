@@ -12,13 +12,8 @@ extern crate alloc;
 use alloc::collections::BTreeMap;
 use alloc::string::String;
 use authority_selection_inherents::{
-	CommitteeMember,
-	authority_selection_inputs::AuthoritySelectionInputs,
-	filter_invalid_candidates::{
-		PermissionedCandidateDataError, RegistrationDataError, StakeError,
-		validate_permissioned_candidate_data,
-	},
-	select_authorities,
+	AuthoritySelectionInputs, CommitteeMember, PermissionedCandidateDataError,
+	RegistrationDataError, StakeError, select_authorities, validate_permissioned_candidate_data,
 };
 use frame_support::genesis_builder_helper::{build_state, get_preset};
 use frame_support::inherent::ProvideInherent;
@@ -1068,12 +1063,12 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi<Block> for Runtime {
+	impl authority_selection_inherents::CandidateValidationApi<Block> for Runtime {
 		fn validate_registered_candidate_data(stake_pool_public_key: &StakePoolPublicKey, registration_data: &RegistrationData) -> Option<RegistrationDataError> {
-			authority_selection_inherents::filter_invalid_candidates::validate_registration_data(stake_pool_public_key, registration_data, Sidechain::genesis_utxo()).err()
+			authority_selection_inherents::validate_registration_data(stake_pool_public_key, registration_data, Sidechain::genesis_utxo()).err()
 		}
 		fn validate_stake(stake: Option<StakeDelegation>) -> Option<StakeError> {
-			authority_selection_inherents::filter_invalid_candidates::validate_stake(stake).err()
+			authority_selection_inherents::validate_stake(stake).err()
 		}
 		fn validate_permissioned_candidate_data(candidate: PermissionedCandidateData) -> Option<PermissionedCandidateDataError> {
 			validate_permissioned_candidate_data(candidate).err()

@@ -1,7 +1,7 @@
 use crate::candidates::CandidatesDataSourceImpl;
 use crate::db_model::index_exists_unsafe;
 use crate::metrics::mock::test_metrics;
-use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
+use authority_selection_inherents::AuthoritySelectionDataSource;
 use hex_literal::hex;
 use sidechain_domain::*;
 use sqlx::PgPool;

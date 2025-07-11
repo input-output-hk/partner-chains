@@ -21,9 +21,6 @@ use {
 #[cfg(feature = "std")]
 pub use {sidechain_domain::mainchain_epoch::MainchainEpochConfig, sidechain_slots::ScSlotConfig};
 
-/// Inherent data type provided by [AriadneInherentDataProvider].
-pub type InherentType = AuthoritySelectionInputs;
-
 #[derive(Clone, Debug, Encode, Decode)]
 /// Inherent data provider providing inputs for authority selection.
 pub struct AriadneInherentDataProvider {
