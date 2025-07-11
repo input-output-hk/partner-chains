@@ -64,8 +64,8 @@ class TestRpc:
         if permissioned_candidates:
             for candidate in permissioned_candidates:
                 assert candidate["sidechainPublicKey"] is not None
-                assert candidate["auraPublicKey"] is not None
-                assert candidate["grandpaPublicKey"] is not None
+                assert candidate["keys"]["aura"] is not None
+                assert candidate["keys"]["gran"] is not None
 
         assert 'candidateRegistrations' in ariadne_parameters
         trustless_registrations = ariadne_parameters["candidateRegistrations"]

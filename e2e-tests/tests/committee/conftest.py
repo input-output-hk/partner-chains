@@ -177,12 +177,12 @@ def permissioned_candidates(
     if active_candidates:
         candidate_to_remove = random.choice(active_candidates)
         candidate_name_to_remove = next(
-            (name for name, node in candidates.items() if node.aura_public_key == candidate_to_remove["auraPublicKey"]),
+            (name for name, node in candidates.items() if node.aura_public_key == candidate_to_remove["keys"]["aura"]),
             None,
         )
         if not candidate_name_to_remove:
             raise ValueError(
-                f"Could not find candidate with aura key {candidate_to_remove['auraPublicKey']} in config."
+                f"Could not find candidate with aura key {candidate_to_remove['keys']['aura']} in config."
             )
         del candidates[candidate_name_to_remove]
     else:

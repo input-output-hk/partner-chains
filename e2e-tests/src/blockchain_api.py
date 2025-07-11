@@ -232,8 +232,8 @@ class BlockchainApi(ABC):
         Return: A list of candidates. Example response:
         ```
         [
-            {"sidechainPublicKey": "0x000000", "auraPublicKey": "0x111111", "isValid": true, ...},
-            {"sidechainPublicKey": "0x000001", "auraPublicKey": "0x222222", "isValid": false, ...}
+            {"sidechainPublicKey": "0x000000", "keys": {"aura": "0x111111", ...}, "isValid": true, ...},
+            {"sidechainPublicKey": "0x000001", "keys": {"aura": "0x222222", ...}, "isValid": false, ...}
         ]
         ```
         """
