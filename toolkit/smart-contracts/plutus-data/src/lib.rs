@@ -58,8 +58,6 @@ impl PlutusDataExtensions for PlutusData {
 ///     }
 /// ```
 pub(crate) trait VersionedDatum: Sized {
-	const NAME: &str;
-
 	/// Parses versioned plutus data.
 	fn decode(data: &PlutusData) -> DecodingResult<Self>;
 }
@@ -87,8 +85,6 @@ pub(crate) trait VersionedDatumWithLegacy: Sized {
 }
 
 impl<T: VersionedDatumWithLegacy> VersionedDatum for T {
-	const NAME: &str = <Self as VersionedDatumWithLegacy>::NAME;
-
 	fn decode(data: &PlutusData) -> DecodingResult<Self> {
 		(match plutus_data_version_and_payload(data) {
 			None => Self::decode_legacy(data),

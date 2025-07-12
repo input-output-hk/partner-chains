@@ -119,8 +119,6 @@ impl TryFrom<PlutusData> for ReserveDatum {
 }
 
 impl VersionedDatum for ReserveDatum {
-	const NAME: &str = "ReserveDatum";
-
 	fn decode(datum: &PlutusData) -> DecodingResult<Self> {
 		match plutus_data_version_and_payload(datum) {
 			Some(VersionedGenericDatum { version: 0, datum, .. }) => {
