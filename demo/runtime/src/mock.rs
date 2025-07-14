@@ -1,7 +1,6 @@
-use authority_selection_inherents::ariadne_inherent_data_provider::AriadneInherentDataProvider;
-use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
-use authority_selection_inherents::filter_invalid_candidates::{
-	RegisterValidatorSignedMessage, filter_trustless_candidates_registrations,
+use authority_selection_inherents::{
+	AriadneInherentDataProvider, AuthoritySelectionInputs, RegisterValidatorSignedMessage,
+	filter_trustless_candidates_registrations,
 };
 use frame_support::{
 	Hashable,

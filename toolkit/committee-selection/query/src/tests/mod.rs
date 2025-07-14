@@ -108,7 +108,7 @@ async fn get_epoch_committee_should_work_correctly_for_next_epoch() {
 mod get_registration_tests {
 	use super::*;
 	use crate::types::PermissionedCandidateData;
-	use authority_selection_inherents::filter_invalid_candidates::{
+	use authority_selection_inherents::{
 		PermissionedCandidateDataError, RegistrationDataError, StakeError,
 	};
 	use sidechain_domain::byte_string::ByteString;
