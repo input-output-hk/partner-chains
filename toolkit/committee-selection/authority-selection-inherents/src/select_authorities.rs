@@ -15,15 +15,14 @@ use sp_runtime::BoundedVec;
 /// Seed is constructed from the MC epoch nonce and the sidechain epoch.
 pub fn select_authorities<
 	TAccountId: Clone + Ord + From<ecdsa::Public>,
-	TAccountKeys: Clone + Ord,
-	ConvertKeys: MaybeFromCandidateKeys<TAccountKeys>,
+	TAccountKeys: Clone + Ord + MaybeFromCandidateKeys,
 	MaxAuthorities: Get<u32>,
 >(
 	genesis_utxo: UtxoId,
 	input: AuthoritySelectionInputs,
 	sidechain_epoch: ScEpochNumber,
 ) -> Option<BoundedVec<CommitteeMember<TAccountId, TAccountKeys>, MaxAuthorities>> {
-	Some(BoundedVec::truncate_from(select_candidates::<TAccountId, TAccountKeys, ConvertKeys>(
+	Some(BoundedVec::truncate_from(select_candidates::<TAccountId, TAccountKeys>(
 		genesis_utxo,
 		input,
 		sidechain_epoch,
@@ -32,8 +31,7 @@ pub fn select_authorities<
 
 fn select_candidates<
 	TAccountId: Clone + Ord + From<ecdsa::Public>,
-	TAccountKeys: Clone + Ord,
-	ConvertKeys: MaybeFromCandidateKeys<TAccountKeys>,
+	TAccountKeys: Clone + Ord + MaybeFromCandidateKeys,
 >(
 	genesis_utxo: UtxoId,
 	input: AuthoritySelectionInputs,
@@ -42,12 +40,11 @@ fn select_candidates<
 	let valid_registered_candidates = filter_trustless_candidates_registrations::<
 		TAccountId,
 		TAccountKeys,
-		ConvertKeys,
 	>(input.registered_candidates, genesis_utxo);
-	let valid_permissioned_candidates =
-		filter_invalid_permissioned_candidates::<TAccountId, TAccountKeys, ConvertKeys>(
-			input.permissioned_candidates,
-		);
+	let valid_permissioned_candidates = filter_invalid_permissioned_candidates::<
+		TAccountId,
+		TAccountKeys,
+	>(input.permissioned_candidates);
 	let valid_permissioned_count = valid_permissioned_candidates.len();
 	let valid_registered_count = valid_registered_candidates.len();
 

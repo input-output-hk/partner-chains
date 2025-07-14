@@ -160,9 +160,14 @@ mod get_registration_tests {
 			.to_ss58check(),
 			mainchain_pub_key: to_hex(&candidate.mainchain_pub_key().0, false),
 			cross_chain_pub_key: to_hex(&registration.cross_chain_pub_key.0, false),
-			keys: vec![("test".to_string(), ByteString::from_hex_unsafe("0x0000000000000001"))]
-				.into_iter()
-				.collect(),
+			keys: vec![(
+				"sr25".to_string(),
+				ByteString::from_hex_unsafe(
+					"0x0101010101010101010101010101010101010101010101010101010101010101",
+				),
+			)]
+			.into_iter()
+			.collect(),
 			sidechain_signature: to_hex(&registration.sidechain_signature.0, false),
 			mainchain_signature: to_hex(&registration.mainchain_signature.0, false),
 			cross_chain_signature: to_hex(&registration.cross_chain_signature.0, false),
@@ -317,7 +322,7 @@ mod get_registration_tests {
 	fn valid_permissioned_candidate() -> sidechain_domain::PermissionedCandidateData {
 		sidechain_domain::PermissionedCandidateData {
 			sidechain_public_key: SidechainPublicKey(vec![1; 33]),
-			keys: CandidateKeys(vec![CandidateKey { id: *b"test", bytes: vec![1u8; 8] }]),
+			keys: CandidateKeys(vec![CandidateKey { id: *b"sr25", bytes: vec![1u8; 32] }]),
 		}
 	}
 

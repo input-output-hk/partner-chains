@@ -1,5 +1,5 @@
 use authority_selection_inherents::{
-	AriadneInherentDataProvider, AuthoritySelectionInputs, ConvertForImplOpaqueKeys,
+	AriadneInherentDataProvider, AuthoritySelectionInputs, MaybeFromCandidateKeys,
 	RegisterValidatorSignedMessage, filter_trustless_candidates_registrations,
 };
 use frame_support::{
@@ -116,6 +116,9 @@ impl_opaque_keys! {
 		pub grandpa: Grandpa,
 	}
 }
+
+impl MaybeFromCandidateKeys for TestSessionKeys {}
+
 impl From<(sr25519::Public, ed25519::Public)> for TestSessionKeys {
 	fn from((aura, grandpa): (sr25519::Public, ed25519::Public)) -> Self {
 		let aura = AuraId::from(aura);
@@ -174,7 +177,6 @@ impl pallet_session_validator_management::Config for Test {
 		let candidates: Vec<_> = filter_trustless_candidates_registrations::<
 			Self::AuthorityId,
 			Self::AuthorityKeys,
-			ConvertForImplOpaqueKeys,
 		>(input.registered_candidates, Sidechain::genesis_utxo())
 		.into_iter()
 		.map(|(c, _)| (c.account_id().clone(), c.account_keys().clone()))
