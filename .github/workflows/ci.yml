@@ -69,7 +69,7 @@ jobs:
       - name: formatting
         run: nix develop -c bash -c "cargo fmt --check"
       - name: ls -la
-        run: ls -la
+        run: ls -la /tmp
       - name: touch /tmp/testfile
         run: touch /tmp/testfile
       - name: Save Rust cache to host
