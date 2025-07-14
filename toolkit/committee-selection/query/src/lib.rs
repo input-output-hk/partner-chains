@@ -5,10 +5,9 @@ pub mod get_registrations;
 pub mod types;
 
 use async_trait::async_trait;
-use authority_selection_inherents::authority_selection_inputs::{
-	AuthoritySelectionDataSource, AuthoritySelectionInputs,
+use authority_selection_inherents::{
+	AuthoritySelectionDataSource, AuthoritySelectionInputs, CandidateValidationApi,
 };
-use authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
 use derive_new::new;
 use parity_scale_codec::{Decode, Encode};
 use sidechain_block_search::{FindSidechainBlock, SidechainInfo, predicates::AnyBlockInEpoch};

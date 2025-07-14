@@ -1,7 +1,6 @@
-use authority_selection_inherents::ariadne_inherent_data_provider::AriadneInherentDataProvider;
-use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
-use authority_selection_inherents::filter_invalid_candidates::{
-	RegisterValidatorSignedMessage, filter_trustless_candidates_registrations,
+use authority_selection_inherents::{
+	AriadneInherentDataProvider, AuthoritySelectionInputs, RegisterValidatorSignedMessage,
+	filter_trustless_candidates_registrations,
 };
 use frame_support::{
 	Hashable,
@@ -341,8 +340,7 @@ pub fn create_inherent_data_struct(
 					validator.cross_chain.public().into_inner().0.to_vec(),
 				),
 				cross_chain_pub_key: CrossChainPublicKey(vec![]),
-				aura_pub_key: AuraPublicKey(validator.aura.public().as_slice().into()),
-				grandpa_pub_key: GrandpaPublicKey(validator.grandpa.public().as_slice().into()),
+				keys: validator.candidate_keys(),
 				utxo_info: UtxoInfo::default(),
 				tx_inputs: vec![signed_message.registration_utxo],
 			};
@@ -389,6 +387,15 @@ impl TestKeys {
 	}
 	pub fn session(&self) -> TestSessionKeys {
 		TestSessionKeys { aura: self.aura.public(), grandpa: self.grandpa.public() }
+	}
+	pub fn candidate_keys(&self) -> CandidateKeys {
+		CandidateKeys(
+			self.session()
+				.into_raw_public_keys()
+				.into_iter()
+				.map(|(value, key_type_id)| CandidateKey::new(key_type_id, value))
+				.collect(),
+		)
 	}
 }
 

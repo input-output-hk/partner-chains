@@ -9,8 +9,9 @@ use plutus::ToDatum;
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sidechain_domain::*;
-use sp_core::{Pair, ecdsa, ed25519, sr25519};
+use sp_core::{ConstU32, Pair, ecdsa, ed25519, sr25519};
 use sp_runtime::traits::Zero;
+use sp_session_validator_management::CommitteeMember;
 
 #[test]
 fn registration_message_encoding() {
@@ -142,7 +143,7 @@ const ALL_MOCK_VALIDATORS: [(MockValidator, [u8; 33]); 11] = [
 	(KIM, hex!("03e843f200e30bc5b951c73a96d968db1c0cd05e357d910fce159fc59c40e9d6e2")),
 ];
 
-pub fn account_id_to_name(account_id: &AccountId) -> &'static str {
+pub fn account_id_to_name(account_id: AccountId) -> &'static str {
 	ALL_MOCK_VALIDATORS
 		.iter()
 		.find(|(_, acc_id)| acc_id == &account_id.0.0)
@@ -177,7 +178,13 @@ impl MockValidator {
 	pub fn grandpa_pub_key(&self) -> GrandpaPublicKey {
 		GrandpaPublicKey(self.session_keys().grandpa.to_vec())
 	}
+
+	pub fn keys(&self) -> CandidateKeys {
+		CandidateKeys(vec![self.aura_pub_key().into(), self.grandpa_pub_key().into()])
+	}
 }
+
+type MaxValidators = ConstU32<32>;
 
 #[test]
 fn ariadne_all_permissioned_test() {
@@ -193,7 +200,7 @@ fn ariadne_all_permissioned_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee = select_authorities::<AccountId, AccountKeys>(
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, MaxValidators>(
 		UtxoId::default(),
 		authority_selection_inputs,
 		ScEpochNumber::zero(),
@@ -203,7 +210,7 @@ fn ariadne_all_permissioned_test() {
 	let committee = calculated_committee.unwrap();
 	let mut committee_names = committee
 		.iter()
-		.map(|member| account_id_to_name(member.account_id()))
+		.map(|member| account_id_to_name(member.authority_id()))
 		.collect::<Vec<_>>();
 	committee_names.sort();
 	let expected_committee_names =
@@ -225,7 +232,7 @@ fn ariadne_only_permissioned_candidates_are_present_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee = select_authorities::<AccountId, AccountKeys>(
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, MaxValidators>(
 		UtxoId::default(),
 		authority_selection_inputs,
 		ScEpochNumber::zero(),
@@ -235,7 +242,7 @@ fn ariadne_only_permissioned_candidates_are_present_test() {
 	let committee = calculated_committee.unwrap();
 	let mut committee_names = committee
 		.iter()
-		.map(|member| account_id_to_name(member.account_id()))
+		.map(|member| account_id_to_name(member.authority_id()))
 		.collect::<Vec<_>>();
 	committee_names.sort();
 	let expected_committee_names =
@@ -257,7 +264,7 @@ fn ariadne_3_to_2_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee = select_authorities::<AccountId, AccountKeys>(
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, MaxValidators>(
 		UtxoId::default(),
 		authority_selection_inputs,
 		ScEpochNumber::zero(),
@@ -267,7 +274,7 @@ fn ariadne_3_to_2_test() {
 	let committee = calculated_committee.unwrap();
 	let mut committee_names = committee
 		.iter()
-		.map(|member| account_id_to_name(member.account_id()))
+		.map(|member| account_id_to_name(member.authority_id()))
 		.collect::<Vec<_>>();
 	committee_names.sort();
 	let expected_committee_names = vec!["alice", "bob", "charlie", "dave", "eve"];
@@ -288,7 +295,7 @@ fn ariadne_3_to_2_with_more_available_candidates_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee = select_authorities::<AccountId, AccountKeys>(
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, MaxValidators>(
 		UtxoId::default(),
 		authority_selection_inputs,
 		ScEpochNumber::zero(),
@@ -298,7 +305,7 @@ fn ariadne_3_to_2_with_more_available_candidates_test() {
 	let committee = calculated_committee.unwrap();
 	let committee_names = committee
 		.iter()
-		.map(|member| account_id_to_name(member.account_id()))
+		.map(|member| account_id_to_name(member.authority_id()))
 		.collect::<Vec<_>>();
 	// No candidate has guaranteed seat. Every seat comes from random with repetitions.
 	let permissioned_selected = committee_names
@@ -326,7 +333,7 @@ fn ariadne_4_to_7_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee = select_authorities::<AccountId, AccountKeys>(
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, MaxValidators>(
 		UtxoId::default(),
 		authority_selection_inputs,
 		ScEpochNumber::zero(),
@@ -336,7 +343,7 @@ fn ariadne_4_to_7_test() {
 	let committee = calculated_committee.unwrap();
 	let mut committee_names = committee
 		.iter()
-		.map(|member| account_id_to_name(member.account_id()))
+		.map(|member| account_id_to_name(member.authority_id()))
 		.collect::<Vec<_>>();
 	committee_names.sort();
 	// Each permissioned has 1 guaranteed. Registered candidates henry, ida, james and kim have 1 place for sure as well and three places are assigned randomly.
@@ -353,7 +360,7 @@ fn ariadne_does_not_return_empty_committee() {
 		&[],
 		DParameter { num_permissioned_candidates: 1, num_registered_candidates: 1 },
 	);
-	let calculated_committee = select_authorities::<AccountId, AccountKeys>(
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, MaxValidators>(
 		UtxoId::default(),
 		authority_selection_inputs,
 		ScEpochNumber::zero(),
@@ -391,8 +398,7 @@ fn create_epoch_candidates_idp(validators: &[MockValidator]) -> Vec<CandidateReg
 				mainchain_signature: MainchainSignature(mainchain_signature.0),
 				cross_chain_signature: CrossChainSignature(sidechain_signature_bytes_no_recovery),
 				sidechain_pub_key: validator.sidechain_pub_key(),
-				aura_pub_key: validator.aura_pub_key(),
-				grandpa_pub_key: validator.grandpa_pub_key(),
+				keys: validator.keys(),
 				cross_chain_pub_key: CrossChainPublicKey(validator.sidechain_pub_key().0),
 				utxo_info: UtxoInfo::default(),
 				tx_inputs: vec![signed_message.registration_utxo],
@@ -420,8 +426,7 @@ pub fn create_authority_selection_inputs(
 		.iter()
 		.map(|c| PermissionedCandidateData {
 			sidechain_public_key: c.sidechain_pub_key(),
-			aura_public_key: c.aura_pub_key(),
-			grandpa_public_key: c.grandpa_pub_key(),
+			keys: c.keys(),
 		})
 		.collect();
 	AuthoritySelectionInputs {

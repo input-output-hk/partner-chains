@@ -1,6 +1,5 @@
 use super::mock::mock_genesis_utxo;
-use authority_selection_inherents::CommitteeMember;
-use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
+use authority_selection_inherents::{AuthoritySelectionInputs, CommitteeMember};
 use hex_literal::hex;
 use partner_chains_demo_runtime::opaque::SessionKeys;
 use partner_chains_demo_runtime::{BlockAuthor, CrossChainPublic};
@@ -13,6 +12,7 @@ use sp_core::{ecdsa, ed25519, sr25519};
 use sp_governed_map::MainChainScriptsV1;
 use sp_inherents::InherentIdentifier;
 use sp_runtime::Digest;
+use sp_runtime::key_types::{AURA, GRANDPA};
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT, NumberFor, Zero};
 use sp_sidechain::GetGenesisUtxo;
 use std::collections::HashMap;
@@ -80,8 +80,8 @@ sp_api::mock_impl_runtime_apis! {
 					let registration = candidate.registrations().first().unwrap().clone();
 					let cross_chain_pub_slice: [u8; 33] = registration.cross_chain_pub_key.0.try_into().unwrap();
 					let cross_chain_public: CrossChainPublic = CrossChainPublic::from(ecdsa::Public::from(cross_chain_pub_slice));
-					let aura_pub_key = registration.aura_pub_key.try_into_sr25519().unwrap();
-					let grandpa_pub_key = registration.grandpa_pub_key.try_into_ed25519().unwrap();
+					let aura_pub_key = AuraPublicKey(registration.keys.find(AURA).unwrap()).try_into_sr25519().unwrap();
+					let grandpa_pub_key = GrandpaPublicKey(registration.keys.find(GRANDPA).unwrap()).try_into_ed25519().unwrap();
 					let session_keys = (aura_pub_key, grandpa_pub_key).into();
 					CommitteeMember::permissioned(cross_chain_public, session_keys)
 				}).collect();

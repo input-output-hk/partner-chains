@@ -5,7 +5,7 @@
 //! `follower_commands` macro is used to generate [clap] commands.
 //! Command level doc comments are supported, but parameter level doc comments are not supported.
 
-use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
+use authority_selection_inherents::AuthoritySelectionDataSource;
 use clap::Parser;
 use partner_chains_db_sync_data_sources::{BlockDataSourceImpl, CandidatesDataSourceImpl, PgPool};
 use sidechain_domain::*;

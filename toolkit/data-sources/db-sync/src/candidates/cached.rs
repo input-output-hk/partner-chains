@@ -5,7 +5,7 @@
 
 use crate::candidates::CandidatesDataSourceImpl;
 use async_trait::async_trait;
-use authority_selection_inherents::authority_selection_inputs::*;
+use authority_selection_inherents::*;
 use figment::{Figment, providers::Env};
 use log::info;
 use lru::LruCache;

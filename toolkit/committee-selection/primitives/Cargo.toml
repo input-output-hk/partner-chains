@@ -35,9 +35,8 @@ std = [
     "sp-std/std",
     "sp-runtime/std",
     "sidechain-domain/std",
-    "sidechain-domain/serde",
-    "thiserror",
-    "envy",
+    "dep:thiserror",
+    "dep:envy",
     "serde"
 ]
 serde = [
