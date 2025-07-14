@@ -70,8 +70,8 @@ jobs:
         run: nix develop -c bash -c "cargo fmt --check"
       - name: ls -la
         run: ls -la
-      - name: ls /tmp
-        run: ls /tmp
+      - name: check testfile
+        run: ls -l /tmp | grep testfile
       - name: touch /tmp/testfile
         run: touch /tmp/testfile
       - name: Save Rust cache to host
