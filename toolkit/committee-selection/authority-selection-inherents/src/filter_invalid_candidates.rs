@@ -101,18 +101,17 @@ impl<TAccountId, TAccountKeys> Candidate<TAccountId, TAccountKeys> {
 }
 
 /// Get the valid trustless candidates from the registrations from inherent data
-pub fn filter_trustless_candidates_registrations<TAccountId, TAccountKeys, ConvertKeys>(
+pub fn filter_trustless_candidates_registrations<TAccountId, TAccountKeys: MaybeFromCandidateKeys>(
 	candidate_registrations: Vec<CandidateRegistrations>,
 	genesis_utxo: UtxoId,
 ) -> Vec<(Candidate<TAccountId, TAccountKeys>, selection::Weight)>
 where
-	ConvertKeys: MaybeFromCandidateKeys<TAccountKeys>,
 	TAccountId: From<ecdsa::Public>,
 {
 	candidate_registrations
 		.into_iter()
 		.flat_map(|candidate_registrations| {
-			select_latest_valid_candidate::<TAccountId, TAccountKeys, ConvertKeys>(
+			select_latest_valid_candidate::<TAccountId, TAccountKeys>(
 				candidate_registrations,
 				genesis_utxo,
 			)
@@ -124,32 +123,29 @@ where
 		.collect()
 }
 /// Filters invalid candidates from a list of [PermissionedCandidateData].
-pub fn filter_invalid_permissioned_candidates<TAccountId, TAccountKeys, ConvertKeys>(
+pub fn filter_invalid_permissioned_candidates<TAccountId, TAccountKeys: MaybeFromCandidateKeys>(
 	permissioned_candidates: Vec<PermissionedCandidateData>,
 ) -> Vec<Candidate<TAccountId, TAccountKeys>>
 where
-	ConvertKeys: MaybeFromCandidateKeys<TAccountKeys>,
 	TAccountId: From<ecdsa::Public>,
 {
 	permissioned_candidates
 		.into_iter()
 		.filter_map(|candidate| {
 			let (partner_chain_key, account_keys) =
-				validate_permissioned_candidate_data::<TAccountKeys, ConvertKeys>(candidate)
-					.ok()?;
+				validate_permissioned_candidate_data::<TAccountKeys>(candidate).ok()?;
 			let account_id = partner_chain_key.into();
 			Some(Candidate::Permissioned(PermissionedCandidate { account_id, account_keys }))
 		})
 		.collect()
 }
 
-fn select_latest_valid_candidate<TAccountId, TAccountKeys, ConvertKeys>(
+fn select_latest_valid_candidate<TAccountId, TAccountKeys: MaybeFromCandidateKeys>(
 	candidate_registrations: CandidateRegistrations,
 	genesis_utxo: UtxoId,
 ) -> Option<CandidateWithStake<TAccountId, TAccountKeys>>
 where
 	TAccountId: From<ecdsa::Public>,
-	ConvertKeys: MaybeFromCandidateKeys<TAccountKeys>,
 {
 	let stake_delegation = validate_stake(candidate_registrations.stake_delegation).ok()?;
 	let stake_pool_pub_key = candidate_registrations.stake_pool_public_key;
@@ -158,7 +154,7 @@ where
 		.registrations
 		.into_iter()
 		.filter_map(|registration_data| {
-			match validate_registration_data::<TAccountKeys, ConvertKeys>(
+			match validate_registration_data::<TAccountKeys>(
 				&stake_pool_pub_key,
 				&registration_data,
 				genesis_utxo,
@@ -232,12 +228,9 @@ pub enum PermissionedCandidateDataError {
 }
 
 /// Validates Account keys and Partner Chain public keys of [PermissionedCandidateData].
-pub fn validate_permissioned_candidate_data<TAccountKeys, ConvertKeys>(
+pub fn validate_permissioned_candidate_data<TAccountKeys: MaybeFromCandidateKeys>(
 	candidate: PermissionedCandidateData,
-) -> Result<(ecdsa::Public, TAccountKeys), PermissionedCandidateDataError>
-where
-	ConvertKeys: MaybeFromCandidateKeys<TAccountKeys>,
-{
+) -> Result<(ecdsa::Public, TAccountKeys), PermissionedCandidateDataError> {
 	let ecdsa_bytes: [u8; 33] = candidate
 		.sidechain_public_key
 		.0
@@ -245,7 +238,7 @@ where
 		.map_err(|_| PermissionedCandidateDataError::InvalidSidechainPubKey)?;
 	Ok((
 		ecdsa_bytes.into(),
-		ConvertKeys::maybe_from(&candidate.keys)
+		MaybeFromCandidateKeys::maybe_from(&candidate.keys)
 			.ok_or_else(|| PermissionedCandidateDataError::InvalidAccountKeys)?,
 	))
 }
@@ -257,15 +250,12 @@ where
 /// * stake pool signature
 /// * sidechain signature
 /// * transaction inputs contain correct registration utxo
-pub fn validate_registration_data<TAccountKeys, ConvertKeys>(
+pub fn validate_registration_data<TAccountKeys: MaybeFromCandidateKeys>(
 	stake_pool_pub_key: &StakePoolPublicKey,
 	registration_data: &RegistrationData,
 	genesis_utxo: UtxoId,
-) -> Result<(ecdsa::Public, TAccountKeys), RegistrationDataError>
-where
-	ConvertKeys: MaybeFromCandidateKeys<TAccountKeys>,
-{
-	let account_keys = ConvertKeys::maybe_from(&registration_data.keys)
+) -> Result<(ecdsa::Public, TAccountKeys), RegistrationDataError> {
+	let account_keys = MaybeFromCandidateKeys::maybe_from(&registration_data.keys)
 		.ok_or(RegistrationDataError::InvalidAccountKeys)?;
 	let sidechain_pub_key = ecdsa::Public::from(
 		<[u8; 33]>::try_from(registration_data.sidechain_pub_key.0.clone())
@@ -503,7 +493,7 @@ mod tests {
 		fn should_work() {
 			let (mainchain_pub_key, registration_data, genesis_utxo) = create_valid_parameters();
 			assert!(
-				validate_registration_data::<AccountKeys, TestConvertKeys>(
+				validate_registration_data::<AccountKeys>(
 					&mainchain_pub_key,
 					&registration_data,
 					genesis_utxo,
@@ -519,7 +509,7 @@ mod tests {
 				StakePoolPublicKey(ed25519::Pair::from_seed_slice(&[0u8; 32]).unwrap().public().0);
 			assert_ne!(mainchain_pub_key, different_mainchain_pub_key);
 			assert_eq!(
-				validate_registration_data::<AccountKeys, TestConvertKeys>(
+				validate_registration_data::<AccountKeys>(
 					&different_mainchain_pub_key,
 					&registration_data,
 					genesis_utxo,
@@ -536,7 +526,7 @@ mod tests {
 			let (mainchain_pub_key, registration_data, genesis_utxo) =
 				create_parameters(signing_sidechain_account, sidechain_pub_key);
 			assert_eq!(
-				validate_registration_data::<AccountKeys, TestConvertKeys>(
+				validate_registration_data::<AccountKeys>(
 					&mainchain_pub_key,
 					&registration_data,
 					genesis_utxo,
@@ -557,7 +547,7 @@ mod tests {
 				GrandpaPublicKey(vec![3; 4]).into(),
 			]);
 			assert_eq!(
-				validate_registration_data::<AccountKeys, TestConvertKeys>(
+				validate_registration_data::<AccountKeys>(
 					&mainchain_pub_key,
 					&registration_data,
 					genesis_utxo,
@@ -578,7 +568,7 @@ mod tests {
 				CandidateKey::new(GRANDPA, vec![2; 32]),
 			]);
 			assert_eq!(
-				validate_registration_data::<AccountKeys, TestConvertKeys>(
+				validate_registration_data::<AccountKeys>(
 					&mainchain_pub_key,
 					&registration_data,
 					genesis_utxo
@@ -596,7 +586,7 @@ mod tests {
 			.unwrap();
 			assert_ne!(different_genesis_utxo, genesis_utxo);
 			assert!(
-				validate_registration_data::<AccountKeys, TestConvertKeys>(
+				validate_registration_data::<AccountKeys>(
 					&mainchain_pub_key,
 					&registration_data,
 					different_genesis_utxo,
@@ -611,7 +601,7 @@ mod tests {
 				create_valid_parameters();
 			registration_data.tx_inputs = vec![];
 			assert_eq!(
-				validate_registration_data::<AccountKeys, TestConvertKeys>(
+				validate_registration_data::<AccountKeys>(
 					&mainchain_pub_key,
 					&registration_data,
 					genesis_utxo,
@@ -647,11 +637,10 @@ mod tests {
 			},
 		];
 
-		let valid_candidates = filter_trustless_candidates_registrations::<
-			AccountId,
-			AccountKeys,
-			TestConvertKeys,
-		>(candidate_registrations, genesis_utxo);
+		let valid_candidates = filter_trustless_candidates_registrations::<AccountId, AccountKeys>(
+			candidate_registrations,
+			genesis_utxo,
+		);
 
 		assert_eq!(valid_candidates.len(), 2);
 		assert_eq!(valid_candidates[0].0.stake_delegation(), Some(StakeDelegation(1)));
@@ -697,10 +686,9 @@ mod tests {
 			},
 			valid_candidate.clone(),
 		];
-		let valid_candidates =
-			filter_invalid_permissioned_candidates::<AccountId, AccountKeys, TestConvertKeys>(
-				permissioned_candidates,
-			);
+		let valid_candidates = filter_invalid_permissioned_candidates::<AccountId, AccountKeys>(
+			permissioned_candidates,
+		);
 		assert_eq!(valid_candidates.len(), 1);
 		assert_eq!(
 			valid_candidates.first().unwrap().account_id(),

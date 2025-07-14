@@ -12,9 +12,8 @@ extern crate alloc;
 use alloc::collections::BTreeMap;
 use alloc::string::String;
 use authority_selection_inherents::{
-	AuthoritySelectionInputs, CommitteeMember, ConvertForImplOpaqueKeys,
-	PermissionedCandidateDataError, RegistrationDataError, StakeError, select_authorities,
-	validate_permissioned_candidate_data,
+	AuthoritySelectionInputs, CommitteeMember, PermissionedCandidateDataError,
+	RegistrationDataError, StakeError, select_authorities, validate_permissioned_candidate_data,
 };
 use frame_support::genesis_builder_helper::{build_state, get_preset};
 use frame_support::inherent::ProvideInherent;
@@ -170,6 +169,8 @@ pub mod opaque {
 			Self { aura: aura.into(), grandpa: grandpa.into() }
 		}
 	}
+
+	impl MaybeFromCandidateKeys for SessionKeys {}
 
 	impl_opaque_keys! {
 		pub struct CrossChainKey {
@@ -401,12 +402,11 @@ impl pallet_session_validator_management::Config for Runtime {
 		input: AuthoritySelectionInputs,
 		sidechain_epoch: ScEpochNumber,
 	) -> Option<BoundedVec<Self::CommitteeMember, Self::MaxValidators>> {
-		select_authorities::<
-			opaque::cross_chain_app::Public,
-			SessionKeys,
-			ConvertForImplOpaqueKeys,
-			MaxValidators,
-		>(Sidechain::genesis_utxo(), input, sidechain_epoch)
+		select_authorities::<opaque::cross_chain_app::Public, SessionKeys, MaxValidators>(
+			Sidechain::genesis_utxo(),
+			input,
+			sidechain_epoch,
+		)
 	}
 
 	fn current_epoch_number() -> ScEpochNumber {
@@ -1071,13 +1071,13 @@ impl_runtime_apis! {
 
 	impl authority_selection_inherents::CandidateValidationApi<Block> for Runtime {
 		fn validate_registered_candidate_data(stake_pool_public_key: &StakePoolPublicKey, registration_data: &RegistrationData) -> Option<RegistrationDataError> {
-			authority_selection_inherents::validate_registration_data::<SessionKeys, ConvertForImplOpaqueKeys>(stake_pool_public_key, registration_data, Sidechain::genesis_utxo()).err()
+			authority_selection_inherents::validate_registration_data::<SessionKeys>(stake_pool_public_key, registration_data, Sidechain::genesis_utxo()).err()
 		}
 		fn validate_stake(stake: Option<StakeDelegation>) -> Option<StakeError> {
 			authority_selection_inherents::validate_stake(stake).err()
 		}
 		fn validate_permissioned_candidate_data(candidate: PermissionedCandidateData) -> Option<PermissionedCandidateDataError> {
-			validate_permissioned_candidate_data::<SessionKeys, ConvertForImplOpaqueKeys>(candidate).err()
+			validate_permissioned_candidate_data::<SessionKeys>(candidate).err()
 		}
 	}
 
