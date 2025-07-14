@@ -11,13 +11,11 @@ extern crate alloc;
 
 use alloc::collections::BTreeMap;
 use alloc::string::String;
-use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
-use authority_selection_inherents::filter_invalid_candidates::{
-	PermissionedCandidateDataError, RegistrationDataError, StakeError,
+use authority_selection_inherents::{
+	AuthoritySelectionInputs, CommitteeMember, ConvertForImplOpaqueKeys,
+	PermissionedCandidateDataError, RegistrationDataError, StakeError, select_authorities,
 	validate_permissioned_candidate_data,
 };
-use authority_selection_inherents::select_authorities::select_authorities;
-use authority_selection_inherents::{CommitteeMember, ConvertForImplOpaqueKeys};
 use frame_support::genesis_builder_helper::{build_state, get_preset};
 use frame_support::inherent::ProvideInherent;
 use frame_support::weights::constants::RocksDbWeight as RuntimeDbWeight;
@@ -403,16 +401,12 @@ impl pallet_session_validator_management::Config for Runtime {
 		input: AuthoritySelectionInputs,
 		sidechain_epoch: ScEpochNumber,
 	) -> Option<BoundedVec<Self::CommitteeMember, Self::MaxValidators>> {
-		Some(BoundedVec::truncate_from(
-			select_authorities::<
-				opaque::cross_chain_app::Public,
-				SessionKeys,
-				ConvertForImplOpaqueKeys,
-			>(Sidechain::genesis_utxo(), input, sidechain_epoch)?
-			.into_iter()
-			.map(|member| member.into())
-			.collect(),
-		))
+		select_authorities::<
+			opaque::cross_chain_app::Public,
+			SessionKeys,
+			ConvertForImplOpaqueKeys,
+			MaxValidators,
+		>(Sidechain::genesis_utxo(), input, sidechain_epoch)
 	}
 
 	fn current_epoch_number() -> ScEpochNumber {
@@ -1075,12 +1069,12 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi<Block> for Runtime {
+	impl authority_selection_inherents::CandidateValidationApi<Block> for Runtime {
 		fn validate_registered_candidate_data(stake_pool_public_key: &StakePoolPublicKey, registration_data: &RegistrationData) -> Option<RegistrationDataError> {
-			authority_selection_inherents::filter_invalid_candidates::validate_registration_data::<SessionKeys, ConvertForImplOpaqueKeys>(stake_pool_public_key, registration_data, Sidechain::genesis_utxo()).err()
+			authority_selection_inherents::validate_registration_data::<SessionKeys, ConvertForImplOpaqueKeys>(stake_pool_public_key, registration_data, Sidechain::genesis_utxo()).err()
 		}
 		fn validate_stake(stake: Option<StakeDelegation>) -> Option<StakeError> {
-			authority_selection_inherents::filter_invalid_candidates::validate_stake(stake).err()
+			authority_selection_inherents::validate_stake(stake).err()
 		}
 		fn validate_permissioned_candidate_data(candidate: PermissionedCandidateData) -> Option<PermissionedCandidateDataError> {
 			validate_permissioned_candidate_data::<SessionKeys, ConvertForImplOpaqueKeys>(candidate).err()

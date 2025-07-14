@@ -1,7 +1,5 @@
-use authority_selection_inherents::ConvertForImplOpaqueKeys;
-use authority_selection_inherents::ariadne_inherent_data_provider::AriadneInherentDataProvider;
-use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
-use authority_selection_inherents::filter_invalid_candidates::{
+use authority_selection_inherents::{
+	AriadneInherentDataProvider, AuthoritySelectionInputs, ConvertForImplOpaqueKeys,
 	RegisterValidatorSignedMessage, filter_trustless_candidates_registrations,
 };
 use frame_support::{

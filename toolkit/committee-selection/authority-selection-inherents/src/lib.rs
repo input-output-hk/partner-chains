@@ -11,10 +11,27 @@ use sp_core::{ConstU32, Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use sp_runtime::traits::OpaqueKeys;
 use sp_session_validator_management::CommitteeMember as CommitteeMemberT;
 
-pub mod ariadne_inherent_data_provider;
-pub mod authority_selection_inputs;
-pub mod filter_invalid_candidates;
-pub mod select_authorities;
+mod ariadne_inherent_data_provider;
+mod authority_selection_inputs;
+mod filter_invalid_candidates;
+mod select_authorities;
+
+pub use {
+	ariadne_inherent_data_provider::AriadneInherentDataProvider,
+	authority_selection_inputs::{AriadneParameters, AuthoritySelectionInputs},
+	filter_invalid_candidates::{
+		PermissionedCandidateDataError, RegisterValidatorSignedMessage, RegistrationDataError,
+		StakeError, filter_trustless_candidates_registrations,
+		runtime_decl_for_candidate_validation_api, validate_permissioned_candidate_data,
+		validate_registration_data, validate_stake,
+	},
+	select_authorities::select_authorities,
+};
+#[cfg(feature = "std")]
+pub use {
+	authority_selection_inputs::AuthoritySelectionDataSource,
+	filter_invalid_candidates::CandidateValidationApi,
+};
 
 #[cfg(test)]
 mod runtime_api_mock;

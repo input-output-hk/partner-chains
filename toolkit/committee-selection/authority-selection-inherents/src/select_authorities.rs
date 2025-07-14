@@ -1,14 +1,15 @@
 //! Functionality related to selecting the validators from the valid candidates
 
-use crate::MaybeFromCandidateKeys;
 use crate::authority_selection_inputs::AuthoritySelectionInputs;
 use crate::filter_invalid_candidates::{
-	Candidate, filter_invalid_permissioned_candidates, filter_trustless_candidates_registrations,
+	filter_invalid_permissioned_candidates, filter_trustless_candidates_registrations,
 };
+use crate::{CommitteeMember, MaybeFromCandidateKeys};
 use log::{info, warn};
 use plutus::*;
 use sidechain_domain::{EpochNonce, ScEpochNumber, UtxoId};
-use sp_core::{U256, ecdsa};
+use sp_core::{Get, U256, ecdsa};
+use sp_runtime::BoundedVec;
 
 /// Selects authorities using the Ariadne selection algorithm and data sourced from Partner Chains smart contracts on Cardano.
 /// Seed is constructed from the MC epoch nonce and the sidechain epoch.
@@ -16,11 +17,28 @@ pub fn select_authorities<
 	TAccountId: Clone + Ord + From<ecdsa::Public>,
 	TAccountKeys: Clone + Ord,
 	ConvertKeys: MaybeFromCandidateKeys<TAccountKeys>,
+	MaxAuthorities: Get<u32>,
 >(
 	genesis_utxo: UtxoId,
 	input: AuthoritySelectionInputs,
 	sidechain_epoch: ScEpochNumber,
-) -> Option<Vec<Candidate<TAccountId, TAccountKeys>>> {
+) -> Option<BoundedVec<CommitteeMember<TAccountId, TAccountKeys>, MaxAuthorities>> {
+	Some(BoundedVec::truncate_from(select_candidates::<TAccountId, TAccountKeys, ConvertKeys>(
+		genesis_utxo,
+		input,
+		sidechain_epoch,
+	)?))
+}
+
+fn select_candidates<
+	TAccountId: Clone + Ord + From<ecdsa::Public>,
+	TAccountKeys: Clone + Ord,
+	ConvertKeys: MaybeFromCandidateKeys<TAccountKeys>,
+>(
+	genesis_utxo: UtxoId,
+	input: AuthoritySelectionInputs,
+	sidechain_epoch: ScEpochNumber,
+) -> Option<Vec<CommitteeMember<TAccountId, TAccountKeys>>> {
 	let valid_registered_candidates = filter_trustless_candidates_registrations::<
 		TAccountId,
 		TAccountKeys,
@@ -47,7 +65,7 @@ pub fn select_authorities<
 			validators.len(),
 			sidechain_epoch
 		);
-		Some(validators)
+		Some(validators.into_iter().map(|member| member.into()).collect())
 	} else {
 		warn!("🚫 Failed to select validators for epoch {}", sidechain_epoch);
 		None

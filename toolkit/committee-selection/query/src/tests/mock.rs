@@ -1,4 +1,4 @@
-use authority_selection_inherents::filter_invalid_candidates::RegisterValidatorSignedMessage;
+use authority_selection_inherents::RegisterValidatorSignedMessage;
 use plutus::ToDatum;
 use sidechain_domain::*;
 use sp_core::{Pair, ecdsa, ed25519};
