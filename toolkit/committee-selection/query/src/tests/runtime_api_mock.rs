@@ -1,6 +1,6 @@
 use super::*;
 use crate::tests::query_mock::TestRuntimeApi;
-use authority_selection_inherents::filter_invalid_candidates::{
+use authority_selection_inherents::{
 	PermissionedCandidateDataError, RegistrationDataError, StakeError,
 	validate_permissioned_candidate_data, validate_registration_data,
 };
@@ -86,10 +86,10 @@ sp_api::mock_impl_runtime_apis! {
 			validate_registration_data(mainchain_pub_key, registration_data, TEST_UTXO_ID).err()
 		}
 		fn validate_stake(stake: Option<StakeDelegation>) -> Option<StakeError> {
-			authority_selection_inherents::filter_invalid_candidates::validate_stake(stake).err()
+			authority_selection_inherents::validate_stake(stake).err()
 		}
 		fn validate_permissioned_candidate_data(candidate: sidechain_domain::PermissionedCandidateData) -> Option<PermissionedCandidateDataError> {
-			validate_permissioned_candidate_data::<CrossChainPublic>(candidate).err()
+			validate_permissioned_candidate_data(candidate).err()
 		}
 	}
 }

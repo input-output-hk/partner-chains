@@ -254,7 +254,7 @@ mod tests {
 	};
 
 	use sidechain_domain::{
-		AdaBasedStaking, AuraPublicKey, CandidateRegistration, GrandpaPublicKey, MainchainKeyHash,
+		AdaBasedStaking, CandidateKeys, CandidateRegistration, MainchainKeyHash,
 		MainchainSignature, McTxHash, SidechainPublicKey, SidechainSignature, UtxoId, UtxoIndex,
 	};
 
@@ -278,8 +278,7 @@ mod tests {
 			partner_chain_signature: SidechainSignature(Vec::new()),
 			registration_utxo,
 			own_pkh: own_pkh(),
-			aura_pub_key: AuraPublicKey(Vec::new()),
-			grandpa_pub_key: GrandpaPublicKey(Vec::new()),
+			keys: CandidateKeys(vec![]),
 		}
 	}
 

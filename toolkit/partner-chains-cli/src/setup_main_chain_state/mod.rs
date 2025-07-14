@@ -34,11 +34,7 @@ impl TryFrom<PermissionedCandidateData> for ParsedPermissionedCandidatesKeys {
 	type Error = anyhow::Error;
 
 	fn try_from(value: PermissionedCandidateData) -> Result<Self, Self::Error> {
-		let keys = PermissionedCandidateKeys {
-			sidechain_pub_key: hex::encode(value.sidechain_public_key.0),
-			aura_pub_key: hex::encode(value.aura_public_key.0),
-			grandpa_pub_key: hex::encode(value.grandpa_public_key.0),
-		};
+		let keys: PermissionedCandidateKeys = (&value).into();
 		TryFrom::try_from(&keys)
 	}
 }

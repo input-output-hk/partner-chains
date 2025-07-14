@@ -108,9 +108,11 @@ async fn get_epoch_committee_should_work_correctly_for_next_epoch() {
 mod get_registration_tests {
 	use super::*;
 	use crate::types::PermissionedCandidateData;
-	use authority_selection_inherents::filter_invalid_candidates::{
+	use authority_selection_inherents::{
 		PermissionedCandidateDataError, RegistrationDataError, StakeError,
 	};
+	use sidechain_domain::byte_string::ByteString;
+	use sp_runtime::key_types::{AURA, GRANDPA};
 
 	const SEED: [u8; 32] = [7u8; 32];
 	const SEED2: [u8; 32] = [8u8; 32];
@@ -150,6 +152,8 @@ mod get_registration_tests {
 			.await
 			.unwrap();
 
+		let aura = registration.keys.find_or_empty(AURA);
+		let grandpa = registration.keys.find_or_empty(GRANDPA);
 		let expected_entry = CandidateRegistrationEntry {
 			sidechain_pub_key: to_hex(&registration.sidechain_pub_key.0, false),
 			sidechain_account_id: MultiSigner::Ecdsa(ecdsa::Public::from(
@@ -159,8 +163,12 @@ mod get_registration_tests {
 			.to_ss58check(),
 			mainchain_pub_key: to_hex(&candidate.mainchain_pub_key().0, false),
 			cross_chain_pub_key: to_hex(&registration.cross_chain_pub_key.0, false),
-			aura_pub_key: to_hex(&registration.aura_pub_key.0, false),
-			grandpa_pub_key: to_hex(&registration.grandpa_pub_key.0, false),
+			keys: vec![
+				("aura".to_string(), ByteString(aura)),
+				("gran".to_string(), ByteString(grandpa)),
+			]
+			.into_iter()
+			.collect(),
 			sidechain_signature: to_hex(&registration.sidechain_signature.0, false),
 			mainchain_signature: to_hex(&registration.mainchain_signature.0, false),
 			cross_chain_signature: to_hex(&registration.cross_chain_signature.0, false),
@@ -187,7 +195,12 @@ mod get_registration_tests {
 	#[tokio::test]
 	async fn should_not_be_valid_if_aura_account_key_is_invalid() {
 		test_invalid_registration_data(
-			|registration| registration.aura_pub_key = AuraPublicKey(vec![7u8; 4]),
+			|registration| {
+				registration.keys = CandidateKeys(vec![
+					AuraPublicKey(vec![7u8; 4]).into(),
+					registration.keys.0.get(1).unwrap().clone(),
+				])
+			},
 			RegistrationError::InvalidRegistrationData(RegistrationDataError::InvalidAuraKey),
 		)
 		.await;
@@ -196,7 +209,12 @@ mod get_registration_tests {
 	#[tokio::test]
 	async fn should_not_be_valid_if_grandpa_account_key_is_invalid() {
 		test_invalid_registration_data(
-			|registration| registration.grandpa_pub_key = GrandpaPublicKey(vec![7u8; 4]),
+			|registration| {
+				registration.keys = CandidateKeys(vec![
+					registration.keys.0.get(0).unwrap().clone(),
+					GrandpaPublicKey(vec![7u8; 4]).into(),
+				])
+			},
 			RegistrationError::InvalidRegistrationData(RegistrationDataError::InvalidGrandpaKey),
 		)
 		.await;
@@ -321,9 +339,16 @@ mod get_registration_tests {
 	fn valid_permissioned_candidate() -> sidechain_domain::PermissionedCandidateData {
 		sidechain_domain::PermissionedCandidateData {
 			sidechain_public_key: SidechainPublicKey(vec![1; 33]),
-			aura_public_key: AuraPublicKey(vec![2; 32]),
-			grandpa_public_key: GrandpaPublicKey(vec![3; 32]),
+			keys: CandidateKeys(vec![valid_aura_key().into(), valid_grandpa_key().into()]),
 		}
+	}
+
+	fn valid_aura_key() -> AuraPublicKey {
+		AuraPublicKey(vec![2; 32])
+	}
+
+	fn valid_grandpa_key() -> GrandpaPublicKey {
+		GrandpaPublicKey(vec![3; 32])
 	}
 
 	#[tokio::test]
@@ -385,11 +410,17 @@ mod get_registration_tests {
 				..valid_permissioned_candidate()
 			},
 			sidechain_domain::PermissionedCandidateData {
-				aura_public_key: AuraPublicKey(vec![1; 37]),
+				keys: CandidateKeys(vec![
+					AuraPublicKey(vec![1; 37]).into(),
+					valid_grandpa_key().into(),
+				]),
 				..valid_permissioned_candidate()
 			},
 			sidechain_domain::PermissionedCandidateData {
-				grandpa_public_key: GrandpaPublicKey(vec![1; 33]),
+				keys: CandidateKeys(vec![
+					valid_aura_key().into(),
+					GrandpaPublicKey(vec![1; 4]).into(),
+				]),
 				..valid_permissioned_candidate()
 			},
 		];
