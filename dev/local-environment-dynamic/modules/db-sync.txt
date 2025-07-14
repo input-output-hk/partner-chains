@@ -1,0 +1,27 @@
+
+  db-sync:
+    container_name: db-sync
+    image: ${DBSYNC_IMAGE}
+    platform: linux/amd64
+    volumes:
+      - shared-volume:/shared
+      - db-sync-state-dir:/var/lib
+      - cardano-node-1-data:/node-ipc
+      - ./configurations/busybox:/busybox
+      - ./configurations/db-sync/entrypoint.sh:/entrypoint.sh
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]
+    command: >
+      --config /shared/db-sync-config.json
+      --socket-path /node-ipc/node.socket
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=cexplorer
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: ${CPU_DBSYNC:-}
+          memory: ${MEM_DBSYNC:-}

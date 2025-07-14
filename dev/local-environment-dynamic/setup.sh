@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 
+NUM_PERMISSIONED_NODES_TO_PROCESS=10
+NUM_REGISTERED_NODES_TO_PROCESS=10
+
 PARTNER_CHAINS_NODE_IMAGE="ghcr.io/input-output-hk/partner-chains/partner-chains-node-unstable:latest"
 CARDANO_IMAGE="ghcr.io/intersectmbo/cardano-node:10.1.4"
-DBSYNC_IMAGE="ghcr.io/intersectmbo/cardano-db-sync:13.6.0.4"
-OGMIOS_IMAGE="cardanosolutions/ogmios:v6.11.0"
+DBSYNC_IMAGE="ghcr.io/intersectmbo/cardano-db-sync:13.6.0.5"
+OGMIOS_IMAGE="cardanosolutions/ogmios:v6.12.0"
 POSTGRES_IMAGE="postgres:17.2"
-TESTS_IMAGE="python:3.12-slim"
 
 display_banner() {
   cat <<'EOF'
@@ -117,7 +119,7 @@ function validate_memory_limit() {
       echo "$mem_limit"
       break
     else
-      echo "Invalid memory limit. Please enter a valid value (e.g., 500M for 500 MB, 2G for 2 GB)."
+      echo "Invalid memory limit. Please enter a valid value (e.g., 500m for 500 MB, 2g for 2 GB)."
     fi
   done
 }
@@ -138,13 +140,14 @@ resource_limits_setup() {
   read -p "Do you want to restrict CPU and Memory limits for the stack? (Y/N) " restrict_resources
   if [[ $restrict_resources == [Yy]* ]]; then
     if [[ $cardano_node_enabled == true ]]; then
-      read -p "Apply sensible limits (Total = 4 CPU / 4GB Memory)? (Y/N) " sensible_limits
+      read -p "Apply sensible limits (Total = 32 CPU / 32GB Memory)? (Y/N) " sensible_limits
     else
-      read -p "Apply sensible limits (Total = 3 CPU / 3GB Memory)? (Y/N) " sensible_limits
+      read -p "Apply sensible limits (Total = 31 CPU / 31GB Memory)? (Y/N) " sensible_limits
     fi
     if [[ $sensible_limits == [Yy]* ]]; then
-      CPU_PARTNER_CHAINS_NODE=0.4
-      MEM_PARTNER_CHAINS_NODE=400M
+      # Allocate 0.1 CPU and 100MB per node for 310 nodes
+      CPU_PARTNER_CHAINS_NODE=0.1
+      MEM_PARTNER_CHAINS_NODE=100M
       cpu_cardano=1
       mem_cardano=1000M
       cpu_postgres=0.5
@@ -154,8 +157,8 @@ resource_limits_setup() {
       cpu_ogmios=0.2
       mem_ogmios=500M
     else
-      CPU_PARTNER_CHAINS_NODE=$(validate_cpu_limit "Enter CPU limit for Partner Chains nodes (e.g., 0.4 for 0.4 CPU): ")
-      MEM_PARTNER_CHAINS_NODE=$(validate_memory_limit "Enter Memory limit for each of the 3 x Partner Chains nodes (e.g., 400M for 400 MB): ")
+      CPU_PARTNER_CHAINS_NODE=$(validate_cpu_limit "Enter CPU limit for each Partner Chains node (e.g., 0.1 for 0.1 CPU): ")
+      MEM_PARTNER_CHAINS_NODE=$(validate_memory_limit "Enter Memory limit for each Partner Chains node (e.g., 100M for 100 MB): ")
 
       cpu_cardano=$(validate_cpu_limit "Enter CPU limit for Cardano node (e.g., 1 for 1 CPU): ")
       mem_cardano=$(validate_memory_limit "Enter Memory limit for Cardano node (e.g., 1000M for 1000 MB): ")
@@ -274,8 +277,9 @@ CARDANO_IMAGE=$CARDANO_IMAGE
 DBSYNC_IMAGE=$DBSYNC_IMAGE
 OGMIOS_IMAGE=$OGMIOS_IMAGE
 POSTGRES_IMAGE=$POSTGRES_IMAGE
-TESTS_IMAGE=$TESTS_IMAGE
 PARTNER_CHAINS_NODE_IMAGE=${node_image:-$PARTNER_CHAINS_NODE_IMAGE}
+NUM_PERMISSIONED_NODES_TO_PROCESS=$NUM_PERMISSIONED_NODES_TO_PROCESS
+NUM_REGISTERED_NODES_TO_PROCESS=$NUM_REGISTERED_NODES_TO_PROCESS
 EOF
 
     if [ "$mode" == "interactive" ]; then
@@ -283,109 +287,317 @@ EOF
     fi
 }
 
-choose_deployment_option() {
-  echo "===== CUSTOM STACK MODIFICATIONS ========"
-  read -p "Make custom modification to the stack? (Y/N): " modify_stack
-  if [[ $modify_stack =~ ^[Yy]$ ]]; then
-    echo "Choose your deployment option:"
-    echo "1) Include only Cardano testnet"
-    echo "2) Include Cardano testnet with Ogmios"
-    echo "3) Include Cardano testnet, Ogmios, DB-Sync and Postgres"
-    echo "4) Deploy a single Partner Chains node with network_mode: "host" for external connections (adjust partner-chains-external-node.txt before running this script)"
-    echo "5) Deploy a 3 node Partner Chain network using wizard" 
-    read -p "Enter your choice (1/2/3/4/5): " deployment_option
-  else
-    deployment_option=0
-  fi
-  echo
+generate_node_configurations() {
+    # Create directories for node configurations
+    mkdir -p configurations/partner-chains-nodes
+
+    # Generate permissioned-1 (bootnode) configuration
+    node_name="permissioned-1"
+    mkdir -p configurations/partner-chains-nodes/$node_name
+    cat > configurations/partner-chains-nodes/$node_name/entrypoint.sh <<EOF
+#!/bin/sh
+
+echo 'Waiting for Cardano chain to sync and Partner Chains smart contracts setup to complete...'
+
+while true; do
+    if [ -f "/shared/partner-chains-setup.ready" ]; then
+        break
+    else
+        sleep 1
+    fi
+done
+
+echo "Partner Chains smart contracts setup complete. Starting node..."
+
+# Create a local keystore and copy keys from the shared volume
+echo "Creating local keystore and copying keys..."
+mkdir /data/keystore
+cp /shared/node-keys/$node_name/keystore/* /data/keystore/
+chmod -R 777 /data/keystore
+
+NODE_KEY='b0c7b085c8df4d8f0add881a39d90a0f29edd265dba1b9c2db5564f8e1b1a02a'
+PEER_ID='12D3KooWD7ou3cgmVbMttbAXNvXPwna8LkRUko849YE8oWv5NGZP'
+
+export MC__FIRST_EPOCH_TIMESTAMP_MILLIS=\$(cat /shared/MC__FIRST_EPOCH_TIMESTAMP_MILLIS)
+
+/usr/local/bin/partner-chains-node \\
+  --chain=/shared/chain-spec.json \\
+  --validator \\
+  --node-key="\$NODE_KEY" \\
+  --base-path=/data \\
+  --keystore-path=/data/keystore \\
+  --in-peers=10000 \\
+  --out-peers=10000 \\
+  --unsafe-rpc-external \\
+  --rpc-port=9933 \\
+  --rpc-cors=all \\
+  --rpc-max-connections=10000 \\
+  --prometheus-port=9615 \\
+  --prometheus-external \\
+  --state-pruning=archive \\
+  --discover-local \\
+  --blocks-pruning=archive \\
+  --listen-addr=/ip4/0.0.0.0/tcp/30333 \\
+  --public-addr="/dns4/partner-chains-node-permissioned-1/tcp/30333/p2p/\$PEER_ID" &
+
+touch /shared/partner-chains-node-$node_name.ready
+
+wait
+EOF
+    chmod +x configurations/partner-chains-nodes/$node_name/entrypoint.sh
+
+    # Generate remaining permissioned nodes configurations
+    for ((i=2; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
+        node_name="permissioned-$i"
+        mkdir -p configurations/partner-chains-nodes/$node_name
+        cat > configurations/partner-chains-nodes/$node_name/entrypoint.sh <<EOF
+#!/bin/sh
+
+echo 'Waiting for Cardano chain to sync and Partner Chains smart contracts setup to complete...'
+
+while true; do
+    if [ -f "/shared/partner-chains-setup.ready" ]; then
+        break
+    else
+        sleep 1
+    fi
+done
+
+echo "Partner Chains smart contracts setup complete. Starting node..."
+echo "Staggering start by $i seconds..."
+sleep $i
+
+# Create a local keystore and copy keys from the shared volume
+echo "Creating local keystore and copying keys..."
+mkdir /data/keystore
+cp /shared/node-keys/$node_name/keystore/* /data/keystore/
+chmod -R 777 /data/keystore
+
+NODE_KEY=\$(openssl rand -hex 32)
+PEER_ID=\$(echo "\$NODE_KEY" | /usr/local/bin/partner-chains-node key inspect-node-key)
+
+export MC__FIRST_EPOCH_TIMESTAMP_MILLIS=\$(cat /shared/MC__FIRST_EPOCH_TIMESTAMP_MILLIS)
+
+/usr/local/bin/partner-chains-node \\
+  --chain=/shared/chain-spec.json \\
+  --validator \\
+  --node-key="\$NODE_KEY" \\
+  --bootnodes="/dns/partner-chains-node-permissioned-1/tcp/30333/p2p/12D3KooWD7ou3cgmVbMttbAXNvXPwna8LkRUko849YE8oWv5NGZP" \\
+  --base-path=/data \\
+  --keystore-path=/data/keystore \\
+  --in-peers=10000 \\
+  --out-peers=10000 \\
+  --unsafe-rpc-external \\
+  --rpc-port=9933 \\
+  --rpc-cors=all \\
+  --rpc-max-connections=10000 \\
+  --prometheus-port=9615 \\
+  --prometheus-external \\
+  --state-pruning=archive \\
+  --discover-local \\
+  --blocks-pruning=archive \\
+  --listen-addr=/ip4/0.0.0.0/tcp/30333 \\
+  --public-addr="/dns4/partner-chains-node-$node_name/tcp/30333/p2p/\$PEER_ID" &
+
+touch /shared/partner-chains-node-$node_name.ready
+
+wait
+EOF
+        chmod +x configurations/partner-chains-nodes/$node_name/entrypoint.sh
+    done
+
+    for ((i=1; i<=NUM_REGISTERED_NODES_TO_PROCESS; i++)); do
+        node_name="registered-$i"
+        mkdir -p configurations/partner-chains-nodes/$node_name
+        cat > configurations/partner-chains-nodes/$node_name/entrypoint.sh <<EOF
+#!/bin/sh
+
+echo 'Waiting for Cardano chain to sync and Partner Chains smart contracts setup to complete...'
+
+while true; do
+    if [ -f "/shared/partner-chains-setup.ready" ]; then
+        break
+    else
+        sleep 1
+    fi
+done
+
+echo "Partner Chains smart contracts setup complete. Starting node..."
+echo "Staggering start by $i seconds..."
+sleep $i
+
+# Create a local keystore and copy keys from the shared volume
+echo "Creating local keystore and copying keys..."
+mkdir /data/keystore
+cp /shared/node-keys/$node_name/keystore/* /data/keystore/
+chmod -R 777 /data/keystore
+
+NODE_KEY=\$(openssl rand -hex 32)
+PEER_ID=\$(echo "\$NODE_KEY" | /usr/local/bin/partner-chains-node key inspect-node-key)
+
+export MC__FIRST_EPOCH_TIMESTAMP_MILLIS=\$(cat /shared/MC__FIRST_EPOCH_TIMESTAMP_MILLIS)
+
+/usr/local/bin/partner-chains-node \\
+  --chain=/shared/chain-spec.json \\
+  --validator \\
+  --node-key="\$NODE_KEY" \\
+  --base-path=/data \\
+  --keystore-path=/data/keystore \\
+  --bootnodes="/dns/partner-chains-node-permissioned-1/tcp/30333/p2p/12D3KooWD7ou3cgmVbMttbAXNvXPwna8LkRUko849YE8oWv5NGZP" \\
+  --in-peers=10000 \\
+  --out-peers=10000 \\
+  --unsafe-rpc-external \\
+  --rpc-port=9933 \\
+  --rpc-cors=all \\
+  --rpc-max-connections=10000 \\
+  --prometheus-port=9615 \\
+  --prometheus-external \\
+  --state-pruning=archive \\
+  --discover-local \\
+  --blocks-pruning=archive \\
+  --listen-addr=/ip4/0.0.0.0/tcp/30333 \\
+  --public-addr="/dns4/partner-chains-node-$node_name/tcp/30333/p2p/\$PEER_ID" &
+
+touch /shared/partner-chains-node-$node_name.ready
+
+wait
+EOF
+        chmod +x configurations/partner-chains-nodes/$node_name/entrypoint.sh
+    done
+
+    # Generate docker-compose.yml
+    cat > docker-compose.yml <<EOF
+services:
+EOF
+
+    # Add permissioned nodes
+    for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
+        node_name="permissioned-$i"
+        rpc_port=$((9933 + i - 1))
+        prometheus_port=$((9615 + i - 1))
+        
+        cat >> docker-compose.yml <<EOF
+  partner-chains-node-$node_name:
+    container_name: partner-chains-node-$node_name
+    image: \${PARTNER_CHAINS_NODE_IMAGE}
+    platform: linux/amd64
+    volumes:
+      - shared-volume:/shared
+      - partner-chains-node-$node_name-data:/data
+      - ./configurations/partner-chains-nodes/$node_name/entrypoint.sh:/entrypoint.sh
+    environment:
+      DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:\${POSTGRES_PASSWORD}@postgres:\${POSTGRES_PORT}/cexplorer"
+      CARDANO_SECURITY_PARAMETER: "5"
+      CARDANO_ACTIVE_SLOTS_COEFF: "0.4"
+      MC__FIRST_EPOCH_NUMBER: "0"
+      MC__FIRST_SLOT_NUMBER: "0"
+      MC__EPOCH_DURATION_MILLIS: "120000"
+      BLOCK_STABILITY_MARGIN: "0"
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]
+    ports:
+      - "$rpc_port:9933"
+      - "$prometheus_port:9615"
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: \${CPU_PARTNER_CHAINS_NODE:-}
+          memory: \${MEM_PARTNER_CHAINS_NODE:-}
+EOF
+    done
+
+    # Add registered nodes
+    for ((i=1; i<=NUM_REGISTERED_NODES_TO_PROCESS; i++)); do
+        node_name="registered-$i"
+        rpc_port=$((9933 + i - 1 + NUM_PERMISSIONED_NODES_TO_PROCESS))
+        prometheus_port=$((9615 + i - 1 + NUM_PERMISSIONED_NODES_TO_PROCESS))
+        
+        cat >> docker-compose.yml <<EOF
+  partner-chains-node-$node_name:
+    container_name: partner-chains-node-$node_name
+    image: \${PARTNER_CHAINS_NODE_IMAGE}
+    platform: linux/amd64
+    volumes:
+      - shared-volume:/shared
+      - partner-chains-node-$node_name-data:/data
+      - ./configurations/partner-chains-nodes/$node_name/entrypoint.sh:/entrypoint.sh
+    environment:
+      DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:\${POSTGRES_PASSWORD}@postgres:\${POSTGRES_PORT}/cexplorer"
+      CARDANO_SECURITY_PARAMETER: "5"
+      CARDANO_ACTIVE_SLOTS_COEFF: "0.4"
+      MC__FIRST_EPOCH_NUMBER: "0"
+      MC__FIRST_SLOT_NUMBER: "0"
+      MC__EPOCH_DURATION_MILLIS: "120000"
+      BLOCK_STABILITY_MARGIN: "0"
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]
+    ports:
+      - "$rpc_port:9933"
+      - "$prometheus_port:9615"
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: \${CPU_PARTNER_CHAINS_NODE:-}
+          memory: \${MEM_PARTNER_CHAINS_NODE:-}
+EOF
+    done
+
+    echo "Generated node configurations and docker-compose.yml"
 }
 
 create_docker_compose() {
     local mode=$1
+    local script_dir; script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
     if [ "$mode" == "interactive" ]; then
         echo "===== DOCKER-COMPOSE.YML CREATION ============"
         echo "Creating docker-compose.yml manifest file with service configurations."
     fi
 
-    echo "services:" > docker-compose.yml
+    # Generate node configurations and docker-compose.yml
+    generate_node_configurations
 
-    case $deployment_option in
-      1)
-        echo -e "Including only Cardano testnet service.\n"
-        cat ./modules/cardano.txt >> docker-compose.yml
-        ;;
-      2)
-        echo -e "Including Cardano testnet, and Ogmios services.\n"
-        cat ./modules/cardano.txt >> docker-compose.yml
-        cat ./modules/ogmios.txt >> docker-compose.yml
-        ;;
-      3)
-        echo -e "Including Cardano testnet, Ogmios, DB-Sync, and Postgres services.\n"
-        cat ./modules/cardano.txt >> docker-compose.yml
-        cat ./modules/ogmios.txt >> docker-compose.yml
-        cat ./modules/db-sync.txt >> docker-compose.yml
-        cat ./modules/postgres.txt >> docker-compose.yml
-        ;;
-      4)
-        echo -e "Including all services with external partner chain node.\n"
-        cat ./modules/cardano.txt >> docker-compose.yml
-        cat ./modules/ogmios.txt >> docker-compose.yml
-        cat ./modules/db-sync.txt >> docker-compose.yml
-        cat ./modules/postgres.txt >> docker-compose.yml
-        cat ./modules/partner-chains-external-node.txt >> docker-compose.yml
-        cat ./modules/partner-chains-setup.txt >> docker-compose.yml
-        ;;
-      5)
-        echo -e "Including all services with wizard partner chain node.\n"
-        cat ./modules/cardano.txt >> docker-compose.yml
-        cat ./modules/ogmios.txt >> docker-compose.yml
-        cat ./modules/db-sync.txt >> docker-compose.yml
-        cat ./modules/postgres.txt >> docker-compose.yml
-        cat ./modules/partner-chains-wizard.txt >> docker-compose.yml
-        ;;
-      0)
-        echo -e "Including all services.\n"
-        cat ./modules/cardano.txt >> docker-compose.yml
-        cat ./modules/ogmios.txt >> docker-compose.yml
-        cat ./modules/db-sync.txt >> docker-compose.yml
-        cat ./modules/postgres.txt >> docker-compose.yml
-        cat ./modules/partner-chains-nodes.txt >> docker-compose.yml
-        cat ./modules/partner-chains-setup.txt >> docker-compose.yml
-        ;;
-      *)
-        echo "Invalid deployment option selected."
-        exit 1
-        ;;
-    esac
-    if [ "$tests_enabled" == "yes" ]; then
-        echo -e "Including tests.\n"
-        cat ./modules/tests.txt >> docker-compose.yml
+    # Add other services
+    cat "$script_dir/modules/cardano.txt" >> docker-compose.yml
+    cat "$script_dir/modules/ogmios.txt" >> docker-compose.yml
+    cat "$script_dir/modules/db-sync.txt" >> docker-compose.yml
+    cat "$script_dir/modules/postgres.txt" >> docker-compose.yml
+    cat "$script_dir/modules/partner-chains-setup.txt" >> docker-compose.yml
+
+    # Add volumes
+    cat "$script_dir/modules/volumes.txt" >> docker-compose.yml
+    echo "" >> docker-compose.yml # Ensure a newline
+
+    # Add volume entries for all nodes
+    for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
+        echo "  partner-chains-node-permissioned-$i-data:" >> docker-compose.yml
+    done
+
+    for ((i=1; i<=NUM_REGISTERED_NODES_TO_PROCESS; i++)); do
+        echo "  partner-chains-node-registered-$i-data:" >> docker-compose.yml
+    done
+
+    cat <<EOF >>docker-compose.yml
+
+networks:
+  partner-chain-network:
+    driver: bridge
+EOF
+
+    if [ "$mode" != "non-interactive" ]; then
+      echo -e "docker-compose.yml file created successfully.\n"
     fi
-    cat ./modules/volumes.txt >> docker-compose.yml
-    echo -e "docker-compose.yml file created successfully.\n"
 }
 
 parse_arguments() {
     non_interactive=0
-    deployment_option=0
     postgres_password=""
-    tests_enabled="no"
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
             -n|--non-interactive)
                 non_interactive=1
                 shift
-                ;;
-            -d|--deployment-option)
-                if [[ -n "$2" && "$2" =~ ^[1-5]$ ]]; then
-                    deployment_option="$2"
-                    shift 2
-                else
-                    echo "Error: Invalid deployment option '$2'. Valid options are 1, 2, 3, 4 or 5."
-                    exit 1
-                fi
                 ;;
             -p|--postgres-password)
                 if [[ -n "$2" ]]; then
@@ -405,19 +617,12 @@ parse_arguments() {
                     exit 1
                 fi
                 ;;
-            -t|--tests)
-                tests_enabled="yes"
-                echo "Tests enabled. Ensure contents of e2e-tests directory is copied to ./configurations/tests/."
-                shift
-                ;;
             -h|--help)
                 echo "Usage: $0 [OPTION]..."
                 echo "Initialize and configure the Docker environment."
                 echo "  -n, --non-interactive     Run with no interactive prompts and accept sensible default configuration settings."
-                echo "  -d, --deployment-option   Specify one of the custom deployment options (1, 2, 3, or 4)."
                 echo "  -p, --postgres-password   Set a specific password for PostgreSQL (overrides automatic generation)."
                 echo "  -i, --node-image          Specify a custom Partner Chains Node image."
-                echo "  -t, --tests               Include tests container."
                 echo "  -h, --help                Display this help dialogue and exit."
                 exit 0
                 ;;
@@ -433,10 +638,8 @@ parse_arguments() {
     done
 
     export non_interactive
-    export deployment_option
     export postgres_password
     export node_image
-    export tests_enabled
 }
 
 main() {
@@ -456,17 +659,14 @@ main() {
         configure_postgres "interactive"
         configure_ogmios
         resource_limits_setup
-
-        if [ "$deployment_option" -eq 0 ]; then
-            choose_deployment_option
-        fi
-
         configure_env "interactive"
         create_docker_compose "interactive"
     fi
 
     echo "===== SETUP COMPLETE ======"
+    echo -e "Run 'bash setup.sh --non-interactive' to run the setup in non-interactive mode"
     echo -e "Run 'docker compose up -d' to deploy local network"
+    echo -e "Use 'docker logs cardano-node-1 -f | grep -E \"DEBUG|LOG|WARN\"' to monitor the mainchain logs"
     echo -e "We recommend using 'lazydocker' or a similar Docker UI to monitor the network logs and performance"
     echo -e "Run 'docker compose down --volumes' when you wish to stop the network and delete all volumes"
 }
