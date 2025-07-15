@@ -495,20 +495,18 @@ pub(crate) async fn get_utxos_for_address(
           		origin_tx.block_index as tx_index_in_block,
           		tx_out.address,
           		datum.value as datum,
-          		array_agg(concat_ws('#', encode(consumes_tx.hash, 'hex'), consumes_tx_in.tx_out_index)) as tx_inputs
+          		array_agg(concat_ws('#', encode(consumes_tx.hash, 'hex'), consumes_tx_out.index)) as tx_inputs
 			FROM tx_out
 			INNER JOIN tx    origin_tx       ON tx_out.tx_id = origin_tx.id
 			INNER JOIN block origin_block    ON origin_tx.block_id = origin_block.id
-          	LEFT JOIN tx_in consuming_tx_in  ON tx_out.tx_id = consuming_tx_in.tx_out_id AND tx_out.index = consuming_tx_in.tx_out_index
-          	LEFT JOIN tx    consuming_tx     ON consuming_tx_in.tx_in_id = consuming_tx.id
-          	LEFT JOIN block consuming_block  ON consuming_tx.block_id = consuming_block.id
-			LEFT JOIN tx_in consumes_tx_in   ON consumes_tx_in.tx_in_id = origin_tx.id
-          	LEFT JOIN tx_out consumes_tx_out ON consumes_tx_out.tx_id = consumes_tx_in.tx_out_id AND consumes_tx_in.tx_out_index = consumes_tx_out.index
-          	LEFT JOIN tx consumes_tx         ON consumes_tx.id = consumes_tx_out.tx_id
-          	LEFT JOIN datum                  ON tx_out.data_hash = datum.hash
+			LEFT JOIN tx    consuming_tx     ON tx_out.consumed_by_tx_id = consuming_tx.id
+			LEFT JOIN block consuming_block  ON consuming_tx.block_id = consuming_block.id
+			LEFT JOIN tx_out consumes_tx_out ON consumes_tx_out.consumed_by_tx_id = origin_tx.id
+			LEFT JOIN tx consumes_tx         ON consumes_tx.id = consumes_tx_out.tx_id
+			LEFT JOIN datum                  ON tx_out.data_hash = datum.hash
           	WHERE
           		tx_out.address = $1 AND origin_block.block_no <= $2
-          		AND (consuming_tx_in.id IS NULL OR consuming_block.block_no > $2)
+          		AND (tx_out.consumed_by_tx_id IS NULL OR consuming_block.block_no > $2)
           		GROUP BY (
 					utxo_id_tx_hash,
 					utxo_id_index,
