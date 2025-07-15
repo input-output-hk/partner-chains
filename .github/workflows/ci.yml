@@ -60,14 +60,14 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ${{ secrets.ECR_REGISTRY_SECRET }}
-      #- name: build
-      #  run: nix develop -c bash -c "cargo build --locked --profile=release"
-      #- name: test
-      #  run: nix develop -c bash -c "cargo test --locked --profile=release --features=runtime-benchmarks"
-      #- name: lint
-      #  run: nix develop -c bash -c "RUSTFLAGS=-Dwarnings cargo clippy --all-targets --all-features"
-      #- name: formatting
-      #  run: nix develop -c bash -c "cargo fmt --check"
+      - name: build
+        run: nix develop -c bash -c "cargo build --locked --profile=release"
+      - name: test
+        run: nix develop -c bash -c "cargo test --locked --profile=release --features=runtime-benchmarks"
+      - name: lint
+        run: nix develop -c bash -c "RUSTFLAGS=-Dwarnings cargo clippy --all-targets --all-features"
+      - name: formatting
+        run: nix develop -c bash -c "cargo fmt --check"
       - name: ls -la
         run: ls -la /tmp
       - name: touch /tmp/testfile2 and chmod 777
