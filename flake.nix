@@ -24,6 +24,7 @@
 
   outputs =
     {
+      self,
       nixpkgs,
       fenix,
       flake-utils,
@@ -51,14 +52,13 @@
       {
         packages.partner-chains = customRustPlatform.buildRustPackage rec {
         pname = "partner-chains";
-        version = "1.7";
+        version = (builtins.fromTOML (builtins.readFile ./Cargo.toml)).workspace.package.version;
         src = ./.;
-        # preBuild = ''
-        #   export SUBSTRATE_CLI_GIT_COMMIT_HASH=${dirtyShortRev or shortRev}
-        # '';
+        preBuild = ''
+          export SUBSTRATE_CLI_GIT_COMMIT_HASH=${self.dirtyShortRev or self.shortRev}
+        '';
 
         useFetchCargoVendor = false;
-        #cargoHash = "sha256-Kg8Z4IWJZ2Ml70JUf8dmIYI6QSYVflq+0lCk790taAc=";
         cargoLock = {
           lockFile = ./Cargo.lock;
           outputHashes = {
@@ -67,7 +67,6 @@
           };
         };
         buildType = "production";
-        #buildAndTestSubdir = dir;
         doCheck = false;
         patches = [];
 
