@@ -57,8 +57,15 @@
         #   export SUBSTRATE_CLI_GIT_COMMIT_HASH=${dirtyShortRev or shortRev}
         # '';
 
-        useFetchCargoVendor = true;
-        cargoHash = "sha256-Kg8Z4IWJZ2Ml70JUf8dmIYI6QSYVflq+0lCk790taAc=";
+        useFetchCargoVendor = false;
+        #cargoHash = "sha256-Kg8Z4IWJZ2Ml70JUf8dmIYI6QSYVflq+0lCk790taAc=";
+        cargoLock = {
+          lockFile = ./Cargo.lock;
+          outputHashes = {
+            "binary-merkle-tree-16.0.0" = "sha256-Yt0KWRMOG53hxdMZvYA60hQ4Vsfkk1R5lv+dd+mzcNI=";
+            "raw-scripts-7.2.1" = "sha256-HTi/mubyBz7dAeLXekexikZZaOHkoI32oUQgmnFe2YM=";
+          };
+        };
         buildType = "production";
         #buildAndTestSubdir = dir;
         doCheck = false;
