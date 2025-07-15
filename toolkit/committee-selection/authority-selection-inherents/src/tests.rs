@@ -432,23 +432,32 @@ pub fn create_authority_selection_inputs(
 }
 
 #[test]
-fn convert_for_impl_opaque_keys_extracts_keys_by_opaque_keys_order() {
-	let keys: AccountKeys = MaybeFromCandidateKeys::maybe_from(&CandidateKeys(vec![
-		CandidateKey {
-			id: <AuraLikeModule as BoundToRuntimeAppPublic>::Public::ID.0,
-			bytes: [1u8; 32].to_vec(),
-		},
-		CandidateKey {
-			id: <GrandpaLikeModule as BoundToRuntimeAppPublic>::Public::ID.0,
-			bytes: [2u8; 32].to_vec(),
-		},
-	]))
-	.unwrap();
+fn maybe_from_candidate_keys_extracts_keys_is_insensitive_to_keys_order() {
+	let key1 = CandidateKey {
+		id: <AuraLikeModule as BoundToRuntimeAppPublic>::Public::ID.0,
+		bytes: [1u8; 32].to_vec(),
+	};
+	let key2 = CandidateKey {
+		id: <GrandpaLikeModule as BoundToRuntimeAppPublic>::Public::ID.0,
+		bytes: [2u8; 32].to_vec(),
+	};
+	let expected = AccountKeys {
+		aura: sp_core::sr25519::Public::from([1u8; 32]).into(),
+		grandpa: sp_core::ed25519::Public::from([2u8; 32]).into(),
+	};
+
 	assert_eq!(
-		keys,
-		AccountKeys {
-			aura: sp_core::sr25519::Public::from([1u8; 32]).into(),
-			grandpa: sp_core::ed25519::Public::from([2u8; 32]).into(),
-		}
-	)
+		AccountKeys::maybe_from(&CandidateKeys(vec![key1.clone(), key2.clone()])).unwrap(),
+		expected
+	);
+	assert_eq!(AccountKeys::maybe_from(&CandidateKeys(vec![key2, key1])).unwrap(), expected);
+}
+
+#[test]
+fn maybe_from_candidate_keys_extracts_returns_none_when_some_key_is_missing() {
+	let key1 = CandidateKey {
+		id: <AuraLikeModule as BoundToRuntimeAppPublic>::Public::ID.0,
+		bytes: [1u8; 32].to_vec(),
+	};
+	assert_eq!(AccountKeys::maybe_from(&CandidateKeys(vec![key1])), None);
 }
