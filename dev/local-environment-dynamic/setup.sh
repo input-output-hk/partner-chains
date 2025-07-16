@@ -555,11 +555,15 @@ create_docker_compose() {
     container_name: postgres-${i}
     image: \${POSTGRES_IMAGE}
     platform: linux/amd64
+    command: postgres -c max_connections=10000 -c maintenance_work_mem=256MB
     environment:
       POSTGRES_PASSWORD: \${POSTGRES_PASSWORD}
       POSTGRES_DB: cexplorer
+      POSTGRES_MULTIPLE_DATABASES: cexplorer
     volumes:
       - postgres-data-${i}:/var/lib/postgresql/data
+      - ./configurations/postgres/entrypoint.sh:/usr/local/bin/custom-entrypoint.sh
+      - ./configurations/postgres/init.sh:/docker-entrypoint-initdb.d/init.sh
     ports:
       - "\${POSTGRES_PORT_${i}}:5432"
     restart: always
@@ -572,15 +576,15 @@ create_docker_compose() {
     container_name: db-sync-${i}
     image: \${DBSYNC_IMAGE}
     platform: linux/amd64
-    command: >
-      --config /shared/db-sync-config.json
-      --socket-path /shared/node.socket
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]
     depends_on:
       - postgres-${i}
       - cardano-node-1
     volumes:
       - db-sync-data-${i}:/var/lib/cdbsync
       - shared-volume:/shared
+      - cardano-node-1-data:/node-ipc
+      - ./configurations/db-sync/entrypoint.sh:/entrypoint.sh
     environment:
       POSTGRES_HOST: postgres-${i}
       POSTGRES_PORT: 5432
