@@ -54,7 +54,6 @@
               (pkgs.lib.hasSuffix ".json" path);
           };
           
-          # Build inputs
           buildInputs = with pkgs; [
             openssl
             libclang.lib
@@ -65,7 +64,6 @@
             pkgs.darwin.apple_sdk.frameworks.Security
           ];
 
-          # Native build inputs
           nativeBuildInputs = with pkgs; [
             pkg-config
             protobuf
@@ -74,6 +72,7 @@
 
           # Environment variables
           CC_ENABLE_DEBUG_OUTPUT = "1";
+          CRATE_CC_NO_DEFAULTS = 1;
           LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
             rustToolchain
             pkgs.stdenv.cc.cc
@@ -81,8 +80,7 @@
             pkgs.clang
           ];
           
-          # Bindgen configuration
-          BINDGEN_EXTRA_CLANG_ARGS = "-I${pkgs.glibc.dev}/include -I${pkgs.clang.cc.lib}/lib/clang/19/include";
+          BINDGEN_EXTRA_CLANG_ARGS = if pkgs.lib.hasSuffix "linux" system then "-I${pkgs.glibc.dev}/include -I${pkgs.clang.cc.lib}/lib/clang/19/include" else "";
           LIBCLANG_PATH = "${pkgs.clang.cc.lib}/lib";
 
           # Platform-specific flags
@@ -102,12 +100,9 @@
           OPENSSL_INCLUDE_DIR = "${pkgs.openssl.dev}/include";
           OPENSSL_LIB_DIR = "${pkgs.openssl.out}/lib";
 
-          # Platform-specific RUSTFLAGS
           RUSTFLAGS = pkgs.lib.optionalString pkgs.stdenv.hostPlatform.isDarwin
             "--cfg unwinding_backport --cfg unwinding_apple";
 
-          # Git commit hash for Substrate CLI
-          SUBSTRATE_CLI_GIT_COMMIT_HASH = self.dirtyShortRev or self.shortRev;
         };
 
         # Build the workspace dependencies
@@ -121,8 +116,10 @@
           version = (builtins.fromTOML (builtins.readFile ./Cargo.toml)).workspace.package.version;
           
           inherit cargoArtifacts;
+
+          # Git commit hash for Substrate CLI
+          SUBSTRATE_CLI_GIT_COMMIT_HASH = self.dirtyShortRev or self.shortRev;
           
-          # Post-fixup for Linux
           postFixup = pkgs.lib.optionalString pkgs.stdenv.hostPlatform.isLinux ''
             patchelf --set-rpath "${pkgs.rocksdb}/lib:${pkgs.stdenv.cc.cc.lib}/lib" $out/bin/partner-chains-demo-node
           '';
