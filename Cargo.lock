@@ -776,6 +776,7 @@ dependencies = [
  "sidechain-domain",
  "sidechain-slots",
  "sp-api",
+ "sp-application-crypto",
  "sp-consensus-slots",
  "sp-core",
  "sp-inherents",

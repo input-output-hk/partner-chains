@@ -1,12 +1,13 @@
 use super::*;
 use crate::tests::query_mock::TestRuntimeApi;
 use authority_selection_inherents::{
-	PermissionedCandidateDataError, RegistrationDataError, StakeError,
+	MaybeFromCandidateKeys, PermissionedCandidateDataError, RegistrationDataError, StakeError,
 	validate_permissioned_candidate_data, validate_registration_data,
 };
 use mock::*;
 use sidechain_domain::*;
 use sp_core::{Decode, Encode};
+use sp_runtime::{BoundToRuntimeAppPublic, impl_opaque_keys};
 use sp_session_validator_management::MainChainScripts;
 #[allow(deprecated)]
 use sp_sidechain::GetSidechainStatus;
@@ -17,7 +18,19 @@ pub type Block = sp_runtime::generic::Block<
 	sp_runtime::OpaqueExtrinsic,
 >;
 
-type SessionKeys = u64;
+pub struct AuraLikeModule;
+impl BoundToRuntimeAppPublic for AuraLikeModule {
+	type Public = sp_runtime::app_crypto::sr25519::AppPublic;
+}
+
+impl_opaque_keys! {
+	pub struct SessionKeys {
+		pub key: AuraLikeModule,
+	}
+}
+
+impl MaybeFromCandidateKeys for SessionKeys {}
+
 #[derive(Encode, Decode, Clone)]
 pub struct CrossChainPublic([u8; 33]);
 impl AsRef<[u8]> for CrossChainPublic {
@@ -83,21 +96,39 @@ sp_api::mock_impl_runtime_apis! {
 
 	impl CandidateValidationApi<Block> for TestRuntimeApi {
 		fn validate_registered_candidate_data(mainchain_pub_key: &StakePoolPublicKey, registration_data: &RegistrationData) -> Option<RegistrationDataError> {
-			validate_registration_data(mainchain_pub_key, registration_data, TEST_UTXO_ID).err()
+			validate_registration_data::<SessionKeys>(mainchain_pub_key, registration_data, TEST_UTXO_ID).err()
 		}
 		fn validate_stake(stake: Option<StakeDelegation>) -> Option<StakeError> {
 			authority_selection_inherents::validate_stake(stake).err()
 		}
 		fn validate_permissioned_candidate_data(candidate: sidechain_domain::PermissionedCandidateData) -> Option<PermissionedCandidateDataError> {
-			validate_permissioned_candidate_data(candidate).err()
+			validate_permissioned_candidate_data::<SessionKeys>(candidate).err()
 		}
 	}
 }
 
 pub(crate) fn committee_for_epoch(epoch: u64) -> Vec<(CrossChainPublic, SessionKeys)> {
 	if epoch == conversion::GENESIS_EPOCH || epoch == conversion::EPOCH_OF_BLOCK_1 {
-		vec![(CrossChainPublic([0u8; 33]), 0), (CrossChainPublic([1u8; 33]), 1)]
+		vec![
+			(
+				CrossChainPublic([0u8; 33]),
+				SessionKeys { key: sp_core::sr25519::Public::from([0u8; 32]).into() },
+			),
+			(
+				CrossChainPublic([1u8; 33]),
+				SessionKeys { key: sp_core::sr25519::Public::from([1u8; 32]).into() },
+			),
+		]
 	} else {
-		vec![(CrossChainPublic([epoch as u8; 33]), 2), (CrossChainPublic([epoch as u8 + 1; 33]), 3)]
+		vec![
+			(
+				CrossChainPublic([epoch as u8; 33]),
+				SessionKeys { key: sp_core::sr25519::Public::from([2u8; 32]).into() },
+			),
+			(
+				CrossChainPublic([epoch as u8 + 1; 33]),
+				SessionKeys { key: sp_core::sr25519::Public::from([3u8; 32]).into() },
+			),
+		]
 	}
 }

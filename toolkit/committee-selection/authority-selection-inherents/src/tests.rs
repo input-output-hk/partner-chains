@@ -1,16 +1,17 @@
+use crate::MaybeFromCandidateKeys;
 use crate::authority_selection_inputs::AuthoritySelectionInputs;
 use crate::filter_invalid_candidates::RegisterValidatorSignedMessage;
 use crate::select_authorities::select_authorities;
 use hex_literal::hex;
 use num_bigint::BigInt;
-use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
+use parity_scale_codec::Encode;
 use plutus::Datum::{ByteStringDatum, ConstructorDatum, IntegerDatum};
 use plutus::ToDatum;
-use scale_info::TypeInfo;
-use serde::{Deserialize, Serialize};
 use sidechain_domain::*;
-use sp_core::{ConstU32, Pair, ecdsa, ed25519, sr25519};
+use sidechain_domain::{CandidateKey, CandidateKeys};
+use sp_core::{ConstU32, Pair, ecdsa, ed25519};
 use sp_runtime::traits::Zero;
+use sp_runtime::{BoundToRuntimeAppPublic, RuntimeAppPublic, impl_opaque_keys};
 use sp_session_validator_management::CommitteeMember;
 
 #[test]
@@ -74,30 +75,25 @@ impl TryFrom<SidechainPublicKey> for AccountId {
 	}
 }
 
-#[derive(
-	Clone,
-	Debug,
-	PartialEq,
-	Eq,
-	PartialOrd,
-	Ord,
-	Encode,
-	Decode,
-	TypeInfo,
-	MaxEncodedLen,
-	Serialize,
-	Deserialize,
-)]
-pub struct AccountKeys {
-	pub aura: [u8; 32],
-	pub grandpa: [u8; 32],
+pub struct AuraLikeModule;
+impl BoundToRuntimeAppPublic for AuraLikeModule {
+	type Public = sp_runtime::app_crypto::sr25519::AppPublic;
 }
 
-impl From<(sr25519::Public, ed25519::Public)> for AccountKeys {
-	fn from((aura, grandpa): (sr25519::Public, ed25519::Public)) -> Self {
-		Self { aura: aura.0, grandpa: grandpa.0 }
+pub struct GrandpaLikeModule;
+impl BoundToRuntimeAppPublic for GrandpaLikeModule {
+	type Public = sp_runtime::app_crypto::ed25519::AppPublic;
+}
+
+impl_opaque_keys! {
+	#[derive(Ord, PartialOrd)]
+	pub struct AccountKeys {
+		pub aura: AuraLikeModule,
+		pub grandpa: GrandpaLikeModule,
 	}
 }
+
+impl MaybeFromCandidateKeys for AccountKeys {}
 
 impl AccountKeys {
 	pub fn from_seed(seed: &str) -> AccountKeys {
@@ -105,7 +101,10 @@ impl AccountKeys {
 		aura.resize(32, 0);
 		let mut grandpa = format!("grandpa-{seed}").into_bytes();
 		grandpa.resize(32, 0);
-		AccountKeys { aura: aura.try_into().unwrap(), grandpa: grandpa.try_into().unwrap() }
+		AccountKeys {
+			aura: sp_core::sr25519::Public::from(<[u8; 32]>::try_from(aura).unwrap()).into(),
+			grandpa: sp_core::ed25519::Public::from(<[u8; 32]>::try_from(grandpa).unwrap()).into(),
+		}
 	}
 }
 
@@ -171,16 +170,11 @@ impl MockValidator {
 		AccountKeys::from_seed(self.seed)
 	}
 
-	pub fn aura_pub_key(&self) -> AuraPublicKey {
-		AuraPublicKey(self.session_keys().aura.to_vec())
-	}
-
-	pub fn grandpa_pub_key(&self) -> GrandpaPublicKey {
-		GrandpaPublicKey(self.session_keys().grandpa.to_vec())
-	}
-
 	pub fn keys(&self) -> CandidateKeys {
-		CandidateKeys(vec![self.aura_pub_key().into(), self.grandpa_pub_key().into()])
+		CandidateKeys(vec![
+			CandidateKey { id: *b"sr25", bytes: self.session_keys().aura.encode() },
+			CandidateKey { id: *b"ed25", bytes: self.session_keys().grandpa.encode() },
+		])
 	}
 }
 
@@ -435,4 +429,35 @@ pub fn create_authority_selection_inputs(
 		registered_candidates: epoch_candidates,
 		epoch_nonce: EpochNonce(DUMMY_EPOCH_NONCE.to_vec()),
 	}
+}
+
+#[test]
+fn maybe_from_candidate_keys_extracts_keys_is_insensitive_to_keys_order() {
+	let key1 = CandidateKey {
+		id: <AuraLikeModule as BoundToRuntimeAppPublic>::Public::ID.0,
+		bytes: [1u8; 32].to_vec(),
+	};
+	let key2 = CandidateKey {
+		id: <GrandpaLikeModule as BoundToRuntimeAppPublic>::Public::ID.0,
+		bytes: [2u8; 32].to_vec(),
+	};
+	let expected = AccountKeys {
+		aura: sp_core::sr25519::Public::from([1u8; 32]).into(),
+		grandpa: sp_core::ed25519::Public::from([2u8; 32]).into(),
+	};
+
+	assert_eq!(
+		AccountKeys::maybe_from(&CandidateKeys(vec![key1.clone(), key2.clone()])).unwrap(),
+		expected
+	);
+	assert_eq!(AccountKeys::maybe_from(&CandidateKeys(vec![key2, key1])).unwrap(), expected);
+}
+
+#[test]
+fn maybe_from_candidate_keys_extracts_returns_none_when_some_key_is_missing() {
+	let key1 = CandidateKey {
+		id: <AuraLikeModule as BoundToRuntimeAppPublic>::Public::ID.0,
+		bytes: [1u8; 32].to_vec(),
+	};
+	assert_eq!(AccountKeys::maybe_from(&CandidateKeys(vec![key1])), None);
 }

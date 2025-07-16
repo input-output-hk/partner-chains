@@ -1,33 +1,37 @@
 //! Functionality related to selecting the validators from the valid candidates
 
-use crate::CommitteeMember;
 use crate::authority_selection_inputs::AuthoritySelectionInputs;
 use crate::filter_invalid_candidates::{
 	filter_invalid_permissioned_candidates, filter_trustless_candidates_registrations,
 };
+use crate::{CommitteeMember, MaybeFromCandidateKeys};
 use log::{info, warn};
 use plutus::*;
 use sidechain_domain::{EpochNonce, ScEpochNumber, UtxoId};
-use sp_core::{Get, U256, ecdsa, ed25519, sr25519};
+use sp_core::{Get, U256, ecdsa};
 use sp_runtime::BoundedVec;
 
 /// Selects authorities using the Ariadne selection algorithm and data sourced from Partner Chains smart contracts on Cardano.
 /// Seed is constructed from the MC epoch nonce and the sidechain epoch.
 pub fn select_authorities<
-	TAccountId: Clone + Ord + TryFrom<sidechain_domain::SidechainPublicKey> + From<ecdsa::Public>,
-	TAccountKeys: Clone + Ord + From<(sr25519::Public, ed25519::Public)>,
+	TAccountId: Clone + Ord + From<ecdsa::Public>,
+	TAccountKeys: Clone + Ord + MaybeFromCandidateKeys,
 	MaxAuthorities: Get<u32>,
 >(
 	genesis_utxo: UtxoId,
 	input: AuthoritySelectionInputs,
 	sidechain_epoch: ScEpochNumber,
 ) -> Option<BoundedVec<CommitteeMember<TAccountId, TAccountKeys>, MaxAuthorities>> {
-	Some(BoundedVec::truncate_from(select_candidates(genesis_utxo, input, sidechain_epoch)?))
+	Some(BoundedVec::truncate_from(select_candidates::<TAccountId, TAccountKeys>(
+		genesis_utxo,
+		input,
+		sidechain_epoch,
+	)?))
 }
 
 fn select_candidates<
-	TAccountId: Clone + Ord + TryFrom<sidechain_domain::SidechainPublicKey> + From<ecdsa::Public>,
-	TAccountKeys: Clone + Ord + From<(sr25519::Public, ed25519::Public)>,
+	TAccountId: Clone + Ord + From<ecdsa::Public>,
+	TAccountKeys: Clone + Ord + MaybeFromCandidateKeys,
 >(
 	genesis_utxo: UtxoId,
 	input: AuthoritySelectionInputs,
@@ -37,8 +41,10 @@ fn select_candidates<
 		TAccountId,
 		TAccountKeys,
 	>(input.registered_candidates, genesis_utxo);
-	let valid_permissioned_candidates =
-		filter_invalid_permissioned_candidates(input.permissioned_candidates);
+	let valid_permissioned_candidates = filter_invalid_permissioned_candidates::<
+		TAccountId,
+		TAccountKeys,
+	>(input.permissioned_candidates);
 	let valid_permissioned_count = valid_permissioned_candidates.len();
 	let valid_registered_count = valid_registered_candidates.len();
 

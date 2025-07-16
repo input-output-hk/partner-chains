@@ -64,6 +64,7 @@ impl<T: PartnerChainRuntime> CmdRun for GenerateKeysCmd<T> {
 		context.enewline();
 
 		generate_spo_keys(&config, &chain_spec_path, context)?;
+
 		context.enewline();
 
 		generate_network_key(&config, &chain_spec_path, context)?;
