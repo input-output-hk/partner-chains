@@ -2,6 +2,7 @@
 use crate::DataSourceError::*;
 use crate::db_model::{
 	self, Address, Asset, BlockNumber, EpochNumber, MainchainTxOutput, StakePoolEntry,
+	TxInConfiguration,
 };
 use crate::metrics::McFollowerMetrics;
 use crate::observed_async_trait;
@@ -49,6 +50,8 @@ pub struct CandidatesDataSourceImpl {
 	pool: PgPool,
 	/// Prometheus metrics client
 	metrics_opt: Option<McFollowerMetrics>,
+	/// Transaction input configuration used by Db-Sync
+	tx_in_config: TxInConfiguration,
 }
 
 observed_async_trait!(
@@ -126,7 +129,8 @@ impl CandidatesDataSourceImpl {
 	) -> Result<CandidatesDataSourceImpl, Box<dyn std::error::Error + Send + Sync>> {
 		db_model::create_idx_ma_tx_out_ident(&pool).await?;
 		db_model::create_idx_tx_out_address(&pool).await?;
-		Ok(Self { pool, metrics_opt })
+		let tx_in_config = TxInConfiguration::from_connection(&pool).await?;
+		Ok(Self { pool, metrics_opt, tx_in_config })
 	}
 
 	/// Creates a new caching instance of the data source
@@ -154,7 +158,10 @@ impl CandidatesDataSourceImpl {
 		let registrations_block_for_epoch = self.get_last_block_for_epoch(epoch).await?;
 		let address: Address = Address(committee_candidate_address.to_string());
 		let active_utxos = match registrations_block_for_epoch {
-			Some(block) => db_model::get_utxos_for_address(&self.pool, &address, block).await?,
+			Some(block) => {
+				db_model::get_utxos_for_address(&self.pool, &address, block, self.tx_in_config)
+					.await?
+			},
 			None => vec![],
 		};
 		self.convert_utxos_to_candidates(&active_utxos)

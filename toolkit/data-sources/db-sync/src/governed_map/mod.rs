@@ -2,7 +2,7 @@
 use crate::DataSourceError::ExpectedDataNotFound;
 use crate::Result;
 use crate::block::BlockDataSourceImpl;
-use crate::db_model::GovernedMapAction;
+use crate::db_model::{GovernedMapAction, TxInConfiguration};
 use crate::{metrics::McFollowerMetrics, observed_async_trait};
 use db_sync_sqlx::{Asset, BlockNumber};
 use itertools::Itertools;
@@ -26,6 +26,8 @@ pub struct GovernedMapDataSourceImpl {
 	pub pool: PgPool,
 	/// Prometheus metrics client
 	pub metrics_opt: Option<McFollowerMetrics>,
+	/// Transaction input configuration used by Db-Sync
+	tx_in_config: TxInConfiguration,
 }
 
 impl GovernedMapDataSourceImpl {
@@ -35,7 +37,8 @@ impl GovernedMapDataSourceImpl {
 		metrics_opt: Option<McFollowerMetrics>,
 	) -> std::result::Result<Self, Box<dyn std::error::Error + Send + Sync>> {
 		crate::db_model::create_idx_tx_out_address(&pool).await?;
-		Ok(Self { pool, metrics_opt })
+		let tx_in_config = TxInConfiguration::from_connection(&pool).await?;
+		Ok(Self { pool, metrics_opt, tx_in_config })
 	}
 }
 
@@ -47,7 +50,7 @@ impl GovernedMapDataSource for GovernedMapDataSourceImpl {
 		scripts: MainChainScriptsV1,
 	) -> std::result::Result<BTreeMap<String, ByteString>, Box<dyn std::error::Error + Send + Sync>>
 	{
-		Ok(get_mappings_entries(&self.pool, mc_block, scripts).await?.into())
+		Ok(get_mappings_entries(&self.pool, mc_block, scripts, self.tx_in_config).await?.into())
 	}
 
 	async fn get_mapping_changes(
@@ -87,6 +90,7 @@ async fn get_mappings_entries(
 	pool: &PgPool,
 	hash: McBlockHash,
 	scripts: MainChainScriptsV1,
+	tx_in_config: TxInConfiguration,
 ) -> Result<BTreeMap<String, ByteString>> {
 	let Some(block) = crate::db_model::get_block_by_hash(pool, hash.clone()).await? else {
 		return Err(ExpectedDataNotFound(format!("Block hash: {hash}")));
@@ -96,6 +100,7 @@ async fn get_mappings_entries(
 		&scripts.validator_address.into(),
 		block.block_no,
 		Asset::new(scripts.asset_policy_id),
+		tx_in_config,
 	)
 	.await?;
 
@@ -126,6 +131,8 @@ pub struct GovernedMapDataSourceCachedImpl {
 	cache: Arc<Mutex<Cache>>,
 	/// [BlockDataSourceImpl] instance shared with other data sources for cache reuse.
 	blocks: Arc<BlockDataSourceImpl>,
+	/// Transaction input configuration used by Db-Sync
+	tx_in_config: TxInConfiguration,
 }
 
 impl GovernedMapDataSourceCachedImpl {
@@ -138,7 +145,8 @@ impl GovernedMapDataSourceCachedImpl {
 	) -> std::result::Result<Self, Box<dyn std::error::Error + Send + Sync>> {
 		crate::db_model::create_idx_tx_out_address(&pool).await?;
 		let cache = Default::default();
-		Ok(Self { pool, metrics_opt, cache_size, cache, blocks })
+		let tx_in_config = TxInConfiguration::from_connection(&pool).await?;
+		Ok(Self { pool, metrics_opt, cache_size, cache, blocks, tx_in_config })
 	}
 }
 
@@ -150,7 +158,7 @@ impl GovernedMapDataSource for GovernedMapDataSourceCachedImpl {
 		scripts: MainChainScriptsV1,
 	) -> std::result::Result<BTreeMap<String, ByteString>, Box<dyn std::error::Error + Send + Sync>>
 	{
-		Ok(get_mappings_entries(&self.pool, mc_block, scripts).await?.into())
+		Ok(get_mappings_entries(&self.pool, mc_block, scripts, self.tx_in_config).await?.into())
 	}
 
 	async fn get_mapping_changes(
@@ -230,12 +238,13 @@ impl GovernedMapDataSourceCachedImpl {
 		up_to_block: BlockNumber,
 		scripts: MainChainScriptsV1,
 	) -> Result<Vec<Change>> {
-		let changes = crate::db_model::get_changes(
+		let changes = crate::db_model::get_governed_map_changes(
 			&self.pool,
 			&scripts.validator_address.into(),
 			since_block,
 			up_to_block,
 			Asset::new(scripts.asset_policy_id),
+			self.tx_in_config,
 		)
 		.await?;
 

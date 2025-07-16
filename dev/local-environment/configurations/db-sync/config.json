@@ -1,4 +1,9 @@
 {
+  "insert_options": {
+    "tx_output": {
+      "value": "consumed"
+    }
+  },
   "EnableLogMetrics": false,
   "EnableLogging": true,
   "NetworkName": "Testnet",

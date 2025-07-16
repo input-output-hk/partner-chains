@@ -1,3 +1,4 @@
+
 CREATE DOMAIN hash28type AS bytea CONSTRAINT flyway_needs_this CHECK (octet_length(VALUE) = 28);
 
 CREATE DOMAIN hash32type AS bytea CONSTRAINT flyway_needs_this CHECK(octet_length(VALUE) = 32);
