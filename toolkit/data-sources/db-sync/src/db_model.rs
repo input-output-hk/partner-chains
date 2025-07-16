@@ -411,15 +411,14 @@ pub(crate) async fn get_changes(
 		(SELECT
 			datum.value as datum, consuming_block.block_no as block_no, consuming_tx.block_index as block_index, $7 as action, -1 as action_order
 		FROM tx_out
-		LEFT JOIN tx_in consuming_tx_in	ON tx_out.tx_id = consuming_tx_in.tx_out_id AND tx_out.index = consuming_tx_in.tx_out_index
-		LEFT JOIN tx consuming_tx		ON consuming_tx_in.tx_in_id = consuming_tx.id
+		LEFT JOIN tx consuming_tx		ON tx_out.consumed_by_tx_id = consuming_tx.id
 		LEFT JOIN block consuming_block	ON consuming_tx.block_id = consuming_block.id
 		INNER JOIN datum				ON tx_out.data_hash = datum.hash
 		INNER JOIN ma_tx_out			ON tx_out.id = ma_tx_out.tx_out_id
 		INNER JOIN multi_asset			ON multi_asset.id = ma_tx_out.ident
 		WHERE
 			tx_out.address = $1
-			AND (consuming_tx_in.id IS NOT NULL AND ($2 IS NULL OR consuming_block.block_no > $2) AND consuming_block.block_no <= $3)
+			AND (tx_out.consumed_by_tx_id IS NOT NULL AND ($2 IS NULL OR consuming_block.block_no > $2) AND consuming_block.block_no <= $3)
 			AND multi_asset.policy = $4
 			AND multi_asset.name = $5))
 		ORDER BY block_no, block_index, action_order ASC";
@@ -448,15 +447,14 @@ pub(crate) async fn get_datums_at_address_with_token(
 			FROM tx_out
 			INNER JOIN tx origin_tx			ON tx_out.tx_id = origin_tx.id
 			INNER JOIN block origin_block	ON origin_tx.block_id = origin_block.id
-			LEFT JOIN tx_in consuming_tx_in	ON tx_out.tx_id = consuming_tx_in.tx_out_id AND tx_out.index = consuming_tx_in.tx_out_index
-			LEFT JOIN tx consuming_tx		ON consuming_tx_in.tx_in_id = consuming_tx.id
+			LEFT JOIN tx consuming_tx		ON tx_out.consumed_by_tx_id = consuming_tx.id
 			LEFT JOIN block consuming_block	ON consuming_tx.block_id = consuming_block.id
 			INNER JOIN datum				ON tx_out.data_hash = datum.hash
 			INNER JOIN ma_tx_out			ON tx_out.id = ma_tx_out.tx_out_id
 			INNER JOIN multi_asset			ON multi_asset.id = ma_tx_out.ident
 			WHERE
 				tx_out.address = $1 AND origin_block.block_no <= $2
-				AND (consuming_tx_in.id IS NULL OR consuming_block.block_no > $2)
+				AND (tx_out.consumed_by_tx_id IS NULL OR consuming_block.block_no > $2)
 				AND multi_asset.policy = $3
 				AND multi_asset.name = $4
 				ORDER BY origin_block.block_no ASC, origin_tx.block_index ASC";
