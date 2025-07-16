@@ -161,16 +161,16 @@ INSERT INTO tx ( id            , hash            , block_id, block_index, out_su
 
 -- the transaction reg_tx_id has 2 outputs
 -- the second output (index 1) is consumed by dereg_tx_id
-INSERT INTO tx_out ( id, tx_id           , index, address     , address_raw, address_has_script, payment_cred, stake_address_id, value, data_hash )
-            VALUES ( 0 , consumed_tx_id  , 0    , 'other_addr', ''         , TRUE              , NULL        , NULL            , 0    , NULL      )
-                  ,( 1 , consumed_tx_id  , 1    , 'other_addr', ''         , TRUE              , NULL        , NULL            , 0    , NULL      )
-                  ,( 2 , consumed_tx_id  , 2    , 'other_addr', ''         , TRUE              , NULL        , NULL            , 0    , NULL      )
-                  ,( 4 , reg_tx_id       , 0    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , hash1     ) -- good registration
-                  ,( 5 , reg_tx_id       , 1    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , hash2     ) -- wrong format
-                  ,( 6 , reg_tx_id       , 2    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , hash3     ) -- formatted properly but not an spo
-                  ,( 7 , dereg_tx_id     , 0    , 'other_addr', ''         , TRUE              , NULL        , NULL            , 0    , hash1     )
-                  ,( 8 , reg_tx_id2      , 0    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , hash5     )
-                  ,( 9 , reg_tx_id2      , 1    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , hash6     ) -- formatted properly but did not consumed advertisedhash
+INSERT INTO tx_out ( id, tx_id           , index, address     , address_raw, address_has_script, payment_cred, stake_address_id, value, data_hash, consumed_by_tx_id )
+            VALUES ( 0 , consumed_tx_id  , 0    , 'other_addr', ''         , TRUE              , NULL        , NULL            , 0    , NULL     , reg_tx_id         )
+                  ,( 1 , consumed_tx_id  , 1    , 'other_addr', ''         , TRUE              , NULL        , NULL            , 0    , NULL     , reg_tx_id         )
+                  ,( 2 , consumed_tx_id  , 2    , 'other_addr', ''         , TRUE              , NULL        , NULL            , 0    , NULL     , reg_tx_id2        )
+                  ,( 4 , reg_tx_id       , 0    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , hash1    , dereg_tx_id       ) -- good registration
+                  ,( 5 , reg_tx_id       , 1    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , hash2    , dereg_tx_id       ) -- wrong format
+                  ,( 6 , reg_tx_id       , 2    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , hash3    , NULL              ) -- formatted properly but not an spo
+                  ,( 7 , dereg_tx_id     , 0    , 'other_addr', ''         , TRUE              , NULL        , NULL            , 0    , hash1    , NULL              )
+                  ,( 8 , reg_tx_id2      , 0    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , hash5    , NULL              )
+                  ,( 9 , reg_tx_id2      , 1    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , hash6    , NULL              ) -- formatted properly but did not consumed advertisedhash
 ;
 
 INSERT INTO datum ( id, hash , tx_id     , value                                            )
@@ -181,13 +181,6 @@ INSERT INTO datum ( id, hash , tx_id     , value                                
                  ,( 5 , hash6, reg_tx_id2, registration3                                    )
 ;
 
-INSERT INTO tx_in ( id, tx_in_id   , tx_out_id, tx_out_index, redeemer_id )
-           VALUES ( 0 , reg_tx_id  , consumed_tx_id, 0      , NULL   )
-                 ,( 1 , reg_tx_id  , consumed_tx_id, 1      , NULL   )
-                 ,( 2 , reg_tx_id2 , consumed_tx_id, 2      , NULL   )
-                 ,( 4 , dereg_tx_id, reg_tx_id     , 0      , NULL   )
-                 ,( 5 , dereg_tx_id, reg_tx_id     , 1      , NULL   )
-;
 END $$;
 
 -- Insert D-parameter
