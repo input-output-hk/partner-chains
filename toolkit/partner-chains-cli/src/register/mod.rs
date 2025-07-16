@@ -7,6 +7,7 @@ use partner_chains_cardano_offchain::register::run_register;
 use plutus_datum_derive::ToDatum;
 use secp256k1::PublicKey;
 use sidechain_domain::*;
+use sp_runtime::KeyTypeId;
 use std::{convert::Infallible, fmt::Display, str::FromStr};
 
 use crate::cmd_traits::Register;
@@ -38,6 +39,26 @@ impl FromStr for PartnerChainPublicKeyParam {
 		let trimmed = s.trim_start_matches("0x");
 		let pk = PublicKey::from_str(trimmed)?;
 		Ok(PartnerChainPublicKeyParam(SidechainPublicKey(pk.serialize().to_vec())))
+	}
+}
+
+#[derive(Clone, Debug)]
+pub struct CandidateKeyParam(pub CandidateKey);
+
+impl FromStr for CandidateKeyParam {
+	type Err = Box<dyn std::error::Error + Send + Sync>;
+
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		let parts: Vec<_> = s.split(":").collect();
+		if parts.len() != 2 {
+			return Err("Incorrect format, expected: <key type>:<key hex>".into());
+		}
+
+		let key_type = KeyTypeId::try_from(parts[0])
+			.map_err(|_| format!("{} is not a correct key type", parts[0]))?;
+		let key = hex::decode(parts[1])?;
+
+		Ok(Self(CandidateKey::new(key_type, key)))
 	}
 }
 
