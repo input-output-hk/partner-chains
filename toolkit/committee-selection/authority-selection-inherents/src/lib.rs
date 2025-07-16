@@ -112,7 +112,7 @@ impl<AuthorityId: Clone, AuthorityKeys: Clone> CommitteeMemberT
 
 /// Trait to try extract [T] from [CandidateKeys].
 pub trait MaybeFromCandidateKeys: OpaqueKeys + Decode + Sized {
-	/// Depends on `Encode` that is derived by `impl_opaque_keys!`
+	/// Depends on `Decode` that is derived by `impl_opaque_keys!`
 	fn maybe_from(keys: &CandidateKeys) -> Option<Self> {
 		let required_keys = Self::key_ids();
 
