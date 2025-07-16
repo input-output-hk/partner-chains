@@ -98,7 +98,7 @@ pub type Hash = sp_core::H256;
 /// to even the core data structures.
 pub mod opaque {
 	use super::*;
-	use authority_selection_inherents::MaybeFromCandidateKeys;
+	use authority_selection_inherents::AutoMaybeFromCandidateKeys;
 	use parity_scale_codec::MaxEncodedLen;
 	use sp_core::{ed25519, sr25519};
 	pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
@@ -171,7 +171,7 @@ pub mod opaque {
 		}
 	}
 
-	impl MaybeFromCandidateKeys for SessionKeys {}
+	impl AutoMaybeFromCandidateKeys for SessionKeys {}
 
 	impl_opaque_keys! {
 		pub struct CrossChainKey {

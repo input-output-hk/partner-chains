@@ -111,7 +111,21 @@ impl<AuthorityId: Clone, AuthorityKeys: Clone> CommitteeMemberT
 }
 
 /// Trait to try extract implementing type from [CandidateKeys].
+///
+/// Chains using keys created using [impl_opaque_keys] should mark them with the [AutoMaybeFromCandidateKeys]
+/// and have their [MaybeFromCandidateKeys] automatically derived instead of implementing it manually.
 pub trait MaybeFromCandidateKeys: OpaqueKeys + Decode + Sized {
+	/// Depends on `Decode` that is derived by `impl_opaque_keys!`
+	fn maybe_from(keys: &CandidateKeys) -> Option<Self>;
+}
+
+/// Marks candidate key types that should have their [MaybeFromCandidateKeys] instance automatically derived
+///
+/// Types for which auto-derivation is supported are:
+/// - types that implement [OpaqueKeys] trait, usually those created usig [impl_opaque_keys]
+pub trait AutoMaybeFromCandidateKeys {}
+
+impl<T: AutoMaybeFromCandidateKeys + OpaqueKeys + Decode + Sized> MaybeFromCandidateKeys for T {
 	/// Depends on `Decode` that is derived by `impl_opaque_keys!`
 	fn maybe_from(keys: &CandidateKeys) -> Option<Self> {
 		let required_keys = Self::key_ids();

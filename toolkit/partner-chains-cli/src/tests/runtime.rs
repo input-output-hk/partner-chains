@@ -1,4 +1,4 @@
-use authority_selection_inherents::{CommitteeMember, MaybeFromCandidateKeys};
+use authority_selection_inherents::{AutoMaybeFromCandidateKeys, CommitteeMember};
 use frame_support::{
 	sp_runtime::traits::{BlakeTwo256, IdentityLookup},
 	*,
@@ -53,7 +53,7 @@ impl_opaque_keys! {
 	}
 }
 
-impl MaybeFromCandidateKeys for TestSessionKeys {}
+impl AutoMaybeFromCandidateKeys for TestSessionKeys {}
 
 construct_runtime! {
 	pub enum MockRuntime {
