@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 NUM_DBSYNC_INSTANCES=3
-NUM_PERMISSIONED_NODES_TO_PROCESS=10
-NUM_REGISTERED_NODES_TO_PROCESS=10
+NUM_PERMISSIONED_NODES_TO_PROCESS=5
+NUM_REGISTERED_NODES_TO_PROCESS=5
 
 PARTNER_CHAINS_NODE_IMAGE="ghcr.io/input-output-hk/partner-chains/partner-chains-node-unstable:latest"
 CARDANO_IMAGE="ghcr.io/intersectmbo/cardano-node:10.1.4"
