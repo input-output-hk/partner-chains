@@ -4,6 +4,7 @@ use crate::ogmios::config::tests::{
 };
 use crate::prepare_configuration::tests::{prompt, prompt_with_default};
 use crate::setup_main_chain_state::SetupMainChainStateCmd;
+use crate::tests::runtime::MockRuntime;
 use crate::tests::{
 	CHAIN_CONFIG_FILE_PATH, MockIO, MockIOContext, OffchainMock, OffchainMocks,
 	RESOURCES_CONFIG_FILE_PATH,
@@ -13,8 +14,7 @@ use hex_literal::hex;
 use partner_chains_cardano_offchain::multisig::MultiSigSmartContractResult;
 use serde_json::json;
 use sidechain_domain::{
-	AuraPublicKey, CandidateKeys, DParameter, GrandpaPublicKey, PermissionedCandidateData,
-	SidechainPublicKey, UtxoId,
+	CandidateKey, CandidateKeys, DParameter, PermissionedCandidateData, SidechainPublicKey, UtxoId,
 };
 
 #[test]
@@ -192,9 +192,10 @@ fn candidates_on_main_chain_are_same_as_in_config_no_updates() {
 	);
 }
 
-fn setup_main_chain_state_cmd() -> SetupMainChainStateCmd {
+fn setup_main_chain_state_cmd() -> SetupMainChainStateCmd<MockRuntime> {
 	SetupMainChainStateCmd {
 		common_arguments: CommonArguments { retry_delay_seconds: 5, retry_count: 59 },
+		_phantom: std::marker::PhantomData,
 	}
 }
 
@@ -300,17 +301,17 @@ fn print_main_chain_and_configuration_candidates_difference_io() -> MockIO {
 		),
 		MockIO::print("The most recent on-chain initial permissioned candidates are:"),
 		MockIO::print(
-			"Partner Chains Key: 0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1, AURA: 0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d, GRANDPA: 0x88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee",
+			"Partner Chains Key: 0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1, ed25: 0x88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee, sr25: 0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d",
 		),
 		MockIO::print(
-			"Partner Chains Key: 0x0263c9cdabbef76829fe5b35f0bbf3051bd1c41b80f58b5d07c271d0dd04de2a4e, AURA: 0x9cedc9f7b926191f64d68ee77dd90c834f0e73c0f53855d77d3b0517041d5640, GRANDPA: 0xde21d8171821fc29a43a1ed90ee75623edc3794012010f165b6afc3483a569aa",
+			"Partner Chains Key: 0x0263c9cdabbef76829fe5b35f0bbf3051bd1c41b80f58b5d07c271d0dd04de2a4e, ed25: 0xde21d8171821fc29a43a1ed90ee75623edc3794012010f165b6afc3483a569aa, sr25: 0x9cedc9f7b926191f64d68ee77dd90c834f0e73c0f53855d77d3b0517041d5640",
 		),
 		MockIO::print("The permissioned candidates in the configuration file are:"),
 		MockIO::print(
-			"Partner Chains Key: 0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1, AURA: 0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d, GRANDPA: 0x88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee",
+			"Partner Chains Key: 0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1, ed25: 0x88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee, sr25: 0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d",
 		),
 		MockIO::print(
-			"Partner Chains Key: 0x0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27, AURA: 0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48, GRANDPA: 0xd17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69",
+			"Partner Chains Key: 0x0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27, ed25: 0xd17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69, sr25: 0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
 		),
 	])
 }
@@ -356,14 +357,18 @@ fn test_chain_config_content() -> serde_json::Value {
 		},
 		"initial_permissioned_candidates": [
 			{
-			  "aura_pub_key": "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d",
-			  "grandpa_pub_key": "0x88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee",
-			  "sidechain_pub_key": "0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1"
+				"keys":{
+					"sr25": "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d",
+					"ed25": "0x88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee"
+				},
+				"partner_chains_key": "0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1"
 			},
 			{
-			  "aura_pub_key": "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
-			  "grandpa_pub_key": "0xd17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69",
-			  "sidechain_pub_key": "0x0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27"
+				"keys":{
+					"sr25": "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
+					"ed25": "0xd17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69"
+				},
+				"partner_chains_key": "0x0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27"
 			}
 		],
 	})
@@ -390,14 +395,16 @@ fn candidate_data_1() -> PermissionedCandidateData {
 			hex!("020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1").to_vec(),
 		),
 		keys: CandidateKeys(vec![
-			AuraPublicKey::from_hex_unsafe(
-				"d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d",
-			)
-			.into(),
-			GrandpaPublicKey::from_hex_unsafe(
-				"88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee",
-			)
-			.into(),
+			CandidateKey {
+				id: *b"sr25",
+				bytes: hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d")
+					.to_vec(),
+			},
+			CandidateKey {
+				id: *b"ed25",
+				bytes: hex!("88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee")
+					.to_vec(),
+			},
 		]),
 	}
 }
@@ -408,14 +415,16 @@ fn candidate_data_2() -> PermissionedCandidateData {
 			hex!("0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27").to_vec(),
 		),
 		keys: CandidateKeys(vec![
-			AuraPublicKey::from_hex_unsafe(
-				"8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
-			)
-			.into(),
-			GrandpaPublicKey::from_hex_unsafe(
-				"d17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69",
-			)
-			.into(),
+			CandidateKey {
+				id: *b"sr25",
+				bytes: hex!("8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48")
+					.to_vec(),
+			},
+			CandidateKey {
+				id: *b"ed25",
+				bytes: hex!("d17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69")
+					.to_vec(),
+			},
 		]),
 	}
 }
@@ -426,14 +435,16 @@ fn candidate_data_3() -> PermissionedCandidateData {
 			"0263c9cdabbef76829fe5b35f0bbf3051bd1c41b80f58b5d07c271d0dd04de2a4e",
 		),
 		keys: CandidateKeys(vec![
-			AuraPublicKey::from_hex_unsafe(
-				"9cedc9f7b926191f64d68ee77dd90c834f0e73c0f53855d77d3b0517041d5640",
-			)
-			.into(),
-			GrandpaPublicKey::from_hex_unsafe(
-				"de21d8171821fc29a43a1ed90ee75623edc3794012010f165b6afc3483a569aa",
-			)
-			.into(),
+			CandidateKey {
+				id: *b"sr25",
+				bytes: hex!("9cedc9f7b926191f64d68ee77dd90c834f0e73c0f53855d77d3b0517041d5640")
+					.to_vec(),
+			},
+			CandidateKey {
+				id: *b"ed25",
+				bytes: hex!("de21d8171821fc29a43a1ed90ee75623edc3794012010f165b6afc3483a569aa")
+					.to_vec(),
+			},
 		]),
 	}
 }

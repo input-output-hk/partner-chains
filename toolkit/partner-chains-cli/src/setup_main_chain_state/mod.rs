@@ -6,9 +6,10 @@ use crate::config::{ChainConfig, ConfigFieldDefinition, ConfigFile, config_field
 use crate::io::IOContext;
 use crate::ogmios::config::prompt_ogmios_configuration;
 use crate::permissioned_candidates::{ParsedPermissionedCandidatesKeys, PermissionedCandidateKeys};
-use crate::{CmdRun, cardano_key};
+use crate::{CmdRun, PartnerChainRuntime, cardano_key};
 use anyhow::Context;
 use anyhow::anyhow;
+use authority_selection_inherents::MaybeFromCandidateKeys;
 use ogmios_client::query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId};
 use ogmios_client::query_network::QueryNetwork;
 use ogmios_client::transactions::Transactions;
@@ -20,17 +21,22 @@ use partner_chains_cardano_offchain::multisig::{
 };
 use serde::de::DeserializeOwned;
 use sidechain_domain::{DParameter, PermissionedCandidateData, UtxoId};
+use std::marker::PhantomData;
 
 #[cfg(test)]
 mod tests;
 
 #[derive(Clone, Debug, clap::Parser)]
-pub struct SetupMainChainStateCmd {
+pub struct SetupMainChainStateCmd<T: PartnerChainRuntime> {
 	#[clap(flatten)]
 	common_arguments: crate::CommonArguments,
+	#[clap(skip)]
+	_phantom: PhantomData<T>,
 }
 
-impl TryFrom<PermissionedCandidateData> for ParsedPermissionedCandidatesKeys {
+impl<Keys: MaybeFromCandidateKeys> TryFrom<PermissionedCandidateData>
+	for ParsedPermissionedCandidatesKeys<Keys>
+{
 	type Error = anyhow::Error;
 
 	fn try_from(value: PermissionedCandidateData) -> Result<Self, Self::Error> {
@@ -49,14 +55,14 @@ impl SortedPermissionedCandidates {
 	}
 }
 
-impl CmdRun for SetupMainChainStateCmd {
+impl<T: PartnerChainRuntime> CmdRun for SetupMainChainStateCmd<T> {
 	fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
 		let chain_config = crate::config::load_chain_config(context)?;
 		context.print(
 			"This wizard will set or update D-Parameter and Permissioned Candidates on the main chain. Setting either of these costs ADA!",
 		);
 		let config_initial_authorities =
-			initial_permissioned_candidates_from_chain_config(context)?;
+			initial_permissioned_candidates_from_chain_config::<C, T::Keys>(context)?;
 		context.print("Will read the current D-Parameter and Permissioned Candidates from the main chain using Ogmios client.");
 		let ogmios_config = prompt_ogmios_configuration(context)?;
 		let offchain = context.offchain_impl(&ogmios_config)?;
@@ -98,7 +104,7 @@ impl CmdRun for SetupMainChainStateCmd {
 	}
 }
 
-fn initial_permissioned_candidates_from_chain_config<C: IOContext>(
+fn initial_permissioned_candidates_from_chain_config<C: IOContext, Keys: MaybeFromCandidateKeys>(
 	context: &C,
 ) -> anyhow::Result<SortedPermissionedCandidates> {
 	// Requirements state "read from 'chain config' (or chain-spec).
@@ -108,7 +114,7 @@ fn initial_permissioned_candidates_from_chain_config<C: IOContext>(
 	// Use ParsedPermissionedCandidatesKeys to validate them
 	let candidates = candidates
 		.iter()
-		.map(ParsedPermissionedCandidatesKeys::try_from)
+		.map(ParsedPermissionedCandidatesKeys::<Keys>::try_from)
 		.collect::<Result<Vec<_>, _>>()?;
 	let candidates = candidates.iter().map(PermissionedCandidateData::from).collect();
 	Ok(SortedPermissionedCandidates::new(candidates))

@@ -28,7 +28,7 @@ impl CmdRun for Register1Cmd {
 
 		let GeneratedKeysFileContent { sidechain_pub_key: pc_pub_key, aura_pub_key, grandpa_pub_key } =
 			read_generated_keys(context).map_err(|e| {
-			    context.eprint("⚠️ The keys file `partner-chains-cli-keys.json` is missing or invalid. Please run the `generate-keys` command first");
+			    context.eprint(&format!("⚠️ The keys file `{KEYS_FILE_PATH}` is missing or invalid. Please run the `generate-keys` command first"));
 				anyhow!(e)
 			})?;
 
@@ -332,7 +332,7 @@ mod tests {
 				vec![
 					intro_msg_io(),
 					load_base_path_value(),
-					vec![MockIO::eprint("⚠️ The keys file `partner-chains-cli-keys.json` is missing or invalid. Please run the `generate-keys` command first")],
+					vec![MockIO::eprint("⚠️ The keys file `partner-chains-public-keys.json` is missing or invalid. Please run the `generate-keys` command first")],
 				]
 				.into_iter()
 				.flatten()

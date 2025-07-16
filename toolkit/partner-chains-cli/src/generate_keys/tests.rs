@@ -8,9 +8,13 @@ use scenarios::resources_file_content;
 
 const DATA_PATH: &str = "/path/to/data";
 
-const GRANDPA_PREFIX: &str = "6772616e"; // "gran" in hex
+const GRANDPA_PREFIX: &str = "65643235"; // "ed25" in hex
 const CROSS_CHAIN_PREFIX: &str = "63726368"; // "crch" in hex
-const AURA_PREFIX: &str = "61757261"; // "aura" in hex
+const AURA_PREFIX: &str = "73723235"; // "sr25" in hex
+
+const AURA_KEY: &str = "070707070707070707070707070707070707070707070707070707070707070707";
+const GRANDPA_KEY: &str = "0808080808080808080808080808080808080808080808080808080808080808";
+const CROSS_CHAIN_KEY: &str = "1313131313131313131313131313131313131313131313131313131313131313";
 
 fn default_config() -> GenerateKeysConfig {
 	GenerateKeysConfig { substrate_node_base_path: DATA_PATH.into() }
@@ -32,9 +36,9 @@ pub mod scenarios {
 			MockIO::eprint(
 				"This 🧙 wizard will generate the following keys and save them to your node's keystore:",
 			),
-			MockIO::eprint("→  an ECDSA Cross-chain key"),
-			MockIO::eprint("→  an ED25519 Grandpa key"),
-			MockIO::eprint("→  an SR25519 Aura key"),
+			MockIO::eprint("→ ecdsa Cross-chain key"),
+			MockIO::eprint("→ ed25519 TestGrandpaLike key"),
+			MockIO::eprint("→ sr25519 TestAuraLike key"),
 			MockIO::eprint("It will also generate a network key for your node if needed."),
 		])
 	}
@@ -73,40 +77,40 @@ pub mod scenarios {
 			)),
 			MockIO::enewline(),
 			MockIO::list_dir(&keystore_path(), None),
-			MockIO::eprint("⚙️ Generating Grandpa (ed25519) key"),
+			MockIO::eprint("⚙️ Generating TestGrandpaLike (ed25519) key"),
 			MockIO::run_command_json(
 				&"<mock executable> key generate --scheme ed25519 --output-type json".to_string(),
 				&serde_json::json!({"publicKey": grandpa_key, "secretPhrase": "grandpa secret phrase"}),
 			),
-			MockIO::eprint("💾 Inserting Grandpa (ed25519) key"),
+			MockIO::eprint("💾 Inserting TestGrandpaLike (ed25519) key"),
 			MockIO::run_command(
 				&format!(
-					"<mock executable> key insert --chain /tmp/MockIOContext_tmp_dir/chain-spec.json --keystore-path {} --scheme ed25519 --key-type gran --suri 'grandpa secret phrase'",
+					"<mock executable> key insert --chain /tmp/MockIOContext_tmp_dir/chain-spec.json --keystore-path {} --scheme ed25519 --key-type ed25 --suri 'grandpa secret phrase'",
 					keystore_path()
 				),
 				"",
 			),
 			MockIO::eprint(&format!(
-				"💾 Grandpa key stored at {}/{GRANDPA_PREFIX}{grandpa_key}",
+				"💾 TestGrandpaLike key stored at {}/{GRANDPA_PREFIX}{grandpa_key}",
 				&keystore_path()
 			)),
 			MockIO::enewline(),
 			MockIO::list_dir(&keystore_path(), None),
-			MockIO::eprint("⚙️ Generating Aura (sr25519) key"),
+			MockIO::eprint("⚙️ Generating TestAuraLike (sr25519) key"),
 			MockIO::run_command_json(
 				&"<mock executable> key generate --scheme sr25519 --output-type json".to_string(),
 				&serde_json::json!({"publicKey": aura_key, "secretPhrase": "aura secret phrase"}),
 			),
-			MockIO::eprint("💾 Inserting Aura (sr25519) key"),
+			MockIO::eprint("💾 Inserting TestAuraLike (sr25519) key"),
 			MockIO::run_command(
 				&format!(
-					"<mock executable> key insert --chain /tmp/MockIOContext_tmp_dir/chain-spec.json --keystore-path {} --scheme sr25519 --key-type aura --suri 'aura secret phrase'",
+					"<mock executable> key insert --chain /tmp/MockIOContext_tmp_dir/chain-spec.json --keystore-path {} --scheme sr25519 --key-type sr25 --suri 'aura secret phrase'",
 					keystore_path()
 				),
 				"",
 			),
 			MockIO::eprint(&format!(
-				"💾 Aura key stored at {}/{AURA_PREFIX}{aura_key}",
+				"💾 TestAuraLike key stored at {}/{AURA_PREFIX}{aura_key}",
 				&keystore_path()
 			)),
 			MockIO::enewline(),
@@ -128,11 +132,14 @@ pub mod scenarios {
 	}
 	pub fn key_file_content(aura: &str, grandpa: &str, cross_chain: &str) -> serde_json::Value {
 		serde_json::json!({
-			"sidechain_pub_key": cross_chain,
-			"aura_pub_key": aura,
-			"grandpa_pub_key": grandpa,
+			"partner_chains_key": format!("0x{cross_chain}"),
+			"keys": {
+				"ed25": format!("0x{grandpa}"),
+				"sr25": format!("0x{aura}")
+			}
 		})
 	}
+
 	pub fn write_key_file(aura: &str, grandpa: &str, cross_chain: &str) -> MockIO {
 		MockIO::Group(vec![
 			MockIO::eprint(
@@ -140,9 +147,11 @@ pub mod scenarios {
 			),
 			MockIO::print(&format!(
 				"{{
-  \"sidechain_pub_key\": \"{cross_chain}\",
-  \"aura_pub_key\": \"{aura}\",
-  \"grandpa_pub_key\": \"{grandpa}\"
+  \"partner_chains_key\": \"0x{cross_chain}\",
+  \"keys\": {{
+    \"ed25\": \"0x{grandpa}\",
+    \"sr25\": \"0x{aura}\"
+  }}
 }}"
 			)),
 			MockIO::eprint("You may share them with your chain governance authority"),
@@ -163,8 +172,8 @@ fn happy_path() {
 		scenarios::create_temp_chain_spec(),
 		scenarios::prompt_all_config_fields(),
 		MockIO::enewline(),
-		scenarios::generate_all_spo_keys("aura-pub-key", "grandpa-pub-key", "cross-chain-pub-key"),
-		scenarios::write_key_file("aura-pub-key", "grandpa-pub-key", "cross-chain-pub-key"),
+		scenarios::generate_all_spo_keys(AURA_KEY, GRANDPA_KEY, CROSS_CHAIN_KEY),
+		scenarios::write_key_file(AURA_KEY, GRANDPA_KEY, CROSS_CHAIN_KEY),
 		MockIO::enewline(),
 		scenarios::generate_network_key(),
 		MockIO::enewline(),
@@ -179,7 +188,7 @@ fn happy_path() {
 	verify_json!(
 		mock_context,
 		"partner-chains-public-keys.json",
-		key_file_content("aura-pub-key", "grandpa-pub-key", "cross-chain-pub-key")
+		key_file_content(AURA_KEY, GRANDPA_KEY, CROSS_CHAIN_KEY)
 	);
 	verify_json!(mock_context, RESOURCES_CONFIG_FILE_PATH, resources_file_content());
 }
@@ -223,9 +232,9 @@ mod generate_spo_keys {
 	#[test]
 	fn preserves_existing_keys_when_user_declines_overwrite() {
 		let keystore_files = vec![
-			format!("{CROSS_CHAIN_PREFIX}cross-chain-key"),
-			format!("{AURA_PREFIX}aura-key"),
-			format!("{GRANDPA_PREFIX}grandpa-key"),
+			format!("{CROSS_CHAIN_PREFIX}{CROSS_CHAIN_KEY}"),
+			format!("{AURA_PREFIX}{AURA_KEY}"),
+			format!("{GRANDPA_PREFIX}{GRANDPA_KEY}"),
 		];
 		let mock_context = MockIOContext::new()
 			.with_json_file(
@@ -237,35 +246,45 @@ mod generate_spo_keys {
 			.with_expected_io(vec![
 				MockIO::list_dir(&keystore_path(), Some(keystore_files.clone())),
 				MockIO::prompt_yes_no(
-					"A Cross-chain key already exists in store: cross-chain-key - overwrite it?",
+					&format!(
+						"A Cross-chain key already exists in store: {CROSS_CHAIN_KEY} - overwrite it?"
+					),
 					false,
 					false,
 				),
 				MockIO::enewline(),
 				MockIO::list_dir(&keystore_path(), Some(keystore_files.clone())),
 				MockIO::prompt_yes_no(
-					"A Grandpa key already exists in store: grandpa-key - overwrite it?",
+					&format!(
+						"A TestGrandpaLike key already exists in store: {GRANDPA_KEY} - overwrite it?"
+					),
 					false,
 					false,
 				),
 				MockIO::enewline(),
 				MockIO::list_dir(&keystore_path(), Some(keystore_files.clone())),
 				MockIO::prompt_yes_no(
-					"A Aura key already exists in store: aura-key - overwrite it?",
+					&format!(
+						"A TestAuraLike key already exists in store: {AURA_KEY} - overwrite it?"
+					),
 					false,
 					false,
 				),
 				MockIO::enewline(),
-				scenarios::write_key_file("0xaura-key", "0xgrandpa-key", "0xcross-chain-key"),
+				scenarios::write_key_file(AURA_KEY, GRANDPA_KEY, CROSS_CHAIN_KEY),
 			]);
 
-		let result = generate_spo_keys(&default_config(), "irrelevant.json", &mock_context);
+		let result = generate_spo_keys::<MockIOContext, MockRuntime>(
+			&default_config(),
+			"irrelevant.json",
+			&mock_context,
+		);
 
 		result.expect("should succeed");
 		verify_json!(
 			mock_context,
 			"partner-chains-public-keys.json",
-			key_file_content("0xaura-key", "0xgrandpa-key", "0xcross-chain-key")
+			key_file_content(AURA_KEY, GRANDPA_KEY, CROSS_CHAIN_KEY)
 		);
 	}
 
@@ -288,7 +307,11 @@ mod generate_spo_keys {
 				MockIO::eprint("Refusing to overwrite keys file - skipping"),
 			]);
 
-		let result = generate_spo_keys(&default_config(), "irrelevant.json", &mock_context);
+		let result = generate_spo_keys::<MockIOContext, MockRuntime>(
+			&default_config(),
+			"irrelevant.json",
+			&mock_context,
+		);
 
 		result.expect("should succeed");
 	}
@@ -363,5 +386,5 @@ mod generate_network_key {
 
 #[test]
 fn key_type_hex_works() {
-	assert_eq!(GRANDPA.key_type_hex(), GRANDPA_PREFIX)
+	assert_eq!(GRANDPA.key_type_hex(), "6772616e")
 }

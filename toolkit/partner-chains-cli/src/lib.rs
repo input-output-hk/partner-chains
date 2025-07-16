@@ -27,8 +27,9 @@ use clap::Parser;
 pub use create_chain_spec::CreateChainSpecConfig;
 pub use io::DefaultCmdRunContext;
 use io::*;
+pub use keystore::{AURA, CROSS_CHAIN, GRANDPA, KeyDefinition};
 use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
-pub use permissioned_candidates::{ParsedPermissionedCandidatesKeys, PermissionedCandidateKeys};
+pub use permissioned_candidates::ParsedPermissionedCandidatesKeys;
 pub use runtime_bindings::{PartnerChainRuntime, RuntimeTypeWrapper};
 use std::time::Duration;
 
@@ -52,14 +53,14 @@ impl CommonArguments {
     after_long_help = HELP_EXAMPLES,
 )]
 /// Partner Chains text "wizards" for setting up a chain.
-pub enum Command<T: PartnerChainRuntime> {
+pub enum Command<T: PartnerChainRuntime + Send + Sync> {
 	/// This wizard generates the keys required for operating a partner-chains node, stores them in the keystore directory, and prints the public keys and keystore location.
 	GenerateKeys(generate_keys::GenerateKeysCmd<T>),
 	/// Wizard to obtain the configuration needed for the partner-chain governance authority. This configuration should be shared with chain participants and used to create the chain spec json file.
 	PrepareConfiguration(prepare_configuration::PrepareConfigurationCmd),
 	/// Wizard for setting D-parameter and Permissioned Candidates list on the main chain.
 	/// Uses 'chain config' obtained after running `prepare-configuration`.
-	SetupMainChainState(setup_main_chain_state::SetupMainChainStateCmd),
+	SetupMainChainState(setup_main_chain_state::SetupMainChainStateCmd<T>),
 	/// Wizard for creating a chain spec json file based on the chain configuration (see `prepare-configuration`).
 	CreateChainSpec(create_chain_spec::CreateChainSpecCmd<T>),
 	/// Wizard for starting a substrate node in the environment set up by `generate-keys`,
@@ -75,7 +76,7 @@ pub enum Command<T: PartnerChainRuntime> {
 	Deregister(deregister::DeregisterCmd),
 }
 
-impl<T: PartnerChainRuntime> Command<T> {
+impl<T: PartnerChainRuntime + Send + Sync> Command<T> {
 	/// Runs a Partner Chain wizard command.
 	pub fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
 		match self {

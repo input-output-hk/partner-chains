@@ -3,32 +3,31 @@ use super::PartnerChainRuntime;
 use crate::create_chain_spec::{CreateChainSpecCmd, INITIAL_PERMISSIONED_CANDIDATES_EXAMPLE};
 use crate::tests::runtime::{MockRuntime, TestSessionKeys};
 use crate::tests::{CHAIN_CONFIG_FILE_PATH, MockIO, MockIOContext};
-use crate::{CmdRun, ParsedPermissionedCandidatesKeys, verify_json};
+use crate::{CmdRun, KeyDefinition, verify_json};
 use colored::Colorize;
 use sidechain_slots::SlotsPerEpoch;
-use sp_core::{ed25519, sr25519};
-use sp_runtime::AccountId32;
 
 impl PartnerChainRuntime for MockRuntime {
-	fn create_chain_spec(config: &super::CreateChainSpecConfig) -> serde_json::Value {
+	type Keys = TestSessionKeys;
+
+	fn create_chain_spec(
+		config: &super::CreateChainSpecConfig<TestSessionKeys>,
+	) -> serde_json::Value {
 		serde_json::json!({
-			"session":config.pallet_partner_chains_session_config::<MockRuntime, _>(to_test_session_keys),
-			"sessionCommitteeManagement": config.pallet_session_validator_management_config::<MockRuntime, _>(to_committee_member),
+			"session":config.pallet_partner_chains_session_config::<MockRuntime>(),
+			"sessionCommitteeManagement": config.pallet_session_validator_management_config::<MockRuntime>(),
 			"sidechain": config.pallet_sidechain_config::<MockRuntime>(SlotsPerEpoch(13)),
 			"governedMap":config.governed_map_config::<MockRuntime>(),
 			"nativeTokenManagement":config.native_token_management_config::<MockRuntime>(),
 		})
 	}
-}
 
-fn to_committee_member(
-	keys: &ParsedPermissionedCandidatesKeys,
-) -> (AccountId32, (sr25519::Public, ed25519::Public)) {
-	(keys.account_id_32(), (keys.aura, keys.grandpa))
-}
-
-fn to_test_session_keys(keys: &ParsedPermissionedCandidatesKeys) -> (AccountId32, TestSessionKeys) {
-	(keys.account_id_32(), TestSessionKeys { aura: keys.aura.into(), grandpa: keys.grandpa.into() })
+	fn key_definitions() -> Vec<crate::KeyDefinition<'static>> {
+		vec![
+			KeyDefinition { name: "TestGrandpaLike", scheme: "ed25519", key_type: "ed25" },
+			KeyDefinition { name: "TestAuraLike", scheme: "sr25519", key_type: "sr25" },
+		]
+	}
 }
 
 fn create_chain_spec_cmd() -> CreateChainSpecCmd<MockRuntime> {
@@ -100,14 +99,18 @@ fn test_config_content() -> serde_json::Value {
 		"chain_parameters": chain_parameters_json(),
 		"initial_permissioned_candidates": [
 			{
-			  "aura_pub_key": "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d",
-			  "grandpa_pub_key": "0x88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee",
-			  "sidechain_pub_key": "0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1"
+				"partner_chains_key": "0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1",
+				"keys": {
+					"sr25": "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d",
+					"ed25": "0x88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee",
+				}
 			},
 			{
-			  "aura_pub_key": "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
-			  "grandpa_pub_key": "0xd17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69",
-			  "sidechain_pub_key": "0x0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27"
+				"partner_chains_key": "0x0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27",
+				"keys": {
+					"sr25": "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
+					"ed25": "0xd17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69",
+				}
 			}
 		],
 		"cardano_addresses": cardano_addresses_json(),
@@ -202,10 +205,10 @@ fn show_initial_permissioned_candidates() -> MockIO {
 	MockIO::Group(vec![
 		MockIO::print("Initial permissioned candidates:"),
 		MockIO::print(
-			"- Partner Chains Key: 0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1, AURA: 0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d, GRANDPA: 0x88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee",
+			"- Partner Chains Key: 0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1, ed25: 0x88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee, sr25: 0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d",
 		),
 		MockIO::print(
-			"- Partner Chains Key: 0x0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27, AURA: 0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48, GRANDPA: 0xd17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69",
+			"- Partner Chains Key: 0x0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27, ed25: 0xd17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69, sr25: 0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
 		),
 	])
 }
@@ -233,8 +236,8 @@ fn generated_chain_spec() -> serde_json::Value {
 			},
 			"sessionCommitteeManagement": {
 				"initialAuthorities": [
-					["5C7C2Z5sWbytvHpuLTvzKunnnRwQxft1jiqrLD5rhucQ5S9X", ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY", "5FA9nQDVg267DEd8m1ZypXLBnvN7SFxYwV7ndqSYGiN9TTpu"]],
-					["5DVskgSC9ncWQpxFMeUn45NU43RUq93ByEge6ApbnLk6BR9N", ["5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty", "5GoNkf6WdbxCFnPdAnYYQyCjAKPJgLNxXwPjwTh6DGg6gN3E"]]
+					{"Permissioned": {"id": {"key": "KW39r9CJjAVzmkf9zQ4YDb2hqfAVGdRqn53eRqyruqpxAP5YL"}, "keys": {"aura": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY", "grandpa": "5FA9nQDVg267DEd8m1ZypXLBnvN7SFxYwV7ndqSYGiN9TTpu"}}},
+					{"Permissioned": {"id": {"key": "KWByAN7WfZABWS5AoWqxriRmF5f2jnDqy3rB5pfHLGkY93ibN"}, "keys": {"aura": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty", "grandpa": "5GoNkf6WdbxCFnPdAnYYQyCjAKPJgLNxXwPjwTh6DGg6gN3E"}}}
 				],
 				"mainChainScripts": {
 					"committee_candidate_address": "addr_test1wz5qc7fk2pat0058w4zwvkw35ytptej3nuc3je2kgtan5dq3rt4sc",

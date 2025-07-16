@@ -5,7 +5,9 @@ use crate::permissioned_candidates::PermissionedCandidateKeys;
 use crate::{config::config_fields, *};
 use anyhow::{Context, anyhow};
 use serde::Deserialize;
+use sidechain_domain::byte_string::ByteString;
 use sp_core::{Pair, ed25519};
+use std::collections::BTreeMap;
 use std::marker::PhantomData;
 
 #[cfg(test)]
@@ -51,19 +53,22 @@ impl<T: PartnerChainRuntime> CmdRun for GenerateKeysCmd<T> {
 		context.eprint(
 			"This 🧙 wizard will generate the following keys and save them to your node's keystore:",
 		);
-		context.eprint("→  an ECDSA Cross-chain key");
-		context.eprint("→  an ED25519 Grandpa key");
-		context.eprint("→  an SR25519 Aura key");
+		context.eprint(&format!("→ {} {} key", CROSS_CHAIN.scheme, CROSS_CHAIN.name));
+		for key_def in T::key_definitions() {
+			context.eprint(&format!("→ {} {} key", key_def.scheme, key_def.name));
+		}
 		context.eprint("It will also generate a network key for your node if needed.");
 		context.enewline();
 
-		let chain_spec_path =
-			write_temp_chain_spec(context, T::create_chain_spec(&CreateChainSpecConfig::default()));
+		let chain_spec_path = write_temp_chain_spec(
+			context,
+			T::create_chain_spec(&CreateChainSpecConfig::<T::Keys>::default()),
+		);
 
 		let config = GenerateKeysConfig::load(context);
 		context.enewline();
 
-		generate_spo_keys(&config, &chain_spec_path, context)?;
+		generate_spo_keys::<C, T>(&config, &chain_spec_path, context)?;
 
 		context.enewline();
 
@@ -85,25 +90,26 @@ fn write_temp_chain_spec<C: IOContext>(context: &C, chain_spec: serde_json::Valu
 	path
 }
 
-pub(crate) fn generate_spo_keys<C: IOContext>(
+pub(crate) fn generate_spo_keys<C: IOContext, T: PartnerChainRuntime>(
 	config: &GenerateKeysConfig,
 	chain_spec_path: &str,
 	context: &C,
 ) -> anyhow::Result<()> {
 	if prompt_can_write("keys file", KEYS_FILE_PATH, context) {
-		let cross_chain_key = generate_or_load_key(config, context, chain_spec_path, &CROSS_CHAIN)?;
+		let partner_chains_key =
+			generate_or_load_key(config, context, chain_spec_path, &CROSS_CHAIN)?;
 		context.enewline();
-		let grandpa_key = generate_or_load_key(config, context, chain_spec_path, &GRANDPA)?;
-		context.enewline();
-		let aura_key = generate_or_load_key(config, context, chain_spec_path, &AURA)?;
-		context.enewline();
+		let mut keys: BTreeMap<String, ByteString> = BTreeMap::new();
+		for key_definition in T::key_definitions() {
+			let generated_key =
+				generate_or_load_key(config, context, chain_spec_path, &key_definition)?;
+			context.enewline();
+			keys.insert(key_definition.key_type.to_owned(), generated_key);
+		}
 
-		let public_keys_json = serde_json::to_string_pretty(&PermissionedCandidateKeys {
-			sidechain_pub_key: cross_chain_key,
-			aura_pub_key: aura_key,
-			grandpa_pub_key: grandpa_key,
-		})
-		.expect("Failed to serialize public keys");
+		let public_keys_json =
+			serde_json::to_string_pretty(&PermissionedCandidateKeys { partner_chains_key, keys })
+				.expect("Failed to serialize public keys");
 		context.write_file(KEYS_FILE_PATH, &public_keys_json);
 
 		context.eprint(&format!(
@@ -215,11 +221,12 @@ fn generate_or_load_key<C: IOContext>(
 	context: &C,
 	chain_spec_path: &str,
 	key_def: &KeyDefinition,
-) -> anyhow::Result<String> {
+) -> anyhow::Result<ByteString> {
 	let keystore_path = config.keystore_path();
 	let existing_keys = context.list_directory(&keystore_path)?.unwrap_or_default();
 
-	if let Some(key) = find_existing_key(&existing_keys, key_def) {
+	let key: anyhow::Result<String> = if let Some(key) = find_existing_key(&existing_keys, key_def)
+	{
 		if context.prompt_yes_no(
 			&format!("A {} key already exists in store: {key} - overwrite it?", key_def.name),
 			false,
@@ -241,5 +248,6 @@ fn generate_or_load_key<C: IOContext>(
 		store_keys(context, config, key_def, &new_key, chain_spec_path)?;
 
 		Ok(new_key.public_key)
-	}
+	};
+	ByteString::decode_hex(&key?).map_err(|e| anyhow!(e))
 }

@@ -1,49 +1,60 @@
 #![cfg(not(feature = "runtime-benchmarks"))]
+use authority_selection_inherents::{CommitteeMember, MaybeFromCandidateKeys};
 use frame_support::{
 	sp_runtime::traits::{BlakeTwo256, IdentityLookup},
 	*,
 };
 use frame_system::EnsureRoot;
 use pallet_partner_chains_session::{SessionHandler, ShouldEndSession};
-use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
-use scale_info::TypeInfo;
-use serde::Serialize;
+use parity_scale_codec::MaxEncodedLen;
+
 use sidechain_domain::{ScEpochNumber, ScSlotNumber};
-use sp_core::{ConstU16, ConstU32, ConstU64, H256, ed25519, sr25519};
-use sp_runtime::{AccountId32, traits::OpaqueKeys};
+use sp_core::{ConstU16, ConstU32, ConstU64, H256, ecdsa};
+use sp_runtime::{AccountId32, BoundToRuntimeAppPublic, KeyTypeId, impl_opaque_keys};
 
-#[derive(
-	Clone,
-	Debug,
-	Decode,
-	DecodeWithMemTracking,
-	Default,
-	Deserialize,
-	Encode,
-	Eq,
-	MaxEncodedLen,
-	Ord,
-	PartialEq,
-	PartialOrd,
-	Serialize,
-	TypeInfo,
-)]
-pub struct TestSessionKeys {
-	pub aura: sr25519::Public,
-	pub grandpa: ed25519::Public,
+pub struct CrossChainPublicLikeModule;
+impl BoundToRuntimeAppPublic for CrossChainPublicLikeModule {
+	type Public = sp_runtime::app_crypto::ecdsa::AppPublic;
 }
 
-impl OpaqueKeys for TestSessionKeys {
-	type KeyTypeIdProviders = ();
-
-	fn key_ids() -> &'static [sp_runtime::KeyTypeId] {
-		&[]
-	}
-
-	fn get_raw(&self, _: sp_runtime::KeyTypeId) -> &[u8] {
-		&[]
+impl_opaque_keys! {
+	#[derive(Ord, PartialOrd, MaxEncodedLen)]
+	pub struct CrossChainPublic {
+		pub key: CrossChainPublicLikeModule,
 	}
 }
+
+impl From<CrossChainPublic> for AccountId32 {
+	fn from(value: CrossChainPublic) -> Self {
+		AccountId32::new(value.blake2_256())
+	}
+}
+
+impl From<ecdsa::Public> for CrossChainPublic {
+	fn from(value: ecdsa::Public) -> Self {
+		CrossChainPublic { key: value.into() }
+	}
+}
+
+pub struct AuraLikeModule;
+impl BoundToRuntimeAppPublic for AuraLikeModule {
+	type Public = sp_runtime::app_crypto::sr25519::AppPublic;
+}
+
+pub struct GrandpaLikeModule;
+impl BoundToRuntimeAppPublic for GrandpaLikeModule {
+	type Public = sp_runtime::app_crypto::ed25519::AppPublic;
+}
+
+impl_opaque_keys! {
+	#[derive(Ord, PartialOrd, MaxEncodedLen)]
+	pub struct TestSessionKeys {
+		pub aura: AuraLikeModule,
+		pub grandpa: GrandpaLikeModule,
+	}
+}
+
+impl MaybeFromCandidateKeys for TestSessionKeys {}
 
 construct_runtime! {
 	pub enum MockRuntime {
@@ -141,11 +152,11 @@ pub(crate) type MaxValidators = ConstU32<137>;
 impl pallet_session_validator_management::Config for MockRuntime {
 	type RuntimeEvent = RuntimeEvent;
 	type MaxValidators = MaxValidators;
-	type AuthorityId = AccountId32;
-	type AuthorityKeys = (sr25519::Public, ed25519::Public);
+	type AuthorityId = CrossChainPublic;
+	type AuthorityKeys = TestSessionKeys;
 	type AuthoritySelectionInputs = ();
 	type ScEpochNumber = ScEpochNumber;
-	type CommitteeMember = (AccountId32, (sr25519::Public, ed25519::Public));
+	type CommitteeMember = CommitteeMember<Self::AuthorityId, TestSessionKeys>;
 	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
 	type WeightInfo = ();
 
@@ -178,7 +189,8 @@ impl ShouldEndSession<u64> for Mock {
 }
 
 impl SessionHandler<AccountId32> for Mock {
-	const KEY_TYPE_IDS: &'static [sp_runtime::KeyTypeId] = &[];
+	const KEY_TYPE_IDS: &'static [sp_runtime::KeyTypeId] =
+		&[KeyTypeId(*b"sr25"), KeyTypeId(*b"ed25")];
 
 	fn on_genesis_session<Ks: sp_runtime::traits::OpaqueKeys>(_: &[(AccountId32, Ks)]) {}
 
