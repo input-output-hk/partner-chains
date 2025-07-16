@@ -10,6 +10,7 @@ Unlike the static `local-environment`, which used a fixed number of validators w
 - **Automated Lifecycle Management**: Handles the entire process of key generation, Cardano address funding, and SPO registration for all registered validators.
 - **Dynamic Node Discovery**: Nodes use dynamic node-keys, PeerIDs, and public addresses for automatic peer discovery within the Substrate network.
 - **Comprehensive Stack**: Includes all necessary components for a fully functional test environment: Cardano node, DB-Sync, Ogmios, and the Partner Chains nodes.
+- **Scalable Database Backend**: Dynamically configures multiple `db-sync` and `postgres` instances and distributes the Partner Chains nodes among them, allowing for greater performance and scalability in large-scale test environments.
 
 ## System Requirements
 
@@ -22,10 +23,12 @@ Running the local environment requires a machine with adequate resources.
 At the top of the `setup.sh` script, you can configure the size of the network:
 
 ```sh
+NUM_DBSYNC_INSTANCES=3
 NUM_PERMISSIONED_NODES_TO_PROCESS=10
 NUM_REGISTERED_NODES_TO_PROCESS=10
 ```
 
+- `NUM_DBSYNC_INSTANCES`: Sets the number of parallel `db-sync` and `postgres` pairs to create. Partner Chains nodes are distributed evenly among these instances in a round-robin fashion.
 - `NUM_PERMISSIONED_NODES_TO_PROCESS`: Defines the number of initial, permissioned nodes.
 - `NUM_REGISTERED_NODES_TO_PROCESS`: Defines the number of additional "registered" nodes that will be spun up and registered as SPOs.
 
