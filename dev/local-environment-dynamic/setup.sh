@@ -572,12 +572,15 @@ create_docker_compose() {
     container_name: db-sync-${i}
     image: \${DBSYNC_IMAGE}
     platform: linux/amd64
+    command: >
+      --config /shared/db-sync-config.json
+      --socket-path /shared/node.socket
     depends_on:
       - postgres-${i}
       - cardano-node-1
     volumes:
       - db-sync-data-${i}:/var/lib/cdbsync
-      - shared-volume:/var/run/cardano
+      - shared-volume:/shared
     environment:
       POSTGRES_HOST: postgres-${i}
       POSTGRES_PORT: 5432
