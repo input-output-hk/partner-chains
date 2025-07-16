@@ -1,4 +1,4 @@
-use crate::MaybeFromCandidateKeys;
+use crate::AutoMaybeFromCandidateKeys;
 use crate::authority_selection_inputs::AuthoritySelectionInputs;
 use crate::filter_invalid_candidates::RegisterValidatorSignedMessage;
 use crate::select_authorities::select_authorities;
@@ -93,7 +93,7 @@ impl_opaque_keys! {
 	}
 }
 
-impl MaybeFromCandidateKeys for AccountKeys {}
+impl AutoMaybeFromCandidateKeys for AccountKeys {}
 
 impl AccountKeys {
 	pub fn from_seed(seed: &str) -> AccountKeys {

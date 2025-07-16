@@ -1,5 +1,5 @@
 use authority_selection_inherents::{
-	AriadneInherentDataProvider, AuthoritySelectionInputs, MaybeFromCandidateKeys,
+	AriadneInherentDataProvider, AuthoritySelectionInputs, AutoMaybeFromCandidateKeys,
 	RegisterValidatorSignedMessage, filter_trustless_candidates_registrations,
 };
 use frame_support::{
@@ -117,7 +117,7 @@ impl_opaque_keys! {
 	}
 }
 
-impl MaybeFromCandidateKeys for TestSessionKeys {}
+impl AutoMaybeFromCandidateKeys for TestSessionKeys {}
 
 impl From<(sr25519::Public, ed25519::Public)> for TestSessionKeys {
 	fn from((aura, grandpa): (sr25519::Public, ed25519::Public)) -> Self {
