@@ -1,8 +1,13 @@
 {
-  description = "Your devShell environment using flake-utils";
+  description = "Partner Chains - A Substrate-based blockchain with Cardano integration";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    
+    crane = {
+      url = "github:ipetkov/crane";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     fenix = {
       url = "github:nix-community/fenix";
@@ -22,139 +27,163 @@
     };
   };
 
-  outputs =
-    {
-      self,
-      nixpkgs,
-      fenix,
-      flake-utils,
-      ...
-    }:
-    flake-utils.lib.eachDefaultSystem (
-      system:
+  outputs = { self, nixpkgs, crane, fenix, flake-utils, ... }:
+    flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs {
           inherit system;
           config.allowUnfree = true;
         };
+
         rustToolchain = fenix.packages.${system}.fromToolchainFile {
           file = ./rust-toolchain.toml;
           sha256 = "SJwZ8g0zF2WrKDVmHrVG3pD2RGoQeo24MEXnNx5FyuI=";
         };
 
-        isLinux = pkgs.stdenv.isLinux;
-        isDarwin = pkgs.stdenv.isDarwin;
-        customRustPlatform = pkgs.makeRustPlatform {
-          cargo = rustToolchain;
-          rustc = rustToolchain;
-        };
-      in
-      {
-        packages.partner-chains = customRustPlatform.buildRustPackage rec {
-        pname = "partner-chains";
-        version = (builtins.fromTOML (builtins.readFile ./Cargo.toml)).workspace.package.version;
-        src = ./.;
-        preBuild = ''
-          export SUBSTRATE_CLI_GIT_COMMIT_HASH=${self.dirtyShortRev or self.shortRev}
-        '';
+        craneLib = (crane.mkLib pkgs).overrideToolchain rustToolchain;
 
-        useFetchCargoVendor = false;
-        cargoLock = {
-          lockFile = ./Cargo.lock;
-          outputHashes = {
-            "binary-merkle-tree-16.0.0" = "sha256-Yt0KWRMOG53hxdMZvYA60hQ4Vsfkk1R5lv+dd+mzcNI=";
-            "raw-scripts-7.2.1" = "sha256-HTi/mubyBz7dAeLXekexikZZaOHkoI32oUQgmnFe2YM=";
+        # Common build inputs for all targets
+        commonArgs = {
+          src = pkgs.lib.cleanSourceWith {
+            src = self;
+            filter = path: type:
+              # Include all files that crane normally includes
+              (craneLib.filterCargoSources path type) ||
+              # Also include examples directories and JSON files
+              (pkgs.lib.hasSuffix "examples" path) ||
+              (pkgs.lib.hasSuffix ".json" path);
           };
-        };
-        buildType = "production";
-        doCheck = false;
-        patches = [];
+          
+          # Build inputs
+          buildInputs = with pkgs; [
+            openssl
+            libclang.lib
+          ] ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [
+            pkgs.rust-jemalloc-sys-unprefixed
+          ] ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
+            pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
+            pkgs.darwin.apple_sdk.frameworks.Security
+          ];
 
-        nativeBuildInputs = [
-          pkgs.pkg-config
-          pkgs.protobuf
+          # Native build inputs
+          nativeBuildInputs = with pkgs; [
+            pkg-config
+            protobuf
+            llvmPackages.lld
+          ];
 
-          pkgs.llvmPackages.lld
-          customRustPlatform.bindgenHook
-        ];
-        buildInputs = [
-          pkgs.rocksdb
-          pkgs.openssl
-          pkgs.libclang.lib
-        ] ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [
-          pkgs.rust-jemalloc-sys-unprefixed
-        ] ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
-          pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
-          pkgs.darwin.apple_sdk.frameworks.Security
-        ];
+          # Environment variables
+          CC_ENABLE_DEBUG_OUTPUT = "1";
+          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
+            rustToolchain
+            pkgs.stdenv.cc.cc
+            pkgs.libz
+            pkgs.clang
+          ];
+          
+          # Bindgen configuration
+          BINDGEN_EXTRA_CLANG_ARGS = "-I${pkgs.glibc.dev}/include -I${pkgs.clang.cc.lib}/lib/clang/19/include";
+          LIBCLANG_PATH = "${pkgs.clang.cc.lib}/lib";
 
-        postFixup = pkgs.lib.optionalString pkgs.stdenv.hostPlatform.isLinux ''
-          patchelf --set-rpath "${pkgs.rocksdb}/lib:${pkgs.stdenv.cc.cc.lib}/lib" $out/bin/partner-chains-demo-node
-        '';
-
-        # Force skip support check in CC crate
-        #CRATE_CC_NO_DEFAULTS = "1";
-
-        # Platform-specific features
-        RUSTFLAGS = pkgs.lib.optionalString pkgs.stdenv.hostPlatform.isDarwin
-          "--cfg unwinding_backport --cfg unwinding_apple";
-
-        # Existing environment variables
-        CC_ENABLE_DEBUG_OUTPUT = "1";
-        #CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_LINKER = "${pkgs.llvmPackages.lld}/bin/lld";
-        #RUST_SRC_PATH = "${customRustPlatform.rustLibSrc}";
-        LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
-        LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
-          rustToolchain
-          pkgs.stdenv.cc.cc
-          pkgs.libz
-          pkgs.clang
-        ];
-
-        # Platform-specific flags
-        CFLAGS =
-          if pkgs.lib.hasSuffix "linux" system then
+          # Platform-specific flags
+          CFLAGS = if pkgs.lib.hasSuffix "linux" system then
             "-DJEMALLOC_STRERROR_R_RETURNS_CHAR_WITH_GNU_SOURCE"
           else
             "";
 
-        PROTOC = "${pkgs.protobuf}/bin/protoc";
-        ROCKSDB_LIB_DIR = "${pkgs.rocksdb}/lib/";
-        OPENSSL_NO_VENDOR = 1;
-        OPENSSL_DIR = "${pkgs.openssl.dev}";
-        OPENSSL_INCLUDE_DIR = "${pkgs.openssl.dev}/include";
-        OPENSSL_LIB_DIR = "${pkgs.openssl.out}/lib";
-        BINDGEN_EXTRA_CLANG_ARGS = "-I${pkgs.stdenv.cc.cc}/include -std=c++17";
+          PROTOC = "${pkgs.protobuf}/bin/protoc";
+          doCheck = false;
+          #C_INCLUDE_PATH = "${pkgs.clang.cc.lib}/lib/clang/19/include";
+          
+          # RocksDB configuration - use system library
+          ROCKSDB_LIB_DIR = "${pkgs.rocksdb}/lib/";
+          OPENSSL_NO_VENDOR = 1;
+          OPENSSL_DIR = "${pkgs.openssl.dev}";
+          OPENSSL_INCLUDE_DIR = "${pkgs.openssl.dev}/include";
+          OPENSSL_LIB_DIR = "${pkgs.openssl.out}/lib";
 
-      };
+          # Platform-specific RUSTFLAGS
+          RUSTFLAGS = pkgs.lib.optionalString pkgs.stdenv.hostPlatform.isDarwin
+            "--cfg unwinding_backport --cfg unwinding_apple";
+
+          # Git commit hash for Substrate CLI
+          SUBSTRATE_CLI_GIT_COMMIT_HASH = self.dirtyShortRev or self.shortRev;
+        };
+
+        # Build the workspace dependencies
+        cargoArtifacts = craneLib.buildDepsOnly (commonArgs // {
+          pname = "partner-chains-deps";
+        });
+
+        # Build the main binary
+        partner-chains = craneLib.buildPackage (commonArgs // {
+          pname = "partner-chains";
+          version = (builtins.fromTOML (builtins.readFile ./Cargo.toml)).workspace.package.version;
+          
+          inherit cargoArtifacts;
+          
+          # Post-fixup for Linux
+          postFixup = pkgs.lib.optionalString pkgs.stdenv.hostPlatform.isLinux ''
+            patchelf --set-rpath "${pkgs.rocksdb}/lib:${pkgs.stdenv.cc.cc.lib}/lib" $out/bin/partner-chains-demo-node
+          '';
+        });
+
+        # Run tests
+        cargoTest = craneLib.cargoTest (commonArgs // {
+          inherit cargoArtifacts;
+        });
+
+        # Run clippy
+        cargoClippy = craneLib.cargoClippy (commonArgs // {
+          inherit cargoArtifacts;
+          cargoClippyExtraArgs = "--all-targets -- --deny warnings";
+        });
+
+        # Run fmt check
+        cargoFmt = craneLib.cargoFmt {
+          inherit (commonArgs) src;
+        };
+
+      in
+      {
+        checks = {
+          # Build the crate as part of `nix flake check`
+          inherit partner-chains cargoTest cargoClippy cargoFmt;
+        };
+
+        packages = {
+          default = partner-chains;
+          inherit partner-chains;
+        };
+
         devShells.default = pkgs.mkShell {
-          packages =
-            with pkgs;
-            [
-              awscli2
-              bashInteractive
-              cargo-edit
-              cargo-license
-              coreutils
-              docker-compose
-              earthly
-              gawk
-              gnumake
-              kubectl
-              libiconv
-              nixfmt-rfc-style
-              openssl
-              patchelf
-              pkg-config
-              protobuf
-              python312
-              python312Packages.pip
-              python312Packages.virtualenv
-              rustToolchain
-              sops
-              xxd
-            ]
-            ++ (if isDarwin then [ pkgs.darwin.apple_sdk.frameworks.SystemConfiguration ] else [ pkgs.clang ]);
+          packages = with pkgs; [
+            awscli2
+            bashInteractive
+            cargo-edit
+            cargo-license
+            coreutils
+            docker-compose
+            earthly
+            gawk
+            gnumake
+            kubectl
+            libiconv
+            nixfmt-rfc-style
+            openssl
+            patchelf
+            pkg-config
+            protobuf
+            python312
+            python312Packages.pip
+            python312Packages.virtualenv
+            rustToolchain
+            sops
+            xxd
+          ] ++ (if pkgs.stdenv.hostPlatform.isDarwin then 
+            [ pkgs.darwin.apple_sdk.frameworks.SystemConfiguration ] 
+          else 
+            [ pkgs.clang ]);
 
           shellHook = ''
             export RUST_SRC_PATH="${rustToolchain}/lib/rustlib/src/rust/library"
@@ -174,12 +203,12 @@
 
             export PYTHONNOUSERSITE=1
             export CRATE_CC_NO_DEFAULTS=1
-            ${if isLinux then "export CFLAGS=-DJEMALLOC_STRERROR_R_RETURNS_CHAR_WITH_GNU_SOURCE" else ""}
+            ${if pkgs.stdenv.hostPlatform.isLinux then "export CFLAGS=-DJEMALLOC_STRERROR_R_RETURNS_CHAR_WITH_GNU_SOURCE" else ""}
           '';
         };
+
         formatter = pkgs.nixfmt-rfc-style;
-      }
-    );
+      });
 
   nixConfig = {
     allow-import-from-derivation = true;
