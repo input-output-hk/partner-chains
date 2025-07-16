@@ -7146,6 +7146,7 @@ dependencies = [
  "num-bigint",
  "pallet-sidechain-rpc",
  "partner-chains-plutus-data",
+ "paste",
  "pretty_assertions",
  "serde",
  "serde_json",

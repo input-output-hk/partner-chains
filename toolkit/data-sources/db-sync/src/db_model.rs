@@ -1,5 +1,5 @@
-use crate::SqlxError;
 use crate::db_datum::DbDatum;
+use crate::{DataSourceError, SqlxError};
 use bigdecimal::ToPrimitive;
 use cardano_serialization_lib::PlutusData;
 use chrono::NaiveDateTime;
@@ -9,8 +9,76 @@ use sidechain_domain::{
 	MainchainBlock, McBlockHash, McBlockNumber, McEpochNumber, McSlotNumber, McTxHash, UtxoId,
 	UtxoIndex,
 };
-use sqlx::{Decode, Pool, Postgres, database::Database, error::BoxDynError, postgres::PgTypeInfo};
-use std::str::FromStr;
+use sqlx::{
+	Decode, PgPool, Pool, Postgres, database::Database, error::BoxDynError, postgres::PgTypeInfo,
+};
+use std::{cell::OnceCell, str::FromStr, sync::Arc};
+use tokio::sync::Mutex;
+
+/// Db-Sync `tx_in.value` configuration field
+#[derive(Debug, PartialEq, Copy, Clone)]
+pub(crate) enum TxInConfiguration {
+	/// Transaction inputs are linked using `tx_in` table
+	Enabled,
+	/// Transaction inputs are linked using `consumed_by_tx_id` column in `tx_out` table
+	Consumed,
+}
+
+impl TxInConfiguration {
+	pub(crate) async fn from_connection(pool: &Pool<Postgres>) -> Result<Self, SqlxError> {
+		let tx_in_exists = sqlx::query_scalar::<_, i64>(
+			"select count(*) from information_schema.tables where table_name = 'tx_in';",
+		)
+		.fetch_one(pool)
+		.await? == 1;
+
+		if !tx_in_exists {
+			return Ok(Self::Consumed);
+		}
+
+		let tx_in_populated = sqlx::query_scalar::<_, bool>("SELECT EXISTS (SELECT 1 FROM tx_in);")
+			.fetch_one(pool)
+			.await?;
+
+		if tx_in_populated {
+			return Ok(Self::Enabled);
+		}
+
+		Ok(Self::Consumed)
+	}
+}
+
+/// Structure that queries, caches and provides Db-Sync configuration
+pub struct DbSyncConfigurationProvider {
+	/// Postgres connection pool
+	pub(crate) pool: PgPool,
+	/// Transaction input configuration used by Db-Sync
+	pub(crate) tx_in_config: Arc<Mutex<OnceCell<TxInConfiguration>>>,
+}
+
+impl DbSyncConfigurationProvider {
+	pub(crate) fn new(pool: PgPool) -> Self {
+		Self { tx_in_config: Arc::new(Mutex::new(OnceCell::new())), pool }
+	}
+
+	pub(crate) async fn get_tx_in_config(
+		&self,
+	) -> std::result::Result<TxInConfiguration, DataSourceError> {
+		let lock = self.tx_in_config.lock().await;
+		if let Some(tx_in_config) = lock.get() {
+			return Ok(*tx_in_config);
+		} else {
+			let tx_in_config = TxInConfiguration::from_connection(&self.pool).await?;
+			lock.set(tx_in_config).map_err(|_| {
+				DataSourceError::InternalDataSourceError(
+					"Failed to set tx_in_config in DbSyncConfigurationProvider".into(),
+				)
+			})?;
+			log::info!("Using configuration: {tx_in_config:?}");
+			return Ok(tx_in_config);
+		}
+	}
+}
 
 #[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
 pub(crate) struct Block {
@@ -366,7 +434,28 @@ pub(crate) async fn get_token_utxo_for_epoch(
 }
 
 #[cfg(feature = "governed-map")]
-pub(crate) async fn get_changes(
+pub(crate) async fn get_governed_map_changes(
+	pool: &Pool<Postgres>,
+	address: &Address,
+	after_block: Option<BlockNumber>,
+	to_block: BlockNumber,
+	asset: Asset,
+	tx_in_configuration: TxInConfiguration,
+) -> Result<Vec<DatumChangeOutput>, SqlxError> {
+	match tx_in_configuration {
+		TxInConfiguration::Enabled => {
+			get_governed_map_changes_tx_in_enabled(pool, address, after_block, to_block, asset)
+				.await
+		},
+		TxInConfiguration::Consumed => {
+			get_governed_map_changes_tx_in_consumed(pool, address, after_block, to_block, asset)
+				.await
+		},
+	}
+}
+
+#[cfg(feature = "governed-map")]
+pub(crate) async fn get_governed_map_changes_tx_in_enabled(
 	pool: &Pool<Postgres>,
 	address: &Address,
 	after_block: Option<BlockNumber>,
@@ -415,7 +504,73 @@ pub(crate) async fn get_changes(
 }
 
 #[cfg(feature = "governed-map")]
+pub(crate) async fn get_governed_map_changes_tx_in_consumed(
+	pool: &Pool<Postgres>,
+	address: &Address,
+	after_block: Option<BlockNumber>,
+	to_block: BlockNumber,
+	asset: Asset,
+) -> Result<Vec<DatumChangeOutput>, SqlxError> {
+	let query = "
+		((SELECT
+			datum.value as datum, origin_block.block_no as block_no, origin_tx.block_index as block_index, $6 as action, 1 as action_order
+		FROM tx_out
+		INNER JOIN tx origin_tx			ON tx_out.tx_id = origin_tx.id
+		INNER JOIN block origin_block	ON origin_tx.block_id = origin_block.id
+		INNER JOIN datum				ON tx_out.data_hash = datum.hash
+		INNER JOIN ma_tx_out			ON tx_out.id = ma_tx_out.tx_out_id
+		INNER JOIN multi_asset			ON multi_asset.id = ma_tx_out.ident
+		WHERE
+			tx_out.address = $1 AND ($2 IS NULL OR origin_block.block_no > $2) AND origin_block.block_no <= $3
+			AND multi_asset.policy = $4
+			AND multi_asset.name = $5)
+		UNION
+		(SELECT
+			datum.value as datum, consuming_block.block_no as block_no, consuming_tx.block_index as block_index, $7 as action, -1 as action_order
+		FROM tx_out
+		LEFT JOIN tx consuming_tx		ON tx_out.consumed_by_tx_id = consuming_tx.id
+		LEFT JOIN block consuming_block	ON consuming_tx.block_id = consuming_block.id
+		INNER JOIN datum				ON tx_out.data_hash = datum.hash
+		INNER JOIN ma_tx_out			ON tx_out.id = ma_tx_out.tx_out_id
+		INNER JOIN multi_asset			ON multi_asset.id = ma_tx_out.ident
+		WHERE
+			tx_out.address = $1
+			AND (tx_out.consumed_by_tx_id IS NOT NULL AND ($2 IS NULL OR consuming_block.block_no > $2) AND consuming_block.block_no <= $3)
+			AND multi_asset.policy = $4
+			AND multi_asset.name = $5))
+		ORDER BY block_no, block_index, action_order ASC";
+	Ok(sqlx::query_as::<_, DatumChangeOutput>(query)
+		.bind(&address.0)
+		.bind(after_block)
+		.bind(to_block)
+		.bind(&asset.policy_id.0)
+		.bind(&asset.asset_name.0)
+		.bind(GovernedMapAction::Create)
+		.bind(GovernedMapAction::Spend)
+		.fetch_all(pool)
+		.await?)
+}
+
+#[cfg(feature = "governed-map")]
 pub(crate) async fn get_datums_at_address_with_token(
+	pool: &Pool<Postgres>,
+	address: &Address,
+	block: BlockNumber,
+	asset: Asset,
+	tx_in_configuration: TxInConfiguration,
+) -> Result<Vec<DatumOutput>, SqlxError> {
+	match tx_in_configuration {
+		TxInConfiguration::Enabled => {
+			get_datums_at_address_with_token_tx_in_enabled(pool, address, block, asset).await
+		},
+		TxInConfiguration::Consumed => {
+			get_datums_at_address_with_token_tx_in_consumed(pool, address, block, asset).await
+		},
+	}
+}
+
+#[cfg(feature = "governed-map")]
+pub(crate) async fn get_datums_at_address_with_token_tx_in_enabled(
 	pool: &Pool<Postgres>,
 	address: &Address,
 	block: BlockNumber,
@@ -448,6 +603,39 @@ pub(crate) async fn get_datums_at_address_with_token(
 		.await?)
 }
 
+#[cfg(feature = "governed-map")]
+pub(crate) async fn get_datums_at_address_with_token_tx_in_consumed(
+	pool: &Pool<Postgres>,
+	address: &Address,
+	block: BlockNumber,
+	asset: Asset,
+) -> Result<Vec<DatumOutput>, SqlxError> {
+	let query = "
+			SELECT
+				datum.value as datum
+			FROM tx_out
+			INNER JOIN tx origin_tx			ON tx_out.tx_id = origin_tx.id
+			INNER JOIN block origin_block	ON origin_tx.block_id = origin_block.id
+			LEFT JOIN tx consuming_tx		ON tx_out.consumed_by_tx_id = consuming_tx.id
+			LEFT JOIN block consuming_block	ON consuming_tx.block_id = consuming_block.id
+			INNER JOIN datum				ON tx_out.data_hash = datum.hash
+			INNER JOIN ma_tx_out			ON tx_out.id = ma_tx_out.tx_out_id
+			INNER JOIN multi_asset			ON multi_asset.id = ma_tx_out.ident
+			WHERE
+				tx_out.address = $1 AND origin_block.block_no <= $2
+				AND (tx_out.consumed_by_tx_id IS NULL OR consuming_block.block_no > $2)
+				AND multi_asset.policy = $3
+				AND multi_asset.name = $4
+				ORDER BY origin_block.block_no ASC, origin_tx.block_index ASC";
+	Ok(sqlx::query_as::<_, DatumOutput>(query)
+		.bind(&address.0)
+		.bind(block)
+		.bind(&asset.policy_id.0)
+		.bind(&asset.asset_name.0)
+		.fetch_all(pool)
+		.await?)
+}
+
 #[cfg(feature = "candidate-source")]
 pub(crate) async fn get_epoch_nonce(
 	pool: &Pool<Postgres>,
@@ -461,6 +649,23 @@ pub(crate) async fn get_epoch_nonce(
 }
 #[cfg(feature = "candidate-source")]
 pub(crate) async fn get_utxos_for_address(
+	pool: &Pool<Postgres>,
+	address: &Address,
+	block: BlockNumber,
+	tx_in_configuration: TxInConfiguration,
+) -> Result<Vec<MainchainTxOutput>, SqlxError> {
+	match tx_in_configuration {
+		TxInConfiguration::Enabled => {
+			get_utxos_for_address_tx_in_enabled(pool, address, block).await
+		},
+		TxInConfiguration::Consumed => {
+			get_utxos_for_address_tx_in_consumed(pool, address, block).await
+		},
+	}
+}
+
+#[cfg(feature = "candidate-source")]
+pub(crate) async fn get_utxos_for_address_tx_in_enabled(
 	pool: &Pool<Postgres>,
 	address: &Address,
 	block: BlockNumber,
@@ -488,6 +693,53 @@ pub(crate) async fn get_utxos_for_address(
           	WHERE
           		tx_out.address = $1 AND origin_block.block_no <= $2
           		AND (consuming_tx_in.id IS NULL OR consuming_block.block_no > $2)
+          		GROUP BY (
+					utxo_id_tx_hash,
+					utxo_id_index,
+					tx_block_no,
+					tx_slot_no,
+					tx_epoch_no,
+					tx_index_in_block,
+					tx_out.address,
+					datum
+				)";
+	let rows = sqlx::query_as::<_, MainchainTxOutputRow>(query)
+		.bind(&address.0)
+		.bind(block)
+		.fetch_all(pool)
+		.await?;
+	let result: Result<Vec<MainchainTxOutput>, sqlx::Error> =
+		rows.into_iter().map(MainchainTxOutput::try_from).collect();
+	Ok(result?)
+}
+
+#[cfg(feature = "candidate-source")]
+pub(crate) async fn get_utxos_for_address_tx_in_consumed(
+	pool: &Pool<Postgres>,
+	address: &Address,
+	block: BlockNumber,
+) -> Result<Vec<MainchainTxOutput>, SqlxError> {
+	let query = "SELECT
+          		origin_tx.hash as utxo_id_tx_hash,
+          		tx_out.index as utxo_id_index,
+          		origin_block.block_no as tx_block_no,
+          		origin_block.slot_no as tx_slot_no,
+          		origin_block.epoch_no as tx_epoch_no,
+          		origin_tx.block_index as tx_index_in_block,
+          		tx_out.address,
+          		datum.value as datum,
+          		array_agg(concat_ws('#', encode(consumes_tx.hash, 'hex'), consumes_tx_out.index)) as tx_inputs
+			FROM tx_out
+			INNER JOIN tx    origin_tx       ON tx_out.tx_id = origin_tx.id
+			INNER JOIN block origin_block    ON origin_tx.block_id = origin_block.id
+			LEFT JOIN tx    consuming_tx     ON tx_out.consumed_by_tx_id = consuming_tx.id
+			LEFT JOIN block consuming_block  ON consuming_tx.block_id = consuming_block.id
+			LEFT JOIN tx_out consumes_tx_out ON consumes_tx_out.consumed_by_tx_id = origin_tx.id
+			LEFT JOIN tx consumes_tx         ON consumes_tx.id = consumes_tx_out.tx_id
+			LEFT JOIN datum                  ON tx_out.data_hash = datum.hash
+          	WHERE
+          		tx_out.address = $1 AND origin_block.block_no <= $2
+          		AND (tx_out.consumed_by_tx_id IS NULL OR consuming_block.block_no > $2)
           		GROUP BY (
 					utxo_id_tx_hash,
 					utxo_id_index,
@@ -618,4 +870,25 @@ ORDER BY block.block_no ASC;
 	.bind(to_block);
 
 	Ok(query.fetch_all(pool).await?)
+}
+
+#[cfg(test)]
+mod tests {
+	use sqlx::PgPool;
+
+	use super::TxInConfiguration;
+
+	#[sqlx::test(migrations = "./testdata/migrations-tx-in-enabled")]
+	async fn tx_in_configuration_is_enabled_if_tx_in_table_exists(pool: PgPool) {
+		let tx_in_config = TxInConfiguration::from_connection(&pool).await.unwrap();
+
+		assert_eq!(tx_in_config, TxInConfiguration::Enabled)
+	}
+
+	#[sqlx::test(migrations = false)]
+	async fn tx_in_configuration_is_consumed_if_tx_in_table_does_not_exist(pool: PgPool) {
+		let tx_in_config = TxInConfiguration::from_connection(&pool).await.unwrap();
+
+		assert_eq!(tx_in_config, TxInConfiguration::Consumed)
+	}
 }
