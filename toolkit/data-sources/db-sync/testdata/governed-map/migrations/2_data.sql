@@ -92,17 +92,17 @@ INSERT INTO tx ( id         , hash   , block_id, block_index, out_sum, fee, depo
               ,( ups_tx_id  , thash_6, 7       , 0          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        )
 ;
 
-INSERT INTO tx_out ( id   , tx_id      , index, address     , address_raw, address_has_script, payment_cred, stake_address_id, value, data_hash, comment          )
-            VALUES ( 0    , cons_tx_id , 0    , 'other_addr', ''         , TRUE              , NULL        , NULL            , 0    , NULL     , NULL             )
-                  ,( 1    , cons_tx_id , 1    , 'other_addr', ''         , TRUE              , NULL        , NULL            , 0    , NULL     , NULL             )
-                  ,( 2    , cons_tx_id , 2    , 'other_addr', ''         , TRUE              , NULL        , NULL            , 0    , NULL     , NULL             )
-                  ,( 3    , ins_tx_ida , 0    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , dhash_1  , 'add key2'       )
-                  ,( 4    , ins_tx_id  , 0    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , dhash_2  , 'add key1'       )
-                  ,( 5    , ins_tx_id  , 1    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , dhash_3  , 'add invalid'    )
-                  ,( 7    , ins_tx_id  , 2    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , dhash_4  , 'duplicate key2' )
-                  ,( 8    , del_tx_id  , 0    , 'other_addr', ''         , TRUE              , NULL        , NULL            , 0    , NULL     , 'delete key1'    )
-                  ,( 9    , ins_tx_id2 , 0    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , dhash_5  , 'add key3'       )
-                  ,( 10   , ups_tx_id  , 0    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , dhash_6  , 'upsert key3'    )
+INSERT INTO tx_out ( id   , tx_id      , index, address     , address_raw, address_has_script, payment_cred, stake_address_id, value, data_hash, consumed_by_tx_id, comment          )
+            VALUES ( 0    , cons_tx_id , 0    , 'other_addr', ''         , TRUE              , NULL        , NULL            , 0    , NULL     , ins_tx_id        , NULL             )
+                  ,( 1    , cons_tx_id , 1    , 'other_addr', ''         , TRUE              , NULL        , NULL            , 0    , NULL     , ins_tx_id        , NULL             )
+                  ,( 2    , cons_tx_id , 2    , 'other_addr', ''         , TRUE              , NULL        , NULL            , 0    , NULL     , NULL             , NULL             )
+                  ,( 3    , ins_tx_ida , 0    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , dhash_1  , NULL             , 'add key2'       )
+                  ,( 4    , ins_tx_id  , 0    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , dhash_2  , del_tx_id        , 'add key1'       )
+                  ,( 5    , ins_tx_id  , 1    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , dhash_3  , del_tx_id        , 'add invalid'    )
+                  ,( 7    , ins_tx_id  , 2    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , dhash_4  , NULL             , 'duplicate key2' )
+                  ,( 8    , del_tx_id  , 0    , 'other_addr', ''         , TRUE              , NULL        , NULL            , 0    , NULL     , NULL             , 'delete key1'    )
+                  ,( 9    , ins_tx_id2 , 0    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , dhash_5  , ups_tx_id        , 'add key3'       )
+                  ,( 10   , ups_tx_id  , 0    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , dhash_6  , NULL             , 'upsert key3'    )
 ;
 
 INSERT INTO ma_tx_out ( id   , quantity , tx_out_id , ident)
@@ -113,15 +113,6 @@ VALUES                ( 0    , 1        , 3         , 999  )
                      ,( 4    , 1        , 8         , 999  )
                      ,( 5    , 1        , 9         , 999  )
                      ,( 6    , 1        , 10        , 999  )
-;
-
-INSERT INTO tx_in ( id, tx_in_id   , tx_out_id  , tx_out_index, redeemer_id )
-           VALUES ( 0 , ins_tx_id  , cons_tx_id , 0           , NULL        )
-                 ,( 1 , ins_tx_id  , cons_tx_id , 1           , NULL        )
-                 ,( 2 , ins_tx_id2 , cons_tx_id , 0           , NULL        )
-                 ,( 4 , del_tx_id  , ins_tx_id  , 0           , NULL        )
-                 ,( 5 , del_tx_id  , ins_tx_id  , 1           , NULL        )
-                 ,( 6 , ups_tx_id  , ins_tx_id2 , 0           , NULL        )
 ;
 
 INSERT INTO datum ( id   , hash    , tx_id     , value                )
