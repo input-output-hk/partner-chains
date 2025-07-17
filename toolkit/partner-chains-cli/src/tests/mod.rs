@@ -9,6 +9,7 @@ use partner_chains_cardano_offchain::governance::MultiSigParameters;
 use partner_chains_cardano_offchain::multisig::MultiSigSmartContractResult;
 use partner_chains_cardano_offchain::scripts_data::ScriptsData;
 use pretty_assertions::assert_eq;
+use runtime::MockRuntime;
 use sidechain_domain::{
 	CandidateRegistration, DParameter, McTxHash, PermissionedCandidateData, StakePoolPublicKey,
 	UtxoId,
@@ -715,15 +716,6 @@ macro_rules! verify_json {
 
 #[test]
 fn verify_cli() {
-	use crate::runtime_bindings::*;
 	use clap::CommandFactory;
-
-	struct MockRuntime;
-	impl PartnerChainRuntime for MockRuntime {
-		fn create_chain_spec(_: &crate::CreateChainSpecConfig) -> serde_json::Value {
-			serde_json::json!({})
-		}
-	}
-
 	crate::Command::<MockRuntime>::command().debug_assert()
 }

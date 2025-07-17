@@ -191,7 +191,7 @@ mod check_keystore {
 		let context = MockIOContext::new().with_expected_io(vec![
 			MockIO::list_dir(&keystore_path(), Some(keystore_files.clone())),
 			MockIO::eprint(
-				"⚠️ Aura key is missing from the keystore. Please run generate-keys wizard first.",
+				"⚠️ AURA key is missing from the keystore. Please run generate-keys wizard first.",
 			),
 		]);
 

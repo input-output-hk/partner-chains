@@ -1,5 +1,6 @@
 use crate::chain_spec::pc_create_chain_spec;
 use partner_chains_cli::{CreateChainSpecConfig, ParsedPermissionedCandidatesKeys};
+use partner_chains_demo_runtime::opaque::SessionKeys;
 use sidechain_domain::{AssetName, MainchainAddress, PolicyId, UtxoId};
 use sp_core::{ecdsa, ed25519, sr25519};
 use std::str::FromStr;
@@ -11,8 +12,10 @@ fn pc_create_chain_spec_test() {
 		initial_permissioned_candidates_raw: vec![],
 		initial_permissioned_candidates_parsed: vec![ParsedPermissionedCandidatesKeys {
 			sidechain: ecdsa::Public::from_raw([11u8; 33]),
-			aura: sr25519::Public::from_raw([12u8; 32]),
-			grandpa: ed25519::Public::from_raw([13u8; 32]),
+			keys: SessionKeys {
+				aura: sr25519::Public::from([12u8; 32]).into(),
+				grandpa: ed25519::Public::from([13u8; 32]).into(),
+			},
 		}],
 		committee_candidate_address: MainchainAddress::from_str("addr_cca").unwrap(),
 		d_parameter_policy_id: PolicyId([2u8; 28]),

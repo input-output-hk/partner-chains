@@ -1,4 +1,6 @@
 use clap::command;
+use partner_chains_cli::{AURA, GRANDPA, KeyDefinition};
+use partner_chains_demo_runtime::opaque::SessionKeys;
 use partner_chains_node_commands::{
 	PartnerChainRuntime, PartnerChainsSubcommand, RuntimeTypeWrapper,
 };
@@ -21,8 +23,16 @@ impl RuntimeTypeWrapper for WizardBindings {
 }
 
 impl PartnerChainRuntime for WizardBindings {
-	fn create_chain_spec(config: &partner_chains_cli::CreateChainSpecConfig) -> serde_json::Value {
+	type Keys = SessionKeys;
+
+	fn create_chain_spec(
+		config: &partner_chains_cli::CreateChainSpecConfig<SessionKeys>,
+	) -> serde_json::Value {
 		crate::chain_spec::pc_create_chain_spec(config)
+	}
+
+	fn key_definitions() -> Vec<KeyDefinition<'static>> {
+		vec![AURA, GRANDPA]
 	}
 }
 

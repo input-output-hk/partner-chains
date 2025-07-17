@@ -4,8 +4,10 @@ use crate::permissioned_candidates::{ParsedPermissionedCandidatesKeys, Permissio
 use crate::runtime_bindings::PartnerChainRuntime;
 use crate::{CmdRun, config::config_fields};
 use anyhow::anyhow;
+use authority_selection_inherents::MaybeFromCandidateKeys;
 use sidechain_domain::{AssetName, MainchainAddress, PolicyId, UtxoId};
-use sp_runtime::DeserializeOwned;
+use sp_core::ecdsa;
+use sp_runtime::{AccountId32, DeserializeOwned};
 use std::marker::PhantomData;
 
 #[cfg(test)]
@@ -38,7 +40,7 @@ impl<T: PartnerChainRuntime> CmdRun for CreateChainSpecCmd<T> {
 }
 
 impl<T: PartnerChainRuntime> CreateChainSpecCmd<T> {
-	fn print_config<C: IOContext>(context: &C, config: &CreateChainSpecConfig) {
+	fn print_config<C: IOContext>(context: &C, config: &CreateChainSpecConfig<T::Keys>) {
 		context.print("Chain parameters:");
 		context.print(format!("- Genesis UTXO: {}", config.genesis_utxo).as_str());
 		context.print("SessionValidatorManagement Main Chain Configuration:");
@@ -91,12 +93,12 @@ impl<T: PartnerChainRuntime> CreateChainSpecCmd<T> {
 }
 
 #[allow(missing_docs)]
-#[derive(Debug, Default)]
+#[derive(Debug)]
 /// Configuration that contains all Partner Chain specific data required to create the chain spec
-pub struct CreateChainSpecConfig {
+pub struct CreateChainSpecConfig<Keys> {
 	pub genesis_utxo: UtxoId,
 	pub initial_permissioned_candidates_raw: Vec<PermissionedCandidateKeys>,
-	pub initial_permissioned_candidates_parsed: Vec<ParsedPermissionedCandidatesKeys>,
+	pub initial_permissioned_candidates_parsed: Vec<ParsedPermissionedCandidatesKeys<Keys>>,
 	pub committee_candidate_address: MainchainAddress,
 	pub d_parameter_policy_id: PolicyId,
 	pub permissioned_candidates_policy_id: PolicyId,
@@ -107,15 +109,15 @@ pub struct CreateChainSpecConfig {
 	pub governed_map_asset_policy_id: Option<PolicyId>,
 }
 
-impl CreateChainSpecConfig {
+impl<Keys: MaybeFromCandidateKeys> CreateChainSpecConfig<Keys> {
 	pub(crate) fn load<C: IOContext>(c: &C) -> Result<Self, anyhow::Error> {
 		let initial_permissioned_candidates_raw =
 			load_config_field(c, &config_fields::INITIAL_PERMISSIONED_CANDIDATES)?;
-		let initial_permissioned_candidates_parsed: Vec<ParsedPermissionedCandidatesKeys> =
+		let initial_permissioned_candidates_parsed: Vec<ParsedPermissionedCandidatesKeys<Keys>> =
 			initial_permissioned_candidates_raw
 				.iter()
 				.map(TryFrom::try_from)
-				.collect::<Result<Vec<ParsedPermissionedCandidatesKeys>, anyhow::Error>>()?;
+				.collect::<Result<Vec<ParsedPermissionedCandidatesKeys<Keys>>, anyhow::Error>>()?;
 		Ok(Self {
 			genesis_utxo: load_config_field(c, &config_fields::GENESIS_UTXO)?,
 			initial_permissioned_candidates_raw,
@@ -152,18 +154,18 @@ impl CreateChainSpecConfig {
 
 	/// Returns [pallet_session::GenesisConfig] derived from the config, using initial permissioned candidates
 	/// as initial validators
-	pub fn pallet_partner_chains_session_config<
-		T: pallet_partner_chains_session::Config,
-		F: Fn(&ParsedPermissionedCandidatesKeys) -> (T::ValidatorId, T::Keys),
-	>(
+	pub fn pallet_partner_chains_session_config<T: pallet_partner_chains_session::Config>(
 		&self,
-		f: F,
-	) -> pallet_partner_chains_session::GenesisConfig<T> {
+	) -> pallet_partner_chains_session::GenesisConfig<T>
+	where
+		T::ValidatorId: From<AccountId32>,
+		T::Keys: From<Keys>,
+	{
 		pallet_partner_chains_session::GenesisConfig {
 			initial_validators: self
 				.initial_permissioned_candidates_parsed
 				.iter()
-				.map(|c| f(c))
+				.map(|c| (c.account_id_32().into(), c.keys.clone().into()))
 				.collect::<Vec<_>>(),
 		}
 	}
@@ -172,16 +174,26 @@ impl CreateChainSpecConfig {
 	/// as initial authorities
 	pub fn pallet_session_validator_management_config<
 		T: pallet_session_validator_management::Config,
-		F: Fn(&ParsedPermissionedCandidatesKeys) -> T::CommitteeMember,
 	>(
 		&self,
-		f: F,
-	) -> pallet_session_validator_management::GenesisConfig<T> {
+	) -> pallet_session_validator_management::GenesisConfig<T>
+	where
+		T::AuthorityId: From<ecdsa::Public>,
+		T::AuthorityKeys: From<Keys>,
+		T::CommitteeMember:
+			From<authority_selection_inherents::CommitteeMember<T::AuthorityId, T::AuthorityKeys>>,
+	{
 		pallet_session_validator_management::GenesisConfig {
 			initial_authorities: self
 				.initial_permissioned_candidates_parsed
 				.iter()
-				.map(|c| f(c))
+				.map(|c| {
+					authority_selection_inherents::CommitteeMember::permissioned(
+						c.sidechain.into(),
+						c.keys.clone().into(),
+					)
+					.into()
+				})
 				.collect::<Vec<_>>(),
 			main_chain_scripts: sp_session_validator_management::MainChainScripts {
 				committee_candidate_address: self.committee_candidate_address.clone(),
@@ -223,6 +235,24 @@ impl CreateChainSpecConfig {
 	}
 }
 
+impl<T> Default for CreateChainSpecConfig<T> {
+	fn default() -> Self {
+		Self {
+			genesis_utxo: Default::default(),
+			initial_permissioned_candidates_raw: Default::default(),
+			initial_permissioned_candidates_parsed: Default::default(),
+			committee_candidate_address: Default::default(),
+			d_parameter_policy_id: Default::default(),
+			permissioned_candidates_policy_id: Default::default(),
+			native_token_policy: Default::default(),
+			native_token_asset_name: Default::default(),
+			illiquid_supply_address: Default::default(),
+			governed_map_validator_address: Default::default(),
+			governed_map_asset_policy_id: Default::default(),
+		}
+	}
+}
+
 fn load_config_field<C: IOContext, T: DeserializeOwned>(
 	context: &C,
 	field: &ConfigFieldDefinition<T>,
@@ -236,13 +266,17 @@ fn load_config_field<C: IOContext, T: DeserializeOwned>(
 pub const INITIAL_PERMISSIONED_CANDIDATES_EXAMPLE: &str = r#"Example of 'initial_permissioned_candidates' field with 2 permissioned candidates:
 "initial_permissioned_candidates": [
 	{
-	  "aura_pub_key": "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde49a5684e7a56da27d",
-	  "grandpa_pub_key": "0x88dc3417d5058ec4b4503e0c12ea1a0a89be200f498922423d4334014fa6b0ee",
-	  "sidechain_pub_key": "0x020a1091341fe5664bfa1782d5e0477968906ac916b04cb365ec3153755684d9a1"
+		"partner_chains_keys": "0x020a1091341fe5664bfa1782d5e0477968906ac916b04cb365ec3153755684d9a1"
+		"keys": {
+			"aura": "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde49a5684e7a56da27d",
+			"gran": "0x88dc3417d5058ec4b4503e0c12ea1a0a89be200f498922423d4334014fa6b0ee"
+		}
 	},
 	{
-	  "aura_pub_key": "0x8eaf04151687736326c9fea17e25fc5287613698c912909cb226aa4794f26a48",
-	  "grandpa_pub_key": "0xd17c2d7823ebf260fd138f2d7e27d114cb145d968b5ff5006125f2414fadae69",
-	  "sidechain_pub_key": "0x0390084fdbf27d2b79d26a4f13f0cdd982cb755a661969143c37cbc49ef5b91f27"
+		"partner_chains_keys": "0x0390084fdbf27d2b79d26a4f13f0cdd982cb755a661969143c37cbc49ef5b91f27"
+		"keys": {
+			"aura": "0x8eaf04151687736326c9fea17e25fc5287613698c912909cb226aa4794f26a48",
+			"gran": "0xd17c2d7823ebf260fd138f2d7e27d114cb145d968b5ff5006125f2414fadae69"
+		}
 	}
 ]"#;
