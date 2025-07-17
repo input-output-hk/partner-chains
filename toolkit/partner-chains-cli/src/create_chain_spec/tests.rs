@@ -1,4 +1,3 @@
-#![cfg(not(feature = "runtime-benchmarks"))]
 use super::PartnerChainRuntime;
 use crate::create_chain_spec::{CreateChainSpecCmd, INITIAL_PERMISSIONED_CANDIDATES_EXAMPLE};
 use crate::tests::runtime::{MockRuntime, TestSessionKeys};

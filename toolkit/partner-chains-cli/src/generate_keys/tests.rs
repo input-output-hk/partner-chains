@@ -1,4 +1,3 @@
-#![cfg(not(feature = "runtime-benchmarks"))]
 use super::*;
 use crate::CmdRun;
 use crate::tests::runtime::MockRuntime;

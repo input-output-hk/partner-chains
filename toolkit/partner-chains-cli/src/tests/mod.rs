@@ -717,6 +717,5 @@ macro_rules! verify_json {
 #[test]
 fn verify_cli() {
 	use clap::CommandFactory;
-
 	crate::Command::<MockRuntime>::command().debug_assert()
 }

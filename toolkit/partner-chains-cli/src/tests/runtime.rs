@@ -1,4 +1,3 @@
-#![cfg(not(feature = "runtime-benchmarks"))]
 use authority_selection_inherents::{CommitteeMember, MaybeFromCandidateKeys};
 use frame_support::{
 	sp_runtime::traits::{BlakeTwo256, IdentityLookup},
@@ -145,6 +144,8 @@ impl pallet_governed_map::Config for MockRuntime {
 	type OnGovernedMappingChange = ();
 	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
 	type WeightInfo = ();
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = ();
 }
 
 pub(crate) type MaxValidators = ConstU32<137>;
