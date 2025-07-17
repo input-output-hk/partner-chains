@@ -10,7 +10,7 @@ use partner_chains_cardano_offchain::multisig::MultiSigSmartContractResult;
 use partner_chains_cardano_offchain::permissioned_candidates::{
 	get_permissioned_candidates, upsert_permissioned_candidates,
 };
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use sidechain_domain::byte_string::ByteString;
 use sidechain_domain::{CandidateKey, CandidateKeys, PermissionedCandidateData, UtxoId};
 use sp_core::crypto::AccountId32;
@@ -20,7 +20,7 @@ use std::collections::BTreeMap;
 use std::fmt::{Display, Formatter};
 
 /// Struct that holds permissioned candidates keys in raw string-ish formats
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Eq, PartialEq)]
 pub struct PermissionedCandidateKeys {
 	/// 0x prefixed hex representation of the ECDSA public key
 	pub partner_chains_key: ByteString,
@@ -164,5 +164,83 @@ impl<C: QueryLedgerState + QueryNetwork> GetPermissionedCandidates for C {
 	) -> anyhow::Result<Option<Vec<PermissionedCandidateData>>> {
 		let network = self.shelley_genesis_configuration().await?.network.to_csl();
 		get_permissioned_candidates(genesis_utxo, network, self).await
+	}
+}
+
+/// Backward compatible way of reading user keys, to not crash wizards when running against files created with some previous version
+impl<'de> Deserialize<'de> for PermissionedCandidateKeys {
+	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+	where
+		D: Deserializer<'de>,
+	{
+		CandidateKeysFormat::deserialize(deserializer).map(From::from)
+	}
+}
+
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum CandidateKeysFormat {
+	V1 { partner_chains_key: ByteString, keys: BTreeMap<String, ByteString> },
+	V0 { sidechain_pub_key: ByteString, aura_pub_key: ByteString, grandpa_pub_key: ByteString },
+}
+
+impl From<CandidateKeysFormat> for PermissionedCandidateKeys {
+	fn from(v: CandidateKeysFormat) -> Self {
+		match v {
+			CandidateKeysFormat::V1 { partner_chains_key, keys } => {
+				Self { partner_chains_key, keys }
+			},
+			CandidateKeysFormat::V0 { sidechain_pub_key, aura_pub_key, grandpa_pub_key } => Self {
+				partner_chains_key: sidechain_pub_key,
+				keys: vec![("aura".to_owned(), aura_pub_key), ("gran".to_owned(), grandpa_pub_key)]
+					.into_iter()
+					.collect(),
+			},
+		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use sidechain_domain::byte_string::ByteString;
+
+	use super::PermissionedCandidateKeys;
+
+	#[test]
+	fn candidate_keys_serde_round_trip() {
+		let keys = PermissionedCandidateKeys {
+			partner_chains_key: ByteString::from_hex_unsafe("0x010101"),
+			keys: vec![
+				("key1".to_owned(), ByteString::from_hex_unsafe("0x020202")),
+				("key2".to_owned(), ByteString::from_hex_unsafe("0x030303")),
+			]
+			.into_iter()
+			.collect(),
+		};
+		let json = serde_json::to_value(&keys).unwrap();
+		let deserialized = serde_json::from_value(json).unwrap();
+		assert_eq!(keys, deserialized)
+	}
+
+	#[test]
+	fn v0_deserialization() {
+		let deserialized: PermissionedCandidateKeys = serde_json::from_value(serde_json::json!({
+			"sidechain_pub_key": "0x0101",
+			"aura_pub_key": "0x0202",
+			"grandpa_pub_key": "0x0303"
+		}))
+		.unwrap();
+		assert_eq!(
+			deserialized,
+			PermissionedCandidateKeys {
+				partner_chains_key: ByteString::from_hex_unsafe("0x0101"),
+				keys: vec![
+					("aura".to_owned(), ByteString::from_hex_unsafe("0x0202")),
+					("gran".to_owned(), ByteString::from_hex_unsafe("0x0303")),
+				]
+				.into_iter()
+				.collect(),
+			}
+		)
 	}
 }
