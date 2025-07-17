@@ -238,17 +238,17 @@ impl<Keys: MaybeFromCandidateKeys> CreateChainSpecConfig<Keys> {
 impl<T> Default for CreateChainSpecConfig<T> {
 	fn default() -> Self {
 		Self {
-			genesis_utxo: UtxoId::default(),
-			initial_permissioned_candidates_raw: Vec::default(),
-			initial_permissioned_candidates_parsed: Vec::default(),
-			committee_candidate_address: MainchainAddress::default(),
-			d_parameter_policy_id: PolicyId::default(),
-			permissioned_candidates_policy_id: PolicyId::default(),
-			native_token_policy: PolicyId::default(),
-			native_token_asset_name: AssetName::default(),
-			illiquid_supply_address: MainchainAddress::default(),
-			governed_map_validator_address: None,
-			governed_map_asset_policy_id: None,
+			genesis_utxo: Default::default(),
+			initial_permissioned_candidates_raw: Default::default(),
+			initial_permissioned_candidates_parsed: Default::default(),
+			committee_candidate_address: Default::default(),
+			d_parameter_policy_id: Default::default(),
+			permissioned_candidates_policy_id: Default::default(),
+			native_token_policy: Default::default(),
+			native_token_asset_name: Default::default(),
+			illiquid_supply_address: Default::default(),
+			governed_map_validator_address: Default::default(),
+			governed_map_asset_policy_id: Default::default(),
 		}
 	}
 }
