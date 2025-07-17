@@ -34,7 +34,9 @@ use ogmios_client::{
 	query_ledger_state::*, query_network::QueryNetwork, transactions::Transactions,
 	types::OgmiosUtxo,
 };
-use partner_chains_plutus_data::reserve::{IlliquidCirculationSupplyDatum, ReserveRedeemer};
+use partner_chains_plutus_data::reserve::{
+	IlliquidCirculationSupplyDatum, IlliquidCirculationSupplyRedeemer, ReserveRedeemer,
+};
 use sidechain_domain::{McTxHash, UtxoId};
 use std::num::NonZero;
 
@@ -58,6 +60,7 @@ pub async fn release_reserve_funds<
 	};
 
 	let reserve_utxo = reserve_data.get_reserve_utxo(&ctx, client).await?;
+	let current_ics_utxos = reserve_data.get_ics_utxos(&ctx, client).await?;
 
 	let tx = Costs::calculate_costs(
 		|costs| {
@@ -65,6 +68,7 @@ pub async fn release_reserve_funds<
 				&ctx,
 				&reserve_data,
 				&reserve_utxo,
+				&current_ics_utxos,
 				&reference_utxo,
 				amount.into(),
 				tip.slot,
@@ -95,6 +99,7 @@ fn reserve_release_tx(
 	ctx: &TransactionContext,
 	reserve_data: &ReserveData,
 	previous_reserve: &ReserveUtxo,
+	current_ics_utxos: &[OgmiosUtxo],
 	reference_utxo: &OgmiosUtxo,
 	amount_to_transfer: u64,
 	latest_slot: u64,
@@ -137,12 +142,49 @@ fn reserve_release_tx(
 	)?;
 
 	// Remove tokens from the reserve
-	tx_builder.set_inputs(&reserve_utxo_input_with_validator_script_reference(
+	let mut inputs = reserve_utxo_input_with_validator_script_reference(
 		&previous_reserve.utxo,
 		reserve_data,
 		ReserveRedeemer::ReleaseFromReserve,
-		&costs.get_one_spend(),
-	)?);
+		&costs.get_spend_ix(0),
+	)?;
+
+	// If there exists only one illiquid circulation supply UTXO we spend it
+	// in the transaction to prevent many UTXOs being created.
+	// Spending more than 1 is not allowed by the smart contract.
+	let mut current_ics_amount = 0u64;
+	if let [ics_utxo] = &current_ics_utxos[..] {
+		use cardano_serialization_lib::*;
+		let input = ics_utxo.to_csl_tx_input();
+		let amount = ics_utxo.value.to_csl()?;
+		current_ics_amount += Into::<u64>::into(
+			amount.multiasset().unwrap_or(MultiAsset::new()).get_asset(
+				&cardano_serialization_lib::ScriptHash::from_bytes(token.policy_id.0.to_vec())
+					.unwrap(),
+				&cardano_serialization_lib::AssetName::new(token.asset_name.0.to_vec()).unwrap(),
+			),
+		);
+		let script = &reserve_data.scripts.illiquid_circulation_supply_validator;
+		let witness = PlutusWitness::new_with_ref(
+			&PlutusScriptSource::new_ref_input(
+				&script.csl_script_hash(),
+				&reserve_data
+					.illiquid_circulation_supply_validator_version_utxo
+					.to_csl_tx_input(),
+				&script.language,
+				script.bytes.len(),
+			),
+			&cardano_serialization_lib::DatumSource::new_ref_input(&ics_utxo.to_csl_tx_input()),
+			&Redeemer::new(
+				&RedeemerTag::new_spend(),
+				&1u32.into(),
+				&IlliquidCirculationSupplyRedeemer::DepositMoreToSupply.into(),
+				&costs.get_spend_ix(1),
+			),
+		);
+		inputs.add_plutus_script_input(&witness, &input, &amount);
+	}
+	tx_builder.set_inputs(&inputs);
 
 	// Transfer released tokens to the illiquid supply
 	tx_builder.add_output(&{
@@ -152,7 +194,10 @@ fn reserve_release_tx(
 			)
 			.with_plutus_data(&IlliquidCirculationSupplyDatum.into())
 			.next()?
-			.with_minimum_ada_and_asset(&token.to_multi_asset(amount_to_transfer)?, ctx)?
+			.with_minimum_ada_and_asset(
+				&token.to_multi_asset(amount_to_transfer + &current_ics_amount)?,
+				ctx,
+			)?
 			.build()?
 	})?;
 
@@ -173,7 +218,8 @@ fn reserve_release_tx(
 	})?;
 
 	tx_builder.set_validity_start_interval_bignum(latest_slot.into());
-	Ok(tx_builder.balance_update_and_build(ctx)?.remove_native_script_witnesses())
+	let tx = tx_builder.balance_update_and_build(ctx)?.remove_native_script_witnesses();
+	Ok(tx)
 }
 
 fn v_function_from_utxo(utxo: &OgmiosUtxo) -> anyhow::Result<PlutusScript> {
@@ -379,6 +425,7 @@ mod tests {
 			&tx_context(),
 			&reserve_data(),
 			&previous_reserve_utxo(),
+			&[],
 			&reference_utxo(),
 			5,
 			0,
