@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
-NUM_PERMISSIONED_NODES_TO_PROCESS=10
-NUM_REGISTERED_NODES_TO_PROCESS=10
+NUM_DBSYNC_INSTANCES=3
+NUM_PERMISSIONED_NODES_TO_PROCESS=5
+NUM_REGISTERED_NODES_TO_PROCESS=5
 
 PARTNER_CHAINS_NODE_IMAGE="ghcr.io/input-output-hk/partner-chains/partner-chains-node-unstable:latest"
 CARDANO_IMAGE="ghcr.io/intersectmbo/cardano-node:10.1.4"
@@ -124,17 +125,6 @@ function validate_memory_limit() {
   done
 }
 
-configure_ogmios() {
-  echo "===== OGMIOS CONFIGURATION ========"
-  read -p "Do you want to set a non-default port for Ogmios? (Will default to 1337) (Y/N): " set_ogmios_port
-  if [[ $set_ogmios_port == [Yy]* ]]; then
-    ogmios_port=$(validate_port "Enter port for Ogmios: ")
-  else
-    ogmios_port=1337
-  fi
-  echo
-}
-
 resource_limits_setup() {
   echo "===== RESOURCE LIMITS SETUP ========"
   read -p "Do you want to restrict CPU and Memory limits for the stack? (Y/N) " restrict_resources
@@ -216,18 +206,9 @@ configure_postgres() {
         fi
     fi
 
-    if [ "$mode" == "non-interactive" ]; then
-        db_port=5432
-    else
-        read -p "Do you want to set a non-default port for Postgres? (Will default to 5432) (Y/N): " set_db_port
-        if [[ $set_db_port =~ ^[Yy] ]]; then
-            db_port=$(validate_port "Enter port for Postgres: ")
-        else
-            db_port=5432
-        fi
-    fi
-
-    db_host=postgres
+    for i in $(seq 1 $NUM_DBSYNC_INSTANCES); do
+        eval "db_port_$i=$((5432 + i - 1))"
+    done
 }
 
 configure_env() {
@@ -240,7 +221,6 @@ configure_env() {
 
     if [ "$mode" == "non-interactive" ]; then
         cat <<EOF >.env
-POSTGRES_PORT=5432
 POSTGRES_PASSWORD=$db_password
 OGMIOS_PORT=1337
 CPU_PARTNER_CHAINS_NODE=0.000
@@ -254,11 +234,14 @@ MEM_DBSYNC=1000G
 CPU_OGMIOS=0.000
 MEM_OGMIOS=1000G
 EOF
+        for i in $(seq 1 $NUM_DBSYNC_INSTANCES); do
+            port_val=$(eval echo \$db_port_$i)
+            echo "POSTGRES_PORT_$i=$port_val" >> .env
+        done
     else
         cat <<EOF >.env
-POSTGRES_PORT=$db_port
 POSTGRES_PASSWORD=$db_password
-OGMIOS_PORT=$ogmios_port
+OGMIOS_PORT=1337
 CPU_PARTNER_CHAINS_NODE=$CPU_PARTNER_CHAINS_NODE
 MEM_PARTNER_CHAINS_NODE=$MEM_PARTNER_CHAINS_NODE
 CPU_CARDANO=$cpu_cardano
@@ -270,6 +253,10 @@ MEM_DBSYNC=$mem_dbsync
 CPU_OGMIOS=$cpu_ogmios
 MEM_OGMIOS=$mem_ogmios
 EOF
+        for i in $(seq 1 $NUM_DBSYNC_INSTANCES); do
+            port_val=$(eval echo \$db_port_$i)
+            echo "POSTGRES_PORT_$i=$port_val" >> .env
+        done
     fi
 
     cat <<EOF >>.env
@@ -475,6 +462,7 @@ EOF
         node_name="permissioned-$i"
         rpc_port=$((9933 + i - 1))
         prometheus_port=$((9615 + i - 1))
+        db_sync_instance=$(( (i - 1) % NUM_DBSYNC_INSTANCES + 1 ))
         
         cat >> docker-compose.yml <<EOF
   partner-chains-node-$node_name:
@@ -486,7 +474,7 @@ EOF
       - partner-chains-node-$node_name-data:/data
       - ./configurations/partner-chains-nodes/$node_name/entrypoint.sh:/entrypoint.sh
     environment:
-      DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:\${POSTGRES_PASSWORD}@postgres:\${POSTGRES_PORT}/cexplorer"
+      DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:\${POSTGRES_PASSWORD}@postgres-${db_sync_instance}:5432/cexplorer"
       CARDANO_SECURITY_PARAMETER: "5"
       CARDANO_ACTIVE_SLOTS_COEFF: "0.4"
       MC__FIRST_EPOCH_NUMBER: "0"
@@ -511,6 +499,7 @@ EOF
         node_name="registered-$i"
         rpc_port=$((9933 + i - 1 + NUM_PERMISSIONED_NODES_TO_PROCESS))
         prometheus_port=$((9615 + i - 1 + NUM_PERMISSIONED_NODES_TO_PROCESS))
+        db_sync_instance=$(( (i - 1 + NUM_PERMISSIONED_NODES_TO_PROCESS) % NUM_DBSYNC_INSTANCES + 1 ))
         
         cat >> docker-compose.yml <<EOF
   partner-chains-node-$node_name:
@@ -522,7 +511,7 @@ EOF
       - partner-chains-node-$node_name-data:/data
       - ./configurations/partner-chains-nodes/$node_name/entrypoint.sh:/entrypoint.sh
     environment:
-      DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:\${POSTGRES_PASSWORD}@postgres:\${POSTGRES_PORT}/cexplorer"
+      DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:\${POSTGRES_PASSWORD}@postgres-${db_sync_instance}:5432/cexplorer"
       CARDANO_SECURITY_PARAMETER: "5"
       CARDANO_ACTIVE_SLOTS_COEFF: "0.4"
       MC__FIRST_EPOCH_NUMBER: "0"
@@ -560,12 +549,64 @@ create_docker_compose() {
     # Add other services
     cat "$script_dir/modules/cardano.txt" >> docker-compose.yml
     cat "$script_dir/modules/ogmios.txt" >> docker-compose.yml
-    cat "$script_dir/modules/db-sync.txt" >> docker-compose.yml
-    cat "$script_dir/modules/postgres.txt" >> docker-compose.yml
+    for i in $(seq 1 $NUM_DBSYNC_INSTANCES); do
+        cat >> docker-compose.yml <<EOF
+  postgres-${i}:
+    container_name: postgres-${i}
+    image: \${POSTGRES_IMAGE}
+    platform: linux/amd64
+    command: postgres -c max_connections=10000 -c maintenance_work_mem=256MB
+    environment:
+      POSTGRES_PASSWORD: \${POSTGRES_PASSWORD}
+      POSTGRES_DB: cexplorer
+      POSTGRES_MULTIPLE_DATABASES: cexplorer
+    volumes:
+      - postgres-data-${i}:/var/lib/postgresql/data
+      - ./configurations/postgres/entrypoint.sh:/usr/local/bin/custom-entrypoint.sh
+      - ./configurations/postgres/init.sh:/docker-entrypoint-initdb.d/init.sh
+    ports:
+      - "\${POSTGRES_PORT_${i}}:5432"
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: \${CPU_POSTGRES:-}
+          memory: \${MEM_POSTGRES:-}
+  db-sync-${i}:
+    container_name: db-sync-${i}
+    image: \${DBSYNC_IMAGE}
+    platform: linux/amd64
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]
+    depends_on:
+      - postgres-${i}
+      - cardano-node-1
+    volumes:
+      - db-sync-data-${i}:/var/lib/cdbsync
+      - shared-volume:/shared
+      - cardano-node-1-data:/node-ipc
+      - ./configurations/db-sync/entrypoint.sh:/entrypoint.sh
+    environment:
+      POSTGRES_HOST: postgres-${i}
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: cexplorer
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: \${POSTGRES_PASSWORD}
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: \${CPU_DBSYNC:-}
+          memory: \${MEM_DBSYNC:-}
+EOF
+    done
     cat "$script_dir/modules/partner-chains-setup.txt" >> docker-compose.yml
 
     # Add volumes
     cat "$script_dir/modules/volumes.txt" >> docker-compose.yml
+    for i in $(seq 1 $NUM_DBSYNC_INSTANCES); do
+        echo "  postgres-data-${i}:" >> docker-compose.yml
+        echo "  db-sync-data-${i}:" >> docker-compose.yml
+    done
     echo "" >> docker-compose.yml # Ensure a newline
 
     # Add volume entries for all nodes
@@ -657,7 +698,6 @@ main() {
         detect_os "interactive"
         backup_files "interactive"
         configure_postgres "interactive"
-        configure_ogmios
         resource_limits_setup
         configure_env "interactive"
         create_docker_compose "interactive"
