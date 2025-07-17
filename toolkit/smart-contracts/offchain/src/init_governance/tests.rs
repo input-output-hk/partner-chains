@@ -331,7 +331,7 @@ fn payment_utxo() -> OgmiosUtxo {
 		index: 1,
 		value: OgmiosValue {
 			lovelace: 9922945937,
-			native_tokens: [([1; 28], vec![Asset { name: vec![], amount: 1 }])].into(),
+			native_tokens: [([1; 28].into(), vec![Asset { name: vec![].into(), amount: 1 }])].into(),
 		},
 		address: test_address_bech32(),
 

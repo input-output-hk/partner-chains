@@ -189,8 +189,8 @@ mod update_d_parameter {
 			value: OgmiosValue {
 				lovelace: SCRIPT_UTXO_LOVELACE,
 				native_tokens: vec![(
-					token_policy_id(),
-					vec![OgmiosAsset { name: vec![], amount: 1 }],
+					token_policy_id().into(),
+					vec![OgmiosAsset { name: vec![].into(), amount: 1 }],
 				)]
 				.into_iter()
 				.collect(),

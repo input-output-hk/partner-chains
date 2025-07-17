@@ -441,7 +441,7 @@ fn ogmios_utxos_to_governed_map_utxos(
 	token: PolicyId,
 ) -> impl Iterator<Item = (OgmiosUtxo, GovernedMapDatum)> {
 	utxos.flat_map(move |utxo| {
-		let _ = utxo.clone().value.native_tokens.get(&token.0)?;
+		let _ = utxo.clone().value.native_tokens.get(&token.0.into())?;
 		let datum = utxo.clone().datum?;
 		let datum_plutus_data = PlutusData::from_bytes(datum.bytes).ok()?;
 

@@ -197,7 +197,7 @@ mod tests {
 	};
 	use cardano_serialization_lib::{Int, NetworkIdKind, PolicyID, Transaction};
 	use hex_literal::hex;
-	use ogmios_client::types::{Asset, OgmiosTx, OgmiosUtxo, OgmiosValue};
+	use ogmios_client::types::{Asset, OgmiosAssetName, OgmiosTx, OgmiosUtxo, OgmiosValue};
 	use partner_chains_plutus_data::reserve::{
 		ReserveDatum, ReserveImmutableSettings, ReserveMutableSettings, ReserveStats,
 	};
@@ -229,8 +229,8 @@ mod tests {
 				lovelace: 994916563,
 				native_tokens: [(
 					// random native token
-					hex!("08b95138e16a062fa8d623a2b1beebd59c06210f3d33690580733e73"),
-					vec![Asset { name: vec![], amount: 1 }],
+					hex!("08b95138e16a062fa8d623a2b1beebd59c06210f3d33690580733e73").into(),
+					vec![Asset { name: OgmiosAssetName::empty(), amount: 1 }],
 				)]
 				.into(),
 			},
@@ -330,13 +330,13 @@ mod tests {
 				native_tokens: [
 					(
 						// reserve token
-						token_policy().0,
-						vec![Asset { name: token_name().0.to_vec(), amount: 990 }],
+						token_policy().0.into(),
+						vec![Asset { name: token_name().0.to_vec().into(), amount: 990 }],
 					),
 					(
 						// leftover governance token - should be returned to the validator
-						hex!("75b8875ff8958c66fecbd93740ac5ffd7370d299e729a46bb5632066"),
-						vec![Asset { name: vec![], amount: 1 }],
+						hex!("75b8875ff8958c66fecbd93740ac5ffd7370d299e729a46bb5632066").into(),
+						vec![Asset { name: OgmiosAssetName::empty(), amount: 1 }],
 					),
 				]
 				.into(),

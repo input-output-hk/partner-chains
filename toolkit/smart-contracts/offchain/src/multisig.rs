@@ -167,7 +167,7 @@ async fn transfer_to_temporary_wallet<T: Transactions + QueryUtxoByUtxoId, A: Aw
 	let funding_tx = funding_tx_builder.balance_update_and_build(&payment_ctx)?;
 	let tx_hash: [u8; 32] = blake2b(funding_tx.body().to_bytes().as_ref());
 	log::info!(
-		"Founding temporary wallet {} with {} in transaction: {}",
+		"Funding temporary wallet {} with {} in transaction: {}",
 		&address.to_bech32(None)?,
 		serde_json::to_string(&value)?,
 		&hex::encode(tx_hash)

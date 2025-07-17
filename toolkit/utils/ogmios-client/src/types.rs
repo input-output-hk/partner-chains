@@ -171,7 +171,20 @@ impl<'de> Deserialize<'de> for OgmiosValue {
 }
 
 /// Represents a script hash.
-type ScriptHash = [u8; 28];
+#[derive(Clone, Default, PartialEq, Eq, Hash)]
+pub struct OgmiosScriptHash(pub [u8; 28]);
+
+impl From<[u8; 28]> for OgmiosScriptHash {
+	fn from(value: [u8; 28]) -> Self {
+		Self(value)
+	}
+}
+
+impl Debug for OgmiosScriptHash {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		f.debug_struct("ScriptHash").field("script_hash", &hex::encode(self.0)).finish()
+	}
+}
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 /// Represents the value of a UTXO.
@@ -179,7 +192,7 @@ pub struct OgmiosValue {
 	/// The amount of lovelace in the UTXO.
 	pub lovelace: u64,
 	/// The native tokens in the UTXO.
-	pub native_tokens: HashMap<ScriptHash, Vec<Asset>>,
+	pub native_tokens: HashMap<OgmiosScriptHash, Vec<Asset>>,
 }
 
 impl OgmiosValue {
@@ -189,11 +202,32 @@ impl OgmiosValue {
 	}
 }
 
+#[derive(Clone, PartialEq, Eq)]
+pub struct OgmiosAssetName(pub Vec<u8>);
+
+impl OgmiosAssetName {
+	pub fn empty() -> Self {
+		OgmiosAssetName(Vec::new())
+	}
+}
+
+impl Debug for OgmiosAssetName {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		f.debug_struct("AssetName").field("name", &hex::encode(self.0.clone())).finish()
+	}
+}
+
+impl From<Vec<u8>> for OgmiosAssetName {
+	fn from(value: Vec<u8>) -> Self {
+		Self(value)
+	}
+}
+
 /// Represents an asset of an UTXO.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Asset {
 	/// The name of the asset.
-	pub name: Vec<u8>,
+	pub name: OgmiosAssetName,
 	/// The amount of the asset.
 	pub amount: u64,
 }
@@ -224,10 +258,10 @@ impl TryFrom<serde_json::Value> for OgmiosValue {
 							.as_number()
 							.and_then(|n| n.clone().as_u64())
 							.ok_or("expected asset amount to be u64");
-						name.and_then(|name| amount.map(|amount| Asset { name, amount }))
+						name.and_then(|name| amount.map(|amount| Asset { name: OgmiosAssetName(name), amount }))
 					})
 					.collect();
-				native_tokens.insert(policy_id, assets?);
+				native_tokens.insert(OgmiosScriptHash(policy_id), assets?);
 				Ok::<(), &'static str>(())
 			}
 		})?;
@@ -300,7 +334,7 @@ where
 #[cfg(test)]
 mod tests {
 	use super::OgmiosUtxo;
-	use crate::types::{Asset, NativeScript, OgmiosScript, OgmiosTx, OgmiosValue};
+	use crate::types::{Asset, OgmiosAssetName, NativeScript, OgmiosScript, OgmiosTx, OgmiosValue, OgmiosScriptHash};
 	use hex_literal::hex;
 
 	#[test]
@@ -333,18 +367,18 @@ mod tests {
 		assert_eq!(
 			value
 				.native_tokens
-				.get(&hex!("e0d4479b3dbb53b1aecd48f7ef524a9cf166585923d91d9c72ed02cb"))
+				.get(&OgmiosScriptHash(hex!("e0d4479b3dbb53b1aecd48f7ef524a9cf166585923d91d9c72ed02cb")))
 				.unwrap()
 				.clone(),
-			vec![Asset { name: vec![], amount: 18446744073709551615u64 }]
+			vec![Asset { name: OgmiosAssetName::empty(), amount: 18446744073709551615u64 }]
 		);
 		let assets = value
 			.native_tokens
-			.get(&hex!("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"))
+			.get(&OgmiosScriptHash(hex!("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")))
 			.unwrap()
 			.clone();
 		assert_eq!(
-			assets.iter().find(|asset| asset.name == hex!("aaaa").to_vec()).unwrap().amount,
+			assets.iter().find(|asset| asset.name.0 == hex!("aaaa").to_vec()).unwrap().amount,
 			1
 		);
 	}

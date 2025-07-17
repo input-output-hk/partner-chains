@@ -113,6 +113,31 @@ impl ReserveData {
 
 		Ok(ReserveUtxo { utxo: reserve_utxo, datum: reserve_settings })
 	}
+
+	pub(crate) async fn get_ics_utxos<T: QueryLedgerState>(
+		&self,
+		ctx: &TransactionContext,
+		client: &T,
+	) -> Result<Vec<OgmiosUtxo>, anyhow::Error> {
+		let ics_address = self
+			.scripts
+			.illiquid_circulation_supply_validator
+			.address(ctx.network)
+			.to_bech32(None)?;
+		let all_utxos = client.query_utxos(&[ics_address]).await?;
+
+		let auth_token_asset_id = AssetId {
+			policy_id: self.scripts.auth_policy.policy_id(),
+			asset_name: AssetName::empty(),
+		};
+
+		let ics_utxos = all_utxos
+			.into_iter()
+			.filter(|utxo| utxo.get_asset_amount(&auth_token_asset_id) != 1u64) // TODO copy pasted from get_reserve_utxo probably not correct
+			.collect::<Vec<_>>();
+
+		Ok(ics_utxos)
+	}
 }
 
 pub(crate) struct TokenAmount {

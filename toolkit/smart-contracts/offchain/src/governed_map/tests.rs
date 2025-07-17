@@ -6,7 +6,7 @@ use cardano_serialization_lib::{
 	Address, ExUnits, Int, NetworkIdKind, PlutusData, RedeemerTag, ScriptHash,
 };
 use hex_literal::hex;
-use ogmios_client::types::{Asset as OgmiosAsset, Datum, OgmiosTx, OgmiosUtxo, OgmiosValue};
+use ogmios_client::types::{Asset as OgmiosAsset, Datum, OgmiosAssetName, OgmiosTx, OgmiosUtxo, OgmiosValue};
 use partner_chains_plutus_data::governed_map::{
 	GovernedMapDatum, governed_map_datum_to_plutus_data,
 };
@@ -337,8 +337,8 @@ mod get_current_value_tests {
 			value: OgmiosValue {
 				lovelace: 1000000,
 				native_tokens: vec![(
-					test_policy().policy_id().0,
-					vec![OgmiosAsset { name: vec![], amount: 1 }],
+					test_policy().policy_id().0.into(),
+					vec![OgmiosAsset { name: vec![].into(), amount: 1 }],
 				)]
 				.into_iter()
 				.collect(),
@@ -365,8 +365,8 @@ mod get_current_value_tests {
 			value: OgmiosValue {
 				lovelace: 1000000,
 				native_tokens: vec![(
-					test_policy().policy_id().0,
-					vec![OgmiosAsset { name: vec![], amount: 1 }],
+					test_policy().policy_id().0.into(),
+					vec![OgmiosAsset { name: vec![].into(), amount: 1 }],
 				)]
 				.into_iter()
 				.collect(),
@@ -425,8 +425,8 @@ mod get_utxos_for_key_tests {
 			value: OgmiosValue {
 				lovelace: 1000000,
 				native_tokens: vec![(
-					test_policy().policy_id().0,
-					vec![OgmiosAsset { name: vec![], amount: 1 }],
+					test_policy().policy_id().0.into(),
+					vec![OgmiosAsset { name: vec![].into(), amount: 1 }],
 				)]
 				.into_iter()
 				.collect(),
@@ -453,8 +453,8 @@ mod get_utxos_for_key_tests {
 			value: OgmiosValue {
 				lovelace: 1000000,
 				native_tokens: vec![(
-					test_policy().policy_id().0,
-					vec![OgmiosAsset { name: vec![], amount: 1 }],
+					test_policy().policy_id().0.into(),
+					vec![OgmiosAsset { name: vec![].into(), amount: 1 }],
 				)]
 				.into_iter()
 				.collect(),
@@ -484,8 +484,8 @@ mod get_utxos_for_key_tests {
 			value: OgmiosValue {
 				lovelace: 1000000,
 				native_tokens: vec![(
-					test_policy().policy_id().0,
-					vec![OgmiosAsset { name: vec![], amount: 1 }],
+					test_policy().policy_id().0.into(),
+					vec![OgmiosAsset { name: vec![].into(), amount: 1 }],
 				)]
 				.into_iter()
 				.collect(),
@@ -507,8 +507,8 @@ mod get_utxos_for_key_tests {
 			value: OgmiosValue {
 				lovelace: 2000000,
 				native_tokens: vec![(
-					test_policy().policy_id().0,
-					vec![OgmiosAsset { name: vec![], amount: 1 }],
+					test_policy().policy_id().0.into(),
+					vec![OgmiosAsset { name: vec![].into(), amount: 1 }],
 				)]
 				.into_iter()
 				.collect(),
@@ -751,12 +751,12 @@ fn mock_governance_utxo() -> OgmiosUtxo {
 	}
 }
 
-fn version_oracle_token_policy_id() -> [u8; 28] {
-	hex!("c11dee532646a9b226aac75f77ea7ae5fba9270674327c882794701e")
+fn version_oracle_token_policy_id() -> OgmiosScriptHash {
+	hex!("c11dee532646a9b226aac75f77ea7ae5fba9270674327c882794701e").into()
 }
 
-fn version_oracle_token_name() -> Vec<u8> {
-	b"Version oracle".to_vec()
+fn version_oracle_token_name() -> OgmiosAssetName {
+	b"Version oracle".to_vec().into()
 }
 
 fn lesser_payment_utxo() -> OgmiosUtxo {
@@ -794,8 +794,8 @@ fn create_key_utxo(tx_id: [u8; 32], index: u16) -> OgmiosUtxo {
 		value: OgmiosValue {
 			lovelace: 1000000,
 			native_tokens: vec![(
-				test_policy().policy_id().0,
-				vec![OgmiosAsset { name: vec![], amount: 1 }],
+				test_policy().policy_id().0.into(),
+				vec![OgmiosAsset { name: vec![].into(), amount: 1 }],
 			)]
 			.into_iter()
 			.collect(),

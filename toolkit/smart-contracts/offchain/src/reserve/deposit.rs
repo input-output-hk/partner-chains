@@ -77,8 +77,8 @@ fn get_token_amount(utxo: &OgmiosUtxo, token: &AssetId) -> u64 {
 	let AssetId { policy_id, asset_name } = token;
 	utxo.value
 		.native_tokens
-		.get(&policy_id.0)
-		.and_then(|assets| assets.iter().find(|asset| asset.name == asset_name.0.to_vec()))
+		.get(&policy_id.0.into())
+		.and_then(|assets| assets.iter().find(|asset| asset.name == asset_name.0.to_vec().into()))
 		.map(|asset| asset.amount)
 		.unwrap_or(0) // Token can be not found if the reserve was created with the initial deposit of 0 tokens
 }

@@ -58,8 +58,8 @@ fn governance_utxo() -> OgmiosUtxo {
 		value: OgmiosValue {
 			lovelace: 2945937,
 			native_tokens: [(
-				version_oracle_validator_hash(),
-				vec![Asset { name: version_oracle_token_name(), amount: 1 }],
+				version_oracle_validator_hash().into(),
+				vec![Asset { name: version_oracle_token_name().into(), amount: 1 }],
 			)]
 			.into(),
 		},

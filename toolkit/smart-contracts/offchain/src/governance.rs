@@ -150,7 +150,7 @@ impl GovernanceData {
 				.unwrap_or(false);
 
 			let contains_version_oracle_token =
-				utxo.value.native_tokens.contains_key(&version_oracle_data.policy_id().0);
+				utxo.value.native_tokens.contains_key(&version_oracle_data.policy_id().0.into());
 			correct_datum && contains_version_oracle_token
 		}))
 	}

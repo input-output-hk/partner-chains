@@ -133,7 +133,7 @@ impl OgmiosValueExt for OgmiosValue {
 			for (policy_id, assets) in self.native_tokens.iter() {
 				let mut csl_assets = Assets::new();
 				for asset in assets.iter() {
-					let asset_name = AssetName::new(asset.name.clone()).map_err(|e| {
+					let asset_name = AssetName::new(asset.name.clone().0).map_err(|e| {
 						JsError::from_str(&format!(
 							"Could not convert Ogmios UTXO value, asset name is invalid: '{}'",
 							e
@@ -141,7 +141,7 @@ impl OgmiosValueExt for OgmiosValue {
 					})?;
 					csl_assets.insert(&asset_name, &asset.amount.into());
 				}
-				multiasset.insert(&ScriptHash::from(*policy_id), &csl_assets);
+				multiasset.insert(&ScriptHash::from(policy_id.0), &csl_assets);
 			}
 			Ok(Value::new_with_assets(&self.lovelace.into(), &multiasset))
 		} else {
@@ -364,11 +364,11 @@ impl OgmiosUtxoExt for OgmiosUtxo {
 	fn get_asset_amount(&self, asset_id: &AssetId) -> u64 {
 		self.value
 			.native_tokens
-			.get(&asset_id.policy_id.0)
+			.get(&asset_id.policy_id.0.into())
 			.cloned()
 			.unwrap_or_default()
 			.iter()
-			.find(|asset| asset.name == asset_id.asset_name.0.to_vec())
+			.find(|asset| asset.name == asset_id.asset_name.0.to_vec().into())
 			.map_or_else(|| 0, |asset| asset.amount)
 	}
 
@@ -877,11 +877,11 @@ impl MultiAssetExt for MultiAsset {
 			let mut assets = Assets::new();
 			for asset in policy_assets {
 				assets.insert(
-					&cardano_serialization_lib::AssetName::new(asset.name.clone())?,
+					&cardano_serialization_lib::AssetName::new(asset.name.clone().0)?,
 					&asset.amount.into(),
 				);
 			}
-			ma.insert(&PolicyID::from(*policy), &assets);
+			ma.insert(&PolicyID::from(policy.0), &assets);
 		}
 		Ok(ma)
 	}
@@ -1006,12 +1006,12 @@ mod tests {
 		let ogmios_value = OgmiosValue {
 			lovelace: 1234567,
 			native_tokens: vec![
-				([0u8; 28], vec![Asset { name: vec![], amount: 111 }]),
+				([0u8; 28].into(), vec![Asset { name: vec![].into(), amount: 111 }]),
 				(
-					[1u8; 28],
+					[1u8; 28].into(),
 					vec![
-						Asset { name: hex!("222222").to_vec(), amount: 222 },
-						Asset { name: hex!("333333").to_vec(), amount: 333 },
+						Asset { name: hex!("222222").to_vec().into(), amount: 222 },
+						Asset { name: hex!("333333").to_vec().into(), amount: 333 },
 					],
 				),
 			]

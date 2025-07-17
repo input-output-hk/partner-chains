@@ -10,10 +10,10 @@ use cardano_serialization_lib::{NetworkIdKind, Transaction, Vkeywitness};
 use hex_literal::hex;
 use itertools::Itertools;
 use ogmios_client::{
-	jsonrpsee::{OgmiosClients, client_for_url},
+	jsonrpsee::{client_for_url, OgmiosClients},
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
 	query_network::QueryNetwork,
-	transactions::Transactions,
+	transactions::Transactions, types::OgmiosAssetName,
 };
 use partner_chains_cardano_offchain::{
 	assemble_and_submit_tx,
@@ -721,8 +721,8 @@ async fn assert_token_amount_eq<T: QueryLedgerState>(
 		.flat_map(|utxo| {
 			utxo.value
 				.native_tokens
-				.get(&token_policy_id.0)
-				.and_then(|assets| assets.iter().find(|a| a.name == token_asset_name.0.to_vec()))
+				.get(&token_policy_id.0.into())
+				.and_then(|assets| assets.iter().find(|a| a.name == token_asset_name.0.to_vec().into()))
 				.map(|asset| asset.amount as u64)
 		})
 		.sum::<u64>();
@@ -783,9 +783,9 @@ async fn get_reserve_datum<
 		.into_iter()
 		.find_map(|utxo| {
 			let reserve_auth_policy_id = scripts_data.policy_ids.reserve_auth.0;
-			let reserve_auth_asset_name: Vec<u8> = Vec::new();
+			let reserve_auth_asset_name = OgmiosAssetName::empty();
 			let auth_token =
-				utxo.value.native_tokens.get(&reserve_auth_policy_id).and_then(|assets| {
+				utxo.value.native_tokens.get(&reserve_auth_policy_id.into()).and_then(|assets| {
 					assets
 						.iter()
 						.find(|asset| asset.name == reserve_auth_asset_name && asset.amount == 1u64)

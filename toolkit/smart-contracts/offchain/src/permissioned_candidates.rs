@@ -295,7 +295,7 @@ mod tests {
 	};
 	use cardano_serialization_lib::{Address, ExUnits, Int, NetworkIdKind, PlutusData};
 	use hex_literal::hex;
-	use ogmios_client::types::{Asset as OgmiosAsset, OgmiosTx, OgmiosUtxo, OgmiosValue};
+	use ogmios_client::types::{Asset as OgmiosAsset, OgmiosAssetName, OgmiosScriptHash, OgmiosTx, OgmiosUtxo, OgmiosValue};
 	use partner_chains_plutus_data::permissioned_candidates::permissioned_candidates_to_plutus_data;
 	use sidechain_domain::{
 		AuraPublicKey, CandidateKeys, GrandpaPublicKey, PermissionedCandidateData,
@@ -351,14 +351,14 @@ mod tests {
 				.amount()
 				.multiasset()
 				.unwrap()
-				.get_asset(&token_policy_id().into(), &empty_asset_name(),),
+				.get_asset(&token_policy_id().0.into(), &empty_asset_name(),),
 			1u64.into()
 		);
 		assert_eq!(script_output.plutus_data().unwrap(), expected_plutus_data());
 		// This token is minted in the transaction
 		let mint = body.mint().unwrap();
 		assert_eq!(
-			mint.get(&token_policy_id().into())
+			mint.get(&token_policy_id().0.into())
 				.unwrap()
 				.get(0)
 				.unwrap()
@@ -387,7 +387,7 @@ mod tests {
 				lovelace: script_utxo_lovelace,
 				native_tokens: vec![(
 					token_policy_id(),
-					vec![OgmiosAsset { name: vec![], amount: 1 }],
+					vec![OgmiosAsset { name: OgmiosAssetName::empty(), amount: 1 }],
 				)]
 				.into_iter()
 				.collect(),
@@ -444,7 +444,7 @@ mod tests {
 				.amount()
 				.multiasset()
 				.unwrap()
-				.get_asset(&token_policy_id().into(), &empty_asset_name(),),
+				.get_asset(&token_policy_id().0.into(), &empty_asset_name(),),
 			1u64.into()
 		);
 		assert_eq!(script_output.plutus_data().unwrap(), expected_plutus_data());
@@ -522,8 +522,8 @@ mod tests {
 			.unwrap()
 	}
 
-	fn token_policy_id() -> [u8; 28] {
-		hex!("f14241393964259a53ca546af364e7f5688ca5aaa35f1e0da0f951b2")
+	fn token_policy_id() -> OgmiosScriptHash {
+		hex!("f14241393964259a53ca546af364e7f5688ca5aaa35f1e0da0f951b2").into()
 	}
 
 	fn input_candidates() -> Vec<PermissionedCandidateData> {
