@@ -38,20 +38,9 @@ impl PermissionedCandidateKeys {
 
 impl Display for PermissionedCandidateKeys {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		let mut v: Vec<String> =
-			vec![format!("Partner Chains Key: {}", self.partner_chains_key.to_hex_string())];
-		v.extend(
-			self.keys_sorted()
-				.iter()
-				.map(|(id, bytes)| format!("{id}: {}", bytes.to_hex_string())),
-		);
-		let len = v.len();
-		for i in 0..len {
-			if i != len - 1 {
-				write!(f, "{}, ", v.get(i).expect("lenght was checked"))?
-			} else {
-				write!(f, "{}", v.get(i).expect("lenght was checked"))?
-			}
+		write!(f, "Partner Chains Key: {}", self.partner_chains_key.to_hex_string())?;
+		for (id, bytes) in self.keys_sorted().iter() {
+			write!(f, ", {id}: {}", bytes.to_hex_string())?
 		}
 		Ok(())
 	}
