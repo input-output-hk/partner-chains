@@ -776,6 +776,7 @@ dependencies = [
  "sidechain-domain",
  "sidechain-slots",
  "sp-api",
+ "sp-application-crypto",
  "sp-consensus-slots",
  "sp-core",
  "sp-inherents",
@@ -7344,6 +7345,7 @@ dependencies = [
  "raw-scripts",
  "serde_json",
  "sidechain-domain",
+ "sp-core",
  "thiserror 2.0.12",
 ]
 

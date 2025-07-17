@@ -2,9 +2,9 @@
 //! and a [run] function for running these commands.
 //! [PartnerChainsSubcommand] is meant to be used by a command line argument parser library.
 #![deny(missing_docs)]
-use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
-use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
-use authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
+use authority_selection_inherents::{
+	AuthoritySelectionDataSource, AuthoritySelectionInputs, CandidateValidationApi,
+};
 use clap::Parser;
 use cli_commands::address_association_signatures::AddressAssociationSignaturesCmd;
 use cli_commands::block_producer_metadata_signatures::BlockProducerMetadataSignatureCmd;
@@ -102,7 +102,7 @@ static REGISTRATION_STATUS_AFTER_HELP: once_cell::sync::Lazy<String> = once_cell
 #[allow(clippy::large_enum_variant)]
 /// Entry point for all Partner Chains specific subcommand.
 pub enum PartnerChainsSubcommand<
-	RuntimeBindings: PartnerChainRuntime,
+	RuntimeBindings: PartnerChainRuntime + Send + Sync,
 	PartnerchainAddress: Clone + Sync + Send + FromStr + 'static,
 > {
 	/// Returns sidechain parameters.
@@ -151,7 +151,7 @@ pub fn run<
 	CommitteeMember,
 	Client,
 	BlockProducerMetadata,
-	RuntimeBindings: PartnerChainRuntime,
+	RuntimeBindings: PartnerChainRuntime + Send + Sync,
 	PartnerchainAddress,
 >(
 	cli: &Cli,

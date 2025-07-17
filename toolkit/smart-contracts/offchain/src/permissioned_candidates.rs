@@ -298,7 +298,8 @@ mod tests {
 	use ogmios_client::types::{Asset as OgmiosAsset, OgmiosTx, OgmiosUtxo, OgmiosValue};
 	use partner_chains_plutus_data::permissioned_candidates::permissioned_candidates_to_plutus_data;
 	use sidechain_domain::{
-		AuraPublicKey, GrandpaPublicKey, PermissionedCandidateData, SidechainPublicKey,
+		AuraPublicKey, CandidateKeys, GrandpaPublicKey, PermissionedCandidateData,
+		SidechainPublicKey,
 	};
 
 	#[test]
@@ -532,24 +533,36 @@ mod tests {
 					hex!("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 						.into(),
 				),
-				aura_public_key: AuraPublicKey(
-					hex!("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb").into(),
-				),
-				grandpa_public_key: GrandpaPublicKey(
-					hex!("cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc").into(),
-				),
+				keys: CandidateKeys(vec![
+					AuraPublicKey(
+						hex!("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
+							.into(),
+					)
+					.into(),
+					GrandpaPublicKey(
+						hex!("cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc")
+							.into(),
+					)
+					.into(),
+				]),
 			},
 			PermissionedCandidateData {
 				sidechain_public_key: SidechainPublicKey(
 					hex!("dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd")
 						.into(),
 				),
-				aura_public_key: AuraPublicKey(
-					hex!("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee").into(),
-				),
-				grandpa_public_key: GrandpaPublicKey(
-					hex!("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").into(),
-				),
+				keys: CandidateKeys(vec![
+					AuraPublicKey(
+						hex!("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
+							.into(),
+					)
+					.into(),
+					GrandpaPublicKey(
+						hex!("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
+							.into(),
+					)
+					.into(),
+				]),
 			},
 		]
 	}

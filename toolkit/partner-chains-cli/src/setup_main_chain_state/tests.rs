@@ -13,8 +13,8 @@ use hex_literal::hex;
 use partner_chains_cardano_offchain::multisig::MultiSigSmartContractResult;
 use serde_json::json;
 use sidechain_domain::{
-	AuraPublicKey, DParameter, GrandpaPublicKey, PermissionedCandidateData, SidechainPublicKey,
-	UtxoId,
+	AuraPublicKey, CandidateKeys, DParameter, GrandpaPublicKey, PermissionedCandidateData,
+	SidechainPublicKey, UtxoId,
 };
 
 #[test]
@@ -389,12 +389,16 @@ fn candidate_data_1() -> PermissionedCandidateData {
 		sidechain_public_key: SidechainPublicKey(
 			hex!("020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1").to_vec(),
 		),
-		aura_public_key: AuraPublicKey(
-			hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d").to_vec(),
-		),
-		grandpa_public_key: GrandpaPublicKey(
-			hex!("88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee").to_vec(),
-		),
+		keys: CandidateKeys(vec![
+			AuraPublicKey::from_hex_unsafe(
+				"d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d",
+			)
+			.into(),
+			GrandpaPublicKey::from_hex_unsafe(
+				"88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee",
+			)
+			.into(),
+		]),
 	}
 }
 
@@ -403,12 +407,16 @@ fn candidate_data_2() -> PermissionedCandidateData {
 		sidechain_public_key: SidechainPublicKey(
 			hex!("0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27").to_vec(),
 		),
-		aura_public_key: AuraPublicKey(
-			hex!("8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48").to_vec(),
-		),
-		grandpa_public_key: GrandpaPublicKey(
-			hex!("d17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69").to_vec(),
-		),
+		keys: CandidateKeys(vec![
+			AuraPublicKey::from_hex_unsafe(
+				"8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
+			)
+			.into(),
+			GrandpaPublicKey::from_hex_unsafe(
+				"d17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69",
+			)
+			.into(),
+		]),
 	}
 }
 
@@ -417,12 +425,16 @@ fn candidate_data_3() -> PermissionedCandidateData {
 		sidechain_public_key: SidechainPublicKey::from_hex_unsafe(
 			"0263c9cdabbef76829fe5b35f0bbf3051bd1c41b80f58b5d07c271d0dd04de2a4e",
 		),
-		aura_public_key: AuraPublicKey::from_hex_unsafe(
-			"9cedc9f7b926191f64d68ee77dd90c834f0e73c0f53855d77d3b0517041d5640",
-		),
-		grandpa_public_key: GrandpaPublicKey::from_hex_unsafe(
-			"de21d8171821fc29a43a1ed90ee75623edc3794012010f165b6afc3483a569aa",
-		),
+		keys: CandidateKeys(vec![
+			AuraPublicKey::from_hex_unsafe(
+				"9cedc9f7b926191f64d68ee77dd90c834f0e73c0f53855d77d3b0517041d5640",
+			)
+			.into(),
+			GrandpaPublicKey::from_hex_unsafe(
+				"de21d8171821fc29a43a1ed90ee75623edc3794012010f165b6afc3483a569aa",
+			)
+			.into(),
+		]),
 	}
 }
 

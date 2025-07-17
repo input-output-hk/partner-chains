@@ -1,16 +1,18 @@
+use crate::MaybeFromCandidateKeys;
 use crate::authority_selection_inputs::AuthoritySelectionInputs;
 use crate::filter_invalid_candidates::RegisterValidatorSignedMessage;
 use crate::select_authorities::select_authorities;
 use hex_literal::hex;
 use num_bigint::BigInt;
-use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
+use parity_scale_codec::Encode;
 use plutus::Datum::{ByteStringDatum, ConstructorDatum, IntegerDatum};
 use plutus::ToDatum;
-use scale_info::TypeInfo;
-use serde::{Deserialize, Serialize};
 use sidechain_domain::*;
-use sp_core::{Pair, ecdsa, ed25519, sr25519};
+use sidechain_domain::{CandidateKey, CandidateKeys};
+use sp_core::{ConstU32, Pair, ecdsa, ed25519};
 use sp_runtime::traits::Zero;
+use sp_runtime::{BoundToRuntimeAppPublic, RuntimeAppPublic, impl_opaque_keys};
+use sp_session_validator_management::CommitteeMember;
 
 #[test]
 fn registration_message_encoding() {
@@ -73,30 +75,25 @@ impl TryFrom<SidechainPublicKey> for AccountId {
 	}
 }
 
-#[derive(
-	Clone,
-	Debug,
-	PartialEq,
-	Eq,
-	PartialOrd,
-	Ord,
-	Encode,
-	Decode,
-	TypeInfo,
-	MaxEncodedLen,
-	Serialize,
-	Deserialize,
-)]
-pub struct AccountKeys {
-	pub aura: [u8; 32],
-	pub grandpa: [u8; 32],
+pub struct AuraLikeModule;
+impl BoundToRuntimeAppPublic for AuraLikeModule {
+	type Public = sp_runtime::app_crypto::sr25519::AppPublic;
 }
 
-impl From<(sr25519::Public, ed25519::Public)> for AccountKeys {
-	fn from((aura, grandpa): (sr25519::Public, ed25519::Public)) -> Self {
-		Self { aura: aura.0, grandpa: grandpa.0 }
+pub struct GrandpaLikeModule;
+impl BoundToRuntimeAppPublic for GrandpaLikeModule {
+	type Public = sp_runtime::app_crypto::ed25519::AppPublic;
+}
+
+impl_opaque_keys! {
+	#[derive(Ord, PartialOrd)]
+	pub struct AccountKeys {
+		pub aura: AuraLikeModule,
+		pub grandpa: GrandpaLikeModule,
 	}
 }
+
+impl MaybeFromCandidateKeys for AccountKeys {}
 
 impl AccountKeys {
 	pub fn from_seed(seed: &str) -> AccountKeys {
@@ -104,7 +101,10 @@ impl AccountKeys {
 		aura.resize(32, 0);
 		let mut grandpa = format!("grandpa-{seed}").into_bytes();
 		grandpa.resize(32, 0);
-		AccountKeys { aura: aura.try_into().unwrap(), grandpa: grandpa.try_into().unwrap() }
+		AccountKeys {
+			aura: sp_core::sr25519::Public::from(<[u8; 32]>::try_from(aura).unwrap()).into(),
+			grandpa: sp_core::ed25519::Public::from(<[u8; 32]>::try_from(grandpa).unwrap()).into(),
+		}
 	}
 }
 
@@ -142,7 +142,7 @@ const ALL_MOCK_VALIDATORS: [(MockValidator, [u8; 33]); 11] = [
 	(KIM, hex!("03e843f200e30bc5b951c73a96d968db1c0cd05e357d910fce159fc59c40e9d6e2")),
 ];
 
-pub fn account_id_to_name(account_id: &AccountId) -> &'static str {
+pub fn account_id_to_name(account_id: AccountId) -> &'static str {
 	ALL_MOCK_VALIDATORS
 		.iter()
 		.find(|(_, acc_id)| acc_id == &account_id.0.0)
@@ -170,14 +170,15 @@ impl MockValidator {
 		AccountKeys::from_seed(self.seed)
 	}
 
-	pub fn aura_pub_key(&self) -> AuraPublicKey {
-		AuraPublicKey(self.session_keys().aura.to_vec())
-	}
-
-	pub fn grandpa_pub_key(&self) -> GrandpaPublicKey {
-		GrandpaPublicKey(self.session_keys().grandpa.to_vec())
+	pub fn keys(&self) -> CandidateKeys {
+		CandidateKeys(vec![
+			CandidateKey { id: *b"sr25", bytes: self.session_keys().aura.encode() },
+			CandidateKey { id: *b"ed25", bytes: self.session_keys().grandpa.encode() },
+		])
 	}
 }
+
+type MaxValidators = ConstU32<32>;
 
 #[test]
 fn ariadne_all_permissioned_test() {
@@ -193,7 +194,7 @@ fn ariadne_all_permissioned_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee = select_authorities::<AccountId, AccountKeys>(
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, MaxValidators>(
 		UtxoId::default(),
 		authority_selection_inputs,
 		ScEpochNumber::zero(),
@@ -203,7 +204,7 @@ fn ariadne_all_permissioned_test() {
 	let committee = calculated_committee.unwrap();
 	let mut committee_names = committee
 		.iter()
-		.map(|member| account_id_to_name(member.account_id()))
+		.map(|member| account_id_to_name(member.authority_id()))
 		.collect::<Vec<_>>();
 	committee_names.sort();
 	let expected_committee_names =
@@ -225,7 +226,7 @@ fn ariadne_only_permissioned_candidates_are_present_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee = select_authorities::<AccountId, AccountKeys>(
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, MaxValidators>(
 		UtxoId::default(),
 		authority_selection_inputs,
 		ScEpochNumber::zero(),
@@ -235,7 +236,7 @@ fn ariadne_only_permissioned_candidates_are_present_test() {
 	let committee = calculated_committee.unwrap();
 	let mut committee_names = committee
 		.iter()
-		.map(|member| account_id_to_name(member.account_id()))
+		.map(|member| account_id_to_name(member.authority_id()))
 		.collect::<Vec<_>>();
 	committee_names.sort();
 	let expected_committee_names =
@@ -257,7 +258,7 @@ fn ariadne_3_to_2_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee = select_authorities::<AccountId, AccountKeys>(
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, MaxValidators>(
 		UtxoId::default(),
 		authority_selection_inputs,
 		ScEpochNumber::zero(),
@@ -267,7 +268,7 @@ fn ariadne_3_to_2_test() {
 	let committee = calculated_committee.unwrap();
 	let mut committee_names = committee
 		.iter()
-		.map(|member| account_id_to_name(member.account_id()))
+		.map(|member| account_id_to_name(member.authority_id()))
 		.collect::<Vec<_>>();
 	committee_names.sort();
 	let expected_committee_names = vec!["alice", "bob", "charlie", "dave", "eve"];
@@ -288,7 +289,7 @@ fn ariadne_3_to_2_with_more_available_candidates_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee = select_authorities::<AccountId, AccountKeys>(
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, MaxValidators>(
 		UtxoId::default(),
 		authority_selection_inputs,
 		ScEpochNumber::zero(),
@@ -298,7 +299,7 @@ fn ariadne_3_to_2_with_more_available_candidates_test() {
 	let committee = calculated_committee.unwrap();
 	let committee_names = committee
 		.iter()
-		.map(|member| account_id_to_name(member.account_id()))
+		.map(|member| account_id_to_name(member.authority_id()))
 		.collect::<Vec<_>>();
 	// No candidate has guaranteed seat. Every seat comes from random with repetitions.
 	let permissioned_selected = committee_names
@@ -326,7 +327,7 @@ fn ariadne_4_to_7_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee = select_authorities::<AccountId, AccountKeys>(
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, MaxValidators>(
 		UtxoId::default(),
 		authority_selection_inputs,
 		ScEpochNumber::zero(),
@@ -336,7 +337,7 @@ fn ariadne_4_to_7_test() {
 	let committee = calculated_committee.unwrap();
 	let mut committee_names = committee
 		.iter()
-		.map(|member| account_id_to_name(member.account_id()))
+		.map(|member| account_id_to_name(member.authority_id()))
 		.collect::<Vec<_>>();
 	committee_names.sort();
 	// Each permissioned has 1 guaranteed. Registered candidates henry, ida, james and kim have 1 place for sure as well and three places are assigned randomly.
@@ -353,7 +354,7 @@ fn ariadne_does_not_return_empty_committee() {
 		&[],
 		DParameter { num_permissioned_candidates: 1, num_registered_candidates: 1 },
 	);
-	let calculated_committee = select_authorities::<AccountId, AccountKeys>(
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, MaxValidators>(
 		UtxoId::default(),
 		authority_selection_inputs,
 		ScEpochNumber::zero(),
@@ -391,8 +392,7 @@ fn create_epoch_candidates_idp(validators: &[MockValidator]) -> Vec<CandidateReg
 				mainchain_signature: MainchainSignature(mainchain_signature.0),
 				cross_chain_signature: CrossChainSignature(sidechain_signature_bytes_no_recovery),
 				sidechain_pub_key: validator.sidechain_pub_key(),
-				aura_pub_key: validator.aura_pub_key(),
-				grandpa_pub_key: validator.grandpa_pub_key(),
+				keys: validator.keys(),
 				cross_chain_pub_key: CrossChainPublicKey(validator.sidechain_pub_key().0),
 				utxo_info: UtxoInfo::default(),
 				tx_inputs: vec![signed_message.registration_utxo],
@@ -420,8 +420,7 @@ pub fn create_authority_selection_inputs(
 		.iter()
 		.map(|c| PermissionedCandidateData {
 			sidechain_public_key: c.sidechain_pub_key(),
-			aura_public_key: c.aura_pub_key(),
-			grandpa_public_key: c.grandpa_pub_key(),
+			keys: c.keys(),
 		})
 		.collect();
 	AuthoritySelectionInputs {
@@ -430,4 +429,35 @@ pub fn create_authority_selection_inputs(
 		registered_candidates: epoch_candidates,
 		epoch_nonce: EpochNonce(DUMMY_EPOCH_NONCE.to_vec()),
 	}
+}
+
+#[test]
+fn maybe_from_candidate_keys_extracts_keys_is_insensitive_to_keys_order() {
+	let key1 = CandidateKey {
+		id: <AuraLikeModule as BoundToRuntimeAppPublic>::Public::ID.0,
+		bytes: [1u8; 32].to_vec(),
+	};
+	let key2 = CandidateKey {
+		id: <GrandpaLikeModule as BoundToRuntimeAppPublic>::Public::ID.0,
+		bytes: [2u8; 32].to_vec(),
+	};
+	let expected = AccountKeys {
+		aura: sp_core::sr25519::Public::from([1u8; 32]).into(),
+		grandpa: sp_core::ed25519::Public::from([2u8; 32]).into(),
+	};
+
+	assert_eq!(
+		AccountKeys::maybe_from(&CandidateKeys(vec![key1.clone(), key2.clone()])).unwrap(),
+		expected
+	);
+	assert_eq!(AccountKeys::maybe_from(&CandidateKeys(vec![key2, key1])).unwrap(), expected);
+}
+
+#[test]
+fn maybe_from_candidate_keys_extracts_returns_none_when_some_key_is_missing() {
+	let key1 = CandidateKey {
+		id: <AuraLikeModule as BoundToRuntimeAppPublic>::Public::ID.0,
+		bytes: [1u8; 32].to_vec(),
+	};
+	assert_eq!(AccountKeys::maybe_from(&CandidateKeys(vec![key1])), None);
 }

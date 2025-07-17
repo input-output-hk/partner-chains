@@ -11,13 +11,10 @@ extern crate alloc;
 
 use alloc::collections::BTreeMap;
 use alloc::string::String;
-use authority_selection_inherents::CommitteeMember;
-use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
-use authority_selection_inherents::filter_invalid_candidates::{
-	PermissionedCandidateDataError, RegistrationDataError, StakeError,
-	validate_permissioned_candidate_data,
+use authority_selection_inherents::{
+	AuthoritySelectionInputs, CommitteeMember, PermissionedCandidateDataError,
+	RegistrationDataError, StakeError, select_authorities, validate_permissioned_candidate_data,
 };
-use authority_selection_inherents::select_authorities::select_authorities;
 use frame_support::genesis_builder_helper::{build_state, get_preset};
 use frame_support::inherent::ProvideInherent;
 use frame_support::weights::constants::RocksDbWeight as RuntimeDbWeight;
@@ -101,6 +98,7 @@ pub type Hash = sp_core::H256;
 /// to even the core data structures.
 pub mod opaque {
 	use super::*;
+	use authority_selection_inherents::MaybeFromCandidateKeys;
 	use parity_scale_codec::MaxEncodedLen;
 	use sp_core::{ed25519, sr25519};
 	pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
@@ -172,6 +170,8 @@ pub mod opaque {
 			Self { aura: aura.into(), grandpa: grandpa.into() }
 		}
 	}
+
+	impl MaybeFromCandidateKeys for SessionKeys {}
 
 	impl_opaque_keys! {
 		pub struct CrossChainKey {
@@ -403,12 +403,11 @@ impl pallet_session_validator_management::Config for Runtime {
 		input: AuthoritySelectionInputs,
 		sidechain_epoch: ScEpochNumber,
 	) -> Option<BoundedVec<Self::CommitteeMember, Self::MaxValidators>> {
-		Some(BoundedVec::truncate_from(
-			select_authorities(Sidechain::genesis_utxo(), input, sidechain_epoch)?
-				.into_iter()
-				.map(|member| member.into())
-				.collect(),
-		))
+		select_authorities::<opaque::cross_chain_app::Public, SessionKeys, MaxValidators>(
+			Sidechain::genesis_utxo(),
+			input,
+			sidechain_epoch,
+		)
 	}
 
 	fn current_epoch_number() -> ScEpochNumber {
@@ -1071,15 +1070,15 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi<Block> for Runtime {
+	impl authority_selection_inherents::CandidateValidationApi<Block> for Runtime {
 		fn validate_registered_candidate_data(stake_pool_public_key: &StakePoolPublicKey, registration_data: &RegistrationData) -> Option<RegistrationDataError> {
-			authority_selection_inherents::filter_invalid_candidates::validate_registration_data(stake_pool_public_key, registration_data, Sidechain::genesis_utxo()).err()
+			authority_selection_inherents::validate_registration_data::<SessionKeys>(stake_pool_public_key, registration_data, Sidechain::genesis_utxo()).err()
 		}
 		fn validate_stake(stake: Option<StakeDelegation>) -> Option<StakeError> {
-			authority_selection_inherents::filter_invalid_candidates::validate_stake(stake).err()
+			authority_selection_inherents::validate_stake(stake).err()
 		}
 		fn validate_permissioned_candidate_data(candidate: PermissionedCandidateData) -> Option<PermissionedCandidateDataError> {
-			validate_permissioned_candidate_data::<CrossChainPublic>(candidate).err()
+			validate_permissioned_candidate_data::<SessionKeys>(candidate).err()
 		}
 	}
 

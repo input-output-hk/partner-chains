@@ -1,7 +1,7 @@
 use crate::candidates::CandidatesDataSourceImpl;
 use crate::db_model::index_exists_unsafe;
 use crate::metrics::mock::test_metrics;
-use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
+use authority_selection_inherents::AuthoritySelectionDataSource;
 use hex_literal::hex;
 use sidechain_domain::*;
 use sqlx::PgPool;
@@ -290,23 +290,35 @@ fn latest_permissioned_candidates() -> Vec<PermissionedCandidateData> {
 			sidechain_public_key: SidechainPublicKey(
 				hex!("cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854").to_vec(),
 			),
-			aura_public_key: AuraPublicKey(
-				hex!("bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec").to_vec(),
-			),
-			grandpa_public_key: GrandpaPublicKey(
-				hex!("9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d").to_vec(),
-			),
+			keys: CandidateKeys(vec![
+				AuraPublicKey(
+					hex!("bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec")
+						.to_vec(),
+				)
+				.into(),
+				GrandpaPublicKey(
+					hex!("9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d")
+						.to_vec(),
+				)
+				.into(),
+			]),
 		},
 		PermissionedCandidateData {
 			sidechain_public_key: SidechainPublicKey(
 				hex!("79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf").to_vec(),
 			),
-			aura_public_key: AuraPublicKey(
-				hex!("56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19").to_vec(),
-			),
-			grandpa_public_key: GrandpaPublicKey(
-				hex!("7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32").to_vec(),
-			),
+			keys: CandidateKeys(vec![
+				AuraPublicKey(
+					hex!("56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19")
+						.to_vec(),
+				)
+				.into(),
+				GrandpaPublicKey(
+					hex!("7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32")
+						.to_vec(),
+				)
+				.into(),
+			]),
 		},
 	]
 }
@@ -322,8 +334,10 @@ fn leader_candidate_spo_a() -> CandidateRegistrations {
 					cross_chain_signature: CrossChainSignature(hex!("f8ec6c7f935d387aaa1693b3bf338cbb8f53013da8a5a234f9c488bacac01af259297e69aee0df27f553c0a1164df827d016125c16af93c99be2c19f36d2f66e").to_vec()),
 					sidechain_pub_key: SidechainPublicKey(hex!("02fe8d1eb1bcb3432b1db5833ff5f2226d9cb5e65cee430558c18ed3a3c86ce1af").to_vec()),
 					cross_chain_pub_key: CrossChainPublicKey(hex!("02fe8d1eb1bcb3432b1db5833ff5f2226d9cb5e65cee430558c18ed3a3c86ce1af").to_vec()),
-					aura_pub_key: AuraPublicKey(hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d").to_vec()),
-					grandpa_pub_key: GrandpaPublicKey(hex!("88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee").to_vec()),
+					keys: CandidateKeys(vec![
+						AuraPublicKey(hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d").to_vec()).into(),
+						GrandpaPublicKey(hex!("88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee").to_vec()).into()
+					]),
 					utxo_info: UtxoInfo {
 						utxo_id: UtxoId::new(hex!("abeed7fb0067f14d6f6436c7f7dedb27ce3ceb4d2d18ff249d43b22d86fae3f1"), 0),
 						epoch_number: McEpochNumber(189),
@@ -352,8 +366,10 @@ fn leader_candidate_spo_b() -> CandidateRegistrations {
 					cross_chain_signature: CrossChainSignature(hex!("f8ec6c7f935d387aaa1693b3bf338cbb8f53013da8a5a234f9c488bacac01af259297e69aee0df27f553c0a1164df827d016125c16af93c99be2c19f36d2f66e").to_vec()),
 					sidechain_pub_key: SidechainPublicKey(hex!("02fe8d1eb1bcb3432b1db5833ff5f2226d9cb5e65cee430558c18ed3a3c86ce1af").to_vec()),
 					cross_chain_pub_key: CrossChainPublicKey(hex!("02fe8d1eb1bcb3432b1db5833ff5f2226d9cb5e65cee430558c18ed3a3c86ce1af").to_vec()),
-					aura_pub_key: AuraPublicKey(hex!("8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48").to_vec()),
-					grandpa_pub_key: GrandpaPublicKey(hex!("d17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69").to_vec()),
+					keys: CandidateKeys(vec![
+						AuraPublicKey(hex!("8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48").to_vec()).into(),
+						GrandpaPublicKey(hex!("d17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69").to_vec()).into()
+					]),
 					utxo_info: UtxoInfo {
 						utxo_id: UtxoId::new(hex!("abeed7fb0067f14d6f6436c7f7dedb27ce3ceb4d2d18ff249d43b22d86fae3f1"), 2),
 						epoch_number: McEpochNumber(189),
@@ -382,8 +398,10 @@ fn leader_candidate_spo_c() -> CandidateRegistrations {
 					cross_chain_signature: CrossChainSignature(hex!("3e8a8b29e513a08d0a66e22422a1a85d1bf409987f30a8c6fcab85ba38a85d0d27793df7e7fb63ace12203b062feb7edb5e6664ac1810b94c38182acc6167425").to_vec()),
 					sidechain_pub_key: SidechainPublicKey(hex!("02333e47cab242fefe88d7da1caa713307290291897f100efb911672d317147f72").to_vec()),
 					cross_chain_pub_key: CrossChainPublicKey(hex!("02333e47cab242fefe88d7da1caa713307290291897f100efb911672d317147f72").to_vec()),
-					aura_pub_key: AuraPublicKey(hex!("8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f23333").to_vec()),
-					grandpa_pub_key: GrandpaPublicKey(hex!("d17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fad3333").to_vec()),
+					keys: CandidateKeys(vec![
+						AuraPublicKey(hex!("8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f23333").to_vec()).into(),
+					    GrandpaPublicKey(hex!("d17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fad3333").to_vec()).into(),
+					]),
 					utxo_info: UtxoInfo {
 						utxo_id: UtxoId::new(hex!("055557fb0067f14d6f6436c7f7dedb27ce3ceb4d2d18ff249d43b22d86fae3f1"), 0),
 						epoch_number: McEpochNumber(191),

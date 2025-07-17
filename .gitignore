@@ -36,6 +36,14 @@ dev/local-environment/configurations/tests/e2e-tests
 dev/local-environment/configurations/partner-chains-node/overrides
 dev/local-environment/runtime-values/*
 
+# Local environment dynamic
+dev/local-environment-dynamic/.env
+dev/local-environment-dynamic/.env.bak
+dev/local-environment-dynamic/docker-compose.yml
+dev/local-environment-dynamic/docker-compose.yml.bak
+dev/local-environment-dynamic/runtime-values/*
+dev/local-environment-dynamic/configurations/partner-chains-nodes/*
+
 ogmios_client.log
 
 # e2e tests (Python)

@@ -1,6 +1,6 @@
 //! Functionality related to filtering invalid candidates from the candidates
 
-use crate::CommitteeMember;
+use crate::{CommitteeMember, MaybeFromCandidateKeys};
 use frame_support::pallet_prelude::TypeInfo;
 use parity_scale_codec::{Decode, Encode};
 use plutus::*;
@@ -8,7 +8,7 @@ use plutus_datum_derive::ToDatum;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sidechain_domain::*;
-use sp_core::{ecdsa, ed25519, sr25519};
+use sp_core::{ecdsa, ed25519};
 use sp_runtime::traits::Verify;
 
 /// Signed Message of the Authority Candidate to register
@@ -101,18 +101,20 @@ impl<TAccountId, TAccountKeys> Candidate<TAccountId, TAccountKeys> {
 }
 
 /// Get the valid trustless candidates from the registrations from inherent data
-pub fn filter_trustless_candidates_registrations<TAccountId, TAccountKeys>(
+pub fn filter_trustless_candidates_registrations<TAccountId, TAccountKeys: MaybeFromCandidateKeys>(
 	candidate_registrations: Vec<CandidateRegistrations>,
 	genesis_utxo: UtxoId,
 ) -> Vec<(Candidate<TAccountId, TAccountKeys>, selection::Weight)>
 where
-	TAccountKeys: From<(sr25519::Public, ed25519::Public)>,
 	TAccountId: From<ecdsa::Public>,
 {
 	candidate_registrations
 		.into_iter()
 		.flat_map(|candidate_registrations| {
-			select_latest_valid_candidate(candidate_registrations, genesis_utxo)
+			select_latest_valid_candidate::<TAccountId, TAccountKeys>(
+				candidate_registrations,
+				genesis_utxo,
+			)
 		})
 		.map(|c| {
 			let weight = c.stake_delegation.0.into();
@@ -121,31 +123,29 @@ where
 		.collect()
 }
 /// Filters invalid candidates from a list of [PermissionedCandidateData].
-pub fn filter_invalid_permissioned_candidates<TAccountId, TAccountKeys>(
+pub fn filter_invalid_permissioned_candidates<TAccountId, TAccountKeys: MaybeFromCandidateKeys>(
 	permissioned_candidates: Vec<PermissionedCandidateData>,
 ) -> Vec<Candidate<TAccountId, TAccountKeys>>
 where
-	TAccountKeys: From<(sr25519::Public, ed25519::Public)>,
-	TAccountId: TryFrom<sidechain_domain::SidechainPublicKey>,
+	TAccountId: From<ecdsa::Public>,
 {
 	permissioned_candidates
 		.into_iter()
 		.filter_map(|candidate| {
-			let (account_id, aura_key, grandpa_key) =
-				validate_permissioned_candidate_data(candidate).ok()?;
-			let account_keys = (aura_key, grandpa_key).into();
+			let (partner_chain_key, account_keys) =
+				validate_permissioned_candidate_data::<TAccountKeys>(candidate).ok()?;
+			let account_id = partner_chain_key.into();
 			Some(Candidate::Permissioned(PermissionedCandidate { account_id, account_keys }))
 		})
 		.collect()
 }
 
-fn select_latest_valid_candidate<TAccountId, TAccountKeys>(
+fn select_latest_valid_candidate<TAccountId, TAccountKeys: MaybeFromCandidateKeys>(
 	candidate_registrations: CandidateRegistrations,
 	genesis_utxo: UtxoId,
 ) -> Option<CandidateWithStake<TAccountId, TAccountKeys>>
 where
 	TAccountId: From<ecdsa::Public>,
-	TAccountKeys: From<(sr25519::Public, ed25519::Public)>,
 {
 	let stake_delegation = validate_stake(candidate_registrations.stake_delegation).ok()?;
 	let stake_pool_pub_key = candidate_registrations.stake_pool_public_key;
@@ -154,8 +154,11 @@ where
 		.registrations
 		.into_iter()
 		.filter_map(|registration_data| {
-			match validate_registration_data(&stake_pool_pub_key, &registration_data, genesis_utxo)
-			{
+			match validate_registration_data::<TAccountKeys>(
+				&stake_pool_pub_key,
+				&registration_data,
+				genesis_utxo,
+			) {
 				Ok(candidate) => Some((candidate, registration_data.utxo_info)),
 				Err(_) => None,
 			}
@@ -165,7 +168,7 @@ where
 
 	Some(CandidateWithStake {
 		account_id: account_id.into(),
-		account_keys: account_keys.into(),
+		account_keys,
 		stake_delegation,
 		stake_pool_pub_key,
 	})
@@ -207,12 +210,9 @@ pub enum RegistrationDataError {
 	/// Registration with invalid sidechain public key
 	#[cfg_attr(feature = "std", error("Registration with invalid sidechain public key"))]
 	InvalidSidechainPubKey,
-	/// Registration with invalid Aura key
-	#[cfg_attr(feature = "std", error("Registration with invalid Aura key"))]
-	InvalidAuraKey,
-	/// Registration with invalid GRANDPA key
-	#[cfg_attr(feature = "std", error("Registration with invalid GRANDPA key"))]
-	InvalidGrandpaKey,
+	/// Registration with invalid Account keys
+	#[cfg_attr(feature = "std", error("Registration with invalid account keys"))]
+	InvalidAccountKeys,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Encode, Decode, TypeInfo)]
@@ -222,54 +222,41 @@ pub enum PermissionedCandidateDataError {
 	/// Permissioned candidate with invalid sidechain public key
 	#[cfg_attr(feature = "std", error("Permissioned candidate with invalid sidechain public key"))]
 	InvalidSidechainPubKey,
-	/// Permissioned candidate with invalid Aura key
-	#[cfg_attr(feature = "std", error("Permissioned candidate with invalid Aura key"))]
-	InvalidAuraKey,
-	/// Permissioned candidate with invalid GRANDPA key
-	#[cfg_attr(feature = "std", error("Permissioned candidate with invalid GRANDPA key"))]
-	InvalidGrandpaKey,
+	/// Permissioned candidate with invalid account keys
+	#[cfg_attr(feature = "std", error("Permissioned candidate with invalid account keys"))]
+	InvalidAccountKeys,
 }
 
-/// Validates Aura, GRANDPA, and Partner Chain public keys of [PermissionedCandidateData].
-pub fn validate_permissioned_candidate_data<AccountId: TryFrom<SidechainPublicKey>>(
+/// Validates Account keys and Partner Chain public keys of [PermissionedCandidateData].
+pub fn validate_permissioned_candidate_data<TAccountKeys: MaybeFromCandidateKeys>(
 	candidate: PermissionedCandidateData,
-) -> Result<(AccountId, sr25519::Public, ed25519::Public), PermissionedCandidateDataError> {
+) -> Result<(ecdsa::Public, TAccountKeys), PermissionedCandidateDataError> {
+	let ecdsa_bytes: [u8; 33] = candidate
+		.sidechain_public_key
+		.0
+		.try_into()
+		.map_err(|_| PermissionedCandidateDataError::InvalidSidechainPubKey)?;
 	Ok((
-		candidate
-			.sidechain_public_key
-			.try_into()
-			.map_err(|_| PermissionedCandidateDataError::InvalidSidechainPubKey)?,
-		candidate
-			.aura_public_key
-			.try_into_sr25519()
-			.ok_or(PermissionedCandidateDataError::InvalidAuraKey)?,
-		candidate
-			.grandpa_public_key
-			.try_into_ed25519()
-			.ok_or(PermissionedCandidateDataError::InvalidGrandpaKey)?,
+		ecdsa_bytes.into(),
+		MaybeFromCandidateKeys::maybe_from(&candidate.keys)
+			.ok_or_else(|| PermissionedCandidateDataError::InvalidAccountKeys)?,
 	))
 }
 
 /// Validates registration data provided by the authority candidate.
 ///
 /// Validates:
-/// * Aura, GRANDPA, and Partner Chain public keys of the candidate
+/// * Account keys and Partner Chain public keys of the candidate
 /// * stake pool signature
 /// * sidechain signature
 /// * transaction inputs contain correct registration utxo
-pub fn validate_registration_data(
+pub fn validate_registration_data<TAccountKeys: MaybeFromCandidateKeys>(
 	stake_pool_pub_key: &StakePoolPublicKey,
 	registration_data: &RegistrationData,
 	genesis_utxo: UtxoId,
-) -> Result<(ecdsa::Public, (sr25519::Public, ed25519::Public)), RegistrationDataError> {
-	let aura_pub_key = registration_data
-		.aura_pub_key
-		.try_into_sr25519()
-		.ok_or(RegistrationDataError::InvalidAuraKey)?;
-	let grandpa_pub_key = registration_data
-		.grandpa_pub_key
-		.try_into_ed25519()
-		.ok_or(RegistrationDataError::InvalidGrandpaKey)?;
+) -> Result<(ecdsa::Public, TAccountKeys), RegistrationDataError> {
+	let account_keys = MaybeFromCandidateKeys::maybe_from(&registration_data.keys)
+		.ok_or(RegistrationDataError::InvalidAccountKeys)?;
 	let sidechain_pub_key = ecdsa::Public::from(
 		<[u8; 33]>::try_from(registration_data.sidechain_pub_key.0.clone())
 			.map_err(|_| RegistrationDataError::InvalidSidechainPubKey)?,
@@ -292,7 +279,7 @@ pub fn validate_registration_data(
 	)?;
 	verify_tx_inputs(registration_data)?;
 
-	Ok((sidechain_pub_key, (aura_pub_key, grandpa_pub_key)))
+	Ok((sidechain_pub_key, account_keys))
 }
 
 /// Validates stake delegation. Stake must be known and positive.
@@ -364,7 +351,7 @@ sp_api::decl_runtime_apis! {
 		/// and return [RegistrationDataError] in case of validation failure.
 		///
 		/// Should validate:
-		/// * Aura, GRANDPA, and Partner Chain public keys of the candidate
+		/// * Account keys and Partner Chain public keys of the candidate
 		/// * stake pool signature
 		/// * sidechain signature
 		/// * transaction inputs contain correct registration utxo
@@ -376,7 +363,7 @@ sp_api::decl_runtime_apis! {
 		/// and return [PermissionedCandidateDataError] in case of validation failure.
 		///
 		/// Should validate:
-		/// * Aura, GRANDPA, and Partner Chain public keys of the candidate
+		/// * Account keys and Partner Chain public keys of the candidate
 		fn validate_permissioned_candidate_data(candidate: PermissionedCandidateData) -> Option<PermissionedCandidateDataError>;
 	}
 }
@@ -414,12 +401,10 @@ mod tests {
 			cross_chain_pub_key: CrossChainPublicKey(
 				hex!("020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1").to_vec()
 			),
-			aura_pub_key: AuraPublicKey(hex!(
-					"d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"
-				).to_vec()),
-			grandpa_pub_key: GrandpaPublicKey(hex!(
-					"88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee"
-				).to_vec()),
+			keys: CandidateKeys(vec![
+				CandidateKey{ id: *b"sr25", bytes: hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d").to_vec()},
+				CandidateKey{ id: *b"ed25", bytes: hex!("88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee").to_vec()},
+			]),
 			utxo_info: UtxoInfo {
 				utxo_id: UtxoId {
 					tx_hash: McTxHash(hex!("a32208949e4fe2989f4c4dc3409850af79f266c8603e1d34a330b4d27e03854a")),
@@ -456,6 +441,7 @@ mod tests {
 			CrossChainPublicKey, McTxHash, SidechainPublicKey, SidechainSignature,
 		};
 		use sp_core::Pair;
+		use sp_runtime::key_types::{AURA, GRANDPA};
 
 		fn create_parameters(
 			signing_sidechain_account: ecdsa::Pair,
@@ -484,8 +470,10 @@ mod tests {
 				cross_chain_signature: CrossChainSignature(vec![]),
 				sidechain_pub_key: SidechainPublicKey(sidechain_pub_key),
 				cross_chain_pub_key: CrossChainPublicKey(vec![]),
-				aura_pub_key: AuraPublicKey(vec![1; 32]),
-				grandpa_pub_key: GrandpaPublicKey(vec![2; 32]),
+				keys: CandidateKeys(vec![
+					CandidateKey { id: *b"sr25", bytes: [1u8; 32].to_vec() },
+					CandidateKey { id: *b"ed25", bytes: [2u8; 32].to_vec() },
+				]),
 				utxo_info: UtxoInfo {
 					utxo_id: UtxoId { tx_hash: McTxHash([7u8; 32]), index: UtxoIndex(7) },
 					epoch_number: McEpochNumber(7),
@@ -503,8 +491,12 @@ mod tests {
 		fn should_work() {
 			let (mainchain_pub_key, registration_data, genesis_utxo) = create_valid_parameters();
 			assert!(
-				validate_registration_data(&mainchain_pub_key, &registration_data, genesis_utxo,)
-					.is_ok()
+				validate_registration_data::<AccountKeys>(
+					&mainchain_pub_key,
+					&registration_data,
+					genesis_utxo,
+				)
+				.is_ok()
 			);
 		}
 
@@ -515,7 +507,7 @@ mod tests {
 				StakePoolPublicKey(ed25519::Pair::from_seed_slice(&[0u8; 32]).unwrap().public().0);
 			assert_ne!(mainchain_pub_key, different_mainchain_pub_key);
 			assert_eq!(
-				validate_registration_data(
+				validate_registration_data::<AccountKeys>(
 					&different_mainchain_pub_key,
 					&registration_data,
 					genesis_utxo,
@@ -532,7 +524,11 @@ mod tests {
 			let (mainchain_pub_key, registration_data, genesis_utxo) =
 				create_parameters(signing_sidechain_account, sidechain_pub_key);
 			assert_eq!(
-				validate_registration_data(&mainchain_pub_key, &registration_data, genesis_utxo,),
+				validate_registration_data::<AccountKeys>(
+					&mainchain_pub_key,
+					&registration_data,
+					genesis_utxo,
+				),
 				Err(RegistrationDataError::InvalidSidechainSignature)
 			);
 		}
@@ -544,10 +540,17 @@ mod tests {
 				ecdsa::Pair::from_seed_slice(&[123u8; 32]).unwrap().public().0.to_vec();
 			let (mainchain_pub_key, mut registration_data, genesis_utxo) =
 				create_parameters(signing_sidechain_account, sidechain_pub_key);
-			registration_data.grandpa_pub_key = GrandpaPublicKey(vec![3; 4]);
+			registration_data.keys = CandidateKeys(vec![
+				AuraPublicKey(vec![1; 32]).into(),
+				GrandpaPublicKey(vec![3; 4]).into(),
+			]);
 			assert_eq!(
-				validate_registration_data(&mainchain_pub_key, &registration_data, genesis_utxo,),
-				Err(RegistrationDataError::InvalidGrandpaKey)
+				validate_registration_data::<AccountKeys>(
+					&mainchain_pub_key,
+					&registration_data,
+					genesis_utxo,
+				),
+				Err(RegistrationDataError::InvalidAccountKeys)
 			);
 		}
 
@@ -558,10 +561,17 @@ mod tests {
 				ecdsa::Pair::from_seed_slice(&[123u8; 32]).unwrap().public().0.to_vec();
 			let (mainchain_pub_key, mut registration_data, genesis_utxo) =
 				create_parameters(signing_sidechain_account, sidechain_pub_key);
-			registration_data.aura_pub_key = AuraPublicKey(vec![3; 4]);
+			registration_data.keys = CandidateKeys(vec![
+				CandidateKey::new(AURA, vec![3; 4]),
+				CandidateKey::new(GRANDPA, vec![2; 32]),
+			]);
 			assert_eq!(
-				validate_registration_data(&mainchain_pub_key, &registration_data, genesis_utxo),
-				Err(RegistrationDataError::InvalidAuraKey)
+				validate_registration_data::<AccountKeys>(
+					&mainchain_pub_key,
+					&registration_data,
+					genesis_utxo
+				),
+				Err(RegistrationDataError::InvalidAccountKeys)
 			);
 		}
 
@@ -574,7 +584,7 @@ mod tests {
 			.unwrap();
 			assert_ne!(different_genesis_utxo, genesis_utxo);
 			assert!(
-				validate_registration_data(
+				validate_registration_data::<AccountKeys>(
 					&mainchain_pub_key,
 					&registration_data,
 					different_genesis_utxo,
@@ -589,7 +599,11 @@ mod tests {
 				create_valid_parameters();
 			registration_data.tx_inputs = vec![];
 			assert_eq!(
-				validate_registration_data(&mainchain_pub_key, &registration_data, genesis_utxo,),
+				validate_registration_data::<AccountKeys>(
+					&mainchain_pub_key,
+					&registration_data,
+					genesis_utxo,
+				),
 				Err(RegistrationDataError::InvalidTxInput)
 			);
 		}
@@ -636,18 +650,25 @@ mod tests {
 		let valid_sidechain_pub_key = SidechainPublicKey(
 			ecdsa::Pair::from_seed_slice(&[123u8; 32]).unwrap().public().0.to_vec(),
 		);
+		let aura_key_bytes =
+			hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d");
+		let valid_aura_key = CandidateKey { id: *b"sr25", bytes: aura_key_bytes.to_vec() };
+		let grandpa_key_bytes =
+			hex!("88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee");
+		let valid_grandpa_key = CandidateKey { id: *b"ed25", bytes: grandpa_key_bytes.to_vec() };
 		let valid_candidate = PermissionedCandidateData {
 			sidechain_public_key: valid_sidechain_pub_key.clone(),
-			aura_public_key: AuraPublicKey(
-				hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d").into(),
-			),
-			grandpa_public_key: GrandpaPublicKey(
-				hex!("88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee").into(),
-			),
+			keys: CandidateKeys(vec![
+				valid_aura_key.clone().into(),
+				valid_grandpa_key.clone().into(),
+			]),
 		};
 		let permissioned_candidates = vec![
 			PermissionedCandidateData {
-				aura_public_key: AuraPublicKey(vec![1; 2]),
+				keys: CandidateKeys(vec![
+					AuraPublicKey(vec![1, 2]).into(),
+					valid_grandpa_key.clone().into(),
+				]),
 				..valid_candidate.clone()
 			},
 			PermissionedCandidateData {
@@ -655,7 +676,10 @@ mod tests {
 				..valid_candidate.clone()
 			},
 			PermissionedCandidateData {
-				grandpa_public_key: GrandpaPublicKey(vec![3; 4]),
+				keys: CandidateKeys(vec![
+					valid_aura_key.clone().into(),
+					GrandpaPublicKey(vec![3; 4]).into(),
+				]),
 				..valid_candidate.clone()
 			},
 			valid_candidate.clone(),
@@ -670,11 +694,10 @@ mod tests {
 		);
 		assert_eq!(
 			valid_candidates.first().unwrap().account_keys(),
-			&(
-				valid_candidate.aura_public_key.try_into_sr25519().unwrap(),
-				valid_candidate.grandpa_public_key.try_into_ed25519().unwrap()
-			)
-				.into()
+			&AccountKeys {
+				aura: sp_core::sr25519::Public::from(aura_key_bytes).into(),
+				grandpa: sp_core::ed25519::Public::from(grandpa_key_bytes).into(),
+			}
 		);
 	}
 }

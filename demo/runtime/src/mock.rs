@@ -1,6 +1,5 @@
-use authority_selection_inherents::ariadne_inherent_data_provider::AriadneInherentDataProvider;
-use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
-use authority_selection_inherents::filter_invalid_candidates::{
+use authority_selection_inherents::{
+	AriadneInherentDataProvider, AuthoritySelectionInputs, MaybeFromCandidateKeys,
 	RegisterValidatorSignedMessage, filter_trustless_candidates_registrations,
 };
 use frame_support::{
@@ -18,6 +17,8 @@ use sp_consensus_grandpa::AuthorityId as GrandpaId;
 use sp_core::crypto::CryptoType;
 use sp_core::sr25519;
 use sp_core::{ByteArray, ConstU128, H256, Pair, crypto::AccountId32, ed25519};
+use sp_runtime::KeyTypeId;
+use sp_runtime::key_types::{AURA, GRANDPA};
 use sp_runtime::{
 	BuildStorage, Digest, DigestItem, MultiSigner, impl_opaque_keys,
 	traits::{BlakeTwo256, IdentifyAccount, IdentityLookup, OpaqueKeys},
@@ -115,11 +116,27 @@ impl_opaque_keys! {
 		pub grandpa: Grandpa,
 	}
 }
+
+impl MaybeFromCandidateKeys for TestSessionKeys {}
+
 impl From<(sr25519::Public, ed25519::Public)> for TestSessionKeys {
 	fn from((aura, grandpa): (sr25519::Public, ed25519::Public)) -> Self {
 		let aura = AuraId::from(aura);
 		let grandpa = GrandpaId::from(grandpa);
 		Self { aura, grandpa }
+	}
+}
+
+impl TryFrom<CandidateKeys> for TestSessionKeys {
+	type Error = KeyTypeId;
+	fn try_from(value: CandidateKeys) -> Result<Self, Self::Error> {
+		let aura = <[u8; 32]>::try_from(value.find_or_empty(AURA))
+			.map_err(|_| AURA)
+			.map(|bytes| AuraId::from(sr25519::Public::from(bytes)))?;
+		let grandpa = <[u8; 32]>::try_from(value.find_or_empty(GRANDPA))
+			.map_err(|_| GRANDPA)
+			.map(|bytes| GrandpaId::from(ed25519::Public::from(bytes)))?;
+		Ok(Self { aura, grandpa })
 	}
 }
 
@@ -341,8 +358,7 @@ pub fn create_inherent_data_struct(
 					validator.cross_chain.public().into_inner().0.to_vec(),
 				),
 				cross_chain_pub_key: CrossChainPublicKey(vec![]),
-				aura_pub_key: AuraPublicKey(validator.aura.public().as_slice().into()),
-				grandpa_pub_key: GrandpaPublicKey(validator.grandpa.public().as_slice().into()),
+				keys: validator.candidate_keys(),
 				utxo_info: UtxoInfo::default(),
 				tx_inputs: vec![signed_message.registration_utxo],
 			};
@@ -389,6 +405,15 @@ impl TestKeys {
 	}
 	pub fn session(&self) -> TestSessionKeys {
 		TestSessionKeys { aura: self.aura.public(), grandpa: self.grandpa.public() }
+	}
+	pub fn candidate_keys(&self) -> CandidateKeys {
+		CandidateKeys(
+			self.session()
+				.into_raw_public_keys()
+				.into_iter()
+				.map(|(value, key_type_id)| CandidateKey::new(key_type_id, value))
+				.collect(),
+		)
 	}
 }
 

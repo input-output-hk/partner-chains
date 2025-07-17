@@ -40,6 +40,7 @@ hex-literal = { workspace = true }
 num-bigint = { workspace = true }
 num-traits = { workspace = true }
 tokio = { workspace = true }
+sp-application-crypto = { workspace = true }
 
 [features]
 default = ["std"]
@@ -47,19 +48,19 @@ std = [
 	"frame-support/std",
 	"sidechain-domain/std",
 	"parity-scale-codec/std",
-    "serde/std",
-    "sidechain-slots",
-    "sidechain-slots/std",
-    "sidechain-slots/serde",
-    "sp-api/std",
-    "sp-session-validator-management/std",
-    "sp-session-validator-management/serde",
-    "sp-core/std",
-    "sp-inherents/std",
-    "sp-runtime/std",
-    "sp-std/std",
-    "thiserror",
-    "async-trait",
-    "selection/std",
+	"serde/std",
+	"sidechain-slots",
+	"sidechain-slots/std",
+	"sidechain-slots/serde",
+	"sp-api/std",
+	"sp-session-validator-management/std",
+	"sp-session-validator-management/serde",
+	"sp-core/std",
+	"sp-inherents/std",
+	"sp-runtime/std",
+	"sp-std/std",
+	"thiserror",
+	"async-trait",
+	"selection/std",
 ]
 mock = []

@@ -31,10 +31,10 @@ use partner_chains_cardano_offchain::{
 };
 use partner_chains_plutus_data::reserve::ReserveDatum;
 use sidechain_domain::{
-	AdaBasedStaking, AssetId, AssetName, AuraPublicKey, CandidateRegistration, DParameter,
-	GrandpaPublicKey, MainchainKeyHash, MainchainSignature, McTxHash, PermissionedCandidateData,
-	PolicyId, SidechainPublicKey, SidechainSignature, StakePoolPublicKey, UtxoId, UtxoIndex,
-	byte_string::ByteString,
+	AdaBasedStaking, AssetId, AssetName, AuraPublicKey, CandidateKeys, CandidateRegistration,
+	DParameter, GrandpaPublicKey, MainchainKeyHash, MainchainSignature, McTxHash,
+	PermissionedCandidateData, PolicyId, SidechainPublicKey, SidechainSignature,
+	StakePoolPublicKey, UtxoId, UtxoIndex, byte_string::ByteString,
 };
 use std::time::Duration;
 use testcontainers::{Container, GenericImage, clients::Cli};
@@ -547,8 +547,10 @@ async fn run_upsert_permissioned_candidates<
 fn make_candidate(n: u8) -> PermissionedCandidateData {
 	PermissionedCandidateData {
 		sidechain_public_key: SidechainPublicKey([n; 33].to_vec()),
-		aura_public_key: AuraPublicKey([n; 32].to_vec()),
-		grandpa_public_key: GrandpaPublicKey([n; 32].to_vec()),
+		keys: CandidateKeys(vec![
+			AuraPublicKey([n; 32].to_vec()).into(),
+			GrandpaPublicKey([n; 32].to_vec()).into(),
+		]),
 	}
 }
 
@@ -692,8 +694,10 @@ async fn run_register<T: QueryLedgerState + Transactions + QueryNetwork + QueryU
 			partner_chain_signature: partnerchain_signature,
 			own_pkh: EVE_PUBLIC_KEY_HASH,
 			registration_utxo,
-			aura_pub_key: AuraPublicKey([22u8; 32].to_vec()),
-			grandpa_pub_key: GrandpaPublicKey([23u8; 32].to_vec()),
+			keys: CandidateKeys(vec![
+				AuraPublicKey([22u8; 32].to_vec()).into(),
+				GrandpaPublicKey([23u8; 32].to_vec()).into(),
+			]),
 		},
 		&eve_payment_key(),
 		client,

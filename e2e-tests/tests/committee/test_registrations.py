@@ -45,10 +45,10 @@ def test_register_candidate(genesis_utxo: str, candidate: Candidates, api: Block
         registered_mc_pub_key == registration["mainchainPubKey"]
     ), f"Could not find MC public key {registered_mc_pub_key} registered for MC epoch {next_status_epoch}"
     assert (
-        registered_aura_pub_key == registration["auraPubKey"]
+        registered_aura_pub_key == registration["keys"]["aura"]
     ), f"Could not find Aura public key {registered_aura_pub_key} registered for MC epoch {next_status_epoch}"
     assert (
-        registered_grandpa_pub_key == registration["grandpaPubKey"]
+        registered_grandpa_pub_key == registration["keys"]["gran"]
     ), f"Could not find Grandpa public key {registered_grandpa_pub_key} registered for MC epoch {next_status_epoch}"
     assert registration[
         "isValid"
