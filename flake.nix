@@ -4,10 +4,7 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     
-    crane = {
-      url = "github:ipetkov/crane";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    crane.url = "github:ipetkov/crane";
 
     fenix = {
       url = "github:nix-community/fenix";
@@ -42,14 +39,45 @@
 
         craneLib = (crane.mkLib pkgs).overrideToolchain rustToolchain;
 
+        shellEnv = {
+          CC_ENABLE_DEBUG_OUTPUT = "1";
+          CRATE_CC_NO_DEFAULTS = 1;
+          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
+            rustToolchain
+            pkgs.stdenv.cc.cc
+            pkgs.libz
+            pkgs.clang
+          ];
+          
+          BINDGEN_EXTRA_CLANG_ARGS = if pkgs.lib.hasSuffix "linux" system then "-I${pkgs.glibc.dev}/include -I${pkgs.clang.cc.lib}/lib/clang/19/include" else "";
+          LIBCLANG_PATH = "${pkgs.clang.cc.lib}/lib";
+
+          CFLAGS = if pkgs.lib.hasSuffix "linux" system then
+            "-DJEMALLOC_STRERROR_R_RETURNS_CHAR_WITH_GNU_SOURCE"
+          else
+            "";
+
+          PROTOC = "${pkgs.protobuf}/bin/protoc";
+          #C_INCLUDE_PATH = "${pkgs.clang.cc.lib}/lib/clang/19/include";
+          
+          # RocksDB configuration - use system library
+          ROCKSDB_LIB_DIR = "${pkgs.rocksdb}/lib/";
+          OPENSSL_NO_VENDOR = 1;
+          OPENSSL_DIR = "${pkgs.openssl.dev}";
+          OPENSSL_INCLUDE_DIR = "${pkgs.openssl.dev}/include";
+          OPENSSL_LIB_DIR = "${pkgs.openssl.out}/lib";
+
+          RUSTFLAGS = pkgs.lib.optionalString pkgs.stdenv.hostPlatform.isDarwin
+            "--cfg unwinding_backport --cfg unwinding_apple";
+        };
+
         # Common build inputs for all targets
         commonArgs = {
+          pname = "partner-chains-demo-node"; 
           src = pkgs.lib.cleanSourceWith {
             src = self;
             filter = path: type:
-              # Include all files that crane normally includes
               (craneLib.filterCargoSources path type) ||
-              # Also include examples directories and JSON files
               (pkgs.lib.hasSuffix "examples" path) ||
               (pkgs.lib.hasSuffix ".json" path);
           };
@@ -70,54 +98,21 @@
             llvmPackages.lld
           ];
 
-          # Environment variables
-          CC_ENABLE_DEBUG_OUTPUT = "1";
-          CRATE_CC_NO_DEFAULTS = 1;
-          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
-            rustToolchain
-            pkgs.stdenv.cc.cc
-            pkgs.libz
-            pkgs.clang
-          ];
-          
-          BINDGEN_EXTRA_CLANG_ARGS = if pkgs.lib.hasSuffix "linux" system then "-I${pkgs.glibc.dev}/include -I${pkgs.clang.cc.lib}/lib/clang/19/include" else "";
-          LIBCLANG_PATH = "${pkgs.clang.cc.lib}/lib";
-
-          # Platform-specific flags
-          CFLAGS = if pkgs.lib.hasSuffix "linux" system then
-            "-DJEMALLOC_STRERROR_R_RETURNS_CHAR_WITH_GNU_SOURCE"
-          else
-            "";
-
-          PROTOC = "${pkgs.protobuf}/bin/protoc";
           doCheck = false;
-          #C_INCLUDE_PATH = "${pkgs.clang.cc.lib}/lib/clang/19/include";
-          
-          # RocksDB configuration - use system library
-          ROCKSDB_LIB_DIR = "${pkgs.rocksdb}/lib/";
-          OPENSSL_NO_VENDOR = 1;
-          OPENSSL_DIR = "${pkgs.openssl.dev}";
-          OPENSSL_INCLUDE_DIR = "${pkgs.openssl.dev}/include";
-          OPENSSL_LIB_DIR = "${pkgs.openssl.out}/lib";
+        } // shellEnv;
 
-          RUSTFLAGS = pkgs.lib.optionalString pkgs.stdenv.hostPlatform.isDarwin
-            "--cfg unwinding_backport --cfg unwinding_apple";
-
-        };
-
-        # Build the workspace dependencies
+        # Build the workspace dependencies separately
         cargoArtifacts = craneLib.buildDepsOnly (commonArgs // {
-          pname = "partner-chains-deps";
+          pname = "partner-chains-demo-node-deps";
         });
 
-        # Build the main binary
-        partner-chains = craneLib.buildPackage (commonArgs // {
-          pname = "partner-chains";
+        partner-chains-demo-node = craneLib.buildPackage (commonArgs // {
+          pname = "partner-chains-demo-node";
           version = (builtins.fromTOML (builtins.readFile ./Cargo.toml)).workspace.package.version;
           
           inherit cargoArtifacts;
 
-          # Git commit hash for Substrate CLI
+          # Git commit hash for partner-chains CLI --version flag
           SUBSTRATE_CLI_GIT_COMMIT_HASH = self.dirtyShortRev or self.shortRev;
           
           postFixup = pkgs.lib.optionalString pkgs.stdenv.hostPlatform.isLinux ''
@@ -125,35 +120,36 @@
           '';
         });
 
-        # Run tests
         cargoTest = craneLib.cargoTest (commonArgs // {
           inherit cargoArtifacts;
         });
 
-        # Run clippy
         cargoClippy = craneLib.cargoClippy (commonArgs // {
           inherit cargoArtifacts;
           cargoClippyExtraArgs = "--all-targets -- --deny warnings";
         });
 
-        # Run fmt check
         cargoFmt = craneLib.cargoFmt {
-          inherit (commonArgs) src;
+          inherit (commonArgs) pname src;
         };
 
       in
       {
-        checks = {
+        checks = { 
           # Build the crate as part of `nix flake check`
-          inherit partner-chains cargoTest cargoClippy cargoFmt;
+          inherit partner-chains-demo-node cargoTest cargoClippy cargoFmt;
         };
 
         packages = {
-          default = partner-chains;
-          inherit partner-chains;
+          default = partner-chains-demo-node;
+          inherit partner-chains-demo-node;
         };
+        devShells.default = craneLib.devShell ({
+          name = "partner-chains-demo-node-shell";
+          # Inherit inputs from checks, which pulls in the build environment from packages.default (and others)
+          checks = self.checks.${system};
 
-        devShells.default = pkgs.mkShell {
+          # Extra packages for the dev shell
           packages = with pkgs; [
             awscli2
             bashInteractive
@@ -161,7 +157,6 @@
             cargo-license
             coreutils
             docker-compose
-            earthly
             gawk
             gnumake
             kubectl
@@ -177,32 +172,11 @@
             rustToolchain
             sops
             xxd
-          ] ++ (if pkgs.stdenv.hostPlatform.isDarwin then 
-            [ pkgs.darwin.apple_sdk.frameworks.SystemConfiguration ] 
-          else 
-            [ pkgs.clang ]);
-
-          shellHook = ''
-            export RUST_SRC_PATH="${rustToolchain}/lib/rustlib/src/rust/library"
-            export LIBCLANG_PATH="${pkgs.libclang.lib}/lib"
-            export LD_LIBRARY_PATH="${
-              pkgs.lib.makeLibraryPath [
-                rustToolchain
-                pkgs.libz
-                pkgs.stdenv.cc.cc
-              ]
-            }"
-
-            export OPENSSL_NO_VENDOR=1
-            export OPENSSL_DIR="${pkgs.openssl.dev}"
-            export OPENSSL_INCLUDE_DIR="${pkgs.openssl.dev}/include"
-            export OPENSSL_LIB_DIR="${pkgs.openssl.out}/lib"
-
-            export PYTHONNOUSERSITE=1
-            export CRATE_CC_NO_DEFAULTS=1
-            ${if pkgs.stdenv.hostPlatform.isLinux then "export CFLAGS=-DJEMALLOC_STRERROR_R_RETURNS_CHAR_WITH_GNU_SOURCE" else ""}
-          '';
-        };
+          ] ++ (if pkgs.stdenv.hostPlatform.isDarwin then
+            [ pkgs.darwin.apple_sdk.frameworks.SystemConfiguration ]
+          else
+            [pkgs.clang]);
+        } // shellEnv);
 
         formatter = pkgs.nixfmt-rfc-style;
       });
