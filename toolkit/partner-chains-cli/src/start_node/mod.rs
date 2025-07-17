@@ -5,14 +5,17 @@ use crate::io::IOContext;
 use crate::keystore::*;
 use crate::{config::config_fields, *};
 use serde::Deserialize;
+use std::marker::PhantomData;
 
 #[cfg(test)]
 mod tests;
 
 #[derive(Clone, Debug, clap::Parser)]
-pub struct StartNodeCmd {
+pub struct StartNodeCmd<T: PartnerChainRuntime> {
 	#[arg(long)]
 	silent: bool,
+	#[clap(skip)]
+	_phantom: PhantomData<T>,
 }
 
 pub struct StartNodeConfig {
@@ -37,11 +40,11 @@ pub struct StartNodeChainConfig {
 	pub bootnodes: Vec<String>,
 }
 
-impl CmdRun for StartNodeCmd {
+impl<T: PartnerChainRuntime> CmdRun for StartNodeCmd<T> {
 	fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
 		let config = StartNodeConfig::load(context);
 
-		if !check_keystore(&config, context)? || !check_chain_spec(context) {
+		if !check_keystore::<C, T>(&config, context)? || !check_chain_spec(context) {
 			return Ok(());
 		}
 
@@ -56,7 +59,7 @@ impl CmdRun for StartNodeCmd {
 			return Ok(());
 		}
 
-		start_node(config, chain_config, &db_connection_string, context)?;
+		start_node::<C, T>(config, chain_config, &db_connection_string, context)?;
 
 		Ok(())
 	}
@@ -117,11 +120,15 @@ fn check_chain_spec<C: IOContext>(context: &C) -> bool {
 	}
 }
 
-fn check_keystore<C: IOContext>(config: &StartNodeConfig, context: &C) -> anyhow::Result<bool> {
+fn check_keystore<C: IOContext, T: PartnerChainRuntime>(
+	config: &StartNodeConfig,
+	context: &C,
+) -> anyhow::Result<bool> {
 	let existing_keys = context.list_directory(&config.keystore_path())?.unwrap_or_default();
-	Ok(key_present(&AURA, &existing_keys, context)
-		&& key_present(&GRANDPA, &existing_keys, context)
-		&& key_present(&CROSS_CHAIN, &existing_keys, context))
+	Ok(key_present(&CROSS_CHAIN, &existing_keys, context)
+		&& T::key_definitions()
+			.iter()
+			.all(|key_def| key_present(key_def, &existing_keys, context)))
 }
 
 fn key_present<C: IOContext>(key: &KeyDefinition, existing_keys: &[String], context: &C) -> bool {
@@ -136,7 +143,7 @@ fn key_present<C: IOContext>(key: &KeyDefinition, existing_keys: &[String], cont
 	}
 }
 
-pub fn start_node<C: IOContext>(
+pub fn start_node<C: IOContext, T: PartnerChainRuntime>(
 	StartNodeConfig { substrate_node_base_path }: StartNodeConfig,
 	StartNodeChainConfig {
 		cardano:

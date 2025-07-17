@@ -65,7 +65,7 @@ pub enum Command<T: PartnerChainRuntime + Send + Sync> {
 	CreateChainSpec(create_chain_spec::CreateChainSpecCmd<T>),
 	/// Wizard for starting a substrate node in the environment set up by `generate-keys`,
 	/// `prepare-config`, and `create-chain-spec`. It also assists in setting the `resources configuration`.
-	StartNode(start_node::StartNodeCmd),
+	StartNode(start_node::StartNodeCmd<T>),
 	/// The first step of registering as a committee candidate. Registration is split into three steps to allow the user to use their cold keys on a cold machine.
 	Register1(register::register1::Register1Cmd),
 	/// The second step of registering as a committee candidate, using cold keys.
