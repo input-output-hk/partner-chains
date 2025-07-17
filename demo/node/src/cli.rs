@@ -1,9 +1,7 @@
 use clap::command;
 use partner_chains_cli::{AURA, GRANDPA, KeyDefinition};
 use partner_chains_demo_runtime::opaque::SessionKeys;
-use partner_chains_node_commands::{
-	PartnerChainRuntime, PartnerChainsSubcommand, RuntimeTypeWrapper,
-};
+use partner_chains_node_commands::{PartnerChainRuntime, PartnerChainsSubcommand};
 use sc_cli::RunCmd;
 use sp_runtime::AccountId32;
 
@@ -18,9 +16,6 @@ pub struct Cli {
 
 #[derive(Debug, Clone)]
 pub struct WizardBindings;
-impl RuntimeTypeWrapper for WizardBindings {
-	type Runtime = partner_chains_demo_runtime::Runtime;
-}
 
 impl PartnerChainRuntime for WizardBindings {
 	type Keys = SessionKeys;
