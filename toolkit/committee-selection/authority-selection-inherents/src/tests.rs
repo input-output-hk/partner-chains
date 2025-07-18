@@ -1,7 +1,7 @@
-use crate::MaybeFromCandidateKeys;
 use crate::authority_selection_inputs::AuthoritySelectionInputs;
 use crate::filter_invalid_candidates::RegisterValidatorSignedMessage;
 use crate::select_authorities::select_authorities;
+use crate::{AutoMaybeFromCandidateKeys, MaybeFromCandidateKeys};
 use hex_literal::hex;
 use num_bigint::BigInt;
 use parity_scale_codec::Encode;
@@ -93,7 +93,7 @@ impl_opaque_keys! {
 	}
 }
 
-impl MaybeFromCandidateKeys for AccountKeys {}
+impl AutoMaybeFromCandidateKeys for AccountKeys {}
 
 impl AccountKeys {
 	pub fn from_seed(seed: &str) -> AccountKeys {
