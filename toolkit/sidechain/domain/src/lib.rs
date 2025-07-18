@@ -1226,6 +1226,11 @@ impl CandidateKeys {
 	pub fn find_or_empty(&self, id: KeyTypeId) -> Vec<u8> {
 		self.find(id).unwrap_or_default()
 	}
+
+	/// True for keys that are only AURA and Grandpa
+	pub fn has_only_aura_and_grandpa_keys(&self) -> bool {
+		self.0.len() == 2 && self.find(AURA).is_some() && self.find(GRANDPA).is_some()
+	}
 }
 
 impl From<Vec<([u8; 4], Vec<u8>)>> for CandidateKeys {
