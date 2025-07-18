@@ -1,4 +1,6 @@
-use crate::tests::{CHAIN_CONFIG_FILE_PATH, MockIO, MockIOContext, RESOURCES_CONFIG_FILE_PATH};
+use crate::tests::{
+	CHAIN_CONFIG_FILE_PATH, MockIO, MockIOContext, RESOURCES_CONFIG_FILE_PATH, runtime::MockRuntime,
+};
 
 use super::*;
 
@@ -10,9 +12,9 @@ const DB_CONNECTION_STRING: &str =
 fn keystore_path() -> String {
 	format!("{DATA_PATH}/keystore")
 }
-const GRANDPA_PREFIX: &str = "6772616e"; // "gran" in hex
+const ED25_PREFIX: &str = "65643235"; // "ed25" in hex
 const CROSS_CHAIN_PREFIX: &str = "63726368"; // "crch" in hex
-const AURA_PREFIX: &str = "61757261"; // "aura" in hex
+const SR25_PREFIX: &str = "73723235"; // "sr25" in hex
 
 fn default_config() -> StartNodeConfig {
 	StartNodeConfig { substrate_node_base_path: DATA_PATH.into() }
@@ -107,8 +109,8 @@ fn happy_path() {
 		format!(
 			"{CROSS_CHAIN_PREFIX}020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1"
 		),
-		format!("{AURA_PREFIX}aura-key"),
-		format!("{GRANDPA_PREFIX}grandpa-key"),
+		format!("{SR25_PREFIX}sr25-key"),
+		format!("{ED25_PREFIX}ed25-key"),
 	];
 
 	let context = MockIOContext::new()
@@ -127,7 +129,7 @@ fn happy_path() {
 			MockIO::run_command(&default_chain_config_run_command(), "irrelevant")
 		]);
 
-	let result = StartNodeCmd { silent: false }.run(&context);
+	let result = StartNodeCmd::<MockRuntime> { silent: false, _phantom: PhantomData }.run(&context);
 
 	result.expect("should succeed");
 	verify_json!(context, RESOURCES_CONFIG_FILE_PATH, expected_final_resources_config_json());
@@ -169,15 +171,15 @@ mod check_keystore {
 	fn passes_when_all_present() {
 		let keystore_files = vec![
 			format!("{CROSS_CHAIN_PREFIX}cross-chain-key"),
-			format!("{AURA_PREFIX}aura-key"),
-			format!("{GRANDPA_PREFIX}grandpa-key"),
+			format!("{SR25_PREFIX}sr25-key"),
+			format!("{ED25_PREFIX}ed25-key"),
 		];
 		#[rustfmt::skip]
 		let context = MockIOContext::new().with_expected_io(vec![
 			MockIO::list_dir(&keystore_path(), Some(keystore_files.clone())),
 		]);
 
-		let result = check_keystore(&default_config(), &context);
+		let result = check_keystore::<MockIOContext, MockRuntime>(&default_config(), &context);
 
 		result.expect("should succeed");
 	}
@@ -186,16 +188,16 @@ mod check_keystore {
 	fn fails_when_one_is_missing() {
 		let keystore_files = vec![
 			format!("{CROSS_CHAIN_PREFIX}cross-chain-key"),
-			format!("{GRANDPA_PREFIX}grandpa-key"),
+			format!("{ED25_PREFIX}grandpa-key"),
 		];
 		let context = MockIOContext::new().with_expected_io(vec![
 			MockIO::list_dir(&keystore_path(), Some(keystore_files.clone())),
 			MockIO::eprint(
-				"⚠️ AURA key is missing from the keystore. Please run generate-keys wizard first.",
+				"⚠️ TestAuraLike key is missing from the keystore. Please run generate-keys wizard first.",
 			),
 		]);
 
-		let result = check_keystore(&default_config(), &context);
+		let result = check_keystore::<MockIOContext, MockRuntime>(&default_config(), &context);
 		let result = result.expect("should succeed");
 		assert!(!result);
 	}

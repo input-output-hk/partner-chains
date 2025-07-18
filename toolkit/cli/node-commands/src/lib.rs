@@ -12,7 +12,7 @@ use cli_commands::registration_signatures::RegistrationSignaturesCmd;
 use frame_support::sp_runtime::traits::NumberFor;
 use parity_scale_codec::{Decode, Encode};
 use partner_chains_cli::DefaultCmdRunContext;
-pub use partner_chains_cli::{PartnerChainRuntime, RuntimeTypeWrapper};
+pub use partner_chains_cli::PartnerChainRuntime;
 use partner_chains_smart_contracts_commands::SmartContractsCmd;
 use sc_cli::{CliConfiguration, SharedParams, SubstrateCli};
 use sc_service::TaskManager;
