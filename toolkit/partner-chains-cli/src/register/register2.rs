@@ -26,6 +26,15 @@ pub struct Register2Cmd {
 
 impl CmdRun for Register2Cmd {
 	fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
+		let Register2Cmd {
+			genesis_utxo,
+			registration_utxo,
+			partner_chain_pub_key,
+			aura_pub_key,
+			grandpa_pub_key,
+			partner_chain_signature,
+		} = self;
+
 		context.print("⚙️ Register as a committee candidate (step 2/3)");
 		context.print(
 			"  This command will use SPO cold signing key for signing the registration message.",
@@ -50,8 +59,16 @@ impl CmdRun for Register2Cmd {
 		let executable = context.current_executable()?;
 		context.print("To finish the registration process, run the following command on the machine with the partner chain dependencies running:\n");
 		context.print(&format!(
-			"{executable} wizards register3 \\\n--genesis-utxo {} \\\n--registration-utxo {} \\\n--aura-pub-key {} \\\n--grandpa-pub-key {} \\\n--partner-chain-pub-key {} \\\n--partner-chain-signature {} \\\n--spo-public-key {} \\\n--spo-signature {}",
-			self.genesis_utxo, self.registration_utxo, self.aura_pub_key, self.grandpa_pub_key, self.partner_chain_pub_key, self.partner_chain_signature, spo_public_key, spo_signature));
+			"{executable} wizards register3 \\
+--genesis-utxo {genesis_utxo} \\
+--registration-utxo {registration_utxo} \\
+--aura-pub-key {aura_pub_key} \\
+--grandpa-pub-key {grandpa_pub_key} \\
+--partner-chain-pub-key {partner_chain_pub_key} \\
+--partner-chain-signature {partner_chain_signature} \\
+--spo-public-key {spo_public_key} \\
+--spo-signature {spo_signature}"
+		));
 		Ok(())
 	}
 }
