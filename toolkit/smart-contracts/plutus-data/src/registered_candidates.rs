@@ -200,7 +200,7 @@ fn decode_v1_register_validator_datum(
 		.data();
 
 	let stake_ownership = decode_ada_based_staking_datum(fields.get(0))?;
-	let sidechain_pub_key = SidechainPublicKey(decode_candidate_key(&fields.get(1))?.bytes);
+	let sidechain_pub_key = fields.get(1).as_bytes().map(SidechainPublicKey)?;
 	let sidechain_signature = fields.get(2).as_bytes().map(SidechainSignature)?;
 	let registration_utxo = decode_utxo_id_datum(fields.get(3))?;
 	let keys = decode_candidate_keys(&fields.get(4))?;
@@ -309,18 +309,22 @@ impl From<RegisterValidatorDatum> for PlutusData {
 			} => {
 				let mut appendix_fields = PlutusList::new();
 				appendix_fields.add(&stake_ownership_to_plutus_data(stake_ownership));
-				appendix_fields.add(&candidate_key_to_plutus(&CandidateKey::new(
-					CROSS_CHAIN_KEY_TYPE_ID,
-					sidechain_pub_key.0,
-				)));
+				appendix_fields.add(&PlutusData::new_bytes(sidechain_pub_key.0));
 				appendix_fields.add(&PlutusData::new_bytes(sidechain_signature.0));
 				appendix_fields.add(&utxo_id_to_plutus_data(registration_utxo));
-				appendix_fields.add(&candidate_keys_to_plutus(&keys));
+				let version = if keys.has_only_aura_and_grandpa_keys() {
+					appendix_fields.add(&PlutusData::new_bytes(keys.find_or_empty(AURA)));
+					appendix_fields.add(&PlutusData::new_bytes(keys.find_or_empty(GRANDPA)));
+					0
+				} else {
+					appendix_fields.add(&candidate_keys_to_plutus(&keys));
+					1
+				};
 				let appendix = ConstrPlutusData::new(&BigNum::zero(), &appendix_fields);
 				VersionedGenericDatum {
 					datum: PlutusData::new_bytes(own_pkh.0.to_vec()),
 					appendix: PlutusData::new_constr_plutus_data(&appendix),
-					version: 1,
+					version,
 				}
 				.into()
 			},
@@ -373,7 +377,7 @@ mod tests {
 		}
 	}
 
-	fn test_datum_v1() -> RegisterValidatorDatum {
+	fn test_datum_v1_aura_and_grandpa_only() -> RegisterValidatorDatum {
 		RegisterValidatorDatum::V1 {
 			stake_ownership: AdaBasedStaking {
 				pub_key: StakePoolPublicKey(hex!("bfbee74ab533f40979101057f96de62e95233f2a5216eb16b54106f09fd7350d")),
@@ -397,6 +401,26 @@ mod tests {
 							.into(),
 					),
 				])
+		}
+	}
+
+	fn test_datum_v1() -> RegisterValidatorDatum {
+		RegisterValidatorDatum::V1 {
+			stake_ownership: AdaBasedStaking {
+				pub_key: StakePoolPublicKey(hex!("bfbee74ab533f40979101057f96de62e95233f2a5216eb16b54106f09fd7350d")),
+				signature: MainchainSignature(hex!("28d1c3b7df297a60d24a3f88bc53d7029a8af35e8dd876764fd9e7a24203a3482a98263cc8ba2ddc7dc8e7faea31c2e7bad1f00e28c43bc863503e3172dc6b0a").into()),
+			},
+			sidechain_pub_key: SidechainPublicKey(hex!("02fe8d1eb1bcb3432b1db5833ff5f2226d9cb5e65cee430558c18ed3a3c86ce1af").into()),
+			sidechain_signature: SidechainSignature(hex!("f8ec6c7f935d387aaa1693b3bf338cbb8f53013da8a5a234f9c488bacac01af259297e69aee0df27f553c0a1164df827d016125c16af93c99be2c19f36d2f66e").into()),
+			registration_utxo: UtxoId {
+				tx_hash: McTxHash(hex!("cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13")),
+				index: UtxoIndex(1),
+			},
+			own_pkh: MainchainKeyHash(hex!("aabbccddeeff00aabbccddeeff00aabbccddeeff00aabbccddeeff00")),
+			keys: CandidateKeys(vec![
+				CandidateKey { id: [0; 4], bytes: [1; 32].to_vec() },
+				CandidateKey { id: [2; 4], bytes: [3; 32].to_vec() },
+			]),
 		}
 	}
 
@@ -481,7 +505,7 @@ mod tests {
 								{"bytes": "28d1c3b7df297a60d24a3f88bc53d7029a8af35e8dd876764fd9e7a24203a3482a98263cc8ba2ddc7dc8e7faea31c2e7bad1f00e28c43bc863503e3172dc6b0a" }
 							]
 						},
-						{"list": [{"bytes": "63726368"}, { "bytes": "02fe8d1eb1bcb3432b1db5833ff5f2226d9cb5e65cee430558c18ed3a3c86ce1af" }]},
+						{"bytes": "02fe8d1eb1bcb3432b1db5833ff5f2226d9cb5e65cee430558c18ed3a3c86ce1af"},
 						{"bytes": "f8ec6c7f935d387aaa1693b3bf338cbb8f53013da8a5a234f9c488bacac01af259297e69aee0df27f553c0a1164df827d016125c16af93c99be2c19f36d2f66e" },
 						{
 							"fields": [
@@ -494,8 +518,8 @@ mod tests {
 							"constructor": 0
 						},
 						{"list": [
-							{"list": [{"bytes": "61757261"}, {"bytes": "d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d" }]},
-							{"list": [{"bytes": "6772616e"}, {"bytes": "88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee" }]}
+							{"list": [{"bytes": "00000000"}, {"bytes": "0101010101010101010101010101010101010101010101010101010101010101" }]},
+							{"list": [{"bytes": "02020202"}, {"bytes": "0303030303030303030303030303030303030303030303030303030303030303" }]}
 						]}
 					]
 				},
@@ -520,6 +544,12 @@ mod tests {
 	fn valid_v1_registration_to_plutus_data() {
 		let plutus_data: PlutusData = test_datum_v1().into();
 		assert_eq!(plutus_data_to_json(plutus_data), test_versioned_datum_v1_json())
+	}
+
+	#[test]
+	fn valid_v1_registration_to_plutus_data_outputs_v0_for_aura_and_grandpa_only() {
+		let plutus_data: PlutusData = test_datum_v1_aura_and_grandpa_only().into();
+		assert_eq!(plutus_data_to_json(plutus_data), test_versioned_datum_v0_json())
 	}
 
 	#[test]

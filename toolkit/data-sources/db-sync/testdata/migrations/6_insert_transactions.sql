@@ -94,7 +94,7 @@ registration_SPO_C jsonb := '
             {"bytes": "1fd2f1e5ad14c829c7359474764701cd74ab9c433c29b0bbafaa6bcf22376e9d651391d08ae6f40b418d2abf827c4c1fcb007e779a2beba7894d68012942c708"}
           ]
         },
-        {"list": [{"bytes": "63726368"}, {"bytes": "02333e47cab242fefe88d7da1caa713307290291897f100efb911672d317147f72"}]},
+        {"bytes": "02333e47cab242fefe88d7da1caa713307290291897f100efb911672d317147f72"},
         {"bytes": "3e8a8b29e513a08d0a66e22422a1a85d1bf409987f30a8c6fcab85ba38a85d0d27793df7e7fb63ace12203b062feb7edb5e6664ac1810b94c38182acc6167425"},
         {
           "constructor": 0,
@@ -306,14 +306,14 @@ DO $$
         	{"constructor": 0, "fields": [] },
          	{"list": [
             	{"list": [
-             		{"list":[{"bytes": "63726368"}, {"bytes": "cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854"}]},
+             		{"bytes": "cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854"},
                		{"list":[
                  		{"list":[{"bytes": "61757261"}, {"bytes": "bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec"}]},
                    		{"list":[{"bytes": "6772616e"}, {"bytes": "9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d"}]}
                     ]}
                 ]},
                 {"list": [
-                	{"list":[{"bytes": "63726368"}, {"bytes": "79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf"}]},
+                	{"bytes": "79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf"},
                  	{"list":[
                  		{"list":[{"bytes": "61757261"}, {"bytes": "56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19"}]},
                    		{"list":[{"bytes": "6772616e"}, {"bytes": "7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32"}]}
