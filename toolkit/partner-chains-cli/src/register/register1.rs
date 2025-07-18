@@ -80,7 +80,15 @@ impl CmdRun for Register1Cmd {
 		let executable = context.current_executable()?;
 		context.print("Run the following command to generate signatures on the next step. It has to be executed on the machine with your SPO cold signing key.");
 		context.print("");
-		context.print(&format!("{executable} wizards register2 \\\n --genesis-utxo {genesis_utxo} \\\n --registration-utxo {registration_utxo} \\\n --aura-pub-key {aura_pub_key} \\\n --grandpa-pub-key {grandpa_pub_key} \\\n --partner-chain-pub-key {pc_pub_key} \\\n --partner-chain-signature {pc_signature}"));
+		context.print(&format!(
+			"{executable} wizards register2 \\
+ --genesis-utxo {genesis_utxo} \\
+ --registration-utxo {registration_utxo} \\
+ --aura-pub-key {aura_pub_key} \\
+ --grandpa-pub-key {grandpa_pub_key} \\
+ --partner-chain-pub-key {pc_pub_key} \\
+ --partner-chain-signature {pc_signature}"
+		));
 
 		Ok(())
 	}
