@@ -24,11 +24,10 @@ pub struct RegisterCmd {
 	payment_key_file: PaymentFilePath,
 	#[arg(
 		long,
-		value_name = "PARTNERCHAIN_KEY:AURA_KEY:GRANDPA_KEY",
 		alias = "sidechain-public-keys",
 		value_parser = parse_partnerchain_public_keys
 	)]
-	/// Colon separated hex strings representing bytes of the Sidechain, Aura and Grandpa public keys
+	/// Candidate public keys in format PARTNER_CHAINS_KEY_HEX:AURA_KEY_HEX:GRANDPA_KEY_HEX or PARTNER_CHAINS_KEY_HEX,KEY_ID_1:KEY_1_HEX,...,KEY_ID_N:KEY_N_HEX
 	partner_chain_public_keys: PermissionedCandidateData,
 	#[arg(long, alias = "sidechain-signature")]
 	/// Hex string of bytes of the registration message signature by partner-chain key, obtained by 'registration-signatures' command

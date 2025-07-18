@@ -1172,6 +1172,21 @@ pub struct CandidateKey {
 	pub bytes: Vec<u8>,
 }
 
+impl FromStr for CandidateKey {
+	type Err = &'static str;
+
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		if let Some((id, bytes)) = s.split_once(':') {
+			let id: [u8; 4] = id.as_bytes().try_into().map_err(|_| "invalid key type id")?;
+			let bytes = bytes.trim_start_matches("0x");
+			let bytes = hex::decode(bytes).map_err(|_| "key bytes are not in hex format")?;
+			Ok(CandidateKey { id, bytes })
+		} else {
+			Err("invalid format of CandidateKey, missing ':'")
+		}
+	}
+}
+
 /// Key type id of Partner Chains cross-chain key, used with ECDSA cryptography
 pub const CROSS_CHAIN_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"crch");
 
