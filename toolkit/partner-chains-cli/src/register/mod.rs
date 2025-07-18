@@ -45,6 +45,12 @@ impl FromStr for PartnerChainPublicKeyParam {
 #[derive(Clone, Debug)]
 pub struct CandidateKeyParam(pub CandidateKey);
 
+impl CandidateKeyParam {
+	fn new(id: [u8; 4], bytes: Vec<u8>) -> Self {
+		Self(CandidateKey { id, bytes })
+	}
+}
+
 impl FromStr for CandidateKeyParam {
 	type Err = Box<dyn std::error::Error + Send + Sync>;
 
@@ -59,6 +65,12 @@ impl FromStr for CandidateKeyParam {
 		let key = hex::decode(parts[1])?;
 
 		Ok(Self(CandidateKey::new(key_type, key)))
+	}
+}
+
+impl From<CandidateKeyParam> for CandidateKey {
+	fn from(value: CandidateKeyParam) -> Self {
+		value.0
 	}
 }
 
