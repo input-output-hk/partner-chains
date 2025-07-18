@@ -1,5 +1,5 @@
-use super::RegisterValidatorMessage;
-use super::{PartnerChainPublicKeyParam, PlainPublicKeyParam, StakePoolSigningKeyParam};
+use super::{CandidateKeyParam, RegisterValidatorMessage};
+use super::{PartnerChainPublicKeyParam, StakePoolSigningKeyParam};
 use crate::CmdRun;
 use crate::cardano_key::get_mc_staking_signing_key_from_file;
 use crate::io::IOContext;
@@ -17,9 +17,7 @@ pub struct Register2Cmd {
 	#[arg(long)]
 	pub partner_chain_pub_key: PartnerChainPublicKeyParam,
 	#[arg(long)]
-	pub aura_pub_key: PlainPublicKeyParam,
-	#[arg(long)]
-	pub grandpa_pub_key: PlainPublicKeyParam,
+	pub keys: Vec<CandidateKeyParam>,
 	#[arg(long)]
 	pub partner_chain_signature: String,
 }
@@ -30,8 +28,7 @@ impl CmdRun for Register2Cmd {
 			genesis_utxo,
 			registration_utxo,
 			partner_chain_pub_key,
-			aura_pub_key,
-			grandpa_pub_key,
+			keys,
 			partner_chain_signature,
 		} = self;
 
@@ -62,12 +59,15 @@ impl CmdRun for Register2Cmd {
 			"{executable} wizards register3 \\
 --genesis-utxo {genesis_utxo} \\
 --registration-utxo {registration_utxo} \\
---aura-pub-key {aura_pub_key} \\
---grandpa-pub-key {grandpa_pub_key} \\
 --partner-chain-pub-key {partner_chain_pub_key} \\
 --partner-chain-signature {partner_chain_signature} \\
 --spo-public-key {spo_public_key} \\
---spo-signature {spo_signature}"
+--spo-signature {spo_signature}{}",
+			keys.iter()
+				.map(CandidateKeyParam::to_string)
+				.map(|arg| format!(" \\\n--keys {arg}"))
+				.collect::<Vec<_>>()
+				.join("")
 		));
 		Ok(())
 	}
@@ -82,6 +82,8 @@ fn get_stake_pool_cold_skey<C: IOContext>(
 
 #[cfg(test)]
 mod tests {
+	use hex_literal::hex;
+
 	use super::*;
 	use crate::tests::{MockIO, MockIOContext};
 
@@ -139,7 +141,15 @@ mod tests {
 				"To finish the registration process, run the following command on the machine with the partner chain dependencies running:\n",
 			),
 			MockIO::print(
-				"<mock executable> wizards register3 \\\n--genesis-utxo 0000000000000000000000000000000000000000000000000000000000000001#0 \\\n--registration-utxo 7e9ebd0950ae1bec5606f0cd7ac88b3c60b1103d7feb6ffa36402edae4d1b617#0 \\\n--aura-pub-key 0xdf883ee0648f33b6103017b61be702017742d501b8fe73b1d69ca0157460b777 \\\n--grandpa-pub-key 0x5a091a06abd64f245db11d2987b03218c6bd83d64c262fe10e3a2a1230e90327 \\\n--partner-chain-pub-key 0x031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6 \\\n--partner-chain-signature 7a7e3e585a5dc248d4a2772814e1b58c90313443dd99369f994e960ecc4931442a08305743db7ab42ab9b8672e00250e1cc7c08bc018b0630a8197c4f95528a301 \\\n--spo-public-key 0xcef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7 \\\n--spo-signature 0xaaa39fbf163ed77c69820536f5dc22854e7e13f964f1e077efde0844a09bde64c1aab4d2b401e0fe39b43c91aa931cad26fa55c8766378462c06d86c85134801",
+				"<mock executable> wizards register3 \\
+--genesis-utxo 0000000000000000000000000000000000000000000000000000000000000001#0 \\
+--registration-utxo 7e9ebd0950ae1bec5606f0cd7ac88b3c60b1103d7feb6ffa36402edae4d1b617#0 \\
+--partner-chain-pub-key 0x031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6 \\
+--partner-chain-signature 7a7e3e585a5dc248d4a2772814e1b58c90313443dd99369f994e960ecc4931442a08305743db7ab42ab9b8672e00250e1cc7c08bc018b0630a8197c4f95528a301 \\
+--spo-public-key 0xcef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7 \\
+--spo-signature 0xaaa39fbf163ed77c69820536f5dc22854e7e13f964f1e077efde0844a09bde64c1aab4d2b401e0fe39b43c91aa931cad26fa55c8766378462c06d86c85134801 \\
+--keys aura:df883ee0648f33b6103017b61be702017742d501b8fe73b1d69ca0157460b777 \\
+--keys gran:5a091a06abd64f245db11d2987b03218c6bd83d64c262fe10e3a2a1230e90327",
 			),
 		]
 	}
@@ -149,8 +159,10 @@ mod tests {
             genesis_utxo: "0000000000000000000000000000000000000000000000000000000000000001#0".parse().unwrap(),
             registration_utxo: "7e9ebd0950ae1bec5606f0cd7ac88b3c60b1103d7feb6ffa36402edae4d1b617#0".parse().unwrap(),
             partner_chain_pub_key: "0x031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6".parse().unwrap(),
-            aura_pub_key: "0xdf883ee0648f33b6103017b61be702017742d501b8fe73b1d69ca0157460b777".parse().unwrap(),
-            grandpa_pub_key: "0x5a091a06abd64f245db11d2987b03218c6bd83d64c262fe10e3a2a1230e90327".parse().unwrap(),
+			keys: vec![
+				CandidateKeyParam::new(*b"aura", hex!("df883ee0648f33b6103017b61be702017742d501b8fe73b1d69ca0157460b777").to_vec()),
+				CandidateKeyParam::new(*b"gran", hex!("5a091a06abd64f245db11d2987b03218c6bd83d64c262fe10e3a2a1230e90327").to_vec())
+			],
             partner_chain_signature: "7a7e3e585a5dc248d4a2772814e1b58c90313443dd99369f994e960ecc4931442a08305743db7ab42ab9b8672e00250e1cc7c08bc018b0630a8197c4f95528a301".parse().unwrap()
         }
 	}

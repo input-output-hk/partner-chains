@@ -68,6 +68,12 @@ impl FromStr for CandidateKeyParam {
 	}
 }
 
+impl ToString for CandidateKeyParam {
+	fn to_string(&self) -> String {
+		format!("{}:{}", String::from_utf8_lossy(&self.0.id), hex::encode(&self.0.bytes))
+	}
+}
+
 impl From<CandidateKeyParam> for CandidateKey {
 	fn from(value: CandidateKeyParam) -> Self {
 		value.0
