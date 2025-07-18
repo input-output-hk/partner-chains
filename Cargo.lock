@@ -8280,8 +8280,8 @@ dependencies = [
 
 [[package]]
 name = "raw-scripts"
-version = "7.2.1"
-source = "git+https://github.com/input-output-hk/partner-chains-smart-contracts.git?tag=v7.2.2#d2286eb2ac4c158c5147e32125336eabf67f139e"
+version = "7.2.2"
+source = "git+https://github.com/input-output-hk/partner-chains-smart-contracts.git?rev=d7bcb3a7717c2d5397d47c3b3e31097662b0b3a1#d7bcb3a7717c2d5397d47c3b3e31097662b0b3a1"
 dependencies = [
  "hex-literal 0.4.1",
 ]
