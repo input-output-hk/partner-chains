@@ -1,8 +1,5 @@
 #!/bin/bash
 
-apt -qq update &> /dev/null
-apt -qq -y install curl jq ncat &> /dev/null
-
 cp /usr/local/bin/partner-chains-node /partner-chains-node
 echo "Using Partner Chains node version:"
 ./partner-chains-node --version
@@ -95,18 +92,18 @@ echo "Generating and inserting permissioned candidates..."
 for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
     node_name="permissioned-$i"
     echo "Processing $node_name..."
-    
+
     # Create directory for node keys
     mkdir -p /shared/node-keys/$node_name/keys
     mkdir -p /shared/node-keys/$node_name/keystore
-    
+
     # Generate keys for each node
     echo "[DEBUG] Generating sidechain keys for $node_name..."
     ./partner-chains-node key generate \
         --scheme ecdsa \
         --output-type json \
         > /shared/node-keys/$node_name/keys/sidechain.json
-    
+
     if [ $? -ne 0 ]; then
         echo "[ERROR] partner-chains-node key generate (ecdsa) failed for $node_name!"
         # Optionally exit or handle error
@@ -121,23 +118,23 @@ for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
         --scheme sr25519 \
         --output-type json \
         > /shared/node-keys/$node_name/keys/aura.json
-    
+
     if [ "$i" -eq 1 ]; then # Debug for the first node only
         echo "[DEBUG] Content of /shared/node-keys/$node_name/keys/aura.json:"
         cat "/shared/node-keys/$node_name/keys/aura.json"
         echo "[DEBUG] End of aura.json content for $node_name."
     fi
-    
+
     ./partner-chains-node key generate \
         --scheme ed25519 \
         --output-type json \
         > /shared/node-keys/$node_name/keys/grandpa.json
-    
+
     # Create keystore files from secret phrases
     sidechain_phrase=$(jq -r '.secretPhrase' "/shared/node-keys/$node_name/keys/sidechain.json")
     sidechain_pubkey=$(jq -r '.publicKey' "/shared/node-keys/$node_name/keys/sidechain.json" | sed 's/0x//')
     echo "\"$sidechain_phrase\"" > "/shared/node-keys/$node_name/keystore/63726368${sidechain_pubkey}"
-    
+
     aura_phrase=$(jq -r '.secretPhrase' "/shared/node-keys/$node_name/keys/aura.json")
     aura_pubkey=$(jq -r '.publicKey' "/shared/node-keys/$node_name/keys/aura.json" | sed 's/0x//')
     echo "\"$aura_phrase\"" > "/shared/node-keys/$node_name/keystore/61757261${aura_pubkey}"
@@ -145,21 +142,21 @@ for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
     grandpa_phrase=$(jq -r '.secretPhrase' "/shared/node-keys/$node_name/keys/grandpa.json")
     grandpa_pubkey=$(jq -r '.publicKey' "/shared/node-keys/$node_name/keys/grandpa.json" | sed 's/0x//')
     echo "\"$grandpa_phrase\"" > "/shared/node-keys/$node_name/keystore/6772616e${grandpa_pubkey}"
-    
+
     # Allow node process to write to its directory (for keystore etc.)
     chmod -R 777 "/shared/node-keys/$node_name"
-    
+
     if [ "$i" -eq 1 ]; then # Debug for the first node only
         echo "[DEBUG] Content of /shared/node-keys/$node_name/keys/grandpa.json:"
         cat "/shared/node-keys/$node_name/keys/grandpa.json"
         echo "[DEBUG] End of grandpa.json content for $node_name."
     fi
-    
+
     # Extract public keys
     sidechain_vkey=$(jq -r '.publicKey' /shared/node-keys/$node_name/keys/sidechain.json)
     aura_vkey=$(jq -r '.publicKey' /shared/node-keys/$node_name/keys/aura.json)
     grandpa_vkey=$(jq -r '.publicKey' /shared/node-keys/$node_name/keys/grandpa.json)
-    
+
     # Add to permissioned candidates list
     echo "$sidechain_vkey:$aura_vkey:$grandpa_vkey" >> permissioned_candidates.csv
 done
@@ -183,27 +180,27 @@ echo "Generating and registering registered candidates..."
 for ((i=1; i<=NUM_REGISTERED_NODES_TO_PROCESS; i++)); do
     node_name="registered-$i"
     echo "Processing $node_name..."
-    
+
     # Create directory for node keys
     mkdir -p /shared/node-keys/$node_name/keys
     mkdir -p /shared/node-keys/$node_name/keystore
-    
+
     # Generate keys for each node
     ./partner-chains-node key generate \
         --scheme ecdsa \
         --output-type json \
         > /shared/node-keys/$node_name/keys/sidechain.json
-    
+
     ./partner-chains-node key generate \
         --scheme sr25519 \
         --output-type json \
         > /shared/node-keys/$node_name/keys/aura.json
-    
+
     ./partner-chains-node key generate \
         --scheme ed25519 \
         --output-type json \
         > /shared/node-keys/$node_name/keys/grandpa.json
-    
+
     # Create keystore files from secret phrases
     sidechain_phrase=$(jq -r '.secretPhrase' "/shared/node-keys/$node_name/keys/sidechain.json")
     sidechain_pubkey=$(jq -r '.publicKey' "/shared/node-keys/$node_name/keys/sidechain.json" | sed 's/0x//')
@@ -216,13 +213,13 @@ for ((i=1; i<=NUM_REGISTERED_NODES_TO_PROCESS; i++)); do
     grandpa_phrase=$(jq -r '.secretPhrase' "/shared/node-keys/$node_name/keys/grandpa.json")
     grandpa_pubkey=$(jq -r '.publicKey' "/shared/node-keys/$node_name/keys/grandpa.json" | sed 's/0x//')
     echo "\"$grandpa_phrase\"" > "/shared/node-keys/$node_name/keystore/6772616e${grandpa_pubkey}"
-    
+
     # Allow node process to write to its directory (for keystore etc.)
     chmod -R 777 "/shared/node-keys/$node_name"
 
     # Extract keys and generate signatures
     sidechain_signing_key=$(jq -r '.secretSeed' /shared/node-keys/$node_name/keys/sidechain.json)
-    
+
     # Define and read the specific registration UTXO for this node
     NODE_REGISTRATION_UTXO_FILE="/shared/registered-${i}.utxo"
     if [ ! -f "$NODE_REGISTRATION_UTXO_FILE" ]; then
@@ -263,7 +260,7 @@ for ((i=1; i<=NUM_REGISTERED_NODES_TO_PROCESS; i++)); do
         --mainchain-signing-key $MAINCHAIN_SIGNING_KEY_RAW \
         --sidechain-signing-key $sidechain_signing_key \
         --registration-utxo $NODE_REGISTRATION_UTXO)
-    
+
     # Extract signatures and keys
     spo_public_key=$(echo "$registration_output" | jq -r ".spo_public_key")
     spo_signature=$(echo "$registration_output" | jq -r ".spo_signature")
@@ -271,7 +268,7 @@ for ((i=1; i<=NUM_REGISTERED_NODES_TO_PROCESS; i++)); do
     sidechain_signature=$(echo "$registration_output" | jq -r ".sidechain_signature")
     aura_vkey=$(jq -r '.publicKey' /shared/node-keys/$node_name/keys/aura.json)
     grandpa_vkey=$(jq -r '.publicKey' /shared/node-keys/$node_name/keys/grandpa.json)
-    
+
     NODE_PAYMENT_SKEY_FILE="/shared/node-keys/registered-${i}/keys/payment.skey"
     if [ ! -f "$NODE_PAYMENT_SKEY_FILE" ]; then
         echo "Error: Payment signing key file $NODE_PAYMENT_SKEY_FILE not found for $node_name!"
@@ -308,11 +305,11 @@ for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
     validator_id=$(jq -r '.ss58Address' "/shared/node-keys/$node_name/keys/sidechain.json")
     aura_ss58=$(jq -r '.ss58Address' "/shared/node-keys/$node_name/keys/aura.json")
     grandpa_ss58=$(jq -r '.ss58Address' "/shared/node-keys/$node_name/keys/grandpa.json")
-    
+
     if [ $i -gt 1 ]; then
         echo "," >> initial_validators.json
     fi
-    
+
     cat <<EOF >> initial_validators.json
     [
         "$validator_id",
@@ -336,11 +333,11 @@ for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
     validator_id=$(jq -r '.ss58PublicKey' "/shared/node-keys/$node_name/keys/sidechain.json")
     aura_ss58=$(jq -r '.ss58Address' "/shared/node-keys/$node_name/keys/aura.json")
     grandpa_ss58=$(jq -r '.ss58Address' "/shared/node-keys/$node_name/keys/grandpa.json")
-    
+
     if [ $i -gt 1 ]; then
         echo "," >> initial_authorities.json
     fi
-    
+
     cat <<EOF >> initial_authorities.json
     {
         "Permissioned": {

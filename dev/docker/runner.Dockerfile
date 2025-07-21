@@ -13,7 +13,9 @@ RUN apt-get update && apt-get install -y \
 	vim \
 	dnsutils \
 	jq \
-	htop
+	htop \
+	ncat \
+	expect
 
 RUN useradd -m -u 1010 -U -s /bin/sh -d /substrate substrate \
 	&& mkdir -p /data /substrate/.local/share/partner-chains-node \
