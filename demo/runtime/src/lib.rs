@@ -509,26 +509,35 @@ impl pallet_block_production_log::benchmarking::BenchmarkHelper<BlockAuthor>
 pub struct PalletBlockProducerMetadataBenchmarkHelper;
 
 #[cfg(feature = "runtime-benchmarks")]
-impl pallet_block_producer_metadata::benchmarking::BenchmarkHelper<BlockProducerMetadataType>
-	for PalletBlockProducerMetadataBenchmarkHelper
+impl
+	pallet_block_producer_metadata::benchmarking::BenchmarkHelper<
+		BlockProducerMetadataType,
+		AccountId,
+	> for PalletBlockProducerMetadataBenchmarkHelper
 {
+	fn genesis_utxo() -> UtxoId {
+		Sidechain::genesis_utxo()
+	}
+
 	fn metadata() -> BlockProducerMetadataType {
 		BlockProducerMetadataType {
 			url: "https://cool.stuff/spo.json".try_into().unwrap(),
 			hash: SizedByteString::from([0; 32]),
 		}
 	}
+
 	fn cross_chain_pub_key() -> sidechain_domain::CrossChainPublicKey {
 		sidechain_domain::CrossChainPublicKey(
 			hex_literal::hex!("020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1")
 				.to_vec(),
 		)
 	}
-	fn upsert_cross_chain_signature() -> sidechain_domain::CrossChainSignature {
-		sidechain_domain::CrossChainSignature(hex_literal::hex!("0892ab398baf72fb90c7e90147caea9b5aa642f082e8573877aba34aeb618c7e3c4a904ef5c12bdb6560d665a71584ea266279ba686ff7e4f886ca75e357fdff").to_vec())
-	}
-	fn delete_cross_chain_signature() -> sidechain_domain::CrossChainSignature {
-		sidechain_domain::CrossChainSignature(hex_literal::hex!("e891b42327fc5202f258b080d0a3f33d9a292693840dee5fa5e46033fe0b059b682597be65ac5678c182a65b46b621aaadcfb0811155f54e8d99c9e4394a1fe9").to_vec())
+
+	fn cross_chain_sign_key() -> pallet_block_producer_metadata::benchmarking::SecretKey {
+		pallet_block_producer_metadata::benchmarking::SecretKey::from_slice(&hex_literal::hex!(
+			"cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854"
+		))
+		.unwrap()
 	}
 
 	fn upsert_valid_before() -> u64 {

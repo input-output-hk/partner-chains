@@ -24,6 +24,7 @@ sp-core = { workspace = true, optional = true }
 sp-block-producer-metadata = { workspace = true }
 sp-runtime = { workspace = true, optional = true }
 sp-io = { workspace = true, optional = true }
+k256 = { workspace = true, optional = true }
 
 [dev-dependencies]
 sp-core = { workspace = true }
@@ -33,6 +34,7 @@ hex-literal = { workspace = true }
 k256 = { workspace = true }
 pallet-balances = { workspace = true }
 pretty_assertions = { workspace = true }
+sp-block-producer-metadata = { workspace = true, features = ["std"] }
 
 [features]
 default = ["std"]
@@ -57,4 +59,5 @@ runtime-benchmarks = [
     "hex-literal",
     "sp-core",
     "sp-io",
+    "k256",
 ]

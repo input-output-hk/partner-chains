@@ -183,7 +183,7 @@ pub mod pallet {
 
 		/// Helper providing mock values for use in benchmarks
 		#[cfg(feature = "runtime-benchmarks")]
-		type BenchmarkHelper: benchmarking::BenchmarkHelper<Self::BlockProducerMetadata>;
+		type BenchmarkHelper: benchmarking::BenchmarkHelper<Self::BlockProducerMetadata, Self::AccountId>;
 	}
 
 	/// Storage mapping from block producers to their metadata, owner account and deposit amount
@@ -248,6 +248,7 @@ pub mod pallet {
 				metadata: Some(metadata.clone()),
 				genesis_utxo,
 				valid_before,
+				owner: origin_account.clone(),
 			};
 
 			let is_valid_signature =
@@ -297,11 +298,12 @@ pub mod pallet {
 			let origin_account = ensure_signed(origin)?;
 
 			let genesis_utxo = T::genesis_utxo();
-			let metadata_message = MetadataSignedMessage::<T::BlockProducerMetadata> {
+			let metadata_message = MetadataSignedMessage::<T::BlockProducerMetadata, T::AccountId> {
 				cross_chain_pub_key: cross_chain_pub_key.clone(),
 				metadata: None,
 				genesis_utxo,
 				valid_before,
+				owner: origin_account.clone(),
 			};
 			let cross_chain_key_hash = cross_chain_pub_key.hash();
 			let is_valid_signature =
