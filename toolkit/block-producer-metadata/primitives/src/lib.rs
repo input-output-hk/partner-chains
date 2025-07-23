@@ -20,7 +20,7 @@ extern crate alloc;
 
 /// Message signed to authorize modification of a block producer's on-chain metadata
 #[derive(Debug, Clone, Encode)]
-pub struct MetadataSignedMessage<Metadata> {
+pub struct MetadataSignedMessage<Metadata, AccountId> {
 	/// Cross-chain public key
 	pub cross_chain_pub_key: CrossChainPublicKey,
 	/// Block producer's metadata. [None] signifies a deletion of metadata from the chain.
@@ -31,11 +31,12 @@ pub struct MetadataSignedMessage<Metadata> {
 	/// to be valid. This value is mapped to a Partner Chain slot which loses precision for
 	/// chains with block times above 1 second.
 	pub valid_before: u64,
+	/// Account ID that will be used to set the metadata and own it on-chain
+	pub owner: AccountId,
 }
 
-impl<M: Encode> MetadataSignedMessage<M> {
+impl<M: Encode, AccountId: Encode> MetadataSignedMessage<M, AccountId> {
 	/// Encodes this message using SCALE codec and signs it
-	#[cfg(feature = "std")]
 	pub fn sign_with_key(&self, skey: &k256::SecretKey) -> CrossChainSignature {
 		use k256::Secp256k1;
 		use k256::ecdsa::hazmat::DigestPrimitive;
@@ -70,6 +71,7 @@ mod tests {
 			metadata: Some("metadata".to_string()),
 			genesis_utxo: UtxoId::new([2; 32], 0),
 			valid_before: 100_000_000_000,
+			owner: 1000,
 		};
 
 		// Alice cross-chain key
