@@ -26,35 +26,31 @@ jobs:
 ### Pre merge workflow ###############################################################################################################
 
   build-linux-x86_64-pre-merge:
-    runs-on: ubuntu-latest
+    runs-on: nixos
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
     steps:
-      #- name: Clean runner environment
-      #  run: rm -rf ./*
+      - name: Clean runner environment
+        run: rm -rf ./*
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           clean: true
-      - name: Install Nix
-        uses: cachix/install-nix-action@v27
-        with:
-          github_access_token: ${{ secrets.GITHUB_TOKEN }}
-      #- name: Restore Rust cache from host
-      #  run: |
-      #    set -e
-      #    echo "--- Restoring Rust cache from host ---"
-      #    if [ -d /tmp/rust-cache ]; then
-      #      echo "Rust cache found. Restoring..."
-      #      mkdir -p ~/.cargo/git ~/.cargo/registry ./target
-      #      nix shell nixpkgs#rsync -c bash -c "
-      #        rsync -a /tmp/rust-cache/cargo-git/ ~/.cargo/git/
-      #        rsync -a /tmp/rust-cache/cargo-registry/ ~/.cargo/registry/
-      #        rsync -a /tmp/rust-cache/target/ ./target/
-      #      "
-      #    else
-      #      echo "No Rust cache found. Will be created after build."
-      #    fi
+      - name: Restore Rust cache from host
+        run: |
+          set -e
+          echo "--- Restoring Rust cache from host ---"
+          if [ -d /tmp/rust-cache ]; then
+            echo "Rust cache found. Restoring..."
+            mkdir -p ~/.cargo/git ~/.cargo/registry ./target
+            nix shell nixpkgs#rsync -c bash -c "
+              rsync -a /tmp/rust-cache/cargo-git/ ~/.cargo/git/
+              rsync -a /tmp/rust-cache/cargo-registry/ ~/.cargo/registry/
+              rsync -a /tmp/rust-cache/target/ ./target/
+            "
+          else
+            echo "No Rust cache found. Will be created after build."
+          fi
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -72,19 +68,19 @@ jobs:
         run: nix develop -c bash -c "RUSTFLAGS=-Dwarnings cargo clippy --all-targets --all-features"
       - name: Formatting
         run: nix develop -c bash -c "cargo fmt --check"
-      #- name: Save Rust cache to host
-      #  if: always()
-      #  run: |
-      #    set -e
-      #    echo "--- Saving Rust cache to host cache ---"
-      #    mkdir -p /tmp/rust-cache
-      #    nix shell nixpkgs#rsync -c bash -c "
-      #      rsync -a ~/.cargo/git/ /tmp/rust-cache/cargo-git/
-      #      rsync -a ~/.cargo/registry/ /tmp/rust-cache/cargo-registry/
-      #      rsync -a ./target/ /tmp/rust-cache/target/
-      #    "
-      #    echo "--- Verifying cache contents ---"
-      #    ls -laR /tmp/rust-cache
+      - name: Save Rust cache to host
+        if: always()
+        run: |
+          set -e
+          echo "--- Saving Rust cache to host cache ---"
+          mkdir -p /tmp/rust-cache
+          nix shell nixpkgs#rsync -c bash -c "
+            rsync -a ~/.cargo/git/ /tmp/rust-cache/cargo-git/
+            rsync -a ~/.cargo/registry/ /tmp/rust-cache/cargo-registry/
+            rsync -a ./target/ /tmp/rust-cache/target/
+          "
+          echo "--- Verifying cache contents ---"
+          ls -laR /tmp/rust-cache
       #- name: Run cargo-deny to check licenses
       #  uses: EmbarkStudios/cargo-deny-action@v1
       #  with:
@@ -244,38 +240,34 @@ jobs:
 ### Post merge workflow ###############################################################################################################
 
   build-linux-x86_64-post-merge:
-    runs-on: ubuntu-latest
+    runs-on: nixos
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
     outputs:
       sha: ${{ steps.get_sha.outputs.sha }}
     steps:
-      #- name: Clean runner environment
-      #  run: rm -rf ./*
+      - name: Clean runner environment
+        run: rm -rf ./*
       - name: Checkout master branch code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: master
           clean: true
-      - name: Install Nix
-        uses: cachix/install-nix-action@v27
-        with:
-          github_access_token: ${{ secrets.GITHUB_TOKEN }}
-      #- name: Restore Rust cache from host
-      #  run: |
-      #    set -e
-      #    echo "--- Restoring Rust cache from host ---"
-      #    if [ -d /tmp/rust-cache ]; then
-      #      echo "Rust cache found. Restoring..."
-      #      mkdir -p ~/.cargo/git ~/.cargo/registry ./target
-      #      nix shell nixpkgs#rsync -c bash -c "
-      #        rsync -a /tmp/rust-cache/cargo-git/ ~/.cargo/git/
-      #        rsync -a /tmp/rust-cache/cargo-registry/ ~/.cargo/registry/
-      #        rsync -a /tmp/rust-cache/target/ ./target/
-      #      "
-      #    else
-      #      echo "No Rust cache found. Will be created after build."
-      #    fi
+      - name: Restore Rust cache from host
+        run: |
+          set -e
+          echo "--- Restoring Rust cache from host ---"
+          if [ -d /tmp/rust-cache ]; then
+            echo "Rust cache found. Restoring..."
+            mkdir -p ~/.cargo/git ~/.cargo/registry ./target
+            nix shell nixpkgs#rsync -c bash -c "
+              rsync -a /tmp/rust-cache/cargo-git/ ~/.cargo/git/
+              rsync -a /tmp/rust-cache/cargo-registry/ ~/.cargo/registry/
+              rsync -a /tmp/rust-cache/target/ ./target/
+            "
+          else
+            echo "No Rust cache found. Will be created after build."
+          fi
       - name: Get current commit SHA
         id: get_sha
         run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
@@ -317,19 +309,19 @@ jobs:
           docker push ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ steps.get_sha.outputs.sha }}
           docker push ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:latest
           docker push ghcr.io/${{ github.repository }}/partner-chains-node-unstable:latest
-      #- name: Save Rust cache to host
-      #  if: always()
-      #  run: |
-      #    set -e
-      #    echo "--- Saving Rust cache to host cache ---"
-      #    mkdir -p /tmp/rust-cache
-      #    nix shell nixpkgs#rsync -c bash -c "
-      #      rsync -a ~/.cargo/git/ /tmp/rust-cache/cargo-git/
-      #      rsync -a ~/.cargo/registry/ /tmp/rust-cache/cargo-registry/
-      #      rsync -a ./target/ /tmp/rust-cache/target/
-      #    "
-      #    echo "--- Verifying cache contents ---"
-      #    ls -laR /tmp/rust-cache
+      - name: Save Rust cache to host
+        if: always()
+        run: |
+          set -e
+          echo "--- Saving Rust cache to host cache ---"
+          mkdir -p /tmp/rust-cache
+          nix shell nixpkgs#rsync -c bash -c "
+            rsync -a ~/.cargo/git/ /tmp/rust-cache/cargo-git/
+            rsync -a ~/.cargo/registry/ /tmp/rust-cache/cargo-registry/
+            rsync -a ./target/ /tmp/rust-cache/target/
+          "
+          echo "--- Verifying cache contents ---"
+          ls -laR /tmp/rust-cache
       - name: Rename artifact
         run: |
           cp ./partner-chains-demo-node partner-chains-node-${{ steps.get_sha.outputs.sha }}-x86_64-linux
@@ -503,36 +495,32 @@ jobs:
 ### Workflow dispatch flow ###############################################################################################################
 
   build-linux-x86_64-workflow-dispatch:
-    runs-on: ubuntu-latest
+    runs-on: nixos
     if: github.event_name == 'workflow_dispatch'
     steps:
-      #- name: Clean runner environment
-      #  run: rm -rf ./*
+      - name: Clean runner environment
+        run: rm -rf ./*
       - name: Checkout target code to build
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ inputs.sha }}
           clean: true
-      - name: Install Nix
-        uses: cachix/install-nix-action@v27
-        with:
-          github_access_token: ${{ secrets.GITHUB_TOKEN }}
-      #- name: Restore Rust cache from host
-      #  run: |
-      #    set -e
-      #    echo "--- Restoring Rust cache from host ---"
-      #    if [ -d /tmp/rust-cache ]; then
-      #      echo "Rust cache found. Restoring..."
-      #      mkdir -p ~/.cargo/git ~/.cargo/registry ./target
-      #      nix shell nixpkgs#rsync -c bash -c "
-      #        rsync -a /tmp/rust-cache/cargo-git/ ~/.cargo/git/
-      #        rsync -a /tmp/rust-cache/cargo-registry/ ~/.cargo/registry/
-      #        rsync -a /tmp/rust-cache/target/ ./target/
-      #      "
-      #    else
-      #      echo "No Rust cache found. Will be created after build."
-      #    fi
+      - name: Restore Rust cache from host
+        run: |
+          set -e
+          echo "--- Restoring Rust cache from host ---"
+          if [ -d /tmp/rust-cache ]; then
+            echo "Rust cache found. Restoring..."
+            mkdir -p ~/.cargo/git ~/.cargo/registry ./target
+            nix shell nixpkgs#rsync -c bash -c "
+              rsync -a /tmp/rust-cache/cargo-git/ ~/.cargo/git/
+              rsync -a /tmp/rust-cache/cargo-registry/ ~/.cargo/registry/
+              rsync -a /tmp/rust-cache/target/ ./target/
+            "
+          else
+            echo "No Rust cache found. Will be created after build."
+          fi
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -550,19 +538,19 @@ jobs:
         run: nix develop -c bash -c "RUSTFLAGS=-Dwarnings cargo clippy --all-targets --all-features"
       - name: Formatting
         run: nix develop -c bash -c "cargo fmt --check"
-      #- name: Save Rust cache to host
-      #  if: always()
-      #  run: |
-      #    set -e
-      #    echo "--- Saving Rust cache to host cache ---"
-      #    mkdir -p /tmp/rust-cache
-      #    nix shell nixpkgs#rsync -c bash -c "
-      #      rsync -a ~/.cargo/git/ /tmp/rust-cache/cargo-git/
-      #      rsync -a ~/.cargo/registry/ /tmp/rust-cache/cargo-registry/
-      #      rsync -a ./target/ /tmp/rust-cache/target/
-      #    "
-      #    echo "--- Verifying cache contents ---"
-      #    ls -laR /tmp/rust-cache
+      - name: Save Rust cache to host
+        if: always()
+        run: |
+          set -e
+          echo "--- Saving Rust cache to host cache ---"
+          mkdir -p /tmp/rust-cache
+          nix shell nixpkgs#rsync -c bash -c "
+            rsync -a ~/.cargo/git/ /tmp/rust-cache/cargo-git/
+            rsync -a ~/.cargo/registry/ /tmp/rust-cache/cargo-registry/
+            rsync -a ./target/ /tmp/rust-cache/target/
+          "
+          echo "--- Verifying cache contents ---"
+          ls -laR /tmp/rust-cache
       #- name: Run cargo-deny to check licenses
       #  uses: EmbarkStudios/cargo-deny-action@v1
       #  with:
