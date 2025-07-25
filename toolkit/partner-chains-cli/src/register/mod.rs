@@ -49,6 +49,15 @@ impl CandidateKeyParam {
 	fn new(id: [u8; 4], bytes: Vec<u8>) -> Self {
 		Self(CandidateKey { id, bytes })
 	}
+
+	fn try_new_from(id: &str, bytes: Vec<u8>) -> anyhow::Result<Self> {
+		let id = id
+			.bytes()
+			.collect::<Vec<u8>>()
+			.try_into()
+			.expect("Incorrect key type length, must be 4");
+		Ok(Self::new(id, bytes))
+	}
 }
 
 impl FromStr for CandidateKeyParam {

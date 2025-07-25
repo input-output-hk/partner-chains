@@ -145,11 +145,7 @@ pub fn read_generated_keys<C: IOContext>(context: &C) -> anyhow::Result<Generate
 
 	let mut keys = vec![];
 	for (id, bytes) in raw_keys.into_iter() {
-		if id.len() != 4 {
-			return Err(anyhow!("Incorrect key type length: {}, must be 4", id.len()));
-		}
-		let id = id.bytes().collect::<Vec<u8>>().try_into().expect("Checked for length 4.");
-		keys.push(CandidateKeyParam::new(id, bytes.0))
+		keys.push(CandidateKeyParam::try_new_from(&id, bytes.0)?)
 	}
 
 	Ok(GeneratedKeysFileContent { partner_chains_key, keys })
