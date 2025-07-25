@@ -12,6 +12,12 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Removed
 
+# v1.7.1
+
+## Changed
+
+* Switched from `polkadot-stable2503-07` to `polkadot-stable2506`. `type RuntimeEvent` became deprecated in polkadot-sdk. It has been removed from the toolkit crates. To update to this version of PC toolkit, please remove definition of `type RuntimeEvent` when wiring in runtime.
+
 # v1.7.0
 
 ## Changed

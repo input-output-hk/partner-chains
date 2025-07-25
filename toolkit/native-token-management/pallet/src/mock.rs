@@ -78,7 +78,6 @@ impl frame_system::Config for Test {
 }
 
 impl crate::pallet::Config for Test {
-	type RuntimeEvent = RuntimeEvent;
 	type TokenTransferHandler = Mock;
 	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
 	type WeightInfo = ();

@@ -85,7 +85,6 @@ impl frame_system::Config for Test {
 }
 
 impl pallet::Config for Test {
-	type RuntimeEvent = RuntimeEvent;
 	type MaxValidators = ConstU32<32>;
 	type AuthorityId = AuthorityId;
 	type AuthorityKeys = AuthorityKeys;
