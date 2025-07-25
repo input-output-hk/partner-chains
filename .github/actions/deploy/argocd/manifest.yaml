@@ -29,6 +29,8 @@ spec:
               memory: "4096Mi"
               cpu: "1000m"
           env:
+            - name: CARDANO_DATA_SOURCE
+              value: "db-sync"
             - name: DB_SYNC_POSTGRES_CONNECTION_STRING
               value: "postgres://postgres:password123@ferdie-service.sc.svc.cluster.local:5432/cexplorer"
             - name: CARDANO_SECURITY_PARAMETER

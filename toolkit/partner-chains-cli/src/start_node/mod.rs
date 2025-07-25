@@ -40,6 +40,28 @@ pub struct StartNodeChainConfig {
 	pub bootnodes: Vec<String>,
 }
 
+pub struct DataSourceConfig {
+	pub data_source_env_variable: String,
+	pub data_source_conn_string: String,
+}
+
+impl DataSourceConfig {
+	pub fn load<C: IOContext>(data_source: &str, context: &C) -> anyhow::Result<Option<Self>> {
+		let config = match data_source {
+			"db-sync" => Self {
+				data_source_env_variable: "DB_SYNC_POSTGRES_CONNECTION_STRING".to_string(),
+				data_source_conn_string: POSTGRES_CONNECTION_STRING
+					.load_or_prompt_and_save(context),
+			},
+			_ => {
+				context.eprint("⚠️ Invalid Cardano data source. Supported values are: db-sync");
+				return Ok(None);
+			},
+		};
+		Ok(Some(config))
+	}
+}
+
 impl<T: PartnerChainRuntime> CmdRun for StartNodeCmd<T> {
 	fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
 		let config = StartNodeConfig::load(context);
@@ -48,18 +70,27 @@ impl<T: PartnerChainRuntime> CmdRun for StartNodeCmd<T> {
 			return Ok(());
 		}
 
-		let db_connection_string = POSTGRES_CONNECTION_STRING.load_or_prompt_and_save(context);
+		let data_source = config_fields::CARDANO_DATA_SOURCE.load_or_prompt_and_save(context);
+
+		let Some(data_source_config) = DataSourceConfig::load(&data_source, context)? else {
+			return Ok(());
+		};
 
 		let Some(chain_config) = load_chain_config(context)? else { return Ok(()) };
 
 		if !self.silent
-			&& !prompt_values_fine(&config, &chain_config, &db_connection_string, context)
-		{
+			&& !prompt_values_fine(
+				&config,
+				&chain_config,
+				&data_source_config,
+				&data_source,
+				context,
+			) {
 			context.eprint("Aborting. Edit configuration files and rerun the command.");
 			return Ok(());
 		}
 
-		start_node::<C, T>(config, chain_config, &db_connection_string, context)?;
+		start_node::<C, T>(config, chain_config, &data_source_config, &data_source, context)?;
 
 		Ok(())
 	}
@@ -88,7 +119,11 @@ fn prompt_values_fine<C: IOContext>(
 		cardano,
 		bootnodes,
 	}: &StartNodeChainConfig,
-	db_connection_string: &str,
+	DataSourceConfig {
+		data_source_env_variable,
+		data_source_conn_string,
+	}: &DataSourceConfig,
+	data_source: &str,
 	context: &C,
 ) -> bool
 {
@@ -104,7 +139,8 @@ fn prompt_values_fine<C: IOContext>(
 	context.eprint(&format!("        EPOCH_DURATION_MILLIS              = {}", cardano.epoch_duration_millis));
 	context.eprint(&format!("        FIRST_EPOCH_NUMBER                 = {}", cardano.first_epoch_number));
 	context.eprint(&format!("        FIRST_SLOT_NUMBER                  = {}", cardano.first_slot_number));
-	context.eprint(&format!("        DB_SYNC_POSTGRES_CONNECTION_STRING = {}", db_connection_string));
+	context.eprint(&format!("        CARDANO_DATA_SOURCE                = {}", data_source));
+	context.eprint(&format!("        {} = {}", data_source_env_variable, data_source_conn_string));
 	context.prompt_yes_no("Proceed?", true)
 }
 
@@ -158,14 +194,16 @@ pub fn start_node<C: IOContext, T: PartnerChainRuntime>(
 			},
 		bootnodes,
 	}: StartNodeChainConfig,
-	db_connection_string: &str,
+	DataSourceConfig { data_source_env_variable, data_source_conn_string }: &DataSourceConfig,
+	data_source: &str,
 	context: &C,
 ) -> anyhow::Result<()> {
 	let executable = context.current_executable()?;
 	let environment_prefix = format!(
 		"CARDANO_SECURITY_PARAMETER='{security_parameter}' \\
          CARDANO_ACTIVE_SLOTS_COEFF='{active_slots_coeff}' \\
-         DB_SYNC_POSTGRES_CONNECTION_STRING='{db_connection_string}' \\
+         {data_source_env_variable}='{data_source_conn_string}' \\
+		 CARDANO_DATA_SOURCE='{data_source}' \\
          MC__FIRST_EPOCH_TIMESTAMP_MILLIS='{first_epoch_timestamp_millis}' \\
          MC__EPOCH_DURATION_MILLIS='{epoch_duration_millis}' \\
          MC__SLOT_DURATION_MILLIS='{slot_duration_millis}' \\
@@ -174,6 +212,7 @@ pub fn start_node<C: IOContext, T: PartnerChainRuntime>(
          BLOCK_STABILITY_MARGIN='0' \\
 "
 	);
+
 	let bootnodes = bootnodes
 		.iter()
 		.map(|bootnode| format!("--bootnodes {}", bootnode))

@@ -8,6 +8,7 @@
       - shared-volume:/shared
       - partner-chains-node-1-data:/data
     environment:
+      CARDANO_DATA_SOURCE: "db-sync"
       DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:${POSTGRES_PASSWORD}@127.0.0.1:${POSTGRES_PORT}/cexplorer"
       CARDANO_SECURITY_PARAMETER: "5"
       CARDANO_ACTIVE_SLOTS_COEFF: "0.4"

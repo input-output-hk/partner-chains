@@ -25,7 +25,7 @@
 #
 # Should be run on a reference machine to gain accurate benchmarks
 
-export USE_MOCK_DATA_SOURCES=true
+export CARDANO_DATA_SOURCE="mock"
 
 while getopts 'bfp:v' flag; do
   case "${flag}" in
