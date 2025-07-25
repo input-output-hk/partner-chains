@@ -143,7 +143,6 @@ impl TryFrom<CandidateKeys> for TestSessionKeys {
 pallet_partner_chains_session::impl_pallet_session_config!(Test);
 
 impl pallet_partner_chains_session::Config for Test {
-	type RuntimeEvent = RuntimeEvent;
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
 	type ShouldEndSession = ValidatorManagementSessionManager<Test>;
 	type NextSessionRotation = ();
@@ -160,7 +159,6 @@ impl pallet_sidechain::Config for Test {
 }
 
 impl pallet_session_validator_management::Config for Test {
-	type RuntimeEvent = RuntimeEvent;
 	type MaxValidators = ConstU32<32>;
 	type AuthorityId = CrossChainPublic;
 	type AuthorityKeys = TestSessionKeys;
