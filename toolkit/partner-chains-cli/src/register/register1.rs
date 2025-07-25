@@ -1,4 +1,6 @@
-use super::RegisterValidatorMessage;
+use std::collections::BTreeMap;
+
+use super::{CandidateKeyParam, RegisterValidatorMessage};
 use crate::config::KEYS_FILE_PATH;
 use crate::io::IOContext;
 use crate::keystore::{CROSS_CHAIN, keystore_path};
@@ -10,9 +12,9 @@ use partner_chains_cardano_offchain::csl::NetworkTypeExt;
 use select_utxo::{query_utxos, select_from_utxos};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
+use sidechain_domain::byte_string::ByteString;
 use sidechain_domain::crypto::sc_public_key_and_signature_for_datum;
 use sidechain_domain::{NetworkType, SidechainPublicKey, UtxoId};
-use sp_core::bytes::from_hex;
 use sp_core::{Pair, ecdsa};
 
 #[derive(Clone, Debug, clap::Parser)]
@@ -26,7 +28,7 @@ impl CmdRun for Register1Cmd {
 		let node_data_base_path =
 			config_fields::SUBSTRATE_NODE_DATA_BASE_PATH.load_or_prompt_and_save(context);
 
-		let GeneratedKeysFileContent { sidechain_pub_key: pc_pub_key, aura_pub_key, grandpa_pub_key } =
+		let GeneratedKeysFileContent { partner_chains_key, keys } =
 			read_generated_keys(context).map_err(|e| {
 			    context.eprint(&format!("⚠️ The keys file `{KEYS_FILE_PATH}` is missing or invalid. Please run the `generate-keys` command first"));
 				anyhow!(e)
@@ -54,11 +56,7 @@ impl CmdRun for Register1Cmd {
 		);
 		context.print("");
 
-		let pc_pub_key_typed: SidechainPublicKey =
-			SidechainPublicKey(from_hex(&pc_pub_key).map_err(|e| {
-				context.eprint(&format!("⚠️ Failed to decode partner-chains public key: {e}"));
-				anyhow!(e)
-			})?);
+		let pc_pub_key_typed: SidechainPublicKey = SidechainPublicKey(partner_chains_key.0.clone());
 
 		let registration_message = RegisterValidatorMessage {
 			genesis_utxo,
@@ -66,14 +64,17 @@ impl CmdRun for Register1Cmd {
 			registration_utxo,
 		};
 
-		let ecdsa_pair =
-			get_ecdsa_pair_from_file(context, &keystore_path(&node_data_base_path), &pc_pub_key)
-				.map_err(|e| {
-					context.eprint(&format!(
-						"⚠️ Failed to read partner chain key from the keystore: {e}"
-					));
-					anyhow!(e)
-				})?;
+		let ecdsa_pair = get_ecdsa_pair_from_file(
+			context,
+			&keystore_path(&node_data_base_path),
+			&partner_chains_key.to_hex_string(),
+		)
+		.map_err(|e| {
+			context.eprint(&format!("⚠️ Failed to read partner chain key from the keystore: {e}"));
+			anyhow!(e)
+		})?;
+
+		let partner_chains_key_str = partner_chains_key.to_hex_string();
 
 		let pc_signature =
 			sign_registration_message_with_sidechain_key(registration_message, ecdsa_pair)?;
@@ -82,12 +83,15 @@ impl CmdRun for Register1Cmd {
 		context.print("");
 		context.print(&format!(
 			"{executable} wizards register2 \\
- --genesis-utxo {genesis_utxo} \\
- --registration-utxo {registration_utxo} \\
- --aura-pub-key {aura_pub_key} \\
- --grandpa-pub-key {grandpa_pub_key} \\
- --partner-chain-pub-key {pc_pub_key} \\
- --partner-chain-signature {pc_signature}"
+--genesis-utxo {genesis_utxo} \\
+--registration-utxo {registration_utxo} \\
+--partner-chain-pub-key {partner_chains_key_str} \\
+--partner-chain-signature {pc_signature}{}",
+			keys.iter()
+				.map(CandidateKeyParam::to_string)
+				.map(|arg| format!(" \\\n--keys {arg}"))
+				.collect::<Vec<_>>()
+				.join("")
 		));
 
 		Ok(())
@@ -119,18 +123,36 @@ fn sign_registration_message_with_sidechain_key(
 	Ok(hex::encode(sig.serialize_compact()))
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug)]
 pub struct GeneratedKeysFileContent {
-	pub sidechain_pub_key: String,
-	pub aura_pub_key: String,
-	pub grandpa_pub_key: String,
+	pub partner_chains_key: ByteString,
+	pub keys: Vec<CandidateKeyParam>,
 }
 
 pub fn read_generated_keys<C: IOContext>(context: &C) -> anyhow::Result<GeneratedKeysFileContent> {
 	let keys_file_content = context
 		.read_file(KEYS_FILE_PATH)
 		.ok_or_else(|| anyhow::anyhow!("failed to read keys file"))?;
-	Ok(serde_json::from_str(&keys_file_content)?)
+
+	#[derive(Serialize, Deserialize, Debug)]
+	pub struct GeneratedKeysFileContentRaw {
+		pub partner_chains_key: ByteString,
+		pub keys: BTreeMap<String, ByteString>,
+	}
+
+	let GeneratedKeysFileContentRaw { partner_chains_key, keys: raw_keys } =
+		serde_json::from_str(&keys_file_content)?;
+
+	let mut keys = vec![];
+	for (id, bytes) in raw_keys.into_iter() {
+		if id.len() != 4 {
+			return Err(anyhow!("Incorrect key type length: {}, must be 4", id.len()));
+		}
+		let id = id.bytes().collect::<Vec<u8>>().try_into().expect("Checked for length 4.");
+		keys.push(CandidateKeyParam::new(id, bytes.0))
+	}
+
+	Ok(GeneratedKeysFileContent { partner_chains_key, keys })
 }
 
 pub fn load_chain_config_field<C: IOContext, T>(
@@ -419,9 +441,11 @@ mod tests {
 
 	fn generated_keys_file_content() -> serde_json::Value {
 		serde_json::json!({
-		  "sidechain_pub_key": "0x031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6",
-		  "aura_pub_key": "0xdf883ee0648f33b6103017b61be702017742d501b8fe73b1d69ca0157460b777",
-		  "grandpa_pub_key": "0x5a091a06abd64f245db11d2987b03218c6bd83d64c262fe10e3a2a1230e90327"
+			"partner_chains_key": "0x031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6",
+			"keys": {
+				"aura": "0xdf883ee0648f33b6103017b61be702017742d501b8fe73b1d69ca0157460b777",
+				"gran": "0x5a091a06abd64f245db11d2987b03218c6bd83d64c262fe10e3a2a1230e90327"
+			}
 		})
 	}
 
@@ -516,7 +540,13 @@ mod tests {
 			),
 			MockIO::print(""),
 			MockIO::print(
-				"<mock executable> wizards register2 \\\n --genesis-utxo 0000000000000000000000000000000000000000000000000000000000000001#0 \\\n --registration-utxo 4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 \\\n --aura-pub-key 0xdf883ee0648f33b6103017b61be702017742d501b8fe73b1d69ca0157460b777 \\\n --grandpa-pub-key 0x5a091a06abd64f245db11d2987b03218c6bd83d64c262fe10e3a2a1230e90327 \\\n --partner-chain-pub-key 0x031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6 \\\n --partner-chain-signature 6e295e36a6b11d8b1c5ec01ac8a639b466fbfbdda94b39ea82b0992e303d58543341345fc705e09c7838786ba0bc746d9038036f66a36d1127d924c4a0228bec",
+				"<mock executable> wizards register2 \\
+--genesis-utxo 0000000000000000000000000000000000000000000000000000000000000001#0 \\
+--registration-utxo 4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 \\
+--partner-chain-pub-key 0x031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6 \\
+--partner-chain-signature 6e295e36a6b11d8b1c5ec01ac8a639b466fbfbdda94b39ea82b0992e303d58543341345fc705e09c7838786ba0bc746d9038036f66a36d1127d924c4a0228bec \\
+--keys aura:df883ee0648f33b6103017b61be702017742d501b8fe73b1d69ca0157460b777 \\
+--keys gran:5a091a06abd64f245db11d2987b03218c6bd83d64c262fe10e3a2a1230e90327",
 			),
 		]
 	}
