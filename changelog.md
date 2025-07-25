@@ -6,6 +6,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Changed
 
+* Switched from `polkadot-stable2503-07` to `polkadot-stable2506`. `type RuntimeEvent` became deprecated in polkadot-sdk. It has been removed from the toolkit crates. To update to this version of PC toolkit, please remove definition of `type RuntimeEvent` when wiring in runtime.
 * Added extra constant burn fee in `pallet-address-association` to discourage attacks on pallet storage.
 * Fixed panic when running `ariadne-parameters`, `registration-status` and `sidechain-params` subcommands when chain spec without initial authorities is used.
 * Wizards don't require `generate-keys` for `prepare-configuration`. Altered recommended order of `create-chain-spec` and `setup-main-chain-state`.
