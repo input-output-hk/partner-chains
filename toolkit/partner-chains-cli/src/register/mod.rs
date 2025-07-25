@@ -62,7 +62,7 @@ impl FromStr for CandidateKeyParam {
 
 		let key_type = KeyTypeId::try_from(parts[0])
 			.map_err(|_| format!("{} is not a correct key type", parts[0]))?;
-		let key = hex::decode(parts[1])?;
+		let key = hex::decode(parts[1].strip_prefix("0x").unwrap_or(parts[1]))?;
 
 		Ok(Self(CandidateKey::new(key_type, key)))
 	}
