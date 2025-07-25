@@ -4,11 +4,8 @@ use super::*;
 use crate::mock::mock_pallet::CurrentTime;
 use frame_support::{assert_noop, assert_ok, traits::tokens::fungible::InspectHold};
 use frame_system::pallet_prelude::OriginFor;
-use hex_literal::hex;
 use mock::*;
 use sidechain_domain::byte_string::SizedByteString;
-use sidechain_domain::*;
-use sp_runtime::AccountId32;
 
 mod upsert_metadata {
 
@@ -22,7 +19,7 @@ mod upsert_metadata {
 			assert_ok!(super::Pallet::<Test>::upsert_metadata(
 				OriginFor::<Test>::signed(FUNDED_ACCOUNT),
 				url_metadata_1(),
-				cross_chain_signature_1(),
+				cross_chain_signature(FUNDED_ACCOUNT, Some(url_metadata_1())),
 				cross_chain_pub_key(),
 				valid_before()
 			));
@@ -50,7 +47,7 @@ mod upsert_metadata {
 			assert_ok!(super::Pallet::<Test>::upsert_metadata(
 				OriginFor::<Test>::signed(FUNDED_ACCOUNT),
 				url_metadata_1(),
-				cross_chain_signature_1(),
+				cross_chain_signature(FUNDED_ACCOUNT, Some(url_metadata_1())),
 				cross_chain_pub_key(),
 				valid_before()
 			));
@@ -63,7 +60,7 @@ mod upsert_metadata {
 			assert_ok!(super::Pallet::<Test>::upsert_metadata(
 				OriginFor::<Test>::signed(FUNDED_ACCOUNT),
 				url_metadata_2(),
-				cross_chain_signature_2(),
+				cross_chain_signature(FUNDED_ACCOUNT, Some(url_metadata_2())),
 				cross_chain_pub_key(),
 				valid_before()
 			));
@@ -100,7 +97,7 @@ mod upsert_metadata {
 				super::Pallet::<Test>::upsert_metadata(
 					OriginFor::<Test>::signed(FUNDED_ACCOUNT),
 					url_metadata_2(),
-					cross_chain_signature_1(),
+					cross_chain_signature(FUNDED_ACCOUNT, Some(url_metadata_1())),
 					cross_chain_pub_key(),
 					valid_before()
 				)
@@ -113,13 +110,11 @@ mod upsert_metadata {
 	#[test]
 	fn fails_with_insufficient_balance() {
 		new_test_ext().execute_with(|| {
-			let poor_account = AccountId32::new([13; 32]);
-
 			assert_noop!(
 				super::Pallet::<Test>::upsert_metadata(
-					OriginFor::<Test>::signed(poor_account),
+					OriginFor::<Test>::signed(POOR_ACCOUNT),
 					url_metadata_1(),
-					cross_chain_signature_1(),
+					cross_chain_signature(POOR_ACCOUNT, Some(url_metadata_1())),
 					cross_chain_pub_key(),
 					valid_before()
 				),
@@ -134,7 +129,7 @@ mod upsert_metadata {
 			super::Pallet::<Test>::upsert_metadata(
 				OriginFor::<Test>::signed(FUNDED_ACCOUNT),
 				url_metadata_1(),
-				cross_chain_signature_1(),
+				cross_chain_signature(FUNDED_ACCOUNT, Some(url_metadata_1())),
 				cross_chain_pub_key(),
 				valid_before(),
 			)
@@ -143,7 +138,7 @@ mod upsert_metadata {
 			let error = super::Pallet::<Test>::upsert_metadata(
 				OriginFor::<Test>::signed(FUNDED_ACCOUNT_2),
 				url_metadata_1(),
-				cross_chain_signature_1(),
+				cross_chain_signature(FUNDED_ACCOUNT_2, Some(url_metadata_1())),
 				cross_chain_pub_key(),
 				valid_before(),
 			)
@@ -160,7 +155,7 @@ mod upsert_metadata {
 			let error = super::Pallet::<Test>::upsert_metadata(
 				OriginFor::<Test>::signed(FUNDED_ACCOUNT),
 				url_metadata_1(),
-				cross_chain_signature_1(),
+				cross_chain_signature(FUNDED_ACCOUNT, Some(url_metadata_1())),
 				cross_chain_pub_key(),
 				valid_before(),
 			)
@@ -181,7 +176,7 @@ mod delete_metadata {
 			assert_ok!(super::Pallet::<Test>::upsert_metadata(
 				OriginFor::<Test>::signed(FUNDED_ACCOUNT),
 				url_metadata_1(),
-				cross_chain_signature_1(),
+				cross_chain_signature(FUNDED_ACCOUNT, Some(url_metadata_1())),
 				cross_chain_pub_key(),
 				valid_before()
 			));
@@ -194,7 +189,7 @@ mod delete_metadata {
 			assert_ok!(super::Pallet::<Test>::delete_metadata(
 				OriginFor::<Test>::signed(FUNDED_ACCOUNT),
 				cross_chain_pub_key(),
-				cross_chain_signature_delete(),
+				cross_chain_signature(FUNDED_ACCOUNT, None),
 				valid_before()
 			));
 
@@ -215,7 +210,7 @@ mod delete_metadata {
 			super::Pallet::<Test>::upsert_metadata(
 				OriginFor::<Test>::signed(FUNDED_ACCOUNT),
 				url_metadata_1(),
-				cross_chain_signature_1(),
+				cross_chain_signature(FUNDED_ACCOUNT, Some(url_metadata_1())),
 				cross_chain_pub_key(),
 				valid_before(),
 			)
@@ -224,7 +219,7 @@ mod delete_metadata {
 			let error = super::Pallet::<Test>::delete_metadata(
 				OriginFor::<Test>::signed(FUNDED_ACCOUNT_2),
 				cross_chain_pub_key(),
-				cross_chain_signature_delete(),
+				cross_chain_signature(FUNDED_ACCOUNT_2, None),
 				valid_before(),
 			)
 			.unwrap_err();
@@ -240,7 +235,7 @@ mod delete_metadata {
 			let error = super::Pallet::<Test>::delete_metadata(
 				OriginFor::<Test>::signed(FUNDED_ACCOUNT),
 				cross_chain_pub_key(),
-				cross_chain_signature_delete(),
+				cross_chain_signature(FUNDED_ACCOUNT, None),
 				valid_before(),
 			)
 			.unwrap_err();
@@ -257,38 +252,9 @@ fn url_metadata_1() -> BlockProducerUrlMetadata {
 	}
 }
 
-fn cross_chain_signature_1() -> CrossChainSignature {
-	CrossChainSignature(hex!(
-		"0e644ae5589365cce0123e673d59eab5381a1c38d5e21a7732bce8592f38fd522e9d395584f72b03ad9b167c1f57813013e0c6feedea799f877f87ec4edc3177"
-	).to_vec())
-}
-
 fn url_metadata_2() -> BlockProducerUrlMetadata {
 	BlockProducerUrlMetadata {
 		url: "https://cooler.stuff/spo2.json".try_into().unwrap(),
 		hash: SizedByteString::from([17; 32]),
 	}
-}
-
-fn cross_chain_signature_2() -> CrossChainSignature {
-	CrossChainSignature(hex!(
-		"1dc03e8577bfda40215ce2e392f2bccb7d203664fa8b031ba14b27dbf2e7e2af345bcb5424e5b2e31ec2027d8313c25a6cbc21ebcdeadee398aaaa6491fb3a02"
-	).to_vec())
-}
-
-fn cross_chain_signature_delete() -> CrossChainSignature {
-	CrossChainSignature(hex!(
-		"28e26efe063733903d79bcd2a036b2f2050e6d54372ad0dbf9db2bcd2026ce58171826fcd205c74c5cdd4cda08a3d5e1497b3d968f3d9328e816b3a9166a68d9"
-	).to_vec())
-}
-
-fn cross_chain_pub_key() -> CrossChainPublicKey {
-	// pub key of secret key cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854
-	CrossChainPublicKey(
-		hex!("020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1").to_vec(),
-	)
-}
-
-fn valid_before() -> u64 {
-	100_000_000
 }

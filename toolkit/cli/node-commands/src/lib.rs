@@ -19,6 +19,7 @@ use sc_service::TaskManager;
 use sidechain_domain::{McEpochNumber, ScEpochNumber, StakePoolPublicKey};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
+use sp_runtime::AccountId32;
 use sp_runtime::DeserializeOwned;
 use sp_runtime::Serialize;
 use sp_runtime::traits::Block as BlockT;
@@ -132,7 +133,7 @@ pub enum PartnerChainsSubcommand<
 
 	/// Signs block producer metadata for submitting to the runtime
 	#[command(subcommand)]
-	SignBlockProducerMetadata(BlockProducerMetadataSignatureCmd),
+	SignBlockProducerMetadata(BlockProducerMetadataSignatureCmd<AccountId32>),
 
 	/// Commands for interacting with Partner Chain smart contracts on Cardano
 	#[command(subcommand)]
