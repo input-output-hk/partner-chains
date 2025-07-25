@@ -17,6 +17,33 @@ use sp_governed_map::GovernedMapDataSource;
 use sp_native_token_management::NativeTokenManagementDataSource;
 use std::{error::Error, sync::Arc};
 
+#[derive(Clone, Debug, PartialEq)]
+pub enum DataSourceType {
+	DbSync,
+	Mock,
+}
+
+impl std::str::FromStr for DataSourceType {
+	type Err = String;
+
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		match s.to_lowercase().as_str() {
+			"db-sync" => Ok(DataSourceType::DbSync),
+			"mock" => Ok(DataSourceType::Mock),
+			_ => Err(format!("Invalid data source type: {}. Valid options: db-sync, mock", s)),
+		}
+	}
+}
+
+impl std::fmt::Display for DataSourceType {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		match self {
+			DataSourceType::DbSync => write!(f, "db-sync"),
+			DataSourceType::Mock => write!(f, "mock"),
+		}
+	}
+}
+
 #[derive(Clone)]
 pub struct DataSources {
 	pub mc_hash: Arc<dyn McHashDataSource + Send + Sync>,
@@ -30,19 +57,33 @@ pub struct DataSources {
 pub(crate) async fn create_cached_data_sources(
 	metrics_opt: Option<McFollowerMetrics>,
 ) -> std::result::Result<DataSources, ServiceError> {
-	if use_mock_follower() {
-		create_mock_data_sources().map_err(|err| {
+	let data_source_type = get_data_source_type();
+
+	match data_source_type {
+		DataSourceType::Mock => create_mock_data_sources().map_err(|err| {
 			ServiceError::Application(
 				format!("Failed to create mock data sources: {err}. Check configuration.").into(),
 			)
-		})
-	} else {
-		create_cached_db_sync_data_sources(metrics_opt).await.map_err(|err| {
-			ServiceError::Application(
-				format!("Failed to create db-sync data sources: {err}").into(),
-			)
-		})
+		}),
+		DataSourceType::DbSync => {
+			create_cached_db_sync_data_sources(metrics_opt).await.map_err(|err| {
+				ServiceError::Application(
+					format!("Failed to create db-sync data sources: {err}").into(),
+				)
+			})
+		},
 	}
+}
+
+fn get_data_source_type() -> DataSourceType {
+	if use_mock_follower() {
+		return DataSourceType::Mock;
+	}
+
+	std::env::var("DATA_SOURCE")
+		.ok()
+		.and_then(|v| v.parse().ok())
+		.unwrap_or(DataSourceType::DbSync)
 }
 
 fn use_mock_follower() -> bool {
@@ -68,6 +109,7 @@ pub fn create_mock_data_sources()
 pub const CANDIDATES_FOR_EPOCH_CACHE_SIZE: usize = 64;
 pub const STAKE_CACHE_SIZE: usize = 100;
 pub const GOVERNED_MAP_CACHE_SIZE: u16 = 100;
+
 pub async fn create_cached_db_sync_data_sources(
 	metrics_opt: Option<McFollowerMetrics>,
 ) -> Result<DataSources, Box<dyn Error + Send + Sync + 'static>> {

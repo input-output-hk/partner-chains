@@ -1,12 +1,30 @@
-use clap::command;
+use clap::{ValueEnum, command};
 use partner_chains_cli::{AURA, GRANDPA, KeyDefinition};
 use partner_chains_demo_runtime::opaque::SessionKeys;
 use partner_chains_node_commands::{PartnerChainRuntime, PartnerChainsSubcommand};
 use sc_cli::RunCmd;
 use sp_runtime::AccountId32;
 
+#[derive(Debug, Clone, ValueEnum)]
+pub enum DataSource {
+	DbSync,
+	Mock,
+}
+
+impl From<DataSource> for crate::data_sources::DataSourceType {
+	fn from(ds: DataSource) -> Self {
+		match ds {
+			DataSource::DbSync => crate::data_sources::DataSourceType::DbSync,
+			DataSource::Mock => crate::data_sources::DataSourceType::Mock,
+		}
+	}
+}
+
 #[derive(Debug, clap::Parser)]
 pub struct Cli {
+	#[arg(long, value_enum, default_value = "db-sync")]
+	pub data_source: DataSource,
+
 	#[command(subcommand)]
 	pub subcommand: Option<Subcommand>,
 
@@ -84,6 +102,19 @@ mod registration_signatures_tests {
 				"sidechain_signature": "0xce7696304946a9eaec3c2c8be1aa49023f0fe01b08c7097c8493d733424f22fe45153632876785143fe4db8f362b2b1dfcede2c755d11c6a1b78a2f4b7f1b87d"
 			})
 		)
+	}
+
+	#[test]
+	fn invalid_data_source() {
+		let data_source = "unknown";
+		let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+		let cmd_result =
+			cmd.args(format!("--data-source {}", data_source).split(' ')).assert().failure();
+		let output = std::str::from_utf8(&cmd_result.get_output().stderr).unwrap();
+		assert_eq!(
+			output,
+			"error: invalid value 'unknown' for '--data-source <DATA_SOURCE>'\n  [possible values: db-sync, mock]\n\nFor more information, try '--help'.\n"
+		);
 	}
 
 	const REGISTRATION_SIGS_CMD: &str = "registration-signatures \
