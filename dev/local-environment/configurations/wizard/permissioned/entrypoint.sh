@@ -1,8 +1,5 @@
 #!/bin/bash
 
-echo "Installing dependencies..."
-apt -qq update &> /dev/null
-apt -qq -y install expect jq &> /dev/null
 cp /usr/local/bin/partner-chains-node /data/partner-chains-node
 cd /data
 

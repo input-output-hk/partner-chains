@@ -1,8 +1,5 @@
 #!/bin/bash
 
-apt -qq update &> /dev/null
-apt -qq -y install curl jq ncat &> /dev/null
-
 cp /usr/local/bin/partner-chains-node /partner-chains-node
 echo "Using Partner Chains node version:"
 ./partner-chains-node --version
