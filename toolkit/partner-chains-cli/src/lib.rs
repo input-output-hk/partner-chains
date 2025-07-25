@@ -30,7 +30,7 @@ use io::*;
 pub use keystore::{AURA, CROSS_CHAIN, GRANDPA, KeyDefinition};
 use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
 pub use permissioned_candidates::ParsedPermissionedCandidatesKeys;
-pub use runtime_bindings::{PartnerChainRuntime, RuntimeTypeWrapper};
+pub use runtime_bindings::PartnerChainRuntime;
 use std::time::Duration;
 
 #[derive(Clone, Debug, clap::Parser)]
