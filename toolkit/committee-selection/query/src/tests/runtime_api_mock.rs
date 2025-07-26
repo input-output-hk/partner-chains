@@ -1,7 +1,7 @@
 use super::*;
 use crate::tests::query_mock::TestRuntimeApi;
 use authority_selection_inherents::{
-	MaybeFromCandidateKeys, PermissionedCandidateDataError, RegistrationDataError, StakeError,
+	AutoMaybeFromCandidateKeys, PermissionedCandidateDataError, RegistrationDataError, StakeError,
 	validate_permissioned_candidate_data, validate_registration_data,
 };
 use mock::*;
@@ -29,7 +29,7 @@ impl_opaque_keys! {
 	}
 }
 
-impl MaybeFromCandidateKeys for SessionKeys {}
+impl AutoMaybeFromCandidateKeys for SessionKeys {}
 
 #[derive(Encode, Decode, Clone)]
 pub struct CrossChainPublic([u8; 33]);
