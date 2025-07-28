@@ -185,10 +185,10 @@ pub fn new_partial(
 
 pub async fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
 	let task_manager = match config.network.network_backend {
-		Some(sc_network::config::NetworkBackendType::Libp2p) => {
+		sc_network::config::NetworkBackendType::Libp2p => {
 			new_full_base::<sc_network::NetworkWorker<_, _>>(config).await?
 		},
-		None | Some(sc_network::config::NetworkBackendType::Litep2p) => {
+		sc_network::config::NetworkBackendType::Litep2p => {
 			new_full_base::<sc_network::Litep2pNetworkBackend>(config).await?
 		},
 	};

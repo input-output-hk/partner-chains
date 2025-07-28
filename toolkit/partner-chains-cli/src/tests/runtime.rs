@@ -116,7 +116,6 @@ impl pallet_native_token_management::TokenTransferHandler for Mock {
 }
 
 impl pallet_native_token_management::Config for MockRuntime {
-	type RuntimeEvent = RuntimeEvent;
 	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
 	type TokenTransferHandler = Mock;
 	type WeightInfo = ();
@@ -151,7 +150,6 @@ impl pallet_governed_map::Config for MockRuntime {
 pub(crate) type MaxValidators = ConstU32<137>;
 
 impl pallet_session_validator_management::Config for MockRuntime {
-	type RuntimeEvent = RuntimeEvent;
 	type MaxValidators = MaxValidators;
 	type AuthorityId = CrossChainPublic;
 	type AuthorityKeys = TestSessionKeys;
@@ -174,7 +172,6 @@ impl pallet_session_validator_management::Config for MockRuntime {
 }
 
 impl pallet_partner_chains_session::Config for MockRuntime {
-	type RuntimeEvent = RuntimeEvent;
 	type ValidatorId = AccountId32;
 	type ShouldEndSession = Mock;
 	type NextSessionRotation = ();
