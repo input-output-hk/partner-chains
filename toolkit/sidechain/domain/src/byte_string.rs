@@ -43,7 +43,18 @@ impl Deref for ByteString {
 }
 
 /// Constant size variant of `ByteString` that's usable in a FRAME runtime
-#[derive(Eq, Clone, PartialEq, TypeInfo, MaxEncodedLen, Encode, Decode, DecodeWithMemTracking)]
+#[derive(
+	Eq,
+	Clone,
+	PartialEq,
+	TypeInfo,
+	MaxEncodedLen,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	PartialOrd,
+	Ord,
+)]
 #[byte_string(debug)]
 #[byte_string(to_hex_string)]
 #[cfg_attr(feature = "std", byte_string(decode_hex))]
