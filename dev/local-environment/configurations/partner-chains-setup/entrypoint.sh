@@ -91,8 +91,8 @@ node2_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/aura.vkey
 node2_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/grandpa.vkey)
 
 cat <<EOF > permissioned_candidates.csv
-$node1_sidechain_vkey:$node1_aura_vkey:$node1_grandpa_vkey
-$node2_sidechain_vkey:$node2_aura_vkey:$node2_grandpa_vkey
+$node1_sidechain_vkey,aura:$node1_aura_vkey,gran:$node1_grandpa_vkey
+$node2_sidechain_vkey,aura:$node2_aura_vkey,gran:$node2_grandpa_vkey
 EOF
 
 ./partner-chains-node smart-contracts upsert-permissioned-candidates \
@@ -136,7 +136,7 @@ node4_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-4/keys/grandp
     --genesis-utxo $GENESIS_UTXO \
     --spo-public-key $node4_spo_public_key \
     --spo-signature $node4_spo_signature \
-    --sidechain-public-keys $node4_sidechain_public_key:$node4_aura_vkey:$node4_grandpa_vkey \
+    --partner-chain-public-keys $node4_sidechain_public_key,aura:$node4_aura_vkey,gran:$node4_grandpa_vkey \
     --sidechain-signature $node4_sidechain_signature \
     --registration-utxo $node4_utxo \
     --payment-key-file /partner-chains-nodes/partner-chains-node-4/keys/payment.skey
@@ -176,7 +176,7 @@ node5_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-5/keys/grandp
     --genesis-utxo $GENESIS_UTXO \
     --spo-public-key $node5_spo_public_key \
     --spo-signature $node5_spo_signature \
-    --sidechain-public-keys $node5_sidechain_public_key:$node5_aura_vkey:$node5_grandpa_vkey \
+    --partner-chain-public-keys $node5_sidechain_public_key,aura:$node5_aura_vkey,gran:$node5_grandpa_vkey \
     --sidechain-signature $node5_sidechain_signature \
     --registration-utxo $node5_utxo \
     --payment-key-file /partner-chains-nodes/partner-chains-node-5/keys/payment.skey

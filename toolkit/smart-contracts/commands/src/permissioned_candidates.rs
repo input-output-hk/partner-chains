@@ -9,7 +9,8 @@ pub struct UpsertPermissionedCandidatesCmd {
 	common_arguments: crate::CommonArguments,
 	#[arg(long)]
 	/// Path to the file containing the permissioned candidates data.
-	/// Each line represents one permissioned candidate in format SIDECHAIN_KEY:AURA_KEY:GRANDPA_KEY
+	/// Each line represents one permissioned candidate in format PARTNER_CHAINS_KEY,KEY_1_ID:KEY_1_BYTES,...,KEY_N_ID:KEY_N_BYTES.
+	/// Legacy format of PARTNER_CHAINS_KEY:AURA_PUB_KEY:GRANDPA_PUB_KEY is supported, each line is eqivalent to `PARTNER_CHAINS_KEY,aura:AURA_PUB_KEY,gran:GRANDPA_PUB_KEY`.
 	permissioned_candidates_file: String,
 	#[clap(flatten)]
 	/// Path to the payment key file
