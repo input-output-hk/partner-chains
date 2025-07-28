@@ -14,6 +14,8 @@ RUN apt-get update && apt-get install -y \
     dnsutils \
     jq \
     htop \
+    ncat \
+    expect \
     && rm -rf /var/lib/apt/lists/*
 
 RUN useradd -m -u 1010 -U -s /bin/sh -d /substrate substrate \

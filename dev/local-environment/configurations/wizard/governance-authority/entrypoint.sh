@@ -27,9 +27,6 @@ if [ -f "/shared/partner-chains-node-1.ready" ]; then
 fi
 
 
-echo "Installing dependencies..."
-apt -qq update &> /dev/null
-apt -qq -y install expect curl jq ncat &> /dev/null
 cp /usr/local/bin/partner-chains-node /partner-chains-node
 
 
