@@ -206,7 +206,7 @@ pub mod pallet {
 		type Error = InherentError;
 		const INHERENT_IDENTIFIER: InherentIdentifier = INHERENT_IDENTIFIER;
 
-		/// Responsible for calling [Call:set] on each block by the block author, if the validator list changed
+		/// Responsible for calling [Call::set] on each block by the block author, if the validator list changed
 		fn create_inherent(data: &InherentData) -> Option<Self::Call> {
 			if NextCommittee::<T>::exists() {
 				None

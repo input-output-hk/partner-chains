@@ -3,7 +3,7 @@
 //! Ogmios is a JSON-RPC server that provides a high-level API for interacting with the Cardano blockchain.
 //! It can be accessed via a HTTP or WebSocket connection.
 //!
-//! More information about Ogmios API can be found at https://ogmios.dev/api/
+//! More information about Ogmios API can be found at <https://ogmios.dev/api/>
 
 #[cfg(feature = "jsonrpsee-client")]
 pub mod jsonrpsee;

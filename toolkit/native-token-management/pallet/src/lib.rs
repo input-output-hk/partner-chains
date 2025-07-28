@@ -54,14 +54,14 @@
 //! ```
 //!
 //! Keep in mind that if the handler logic has to perform storage operations, the pallet's benchmarks
-//! should be rerun. Otherwise default weights are provided in [pallet_native_token_management::weights].
+//! should be rerun. Otherwise default weights are provided in [crate::weights].
 //!
 //! ## Script configuration
 //!
 //! For token transfers to be observed, the pallet must be configured with correct Cardano addresses and
 //! scripts used to idendify them in the ledger. These scripts can be set in two ways: through genesis
 //! configuration if the pallet is present in the initial runtime of a chain; or via a governance action
-//! using the [set_main_chain_scripts] extrinsic.
+//! using the [Pallet::set_main_chain_scripts] extrinsic.
 //!
 //! ### Genesis configuratin
 //!
@@ -84,7 +84,7 @@
 //! ### Main chain scripts extrinsic
 //!
 //! Once the chain is already started, to set initial main chain scripts to a newly added pallet, or to
-//! change the existing ones, the [set_main_chain_scripts] extrinsic must be submitted through on-chain
+//! change the existing ones, the [Pallet::set_main_chain_scripts] extrinsic must be submitted through on-chain
 //! governance mechanism like `sudo` or `pallet_democracy`. Who exactly can submit this extrinsic is
 //! controlled by the [Config::MainChainScriptsOrigin] field of the pallet's configuration, but for security
 //! it must be a trusted entity.
@@ -175,7 +175,7 @@ pub mod pallet {
 	/// Stores the pallet's initialization state.
 	///
 	/// The pallet is considered initialized if its inherent has been successfuly called at least once since
-	/// genesis or the last invocation of [set_main_chain_scripts][Pallet::set_main_chain_scripts].
+	/// genesis or the last invocation of [Pallet::set_main_chain_scripts].
 	#[pallet::storage]
 	pub type Initialized<T: Config> = StorageValue<_, bool, ValueQuery>;
 

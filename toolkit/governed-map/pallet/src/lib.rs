@@ -86,7 +86,7 @@
 //! through the [SubstrateWeight][crate::weights::SubstrateWeight] type.
 //!
 //! However, since data size limits and the on-change logic both can affect the weights, it is advisable to run
-//! your own benchmark to account for their impact. See the documentation on [crate::benchmarking] for details.
+//! your own benchmark to account for their impact. See the documentation on [benchmarking] for details.
 //!
 //! ### Configuring the pallet
 //!
@@ -170,7 +170,7 @@ mod tests;
 #[cfg(test)]
 mod mock;
 
-#[cfg(feature = "runtime-benchmarks")]
+#[cfg(any(feature = "runtime-benchmarks", doc))]
 pub mod benchmarking;
 
 #[frame_support::pallet]

@@ -140,7 +140,7 @@ sp_api::decl_runtime_apis! {
 	{
 		/// Returns main chain scripts
 		fn get_main_chain_scripts() -> MainChainScripts;
-		/// Returns next unset [ScEpochNumber]
+		/// Returns next unset [sidechain_domain::ScEpochNumber]
 		fn get_next_unset_epoch_number() -> ScEpochNumber;
 
 		#[changed_in(2)]

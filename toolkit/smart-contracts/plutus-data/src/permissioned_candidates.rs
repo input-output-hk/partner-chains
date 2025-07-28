@@ -77,6 +77,7 @@ impl From<PermissionedCandidateDatums> for Vec<PermissionedCandidateData> {
 /// Converts a list of [PermissionedCandidateData] values to [VersionedGenericDatum] encoded as [PlutusData].
 ///
 /// Encoding:
+/// ```ignore
 ///   VersionedGenericDatum:
 ///   - datum: ()
 ///   - appendix:
@@ -93,6 +94,7 @@ impl From<PermissionedCandidateDatums> for Vec<PermissionedCandidateData> {
 ///       // etc.
 ///     ]
 ///   - version: 0
+/// ```
 pub fn permissioned_candidates_to_plutus_data(
 	candidates: &[PermissionedCandidateData],
 ) -> PlutusData {

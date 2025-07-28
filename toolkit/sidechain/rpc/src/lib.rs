@@ -95,7 +95,7 @@ mod tests;
 #[cfg(any(test))]
 mod mock;
 
-/// Response type of the [SidechainRpcApi::get_params] method
+/// Response type of the [crate::SidechainRpcApiServer::get_params] method
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Debug)]
 pub struct GetParamsOutput {
 	/// Genesis UTXO of the queried Partner Chain

@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use sp_core::offchain::Timestamp;
 use std::fmt::Debug;
 
-/// Response type of [SidechainRpcApiServer::get_status]
+/// Response type of [crate::SidechainRpcApiServer::get_status]
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct GetStatusResponse {
@@ -39,7 +39,7 @@ pub struct MainchainData {
 	pub next_epoch_timestamp: Timestamp,
 }
 
-/// Error type returned by [SidechainRpcApiServer::get_status]
+/// Error type returned by [crate::SidechainRpcApiServer::get_status]
 #[derive(Debug)]
 pub enum GetStatusRpcError {
 	/// Signals that the server could not convert Partner Chain slot number to timestamp

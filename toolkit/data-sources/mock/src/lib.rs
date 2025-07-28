@@ -53,7 +53,9 @@ pub use block::BlockDataSourceMock;
 #[cfg(feature = "candidate-source")]
 mod candidate;
 #[cfg(feature = "candidate-source")]
-pub use candidate::{AuthoritySelectionDataSourceMock, MockRegistrationsConfig};
+pub use candidate::{
+	AuthoritySelectionDataSourceMock, MockEpochCandidates, MockRegistrationsConfig,
+};
 
 #[cfg(feature = "governed-map")]
 mod governed_map;

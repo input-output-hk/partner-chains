@@ -114,9 +114,12 @@ fn decoding_error_and_log(data: &PlutusData, to: &str, msg: &str) -> DataDecodin
 /// This struct has the same shape as `VersionedGenericDatum` from smart-contracts.
 /// It is used to help implementing a proper `From` trait for `PlutusData` for
 /// datum types.
-pub(crate) struct VersionedGenericDatum {
+pub struct VersionedGenericDatum {
+	/// data that is interpreted by smart-contract
 	pub datum: PlutusData,
+	/// generic data ignored by smart-contract logic, schema is version dependent
 	pub appendix: PlutusData,
+	/// version number
 	pub version: u64,
 }
 

@@ -75,7 +75,7 @@
 //!
 //! The same constructor can be used for both proposal and validation of blocks.
 //!
-//! [NativeTokenManagementApi]: sp_native_token_management::NativeTokenManagementApi
+//! [NativeTokenManagementApi]: crate::NativeTokenManagementApi
 #![cfg_attr(not(feature = "std"), no_std)]
 #![deny(missing_docs)]
 

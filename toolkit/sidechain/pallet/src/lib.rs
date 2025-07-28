@@ -46,7 +46,7 @@
 //! the pallet can be configured with a handler that will be triggered during initialization
 //! of each first block of a new epoch.
 //!
-//! To create a new epoch handler, simply define a type and have it implement the [OnNewEpoch] trait:
+//! To create a new epoch handler, simply define a type and have it implement the [sp_sidechain::OnNewEpoch] trait:
 //! ```rust
 //! use sidechain_domain::{ ScEpochNumber, ScSlotNumber };
 //! use sp_runtime::Weight;

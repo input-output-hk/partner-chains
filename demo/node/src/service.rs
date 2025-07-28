@@ -35,8 +35,8 @@ type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 /// imported and generated.
 const GRANDPA_JUSTIFICATION_PERIOD: u32 = 512;
 
-/// This function provides dependencies of [partner_chains_nodes_command::PartnerChainsSubcommand].
-/// It is not mandatory to have such a dedicated function, [partial_service] could be enough,
+/// This function provides dependencies of [partner_chains_node_commands::PartnerChainsSubcommand].
+/// It is not mandatory to have such a dedicated function, [new_partial] could be enough,
 /// however using such a specialized function decreases number of possible failures and wiring time.
 pub fn new_pc_command_deps(
 	config: &Configuration,

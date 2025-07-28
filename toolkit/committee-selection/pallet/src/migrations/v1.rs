@@ -9,7 +9,7 @@ use {
 
 use super::v0;
 
-/// [VersionedMigration] parametrized for v0 to v1 migration.
+/// [frame_support::migrations::VersionedMigration] parametrized for v0 to v1 migration.
 pub type LegacyToV1Migration<T> = frame_support::migrations::VersionedMigration<
 	0, // The migration will only execute when the on-chain storage version is 0
 	1, // The on-chain storage version will be set to 1 after the migration is complete

@@ -17,9 +17,9 @@ sidechain-domain = { workspace = true, features = ["std"] }
 sp-core = { workspace = true }
 cardano-serialization-lib = { workspace = true }
 thiserror = { workspace = true }
+raw-scripts = { workspace = true }
 
 [dev-dependencies]
-raw-scripts = { workspace = true }
 serde_json = { workspace = true }
 hex = { workspace = true }
 hex-literal = { workspace = true }
