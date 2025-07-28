@@ -22,11 +22,15 @@ use byte_string_derive::byte_string;
 use core::{
 	fmt::{Display, Formatter},
 	ops::Deref,
+	u32,
 };
 use crypto::blake2b;
 use derive_more::{From, Into};
 use num_derive::*;
-use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen, WrapperTypeEncode};
+use parity_scale_codec::{
+	Compact, Decode, DecodeWithMemTracking, Encode, MaxEncodedLen, WrapperTypeEncode,
+	decode_vec_with_len,
+};
 use plutus_datum_derive::*;
 use scale_info::TypeInfo;
 use sp_core::{
@@ -1197,19 +1201,7 @@ impl CandidateKey {
 	}
 }
 
-#[derive(
-	Debug,
-	Clone,
-	PartialEq,
-	Eq,
-	Decode,
-	DecodeWithMemTracking,
-	Encode,
-	TypeInfo,
-	PartialOrd,
-	Ord,
-	Hash,
-)]
+#[derive(Debug, Clone, PartialEq, Eq, DecodeWithMemTracking, TypeInfo, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 /// Bytes of CandidateKeys that come from Cardano or other input.
 pub struct CandidateKeys(pub Vec<CandidateKey>);
@@ -1236,6 +1228,57 @@ impl CandidateKeys {
 impl From<Vec<([u8; 4], Vec<u8>)>> for CandidateKeys {
 	fn from(value: Vec<([u8; 4], Vec<u8>)>) -> Self {
 		Self(value.into_iter().map(|(id, bytes)| CandidateKey { id, bytes }).collect())
+	}
+}
+
+/// Backward compatible [Encode] for [CandidateKeys].
+/// After node update InherentData would be encoded with this version but runtime would still know [PermissionedCandidateData] and [CandidateRegistration]
+/// that have [AuraPublicKey] and [GrandpaPublicKey] fields instead of [CandidateKeys] field.
+/// To support existing chains, when keys are AURA and Grandpa, [CandidateKeys] is encoded exactly like in previous version.
+/// If other key set is used in the place where AURA vector lenght is encoded, Compact(u32::MAX) is encoded to enable discrimination between the types that
+/// has to be decoded.
+/// The represtation is either:
+/// Legacy: AuraKeySize, AuraKeyBytes, GrandpaKeySize, GrandpaKeyBytes
+/// Generic: u32::MAX, CandidateKeysVector
+/// AuraKeySize cannot be u32::MAX (won't fit on Cardano), so when it is encountered, we know that the generic representation is used.
+impl Encode for CandidateKeys {
+	fn size_hint(&self) -> usize {
+		if self.has_only_aura_and_grandpa_keys() {
+			Encode::size_hint(&AuraPublicKey(self.find_or_empty(AURA)))
+				.saturating_add(Encode::size_hint(&GrandpaPublicKey(self.find_or_empty(GRANDPA))))
+		} else {
+			Encode::size_hint(&Compact(u32::MAX)).saturating_add(Encode::size_hint(&self.0))
+		}
+	}
+
+	fn encode_to<T: parity_scale_codec::Output + ?Sized>(&self, dest: &mut T) {
+		if self.has_only_aura_and_grandpa_keys() {
+			Encode::encode_to(&AuraPublicKey(self.find_or_empty(AURA)), dest);
+			Encode::encode_to(&GrandpaPublicKey(self.find_or_empty(GRANDPA)), dest)
+		} else {
+			// Compact(u32::MAX) is used to signal that a vector of CandidateKey should be decoded
+			// It has to be this type, be it is the item that AuraPublicKey::decode expects.
+			Encode::encode_to(&Compact(u32::MAX), dest);
+			Encode::encode_to(&self.0, dest)
+		}
+	}
+}
+
+/// Custom backward compatibile Decode. See comment on the Encode implementation.
+impl Decode for CandidateKeys {
+	fn decode<I: parity_scale_codec::Input>(
+		input: &mut I,
+	) -> Result<Self, parity_scale_codec::Error> {
+		// See Encode instance
+		let marker_or_aura_size: u32 = <Compact<u32>>::decode(input)?.0;
+		if marker_or_aura_size == u32::MAX {
+			let keys = Vec::<CandidateKey>::decode(input)?;
+			Ok(Self(keys))
+		} else {
+			let aura_bytes: Vec<u8> = decode_vec_with_len(input, marker_or_aura_size as usize)?;
+			let grandpa = GrandpaPublicKey::decode(input)?;
+			Ok(Self(vec![AuraPublicKey(aura_bytes).into(), grandpa.into()]))
+		}
 	}
 }
 
@@ -1378,6 +1421,7 @@ mod tests {
 	use super::*;
 	use core::str::FromStr;
 	use hex_literal::hex;
+	use parity_scale_codec::{Decode, Encode};
 
 	#[test]
 	fn main_chain_address_string_serialize_deserialize_round_trip() {
@@ -1448,6 +1492,46 @@ mod tests {
 		);
 
 		assert!(signature.verify(&pubkey, &signed_data).is_ok())
+	}
+
+	#[derive(Decode, Encode, PartialEq, Eq, Debug)]
+	struct TestCandidateKeys {
+		field_before: Option<u32>,
+		keys: CandidateKeys,
+		// ensures that Decode of CandidateKeys does not consume the whole input
+		field_after: Option<u32>,
+	}
+
+	#[test]
+	fn encode_decode_round_trip_for_generic_candidate_keys() {
+		let keys = TestCandidateKeys {
+			field_before: Some(42),
+			keys: CandidateKeys(vec![
+				CandidateKey { id: *b"abcd", bytes: [7u8; 32].to_vec() },
+				CandidateKey { id: *b"efgh", bytes: [9u8; 32].to_vec() },
+			]),
+			field_after: Some(15),
+		};
+		let bytes: Vec<u8> = Encode::encode(&keys);
+		let mut bytes: &[u8] = &bytes;
+		let decoded = TestCandidateKeys::decode(&mut bytes).unwrap();
+		assert_eq!(keys, decoded)
+	}
+
+	#[test]
+	fn encode_decode_round_trip_for_aura_and_grandpa_candidate_keys() {
+		let keys = TestCandidateKeys {
+			field_before: Some(42),
+			keys: CandidateKeys(vec![
+				AuraPublicKey([7u8; 32].to_vec()).into(),
+				GrandpaPublicKey([9u8; 32].to_vec()).into(),
+			]),
+			field_after: Some(15),
+		};
+		let bytes: Vec<u8> = Encode::encode(&keys);
+		let mut bytes: &[u8] = &bytes;
+		let decoded = TestCandidateKeys::decode(&mut bytes).unwrap();
+		assert_eq!(keys, decoded)
 	}
 }
 
