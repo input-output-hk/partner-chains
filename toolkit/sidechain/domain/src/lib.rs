@@ -46,7 +46,7 @@ use {
 
 /// The number of main chain epochs back a Partner Chain queries for committee selection inputs.
 /// This offset is necessary to ensure that data is present and stable.
-const DATA_MC_EPOCH_OFFSET: u32 = 2;
+pub const DATA_MC_EPOCH_OFFSET: u32 = 2;
 
 /// Shifts given epoch back by [DATA_MC_EPOCH_OFFSET] accounting for underflow.
 pub fn offset_data_epoch(epoch: &McEpochNumber) -> Result<McEpochNumber, u32> {

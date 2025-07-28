@@ -36,7 +36,7 @@ impl TimeSource for SystemTimeSource {
 	}
 }
 
-#[cfg(feature = "mock")]
+#[cfg(any(feature = "mock", doc))]
 /// A mock implementation of `TimeSource` for testing purposes.
 pub struct MockedTimeSource {
 	/// The mocked current time in milliseconds since Unix epoch

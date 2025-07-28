@@ -190,8 +190,8 @@ impl From<raw_scripts::RawScript> for PlutusScript {
 
 /// Applies arguments to a Plutus script.
 /// The first argument is the script, the rest of the arguments are the datums that will be applied.
-/// * The script can be any type that implements [Into<PlutusScript>] for example [raw_scripts::RawScript].
-/// * The arguments can be any type that implements [Into<PlutusDataWrapper>]. Implementations are provided for
+/// * The script can be any type that implements [`Into<PlutusScript>`] for example [raw_scripts::RawScript].
+/// * The arguments can be any type that implements [`Into<PlutusDataWrapper>`]. Implementations are provided for
 ///   [uplc::PlutusData] and [plutus::Datum].
 /// Returns [anyhow::Result<uplc::PlutusData>].
 ///

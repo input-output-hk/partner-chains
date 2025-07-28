@@ -2,7 +2,7 @@
 //!
 //! ## Contents
 //!
-//! This crate provides the [BlockProducerFeesRpcApiServer] trait defining the JsonRPC method to display
+//! This crate provides the [BlockProducerFeesRpcServer] trait defining the JsonRPC method to display
 //! block producer fees and its concrete implementation [BlockProducerFeesRpc].
 //! ## Usage - PC Builders
 //!
@@ -65,7 +65,7 @@ pub trait BlockProducerFeesRpc<AccountId: Decode> {
 	fn get_block_producer_fees(&self) -> RpcResult<Vec<FeesSettings<AccountId>>>;
 }
 
-/// Concrete implementation of [BlockProducerFeesRpcApiServer] that uses [BlockProducerFeesRpcApi] for querying runtime storage.
+/// Concrete implementation of [BlockProducerFeesRpcServer] that uses [BlockProducerFeesApi] for querying runtime storage.
 #[derive(new)]
 pub struct BlockProducerFeesRpc<C, Block, AccountId> {
 	client: Arc<C>,

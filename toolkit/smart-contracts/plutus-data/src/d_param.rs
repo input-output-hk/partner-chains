@@ -34,7 +34,7 @@ impl From<DParamDatum> for sidechain_domain::DParameter {
 	}
 }
 
-/// Convert [DParameter] to [PlutusData].
+/// Convert [sidechain_domain::DParameter] to [PlutusData].
 ///
 /// Encoding:
 ///   VersionedGenericDatum:

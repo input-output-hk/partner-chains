@@ -20,9 +20,8 @@
 //!
 //! ## Result types
 //!
-//! Most commands return a [SubCmdResult] type, which is a wrapper around a
-//! [serde_json::Value]. The returned value is printed to the ouptut at the end
-//! of the command execution.
+//! Most commands return result of [serde_json::Value].
+//! The returned value is printed to the ouptut at the end of the command execution.
 use ogmios_client::jsonrpsee::{OgmiosClients, client_for_url};
 use partner_chains_cardano_offchain::{
 	await_tx::FixedDelayRetries,

@@ -152,7 +152,7 @@ impl<Keys: MaybeFromCandidateKeys> CreateChainSpecConfig<Keys> {
 		}
 	}
 
-	/// Returns [pallet_session::GenesisConfig] derived from the config, using initial permissioned candidates
+	/// Returns [pallet_partner_chains_session::GenesisConfig] derived from the config, using initial permissioned candidates
 	/// as initial validators
 	pub fn pallet_partner_chains_session_config<T: pallet_partner_chains_session::Config>(
 		&self,

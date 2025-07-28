@@ -36,7 +36,7 @@ pub fn runtime_wasm() -> &'static [u8] {
 }
 
 /// Creates chain-spec according to the config obtained by wizards.
-/// [JValue] is returned instead of [sc_service::GenericChainSpec] in order to avoid
+/// [serde_json::Value] is returned instead of [sc_service::GenericChainSpec] in order to avoid
 /// GPL code in the toolkit.
 pub fn pc_create_chain_spec(config: &CreateChainSpecConfig<SessionKeys>) -> serde_json::Value {
 	let runtime_genesis_config = partner_chains_demo_runtime::RuntimeGenesisConfig {
