@@ -26,6 +26,7 @@ match this change.
 * `authority-selection-inherents` crate now exports all its public members from the crate root
 * `select_authorities` in `authority-selection-inherents` crate now returns a `BoundedVec` of `CommitteeMembers`. Projects that used the old version no longer
 need to transform the data in their own runtime code
+* Updates Rust dependency to v1.88, changes WASM target to 'wasm32v1-none'
 
 ## Added
 
