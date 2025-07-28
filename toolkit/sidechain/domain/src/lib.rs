@@ -1182,7 +1182,7 @@ impl FromStr for CandidateKey {
 			let bytes = hex::decode(bytes).map_err(|_| "key bytes are not in hex format")?;
 			Ok(CandidateKey { id, bytes })
 		} else {
-			Err("invalid format of CandidateKey, missing ':'")
+			Err("invalid format of CandidateKey, expected '<key type>:<key>'")
 		}
 	}
 }

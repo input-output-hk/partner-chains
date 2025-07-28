@@ -181,7 +181,7 @@ impl From<GenesisUtxo> for UtxoId {
 	}
 }
 
-/// Parses public keys in formatted as PARTNER_CHAINS_KEY:AURA_KEY:GRANDPA_KEY or PARTNER_CHAINS_KEY,KEY_ID_1:KEY_1,...,KEY_ID_N:KEY_N
+/// Parses public keys formatted as PARTNER_CHAINS_KEY:AURA_KEY:GRANDPA_KEY or PARTNER_CHAINS_KEY,KEY_ID_1:KEY_1,...,KEY_ID_N:KEY_N
 pub(crate) fn parse_partnerchain_public_keys(
 	partner_chain_public_keys: &str,
 ) -> CmdResult<PermissionedCandidateData> {
