@@ -36,4 +36,4 @@ EXPOSE 9944
 
 VOLUME ["/data"]
 
-ENTRYPOINT ["/usr/local/bin/partner-chains-node"] 
+ENTRYPOINT ["/usr/local/bin/partner-chains-node"]
