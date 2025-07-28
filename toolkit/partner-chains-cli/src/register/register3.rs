@@ -11,6 +11,8 @@ use sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDeri
 use sidechain_domain::*;
 use sidechain_domain::{CandidateRegistration, UtxoId};
 
+use super::CandidateKeyParam;
+
 #[derive(Clone, Debug, Parser)]
 #[command(author, version, about, long_about = None)]
 pub struct Register3Cmd {
@@ -23,9 +25,7 @@ pub struct Register3Cmd {
 	#[arg(long)]
 	pub partner_chain_pub_key: SidechainPublicKey,
 	#[arg(long)]
-	pub aura_pub_key: AuraPublicKey,
-	#[arg(long)]
-	pub grandpa_pub_key: GrandpaPublicKey,
+	pub keys: Vec<CandidateKeyParam>,
 	#[arg(long)]
 	pub partner_chain_signature: SidechainSignature,
 	#[arg(long)]
@@ -63,10 +63,7 @@ impl CmdRun for Register3Cmd {
 			partner_chain_signature: self.partner_chain_signature.clone(),
 			own_pkh: payment_signing_key.to_pub_key_hash(),
 			registration_utxo: self.registration_utxo,
-			keys: CandidateKeys(vec![
-				self.aura_pub_key.clone().into(),
-				self.grandpa_pub_key.clone().into(),
-			]),
+			keys: CandidateKeys(self.keys.iter().cloned().map(Into::into).collect()),
 		};
 		let offchain = context.offchain_impl(&ogmios_configuration)?;
 
@@ -334,15 +331,31 @@ mod tests {
 	fn mock_register3_cmd() -> Register3Cmd {
 		Register3Cmd {
 			common_arguments: crate::CommonArguments { retry_delay_seconds: 5, retry_count: 59 },
-            genesis_utxo: genesis_utxo(),
-            registration_utxo: "cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13#0".parse().unwrap(),
-            partner_chain_pub_key: "020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1".parse().unwrap(),
-            aura_pub_key: "79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf".parse().unwrap(),
-            grandpa_pub_key: "1a55db596380bc63f5ee964565359b5ea8e0096c798c3281692df097abbd9aa4b657f887915ad2a52fc85c674ef4044baeaf7149546af93a2744c379b9798f07".parse().unwrap(),
-            partner_chain_signature: SidechainSignature(hex_literal::hex!("cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854").to_vec()),
-			spo_public_key: StakePoolPublicKey(hex_literal::hex!("cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7")),
-			spo_signature: MainchainSignature(hex_literal::hex!("aaa39fbf163ed77c69820536f5dc22854e7e13f964f1e077efde0844a09bde64c1aab4d2b401e0fe39b43c91aa931cad26fa55c8766378462c06d86c85134801")),
-        }
+			genesis_utxo: genesis_utxo(),
+			registration_utxo: "cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13#0"
+				.parse()
+				.unwrap(),
+			partner_chain_pub_key:
+				"020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1"
+					.parse()
+					.unwrap(),
+			keys: vec![
+				CandidateKeyParam::new(*b"aura", hex!("79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf").to_vec()),
+				CandidateKeyParam::new(*b"gran", hex!("1a55db596380bc63f5ee964565359b5ea8e0096c798c3281692df097abbd9aa4b657f887915ad2a52fc85c674ef4044baeaf7149546af93a2744c379b9798f07").to_vec()),
+			],
+			partner_chain_signature: SidechainSignature(
+				hex_literal::hex!(
+					"cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854"
+				)
+				.to_vec(),
+			),
+			spo_public_key: StakePoolPublicKey(hex_literal::hex!(
+				"cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7"
+			)),
+			spo_signature: MainchainSignature(hex_literal::hex!(
+				"aaa39fbf163ed77c69820536f5dc22854e7e13f964f1e077efde0844a09bde64c1aab4d2b401e0fe39b43c91aa931cad26fa55c8766378462c06d86c85134801"
+			)),
+		}
 	}
 
 	fn genesis_utxo() -> UtxoId {
