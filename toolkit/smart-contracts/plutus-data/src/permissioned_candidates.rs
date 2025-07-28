@@ -32,8 +32,7 @@ impl From<PermissionedCandidateDatumV1> for PermissionedCandidateData {
 	// with T: OpaqueKeys, this function will be re-implemented.
 	fn from(value: PermissionedCandidateDatumV1) -> Self {
 		let PermissionedCandidateDatumV1 { partner_chains_key, keys } = value;
-		let sidechain_public_key = SidechainPublicKey(partner_chains_key.bytes);
-		PermissionedCandidateData { sidechain_public_key, keys }
+		PermissionedCandidateData { sidechain_public_key: partner_chains_key, keys }
 	}
 }
 
@@ -41,7 +40,7 @@ impl From<PermissionedCandidateDatumV1> for PermissionedCandidateData {
 /// Datum representing a permissioned candidate with arbitrary set of keys
 pub struct PermissionedCandidateDatumV1 {
 	/// Partner Chains key identifier and bytes
-	pub partner_chains_key: CandidateKey,
+	pub partner_chains_key: SidechainPublicKey,
 	/// Represents arbitrary set of keys with 4 character identifier
 	pub keys: CandidateKeys,
 }
@@ -75,11 +74,12 @@ impl From<PermissionedCandidateDatums> for Vec<PermissionedCandidateData> {
 }
 
 /// Converts a list of [PermissionedCandidateData] values to [VersionedGenericDatum] encoded as [PlutusData].
-///
+/// Version 0 is used for specific set of Partner Chains Key: partner chains key, AURA, Grandpa
+/// If other set of key is used, then version 1 is used.
 /// Encoding:
 /// ```ignore
 ///   VersionedGenericDatum:
-///   - datum: ()
+///   - datum: Constr 0 []
 ///   - appendix:
 ///     [
 ///       [ candidates[0].sidechain_public_key
@@ -94,31 +94,89 @@ impl From<PermissionedCandidateDatums> for Vec<PermissionedCandidateData> {
 ///       // etc.
 ///     ]
 ///   - version: 0
+/// or:
+///   VersionedGenericDatum:
+///   - datum: Constr 0 []
+///   - appendix:
+///     [
+///       [ candidates[0].sidechain_public_key
+/// 	  ,
+///         [
+/// 	      [ candidates[0].keys[0].id,
+///           , candidates[0].keys[0].bytes
+///           ]
+///         , [ candidates[0].keys[1].id,
+///           , candidates[0].keys[1].bytes
+///           ]
+///           // etc.
+///         ]
+///       ]
+///     ,
+///       [ candidates[1].sidechain_public_key
+/// 	  ,
+///         [
+/// 	      [ candidates[1].keys[0].id,
+///           , candidates[1].keys[0].bytes
+///           ]
+///         , [ candidates[1].keys[1].id,
+///           , candidates[1].keys[1].bytes
+///           ]
+///           // etc.
+///         ]
+///       ]
+///       // etc.
+///     ]
+///   - version: 1
 /// ```
+
 pub fn permissioned_candidates_to_plutus_data(
 	candidates: &[PermissionedCandidateData],
 ) -> PlutusData {
-	let mut list = PlutusList::new();
-	for candidate in candidates {
-		let mut candidate_datum = PlutusList::new();
-		candidate_datum.add(&PlutusData::new_bytes(candidate.sidechain_public_key.0.clone()));
-		for key in candidate.keys.0.iter() {
-			candidate_datum.add(&PlutusData::new_bytes(key.bytes.clone()));
+	fn candidates_to_plutus_data_v0(candidates: &[PermissionedCandidateData]) -> PlutusData {
+		let mut list = PlutusList::new();
+		for candidate in candidates {
+			let mut candidate_datum = PlutusList::new();
+			candidate_datum.add(&PlutusData::new_bytes(candidate.sidechain_public_key.0.clone()));
+			for key in candidate.keys.0.iter() {
+				candidate_datum.add(&PlutusData::new_bytes(key.bytes.clone()));
+			}
+			list.add(&PlutusData::new_list(&candidate_datum));
 		}
-		list.add(&PlutusData::new_list(&candidate_datum));
+		let appendix = PlutusData::new_list(&list);
+		VersionedGenericDatum {
+			datum: PlutusData::new_empty_constr_plutus_data(&BigNum::zero()),
+			appendix,
+			version: 0,
+		}
+		.into()
 	}
-	let appendix = PlutusData::new_list(&list);
-	VersionedGenericDatum {
-		datum: PlutusData::new_empty_constr_plutus_data(&BigNum::zero()),
-		appendix,
-		version: 0,
+
+	fn candidates_to_plutus_data_v1(candidates: &[PermissionedCandidateData]) -> PlutusData {
+		let mut list = PlutusList::new();
+		for candidate in candidates {
+			let mut candidate_datum = PlutusList::new();
+			candidate_datum.add(&PlutusData::new_bytes(candidate.sidechain_public_key.0.clone()));
+			candidate_datum.add(&candidate_keys_to_plutus(&candidate.keys));
+			list.add(&PlutusData::new_list(&candidate_datum));
+		}
+		VersionedGenericDatum {
+			datum: PlutusData::new_empty_constr_plutus_data(&BigNum::zero()),
+			appendix: PlutusData::new_list(&list),
+			version: 1,
+		}
+		.into()
 	}
-	.into()
+
+	if candidates.iter().all(|c| c.keys.has_only_aura_and_grandpa_keys()) {
+		candidates_to_plutus_data_v0(candidates)
+	} else {
+		candidates_to_plutus_data_v1(candidates)
+	}
 }
 
 impl PermissionedCandidateDatums {
 	/// Parses plutus data schema in accordance with V1 schema
-	fn decode_v1(data: &PlutusData) -> Result<Self, String> {
+	fn decode_v1_appendix(data: &PlutusData) -> Result<Self, String> {
 		let permissioned_candidates = data
 			.as_list()
 			.and_then(|list_datums| {
@@ -156,9 +214,10 @@ impl VersionedDatumWithLegacy for PermissionedCandidateDatums {
 		appendix: &PlutusData,
 	) -> Result<Self, String> {
 		match version {
+			// v0 appendix is the same as legacy format of whole plutus data
 			0 => PermissionedCandidateDatums::decode_legacy(appendix)
 				.map_err(|msg| format!("Cannot parse appendix: {msg}")),
-			1 => PermissionedCandidateDatums::decode_v1(appendix)
+			1 => PermissionedCandidateDatums::decode_v1_appendix(appendix)
 				.map_err(|msg| format!("Cannot parse appendix: {msg}")),
 			_ => Err(format!("Unknown version: {version}")),
 		}
@@ -184,7 +243,7 @@ fn decode_legacy_candidate_datum(datum: &PlutusData) -> Option<PermissionedCandi
 fn decode_v1_candidate_datum(datum: &PlutusData) -> Option<PermissionedCandidateDatumV1> {
 	// The first element has Partner Chains key, second contains all other keys
 	let outer_list = datum.as_list().filter(|l| l.len() == 2)?;
-	let partner_chains_key = decode_candidate_key(&outer_list.get(0))?;
+	let partner_chains_key = SidechainPublicKey(outer_list.get(0).as_bytes()?);
 	let keys = decode_candidate_keys(&outer_list.get(1))?;
 	Some(PermissionedCandidateDatumV1 { partner_chains_key, keys })
 }
@@ -267,14 +326,14 @@ mod tests {
 				{ "constructor": 0, "fields": [] },
 				{"list": [
 					{"list":[
-						{"list": [{"bytes": hex::encode(b"crch")}, {"bytes": "cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854"}]},
+						{"bytes": "cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854"},
 						{"list": [
 							{"list": [{"bytes": hex::encode(b"aura")}, {"bytes": "bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec"}]},
 							{"list": [{"bytes": hex::encode(b"gran")}, {"bytes": "9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d"}]}
 						]}
 					]},
 					{"list":[
-						{"list": [{"bytes": hex::encode(b"crch")}, {"bytes": "79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf"}]},
+						{"bytes": "79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf"},
 						{"list": [
 							{"list": [{"bytes": hex::encode(b"aura")}, {"bytes": "56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19"}]},
 							{"list": [{"bytes": hex::encode(b"gran")}, {"bytes": "7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32"}]}
@@ -287,7 +346,7 @@ mod tests {
 	}
 
 	#[test]
-	fn test_permissioned_candidates_to_plutus_data() {
+	fn permissioned_candidates_to_plutus_data_outputs_v0_for_aura_and_grandpa_keys() {
 		let expected_plutus_data = json_to_plutus_data(v0_datum_json());
 
 		let domain_data = vec![
@@ -332,6 +391,50 @@ mod tests {
 	}
 
 	#[test]
+	fn permissioned_candidates_to_plutus_data_outputs_v1() {
+		let domain_data = vec![
+			PermissionedCandidateData {
+				sidechain_public_key: SidechainPublicKey([1; 33].to_vec()),
+				keys: CandidateKeys(vec![
+					CandidateKey { id: [2; 4], bytes: [3; 32].to_vec() },
+					CandidateKey { id: [4; 4], bytes: [5; 32].to_vec() },
+				]),
+			},
+			PermissionedCandidateData {
+				sidechain_public_key: SidechainPublicKey([6; 33].to_vec()),
+				keys: CandidateKeys(vec![
+					CandidateKey { id: [7; 4], bytes: [8; 32].to_vec() },
+					CandidateKey { id: [9; 4], bytes: [10u8; 32].to_vec() },
+				]),
+			},
+		];
+		let json = serde_json::json!({
+			"list": [
+				{ "constructor": 0, "fields": [] },
+				{"list": [
+					{"list":[
+						{"bytes": "010101010101010101010101010101010101010101010101010101010101010101"},
+						{"list": [
+							{"list": [{"bytes": "02020202"}, {"bytes": "0303030303030303030303030303030303030303030303030303030303030303"}]},
+							{"list": [{"bytes": "04040404"}, {"bytes": "0505050505050505050505050505050505050505050505050505050505050505"}]}
+						]}
+					]},
+					{"list":[
+						{"bytes": "060606060606060606060606060606060606060606060606060606060606060606"},
+						{"list": [
+							{"list": [{"bytes": "07070707"}, {"bytes": "0808080808080808080808080808080808080808080808080808080808080808"}]},
+							{"list": [{"bytes": "09090909"}, {"bytes": "0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a"}]}
+						]}
+					]}
+				]},
+				{ "int": 1 }
+			]
+		});
+		let expected_plutus_data = json_to_plutus_data(json);
+		assert_eq!(permissioned_candidates_to_plutus_data(&domain_data), expected_plutus_data)
+	}
+
+	#[test]
 	fn valid_v0_permissioned_candidates() {
 		let plutus_data = json_to_plutus_data(v0_datum_json());
 
@@ -369,8 +472,7 @@ mod tests {
 
 		let expected_datum = PermissionedCandidateDatums::V1(vec![
 			PermissionedCandidateDatumV1 {
-				partner_chains_key: CandidateKey::new(
-					CROSS_CHAIN_KEY_TYPE_ID,
+				partner_chains_key: SidechainPublicKey(
 					hex!("cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854").into(),
 				),
 				keys: CandidateKeys(vec![
@@ -387,8 +489,7 @@ mod tests {
 				]),
 			},
 			PermissionedCandidateDatumV1 {
-				partner_chains_key: CandidateKey::new(
-					CROSS_CHAIN_KEY_TYPE_ID,
+				partner_chains_key: SidechainPublicKey(
 					hex!("79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf").into(),
 				),
 				keys: CandidateKeys(vec![

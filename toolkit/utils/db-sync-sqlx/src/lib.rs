@@ -60,8 +60,7 @@ macro_rules! sqlx_implementations_for_wrapper {
 			fn encode_by_ref(
 				&self,
 				buf: &mut <Postgres as Database>::ArgumentBuffer<'q>,
-			) -> std::result::Result<IsNull, Box<(dyn std::error::Error + Send + Sync + 'static)>>
-			{
+			) -> std::result::Result<IsNull, BoxDynError> {
 				buf.extend(&self.0.to_be_bytes());
 				Ok(IsNull::No)
 			}
