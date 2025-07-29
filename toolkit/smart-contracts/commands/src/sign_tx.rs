@@ -6,7 +6,7 @@ use sidechain_domain::TransactionCbor;
 #[derive(Clone, Debug, clap::Parser)]
 /// Command for signing a cardano transaction
 pub struct SignTxCmd {
-	#[arg(long, value_parser = TransactionCbor::decode_hex)]
+	#[arg(long)]
 	/// Hex-encoded transaction CBOR (with or without 0x prefix)
 	transaction: TransactionCbor,
 	#[clap(flatten)]

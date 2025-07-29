@@ -16,7 +16,7 @@ pub use partner_chains_cli::PartnerChainRuntime;
 use partner_chains_smart_contracts_commands::SmartContractsCmd;
 use sc_cli::{CliConfiguration, SharedParams, SubstrateCli};
 use sc_service::TaskManager;
-use sidechain_domain::{McEpochNumber, ScEpochNumber, StakePoolPublicKey};
+use sidechain_domain::*;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::AccountId32;
@@ -30,7 +30,6 @@ use sp_session_validator_management_query::commands::*;
 #[allow(deprecated)]
 use sp_sidechain::{GetGenesisUtxo, GetSidechainStatus};
 use std::future::Future;
-use std::str::FromStr;
 use std::sync::Arc;
 
 #[derive(Debug, Clone, Parser)]
@@ -104,7 +103,7 @@ static REGISTRATION_STATUS_AFTER_HELP: once_cell::sync::Lazy<String> = once_cell
 /// Entry point for all Partner Chains specific subcommand.
 pub enum PartnerChainsSubcommand<
 	RuntimeBindings: PartnerChainRuntime + Send + Sync,
-	PartnerchainAddress: Clone + Sync + Send + FromStr + 'static,
+	PartnerchainAddress: Clone + Sync + Send + FromStrStdErr + 'static,
 > {
 	/// Returns sidechain parameters.
 	/// Requires --chain parameter that results in loading a properly configured chain spec.
@@ -181,7 +180,7 @@ where
 	CommitteeMember::AuthorityId: Decode + Encode + AsRef<[u8]> + Send + Sync + 'static,
 	CommitteeMember::AuthorityKeys: Decode + Encode,
 	BlockProducerMetadata: DeserializeOwned + Encode + Send + Sync,
-	PartnerchainAddress: Serialize + Clone + Sync + Send + FromStr + Encode + 'static,
+	PartnerchainAddress: Serialize + Clone + Sync + Send + FromStrStdErr + Encode + 'static,
 {
 	match cmd {
 		PartnerChainsSubcommand::SidechainParams(cmd) => {

@@ -6,13 +6,14 @@ use serde::de::DeserializeOwned;
 use serde_json::{self, json};
 use sidechain_domain::*;
 use sp_block_producer_metadata::MetadataSignedMessage;
-use std::{io::BufReader, str::FromStr};
+use std::io::BufReader;
 use time_source::{SystemTimeSource, TimeSource};
 
 /// Generates ECDSA signatures for block producer metadata using cross-chain keys.
 #[derive(Clone, Debug, clap::Subcommand)]
 #[command(author, version, about, long_about = None)]
-pub enum BlockProducerMetadataSignatureCmd<AccountId: FromStr + Clone + Send + Sync + 'static> {
+pub enum BlockProducerMetadataSignatureCmd<AccountId: FromStrStdErr + Clone + Send + Sync + 'static>
+{
 	/// Generates signature for the `upsert_metadata` extrinsic
 	Upsert {
 		/// Genesis UTXO that uniquely identifies the target Partner Chain
@@ -28,7 +29,7 @@ pub enum BlockProducerMetadataSignatureCmd<AccountId: FromStr + Clone + Send + S
 		#[arg(long, default_value = "3600")]
 		ttl: u64,
 		/// Partner Chain Account that will be used to upsert the metadata and will own it on-chain
-		#[arg(long, value_parser=parse_partner_chain_accounts::<AccountId>)]
+		#[arg(long)]
 		partner_chain_account: AccountId,
 	},
 	/// Generates signature for the `delete_metadata` extrinsic
@@ -44,16 +45,12 @@ pub enum BlockProducerMetadataSignatureCmd<AccountId: FromStr + Clone + Send + S
 		ttl: u64,
 		/// Partner Chain Account that will be used to delete the metadata.
 		/// It must be the account that owns it on-chain.
-		#[arg(long, value_parser=parse_partner_chain_accounts::<AccountId>)]
+		#[arg(long)]
 		partner_chain_account: AccountId,
 	},
 }
 
-fn parse_partner_chain_accounts<T: FromStr>(s: &str) -> Result<T, String> {
-	T::from_str(s).map_err(|_| "Failed to parse Account ID".to_owned())
-}
-
-impl<AccountId: Encode + FromStr + Clone + Send + Sync + 'static>
+impl<AccountId: Encode + FromStrStdErr + Clone + Send + Sync + 'static>
 	BlockProducerMetadataSignatureCmd<AccountId>
 {
 	/// Reads metadata file, generates signatures, and outputs JSON to stdout.
