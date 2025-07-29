@@ -41,13 +41,13 @@ class PartnerChainsNode:
             logging.error(f"Could not parse response of sign-address-association cmd: {result}")
             raise e
 
-    def sign_block_producer_metadata_upsert(self, genesis_utxo, metadata_file, cross_chain_signing_key, partner_chains_account):
-        return self.sign_block_producer_metadata_operation(genesis_utxo, metadata_file, cross_chain_signing_key, partner_chains_account)
+    def sign_block_producer_metadata_upsert(self, genesis_utxo, metadata_file, cross_chain_signing_key, partner_chain_account):
+        return self.sign_block_producer_metadata_operation(genesis_utxo, metadata_file, cross_chain_signing_key, partner_chain_account)
 
-    def sign_block_producer_metadata_delete(self, genesis_utxo, cross_chain_signing_key, partner_chains_account):
-        return self.sign_block_producer_metadata_operation(genesis_utxo, None, cross_chain_signing_key, partner_chains_account)
+    def sign_block_producer_metadata_delete(self, genesis_utxo, cross_chain_signing_key, partner_chain_account):
+        return self.sign_block_producer_metadata_operation(genesis_utxo, None, cross_chain_signing_key, partner_chain_account)
 
-    def sign_block_producer_metadata_operation(self, genesis_utxo, metadata_file, cross_chain_signing_key, partner_chains_account):
+    def sign_block_producer_metadata_operation(self, genesis_utxo, metadata_file, cross_chain_signing_key, partner_chain_account):
         cross_chain_signing_key = cross_chain_signing_key.to_string().hex()
 
         sign_block_producer_metadata_cmd = " ".join([
@@ -57,7 +57,7 @@ class PartnerChainsNode:
                 f"--genesis-utxo {genesis_utxo}",
                 (f"--metadata-file {metadata_file}" if metadata_file is not None else ""),
                 f"--cross-chain-signing-key {cross_chain_signing_key}",
-                f"--partner-chain-account {partner_chains_account}"
+                f"--partner-chain-account {partner_chain_account}"
              ])
 
         result = self.run_command.exec(sign_block_producer_metadata_cmd)
