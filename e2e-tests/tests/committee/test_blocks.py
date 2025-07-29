@@ -18,7 +18,7 @@ def test_block_producer_can_update_their_metadata(genesis_utxo, api: BlockchainA
     }
     metadata_filepath = write_file(api.partner_chains_node.run_command, metadata)
 
-    signature = api.sign_block_producer_metadata_upsert(genesis_utxo, metadata_filepath, skey)
+    signature = api.sign_block_producer_metadata_upsert(genesis_utxo, metadata_filepath, skey, get_wallet.address)
     assert signature.signature, "Signature is empty"
     assert signature.cross_chain_pub_key == f"0x{vkey_hex}"
 
@@ -41,7 +41,7 @@ def test_block_producer_can_update_their_metadata(genesis_utxo, api: BlockchainA
         "hash": "0x0000000000000000000000000000000000000000000000000000000000000002",
     }
     metadata_filepath = write_file(api.partner_chains_node.run_command, metadata)
-    signature = api.sign_block_producer_metadata_upsert(genesis_utxo, metadata_filepath, skey)
+    signature = api.sign_block_producer_metadata_upsert(genesis_utxo, metadata_filepath, skey, get_wallet.address)
     assert signature.signature, "Signature is empty"
     assert signature.cross_chain_pub_key == f"0x{vkey_hex}"
 
@@ -72,7 +72,7 @@ def test_block_producer_can_delete_their_metadata(genesis_utxo, api: BlockchainA
     }
     metadata_filepath = write_file(api.partner_chains_node.run_command, metadata)
 
-    signature = api.sign_block_producer_metadata_upsert(genesis_utxo, metadata_filepath, skey)
+    signature = api.sign_block_producer_metadata_upsert(genesis_utxo, metadata_filepath, skey, get_wallet.address)
     assert signature.signature, "Signature is empty"
     assert signature.cross_chain_pub_key == f"0x{vkey_hex}"
 
@@ -90,7 +90,7 @@ def test_block_producer_can_delete_their_metadata(genesis_utxo, api: BlockchainA
     assert rpc_metadata == metadata, "RPC did not return block producer metadata or it is incorrect"
 
     logger.info("Starting delete")
-    signature = api.sign_block_producer_metadata_delete(genesis_utxo, skey)
+    signature = api.sign_block_producer_metadata_delete(genesis_utxo, skey, get_wallet.address)
     assert signature.signature, "Signature is empty"
     assert signature.cross_chain_pub_key == f"0x{vkey_hex}"
 

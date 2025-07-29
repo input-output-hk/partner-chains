@@ -685,14 +685,14 @@ class SubstrateApi(BlockchainApi):
     def sign_address_association(self, genesis_utxo, address, stake_signing_key):
         return self.partner_chains_node.sign_address_association(genesis_utxo, address, stake_signing_key)
 
-    def sign_block_producer_metadata_upsert(self, genesis_utxo, metadata_file, cross_chain_signing_key):
+    def sign_block_producer_metadata_upsert(self, genesis_utxo, metadata_file, cross_chain_signing_key, partner_chain_account):
         return self.partner_chains_node.sign_block_producer_metadata_upsert(
-            genesis_utxo, metadata_file, cross_chain_signing_key
+            genesis_utxo, metadata_file, cross_chain_signing_key, partner_chain_account
         )
 
-    def sign_block_producer_metadata_delete(self, genesis_utxo, cross_chain_signing_key):
+    def sign_block_producer_metadata_delete(self, genesis_utxo, cross_chain_signing_key, partner_chain_account):
         return self.partner_chains_node.sign_block_producer_metadata_delete(
-            genesis_utxo, cross_chain_signing_key
+            genesis_utxo, cross_chain_signing_key, partner_chain_account
         )
 
     @long_running_function

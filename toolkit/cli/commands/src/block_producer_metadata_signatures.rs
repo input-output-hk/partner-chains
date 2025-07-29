@@ -6,13 +6,13 @@ use serde::de::DeserializeOwned;
 use serde_json::{self, json};
 use sidechain_domain::*;
 use sp_block_producer_metadata::MetadataSignedMessage;
-use std::io::BufReader;
+use std::{io::BufReader, str::FromStr};
 use time_source::{SystemTimeSource, TimeSource};
 
 /// Generates ECDSA signatures for block producer metadata using cross-chain keys.
 #[derive(Clone, Debug, clap::Subcommand)]
 #[command(author, version, about, long_about = None)]
-pub enum BlockProducerMetadataSignatureCmd {
+pub enum BlockProducerMetadataSignatureCmd<AccountId: FromStr + Clone + Send + Sync + 'static> {
 	/// Generates signature for the `upsert_metadata` extrinsic
 	Upsert {
 		/// Genesis UTXO that uniquely identifies the target Partner Chain
@@ -27,6 +27,9 @@ pub enum BlockProducerMetadataSignatureCmd {
 		/// Time-to-live of the signature in seconds.
 		#[arg(long, default_value = "3600")]
 		ttl: u64,
+		/// Partner Chain Account that will be used to upsert the metadata and will own it on-chain
+		#[arg(long, value_parser=parse_partner_chain_accounts::<AccountId>)]
+		partner_chain_account: AccountId,
 	},
 	/// Generates signature for the `delete_metadata` extrinsic
 	Delete {
@@ -39,10 +42,20 @@ pub enum BlockProducerMetadataSignatureCmd {
 		/// Time-to-live of the signature in seconds.
 		#[arg(long, default_value = "3600")]
 		ttl: u64,
+		/// Partner Chain Account that will be used to delete the metadata.
+		/// It must be the account that owns it on-chain.
+		#[arg(long, value_parser=parse_partner_chain_accounts::<AccountId>)]
+		partner_chain_account: AccountId,
 	},
 }
 
-impl BlockProducerMetadataSignatureCmd {
+fn parse_partner_chain_accounts<T: FromStr>(s: &str) -> Result<T, String> {
+	T::from_str(s).map_err(|_| "Failed to parse Account ID".to_owned())
+}
+
+impl<AccountId: Encode + FromStr + Clone + Send + Sync + 'static>
+	BlockProducerMetadataSignatureCmd<AccountId>
+{
 	/// Reads metadata file, generates signatures, and outputs JSON to stdout.
 	pub fn execute<M: Send + Sync + DeserializeOwned + Encode>(&self) -> anyhow::Result<()> {
 		let input = self.get_input::<M>()?;
@@ -82,6 +95,7 @@ impl BlockProducerMetadataSignatureCmd {
 			metadata,
 			genesis_utxo: *self.genesis_utxo(),
 			valid_before: self.valid_before(time_source),
+			owner: self.partner_chain_account(),
 		};
 		let signature = message.sign_with_key(&self.cross_chain_signing_key().0);
 
@@ -99,6 +113,13 @@ impl BlockProducerMetadataSignatureCmd {
 		match self {
 			Self::Delete { cross_chain_signing_key, .. } => cross_chain_signing_key,
 			Self::Upsert { cross_chain_signing_key, .. } => cross_chain_signing_key,
+		}
+	}
+
+	fn partner_chain_account(&self) -> &AccountId {
+		match self {
+			Self::Delete { partner_chain_account, .. } => partner_chain_account,
+			Self::Upsert { partner_chain_account, .. } => partner_chain_account,
 		}
 	}
 
@@ -155,6 +176,7 @@ mod tests {
 				.unwrap(),
 			),
 			ttl: 3600,
+			partner_chain_account: 999u32,
 		};
 
 		let metadata = TestMetadata { url: "http://example.com".into(), hash: "1234".into() };
@@ -164,8 +186,8 @@ mod tests {
 		let expected_output = json!({
 			"cross_chain_pub_key": "0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1",
 			"cross_chain_pub_key_hash" : "0x4a20b7cab322b36838a8e4b6063c3563cdb79c97175f6c2d233dac4d",
-			"encoded_message": "0x84020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a10148687474703a2f2f6578616d706c652e636f6d10313233340101010101010101010101010101010101010101010101010101010101010101010010eff50500000000",
-			"signature": "0x94bc07a67ada4a27f24a9e455ac7adb12e81b6b53b59637a1cae96c9f7a2fcf321586c8a3d4605949c3a105f5767ae0b315e3dcfa44b01272e9c698df3317ec4",
+			"encoded_message": "0x84020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a10148687474703a2f2f6578616d706c652e636f6d10313233340101010101010101010101010101010101010101010101010101010101010101010010eff50500000000e7030000",
+			"signature": "0xcfd171975a2c6ab6757c8ebbf104ba46d8b9722c17b151e4d735fa90673db1183200a6e90578f9337fe5c60d012e06f6b98be902a2d25dcf319f2f1b434bd645",
 			"encoded_metadata": "0x48687474703a2f2f6578616d706c652e636f6d1031323334",
 			"valid_before": time + ttl
 		});

@@ -7,10 +7,12 @@
 //!
 //! ```rust
 //! use sidechain_domain::byte_string::*;
-//! use sidechain_domain::{ CrossChainSignature, CrossChainPublicKey };
-//! use sp_core::ConstU32;
+//! use sidechain_domain::{ CrossChainSignature, CrossChainPublicKey, UtxoId };
+//! use sp_core::{ ConstU32, Encode };
 //! use hex_literal::hex;
+//! use sp_runtime::AccountId32;
 //!
+//! #[derive(Encode)]
 //! struct BlockProducerMetadata {
 //!     pub url: BoundedString<ConstU32<512>>,
 //!     pub hash: SizedByteString<32>,
@@ -18,7 +20,11 @@
 //!
 //! struct ExampleBenchmarkHelper;
 //!
-//! impl pallet_block_producer_metadata::benchmarking::BenchmarkHelper<BlockProducerMetadata> for ExampleBenchmarkHelper {
+//! impl pallet_block_producer_metadata::benchmarking::BenchmarkHelper<BlockProducerMetadata, AccountId32> for ExampleBenchmarkHelper {
+//!     fn genesis_utxo() -> UtxoId {
+//!         UtxoId::new([1;32], 0)
+//!     }
+//!
 //!     fn metadata() -> BlockProducerMetadata {
 //!         BlockProducerMetadata {
 //!        	   url: BoundedString::try_from("https://cool.stuff/spo.json").unwrap(),
@@ -28,11 +34,8 @@
 //!     fn cross_chain_pub_key() -> CrossChainPublicKey {
 //!         CrossChainPublicKey(hex!("020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1").to_vec())
 //!     }
-//!     fn upsert_cross_chain_signature() -> sidechain_domain::CrossChainSignature {
-//!         CrossChainSignature(hex!("810854f5bd1d06dc8583ebd58ff4877dddb1646511edb10afd021f716bf51a8e617353b6c5d5f92a2005e2c3c24b782a6f74132d6b54251854cce186c981862c").to_vec())
-//!     }
-//!     fn delete_cross_chain_signature() -> sidechain_domain::CrossChainSignature {
-//!         CrossChainSignature(hex!("5c1a701c8adffdf53a371409a24cc6c2d778a4c65c2c105c5fccfc5eeb69e3fa59bd723e7c10893f53fcfdfff8c02954f2230953cb9596119c11d4a9a29564c5").to_vec())
+//!     fn cross_chain_sign_key() -> k256::SecretKey {
+//!         k256::SecretKey::from_slice(&[2;32]).unwrap()
 //!     }
 //!     fn upsert_valid_before() -> u64 {
 //!     	100_000_000
@@ -65,26 +68,49 @@
 use super::*;
 use frame_benchmarking::v2::*;
 use frame_system::RawOrigin;
+pub use k256::SecretKey;
 use sidechain_domain::*;
 
 /// Helper trait for injecting mock values for use in benchmarks
-pub trait BenchmarkHelper<BlockProducerMetadata> {
+pub trait BenchmarkHelper<BlockProducerMetadata: Encode, AccountId: Encode> {
+	/// Should return the chain's genesis utxo
+	fn genesis_utxo() -> UtxoId;
 	/// Should return mock metadata
 	fn metadata() -> BlockProducerMetadata;
 	/// Should return mock cross-chain pubkey
 	fn cross_chain_pub_key() -> CrossChainPublicKey;
+	/// Should return mock cross-chain signing key
+	fn cross_chain_sign_key() -> SecretKey;
 	/// Should return mock cross-chain signature for upsert operation
 	///
 	/// This signature must match the cross-chain pubkey returned by `cross_chain_pub_key` and be a valid
 	/// signature of [MetadataSignedMessage] created using values returned by `metadata` and `cross_chain_pub_key`
 	/// and the genesis UTXO used for benchmarks.
-	fn upsert_cross_chain_signature() -> CrossChainSignature;
+	fn upsert_cross_chain_signature(owner: AccountId) -> CrossChainSignature {
+		MetadataSignedMessage {
+			cross_chain_pub_key: Self::cross_chain_pub_key(),
+			metadata: Some(Self::metadata()),
+			genesis_utxo: Self::genesis_utxo(),
+			valid_before: Self::upsert_valid_before(),
+			owner,
+		}
+		.sign_with_key(&Self::cross_chain_sign_key())
+	}
 
 	/// Should return mock cross-chain signature for delete operation
 	///
 	/// This signature must match the cross-chain pubkey returned by `cross_chain_pub_key` and be a valid
 	/// for the genesis UTXO used for benchmarks.
-	fn delete_cross_chain_signature() -> CrossChainSignature;
+	fn delete_cross_chain_signature(owner: AccountId) -> CrossChainSignature {
+		MetadataSignedMessage {
+			cross_chain_pub_key: Self::cross_chain_pub_key(),
+			metadata: None::<BlockProducerMetadata>,
+			genesis_utxo: Self::genesis_utxo(),
+			valid_before: Self::delete_valid_before(),
+			owner,
+		}
+		.sign_with_key(&Self::cross_chain_sign_key())
+	}
 
 	/// Should return the valid-before value for the upsert
 	fn upsert_valid_before() -> u64;
@@ -103,12 +129,14 @@ mod benchmarks {
 	fn upsert_metadata() {
 		let metadata = T::BenchmarkHelper::metadata();
 		let cross_chain_pub_key = T::BenchmarkHelper::cross_chain_pub_key();
-		let cross_chain_signature = T::BenchmarkHelper::upsert_cross_chain_signature();
 		let valid_before = T::BenchmarkHelper::upsert_valid_before();
 
 		// Create an account and fund it with sufficient balance
 		let caller: T::AccountId = account("caller", 0, 0);
 		let _ = T::Currency::mint_into(&caller, T::HoldAmount::get() * 2u32.into());
+
+		let cross_chain_signature =
+			T::BenchmarkHelper::upsert_cross_chain_signature(caller.clone());
 
 		#[extrinsic_call]
 		_(
@@ -124,12 +152,14 @@ mod benchmarks {
 	fn delete_metadata() {
 		let metadata = T::BenchmarkHelper::metadata();
 		let cross_chain_pub_key = T::BenchmarkHelper::cross_chain_pub_key();
-		let cross_chain_signature = T::BenchmarkHelper::delete_cross_chain_signature();
 		let valid_before = T::BenchmarkHelper::delete_valid_before();
 
 		let caller: T::AccountId = account("caller", 0, 0);
 		let _ =
 			T::Currency::hold(&HoldReason::MetadataDeposit.into(), &caller, T::HoldAmount::get());
+
+		let cross_chain_signature =
+			T::BenchmarkHelper::delete_cross_chain_signature(caller.clone());
 
 		BlockProducerMetadataStorage::<T>::insert(
 			cross_chain_pub_key.hash(),

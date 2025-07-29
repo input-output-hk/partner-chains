@@ -7,6 +7,7 @@ use hex_literal::hex;
 use scale_info::TypeInfo;
 use sidechain_domain::byte_string::{BoundedString, SizedByteString};
 use sidechain_domain::*;
+use sp_block_producer_metadata::MetadataSignedMessage;
 use sp_core::H256;
 use sp_runtime::codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use sp_runtime::{
@@ -115,9 +116,13 @@ pub struct BlockProducerUrlMetadata {
 pub struct PalletBlockProducerMetadataBenchmarkHelper;
 
 #[cfg(feature = "runtime-benchmarks")]
-impl crate::benchmarking::BenchmarkHelper<BlockProducerUrlMetadata>
+impl crate::benchmarking::BenchmarkHelper<BlockProducerUrlMetadata, AccountId32>
 	for PalletBlockProducerMetadataBenchmarkHelper
 {
+	fn genesis_utxo() -> UtxoId {
+		genesis_utxo()
+	}
+
 	fn metadata() -> BlockProducerUrlMetadata {
 		BlockProducerUrlMetadata {
 			url: "https://cool.stuff/spo.json".try_into().unwrap(),
@@ -126,17 +131,11 @@ impl crate::benchmarking::BenchmarkHelper<BlockProducerUrlMetadata>
 	}
 
 	fn cross_chain_pub_key() -> CrossChainPublicKey {
-		CrossChainPublicKey(
-			hex!("020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1").to_vec(),
-		)
+		cross_chain_pub_key()
 	}
 
-	fn upsert_cross_chain_signature() -> CrossChainSignature {
-		CrossChainSignature(hex!("0e644ae5589365cce0123e673d59eab5381a1c38d5e21a7732bce8592f38fd522e9d395584f72b03ad9b167c1f57813013e0c6feedea799f877f87ec4edc3177").to_vec())
-	}
-
-	fn delete_cross_chain_signature() -> CrossChainSignature {
-		CrossChainSignature(hex!("28e26efe063733903d79bcd2a036b2f2050e6d54372ad0dbf9db2bcd2026ce58171826fcd205c74c5cdd4cda08a3d5e1497b3d968f3d9328e816b3a9166a68d9").to_vec())
+	fn cross_chain_sign_key() -> k256::SecretKey {
+		cross_chain_priv_key()
 	}
 
 	fn upsert_valid_before() -> u64 {
@@ -150,14 +149,19 @@ impl crate::benchmarking::BenchmarkHelper<BlockProducerUrlMetadata>
 
 pub(crate) const FUNDED_ACCOUNT: AccountId32 = AccountId32::new([1; 32]);
 pub(crate) const FUNDED_ACCOUNT_2: AccountId32 = AccountId32::new([2; 32]);
+pub(crate) const POOR_ACCOUNT: AccountId32 = AccountId32::new([3; 32]);
 
 pub(crate) const INITIAL_BALANCE: u128 = 100_000;
+
+pub(crate) fn genesis_utxo() -> UtxoId {
+	UtxoId::new(hex!("59104061ffa0d66f9ba0135d6fc6a884a395b10f8ae9cb276fc2c3bfdfedc260"), 1)
+}
 
 impl crate::pallet::Config for Test {
 	type WeightInfo = ();
 	type BlockProducerMetadata = BlockProducerUrlMetadata;
 	fn genesis_utxo() -> UtxoId {
-		UtxoId::new(hex!("59104061ffa0d66f9ba0135d6fc6a884a395b10f8ae9cb276fc2c3bfdfedc260"), 1)
+		genesis_utxo()
 	}
 	fn current_time() -> u64 {
 		Mock::current_time()
@@ -178,4 +182,36 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	.assimilate_storage(&mut t)
 	.unwrap();
 	t.into()
+}
+
+pub(crate) fn cross_chain_pub_key() -> CrossChainPublicKey {
+	// pub key of secret key cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854
+	CrossChainPublicKey(
+		hex!("020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1").to_vec(),
+	)
+}
+
+pub(crate) fn cross_chain_priv_key() -> k256::SecretKey {
+	k256::SecretKey::from_slice(&hex!(
+		"cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854"
+	))
+	.unwrap()
+}
+
+pub(crate) fn valid_before() -> u64 {
+	100_000_000
+}
+
+pub(crate) fn cross_chain_signature(
+	owner: AccountId32,
+	metadata: Option<BlockProducerUrlMetadata>,
+) -> CrossChainSignature {
+	MetadataSignedMessage {
+		cross_chain_pub_key: cross_chain_pub_key(),
+		metadata,
+		genesis_utxo: genesis_utxo(),
+		valid_before: valid_before(),
+		owner,
+	}
+	.sign_with_key(&cross_chain_priv_key())
 }
