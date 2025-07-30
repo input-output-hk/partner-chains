@@ -536,7 +536,8 @@ EOF
 
     batch_size=25
     last_batch_leader=""
-    
+    node_counter=0
+
     # Add permissioned nodes
     for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
         node_name="permissioned-$i"
@@ -554,28 +555,29 @@ EOF
       - partner-chains-node-$node_name-data:/data
       - ./configurations/partner-chains-nodes/$node_name/entrypoint.sh:/entrypoint.sh
 EOF
-        # Add dependency if a previous batch leader exists
-        if [ -n "$last_batch_leader" ]; then
-            cat >> docker-compose.yml <<EOF
+        is_leader=false
+        if (( node_counter % batch_size == 0 )); then
+            is_leader=true
+        fi
+
+        if [ "$is_leader" = true ]; then
+            if [ -n "$last_batch_leader" ]; then
+                cat >> docker-compose.yml <<EOF
     depends_on:
       $last_batch_leader:
-        condition: service_healthy
+        condition: service_started
 EOF
-        fi
-
-        # If this node is the start of a new batch, it becomes the new leader
-        if (( (i - 1) % batch_size == 0 )); then
+            fi
             last_batch_leader="partner-chains-node-$node_name"
-            # Add a healthcheck to this leader node
-            cat >> docker-compose.yml <<EOF
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9615/metrics"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
+        else
+            if [ -n "$last_batch_leader" ]; then
+                cat >> docker-compose.yml <<EOF
+    depends_on:
+      - $last_batch_leader
 EOF
+            fi
         fi
-
+        
         cat >> docker-compose.yml <<EOF
     environment:
       DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:\${POSTGRES_PASSWORD}@postgres-${db_sync_instance}:5432/cexplorer"
@@ -596,6 +598,7 @@ EOF
           cpus: \${CPU_PARTNER_CHAINS_NODE:-}
           memory: \${MEM_PARTNER_CHAINS_NODE:-}
 EOF
+        node_counter=$((node_counter + 1))
     done
 
     # Add registered nodes
@@ -615,29 +618,29 @@ EOF
       - partner-chains-node-$node_name-data:/data
       - ./configurations/partner-chains-nodes/$node_name/entrypoint.sh:/entrypoint.sh
 EOF
-        # Add dependency if a previous batch leader exists
-        if [ -n "$last_batch_leader" ]; then
-            cat >> docker-compose.yml <<EOF
+        is_leader=false
+        if (( node_counter % batch_size == 0 )); then
+            is_leader=true
+        fi
+
+        if [ "$is_leader" = true ]; then
+            if [ -n "$last_batch_leader" ]; then
+                cat >> docker-compose.yml <<EOF
     depends_on:
       $last_batch_leader:
-        condition: service_healthy
+        condition: service_started
 EOF
-        fi
-
-        # If this node is the start of a new batch, it becomes the new leader
-        current_total_index=$((NUM_PERMISSIONED_NODES_TO_PROCESS + i))
-        if (( (current_total_index - 1) % batch_size == 0 )); then
+            fi
             last_batch_leader="partner-chains-node-$node_name"
-            # Add a healthcheck to this leader node
-            cat >> docker-compose.yml <<EOF
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9615/metrics"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
+        else
+            if [ -n "$last_batch_leader" ]; then
+                cat >> docker-compose.yml <<EOF
+    depends_on:
+      - $last_batch_leader
 EOF
+            fi
         fi
-
+        
         cat >> docker-compose.yml <<EOF
     environment:
       DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:\${POSTGRES_PASSWORD}@postgres-${db_sync_instance}:5432/cexplorer"
@@ -658,6 +661,7 @@ EOF
           cpus: \${CPU_PARTNER_CHAINS_NODE:-}
           memory: \${MEM_PARTNER_CHAINS_NODE:-}
 EOF
+        node_counter=$((node_counter + 1))
     done
 
     echo "Generated node configurations and docker-compose.yml"
