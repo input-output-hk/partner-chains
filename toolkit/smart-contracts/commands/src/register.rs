@@ -1,7 +1,4 @@
-use crate::{
-	GenesisUtxo, PaymentFilePath, option_to_json, parse_partnerchain_public_keys,
-	transaction_submitted_json,
-};
+use crate::{GenesisUtxo, PaymentFilePath, option_to_json, transaction_submitted_json};
 use partner_chains_cardano_offchain::register::{run_deregister, run_register};
 use sidechain_domain::{
 	AdaBasedStaking, CandidateRegistration, MainchainSignature, PermissionedCandidateData,
@@ -22,11 +19,7 @@ pub struct RegisterCmd {
 	#[clap(flatten)]
 	/// Path to the payment key file
 	payment_key_file: PaymentFilePath,
-	#[arg(
-		long,
-		alias = "sidechain-public-keys",
-		value_parser = parse_partnerchain_public_keys
-	)]
+	#[arg(long, alias = "sidechain-public-keys")]
 	/// Candidate public keys in format PARTNER_CHAINS_KEY_HEX:AURA_KEY_HEX:GRANDPA_KEY_HEX or PARTNER_CHAINS_KEY_HEX,KEY_ID_1:KEY_1_HEX,...,KEY_ID_N:KEY_N_HEX
 	partner_chain_public_keys: PermissionedCandidateData,
 	#[arg(long, alias = "sidechain-signature")]

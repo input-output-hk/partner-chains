@@ -1265,6 +1265,76 @@ pub struct PermissionedCandidateData {
 	pub keys: CandidateKeys,
 }
 
+/// Parses public keys formatted as PARTNER_CHAINS_KEY:AURA_KEY:GRANDPA_KEY or PARTNER_CHAINS_KEY,KEY_ID_1:KEY_1,...,KEY_ID_N:KEY_N
+#[cfg(feature = "std")]
+impl FromStr for PermissionedCandidateData {
+	type Err = alloc::boxed::Box<dyn core::error::Error + Send + Sync>;
+
+	fn from_str(partner_chain_public_keys: &str) -> Result<Self, Self::Err> {
+		fn is_legacy_format(line: &str) -> bool {
+			line.contains(':') && !line.contains(',')
+		}
+
+		fn parse_legacy_format(
+			line: &str,
+		) -> Result<
+			PermissionedCandidateData,
+			alloc::boxed::Box<dyn core::error::Error + Send + Sync>,
+		> {
+			let line = line.replace("0x", "");
+			if let [sidechain_pub_key, aura_pub_key, grandpa_pub_key] =
+				line.split(":").collect::<Vec<_>>()[..]
+			{
+				Ok(PermissionedCandidateData {
+					sidechain_public_key: SidechainPublicKey(
+						hex::decode(sidechain_pub_key).map_err(|e| e.to_string())?,
+					),
+					keys: CandidateKeys(vec![
+						AuraPublicKey(hex::decode(aura_pub_key).map_err(|e| e.to_string())?).into(),
+						GrandpaPublicKey(hex::decode(grandpa_pub_key).map_err(|e| e.to_string())?)
+							.into(),
+					]),
+				})
+			} else {
+				Err(format!("Failed to parse partner chain public keys (legacy) from '{line}'")
+					.into())
+			}
+		}
+
+		fn parse_generic_format(
+			line: &str,
+		) -> Result<
+			PermissionedCandidateData,
+			alloc::boxed::Box<dyn core::error::Error + Send + Sync>,
+		> {
+			let mut columns = line.split(",");
+			if let Some(partner_chains_key) = columns.next() {
+				let partner_chains_key = SidechainPublicKey(
+					hex::decode(partner_chains_key.trim_start_matches("0x"))
+						.map_err(|e| e.to_string())?,
+				);
+				let mut keys = vec![];
+				for column in columns {
+					let key = CandidateKey::from_str(column)?;
+					keys.push(key);
+				}
+				Ok(PermissionedCandidateData {
+					sidechain_public_key: partner_chains_key,
+					keys: CandidateKeys(keys),
+				})
+			} else {
+				Err("Failed to parse partner chain public keys (generic) from '{line}'.".into())
+			}
+		}
+
+		if is_legacy_format(&partner_chain_public_keys) {
+			parse_legacy_format(&partner_chain_public_keys)
+		} else {
+			parse_generic_format(&partner_chain_public_keys)
+		}
+	}
+}
+
 /// Cardano SPO registration. This is a stripped-down version of [RegistrationData].
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct CandidateRegistration {
@@ -1445,4 +1515,14 @@ pub struct PoolDelegation {
 	pub total_stake: StakeDelegation,
 	/// Delegated amount for each delegator of the stake pool
 	pub delegators: BTreeMap<DelegatorKey, DelegatorStakeAmount>,
+}
+
+/// [FromStr] trait with [FromStr::Err] fixed to a type compatible with `clap`'s `value_parser` macro.
+pub trait FromStrStdErr:
+	FromStr<Err: Into<alloc::boxed::Box<(dyn core::error::Error + Send + Sync + 'static)>>>
+{
+}
+impl<T: FromStr<Err: Into<alloc::boxed::Box<(dyn core::error::Error + Send + Sync + 'static)>>>>
+	FromStrStdErr for T
+{
 }

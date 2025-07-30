@@ -8,10 +8,10 @@ use sidechain_domain::{TransactionCbor, VKeyWitnessCbor};
 pub struct AssembleAndSubmitCmd {
 	#[clap(flatten)]
 	common_arguments: crate::CommonArguments,
-	#[arg(long, value_parser = TransactionCbor::decode_hex)]
+	#[arg(long)]
 	/// Hex-encoded transaction CBOR (with or without 0x prefix)
 	transaction: TransactionCbor,
-	#[arg(short, long, num_args = 1.., value_delimiter = ' ', value_parser = VKeyWitnessCbor::decode_hex)]
+	#[arg(short, long, num_args = 1.., value_delimiter = ' ')]
 	/// Witnesses of the transaction. Each witness is a hex-encoded CBOR (with or without 0x prefix), encoding a 1 element list containing a 2 elements list [[public_key, signature]].
 	witnesses: Vec<VKeyWitnessCbor>,
 }

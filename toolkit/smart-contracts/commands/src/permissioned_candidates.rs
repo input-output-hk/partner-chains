@@ -1,6 +1,7 @@
-use crate::{GenesisUtxo, PaymentFilePath, option_to_json, parse_partnerchain_public_keys};
+use crate::{GenesisUtxo, PaymentFilePath, option_to_json};
 use partner_chains_cardano_offchain::permissioned_candidates::upsert_permissioned_candidates;
 use std::fs::read_to_string;
+use std::str::FromStr;
 
 #[derive(Clone, Debug, clap::Parser)]
 /// Command for upserting the permissioned candidates on the main chain
@@ -10,7 +11,7 @@ pub struct UpsertPermissionedCandidatesCmd {
 	#[arg(long)]
 	/// Path to the file containing the permissioned candidates data.
 	/// Each line represents one permissioned candidate in format PARTNER_CHAINS_KEY,KEY_1_ID:KEY_1_BYTES,...,KEY_N_ID:KEY_N_BYTES.
-	/// Legacy format of PARTNER_CHAINS_KEY:AURA_PUB_KEY:GRANDPA_PUB_KEY is supported, each line is eqivalent to `PARTNER_CHAINS_KEY,aura:AURA_PUB_KEY,gran:GRANDPA_PUB_KEY`.
+	/// Legacy format of PARTNER_CHAINS_KEY:AURA_PUB_KEY:GRANDPA_PUB_KEY is supported, each line is equivalent to `PARTNER_CHAINS_KEY,aura:AURA_PUB_KEY,gran:GRANDPA_PUB_KEY`.
 	permissioned_candidates_file: String,
 	#[clap(flatten)]
 	/// Path to the payment key file
@@ -37,9 +38,10 @@ impl UpsertPermissionedCandidatesCmd {
 			if line.is_empty() {
 				continue;
 			}
-			let permissioned_candidate = parse_partnerchain_public_keys(line).map_err(|e| {
-				format!("Failed to parse permissioned candidate: '{}', because of {}", line, e)
-			})?;
+			let permissioned_candidate =
+				sidechain_domain::PermissionedCandidateData::from_str(line).map_err(|e| {
+					format!("Failed to parse permissioned candidate: '{}', because of {}", line, e)
+				})?;
 			permissioned_candidates.push(permissioned_candidate);
 		}
 
