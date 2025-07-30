@@ -324,7 +324,6 @@ export MC__FIRST_EPOCH_TIMESTAMP_MILLIS=\$(cat /shared/MC__FIRST_EPOCH_TIMESTAMP
   --rpc-port=9933 \\
   --rpc-cors=all \\
   --rpc-max-connections=10000 \\
-  --ws-max-connections=10000 \\
   --prometheus-port=9615 \\
   --prometheus-external \\
   --state-pruning=archive \\
@@ -385,7 +384,6 @@ export MC__FIRST_EPOCH_TIMESTAMP_MILLIS=\$(cat /shared/MC__FIRST_EPOCH_TIMESTAMP
   --rpc-port=9933 \\
   --rpc-cors=all \\
   --rpc-max-connections=10000 \\
-  --ws-max-connections=10000 \\
   --prometheus-port=9615 \\
   --prometheus-external \\
   --state-pruning=archive \\
@@ -451,7 +449,6 @@ export MC__FIRST_EPOCH_TIMESTAMP_MILLIS=\$(cat /shared/MC__FIRST_EPOCH_TIMESTAMP
   --rpc-port=9933 \\
   --rpc-cors=all \\
   --rpc-max-connections=10000 \\
-  --ws-max-connections=10000 \\
   --prometheus-port=9615 \\
   --prometheus-external \\
   --state-pruning=archive \\
@@ -516,7 +513,6 @@ export MC__FIRST_EPOCH_TIMESTAMP_MILLIS=\$(cat /shared/MC__FIRST_EPOCH_TIMESTAMP
   --rpc-port=9933 \\
   --rpc-cors=all \\
   --rpc-max-connections=10000 \\
-  --ws-max-connections=10000 \\
   --prometheus-port=9615 \\
   --prometheus-external \\
   --state-pruning=archive \\
@@ -538,6 +534,9 @@ EOF
 services:
 EOF
 
+    batch_size=25
+    last_batch_leader=""
+    
     # Add permissioned nodes
     for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
         node_name="permissioned-$i"
@@ -554,6 +553,30 @@ EOF
       - shared-volume:/shared
       - partner-chains-node-$node_name-data:/data
       - ./configurations/partner-chains-nodes/$node_name/entrypoint.sh:/entrypoint.sh
+EOF
+        # Add dependency if a previous batch leader exists
+        if [ -n "$last_batch_leader" ]; then
+            cat >> docker-compose.yml <<EOF
+    depends_on:
+      $last_batch_leader:
+        condition: service_healthy
+EOF
+        fi
+
+        # If this node is the start of a new batch, it becomes the new leader
+        if (( (i - 1) % batch_size == 0 )); then
+            last_batch_leader="partner-chains-node-$node_name"
+            # Add a healthcheck to this leader node
+            cat >> docker-compose.yml <<EOF
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9615/metrics"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+EOF
+        fi
+
+        cat >> docker-compose.yml <<EOF
     environment:
       DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:\${POSTGRES_PASSWORD}@postgres-${db_sync_instance}:5432/cexplorer"
       CARDANO_SECURITY_PARAMETER: "5"
@@ -591,6 +614,31 @@ EOF
       - shared-volume:/shared
       - partner-chains-node-$node_name-data:/data
       - ./configurations/partner-chains-nodes/$node_name/entrypoint.sh:/entrypoint.sh
+EOF
+        # Add dependency if a previous batch leader exists
+        if [ -n "$last_batch_leader" ]; then
+            cat >> docker-compose.yml <<EOF
+    depends_on:
+      $last_batch_leader:
+        condition: service_healthy
+EOF
+        fi
+
+        # If this node is the start of a new batch, it becomes the new leader
+        current_total_index=$((NUM_PERMISSIONED_NODES_TO_PROCESS + i))
+        if (( (current_total_index - 1) % batch_size == 0 )); then
+            last_batch_leader="partner-chains-node-$node_name"
+            # Add a healthcheck to this leader node
+            cat >> docker-compose.yml <<EOF
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9615/metrics"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+EOF
+        fi
+
+        cat >> docker-compose.yml <<EOF
     environment:
       DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:\${POSTGRES_PASSWORD}@postgres-${db_sync_instance}:5432/cexplorer"
       CARDANO_SECURITY_PARAMETER: "5"
