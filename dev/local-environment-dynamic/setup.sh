@@ -537,7 +537,7 @@ EOF
     # Add permissioned nodes
     for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
         node_name="permissioned-$i"
-        rpc_port=$((9933 + i - 1))
+        rpc_port=$((11000 + i - 1))
         prometheus_port=$((9615 + i - 1))
         db_sync_instance=$(( (i - 1) % NUM_DBSYNC_INSTANCES + 1 ))
         
@@ -574,7 +574,7 @@ EOF
     # Add registered nodes
     for ((i=1; i<=NUM_REGISTERED_NODES_TO_PROCESS; i++)); do
         node_name="registered-$i"
-        rpc_port=$((9933 + i - 1 + NUM_PERMISSIONED_NODES_TO_PROCESS))
+        rpc_port=$((11000 + i - 1 + NUM_PERMISSIONED_NODES_TO_PROCESS))
         prometheus_port=$((9615 + i - 1 + NUM_PERMISSIONED_NODES_TO_PROCESS))
         db_sync_instance=$(( (i - 1 + NUM_PERMISSIONED_NODES_TO_PROCESS) % NUM_DBSYNC_INSTANCES + 1 ))
         
