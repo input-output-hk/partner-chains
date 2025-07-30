@@ -320,6 +320,8 @@ export MC__FIRST_EPOCH_TIMESTAMP_MILLIS=\$(cat /shared/MC__FIRST_EPOCH_TIMESTAMP
   --keystore-path=/data/keystore \\
   --in-peers=10000 \\
   --out-peers=10000 \\
+  --max-peers-in=10000 \\
+  --max-peers-out=10000 \\
   --unsafe-rpc-external \\
   --rpc-port=9933 \\
   --rpc-cors=all \\
@@ -380,6 +382,8 @@ export MC__FIRST_EPOCH_TIMESTAMP_MILLIS=\$(cat /shared/MC__FIRST_EPOCH_TIMESTAMP
   --keystore-path=/data/keystore \\
   --in-peers=10000 \\
   --out-peers=10000 \\
+  --max-peers-in=10000 \\
+  --max-peers-out=10000 \\
   --unsafe-rpc-external \\
   --rpc-port=9933 \\
   --rpc-cors=all \\
@@ -445,6 +449,8 @@ export MC__FIRST_EPOCH_TIMESTAMP_MILLIS=\$(cat /shared/MC__FIRST_EPOCH_TIMESTAMP
   --keystore-path=/data/keystore \\
   --in-peers=10000 \\
   --out-peers=10000 \\
+  --max-peers-in=10000 \\
+  --max-peers-out=10000 \\
   --unsafe-rpc-external \\
   --rpc-port=9933 \\
   --rpc-cors=all \\
@@ -509,6 +515,8 @@ export MC__FIRST_EPOCH_TIMESTAMP_MILLIS=\$(cat /shared/MC__FIRST_EPOCH_TIMESTAMP
   --bootnodes="$bootnode_address" \\
   --in-peers=10000 \\
   --out-peers=10000 \\
+  --max-peers-in=10000 \\
+  --max-peers-out=10000 \\
   --unsafe-rpc-external \\
   --rpc-port=9933 \\
   --rpc-cors=all \\
