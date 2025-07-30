@@ -113,6 +113,11 @@ You can also monitor logs directly from the command line:
 -   **Full stack setup progress**: `docker logs partner-chains-setup -f`
 -   **Partner Chains node startup**: `docker logs partner-chains-node-permissioned-1 -f` (or any other node).
 
+You can view exposed prometheus metrics with:
+`docker exec -it partner-chains-node-permissioned-1 curl http://localhost:9615/metrics`
+
+Or deploy a local prometheus + grafana stack and scrape the unique exposed ports.
+
 ### 4. Stop the Environment
 
 To tear down the environment and remove all data, it is mandatory to also wipe all volumes.
