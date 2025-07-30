@@ -1225,9 +1225,10 @@ if [ "$NUM_REGISTERED_NODES_TO_PROCESS" -gt 0 ]; then
 
     echo "[LOG] Completed SPO Registration and Delegation for all nodes."
     # --- END NEW: Register Nodes as Cardano SPOs and Delegate Stake ---
+fi
 
-    echo "[LOG] Creating /shared/cardano.ready signal file."
-    touch /shared/cardano.ready
+echo "[LOG] Creating /shared/cardano.ready signal file."
+touch /shared/cardano.ready
 
-    echo "[LOG] Cardano node entrypoint script finished. Waiting for node process to terminate (if it does)."
-    wait
+echo "[LOG] Cardano node entrypoint script finished. Waiting for node process to terminate (if it does)."
+wait
