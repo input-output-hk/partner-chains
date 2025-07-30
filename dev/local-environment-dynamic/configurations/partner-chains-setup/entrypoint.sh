@@ -162,39 +162,19 @@ for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
 done
 
 if [ "$NUM_PERMISSIONED_NODES_TO_PROCESS" -gt 0 ]; then
-    echo "Inserting permissioned candidates in batches..."
-    batch_size=50
-    total_lines=$(wc -l < permissioned_candidates.csv)
-    num_batches=$(( (total_lines + batch_size - 1) / batch_size ))
+    echo "Inserting permissioned candidates..."
+    ./partner-chains-node smart-contracts upsert-permissioned-candidates \
+        --ogmios-url http://ogmios:$OGMIOS_PORT \
+        --genesis-utxo $GENESIS_UTXO \
+        --permissioned-candidates-file permissioned_candidates.csv \
+        --payment-key-file /keys/funded_address.skey
 
-    for ((batch_num=1; batch_num<=num_batches; batch_num++)); do
-        echo "Processing batch $batch_num of $num_batches..."
-        batch_csv="permissioned_candidates_batch.csv"
-        
-        start_line=$(( (batch_num - 1) * batch_size + 1 ))
-        end_line=$(( batch_num * batch_size ))
-        
-        sed -n "${start_line},${end_line}p" permissioned_candidates.csv > "$batch_csv"
-
-        echo "Inserting permissioned candidates for batch $batch_num..."
-        ./partner-chains-node smart-contracts upsert-permissioned-candidates \
-            --ogmios-url http://ogmios:$OGMIOS_PORT \
-            --genesis-utxo $GENESIS_UTXO \
-            --permissioned-candidates-file "$batch_csv" \
-            --payment-key-file /keys/funded_address.skey
-
-        if [ $? -eq 0 ]; then
-            echo "Batch $batch_num inserted successfully!"
-            if [ "$batch_num" -lt "$num_batches" ]; then
-                echo "Waiting 20 seconds for transaction to confirm before next batch..."
-                sleep 20
-            fi
-        else
-            echo "Failed to insert permissioned candidates for batch $batch_num..."
-            exit 1
-        fi
-    done
-    rm permissioned_candidates.csv permissioned_candidates_batch.csv
+    if [ $? -eq 0 ]; then
+        echo "Permissioned candidates inserted successfully!"
+    else
+        echo "Failed to insert permissioned candidates..."
+        exit 1
+    fi
 fi
 
 # Generate and register registered nodes (1-300)

@@ -1230,5 +1230,5 @@ fi
 echo "[LOG] Creating /shared/cardano.ready signal file."
 touch /shared/cardano.ready
 
-echo "[LOG] Cardano node entrypoint script finished. Waiting for node process to terminate (if it does)."
+echo "[LOG] Cardano node entrypoint script finished. The partner-chains-setup entrypoint will now begin..."
 wait
