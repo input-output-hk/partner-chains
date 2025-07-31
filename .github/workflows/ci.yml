@@ -40,8 +40,7 @@ jobs:
         id: rust-cache
         uses: corca-ai/local-cache@v3
         with:
-          base: /tmp
-          path: rust-cache
+          path: /tmp/rust-cache
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           clean-key: true
       - name: Populate Cargo & target from /tmp
@@ -258,8 +257,7 @@ jobs:
         id: rust-cache
         uses: corca-ai/local-cache@v3
         with:
-          base: /tmp
-          path: rust-cache
+          path: /tmp/rust-cache
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           clean-key: true
       - name: Populate Cargo & target from /tmp
@@ -512,8 +510,7 @@ jobs:
         id: rust-cache
         uses: corca-ai/local-cache@v3
         with:
-          base: /tmp
-          path: rust-cache
+          path: /tmp/rust-cache
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           clean-key: true
       - name: Populate Cargo & target from /tmp
