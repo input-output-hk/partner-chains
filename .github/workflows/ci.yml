@@ -40,17 +40,28 @@ jobs:
         run: |
           set -e
           echo "--- Restoring Rust cache from host ---"
-          nix shell nixpkgs#util-linux nixpkgs#rsync -c flock /tmp/rust-cache.lock -c '
-            if [ -d /tmp/rust-cache ]; then
-              echo "Rust cache found. Restoring..."
-              mkdir -p ~/.cargo/git ~/.cargo/registry ./target
-              rsync -a /tmp/rust-cache/cargo-git/ ~/.cargo/git/ && \
-              rsync -a /tmp/rust-cache/cargo-registry/ ~/.cargo/registry/ && \
-              rsync -a /tmp/rust-cache/target/ ./target/
-            else
-              echo "No Rust cache found. Will be created after build."
+          SECONDS=0
+          while ! mkdir "/tmp/rust-cache.lock" 2>/dev/null; do
+            if [ $SECONDS -gt 300 ]; then
+              echo "Timeout waiting for lock. Forcibly removing stale lock file."
+              rmdir "/tmp/rust-cache.lock" || true
+              continue
             fi
-          '
+            echo "Cache is locked. Waiting 10 seconds..."
+            sleep 10
+          done
+          trap 'rmdir "/tmp/rust-cache.lock"' EXIT
+          if [ -d /tmp/rust-cache ]; then
+            echo "Rust cache found. Restoring..."
+            mkdir -p ~/.cargo/git ~/.cargo/registry ./target
+            nix shell nixpkgs#rsync -c bash -c "
+              rsync -a /tmp/rust-cache/cargo-git/ ~/.cargo/git/
+              rsync -a /tmp/rust-cache/cargo-registry/ ~/.cargo/registry/
+              rsync -a /tmp/rust-cache/target/ ./target/
+            "
+          else
+            echo "No Rust cache found. Will be created after build."
+          fi
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -73,17 +84,28 @@ jobs:
         run: |
           set -e
           echo "--- Saving Rust cache to host cache ---"
-          nix shell nixpkgs#util-linux nixpkgs#rsync -c flock /tmp/rust-cache.lock -c '
-            echo "Acquired lock to save cache"
-            mkdir -p /tmp/rust-cache-stage/cargo-git /tmp/rust-cache-stage/cargo-registry /tmp/rust-cache-stage/target
-            rsync -a --delete ~/.cargo/git/ /tmp/rust-cache-stage/cargo-git/ && \
-            rsync -a --delete ~/.cargo/registry/ /tmp/rust-cache-stage/cargo-registry/ && \
+          SECONDS=0
+          while ! mkdir "/tmp/rust-cache.lock" 2>/dev/null; do
+            if [ $SECONDS -gt 300 ]; then
+              echo "Timeout waiting for lock. Forcibly removing stale lock file."
+              rmdir "/tmp/rust-cache.lock" || true
+              continue
+            fi
+            echo "Cache is locked. Waiting 10 seconds..."
+            sleep 10
+          done
+          trap 'rmdir "/tmp/rust-cache.lock"' EXIT
+          echo "Acquired lock to save cache"
+          mkdir -p /tmp/rust-cache-stage/cargo-git /tmp/rust-cache-stage/cargo-registry /tmp/rust-cache-stage/target
+          nix shell nixpkgs#rsync -c bash -c "
+            rsync -a --delete ~/.cargo/git/ /tmp/rust-cache-stage/cargo-git/
+            rsync -a --delete ~/.cargo/registry/ /tmp/rust-cache-stage/cargo-registry/
             rsync -a --delete ./target/ /tmp/rust-cache-stage/target/
-            rm -rf /tmp/rust-cache
-            mv /tmp/rust-cache-stage /tmp/rust-cache
-            echo "--- Verifying cache contents ---"
-            ls -laR /tmp/rust-cache
-          '
+          "
+          rm -rf /tmp/rust-cache
+          mv /tmp/rust-cache-stage /tmp/rust-cache
+          echo "--- Verifying cache contents ---"
+          ls -laR /tmp/rust-cache
       #- name: Run cargo-deny to check licenses
       #  uses: EmbarkStudios/cargo-deny-action@v1
       - name: Build chain specs
@@ -258,17 +280,28 @@ jobs:
         run: |
           set -e
           echo "--- Restoring Rust cache from host ---"
-          nix shell nixpkgs#util-linux nixpkgs#rsync -c flock /tmp/rust-cache.lock -c '
-            if [ -d /tmp/rust-cache ]; then
-              echo "Rust cache found. Restoring..."
-              mkdir -p ~/.cargo/git ~/.cargo/registry ./target
-              rsync -a /tmp/rust-cache/cargo-git/ ~/.cargo/git/ && \
-              rsync -a /tmp/rust-cache/cargo-registry/ ~/.cargo/registry/ && \
-              rsync -a /tmp/rust-cache/target/ ./target/
-            else
-              echo "No Rust cache found. Will be created after build."
+          SECONDS=0
+          while ! mkdir "/tmp/rust-cache.lock" 2>/dev/null; do
+            if [ $SECONDS -gt 300 ]; then
+              echo "Timeout waiting for lock. Forcibly removing stale lock file."
+              rmdir "/tmp/rust-cache.lock" || true
+              continue
             fi
-          '
+            echo "Cache is locked. Waiting 10 seconds..."
+            sleep 10
+          done
+          trap 'rmdir "/tmp/rust-cache.lock"' EXIT
+          if [ -d /tmp/rust-cache ]; then
+            echo "Rust cache found. Restoring..."
+            mkdir -p ~/.cargo/git ~/.cargo/registry ./target
+            nix shell nixpkgs#rsync -c bash -c "
+              rsync -a /tmp/rust-cache/cargo-git/ ~/.cargo/git/
+              rsync -a /tmp/rust-cache/cargo-registry/ ~/.cargo/registry/
+              rsync -a /tmp/rust-cache/target/ ./target/
+            "
+          else
+            echo "No Rust cache found. Will be created after build."
+          fi
       - name: Get current commit SHA
         id: get_sha
         run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
@@ -315,17 +348,28 @@ jobs:
         run: |
           set -e
           echo "--- Saving Rust cache to host cache ---"
-          nix shell nixpkgs#util-linux nixpkgs#rsync -c flock /tmp/rust-cache.lock -c '
-            echo "Acquired lock to save cache"
-            mkdir -p /tmp/rust-cache-stage/cargo-git /tmp/rust-cache-stage/cargo-registry /tmp/rust-cache-stage/target
-            rsync -a --delete ~/.cargo/git/ /tmp/rust-cache-stage/cargo-git/ && \
-            rsync -a --delete ~/.cargo/registry/ /tmp/rust-cache-stage/cargo-registry/ && \
+          SECONDS=0
+          while ! mkdir "/tmp/rust-cache.lock" 2>/dev/null; do
+            if [ $SECONDS -gt 300 ]; then
+              echo "Timeout waiting for lock. Forcibly removing stale lock file."
+              rmdir "/tmp/rust-cache.lock" || true
+              continue
+            fi
+            echo "Cache is locked. Waiting 10 seconds..."
+            sleep 10
+          done
+          trap 'rmdir "/tmp/rust-cache.lock"' EXIT
+          echo "Acquired lock to save cache"
+          mkdir -p /tmp/rust-cache-stage/cargo-git /tmp/rust-cache-stage/cargo-registry /tmp/rust-cache-stage/target
+          nix shell nixpkgs#rsync -c bash -c "
+            rsync -a --delete ~/.cargo/git/ /tmp/rust-cache-stage/cargo-git/
+            rsync -a --delete ~/.cargo/registry/ /tmp/rust-cache-stage/cargo-registry/
             rsync -a --delete ./target/ /tmp/rust-cache-stage/target/
-            rm -rf /tmp/rust-cache
-            mv /tmp/rust-cache-stage /tmp/rust-cache
-            echo "--- Verifying cache contents ---"
-            ls -laR /tmp/rust-cache
-          '
+          "
+          rm -rf /tmp/rust-cache
+          mv /tmp/rust-cache-stage /tmp/rust-cache
+          echo "--- Verifying cache contents ---"
+          ls -laR /tmp/rust-cache
       - name: Rename artifact
         run: |
           cp ./partner-chains-demo-node partner-chains-node-${{ steps.get_sha.outputs.sha }}-x86_64-linux
@@ -514,17 +558,28 @@ jobs:
         run: |
           set -e
           echo "--- Restoring Rust cache from host ---"
-          nix shell nixpkgs#util-linux nixpkgs#rsync -c flock /tmp/rust-cache.lock -c '
-            if [ -d /tmp/rust-cache ]; then
-              echo "Rust cache found. Restoring..."
-              mkdir -p ~/.cargo/git ~/.cargo/registry ./target
-              rsync -a /tmp/rust-cache/cargo-git/ ~/.cargo/git/ && \
-              rsync -a /tmp/rust-cache/cargo-registry/ ~/.cargo/registry/ && \
-              rsync -a /tmp/rust-cache/target/ ./target/
-            else
-              echo "No Rust cache found. Will be created after build."
+          SECONDS=0
+          while ! mkdir "/tmp/rust-cache.lock" 2>/dev/null; do
+            if [ $SECONDS -gt 300 ]; then
+              echo "Timeout waiting for lock. Forcibly removing stale lock file."
+              rmdir "/tmp/rust-cache.lock" || true
+              continue
             fi
-          '
+            echo "Cache is locked. Waiting 10 seconds..."
+            sleep 10
+          done
+          trap 'rmdir "/tmp/rust-cache.lock"' EXIT
+          if [ -d /tmp/rust-cache ]; then
+            echo "Rust cache found. Restoring..."
+            mkdir -p ~/.cargo/git ~/.cargo/registry ./target
+            nix shell nixpkgs#rsync -c bash -c "
+              rsync -a /tmp/rust-cache/cargo-git/ ~/.cargo/git/
+              rsync -a /tmp/rust-cache/cargo-registry/ ~/.cargo/registry/
+              rsync -a /tmp/rust-cache/target/ ./target/
+            "
+          else
+            echo "No Rust cache found. Will be created after build."
+          fi
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -547,17 +602,28 @@ jobs:
         run: |
           set -e
           echo "--- Saving Rust cache to host cache ---"
-          nix shell nixpkgs#util-linux nixpkgs#rsync -c flock /tmp/rust-cache.lock -c '
-            echo "Acquired lock to save cache"
-            mkdir -p /tmp/rust-cache-stage/cargo-git /tmp/rust-cache-stage/cargo-registry /tmp/rust-cache-stage/target
-            rsync -a --delete ~/.cargo/git/ /tmp/rust-cache-stage/cargo-git/ && \
-            rsync -a --delete ~/.cargo/registry/ /tmp/rust-cache-stage/cargo-registry/ && \
+          SECONDS=0
+          while ! mkdir "/tmp/rust-cache.lock" 2>/dev/null; do
+            if [ $SECONDS -gt 300 ]; then
+              echo "Timeout waiting for lock. Forcibly removing stale lock file."
+              rmdir "/tmp/rust-cache.lock" || true
+              continue
+            fi
+            echo "Cache is locked. Waiting 10 seconds..."
+            sleep 10
+          done
+          trap 'rmdir "/tmp/rust-cache.lock"' EXIT
+          echo "Acquired lock to save cache"
+          mkdir -p /tmp/rust-cache-stage/cargo-git /tmp/rust-cache-stage/cargo-registry /tmp/rust-cache-stage/target
+          nix shell nixpkgs#rsync -c bash -c "
+            rsync -a --delete ~/.cargo/git/ /tmp/rust-cache-stage/cargo-git/
+            rsync -a --delete ~/.cargo/registry/ /tmp/rust-cache-stage/cargo-registry/
             rsync -a --delete ./target/ /tmp/rust-cache-stage/target/
-            rm -rf /tmp/rust-cache
-            mv /tmp/rust-cache-stage /tmp/rust-cache
-            echo "--- Verifying cache contents ---"
-            ls -laR /tmp/rust-cache
-          '
+          "
+          rm -rf /tmp/rust-cache
+          mv /tmp/rust-cache-stage /tmp/rust-cache
+          echo "--- Verifying cache contents ---"
+          ls -laR /tmp/rust-cache
       #- name: Run cargo-deny to check licenses
       #  uses: EmbarkStudios/cargo-deny-action@v1
       - name: Build chain specs
