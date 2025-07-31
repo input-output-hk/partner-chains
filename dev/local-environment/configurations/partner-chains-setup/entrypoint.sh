@@ -174,6 +174,7 @@ node5_spo_signature=$(echo "$node5_output" | jq -r ".spo_signature")
 node5_sidechain_public_key=$(echo "$node5_output" | jq -r ".sidechain_public_key")
 node5_sidechain_signature=$(echo "$node5_output" | jq -r ".sidechain_signature")
 node5_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-5/keys/aura.vkey)
+node5_beefy_vkey=$(cat /partner-chains-nodes/partner-chains-node-5/keys/beefy.vkey)
 node5_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-5/keys/grandpa.vkey)
 
 # Register 'node-5'
@@ -182,7 +183,7 @@ node5_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-5/keys/grandp
     --genesis-utxo $GENESIS_UTXO \
     --spo-public-key $node5_spo_public_key \
     --spo-signature $node5_spo_signature \
-    --partner-chain-public-keys $node5_sidechain_public_key,aura:$node5_aura_vkey,gran:$node5_grandpa_vkey \
+    --partner-chain-public-keys $node5_sidechain_public_key,aura:$node5_aura_vkey,beefy:$node5_beefy_vkey,gran:$node5_grandpa_vkey \
     --sidechain-signature $node5_sidechain_signature \
     --registration-utxo $node5_utxo \
     --payment-key-file /partner-chains-nodes/partner-chains-node-5/keys/payment.skey
