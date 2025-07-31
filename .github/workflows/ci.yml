@@ -36,11 +36,14 @@ jobs:
         with:
           fetch-depth: 0
           clean: true
+      - name: Symlink host cache into workspace
+        run: ln -s /tmp/rust-cache $GITHUB_WORKSPACE/rust-cache
       - name: Restore & later Save Rust cache
         id: rust-cache
         uses: corca-ai/local-cache@v3
         with:
-          path: /tmp/rust-cache
+          base: /tmp
+          path: rust-cache
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           clean-key: true
       - name: Populate Cargo & target from /tmp
@@ -253,11 +256,14 @@ jobs:
           fetch-depth: 0
           ref: master
           clean: true
+      - name: Symlink host cache into workspace
+        run: ln -s /tmp/rust-cache $GITHUB_WORKSPACE/rust-cache
       - name: Restore & later Save Rust cache
         id: rust-cache
         uses: corca-ai/local-cache@v3
         with:
-          path: /tmp/rust-cache
+          base: /tmp
+          path: rust-cache
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           clean-key: true
       - name: Populate Cargo & target from /tmp
@@ -506,11 +512,14 @@ jobs:
           fetch-depth: 0
           ref: ${{ inputs.sha }}
           clean: true
+      - name: Symlink host cache into workspace
+        run: ln -s /tmp/rust-cache $GITHUB_WORKSPACE/rust-cache
       - name: Restore & later Save Rust cache
         id: rust-cache
         uses: corca-ai/local-cache@v3
         with:
-          path: /tmp/rust-cache
+          base: /tmp
+          path: rust-cache
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           clean-key: true
       - name: Populate Cargo & target from /tmp
