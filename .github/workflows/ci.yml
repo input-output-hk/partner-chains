@@ -40,21 +40,17 @@ jobs:
         run: |
           set -e
           echo "--- Restoring Rust cache from host ---"
-          nix shell nixpkgs#util-linux -c "
-            flock /tmp/rust-cache.lock -c '
-              if [ -d /tmp/rust-cache ]; then
-                echo \"Rust cache found. Restoring...\"
-                mkdir -p ~/.cargo/git ~/.cargo/registry ./target
-                nix shell nixpkgs#rsync -c \" \\
-                  rsync -a /tmp/rust-cache/cargo-git/ ~/.cargo/git/ && \\
-                  rsync -a /tmp/rust-cache/cargo-registry/ ~/.cargo/registry/ && \\
-                  rsync -a /tmp/rust-cache/target/ ./target/ \\
-                \"
-              else
-                echo \"No Rust cache found. Will be created after build.\"
-              fi
-            '
-          "
+          flock /tmp/rust-cache.lock -c '
+            if [ -d /tmp/rust-cache ]; then
+              echo "Rust cache found. Restoring..."
+              mkdir -p ~/.cargo/git ~/.cargo/registry ./target
+              rsync -a /tmp/rust-cache/cargo-git/ ~/.cargo/git/ && \
+              rsync -a /tmp/rust-cache/cargo-registry/ ~/.cargo/registry/ && \
+              rsync -a /tmp/rust-cache/target/ ./target/
+            else
+              echo "No Rust cache found. Will be created after build."
+            fi
+          '
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -77,25 +73,19 @@ jobs:
         run: |
           set -e
           echo "--- Saving Rust cache to host cache ---"
-          nix shell nixpkgs#util-linux -c "
-            flock /tmp/rust-cache.lock -c '
-              echo \"Acquired lock to save cache\"
-              mkdir -p /tmp/rust-cache-stage/cargo-git /tmp/rust-cache-stage/cargo-registry /tmp/rust-cache-stage/target
-              nix shell nixpkgs#rsync -c \" \\
-                rsync -a --delete ~/.cargo/git/ /tmp/rust-cache-stage/cargo-git/ && \\
-                rsync -a --delete ~/.cargo/registry/ /tmp/rust-cache-stage/cargo-registry/ && \\
-                rsync -a --delete ./target/ /tmp/rust-cache-stage/target/ \\
-              \"
-              rm -rf /tmp/rust-cache
-              mv /tmp/rust-cache-stage /tmp/rust-cache
-              echo \"--- Verifying cache contents ---\"
-              ls -laR /tmp/rust-cache
-            '
-          "
+          flock /tmp/rust-cache.lock -c '
+            echo "Acquired lock to save cache"
+            mkdir -p /tmp/rust-cache-stage/cargo-git /tmp/rust-cache-stage/cargo-registry /tmp/rust-cache-stage/target
+            rsync -a --delete ~/.cargo/git/ /tmp/rust-cache-stage/cargo-git/ && \
+            rsync -a --delete ~/.cargo/registry/ /tmp/rust-cache-stage/cargo-registry/ && \
+            rsync -a --delete ./target/ /tmp/rust-cache-stage/target/
+            rm -rf /tmp/rust-cache
+            mv /tmp/rust-cache-stage /tmp/rust-cache
+            echo "--- Verifying cache contents ---"
+            ls -laR /tmp/rust-cache
+          '
       #- name: Run cargo-deny to check licenses
       #  uses: EmbarkStudios/cargo-deny-action@v1
-      #  with:
-      #    command: check licenses
       - name: Build chain specs
         run: |
             source ./dev/envs/devnet/.envrc
@@ -268,21 +258,17 @@ jobs:
         run: |
           set -e
           echo "--- Restoring Rust cache from host ---"
-          nix shell nixpkgs#util-linux -c "
-            flock /tmp/rust-cache.lock -c '
-              if [ -d /tmp/rust-cache ]; then
-                echo \"Rust cache found. Restoring...\"
-                mkdir -p ~/.cargo/git ~/.cargo/registry ./target
-                nix shell nixpkgs#rsync -c \" \\
-                  rsync -a /tmp/rust-cache/cargo-git/ ~/.cargo/git/ && \\
-                  rsync -a /tmp/rust-cache/cargo-registry/ ~/.cargo/registry/ && \\
-                  rsync -a /tmp/rust-cache/target/ ./target/ \\
-                \"
-              else
-                echo \"No Rust cache found. Will be created after build.\"
-              fi
-            '
-          "
+          flock /tmp/rust-cache.lock -c '
+            if [ -d /tmp/rust-cache ]; then
+              echo "Rust cache found. Restoring..."
+              mkdir -p ~/.cargo/git ~/.cargo/registry ./target
+              rsync -a /tmp/rust-cache/cargo-git/ ~/.cargo/git/ && \
+              rsync -a /tmp/rust-cache/cargo-registry/ ~/.cargo/registry/ && \
+              rsync -a /tmp/rust-cache/target/ ./target/
+            else
+              echo "No Rust cache found. Will be created after build."
+            fi
+          '
       - name: Get current commit SHA
         id: get_sha
         run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
@@ -329,21 +315,17 @@ jobs:
         run: |
           set -e
           echo "--- Saving Rust cache to host cache ---"
-          nix shell nixpkgs#util-linux -c "
-            flock /tmp/rust-cache.lock -c '
-              echo \"Acquired lock to save cache\"
-              mkdir -p /tmp/rust-cache-stage/cargo-git /tmp/rust-cache-stage/cargo-registry /tmp/rust-cache-stage/target
-              nix shell nixpkgs#rsync -c \" \\
-                rsync -a --delete ~/.cargo/git/ /tmp/rust-cache-stage/cargo-git/ && \\
-                rsync -a --delete ~/.cargo/registry/ /tmp/rust-cache-stage/cargo-registry/ && \\
-                rsync -a --delete ./target/ /tmp/rust-cache-stage/target/ \\
-              \"
-              rm -rf /tmp/rust-cache
-              mv /tmp/rust-cache-stage /tmp/rust-cache
-              echo \"--- Verifying cache contents ---\"
-              ls -laR /tmp/rust-cache
-            '
-          "
+          flock /tmp/rust-cache.lock -c '
+            echo "Acquired lock to save cache"
+            mkdir -p /tmp/rust-cache-stage/cargo-git /tmp/rust-cache-stage/cargo-registry /tmp/rust-cache-stage/target
+            rsync -a --delete ~/.cargo/git/ /tmp/rust-cache-stage/cargo-git/ && \
+            rsync -a --delete ~/.cargo/registry/ /tmp/rust-cache-stage/cargo-registry/ && \
+            rsync -a --delete ./target/ /tmp/rust-cache-stage/target/
+            rm -rf /tmp/rust-cache
+            mv /tmp/rust-cache-stage /tmp/rust-cache
+            echo "--- Verifying cache contents ---"
+            ls -laR /tmp/rust-cache
+          '
       - name: Rename artifact
         run: |
           cp ./partner-chains-demo-node partner-chains-node-${{ steps.get_sha.outputs.sha }}-x86_64-linux
@@ -532,21 +514,17 @@ jobs:
         run: |
           set -e
           echo "--- Restoring Rust cache from host ---"
-          nix shell nixpkgs#util-linux -c "
-            flock /tmp/rust-cache.lock -c '
-              if [ -d /tmp/rust-cache ]; then
-                echo \"Rust cache found. Restoring...\"
-                mkdir -p ~/.cargo/git ~/.cargo/registry ./target
-                nix shell nixpkgs#rsync -c \" \\
-                  rsync -a /tmp/rust-cache/cargo-git/ ~/.cargo/git/ && \\
-                  rsync -a /tmp/rust-cache/cargo-registry/ ~/.cargo/registry/ && \\
-                  rsync -a /tmp/rust-cache/target/ ./target/ \\
-                \"
-              else
-                echo \"No Rust cache found. Will be created after build.\"
-              fi
-            '
-          "
+          flock /tmp/rust-cache.lock -c '
+            if [ -d /tmp/rust-cache ]; then
+              echo "Rust cache found. Restoring..."
+              mkdir -p ~/.cargo/git ~/.cargo/registry ./target
+              rsync -a /tmp/rust-cache/cargo-git/ ~/.cargo/git/ && \
+              rsync -a /tmp/rust-cache/cargo-registry/ ~/.cargo/registry/ && \
+              rsync -a /tmp/rust-cache/target/ ./target/
+            else
+              echo "No Rust cache found. Will be created after build."
+            fi
+          '
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -569,25 +547,19 @@ jobs:
         run: |
           set -e
           echo "--- Saving Rust cache to host cache ---"
-          nix shell nixpkgs#util-linux -c "
-            flock /tmp/rust-cache.lock -c '
-              echo \"Acquired lock to save cache\"
-              mkdir -p /tmp/rust-cache-stage/cargo-git /tmp/rust-cache-stage/cargo-registry /tmp/rust-cache-stage/target
-              nix shell nixpkgs#rsync -c \" \\
-                rsync -a --delete ~/.cargo/git/ /tmp/rust-cache-stage/cargo-git/ && \\
-                rsync -a --delete ~/.cargo/registry/ /tmp/rust-cache-stage/cargo-registry/ && \\
-                rsync -a --delete ./target/ /tmp/rust-cache-stage/target/ \\
-              \"
-              rm -rf /tmp/rust-cache
-              mv /tmp/rust-cache-stage /tmp/rust-cache
-              echo \"--- Verifying cache contents ---\"
-              ls -laR /tmp/rust-cache
-            '
-          "
+          flock /tmp/rust-cache.lock -c '
+            echo "Acquired lock to save cache"
+            mkdir -p /tmp/rust-cache-stage/cargo-git /tmp/rust-cache-stage/cargo-registry /tmp/rust-cache-stage/target
+            rsync -a --delete ~/.cargo/git/ /tmp/rust-cache-stage/cargo-git/ && \
+            rsync -a --delete ~/.cargo/registry/ /tmp/rust-cache-stage/cargo-registry/ && \
+            rsync -a --delete ./target/ /tmp/rust-cache-stage/target/
+            rm -rf /tmp/rust-cache
+            mv /tmp/rust-cache-stage /tmp/rust-cache
+            echo "--- Verifying cache contents ---"
+            ls -laR /tmp/rust-cache
+          '
       #- name: Run cargo-deny to check licenses
       #  uses: EmbarkStudios/cargo-deny-action@v1
-      #  with:
-      #    command: check licenses
       - name: Build chain specs
         run: |
           source dev/envs/devnet/.envrc
