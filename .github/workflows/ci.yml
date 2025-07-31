@@ -36,19 +36,17 @@ jobs:
         with:
           fetch-depth: 0
           clean: true
-      - name: Use actions/cache for rust cache
-        uses: actions/cache@v3
+      - name: Acquire cache lock
+        uses: andstor/lockfiles@v1
         with:
-          path: /tmp/rust-cache
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
-      - name: Sync from cache location
+          lockfile: /tmp/rust-cache.lock
+          timeout: 300
+      - name: Restore Rust cache from host
         run: |
           set -e
-          echo "--- Restoring from /tmp/rust-cache ---"
+          echo "--- Restoring Rust cache from host ---"
           if [ -d /tmp/rust-cache ]; then
-            echo "Cache found. Restoring..."
+            echo "Rust cache found. Restoring..."
             mkdir -p ~/.cargo/git ~/.cargo/registry ./target
             nix shell nixpkgs#rsync -c bash -c "
               rsync -a /tmp/rust-cache/cargo-git/ ~/.cargo/git/
@@ -56,12 +54,16 @@ jobs:
               rsync -a /tmp/rust-cache/target/ ./target/
             "
           else
-            echo "No cache found. A new one will be created."
+            echo "No Rust cache found. Will be created after build."
           fi
+      - name: Release cache lock
+        if: always()
+        run: rm -f /tmp/rust-cache.lock
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+          aws-region: ${{ env.AWS_REGION }}
       - name: Login to container registry
         uses: docker/login-action@v3
         with:
@@ -74,8 +76,31 @@ jobs:
         run: nix develop -c bash -c "RUSTFLAGS=-Dwarnings cargo clippy --all-targets --all-features"
       - name: Formatting
         run: nix develop -c bash -c "cargo fmt --check"
+      - name: Acquire cache lock
+        uses: andstor/lockfiles@v1
+        with:
+          lockfile: /tmp/rust-cache.lock
+          timeout: 300
+      - name: Save Rust cache to host
+        if: always()
+        run: |
+          set -e
+          echo "--- Saving Rust cache to host cache ---"
+          mkdir -p /tmp/rust-cache
+          nix shell nixpkgs#rsync -c bash -c "
+            rsync -a ~/.cargo/git/ /tmp/rust-cache/cargo-git/
+            rsync -a ~/.cargo/registry/ /tmp/rust-cache/cargo-registry/
+            rsync -a ./target/ /tmp/rust-cache/target/
+          "
+          echo "--- Verifying cache contents ---"
+          ls -laR /tmp/rust-cache
+      - name: Release cache lock
+        if: always()
+        run: rm -f /tmp/rust-cache.lock
       #- name: Run cargo-deny to check licenses
       #  uses: EmbarkStudios/cargo-deny-action@v1
+      #  with:
+      #    command: check licenses
       - name: Build chain specs
         run: |
             source ./dev/envs/devnet/.envrc
@@ -244,19 +269,17 @@ jobs:
           fetch-depth: 0
           ref: master
           clean: true
-      - name: Use actions/cache for rust cache
-        uses: actions/cache@v3
+      - name: Acquire cache lock
+        uses: andstor/lockfiles@v1
         with:
-          path: /tmp/rust-cache
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
-      - name: Sync from cache location
+          lockfile: /tmp/rust-cache.lock
+          timeout: 300
+      - name: Restore Rust cache from host
         run: |
           set -e
-          echo "--- Restoring from /tmp/rust-cache ---"
+          echo "--- Restoring Rust cache from host ---"
           if [ -d /tmp/rust-cache ]; then
-            echo "Cache found. Restoring..."
+            echo "Rust cache found. Restoring..."
             mkdir -p ~/.cargo/git ~/.cargo/registry ./target
             nix shell nixpkgs#rsync -c bash -c "
               rsync -a /tmp/rust-cache/cargo-git/ ~/.cargo/git/
@@ -264,8 +287,11 @@ jobs:
               rsync -a /tmp/rust-cache/target/ ./target/
             "
           else
-            echo "No cache found. A new one will be created."
+            echo "No Rust cache found. Will be created after build."
           fi
+      - name: Release cache lock
+        if: always()
+        run: rm -f /tmp/rust-cache.lock
       - name: Get current commit SHA
         id: get_sha
         run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
@@ -273,6 +299,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+          aws-region: ${{ env.AWS_REGION }}
       - name: Login to container registry
         uses: docker/login-action@v3
         with:
@@ -306,19 +333,27 @@ jobs:
           docker push ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ steps.get_sha.outputs.sha }}
           docker push ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:latest
           docker push ghcr.io/${{ github.repository }}/partner-chains-node-unstable:latest
-      - name: Sync to cache location
+      - name: Acquire cache lock
+        uses: andstor/lockfiles@v1
+        with:
+          lockfile: /tmp/rust-cache.lock
+          timeout: 300
+      - name: Save Rust cache to host
         if: always()
         run: |
           set -e
-          echo "--- Saving to /tmp/rust-cache ---"
-          mkdir -p /tmp/rust-cache/cargo-git /tmp/rust-cache/cargo-registry /tmp/rust-cache/target
+          echo "--- Saving Rust cache to host cache ---"
+          mkdir -p /tmp/rust-cache
           nix shell nixpkgs#rsync -c bash -c "
-            rsync -a --delete ~/.cargo/git/ /tmp/rust-cache/cargo-git/
-            rsync -a --delete ~/.cargo/registry/ /tmp/rust-cache/cargo-registry/
-            rsync -a --delete ./target/ /tmp/rust-cache/target/
+            rsync -a ~/.cargo/git/ /tmp/rust-cache/cargo-git/
+            rsync -a ~/.cargo/registry/ /tmp/rust-cache/cargo-registry/
+            rsync -a ./target/ /tmp/rust-cache/target/
           "
           echo "--- Verifying cache contents ---"
           ls -laR /tmp/rust-cache
+      - name: Release cache lock
+        if: always()
+        run: rm -f /tmp/rust-cache.lock
       - name: Rename artifact
         run: |
           cp ./partner-chains-demo-node partner-chains-node-${{ steps.get_sha.outputs.sha }}-x86_64-linux
@@ -503,19 +538,17 @@ jobs:
           fetch-depth: 0
           ref: ${{ inputs.sha }}
           clean: true
-      - name: Use actions/cache for rust cache
-        uses: actions/cache@v3
+      - name: Acquire cache lock
+        uses: andstor/lockfiles@v1
         with:
-          path: /tmp/rust-cache
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
-      - name: Sync from cache location
+          lockfile: /tmp/rust-cache.lock
+          timeout: 300
+      - name: Restore Rust cache from host
         run: |
           set -e
-          echo "--- Restoring from /tmp/rust-cache ---"
+          echo "--- Restoring Rust cache from host ---"
           if [ -d /tmp/rust-cache ]; then
-            echo "Cache found. Restoring..."
+            echo "Rust cache found. Restoring..."
             mkdir -p ~/.cargo/git ~/.cargo/registry ./target
             nix shell nixpkgs#rsync -c bash -c "
               rsync -a /tmp/rust-cache/cargo-git/ ~/.cargo/git/
@@ -523,12 +556,16 @@ jobs:
               rsync -a /tmp/rust-cache/target/ ./target/
             "
           else
-            echo "No cache found. A new one will be created."
+            echo "No Rust cache found. Will be created after build."
           fi
+      - name: Release cache lock
+        if: always()
+        run: rm -f /tmp/rust-cache.lock
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+          aws-region: ${{ env.AWS_REGION }}
       - name: Login to container registry
         uses: docker/login-action@v3
         with:
@@ -541,6 +578,27 @@ jobs:
         run: nix develop -c bash -c "RUSTFLAGS=-Dwarnings cargo clippy --all-targets --all-features"
       - name: Formatting
         run: nix develop -c bash -c "cargo fmt --check"
+      - name: Acquire cache lock
+        uses: andstor/lockfiles@v1
+        with:
+          lockfile: /tmp/rust-cache.lock
+          timeout: 300
+      - name: Save Rust cache to host
+        if: always()
+        run: |
+          set -e
+          echo "--- Saving Rust cache to host cache ---"
+          mkdir -p /tmp/rust-cache
+          nix shell nixpkgs#rsync -c bash -c "
+            rsync -a ~/.cargo/git/ /tmp/rust-cache/cargo-git/
+            rsync -a ~/.cargo/registry/ /tmp/rust-cache/cargo-registry/
+            rsync -a ./target/ /tmp/rust-cache/target/
+          "
+          echo "--- Verifying cache contents ---"
+          ls -laR /tmp/rust-cache
+      - name: Release cache lock
+        if: always()
+        run: rm -f /tmp/rust-cache.lock
       #- name: Run cargo-deny to check licenses
       #  uses: EmbarkStudios/cargo-deny-action@v1
       #  with:
