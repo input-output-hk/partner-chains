@@ -40,7 +40,7 @@ jobs:
         run: |
           set -e
           echo "--- Restoring Rust cache from host ---"
-          nix shell nixpkgs#util-linux-flock -c "
+          nix shell nixpkgs#util-linux -c "
             flock /tmp/rust-cache.lock -c '
               if [ -d /tmp/rust-cache ]; then
                 echo \"Rust cache found. Restoring...\"
@@ -77,7 +77,7 @@ jobs:
         run: |
           set -e
           echo "--- Saving Rust cache to host cache ---"
-          nix shell nixpkgs#util-linux-flock -c "
+          nix shell nixpkgs#util-linux -c "
             flock /tmp/rust-cache.lock -c '
               echo \"Acquired lock to save cache\"
               mkdir -p /tmp/rust-cache-stage/cargo-git /tmp/rust-cache-stage/cargo-registry /tmp/rust-cache-stage/target
@@ -268,7 +268,7 @@ jobs:
         run: |
           set -e
           echo "--- Restoring Rust cache from host ---"
-          nix shell nixpkgs#util-linux-flock -c "
+          nix shell nixpkgs#util-linux -c "
             flock /tmp/rust-cache.lock -c '
               if [ -d /tmp/rust-cache ]; then
                 echo \"Rust cache found. Restoring...\"
@@ -329,7 +329,7 @@ jobs:
         run: |
           set -e
           echo "--- Saving Rust cache to host cache ---"
-          nix shell nixpkgs#util-linux-flock -c "
+          nix shell nixpkgs#util-linux -c "
             flock /tmp/rust-cache.lock -c '
               echo \"Acquired lock to save cache\"
               mkdir -p /tmp/rust-cache-stage/cargo-git /tmp/rust-cache-stage/cargo-registry /tmp/rust-cache-stage/target
@@ -532,7 +532,7 @@ jobs:
         run: |
           set -e
           echo "--- Restoring Rust cache from host ---"
-          nix shell nixpkgs#util-linux-flock -c "
+          nix shell nixpkgs#util-linux -c "
             flock /tmp/rust-cache.lock -c '
               if [ -d /tmp/rust-cache ]; then
                 echo \"Rust cache found. Restoring...\"
@@ -569,7 +569,7 @@ jobs:
         run: |
           set -e
           echo "--- Saving Rust cache to host cache ---"
-          nix shell nixpkgs#util-linux-flock -c "
+          nix shell nixpkgs#util-linux -c "
             flock /tmp/rust-cache.lock -c '
               echo \"Acquired lock to save cache\"
               mkdir -p /tmp/rust-cache-stage/cargo-git /tmp/rust-cache-stage/cargo-registry /tmp/rust-cache-stage/target
