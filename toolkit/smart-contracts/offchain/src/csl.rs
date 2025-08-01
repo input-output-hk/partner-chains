@@ -1,6 +1,5 @@
 use crate::cardano_keys::CardanoPaymentSigningKey;
 use crate::plutus_script::PlutusScript;
-use anyhow::Context;
 use cardano_serialization_lib::*;
 use fraction::{FromPrimitive, Ratio};
 use ogmios_client::query_ledger_state::ReferenceScriptsCosts;
@@ -275,10 +274,7 @@ impl Costs {
 	}
 
 	async fn from_ogmios<T: Transactions>(tx: &Transaction, client: &T) -> anyhow::Result<Costs> {
-		let evaluate_response = client
-			.evaluate_transaction(&tx.to_bytes())
-			.await
-			.context("calculate_costs received Ogmios error from evaluate_transaction")?;
+		let evaluate_response = client.evaluate_transaction(&tx.to_bytes()).await?;
 
 		let mut mints = HashMap::new();
 		let mut spends = HashMap::new();
@@ -962,7 +958,7 @@ mod tests {
 		.address(NetworkIdKind::Testnet);
 		assert_eq!(
 			address.to_bech32(None).unwrap(),
-			"addr_test1wp6t6apkj6kdz6j0jmtjqc5887cnrnfw9rdpressk3ak66sf6h0hm"
+			"addr_test1wpcsmvsxdjal5jxytvgd3hfntg9eav888mzfykukdjfcx2ce6knnp"
 		);
 	}
 

@@ -16,6 +16,10 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Changed
 
+* **BREAKING**: Updated partner-chains-smart-contracts (raw-scripts) dependency to v8.0.0.
+  Possibility to interact with smart-contracts used by earlier versions is lost.
+  Governance authority will have to establish new partner chain on Cardano.
+  All initialization and candidates registrations have to be repeated.
 * Switched from `polkadot-stable2503-07` to `polkadot-stable2506`. `type RuntimeEvent` became deprecated in polkadot-sdk. It has been removed from the toolkit crates. To update to this version of PC toolkit, please remove definition of `type RuntimeEvent` when wiring in runtime.
 
 # v1.7.0
@@ -85,6 +89,7 @@ patched are: `session-validator-management`, `block-participation`, `native-toke
 **Partner Chain builders should update their pallet versions and run a runtime upgrade as soon as possible.**
 
 ## Added
+
 * `pallet-block-producer-fees` - with settings for the rewards payout logic
 * `governed-map` new feature that allows setting any arbitrary data to be managed via existing governance mechanism
 * `ariadne_v2` selection algorithm that selects committee respecting D-parameter and candidates
@@ -103,6 +108,7 @@ of required signatures.
 All the `smart-contracts` sub-commands that require Governance: `governance update`, `upsert-d-parameter`, `upsert-permissioned-candidates`, `reserve init`, `reserve create`, `reserve deposit`, and `reserve handover` will now submit the transaction only if governance is "1 of 1". Otherwise these commands return a transaction CBOR that can be submitted with the new command `assemble-and-submit-tx`. Signatures can be obtained using `sign-tx`.
 
 Procedure of creating transaction to sign is as follows:
+
 * a temporary wallet is generated
 * temporary wallet private key is saved to a file
 * `--payment-key` transfers required funds to the temporary wallet
@@ -182,6 +188,7 @@ type implemented in `node/runtime/src/lib.rs` for reference using Ariadne.
 # v1.5.0
 
 ## Changed
+
 * `smart-contracts reserve release` command parameter `--amount` semantic has changed, it now represent the amount of tokens to release in this command execution
 * Replaced custom weights with default substrate weights for few pallets
 * Updated to polkadot-stable2409-4 (aka v1.16.4).
@@ -278,6 +285,7 @@ on how to create these new data sources see `node/src/main_chain_follower.rs` fi
 * Update cardano-node to 10.1.2
 
 ## Added
+
 * Added `new_if_pallet_present` factory for the native token inherent data provider,
 allowing to selectively query main chain state based on runtime version
 * Added Largest-First coin selection algorithm.
@@ -305,9 +313,11 @@ crate. Removed `EpochConfig` wrapper type; code using it should be changed to us
 type directly, `EpochConfig::read()` uses should be replaced by `MainchainEpochConfig::read_from_env()`.
 
 ## Fixed
+
 * ETCM-8267 - fixed `partner-chains-cli` missing the native token configuration
 
 ## Added
+
 * ETCM-7811 - native token movement observability components: `sp-native-token-management` and
 `pallet-native-token-management` crates; data sources behind the `native-token` feature in
 `main-chain-follower-api` and `db-sync-follower` crates.
@@ -332,6 +342,7 @@ to match. Now `partner-chains-cli` passes a network parameter to `sidechain-main
 # v1.0.0
 
 ## Changed
+
 * ETCM-7498 - update to polkadot v1.12.0
 * ETCM-6262 - changed the way benchmarks are used in runtime. It now contains 'weights' directory with benchmarks for pallets, block and extrinsics overheads, machine and storage. New scripts for generating them were added.
 * ETCM-7506 - moved `generate-signatures` functionality to node command `registration-signatures`, output has changed, automation in this repository has been updated
@@ -368,15 +379,18 @@ Partner Chains nodes that did not use Active Flow.
 * renamed `sidechains-substrate-node` to `partner-chains-node`
 
 ## Fixed
+
 * ETCM-7745 - do not overwrite legacy chain params in partner-chains-cli prepare-configuration wizard
 * ETCM-7713 - partner-chains-cli prepare-configuration small improvements and fixes
 
 ## Added
+
 * ETCM-7610 implemented 'establish main chain configuration' step of prepare-configuration wizard
 
 # v0.2.1
 
 ## Changed
+
 * ETCM-7422 - decoupled all pallet crates from their related inherent data crates. Moved all primitives
 (types, error types, runtime APIs etc.) to separate crates in `primitives/` directory. Now for each
 `pallet-*` crate there is a corresponding `sp-*` crate.
@@ -389,14 +403,17 @@ Cleaned `inherent_data.rs` which now contains only wiring and necessary minor he
 * made `pallet-block-rewards` crate depend on `sp-block-rewards` and moved some types and traits there
 
 ## Fixed
+
 * ETCM-7463 - fixed incoming transactions cache in db-sync-follower, it was not working at all
 
 # v0.1.0
 
 ## Added
+
 * ETCM-7080: add aura and grandpa public keys to registrations data returned from RPC method
 
 ## Changed
+
 * IMPORTANT: partner-chains-smart-contracts revision has been updated in flake.nix.  Downstream projects, like Midnight, should keep using the previous value, to keep configuration utilities in sync with their testnets.
 * BREAKING: ETCM-5905 - remove all storage maps from pallet-active-flow
 
@@ -412,6 +429,7 @@ hiding each data source type behind a feature
 * Refactoring: moved `sidechain_getAridaneParameters` and `sidechain_getRegistrations` to `pallet-session-validator-management-rpc`.
 
 ## Fixed
+
 * ETCM-7080 - use the same candidate validation as in runtime for `sidechain_getRegistrations` and `sidechain_getAriadneParameters` rpc methods.
 
 # v0.0.26
@@ -427,6 +445,7 @@ hiding each data source type behind a feature
 * ETCM-6954 - update to partnerchains-polkadot-v1.9.0 (public fork), update most of the dependencies
 
 ## Changed
+
 * BREAKING: ETCM-5898 - remove storage maps from pallet-session-validator-management and simplify the committee rotation logic
 * ETCM-6877 - improved the performance of getting the latest on chain committee hash, requires update in deployment configuration.
 * ETCM-6822 - update partner-chains-smart-contracts revision to: 76f57380b6d85f2c1a1f212591a99ebd0db96213.
@@ -441,6 +460,7 @@ types instead of raw byte arrays
 * ETCM-7072 - move `ValidatorManagementSessionManager` to a dedicated crate
 
 ## Fixed
+
 * ETCM-6854 - make endpoints_spec.json file consistent with the actual implementation in session-validator-management
 * ETCM-7051 - sidechain_getEpochSignatures nextCommitteePubKeys were returning next committee of the current epoch
 * ETCM-7081 - fixed 'check_inherent' when committee cannot be selected from inherent data
@@ -492,7 +512,7 @@ and `nextEpochTimestamp` using current time
 
 ## Added
 
-*  ETCM-6075 - added prometheus metrics `execution_time`, `call_count` for each method in main chain follower services
+* ETCM-6075 - added prometheus metrics `execution_time`, `call_count` for each method in main chain follower services
 
 ## Changed
 
@@ -509,17 +529,17 @@ Fixed accepting a block with 'unlock' call when verifier does not see any transa
 
 ## Fixed
 
-* ETCM-6367 - fixed `sidechain_getEpochsToUpload`, so it returns the first epoch of sidechain by @LGLO in https://github.com/input-output-hk/partner-chains/pull/521
-* ETCM-6369 - fixed invalid incoming transaction inherent caused by negative amount (bug in db-sync main chain follower) by @LGLO in https://github.com/input-output-hk/partner-chains/pull/527
-* ETCM-5479 - fixed merkle proof endpoint with proper distributed set utxo by @AmbientTea in https://github.com/input-output-hk/partner-chains/pull/532
-* ETCM-6441 - fixed a SQL query, so it can use index on multi_asset table when looking for d-parameter and permissioned candidates by @LGLO in https://github.com/input-output-hk/partner-chains/pull/537
+* ETCM-6367 - fixed `sidechain_getEpochsToUpload`, so it returns the first epoch of sidechain by @LGLO in <https://github.com/input-output-hk/partner-chains/pull/521>
+* ETCM-6369 - fixed invalid incoming transaction inherent caused by negative amount (bug in db-sync main chain follower) by @LGLO in <https://github.com/input-output-hk/partner-chains/pull/527>
+* ETCM-5479 - fixed merkle proof endpoint with proper distributed set utxo by @AmbientTea in <https://github.com/input-output-hk/partner-chains/pull/532>
+* ETCM-6441 - fixed a SQL query, so it can use index on multi_asset table when looking for d-parameter and permissioned candidates by @LGLO in <https://github.com/input-output-hk/partner-chains/pull/537>
 
 ## Added
 
-* ETCM-6080 - mock payouts to block beneficiaries by @AmbientTea in https://github.com/input-output-hk/partner-chains/pull/500
+* ETCM-6080 - mock payouts to block beneficiaries by @AmbientTea in <https://github.com/input-output-hk/partner-chains/pull/500>
 
 ## Changed
 
-* ETCM-5898 - Updated `sidechain_getEpochCommittee` to search for appropriate block, will allow to not store map of all epochs in the future by @aang114 in https://github.com/input-output-hk/partner-chains/pull/535
+* ETCM-5898 - Updated `sidechain_getEpochCommittee` to search for appropriate block, will allow to not store map of all epochs in the future by @aang114 in <https://github.com/input-output-hk/partner-chains/pull/535>
 * ETCM-5756 - Unified `get_permissioned_candidates_for_epoch` and `get_d_parameter_for_epoch` into a single function: `get_ariadne_parameters`
-* ETCM-6516 - Updated slot assignment algorithm with the most recent specification https://github.com/input-output-hk/partner-chains/pull/563
+* ETCM-6516 - Updated slot assignment algorithm with the most recent specification <https://github.com/input-output-hk/partner-chains/pull/563>

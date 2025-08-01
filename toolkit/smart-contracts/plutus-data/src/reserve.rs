@@ -33,8 +33,6 @@ pub struct ReserveDatum {
 #[derive(Debug, Clone, PartialEq)]
 /// Type representing reserve settings that *are not* changeable after creation
 pub struct ReserveImmutableSettings {
-	/// Unused, set to 0
-	pub t0: u64,
 	/// Reserve token asset Id
 	pub token: AssetId,
 }
@@ -68,9 +66,6 @@ impl From<ReserveDatum> for PlutusData {
 	fn from(value: ReserveDatum) -> Self {
 		VersionedGenericDatum {
 			datum: {
-				let mut immutable_settings = PlutusList::new();
-				let t0 = PlutusData::new_integer(&BigInt::zero());
-				immutable_settings.add(&t0);
 				let (policy_id_bytes, asset_name_bytes) = {
 					let AssetId { policy_id, asset_name } = value.immutable_settings.token.clone();
 					(policy_id.0.to_vec(), asset_name.0.to_vec())
@@ -84,7 +79,6 @@ impl From<ReserveDatum> for PlutusData {
 						&asset_data,
 					))
 				};
-				immutable_settings.add(&token_data);
 
 				let mut v_function_hash_and_initial_incentive = PlutusList::new();
 				v_function_hash_and_initial_incentive.add(&PlutusData::new_bytes(
@@ -95,7 +89,7 @@ impl From<ReserveDatum> for PlutusData {
 				)));
 
 				let mut datum = PlutusList::new();
-				datum.add(&PlutusData::new_list(&immutable_settings));
+				datum.add(&token_data);
 				datum.add(&PlutusData::new_list(&v_function_hash_and_initial_incentive));
 				datum.add(&PlutusData::new_integer(
 					&value.stats.token_total_amount_transferred.into(),
@@ -148,10 +142,7 @@ fn decode_v0_reserve_datum(datum: &PlutusData) -> Option<ReserveDatum> {
 	let outer_list = datum.as_list()?;
 	let mut outer_iter = outer_list.into_iter();
 
-	let immutable_settings_list = outer_iter.next()?.as_list()?;
-	let mut immutable_settings_iter = immutable_settings_list.into_iter();
-	let t0: u64 = immutable_settings_iter.next()?.as_integer()?.as_u64()?.into();
-	let token = decode_token_id_datum(immutable_settings_iter.next()?)?;
+	let token = decode_token_id_datum(outer_iter.next()?)?;
 
 	let mutable_settings_list = outer_iter.next()?.as_list()?;
 	let mut mutable_settings_iter = mutable_settings_list.into_iter();
@@ -164,7 +155,7 @@ fn decode_v0_reserve_datum(datum: &PlutusData) -> Option<ReserveDatum> {
 	};
 
 	Some(ReserveDatum {
-		immutable_settings: ReserveImmutableSettings { t0, token },
+		immutable_settings: ReserveImmutableSettings { token },
 		mutable_settings: ReserveMutableSettings {
 			total_accrued_function_asset_name: total_accrued_function_script_hash,
 			initial_incentive,
@@ -200,7 +191,6 @@ mod tests {
 	fn test_datum() -> ReserveDatum {
 		ReserveDatum {
 			immutable_settings: ReserveImmutableSettings {
-				t0: 0,
 				token: sidechain_domain::AssetId {
 					policy_id: PolicyId([0; 28]),
 					asset_name: AssetName::from_hex_unsafe("aabbcc"),
@@ -217,13 +207,11 @@ mod tests {
 	fn test_datum_plutus_data() -> PlutusData {
 		test_plutus_data!({"list":[
 			{"list":[
-				{"list":[
-					{"int": 0},
 					{"constructor":0,
 					 "fields":[
 						{"bytes": "00000000000000000000000000000000000000000000000000000000"},
 						{"bytes": "aabbcc"}]}
-				]},
+				,
 				{"list":[
 					{"bytes": "02020202020202020202020202020202020202020202020202020202"},
 					{"int": 0}
