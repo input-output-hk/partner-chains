@@ -8,7 +8,7 @@
 //! 3. The transaction should have two outputs:
 //!   * Reserve Validator output that:
 //!   * * has value from existing reserve UTXO
-//!   * * has the updated Plutus Data (in our "versioned format"): `[[[<Encoded Token>], [Bytes(v_function_hash), Int(initial_incentive)], [Int(0)]], Constr(0, []), Int(0)]`,
+//!   * * has the updated Plutus Data (in our "versioned format"): `[[<Encoded Token>, [Bytes(v_function_hash), Int(initial_incentive)], [Int(0)]], Constr(0, []), Int(0)]`,
 //!       where `<Encoded Token>` is `Constr(0, [Bytes(policy_id), Bytes(asset_name)])`.
 //!   * Change output that keeps the Governance Token and change of other tokens
 //! 4. The transaction should have three script reference inputs:
