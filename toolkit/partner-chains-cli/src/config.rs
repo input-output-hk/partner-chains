@@ -501,6 +501,15 @@ pub(crate) mod config_fields {
 			_marker: PhantomData,
 		};
 
+	pub(crate) const CARDANO_DATA_SOURCE: ConfigFieldDefinition<'static, String> =
+		ConfigFieldDefinition {
+			config_file: ConfigFile::Resources,
+			path: &["cardano_data_source"],
+			name: "Cardano data source",
+			default: Some("db-sync"),
+			_marker: PhantomData,
+		};
+
 	pub(crate) const OGMIOS_PROTOCOL: ConfigFieldDefinition<'static, NetworkProtocol> =
 		ConfigFieldDefinition {
 			config_file: ConfigFile::Resources,

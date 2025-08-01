@@ -475,6 +475,7 @@ EOF
       - ./configurations/partner-chains-nodes/$node_name/entrypoint.sh:/entrypoint.sh
     environment:
       DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:\${POSTGRES_PASSWORD}@postgres-${db_sync_instance}:5432/cexplorer"
+      CARDANO_DATA_SOURCE: "db-sync"
       CARDANO_SECURITY_PARAMETER: "5"
       CARDANO_ACTIVE_SLOTS_COEFF: "0.4"
       MC__FIRST_EPOCH_NUMBER: "0"
@@ -512,6 +513,7 @@ EOF
       - ./configurations/partner-chains-nodes/$node_name/entrypoint.sh:/entrypoint.sh
     environment:
       DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:\${POSTGRES_PASSWORD}@postgres-${db_sync_instance}:5432/cexplorer"
+      CARDANO_DATA_SOURCE: "db-sync"
       CARDANO_SECURITY_PARAMETER: "5"
       CARDANO_ACTIVE_SLOTS_COEFF: "0.4"
       MC__FIRST_EPOCH_NUMBER: "0"

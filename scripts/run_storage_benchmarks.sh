@@ -22,7 +22,7 @@ SIDECHAINS_NODE=./target/production/partner-chains-node
 ERR_FILE="benchmarking_errors.txt"
 rm -f $ERR_FILE
 
-export USE_MOCK_DATA_SOURCES=true
+export CARDANO_DATA_SOURCE="mock"
 
 echo "[+] Benchmarking storages"
 OUTPUT=$(
