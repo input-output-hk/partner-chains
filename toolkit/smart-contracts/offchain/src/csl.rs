@@ -958,7 +958,7 @@ mod tests {
 		.address(NetworkIdKind::Testnet);
 		assert_eq!(
 			address.to_bech32(None).unwrap(),
-			"addr_test1wp6t6apkj6kdz6j0jmtjqc5887cnrnfw9rdpressk3ak66sf6h0hm"
+			"addr_test1wpcsmvsxdjal5jxytvgd3hfntg9eav888mzfykukdjfcx2ce6knnp"
 		);
 	}
 

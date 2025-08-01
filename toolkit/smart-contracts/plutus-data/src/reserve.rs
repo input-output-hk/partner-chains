@@ -239,13 +239,11 @@ mod tests {
 	fn test_reserve_datum_plutus_data() -> PlutusData {
 		test_plutus_data!({"list":[
 			{"list":[
-				{"list":[
-					{"int": 0},
 					{"constructor":0,
 					 "fields":[
 						{"bytes": "00000000000000000000000000000000000000000000000000000000"},
 						{"bytes": "aabbcc"}]}
-				]},
+				,
 				{"list":[
 					{"bytes": "02020202020202020202020202020202020202020202020202020202"},
 					{"int": 0}
