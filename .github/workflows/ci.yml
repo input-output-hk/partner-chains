@@ -36,6 +36,11 @@ jobs:
         with:
           fetch-depth: 0
           clean: true
+      - name: Acquire cache lock
+        run: |
+          until mkdir /tmp/rust-cache.lock 2>/dev/null; do
+            sleep 5
+          done
       - name: Restore Rust cache from host
         run: |
           set -e
@@ -51,6 +56,9 @@ jobs:
           else
             echo "No Rust cache found. Will be created after build."
           fi
+      - name: Release cache lock
+        if: always()
+        run: rmdir /tmp/rust-cache.lock
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -68,6 +76,11 @@ jobs:
         run: nix develop -c bash -c "RUSTFLAGS=-Dwarnings cargo clippy --all-targets --all-features"
       - name: Formatting
         run: nix develop -c bash -c "cargo fmt --check"
+      - name: Acquire cache lock
+        run: |
+          until mkdir /tmp/rust-cache.lock 2>/dev/null; do
+            sleep 5
+          done
       - name: Save Rust cache to host
         if: always()
         run: |
@@ -81,6 +94,9 @@ jobs:
           "
           echo "--- Verifying cache contents ---"
           ls -laR /tmp/rust-cache
+      - name: Release cache lock
+        if: always()
+        run: rmdir /tmp/rust-cache.lock
       #- name: Run cargo-deny to check licenses
       #  uses: EmbarkStudios/cargo-deny-action@v1
       #  with:
@@ -253,6 +269,11 @@ jobs:
           fetch-depth: 0
           ref: master
           clean: true
+      - name: Acquire cache lock
+        run: |
+          until mkdir /tmp/rust-cache.lock 2>/dev/null; do
+            sleep 5
+          done
       - name: Restore Rust cache from host
         run: |
           set -e
@@ -268,6 +289,9 @@ jobs:
           else
             echo "No Rust cache found. Will be created after build."
           fi
+      - name: Release cache lock
+        if: always()
+        run: rmdir /tmp/rust-cache.lock
       - name: Get current commit SHA
         id: get_sha
         run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
@@ -309,6 +333,11 @@ jobs:
           docker push ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ steps.get_sha.outputs.sha }}
           docker push ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:latest
           docker push ghcr.io/${{ github.repository }}/partner-chains-node-unstable:latest
+      - name: Acquire cache lock
+        run: |
+          until mkdir /tmp/rust-cache.lock 2>/dev/null; do
+            sleep 5
+          done
       - name: Save Rust cache to host
         if: always()
         run: |
@@ -322,6 +351,9 @@ jobs:
           "
           echo "--- Verifying cache contents ---"
           ls -laR /tmp/rust-cache
+      - name: Release cache lock
+        if: always()
+        run: rmdir /tmp/rust-cache.lock
       - name: Rename artifact
         run: |
           cp ./partner-chains-demo-node partner-chains-node-${{ steps.get_sha.outputs.sha }}-x86_64-linux
@@ -506,6 +538,11 @@ jobs:
           fetch-depth: 0
           ref: ${{ inputs.sha }}
           clean: true
+      - name: Acquire cache lock
+        run: |
+          until mkdir /tmp/rust-cache.lock 2>/dev/null; do
+            sleep 5
+          done
       - name: Restore Rust cache from host
         run: |
           set -e
@@ -521,6 +558,9 @@ jobs:
           else
             echo "No Rust cache found. Will be created after build."
           fi
+      - name: Release cache lock
+        if: always()
+        run: rmdir /tmp/rust-cache.lock
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -538,6 +578,11 @@ jobs:
         run: nix develop -c bash -c "RUSTFLAGS=-Dwarnings cargo clippy --all-targets --all-features"
       - name: Formatting
         run: nix develop -c bash -c "cargo fmt --check"
+      - name: Acquire cache lock
+        run: |
+          until mkdir /tmp/rust-cache.lock 2>/dev/null; do
+            sleep 5
+          done
       - name: Save Rust cache to host
         if: always()
         run: |
@@ -551,6 +596,9 @@ jobs:
           "
           echo "--- Verifying cache contents ---"
           ls -laR /tmp/rust-cache
+      - name: Release cache lock
+        if: always()
+        run: rmdir /tmp/rust-cache.lock
       #- name: Run cargo-deny to check licenses
       #  uses: EmbarkStudios/cargo-deny-action@v1
       #  with:
