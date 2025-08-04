@@ -31,6 +31,7 @@ match this change.
 * `select_authorities` in `authority-selection-inherents` crate now returns a `BoundedVec` of `CommitteeMembers`. Projects that used the old version no longer
 need to transform the data in their own runtime code
 * Updates Rust dependency to v1.88, changes WASM target to 'wasm32v1-none'
+* Backward compatible Encode and Decode for legacy chains that operate with AURA and Grandpa keys as session keys.
 
 ## Added
 
