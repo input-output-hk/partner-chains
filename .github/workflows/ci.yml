@@ -199,7 +199,7 @@ jobs:
   upload-chain-specs-pre-merge:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
     needs: build-linux-x86_64-pre-merge
-    runs-on: eks
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -381,7 +381,7 @@ jobs:
   upload-chain-specs:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
     needs: build-linux-x86_64-post-merge
-    runs-on: eks
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -418,7 +418,7 @@ jobs:
     permissions:
       id-token: write
       contents: write
-    runs-on: eks
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -618,7 +618,7 @@ jobs:
   upload-chain-specs-workflow-dispatch:
     if: github.event_name == 'workflow_dispatch'
     needs: build-linux-x86_64-workflow-dispatch
-    runs-on: eks
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout specific SHA
         uses: actions/checkout@v4
