@@ -275,13 +275,18 @@ EOF
 }
 
 generate_node_configurations() {
+    if [ "$NUM_PERMISSIONED_NODES_TO_PROCESS" -eq 0 ] && [ "$NUM_REGISTERED_NODES_TO_PROCESS" -eq 0 ]; then
+        echo "ERROR: You must configure at least one permissioned or registered node."
+        exit 1
+    fi
     # Create directories for node configurations
     mkdir -p configurations/partner-chains-nodes
 
-    # Generate permissioned-1 (bootnode) configuration
-    node_name="permissioned-1"
-    mkdir -p configurations/partner-chains-nodes/$node_name
-    cat > configurations/partner-chains-nodes/$node_name/entrypoint.sh <<EOF
+    if [ "$NUM_PERMISSIONED_NODES_TO_PROCESS" -gt 0 ]; then
+        # Generate permissioned-1 (bootnode) configuration
+        node_name="permissioned-1"
+        mkdir -p configurations/partner-chains-nodes/$node_name
+        cat > configurations/partner-chains-nodes/$node_name/entrypoint.sh <<EOF
 #!/bin/sh
 
 echo 'Waiting for Cardano chain to sync and Partner Chains smart contracts setup to complete...'
@@ -331,7 +336,8 @@ touch /shared/partner-chains-node-$node_name.ready
 
 wait
 EOF
-    chmod +x configurations/partner-chains-nodes/$node_name/entrypoint.sh
+        chmod +x configurations/partner-chains-nodes/$node_name/entrypoint.sh
+    fi
 
     # Generate remaining permissioned nodes configurations
     for ((i=2; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
@@ -396,7 +402,77 @@ EOF
     for ((i=1; i<=NUM_REGISTERED_NODES_TO_PROCESS; i++)); do
         node_name="registered-$i"
         mkdir -p configurations/partner-chains-nodes/$node_name
-        cat > configurations/partner-chains-nodes/$node_name/entrypoint.sh <<EOF
+        
+        # Check if this should be the bootnode
+        is_bootnode=false
+        if [ "$NUM_PERMISSIONED_NODES_TO_PROCESS" -eq 0 ] && [ "$i" -eq 1 ]; then
+            is_bootnode=true
+        fi
+
+        # Generate entrypoint script
+        if [ "$is_bootnode" = true ]; then
+            cat > configurations/partner-chains-nodes/$node_name/entrypoint.sh <<EOF
+#!/bin/sh
+
+echo 'Waiting for Cardano chain to sync and Partner Chains smart contracts setup to complete...'
+
+while true; do
+    if [ -f "/shared/partner-chains-setup.ready" ]; then
+        break
+    else
+        sleep 1
+    fi
+done
+
+echo "Partner Chains smart contracts setup complete. Starting node..."
+
+# Create a local keystore and copy keys from the shared volume
+echo "Creating local keystore and copying keys..."
+mkdir /data/keystore
+cp /shared/node-keys/$node_name/keystore/* /data/keystore/
+chmod -R 777 /data/keystore
+
+NODE_KEY=\$(openssl rand -hex 32)
+PEER_ID=\$(echo "\$NODE_KEY" | /usr/local/bin/partner-chains-node key inspect-node-key)
+
+export MC__FIRST_EPOCH_TIMESTAMP_MILLIS=\$(cat /shared/MC__FIRST_EPOCH_TIMESTAMP_MILLIS)
+
+/usr/local/bin/partner-chains-node \\
+  --chain=/shared/chain-spec.json \\
+  --validator \\
+  --node-key="\$NODE_KEY" \\
+  --base-path=/data \\
+  --keystore-path=/data/keystore \\
+  --in-peers=10000 \\
+  --out-peers=10000 \\
+  --unsafe-rpc-external \\
+  --rpc-port=9933 \\
+  --rpc-cors=all \\
+  --rpc-max-connections=10000 \\
+  --prometheus-port=9615 \\
+  --prometheus-external \\
+  --state-pruning=archive \\
+  --discover-local \\
+  --blocks-pruning=archive \\
+  --listen-addr=/ip4/0.0.0.0/tcp/30333 \\
+  --public-addr="/dns4/partner-chains-node-$node_name/tcp/30333/p2p/\$PEER_ID" &
+
+touch /shared/partner-chains-node-$node_name.ready
+
+wait
+EOF
+        else
+            # Determine bootnode address
+            if [ "$NUM_PERMISSIONED_NODES_TO_PROCESS" -gt 0 ]; then
+                bootnode_address="/dns/partner-chains-node-permissioned-1/tcp/30333/p2p/12D3KooWD7ou3cgmVbMttbAXNvXPwna8LkRUko849YE8oWv5NGZP"
+            else
+                # This assumes registered-1 is the bootnode
+                # Note: This part of the script doesn't know the peer ID of registered-1 ahead of time.
+                # This is a limitation. For a dynamic setup, a more robust discovery mechanism would be needed.
+                # For now, we'll point to its service name and hope for the best.
+                bootnode_address="/dns/partner-chains-node-registered-1/tcp/30333"
+            fi
+            cat > configurations/partner-chains-nodes/$node_name/entrypoint.sh <<EOF
 #!/bin/sh
 
 echo 'Waiting for Cardano chain to sync and Partner Chains smart contracts setup to complete...'
@@ -430,7 +506,7 @@ export MC__FIRST_EPOCH_TIMESTAMP_MILLIS=\$(cat /shared/MC__FIRST_EPOCH_TIMESTAMP
   --node-key="\$NODE_KEY" \\
   --base-path=/data \\
   --keystore-path=/data/keystore \\
-  --bootnodes="/dns/partner-chains-node-permissioned-1/tcp/30333/p2p/12D3KooWD7ou3cgmVbMttbAXNvXPwna8LkRUko849YE8oWv5NGZP" \\
+  --bootnodes="$bootnode_address" \\
   --in-peers=10000 \\
   --out-peers=10000 \\
   --unsafe-rpc-external \\
@@ -449,6 +525,7 @@ touch /shared/partner-chains-node-$node_name.ready
 
 wait
 EOF
+        fi
         chmod +x configurations/partner-chains-nodes/$node_name/entrypoint.sh
     done
 
@@ -457,10 +534,14 @@ EOF
 services:
 EOF
 
+    batch_size=25
+    last_batch_leader=""
+    node_counter=0
+
     # Add permissioned nodes
     for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
         node_name="permissioned-$i"
-        rpc_port=$((9933 + i - 1))
+        rpc_port=$((11000 + i - 1))
         prometheus_port=$((9615 + i - 1))
         db_sync_instance=$(( (i - 1) % NUM_DBSYNC_INSTANCES + 1 ))
         
@@ -473,6 +554,31 @@ EOF
       - shared-volume:/shared
       - partner-chains-node-$node_name-data:/data
       - ./configurations/partner-chains-nodes/$node_name/entrypoint.sh:/entrypoint.sh
+EOF
+        is_leader=false
+        if (( node_counter % batch_size == 0 )); then
+            is_leader=true
+        fi
+
+        if [ "$is_leader" = true ]; then
+            if [ -n "$last_batch_leader" ]; then
+                cat >> docker-compose.yml <<EOF
+    depends_on:
+      $last_batch_leader:
+        condition: service_started
+EOF
+            fi
+            last_batch_leader="partner-chains-node-$node_name"
+        else
+            if [ -n "$last_batch_leader" ]; then
+                cat >> docker-compose.yml <<EOF
+    depends_on:
+      - $last_batch_leader
+EOF
+            fi
+        fi
+        
+        cat >> docker-compose.yml <<EOF
     environment:
       DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:\${POSTGRES_PASSWORD}@postgres-${db_sync_instance}:5432/cexplorer"
       CARDANO_SECURITY_PARAMETER: "5"
@@ -492,12 +598,13 @@ EOF
           cpus: \${CPU_PARTNER_CHAINS_NODE:-}
           memory: \${MEM_PARTNER_CHAINS_NODE:-}
 EOF
+        node_counter=$((node_counter + 1))
     done
 
     # Add registered nodes
     for ((i=1; i<=NUM_REGISTERED_NODES_TO_PROCESS; i++)); do
         node_name="registered-$i"
-        rpc_port=$((9933 + i - 1 + NUM_PERMISSIONED_NODES_TO_PROCESS))
+        rpc_port=$((11000 + i - 1 + NUM_PERMISSIONED_NODES_TO_PROCESS))
         prometheus_port=$((9615 + i - 1 + NUM_PERMISSIONED_NODES_TO_PROCESS))
         db_sync_instance=$(( (i - 1 + NUM_PERMISSIONED_NODES_TO_PROCESS) % NUM_DBSYNC_INSTANCES + 1 ))
         
@@ -510,6 +617,31 @@ EOF
       - shared-volume:/shared
       - partner-chains-node-$node_name-data:/data
       - ./configurations/partner-chains-nodes/$node_name/entrypoint.sh:/entrypoint.sh
+EOF
+        is_leader=false
+        if (( node_counter % batch_size == 0 )); then
+            is_leader=true
+        fi
+
+        if [ "$is_leader" = true ]; then
+            if [ -n "$last_batch_leader" ]; then
+                cat >> docker-compose.yml <<EOF
+    depends_on:
+      $last_batch_leader:
+        condition: service_started
+EOF
+            fi
+            last_batch_leader="partner-chains-node-$node_name"
+        else
+            if [ -n "$last_batch_leader" ]; then
+                cat >> docker-compose.yml <<EOF
+    depends_on:
+      - $last_batch_leader
+EOF
+            fi
+        fi
+        
+        cat >> docker-compose.yml <<EOF
     environment:
       DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:\${POSTGRES_PASSWORD}@postgres-${db_sync_instance}:5432/cexplorer"
       CARDANO_SECURITY_PARAMETER: "5"
@@ -529,6 +661,7 @@ EOF
           cpus: \${CPU_PARTNER_CHAINS_NODE:-}
           memory: \${MEM_PARTNER_CHAINS_NODE:-}
 EOF
+        node_counter=$((node_counter + 1))
     done
 
     echo "Generated node configurations and docker-compose.yml"
