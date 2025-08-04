@@ -365,7 +365,7 @@ mod tests {
 
 	fn previous_reserve_datum() -> ReserveDatum {
 		ReserveDatum {
-			immutable_settings: ReserveImmutableSettings { t0: 0, token: token_id() },
+			immutable_settings: ReserveImmutableSettings { token: token_id() },
 			mutable_settings: ReserveMutableSettings {
 				total_accrued_function_asset_name: applied_v_function().policy_id(),
 				initial_incentive: 0,
