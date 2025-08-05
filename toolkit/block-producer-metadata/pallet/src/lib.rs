@@ -86,7 +86,7 @@
 //!
 //! ### Benchmarking
 //!
-//! See documentation of [benchmarking] module.
+//! See documentation of benchmarking module.
 //!
 //! ### RPC
 //!
