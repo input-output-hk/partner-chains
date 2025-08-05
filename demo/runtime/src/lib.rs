@@ -383,7 +383,7 @@ impl pallet_partner_chains_session::Config for Runtime {
 }
 
 parameter_types! {
-	pub const MaxValidators: u32 = 32;
+	pub const MaxValidators: u32 = 1024;
 }
 
 impl pallet_session_validator_management::Config for Runtime {
