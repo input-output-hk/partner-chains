@@ -1416,6 +1416,82 @@ pub struct AdaBasedStaking {
 	pub signature: MainchainSignature,
 }
 
+#[derive(
+	Clone,
+	PartialEq,
+	Eq,
+	Ord,
+	PartialOrd,
+	TypeInfo,
+	MaxEncodedLen,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+)]
+/// Represents a Cardano ADA delegator
+pub enum DelegatorKey {
+	/// Represents a staking address that is controlled by a user delegator
+	StakeKeyHash([u8; 28]),
+	/// Represents a staking address that is locked by a Plutus script
+	ScriptKeyHash {
+		/// Raw stake address hash
+		hash_raw: [u8; 28],
+		/// Hash of the Plutus script controlling the staking address
+		script_hash: [u8; 28],
+	},
+}
+
+impl alloc::fmt::Debug for DelegatorKey {
+	fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+		let s = match self {
+			Self::ScriptKeyHash { hash_raw, script_hash } => alloc::format!(
+				"ScriptKeyHash{{ hash_raw: {}, script_hash: {} }}",
+				hex::encode(hash_raw),
+				hex::encode(script_hash)
+			),
+			Self::StakeKeyHash(hash) => alloc::format!("StakeKeyHash({})", hex::encode(hash)),
+		};
+
+		f.write_str(&s)
+	}
+}
+
+/// Amount of Lovelace staked by a Cardano delegator to a single stake pool
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+pub struct DelegatorStakeAmount(pub u64);
+
+impl<T: Into<u64>> From<T> for DelegatorStakeAmount {
+	fn from(value: T) -> Self {
+		Self(value.into())
+	}
+}
+
+/// A mapping between Cardano SPOs and the information about ADA delegation of their stake pools
+///
+/// This mapping can be used to calculate relative share of the total delegation for the
+/// purpose of weighing during block producer selection.
+#[derive(Debug, Clone, Default)]
+pub struct StakeDistribution(pub BTreeMap<MainchainKeyHash, PoolDelegation>);
+
+/// ADA delegation data for a single Cardano SPO
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct PoolDelegation {
+	/// Total amount delegated to the stake pool
+	pub total_stake: StakeDelegation,
+	/// Delegated amount for each delegator of the stake pool
+	pub delegators: BTreeMap<DelegatorKey, DelegatorStakeAmount>,
+}
+
+/// [FromStr] trait with [FromStr::Err] fixed to a type compatible with `clap`'s `value_parser` macro.
+pub trait FromStrStdErr:
+	FromStr<Err: Into<alloc::boxed::Box<dyn core::error::Error + Send + Sync + 'static>>>
+{
+}
+impl<T: FromStr<Err: Into<alloc::boxed::Box<dyn core::error::Error + Send + Sync + 'static>>>>
+	FromStrStdErr for T
+{
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;
@@ -1533,80 +1609,4 @@ mod tests {
 		let decoded = TestCandidateKeys::decode(&mut bytes).unwrap();
 		assert_eq!(keys, decoded)
 	}
-}
-
-#[derive(
-	Clone,
-	PartialEq,
-	Eq,
-	Ord,
-	PartialOrd,
-	TypeInfo,
-	MaxEncodedLen,
-	Encode,
-	Decode,
-	DecodeWithMemTracking,
-)]
-/// Represents a Cardano ADA delegator
-pub enum DelegatorKey {
-	/// Represents a staking address that is controlled by a user delegator
-	StakeKeyHash([u8; 28]),
-	/// Represents a staking address that is locked by a Plutus script
-	ScriptKeyHash {
-		/// Raw stake address hash
-		hash_raw: [u8; 28],
-		/// Hash of the Plutus script controlling the staking address
-		script_hash: [u8; 28],
-	},
-}
-
-impl alloc::fmt::Debug for DelegatorKey {
-	fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-		let s = match self {
-			Self::ScriptKeyHash { hash_raw, script_hash } => alloc::format!(
-				"ScriptKeyHash{{ hash_raw: {}, script_hash: {} }}",
-				hex::encode(hash_raw),
-				hex::encode(script_hash)
-			),
-			Self::StakeKeyHash(hash) => alloc::format!("StakeKeyHash({})", hex::encode(hash)),
-		};
-
-		f.write_str(&s)
-	}
-}
-
-/// Amount of Lovelace staked by a Cardano delegator to a single stake pool
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
-pub struct DelegatorStakeAmount(pub u64);
-
-impl<T: Into<u64>> From<T> for DelegatorStakeAmount {
-	fn from(value: T) -> Self {
-		Self(value.into())
-	}
-}
-
-/// A mapping between Cardano SPOs and the information about ADA delegation of their stake pools
-///
-/// This mapping can be used to calculate relative share of the total delegation for the
-/// purpose of weighing during block producer selection.
-#[derive(Debug, Clone, Default)]
-pub struct StakeDistribution(pub BTreeMap<MainchainKeyHash, PoolDelegation>);
-
-/// ADA delegation data for a single Cardano SPO
-#[derive(Debug, Clone, Default, PartialEq)]
-pub struct PoolDelegation {
-	/// Total amount delegated to the stake pool
-	pub total_stake: StakeDelegation,
-	/// Delegated amount for each delegator of the stake pool
-	pub delegators: BTreeMap<DelegatorKey, DelegatorStakeAmount>,
-}
-
-/// [FromStr] trait with [FromStr::Err] fixed to a type compatible with `clap`'s `value_parser` macro.
-pub trait FromStrStdErr:
-	FromStr<Err: Into<alloc::boxed::Box<(dyn core::error::Error + Send + Sync + 'static)>>>
-{
-}
-impl<T: FromStr<Err: Into<alloc::boxed::Box<(dyn core::error::Error + Send + Sync + 'static)>>>>
-	FromStrStdErr for T
-{
 }
