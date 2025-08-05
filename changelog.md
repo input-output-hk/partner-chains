@@ -34,15 +34,15 @@ need to transform the data in their own runtime code
 
 ### Generic keys feature
 
-Up to v1.7.x the toolkit has supported only a triplet of keys: Partner-Chains keys, AURA, and Grandpa. Partner Chains special meaning and presence is kept, but AURA and Grandpa keys can now be extended with addional keys or even replaced.
+Up to v1.7.x the toolkit has supported only a triplet of keys: Partner-Chain keys, AURA, and Grandpa. Partner Chain key's special meaning and presence is preserved, but the number and types of the remaining keys can be configured according to the needs of a particular Partner Chain.
 
-This enables use of additional pallets that needs some other keys.
+This enables use of additional pallets that require other keys.
 
 Integration with the `wizards` CLI is done by means of `PartnerChainRuntime` trait implementation. See [Update Guide](docs/developer-guides/sdk-update-v1.7-to-v1.8.0.md) for more details.
 
 On Cardano side the Plutus Data format has been changed from `[Partner-chain, AURA, Grandpa]`, to `[Partner-chain, [[key_1_id, key_1_bytes],...,[key_n_id, key_n_bytes]]]`, where `key_i_id` is 4 bytes encoding key type. This is present in version 1 of datums that are now used in place of version 0.
 
-In SCALE encoding of inherent data special instances of `Encode` and `Decode` have to be present to make this transition backward and forward compatible and transparent for the toolkit users. This change does not imply any order of nodes and runtime upgrade.
+In SCALE encoding of inherent data custom implementations of `Encode` and `Decode` have been added to make this transition backward and forward compatible and transparent for the toolkit users. This change does not imply any order of nodes and runtime upgrade.
 
 `getAriadneParameters` and `getRegistrations` RPC results format has changed, `auraPubKey` and `grandpaPubKey` are replaced by `"keys": {"aura": "...", "gran": "..."}`.
 
