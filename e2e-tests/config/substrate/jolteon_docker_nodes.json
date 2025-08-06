@@ -17,10 +17,10 @@
                 "rotation_candidate": true,
                 "cardano_payment_addr": "addr_test1vq6ywn0f007x32j47jrk5qy9hy3gknsvszrcpdqkeaye7pshu2w2t",
                 "keys_files": {
-                    "cardano_payment_key": "./secrets/substrate/staging/keys/validator-1/payment.skey.json.decrypted",
-                    "spo_signing_key": "./secrets/substrate/staging/keys/validator-1/cold.skey.json.decrypted",
-                    "spo_public_key": "./secrets/substrate/staging/keys/validator-1/cold.vkey.json.decrypted",
-                    "partner_chain_signing_key": "./secrets/substrate/staging/keys/validator-1/partner_chain.skey.json.decrypted"
+                    "cardano_payment_key": "./secrets/substrate/jolteon_docker/keys/alice/payment.skey.json.decrypted",
+                    "spo_signing_key": "./secrets/substrate/jolteon_docker/keys/alice/cold.skey.json.decrypted",
+                    "spo_public_key": "./secrets/substrate/jolteon_docker/keys/alice/cold.vkey.json.decrypted",
+                    "partner_chain_signing_key": "./secrets/substrate/jolteon_docker/keys/alice/partner_chain.skey.json.decrypted"
                 }
             },
             "bob": {
@@ -34,10 +34,10 @@
                 "rotation_candidate": true,
                 "cardano_payment_addr": "addr_test1vz80jkz5d2kdaykfrqlqryr6lt46tunk4ldfjqv88hevrpsrdfmm5",
                 "keys_files": {
-                    "cardano_payment_key": "./secrets/substrate/staging/keys/validator-2/payment.skey.json.decrypted",
-                    "spo_signing_key": "./secrets/substrate/staging/keys/validator-2/cold.skey.json.decrypted",
-                    "spo_public_key": "./secrets/substrate/staging/keys/validator-2/cold.vkey.json.decrypted",
-                    "partner_chain_signing_key": "./secrets/substrate/staging/keys/validator-2/partner_chain.skey.json.decrypted"
+                    "cardano_payment_key": "./secrets/substrate/jolteon_docker/keys/bob/payment.skey.json.decrypted",
+                    "spo_signing_key": "./secrets/substrate/jolteon_docker/keys/bob/cold.skey.json.decrypted",
+                    "spo_public_key": "./secrets/substrate/jolteon_docker/keys/bob/cold.vkey.json.decrypted",
+                    "partner_chain_signing_key": "./secrets/substrate/jolteon_docker/keys/bob/partner_chain.skey.json.decrypted"
                 }
             },
             "charlie": {
@@ -51,10 +51,10 @@
                 "permissioned_candidate": true,
                 "cardano_payment_addr": "addr_test1vrxc6wvtmqrqx4n9e89sqf9u0w0jcp8a96s7gkddfsr0ppcdvzcf6",
                 "keys_files": {
-                    "cardano_payment_key": "./secrets/substrate/staging/keys/validator-3/payment.skey.json.decrypted",
-                    "spo_signing_key": "./secrets/substrate/staging/keys/validator-3/cold.skey.json.decrypted",
-                    "spo_public_key": "./secrets/substrate/staging/keys/validator-3/cold.vkey.json.decrypted",
-                    "partner_chain_signing_key": "./secrets/substrate/staging/keys/validator-3/partner_chain.skey.json.decrypted"
+                    "cardano_payment_key": "./secrets/substrate/jolteon_docker/keys/charlie/payment.skey.json.decrypted",
+                    "spo_signing_key": "./secrets/substrate/jolteon_docker/keys/charlie/cold.skey.json.decrypted",
+                    "spo_public_key": "./secrets/substrate/jolteon_docker/keys/charlie/cold.vkey.json.decrypted",
+                    "partner_chain_signing_key": "./secrets/substrate/jolteon_docker/keys/charlie/partner_chain.skey.json.decrypted"
                 }
             },
             "dave": {
@@ -68,16 +68,16 @@
                 "permissioned_candidate": true,
                 "cardano_payment_addr": "addr_test1vq65mgmcpd6rq6ndy22kwxzdc9u0tmrpr7s30037qdhlalg3f5ax0",
                 "keys_files": {
-                    "cardano_payment_key": "./secrets/substrate/staging/keys/validator-4/payment.skey.json.decrypted",
-                    "spo_signing_key": "./secrets/substrate/staging/keys/validator-4/cold.skey.json.decrypted",
-                    "spo_public_key": "./secrets/substrate/staging/keys/validator-4/cold.vkey.json.decrypted",
-                    "partner_chain_signing_key": "./secrets/substrate/staging/keys/validator-4/partner_chain.skey.json.decrypted"
+                    "cardano_payment_key": "./secrets/substrate/jolteon_docker/keys/dave/payment.skey.json.decrypted",
+                    "spo_signing_key": "./secrets/substrate/jolteon_docker/keys/dave/cold.skey.json.decrypted",
+                    "spo_public_key": "./secrets/substrate/jolteon_docker/keys/dave/cold.vkey.json.decrypted",
+                    "partner_chain_signing_key": "./secrets/substrate/jolteon_docker/keys/dave/partner_chain.skey.json.decrypted"
                 }
             }
         },
         "governance_authority": {
             "mainchain_address": "addr_test1vq0sjaaupatuvl9x6aefdsd4whlqtfku93068qzkhf3u2rqt9cnuq",
-            "mainchain_key": "./secrets/substrate/staging/keys/governance_authority/init.skey.json.decrypted",
+            "mainchain_key": "./secrets/substrate/jolteon_docker/keys/governance_authority/init.skey.json.decrypted",
             "mainchain_pub_key": "a90ba46b07c0c2c940e3e3149aee5817130a1d8b600bc85b91345e4f7a1e5aca"
         },
         "selected_node": "alice",
