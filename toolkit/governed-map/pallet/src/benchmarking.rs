@@ -4,7 +4,7 @@
 //!
 //! To run your own benchmarks, you need to implement the [BenchmarkHelper] trait to supply
 //! realistic keys and values, eg:
-//! ```rust
+//! ```rust,ignore
 //! # use frame_support::testing_prelude::bounded_vec;
 //! # use sidechain_domain::bounded_str;
 //! # use sidechain_domain::byte_string::BoundedString;

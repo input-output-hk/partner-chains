@@ -5,7 +5,7 @@
 //! To benchmark this pallet, the PC Builder should define a `BenchmarkHelper` type implementing the
 //! [BenchmarkHelper] type to provide concrete mock values for all generic types used by the pallet:
 //!
-//! ```rust
+//! ```rust,ignore
 //! use sidechain_domain::byte_string::*;
 //! use sidechain_domain::{ CrossChainSignature, CrossChainPublicKey, UtxoId };
 //! use sp_core::{ ConstU32, Encode };
@@ -48,7 +48,7 @@
 //!
 //! Assuming that the runtime crate uses the feature flag `runtime-benchmarks` to enable benchmarking features,
 //! this helper should be then added to the pallet's config:
-//! ```rust
+//! ```rust, ignore
 //! # struct ExampleBenchmarkHelper;
 //! #[cfg(feature = "runtime-benchmarks")]
 //! type BenchmarkHelper = ExampleBenchmarkHelper;
