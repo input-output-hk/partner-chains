@@ -49,7 +49,8 @@ In SCALE encoding of inherent data custom implementations of `Encode` and `Decod
 ### Other additions
 
 * `delete_metadata` extrinsic in `pallet-block-producer-metadata`
-* Added litep2p networking stack support to pc demo node as default. libp2p can be set with explicitly `--network-backend` parameter.
+* Added litep2p networking stack support to pc demo node as default. libp2p can be set with explicitly `--network-backend` parameter
+* Added `CARDANO_DATA_SOURCE` env variable to determine data source for partner-chains. `db-sync` value is used by default
 
 ## Fixed
 
