@@ -192,8 +192,8 @@ pub(crate) trait CostStore {
 	fn get_mint(&self, script: &PlutusScript) -> ExUnits;
 	/// Returns [ExUnits] cost of a validator script for a given spend index.
 	fn get_spend(&self, spend_ix: u32) -> ExUnits;
-	/// Returns [ExUnits] cost of a validator script for a given spend index.
-	fn get_spend_ix(&self, spend_ix: u32) -> ExUnits;
+	/// Returns [ExUnits] cost of a validator script of a given index.
+	fn get_spend_by_ix(&self, ix: u32) -> ExUnits;
 	/// Returns spend cost of the single validator script in a transaction.
 	/// It panics if there is not exactly one validator script execution.
 	fn get_one_spend(&self) -> ExUnits;
@@ -221,14 +221,14 @@ impl CostStore for Costs {
 				.clone(),
 		}
 	}
-	fn get_spend_ix(&self, spend_ix: u32) -> ExUnits {
+	fn get_spend_by_ix(&self, ix: u32) -> ExUnits {
 		match self {
 			Costs::ZeroCosts => zero_ex_units(),
 			Costs::Costs { spends, .. } => {
 				let spend_keys = spends.keys().cloned().collect::<Vec<_>>();
 				spends
-					.get(&spend_keys[spend_ix as usize])
-					.expect("get_spend should not be called with an unknown spend index")
+					.get(&spend_keys[ix as usize])
+					.expect("get_spend_by_ix should not be called with an out of range index")
 					.clone()
 			},
 		}

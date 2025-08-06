@@ -146,7 +146,7 @@ fn reserve_release_tx(
 		&previous_reserve.utxo,
 		reserve_data,
 		ReserveRedeemer::ReleaseFromReserve,
-		&costs.get_spend_ix(0),
+		&costs.get_spend_by_ix(0),
 	)?;
 
 	// If there exists only one illiquid circulation supply UTXO we spend it
@@ -159,9 +159,9 @@ fn reserve_release_tx(
 		let amount = ics_utxo.value.to_csl()?;
 		current_ics_amount += Into::<u64>::into(
 			amount.multiasset().unwrap_or(MultiAsset::new()).get_asset(
-				&cardano_serialization_lib::ScriptHash::from_bytes(token.policy_id.0.to_vec())
+				&ScriptHash::from_bytes(token.policy_id.0.to_vec())
 					.unwrap(),
-				&cardano_serialization_lib::AssetName::new(token.asset_name.0.to_vec()).unwrap(),
+				&AssetName::new(token.asset_name.0.to_vec()).unwrap(),
 			),
 		);
 		let script = &reserve_data.scripts.illiquid_circulation_supply_validator;
@@ -174,12 +174,12 @@ fn reserve_release_tx(
 				&script.language,
 				script.bytes.len(),
 			),
-			&cardano_serialization_lib::DatumSource::new_ref_input(&ics_utxo.to_csl_tx_input()),
+			&DatumSource::new_ref_input(&ics_utxo.to_csl_tx_input()),
 			&Redeemer::new(
 				&RedeemerTag::new_spend(),
 				&1u32.into(),
 				&IlliquidCirculationSupplyRedeemer::DepositMoreToSupply.into(),
-				&costs.get_spend_ix(1),
+				&costs.get_spend_by_ix(1),
 			),
 		);
 		inputs.add_plutus_script_input(&witness, &input, &amount);
@@ -218,8 +218,7 @@ fn reserve_release_tx(
 	})?;
 
 	tx_builder.set_validity_start_interval_bignum(latest_slot.into());
-	let tx = tx_builder.balance_update_and_build(ctx)?.remove_native_script_witnesses();
-	Ok(tx)
+	Ok(tx_builder.balance_update_and_build(ctx)?.remove_native_script_witnesses())
 }
 
 fn v_function_from_utxo(utxo: &OgmiosUtxo) -> anyhow::Result<PlutusScript> {
