@@ -15,7 +15,8 @@ RUN apt-get update && apt-get install -y \
 	jq \
 	htop \
 	ncat \
-	expect
+	expect \
+	xxd
 
 RUN useradd -m -u 1010 -U -s /bin/sh -d /substrate substrate \
 	&& mkdir -p /data /substrate/.local/share/partner-chains-node \

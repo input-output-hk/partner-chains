@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y \
     htop \
     ncat \
     expect \
+    xxd \
     && rm -rf /var/lib/apt/lists/*
 
 RUN useradd -m -u 1010 -U -s /bin/sh -d /substrate substrate \
