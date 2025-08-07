@@ -1,5 +1,6 @@
 use super::{Cache, GovernedMapDataSourceCachedImpl, GovernedMapDataSourceImpl};
 use crate::block::{BlockDataSourceImpl, DbSyncBlockDataSourceConfig};
+use crate::db_model::TxInConfiguration;
 use crate::metrics::mock::test_metrics;
 use hex_literal::hex;
 use pretty_assertions::assert_eq;
@@ -27,7 +28,7 @@ const BLOCK_7: McBlockHash =
 
 #[sqlx::test(migrations = "./testdata/governed-map/migrations")]
 async fn test_governed_map_fails_on_wrong_block_hash(pool: PgPool) {
-	let source = make_source(pool);
+	let source = make_source(pool, TxInConfiguration::Consumed);
 	let mc_block =
 		McBlockHash(hex!("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"));
 	let result = source.get_mapping_changes(None, mc_block, scripts()).await;
@@ -36,7 +37,7 @@ async fn test_governed_map_fails_on_wrong_block_hash(pool: PgPool) {
 
 #[sqlx::test(migrations = "./testdata/governed-map/migrations")]
 async fn test_cached_governed_map_fails_on_wrong_block_hash(pool: PgPool) {
-	let source = make_cached_source(pool).await;
+	let source = make_cached_source(pool, TxInConfiguration::Consumed).await;
 	let mc_block =
 		McBlockHash(hex!("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"));
 	let result = source.get_mapping_changes(None, mc_block, scripts()).await;
@@ -45,7 +46,7 @@ async fn test_cached_governed_map_fails_on_wrong_block_hash(pool: PgPool) {
 
 #[sqlx::test(migrations = "./testdata/governed-map/migrations")]
 async fn test_governed_map_insert(pool: PgPool) {
-	let source = make_source(pool);
+	let source = make_source(pool, TxInConfiguration::Consumed);
 	let mut result = source.get_mapping_changes(None, BLOCK_1, scripts()).await.unwrap();
 	result.sort();
 	let expected = vec![
@@ -63,7 +64,7 @@ async fn test_governed_map_insert(pool: PgPool) {
 
 #[sqlx::test(migrations = "./testdata/governed-map/migrations")]
 async fn test_cached_governed_map_insert(pool: PgPool) {
-	let source = make_cached_source(pool).await;
+	let source = make_cached_source(pool, TxInConfiguration::Consumed).await;
 	let result = source.get_mapping_changes(None, BLOCK_1, scripts()).await.unwrap();
 
 	let expected = vec![
@@ -85,7 +86,7 @@ async fn test_cached_governed_map_insert(pool: PgPool) {
 
 #[sqlx::test(migrations = "./testdata/governed-map/migrations")]
 async fn test_governed_map_delete(pool: PgPool) {
-	let source = make_source(pool);
+	let source = make_source(pool, TxInConfiguration::Consumed);
 	let result = source.get_mapping_changes(Some(BLOCK_1), BLOCK_4, scripts()).await;
 	let expected = vec![("key1".to_owned(), None)];
 	assert_eq!(result.unwrap(), expected);
@@ -93,7 +94,7 @@ async fn test_governed_map_delete(pool: PgPool) {
 
 #[sqlx::test(migrations = "./testdata/governed-map/migrations")]
 async fn test_cached_governed_map_delete(pool: PgPool) {
-	let source = make_cached_source(pool).await;
+	let source = make_cached_source(pool, TxInConfiguration::Consumed).await;
 	let result = source.get_mapping_changes(Some(BLOCK_1), BLOCK_4, scripts()).await;
 	let expected = vec![("key1".to_owned(), None)];
 	assert_eq!(result.unwrap(), expected);
@@ -101,7 +102,7 @@ async fn test_cached_governed_map_delete(pool: PgPool) {
 
 #[sqlx::test(migrations = "./testdata/governed-map/migrations")]
 async fn test_governed_map_upsert(pool: PgPool) {
-	let source = make_source(pool);
+	let source = make_source(pool, TxInConfiguration::Consumed);
 	let mut result = source.get_mapping_changes(Some(BLOCK_6), BLOCK_7, scripts()).await.unwrap();
 	result.sort();
 	let expected = vec![(
@@ -113,7 +114,7 @@ async fn test_governed_map_upsert(pool: PgPool) {
 
 #[sqlx::test(migrations = "./testdata/governed-map/migrations")]
 async fn test_cached_governed_map_upsert(pool: PgPool) {
-	let source = make_cached_source(pool).await;
+	let source = make_cached_source(pool, TxInConfiguration::Consumed).await;
 	let mut result = source.get_mapping_changes(Some(BLOCK_6), BLOCK_7, scripts()).await.unwrap();
 	result.sort();
 	let expected = vec![
@@ -133,11 +134,14 @@ fn scripts() -> MainChainScriptsV1 {
 	}
 }
 
-fn make_source(pool: PgPool) -> GovernedMapDataSourceImpl {
-	GovernedMapDataSourceImpl { pool, metrics_opt: Some(test_metrics()) }
+fn make_source(pool: PgPool, tx_in_config: TxInConfiguration) -> GovernedMapDataSourceImpl {
+	GovernedMapDataSourceImpl { pool, metrics_opt: Some(test_metrics()), tx_in_config }
 }
 
-async fn make_cached_source(pool: PgPool) -> GovernedMapDataSourceCachedImpl {
+async fn make_cached_source(
+	pool: PgPool,
+	tx_in_config: TxInConfiguration,
+) -> GovernedMapDataSourceCachedImpl {
 	GovernedMapDataSourceCachedImpl {
 		pool: pool.clone(),
 		metrics_opt: Some(test_metrics()),
@@ -152,6 +156,7 @@ async fn make_cached_source(pool: PgPool) -> GovernedMapDataSourceCachedImpl {
 			},
 			&mainchain_epoch_config(),
 		)),
+		tx_in_config,
 	}
 }
 
