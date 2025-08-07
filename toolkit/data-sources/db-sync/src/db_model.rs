@@ -13,12 +13,26 @@ use sqlx::{Decode, Pool, Postgres, database::Database, error::BoxDynError, postg
 use std::str::FromStr;
 
 /// Db-Sync `tx_in.value` configuration field
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub(crate) enum TxInConfiguration {
 	/// Transaction inputs are linked using `tx_in` table
 	Legacy,
 	/// Transaction inputs are linked using `consumed_by_tx_id` column in `tx_out` table
 	Consumed,
+}
+
+impl TxInConfiguration {
+	pub(crate) async fn from_connection(pool: &Pool<Postgres>) -> Result<Self, SqlxError> {
+		let query = sqlx::query_scalar::<_, i64>(
+			"select count(*) from information_schema.tables where table_name = 'tx_in';",
+		);
+
+		if query.fetch_all(pool).await?.first() == Some(&0) {
+			Ok(Self::Consumed)
+		} else {
+			Ok(Self::Legacy)
+		}
+	}
 }
 
 #[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
@@ -808,4 +822,26 @@ ORDER BY block.block_no ASC;
 	.bind(to_block);
 
 	Ok(query.fetch_all(pool).await?)
+}
+
+#[cfg(test)]
+
+mod tests {
+	use sqlx::PgPool;
+
+	use super::TxInConfiguration;
+
+	#[sqlx::test(migrations = "./testdata/legacy-schema")]
+	async fn tx_in_configuration_is_legacy_if_tx_in_table_exists(pool: PgPool) {
+		let tx_in_config = TxInConfiguration::from_connection(&pool).await.unwrap();
+
+		assert_eq!(tx_in_config, TxInConfiguration::Legacy)
+	}
+
+	#[sqlx::test(migrations = false)]
+	async fn tx_in_configuration_is_consumed_if_tx_in_table_does_not_exist(pool: PgPool) {
+		let tx_in_config = TxInConfiguration::from_connection(&pool).await.unwrap();
+
+		assert_eq!(tx_in_config, TxInConfiguration::Consumed)
+	}
 }
