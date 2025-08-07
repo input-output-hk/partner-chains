@@ -5,8 +5,10 @@ pub fn set_data_sources_env(
 	context: &impl IOContext,
 	config: &CardanoParameters,
 	postgres_connection_string: &str,
+	data_source: &String,
 ) {
 	context.set_env_var("DB_SYNC_POSTGRES_CONNECTION_STRING", postgres_connection_string);
+	context.set_env_var("CARDANO_DATA_SOURCE", data_source);
 	context.set_env_var("CARDANO_SECURITY_PARAMETER", &config.security_parameter.to_string());
 	context.set_env_var("CARDANO_ACTIVE_SLOTS_COEFF", &config.active_slots_coeff.to_string());
 	context.set_env_var("BLOCK_STABILITY_MARGIN", "0");

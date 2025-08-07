@@ -98,10 +98,17 @@ impl CmdRun for Register3Cmd {
 }
 
 fn prepare_mc_follower_env<C: IOContext>(context: &C) -> anyhow::Result<()> {
+	let data_source = config_fields::CARDANO_DATA_SOURCE.default.unwrap();
+	config_fields::CARDANO_DATA_SOURCE.save_to_file(&data_source.to_string(), context);
 	let postgres_connection_string =
 		config_fields::POSTGRES_CONNECTION_STRING.prompt_with_default_from_file_and_save(context);
 	let chain_config = config::load_chain_config(context)?;
-	set_data_sources_env(context, &chain_config.cardano, &postgres_connection_string);
+	set_data_sources_env(
+		context,
+		&chain_config.cardano,
+		&postgres_connection_string,
+		&data_source.to_string(),
+	);
 	Ok(())
 }
 
@@ -152,7 +159,7 @@ fn get_current_mainchain_epoch(context: &impl IOContext) -> Result<McEpochNumber
 mod tests {
 	use super::*;
 	use crate::{
-		config::config_fields::POSTGRES_CONNECTION_STRING,
+		config::config_fields::{CARDANO_DATA_SOURCE, POSTGRES_CONNECTION_STRING},
 		ogmios::config::tests::{
 			default_ogmios_config_json, default_ogmios_service_config,
 			establish_ogmios_configuration_io,
@@ -308,6 +315,7 @@ mod tests {
 				"DB_SYNC_POSTGRES_CONNECTION_STRING",
 				POSTGRES_CONNECTION_STRING.default.unwrap(),
 			),
+			MockIO::set_env_var("CARDANO_DATA_SOURCE", CARDANO_DATA_SOURCE.default.unwrap()),
 			MockIO::set_env_var("CARDANO_SECURITY_PARAMETER", "1234"),
 			MockIO::set_env_var("CARDANO_ACTIVE_SLOTS_COEFF", "0.1"),
 			MockIO::set_env_var("BLOCK_STABILITY_MARGIN", "0"),
@@ -418,6 +426,7 @@ mod tests {
 
 	fn final_resources_config_json() -> serde_json::Value {
 		json!({
+			"cardano_data_source": "db-sync",
 			"cardano_payment_signing_key_file": "/path/to/payment.skey",
 			"cardano_payment_verification_key_file": "payment.vkey",
 			"db_sync_postgres_connection_string": "postgresql://postgres-user:postgres-password@localhost:5432/cexplorer",

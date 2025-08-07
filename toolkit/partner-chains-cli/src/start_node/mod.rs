@@ -1,4 +1,6 @@
-use crate::config::config_fields::{NODE_P2P_PORT, POSTGRES_CONNECTION_STRING};
+use crate::config::config_fields::{
+	CARDANO_DATA_SOURCE, NODE_P2P_PORT, POSTGRES_CONNECTION_STRING,
+};
 use crate::config::{CHAIN_SPEC_PATH, CardanoParameters};
 use crate::generate_keys::network_key_path;
 use crate::io::IOContext;
@@ -48,18 +50,26 @@ impl<T: PartnerChainRuntime> CmdRun for StartNodeCmd<T> {
 			return Ok(());
 		}
 
+		let data_source = CARDANO_DATA_SOURCE.default.unwrap();
+		CARDANO_DATA_SOURCE.save_to_file(&data_source.to_string(), context);
+
 		let db_connection_string = POSTGRES_CONNECTION_STRING.load_or_prompt_and_save(context);
 
 		let Some(chain_config) = load_chain_config(context)? else { return Ok(()) };
 
 		if !self.silent
-			&& !prompt_values_fine(&config, &chain_config, &db_connection_string, context)
-		{
+			&& !prompt_values_fine(
+				&config,
+				&chain_config,
+				&db_connection_string,
+				&data_source,
+				context,
+			) {
 			context.eprint("Aborting. Edit configuration files and rerun the command.");
 			return Ok(());
 		}
 
-		start_node::<C, T>(config, chain_config, &db_connection_string, context)?;
+		start_node::<C, T>(config, chain_config, &db_connection_string, &data_source, context)?;
 
 		Ok(())
 	}
@@ -89,6 +99,7 @@ fn prompt_values_fine<C: IOContext>(
 		bootnodes,
 	}: &StartNodeChainConfig,
 	db_connection_string: &str,
+	data_source: &str,
 	context: &C,
 ) -> bool
 {
@@ -104,6 +115,7 @@ fn prompt_values_fine<C: IOContext>(
 	context.eprint(&format!("        EPOCH_DURATION_MILLIS              = {}", cardano.epoch_duration_millis));
 	context.eprint(&format!("        FIRST_EPOCH_NUMBER                 = {}", cardano.first_epoch_number));
 	context.eprint(&format!("        FIRST_SLOT_NUMBER                  = {}", cardano.first_slot_number));
+	context.eprint(&format!("        CARDANO_DATA_SOURCE                = {}", data_source));
 	context.eprint(&format!("        DB_SYNC_POSTGRES_CONNECTION_STRING = {}", db_connection_string));
 	context.prompt_yes_no("Proceed?", true)
 }
@@ -159,6 +171,7 @@ pub fn start_node<C: IOContext, T: PartnerChainRuntime>(
 		bootnodes,
 	}: StartNodeChainConfig,
 	db_connection_string: &str,
+	data_source: &str,
 	context: &C,
 ) -> anyhow::Result<()> {
 	let executable = context.current_executable()?;
@@ -166,6 +179,7 @@ pub fn start_node<C: IOContext, T: PartnerChainRuntime>(
 		"CARDANO_SECURITY_PARAMETER='{security_parameter}' \\
          CARDANO_ACTIVE_SLOTS_COEFF='{active_slots_coeff}' \\
          DB_SYNC_POSTGRES_CONNECTION_STRING='{db_connection_string}' \\
+         CARDANO_DATA_SOURCE='{data_source}' \\
          MC__FIRST_EPOCH_TIMESTAMP_MILLIS='{first_epoch_timestamp_millis}' \\
          MC__EPOCH_DURATION_MILLIS='{epoch_duration_millis}' \\
          MC__SLOT_DURATION_MILLIS='{slot_duration_millis}' \\
@@ -174,6 +188,7 @@ pub fn start_node<C: IOContext, T: PartnerChainRuntime>(
          BLOCK_STABILITY_MARGIN='0' \\
 "
 	);
+
 	let bootnodes = bootnodes
 		.iter()
 		.map(|bootnode| format!("--bootnodes {}", bootnode))

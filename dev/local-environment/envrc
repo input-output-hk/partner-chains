@@ -15,7 +15,7 @@ else
     source "$DOT_ENV"
 
     export DB_SYNC_POSTGRES_CONNECTION_STRING="postgres://postgres:$POSTGRES_PASSWORD@localhost:$POSTGRES_PORT/cexplorer"
-    export USE_MOCK_DATA_SOURCES=false
+    export CARDANO_DATA_SOURCE="db-sync"
 
     export BLOCK_STABILITY_MARGIN=0
     export MC__FIRST_EPOCH_NUMBER=0
