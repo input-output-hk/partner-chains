@@ -366,6 +366,55 @@ pub(crate) async fn get_token_utxo_for_epoch(
 }
 
 #[cfg(feature = "governed-map")]
+pub(crate) async fn get_governed_map_changes(
+	pool: &Pool<Postgres>,
+	address: &Address,
+	after_block: Option<BlockNumber>,
+	to_block: BlockNumber,
+	asset: Asset,
+) -> Result<Vec<DatumChangeOutput>, SqlxError> {
+	let query = "
+		((SELECT
+			datum.value as datum, origin_block.block_no as block_no, origin_tx.block_index as block_index, $6 as action, 1 as action_order
+		FROM tx_out
+		INNER JOIN tx origin_tx			ON tx_out.tx_id = origin_tx.id
+		INNER JOIN block origin_block	ON origin_tx.block_id = origin_block.id
+		INNER JOIN datum				ON tx_out.data_hash = datum.hash
+		INNER JOIN ma_tx_out			ON tx_out.id = ma_tx_out.tx_out_id
+		INNER JOIN multi_asset			ON multi_asset.id = ma_tx_out.ident
+		WHERE
+			tx_out.address = $1 AND ($2 IS NULL OR origin_block.block_no > $2) AND origin_block.block_no <= $3
+			AND multi_asset.policy = $4
+			AND multi_asset.name = $5)
+		UNION
+		(SELECT
+			datum.value as datum, consuming_block.block_no as block_no, consuming_tx.block_index as block_index, $7 as action, -1 as action_order
+		FROM tx_out
+		LEFT JOIN tx_in consuming_tx_in	ON tx_out.tx_id = consuming_tx_in.tx_out_id AND tx_out.index = consuming_tx_in.tx_out_index
+		LEFT JOIN tx consuming_tx		ON consuming_tx_in.tx_in_id = consuming_tx.id
+		LEFT JOIN block consuming_block	ON consuming_tx.block_id = consuming_block.id
+		INNER JOIN datum				ON tx_out.data_hash = datum.hash
+		INNER JOIN ma_tx_out			ON tx_out.id = ma_tx_out.tx_out_id
+		INNER JOIN multi_asset			ON multi_asset.id = ma_tx_out.ident
+		WHERE
+			tx_out.address = $1
+			AND (consuming_tx_in.id IS NOT NULL AND ($2 IS NULL OR consuming_block.block_no > $2) AND consuming_block.block_no <= $3)
+			AND multi_asset.policy = $4
+			AND multi_asset.name = $5))
+		ORDER BY block_no, block_index, action_order ASC";
+	Ok(sqlx::query_as::<_, DatumChangeOutput>(query)
+		.bind(&address.0)
+		.bind(after_block)
+		.bind(to_block)
+		.bind(&asset.policy_id.0)
+		.bind(&asset.asset_name.0)
+		.bind(GovernedMapAction::Create)
+		.bind(GovernedMapAction::Spend)
+		.fetch_all(pool)
+		.await?)
+}
+
+#[cfg(feature = "governed-map")]
 pub(crate) async fn get_governed_map_changes_tx_in_consumed(
 	pool: &Pool<Postgres>,
 	address: &Address,
@@ -414,6 +463,40 @@ pub(crate) async fn get_governed_map_changes_tx_in_consumed(
 }
 
 #[cfg(feature = "governed-map")]
+pub(crate) async fn get_datums_at_address_with_token(
+	pool: &Pool<Postgres>,
+	address: &Address,
+	block: BlockNumber,
+	asset: Asset,
+) -> Result<Vec<DatumOutput>, SqlxError> {
+	let query = "
+			SELECT
+				datum.value as datum
+			FROM tx_out
+			INNER JOIN tx origin_tx			ON tx_out.tx_id = origin_tx.id
+			INNER JOIN block origin_block	ON origin_tx.block_id = origin_block.id
+			LEFT JOIN tx_in consuming_tx_in	ON tx_out.tx_id = consuming_tx_in.tx_out_id AND tx_out.index = consuming_tx_in.tx_out_index
+			LEFT JOIN tx consuming_tx		ON consuming_tx_in.tx_in_id = consuming_tx.id
+			LEFT JOIN block consuming_block	ON consuming_tx.block_id = consuming_block.id
+			INNER JOIN datum				ON tx_out.data_hash = datum.hash
+			INNER JOIN ma_tx_out			ON tx_out.id = ma_tx_out.tx_out_id
+			INNER JOIN multi_asset			ON multi_asset.id = ma_tx_out.ident
+			WHERE
+				tx_out.address = $1 AND origin_block.block_no <= $2
+				AND (consuming_tx_in.id IS NULL OR consuming_block.block_no > $2)
+				AND multi_asset.policy = $3
+				AND multi_asset.name = $4
+				ORDER BY origin_block.block_no ASC, origin_tx.block_index ASC";
+	Ok(sqlx::query_as::<_, DatumOutput>(query)
+		.bind(&address.0)
+		.bind(block)
+		.bind(&asset.policy_id.0)
+		.bind(&asset.asset_name.0)
+		.fetch_all(pool)
+		.await?)
+}
+
+#[cfg(feature = "governed-map")]
 pub(crate) async fn get_datums_at_address_with_token_tx_in_consumed(
 	pool: &Pool<Postgres>,
 	address: &Address,
@@ -457,6 +540,56 @@ pub(crate) async fn get_epoch_nonce(
 		.fetch_optional(pool)
 		.await?)
 }
+
+#[cfg(feature = "candidate-source")]
+pub(crate) async fn get_utxos_for_address(
+	pool: &Pool<Postgres>,
+	address: &Address,
+	block: BlockNumber,
+) -> Result<Vec<MainchainTxOutput>, SqlxError> {
+	let query = "SELECT
+          		origin_tx.hash as utxo_id_tx_hash,
+          		tx_out.index as utxo_id_index,
+          		origin_block.block_no as tx_block_no,
+          		origin_block.slot_no as tx_slot_no,
+          		origin_block.epoch_no as tx_epoch_no,
+          		origin_tx.block_index as tx_index_in_block,
+          		tx_out.address,
+          		datum.value as datum,
+          		array_agg(concat_ws('#', encode(consumes_tx.hash, 'hex'), consumes_tx_in.tx_out_index)) as tx_inputs
+			FROM tx_out
+			INNER JOIN tx    origin_tx       ON tx_out.tx_id = origin_tx.id
+			INNER JOIN block origin_block    ON origin_tx.block_id = origin_block.id
+          	LEFT JOIN tx_in consuming_tx_in  ON tx_out.tx_id = consuming_tx_in.tx_out_id AND tx_out.index = consuming_tx_in.tx_out_index
+          	LEFT JOIN tx    consuming_tx     ON consuming_tx_in.tx_in_id = consuming_tx.id
+          	LEFT JOIN block consuming_block  ON consuming_tx.block_id = consuming_block.id
+			LEFT JOIN tx_in consumes_tx_in   ON consumes_tx_in.tx_in_id = origin_tx.id
+          	LEFT JOIN tx_out consumes_tx_out ON consumes_tx_out.tx_id = consumes_tx_in.tx_out_id AND consumes_tx_in.tx_out_index = consumes_tx_out.index
+          	LEFT JOIN tx consumes_tx         ON consumes_tx.id = consumes_tx_out.tx_id
+          	LEFT JOIN datum                  ON tx_out.data_hash = datum.hash
+          	WHERE
+          		tx_out.address = $1 AND origin_block.block_no <= $2
+          		AND (consuming_tx_in.id IS NULL OR consuming_block.block_no > $2)
+          		GROUP BY (
+					utxo_id_tx_hash,
+					utxo_id_index,
+					tx_block_no,
+					tx_slot_no,
+					tx_epoch_no,
+					tx_index_in_block,
+					tx_out.address,
+					datum
+				)";
+	let rows = sqlx::query_as::<_, MainchainTxOutputRow>(query)
+		.bind(&address.0)
+		.bind(block)
+		.fetch_all(pool)
+		.await?;
+	let result: Result<Vec<MainchainTxOutput>, sqlx::Error> =
+		rows.into_iter().map(MainchainTxOutput::try_from).collect();
+	Ok(result?)
+}
+
 #[cfg(feature = "candidate-source")]
 pub(crate) async fn get_utxos_for_address_tx_in_consumed(
 	pool: &Pool<Postgres>,
