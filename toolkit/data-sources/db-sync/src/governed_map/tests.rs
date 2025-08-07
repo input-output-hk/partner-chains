@@ -26,7 +26,7 @@ const BLOCK_6: McBlockHash =
 const BLOCK_7: McBlockHash =
 	McBlockHash(hex!("b702000000000000000000000000000000000000000000000000000000000008"));
 
-#[sqlx::test(migrations = "./testdata/governed-map/migrations")]
+#[sqlx::test(migrations = "./testdata/governed-map/migrations-v2")]
 async fn test_governed_map_fails_on_wrong_block_hash(pool: PgPool) {
 	let source = make_source(pool, TxInConfiguration::Consumed);
 	let mc_block =
@@ -35,7 +35,7 @@ async fn test_governed_map_fails_on_wrong_block_hash(pool: PgPool) {
 	assert_err!(result);
 }
 
-#[sqlx::test(migrations = "./testdata/governed-map/migrations")]
+#[sqlx::test(migrations = "./testdata/governed-map/migrations-v2")]
 async fn test_cached_governed_map_fails_on_wrong_block_hash(pool: PgPool) {
 	let source = make_cached_source(pool, TxInConfiguration::Consumed).await;
 	let mc_block =
@@ -44,7 +44,7 @@ async fn test_cached_governed_map_fails_on_wrong_block_hash(pool: PgPool) {
 	assert_err!(result);
 }
 
-#[sqlx::test(migrations = "./testdata/governed-map/migrations")]
+#[sqlx::test(migrations = "./testdata/governed-map/migrations-v2")]
 async fn test_governed_map_insert(pool: PgPool) {
 	let source = make_source(pool, TxInConfiguration::Consumed);
 	let mut result = source.get_mapping_changes(None, BLOCK_1, scripts()).await.unwrap();
@@ -62,7 +62,7 @@ async fn test_governed_map_insert(pool: PgPool) {
 	assert_eq!(result, expected);
 }
 
-#[sqlx::test(migrations = "./testdata/governed-map/migrations")]
+#[sqlx::test(migrations = "./testdata/governed-map/migrations-v2")]
 async fn test_cached_governed_map_insert(pool: PgPool) {
 	let source = make_cached_source(pool, TxInConfiguration::Consumed).await;
 	let result = source.get_mapping_changes(None, BLOCK_1, scripts()).await.unwrap();
@@ -84,7 +84,7 @@ async fn test_cached_governed_map_insert(pool: PgPool) {
 	assert_eq!(result, expected);
 }
 
-#[sqlx::test(migrations = "./testdata/governed-map/migrations")]
+#[sqlx::test(migrations = "./testdata/governed-map/migrations-v2")]
 async fn test_governed_map_delete(pool: PgPool) {
 	let source = make_source(pool, TxInConfiguration::Consumed);
 	let result = source.get_mapping_changes(Some(BLOCK_1), BLOCK_4, scripts()).await;
@@ -92,7 +92,7 @@ async fn test_governed_map_delete(pool: PgPool) {
 	assert_eq!(result.unwrap(), expected);
 }
 
-#[sqlx::test(migrations = "./testdata/governed-map/migrations")]
+#[sqlx::test(migrations = "./testdata/governed-map/migrations-v2")]
 async fn test_cached_governed_map_delete(pool: PgPool) {
 	let source = make_cached_source(pool, TxInConfiguration::Consumed).await;
 	let result = source.get_mapping_changes(Some(BLOCK_1), BLOCK_4, scripts()).await;
@@ -100,7 +100,7 @@ async fn test_cached_governed_map_delete(pool: PgPool) {
 	assert_eq!(result.unwrap(), expected);
 }
 
-#[sqlx::test(migrations = "./testdata/governed-map/migrations")]
+#[sqlx::test(migrations = "./testdata/governed-map/migrations-v2")]
 async fn test_governed_map_upsert(pool: PgPool) {
 	let source = make_source(pool, TxInConfiguration::Consumed);
 	let mut result = source.get_mapping_changes(Some(BLOCK_6), BLOCK_7, scripts()).await.unwrap();
@@ -112,7 +112,7 @@ async fn test_governed_map_upsert(pool: PgPool) {
 	assert_eq!(result, expected);
 }
 
-#[sqlx::test(migrations = "./testdata/governed-map/migrations")]
+#[sqlx::test(migrations = "./testdata/governed-map/migrations-v2")]
 async fn test_cached_governed_map_upsert(pool: PgPool) {
 	let source = make_cached_source(pool, TxInConfiguration::Consumed).await;
 	let mut result = source.get_mapping_changes(Some(BLOCK_6), BLOCK_7, scripts()).await.unwrap();
