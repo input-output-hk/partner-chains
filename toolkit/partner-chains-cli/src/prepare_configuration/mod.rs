@@ -263,7 +263,7 @@ impl<T: QueryNetwork> GetScriptsData for T {
 			.map_err(|e| format!("Ogmios error: {e}"))?
 			.network
 			.to_csl();
-		get_scripts_data(genesis_utxo, network).map_err(|e| (e.to_string()))
+		get_scripts_data(genesis_utxo, network).map_err(|e| e.to_string())
 	}
 }
 
