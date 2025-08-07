@@ -13,7 +13,7 @@ use sqlx::{Decode, Pool, Postgres, database::Database, error::BoxDynError, postg
 use std::str::FromStr;
 
 /// Db-Sync `tx_in.value` configuration field
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub(crate) enum TxInConfiguration {
 	/// Transaction inputs are linked using `tx_in` table
 	Legacy,

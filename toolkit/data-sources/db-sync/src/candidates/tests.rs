@@ -1,5 +1,5 @@
 use crate::candidates::CandidatesDataSourceImpl;
-use crate::db_model::index_exists_unsafe;
+use crate::db_model::{TxInConfiguration, index_exists_unsafe};
 use crate::metrics::mock::test_metrics;
 use authority_selection_inherents::AuthoritySelectionDataSource;
 use hex_literal::hex;
@@ -14,7 +14,7 @@ const PERMISSIONED_CANDIDATES_POLICY: [u8; 28] =
 
 #[sqlx::test(migrations = "./testdata/migrations")]
 async fn test_get_candidates_for_epoch(pool: PgPool) {
-	let source = make_source(pool);
+	let source = make_source(pool, TxInConfiguration::Consumed);
 	let result = source.get_candidates(McEpochNumber(191), candidates_address()).await.unwrap();
 	let mut candidates = result;
 	candidates.sort_by(|c1, c2| c1.mainchain_pub_key().0.cmp(&c2.mainchain_pub_key().0));
@@ -23,7 +23,7 @@ async fn test_get_candidates_for_epoch(pool: PgPool) {
 
 #[sqlx::test(migrations = "./testdata/migrations")]
 async fn test_get_candidates_after_some_deregistrations(pool: PgPool) {
-	let source = make_source(pool);
+	let source = make_source(pool, TxInConfiguration::Consumed);
 	let result = source.get_candidates(McEpochNumber(195), candidates_address()).await.unwrap();
 	let mut candidates = result;
 	candidates.sort_by(|c1, c2| c1.mainchain_pub_key().0.cmp(&c2.mainchain_pub_key().0));
@@ -32,7 +32,7 @@ async fn test_get_candidates_after_some_deregistrations(pool: PgPool) {
 
 #[sqlx::test(migrations = "./testdata/migrations")]
 async fn test_get_epoch_nonce(pool: PgPool) {
-	let source = make_source(pool);
+	let source = make_source(pool, TxInConfiguration::Consumed);
 	let epoch_189_nonce = EpochNonce(
 		hex!("ABEED7FB0067F14D6F6436C7F7DEDB27CE3CEB4D2D18FF249D43B22D86FAE3F1").to_vec(),
 	);
@@ -42,7 +42,7 @@ async fn test_get_epoch_nonce(pool: PgPool) {
 
 #[sqlx::test(migrations = "./testdata/migrations")]
 async fn test_get_ariadne_parameters_returns_err_if_there_were_no_set_transactions(pool: PgPool) {
-	let source = make_source(pool);
+	let source = make_source(pool, TxInConfiguration::Consumed);
 	// The first permissioned candidates tx was submitted at epoch 190
 	let result = source
 		.get_ariadne_parameters(
@@ -56,7 +56,7 @@ async fn test_get_ariadne_parameters_returns_err_if_there_were_no_set_transactio
 
 #[sqlx::test(migrations = "./testdata/migrations")]
 async fn test_get_ariadne_parameters_returns_the_latest_value_for_the_future_epochs(pool: PgPool) {
-	let source = make_source(pool);
+	let source = make_source(pool, TxInConfiguration::Consumed);
 	// The last tx was submitted at epoch 192
 	let result = source
 		.get_ariadne_parameters(
@@ -76,7 +76,7 @@ async fn test_get_ariadne_parameters_returns_the_latest_value_for_the_future_epo
 async fn test_get_ariadne_parameters_returns_the_latest_candidates_if_there_were_multiple_in_the_same_epoch(
 	pool: PgPool,
 ) {
-	let source = make_source(pool);
+	let source = make_source(pool, TxInConfiguration::Consumed);
 	// There were 2 transactions in epoch 190, one at block "1", second at block "2"
 	// see 6_insert_transactions.sql
 	let result = source
@@ -96,7 +96,7 @@ async fn test_get_ariadne_parameters_returns_the_latest_candidates_if_there_were
 
 #[sqlx::test(migrations = "./testdata/migrations")]
 async fn test_get_ariadne_parameters_returns_none_when_permissioned_list_not_set(pool: PgPool) {
-	let source = make_source(pool);
+	let source = make_source(pool, TxInConfiguration::Consumed);
 	let result = source
 		.get_ariadne_parameters(
 			McEpochNumber(191),
@@ -114,7 +114,7 @@ async fn test_get_ariadne_parameters_returns_none_when_permissioned_list_not_set
 
 #[sqlx::test(migrations = "./testdata/migrations")]
 async fn test_get_ariadne_parameters_returns_the_latest_params_for_the_future_epochs(pool: PgPool) {
-	let source = make_source(pool);
+	let source = make_source(pool, TxInConfiguration::Consumed);
 	// The last tx was submitted at epoch 192
 	let result = source
 		.get_ariadne_parameters(
@@ -146,7 +146,7 @@ mod candidate_caching {
 		let security_parameter = 2;
 		let cache_size = 100;
 		let service = CandidateDataSourceCached::new(
-			make_source(pool.clone()),
+			make_source(pool.clone(), TxInConfiguration::Consumed),
 			cache_size,
 			security_parameter,
 		);
@@ -174,7 +174,11 @@ mod candidate_caching {
 
 	#[sqlx::test(migrations = "./testdata/migrations")]
 	async fn candidates_caching_key_test(pool: PgPool) {
-		let service = CandidateDataSourceCached::new(make_source(pool.clone()), 10, 2);
+		let service = CandidateDataSourceCached::new(
+			make_source(pool.clone(), TxInConfiguration::Consumed),
+			10,
+			2,
+		);
 		// With security parameter 2, block 3 (from epoch 191) is the latest stable block, so epoch 190 is the latest stable epoch.
 		// get_candidates(192) uses data from the last block of epoch 190 (block 2), so result should be cached.
 		let epoch_192_candidates =
@@ -192,7 +196,7 @@ mod candidate_caching {
 		let security_parameter = 2;
 		let cache_size = 100;
 		let service = CandidateDataSourceCached::new(
-			make_source(pool.clone()),
+			make_source(pool.clone(), TxInConfiguration::Consumed),
 			cache_size,
 			security_parameter,
 		);
@@ -246,7 +250,11 @@ mod candidate_caching {
 
 	#[sqlx::test(migrations = "./testdata/migrations")]
 	async fn ariadne_parameters_caching_key_test(pool: PgPool) {
-		let service = CandidateDataSourceCached::new(make_source(pool.clone()), 10, 2);
+		let service = CandidateDataSourceCached::new(
+			make_source(pool.clone(), TxInConfiguration::Consumed),
+			10,
+			2,
+		);
 		// With security parameter 2, block 3 (from epoch 191) is the latest stable block, so epoch 190 is the latest stable epoch.
 		// get_ariadne_parameters(192) uses data from the last block of epoch 190 (block 2), so result should be cached.
 		let epoch_192_ariadne_parameters_result = service
@@ -268,8 +276,8 @@ mod candidate_caching {
 	}
 }
 
-fn make_source(pool: PgPool) -> CandidatesDataSourceImpl {
-	CandidatesDataSourceImpl { pool, metrics_opt: Some(test_metrics()) }
+fn make_source(pool: PgPool, tx_in_config: TxInConfiguration) -> CandidatesDataSourceImpl {
+	CandidatesDataSourceImpl { pool, metrics_opt: Some(test_metrics()), tx_in_config }
 }
 
 fn candidates_address() -> MainchainAddress {
