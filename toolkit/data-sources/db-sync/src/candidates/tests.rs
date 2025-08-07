@@ -12,7 +12,7 @@ const D_PARAM_POLICY: [u8; 28] = hex!("50000000000000000000000000000000000043484
 const PERMISSIONED_CANDIDATES_POLICY: [u8; 28] =
 	hex!("500000000000000000000000000000000000434845434b504f494e19");
 
-#[sqlx::test(migrations = "./testdata/migrations")]
+#[sqlx::test(migrations = "./testdata/migrations-v2")]
 async fn test_get_candidates_for_epoch(pool: PgPool) {
 	let source = make_source(pool, TxInConfiguration::Consumed);
 	let result = source.get_candidates(McEpochNumber(191), candidates_address()).await.unwrap();
@@ -21,7 +21,7 @@ async fn test_get_candidates_for_epoch(pool: PgPool) {
 	assert_eq!(candidates, vec![leader_candidate_spo_a(), leader_candidate_spo_b()])
 }
 
-#[sqlx::test(migrations = "./testdata/migrations")]
+#[sqlx::test(migrations = "./testdata/migrations-v2")]
 async fn test_get_candidates_after_some_deregistrations(pool: PgPool) {
 	let source = make_source(pool, TxInConfiguration::Consumed);
 	let result = source.get_candidates(McEpochNumber(195), candidates_address()).await.unwrap();
@@ -30,7 +30,7 @@ async fn test_get_candidates_after_some_deregistrations(pool: PgPool) {
 	assert_eq!(candidates, vec![leader_candidate_spo_c(), leader_candidate_spo_b()])
 }
 
-#[sqlx::test(migrations = "./testdata/migrations")]
+#[sqlx::test(migrations = "./testdata/migrations-v2")]
 async fn test_get_epoch_nonce(pool: PgPool) {
 	let source = make_source(pool, TxInConfiguration::Consumed);
 	let epoch_189_nonce = EpochNonce(
@@ -40,7 +40,7 @@ async fn test_get_epoch_nonce(pool: PgPool) {
 	assert_eq!(result, Some(epoch_189_nonce));
 }
 
-#[sqlx::test(migrations = "./testdata/migrations")]
+#[sqlx::test(migrations = "./testdata/migrations-v2")]
 async fn test_get_ariadne_parameters_returns_err_if_there_were_no_set_transactions(pool: PgPool) {
 	let source = make_source(pool, TxInConfiguration::Consumed);
 	// The first permissioned candidates tx was submitted at epoch 190
@@ -54,7 +54,7 @@ async fn test_get_ariadne_parameters_returns_err_if_there_were_no_set_transactio
 	assert_err!(result);
 }
 
-#[sqlx::test(migrations = "./testdata/migrations")]
+#[sqlx::test(migrations = "./testdata/migrations-v2")]
 async fn test_get_ariadne_parameters_returns_the_latest_value_for_the_future_epochs(pool: PgPool) {
 	let source = make_source(pool, TxInConfiguration::Consumed);
 	// The last tx was submitted at epoch 192
@@ -72,7 +72,7 @@ async fn test_get_ariadne_parameters_returns_the_latest_value_for_the_future_epo
 	)
 }
 
-#[sqlx::test(migrations = "./testdata/migrations")]
+#[sqlx::test(migrations = "./testdata/migrations-v2")]
 async fn test_get_ariadne_parameters_returns_the_latest_candidates_if_there_were_multiple_in_the_same_epoch(
 	pool: PgPool,
 ) {
@@ -94,7 +94,7 @@ async fn test_get_ariadne_parameters_returns_the_latest_candidates_if_there_were
 	)
 }
 
-#[sqlx::test(migrations = "./testdata/migrations")]
+#[sqlx::test(migrations = "./testdata/migrations-v2")]
 async fn test_get_ariadne_parameters_returns_none_when_permissioned_list_not_set(pool: PgPool) {
 	let source = make_source(pool, TxInConfiguration::Consumed);
 	let result = source
@@ -112,7 +112,7 @@ async fn test_get_ariadne_parameters_returns_none_when_permissioned_list_not_set
 	assert_eq!(result.permissioned_candidates, None)
 }
 
-#[sqlx::test(migrations = "./testdata/migrations")]
+#[sqlx::test(migrations = "./testdata/migrations-v2")]
 async fn test_get_ariadne_parameters_returns_the_latest_params_for_the_future_epochs(pool: PgPool) {
 	let source = make_source(pool, TxInConfiguration::Consumed);
 	// The last tx was submitted at epoch 192
@@ -127,7 +127,7 @@ async fn test_get_ariadne_parameters_returns_the_latest_params_for_the_future_ep
 	assert_eq!(result.permissioned_candidates, Some(latest_permissioned_candidates()))
 }
 
-#[sqlx::test(migrations = "./testdata/migrations")]
+#[sqlx::test(migrations = "./testdata/migrations-v2")]
 async fn test_make_source_creates_index(pool: PgPool) {
 	assert!(!index_exists_unsafe(&pool, "idx_ma_tx_out_ident").await);
 	assert!(!index_exists_unsafe(&pool, "idx_tx_out_address").await);
@@ -141,7 +141,7 @@ mod candidate_caching {
 	use crate::candidates::cached::CandidateDataSourceCached;
 	use crate::candidates::tests::*;
 
-	#[sqlx::test(migrations = "./testdata/migrations")]
+	#[sqlx::test(migrations = "./testdata/migrations-v2")]
 	async fn candidates_caching_test(pool: PgPool) {
 		let security_parameter = 2;
 		let cache_size = 100;
@@ -172,7 +172,7 @@ mod candidate_caching {
 		assert_ne!(epoch_193_candidates, epoch_193_candidates_after_txs_removal);
 	}
 
-	#[sqlx::test(migrations = "./testdata/migrations")]
+	#[sqlx::test(migrations = "./testdata/migrations-v2")]
 	async fn candidates_caching_key_test(pool: PgPool) {
 		let service = CandidateDataSourceCached::new(
 			make_source(pool.clone(), TxInConfiguration::Consumed),
@@ -191,7 +191,7 @@ mod candidate_caching {
 		assert!(epoch_192_candidates_from_different_address.is_empty());
 	}
 
-	#[sqlx::test(migrations = "./testdata/migrations")]
+	#[sqlx::test(migrations = "./testdata/migrations-v2")]
 	async fn ariadne_parameters_caching_test(pool: PgPool) {
 		let security_parameter = 2;
 		let cache_size = 100;
@@ -248,7 +248,7 @@ mod candidate_caching {
 		assert!(epoch_193_ariadne_parameters_after_txs_removal.is_err());
 	}
 
-	#[sqlx::test(migrations = "./testdata/migrations")]
+	#[sqlx::test(migrations = "./testdata/migrations-v2")]
 	async fn ariadne_parameters_caching_key_test(pool: PgPool) {
 		let service = CandidateDataSourceCached::new(
 			make_source(pool.clone(), TxInConfiguration::Consumed),
