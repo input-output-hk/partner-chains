@@ -154,7 +154,9 @@ impl CandidatesDataSourceImpl {
 		let registrations_block_for_epoch = self.get_last_block_for_epoch(epoch).await?;
 		let address: Address = Address(committee_candidate_address.to_string());
 		let active_utxos = match registrations_block_for_epoch {
-			Some(block) => db_model::get_utxos_for_address(&self.pool, &address, block).await?,
+			Some(block) => {
+				db_model::get_utxos_for_address_tx_in_consumed(&self.pool, &address, block).await?
+			},
 			None => vec![],
 		};
 		self.convert_utxos_to_candidates(&active_utxos)

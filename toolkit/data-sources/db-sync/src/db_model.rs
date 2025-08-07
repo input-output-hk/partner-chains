@@ -366,7 +366,7 @@ pub(crate) async fn get_token_utxo_for_epoch(
 }
 
 #[cfg(feature = "governed-map")]
-pub(crate) async fn get_changes(
+pub(crate) async fn get_governed_map_changes_tx_in_consumed(
 	pool: &Pool<Postgres>,
 	address: &Address,
 	after_block: Option<BlockNumber>,
@@ -414,7 +414,7 @@ pub(crate) async fn get_changes(
 }
 
 #[cfg(feature = "governed-map")]
-pub(crate) async fn get_datums_at_address_with_token(
+pub(crate) async fn get_datums_at_address_with_token_tx_in_consumed(
 	pool: &Pool<Postgres>,
 	address: &Address,
 	block: BlockNumber,
@@ -458,7 +458,7 @@ pub(crate) async fn get_epoch_nonce(
 		.await?)
 }
 #[cfg(feature = "candidate-source")]
-pub(crate) async fn get_utxos_for_address(
+pub(crate) async fn get_utxos_for_address_tx_in_consumed(
 	pool: &Pool<Postgres>,
 	address: &Address,
 	block: BlockNumber,

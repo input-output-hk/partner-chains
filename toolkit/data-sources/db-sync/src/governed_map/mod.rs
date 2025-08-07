@@ -91,7 +91,7 @@ async fn get_mappings_entries(
 	let Some(block) = crate::db_model::get_block_by_hash(pool, hash.clone()).await? else {
 		return Err(ExpectedDataNotFound(format!("Block hash: {hash}")));
 	};
-	let entries = crate::db_model::get_datums_at_address_with_token(
+	let entries = crate::db_model::get_datums_at_address_with_token_tx_in_consumed(
 		pool,
 		&scripts.validator_address.into(),
 		block.block_no,
@@ -230,7 +230,7 @@ impl GovernedMapDataSourceCachedImpl {
 		up_to_block: BlockNumber,
 		scripts: MainChainScriptsV1,
 	) -> Result<Vec<Change>> {
-		let changes = crate::db_model::get_changes(
+		let changes = crate::db_model::get_governed_map_changes_tx_in_consumed(
 			&self.pool,
 			&scripts.validator_address.into(),
 			since_block,
