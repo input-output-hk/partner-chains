@@ -2,6 +2,7 @@
 use crate::DataSourceError::*;
 use crate::db_model::{
 	self, Address, Asset, BlockNumber, EpochNumber, MainchainTxOutput, StakePoolEntry,
+	TxInConfiguration,
 };
 use crate::metrics::McFollowerMetrics;
 use crate::observed_async_trait;
@@ -155,7 +156,13 @@ impl CandidatesDataSourceImpl {
 		let address: Address = Address(committee_candidate_address.to_string());
 		let active_utxos = match registrations_block_for_epoch {
 			Some(block) => {
-				db_model::get_utxos_for_address_tx_in_consumed(&self.pool, &address, block).await?
+				db_model::get_utxos_for_address(
+					&self.pool,
+					&address,
+					block,
+					TxInConfiguration::Consumed,
+				)
+				.await?
 			},
 			None => vec![],
 		};

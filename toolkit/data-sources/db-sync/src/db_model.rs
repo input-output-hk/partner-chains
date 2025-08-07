@@ -12,6 +12,15 @@ use sidechain_domain::{
 use sqlx::{Decode, Pool, Postgres, database::Database, error::BoxDynError, postgres::PgTypeInfo};
 use std::str::FromStr;
 
+/// Db-Sync `tx_in.value` configuration field
+#[derive(Debug)]
+pub(crate) enum TxInConfiguration {
+	/// Transaction inputs are linked using `tx_in` table
+	Legacy,
+	/// Transaction inputs are linked using `consumed_by_tx_id` column in `tx_out` table
+	Consumed,
+}
+
 #[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
 pub(crate) struct Block {
 	pub block_no: BlockNumber,
@@ -372,6 +381,26 @@ pub(crate) async fn get_governed_map_changes(
 	after_block: Option<BlockNumber>,
 	to_block: BlockNumber,
 	asset: Asset,
+	tx_in_configuration: TxInConfiguration,
+) -> Result<Vec<DatumChangeOutput>, SqlxError> {
+	match tx_in_configuration {
+		TxInConfiguration::Legacy => {
+			get_governed_map_changes_tx_in_legacy(pool, address, after_block, to_block, asset).await
+		},
+		TxInConfiguration::Consumed => {
+			get_governed_map_changes_tx_in_consumed(pool, address, after_block, to_block, asset)
+				.await
+		},
+	}
+}
+
+#[cfg(feature = "governed-map")]
+pub(crate) async fn get_governed_map_changes_tx_in_legacy(
+	pool: &Pool<Postgres>,
+	address: &Address,
+	after_block: Option<BlockNumber>,
+	to_block: BlockNumber,
+	asset: Asset,
 ) -> Result<Vec<DatumChangeOutput>, SqlxError> {
 	let query = "
 		((SELECT
@@ -468,6 +497,24 @@ pub(crate) async fn get_datums_at_address_with_token(
 	address: &Address,
 	block: BlockNumber,
 	asset: Asset,
+	tx_in_configuration: TxInConfiguration,
+) -> Result<Vec<DatumOutput>, SqlxError> {
+	match tx_in_configuration {
+		TxInConfiguration::Legacy => {
+			get_datums_at_address_with_token_tx_in_legacy(pool, address, block, asset).await
+		},
+		TxInConfiguration::Consumed => {
+			get_datums_at_address_with_token_tx_in_consumed(pool, address, block, asset).await
+		},
+	}
+}
+
+#[cfg(feature = "governed-map")]
+pub(crate) async fn get_datums_at_address_with_token_tx_in_legacy(
+	pool: &Pool<Postgres>,
+	address: &Address,
+	block: BlockNumber,
+	asset: Asset,
 ) -> Result<Vec<DatumOutput>, SqlxError> {
 	let query = "
 			SELECT
@@ -540,9 +587,23 @@ pub(crate) async fn get_epoch_nonce(
 		.fetch_optional(pool)
 		.await?)
 }
-
 #[cfg(feature = "candidate-source")]
 pub(crate) async fn get_utxos_for_address(
+	pool: &Pool<Postgres>,
+	address: &Address,
+	block: BlockNumber,
+	tx_in_configuration: TxInConfiguration,
+) -> Result<Vec<MainchainTxOutput>, SqlxError> {
+	match tx_in_configuration {
+		TxInConfiguration::Legacy => get_utxos_for_address_tx_in_legacy(pool, address, block).await,
+		TxInConfiguration::Consumed => {
+			get_utxos_for_address_tx_in_consumed(pool, address, block).await
+		},
+	}
+}
+
+#[cfg(feature = "candidate-source")]
+pub(crate) async fn get_utxos_for_address_tx_in_legacy(
 	pool: &Pool<Postgres>,
 	address: &Address,
 	block: BlockNumber,
