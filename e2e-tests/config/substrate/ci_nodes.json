@@ -1,5 +1,5 @@
 {
-  "deployment_mc_epoch": 1018,
+  "deployment_mc_epoch": 1019,
   "deployment_version": "master",
   "test_environment": "ci",
   "keys_path": "secrets/substrate/staging/keys",
