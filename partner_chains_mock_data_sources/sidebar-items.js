@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["block","candidate","governed_map","mc_hash","native_token","sidechain_rpc","stake_distribution"]};
+window.SIDEBAR_ITEMS = {"struct":["AuthoritySelectionDataSourceMock","BlockDataSourceMock","GovernedMapDataSourceMock","McHashDataSourceMock","MockEpochCandidates","MockRegistrationsConfig","NativeTokenDataSourceMock","SidechainRpcDataSourceMock","StakeDistributionDataSourceMock"]};

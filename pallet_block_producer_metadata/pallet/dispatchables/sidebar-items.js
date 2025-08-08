@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["upsert_metadata"]};
+window.SIDEBAR_ITEMS = {"fn":["delete_metadata","upsert_metadata"]};

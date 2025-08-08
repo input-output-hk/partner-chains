@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"constant":["INITIAL_PERMISSIONED_CANDIDATES_EXAMPLE"],"struct":["CreateChainSpecCmd"],"trait":["CreateChainSpecRuntimeBindings"]};

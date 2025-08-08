@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["d_param","governed_map","permissioned_candidates","registered_candidates","reserve","version_oracle"],"struct":["DataDecodingError"],"trait":["PlutusDataExtensions"]};
+window.SIDEBAR_ITEMS = {"mod":["candidate_keys","d_param","governed_map","permissioned_candidates","registered_candidates","reserve","version_oracle"],"struct":["DataDecodingError","VersionedGenericDatum"],"trait":["PlutusDataExtensions"]};

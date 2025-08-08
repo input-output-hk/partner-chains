@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["load_chain_config_field","read_generated_keys"],"struct":["GeneratedKeysFileContent","Register1Cmd"]};

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["get_account_id_from_seed","get_from_seed","runtime_wasm"],"struct":["AuthorityKeys"],"type":["ChainSpec"]};
+window.SIDEBAR_ITEMS = {"fn":["get_account_id_from_seed","get_from_seed","pc_create_chain_spec","runtime_wasm"],"struct":["AuthorityKeys"],"type":["ChainSpec"]};

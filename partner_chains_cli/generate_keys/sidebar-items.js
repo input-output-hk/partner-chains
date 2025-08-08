@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["decode_network_key","generate_keys","generate_network_key","generate_or_load_key","generate_spo_keys","network_key_path","set_dummy_env_vars","store_keys"],"struct":["GenerateKeysCmd","GenerateKeysConfig","KeyGenerationOutput"]};

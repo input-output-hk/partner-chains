@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["BlockProducerMetadataSignatureCmd"]};
+window.SIDEBAR_ITEMS = {"enum":["BlockProducerMetadataSignatureCmd"]};

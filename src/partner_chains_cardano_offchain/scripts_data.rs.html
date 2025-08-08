@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `toolkit/smart-contracts/offchain/src/scripts_data.rs`."><title>scripts_data.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-84e720fa.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="partner_chains_cardano_offchain" data-themes="" data-resource-suffix="" data-rustdoc-version="1.89.0-nightly (1bbd62e54 2025-05-29)" data-channel="nightly" data-search-js="search-f7877310.js" data-settings-js="settings-5514c975.js" ><script src="../../static.files/storage-4e99c027.js"></script><script defer src="../../static.files/src-script-63605ae7.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-fd3af306.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">partner_chains_cardano_offchain/</div>scripts_data.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span><span class="kw">crate</span>::plutus_script;
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `toolkit/smart-contracts/offchain/src/scripts_data.rs`."><title>scripts_data.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-069232aa.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="partner_chains_cardano_offchain" data-themes="" data-resource-suffix="" data-rustdoc-version="1.91.0-nightly (2fd855fbf 2025-08-07)" data-channel="nightly" data-search-js="search-fa3e91e5.js" data-settings-js="settings-5514c975.js" ><script src="../../static.files/storage-68b7e25d.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-eebb9057.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">partner_chains_cardano_offchain/</div>scripts_data.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span><span class="kw">crate</span>::plutus_script;
 <a href=#2 id=2 data-nosnippet>2</a><span class="kw">use crate</span>::{csl::NetworkTypeExt, plutus_script::PlutusScript};
 <a href=#3 id=3 data-nosnippet>3</a><span class="kw">use </span>cardano_serialization_lib::NetworkIdKind;
 <a href=#4 id=4 data-nosnippet>4</a><span class="kw">use </span>ogmios_client::query_network::QueryNetwork;
@@ -248,35 +248,35 @@
 <a href=#248 id=248 data-nosnippet>248</a>		ScriptsData {
 <a href=#249 id=249 data-nosnippet>249</a>			addresses: Addresses {
 <a href=#250 id=250 data-nosnippet>250</a>				committee_candidate_validator:
-<a href=#251 id=251 data-nosnippet>251</a>					<span class="string">"addr_test1wz8z7eaac04rp75u47vqy9k3qgwcxxh92ff3h3hp2xae4kgzwdwp3"</span>.into(),
+<a href=#251 id=251 data-nosnippet>251</a>					<span class="string">"addr_test1wzx9p24eryn2h8xnns583edq82y5qkwey7wgqygzr34y6dqny7nsj"</span>.into(),
 <a href=#252 id=252 data-nosnippet>252</a>				d_parameter_validator:
-<a href=#253 id=253 data-nosnippet>253</a>					<span class="string">"addr_test1wppqfuvptxq3rwv2qwke2dkh8vd0mmc8k4r6a44k86tpckss2zg4v"</span>.into(),
+<a href=#253 id=253 data-nosnippet>253</a>					<span class="string">"addr_test1wqq69vap60sf6nw7q75xcqd6ecch95vx6qylju26qgp429szlhwea"</span>.into(),
 <a href=#254 id=254 data-nosnippet>254</a>				permissioned_candidates_validator:
-<a href=#255 id=255 data-nosnippet>255</a>					<span class="string">"addr_test1wql3vzrgx0hdqhxt4n2wvv93mhnglphl0fadkd06zuzkglcnyc09n"</span>.into(),
+<a href=#255 id=255 data-nosnippet>255</a>					<span class="string">"addr_test1wqhp3xkm7ntcy0q9cjnttngx94vyn4a7fgyyk5cegw3rkhc4pjahq"</span>.into(),
 <a href=#256 id=256 data-nosnippet>256</a>				illiquid_circulation_supply_validator:
-<a href=#257 id=257 data-nosnippet>257</a>					<span class="string">"addr_test1wq7crkpl5mpdeq9wyqyvr2u7q7gtv02pjxgl3fh8mv5r6ec00zynf"</span>.into(),
+<a href=#257 id=257 data-nosnippet>257</a>					<span class="string">"addr_test1wp7zc0geuxhq8sl5vnfsmgman5ezwstlkdl33mc2apyth6svtrlj2"</span>.into(),
 <a href=#258 id=258 data-nosnippet>258</a>				reserve_validator:
-<a href=#259 id=259 data-nosnippet>259</a>					<span class="string">"addr_test1wqs5y7fn6sns7v7eey94mj2wd7ysadr3zmstjfzhk0frdtgsm8pgk"</span>.into(),
+<a href=#259 id=259 data-nosnippet>259</a>					<span class="string">"addr_test1wpneq7pv2sna8fg3htmhv88pagjzfxrmjekn00f7kt2n5dcygk46p"</span>.into(),
 <a href=#260 id=260 data-nosnippet>260</a>				version_oracle_validator:
-<a href=#261 id=261 data-nosnippet>261</a>					<span class="string">"addr_test1wqxm9e576k5ew7g7ctuqx77p9u7zytesnjsx54q2etck00gqplk0l"</span>.into(),
+<a href=#261 id=261 data-nosnippet>261</a>					<span class="string">"addr_test1wpadfxldpsgn3zk5yswm7ygwgmfmawxaj90dl40s77jajfgnker5v"</span>.into(),
 <a href=#262 id=262 data-nosnippet>262</a>				governed_map_validator:
-<a href=#263 id=263 data-nosnippet>263</a>					<span class="string">"addr_test1wpyjqa4deje4c9jsjzt3djv28zszvatzup60vvjvn5cdqeggfmj6v"</span>.into(),
+<a href=#263 id=263 data-nosnippet>263</a>					<span class="string">"addr_test1wr6unjvhtdvej4txavu5h4mt0xa0uylm39jm9fvg0tmt4pc5h4akm"</span>.into(),
 <a href=#264 id=264 data-nosnippet>264</a>			},
 <a href=#265 id=265 data-nosnippet>265</a>			policy_ids: PolicyIds {
 <a href=#266 id=266 data-nosnippet>266</a>				d_parameter: PolicyId(<span class="macro">hex!</span>(
-<a href=#267 id=267 data-nosnippet>267</a>					<span class="string">"f30c3f90c342e61b3f34042bcabd7be8f3ec4b7a6857fdfcdb7b7936"
+<a href=#267 id=267 data-nosnippet>267</a>					<span class="string">"95543debb3d64e2c35fd48129d7a3584870ea9db47859c39ee906c1b"
 <a href=#268 id=268 data-nosnippet>268</a>				</span>)),
 <a href=#269 id=269 data-nosnippet>269</a>				permissioned_candidates: PolicyId(<span class="macro">hex!</span>(
-<a href=#270 id=270 data-nosnippet>270</a>					<span class="string">"8dbf5934f4870570752205fbda4796b5f7df30c9b5a009452dc7df5f"
+<a href=#270 id=270 data-nosnippet>270</a>					<span class="string">"d29bc1e7643976641cd76888009207f20f0e92c1fca7f43deb8f0f0c"
 <a href=#271 id=271 data-nosnippet>271</a>				</span>)),
 <a href=#272 id=272 data-nosnippet>272</a>				reserve_auth: PolicyId(<span class="macro">hex!</span>(
-<a href=#273 id=273 data-nosnippet>273</a>					<span class="string">"8c2f422162225752e5842fd7ac103d6e679e21c13514c9ef8224452c"
+<a href=#273 id=273 data-nosnippet>273</a>					<span class="string">"1c736e05b90d6ea072b0dcf6fe358cbdbb0281138a72ff7c42359285"
 <a href=#274 id=274 data-nosnippet>274</a>				</span>)),
 <a href=#275 id=275 data-nosnippet>275</a>				version_oracle: PolicyId(<span class="macro">hex!</span>(
-<a href=#276 id=276 data-nosnippet>276</a>					<span class="string">"aa7f601aa9f441a26823d872f052d52767229f3301567c86475dfcfb"
+<a href=#276 id=276 data-nosnippet>276</a>					<span class="string">"d3d6eadae137f555653094f67fe29f7beab90d55d04ca05c1ab9d2af"
 <a href=#277 id=277 data-nosnippet>277</a>				</span>)),
 <a href=#278 id=278 data-nosnippet>278</a>				governed_map: PolicyId(<span class="macro">hex!</span>(
-<a href=#279 id=279 data-nosnippet>279</a>					<span class="string">"951a84ca81e42b464934b100de79a3c1e4cbaa81ec68602b625add54"
+<a href=#279 id=279 data-nosnippet>279</a>					<span class="string">"1b7c0fa2b32502b8e92ec529f1fe3931febf0b7829f23dc514d88aa0"
 <a href=#280 id=280 data-nosnippet>280</a>				</span>)),
 <a href=#281 id=281 data-nosnippet>281</a>			},
 <a href=#282 id=282 data-nosnippet>282</a>		}

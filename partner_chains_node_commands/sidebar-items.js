@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["PartnerChainsSubcommand"],"fn":["run"],"struct":["AriadneParametersCmd","RegistrationStatusCmd","SidechainParamsCmd"],"trait":["PartnerChainRuntime","PartnerChainRuntimeBindings","RuntimeTypeWrapper"]};
+window.SIDEBAR_ITEMS = {"enum":["PartnerChainsSubcommand"],"fn":["run"],"struct":["AriadneParametersCmd","RegistrationStatusCmd","SidechainParamsCmd"],"trait":["PartnerChainRuntime"]};

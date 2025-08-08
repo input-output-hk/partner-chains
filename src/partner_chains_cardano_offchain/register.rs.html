@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `toolkit/smart-contracts/offchain/src/register.rs`."><title>register.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-84e720fa.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="partner_chains_cardano_offchain" data-themes="" data-resource-suffix="" data-rustdoc-version="1.89.0-nightly (1bbd62e54 2025-05-29)" data-channel="nightly" data-search-js="search-f7877310.js" data-settings-js="settings-5514c975.js" ><script src="../../static.files/storage-4e99c027.js"></script><script defer src="../../static.files/src-script-63605ae7.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-fd3af306.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">partner_chains_cardano_offchain/</div>register.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span><span class="kw">crate</span>::cardano_keys::CardanoPaymentSigningKey;
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `toolkit/smart-contracts/offchain/src/register.rs`."><title>register.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-069232aa.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="partner_chains_cardano_offchain" data-themes="" data-resource-suffix="" data-rustdoc-version="1.91.0-nightly (2fd855fbf 2025-08-07)" data-channel="nightly" data-search-js="search-fa3e91e5.js" data-settings-js="settings-5514c975.js" ><script src="../../static.files/storage-68b7e25d.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-eebb9057.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">partner_chains_cardano_offchain/</div>register.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span><span class="kw">crate</span>::cardano_keys::CardanoPaymentSigningKey;
 <a href=#2 id=2 data-nosnippet>2</a><span class="kw">use </span><span class="kw">crate</span>::csl::TransactionOutputAmountBuilderExt;
 <a href=#3 id=3 data-nosnippet>3</a><span class="kw">use </span><span class="kw">crate</span>::csl::{
 <a href=#4 id=4 data-nosnippet>4</a>	CostStore, Costs, InputsBuilderExt, TransactionBuilderExt, TransactionContext, unit_plutus_data,
@@ -83,7 +83,7 @@
 <a href=#83 id=83 data-nosnippet>83</a>	})<span class="question-mark">?</span>;
 <a href=#84 id=84 data-nosnippet>84</a>	<span class="kw">let </span>tx_id = result.transaction.id;
 <a href=#85 id=85 data-nosnippet>85</a>	<span class="macro">log::info!</span>(<span class="string">"✅ Transaction submitted. ID: {}"</span>, hex::encode(result.transaction.id));
-<a href=#86 id=86 data-nosnippet>86</a>	await_tx.await_tx_output(client, UtxoId::new(tx_id, <span class="number">0</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
+<a href=#86 id=86 data-nosnippet>86</a>	await_tx.await_tx_output(client, McTxHash(tx_id)).<span class="kw">await</span><span class="question-mark">?</span>;
 <a href=#87 id=87 data-nosnippet>87</a>
 <a href=#88 id=88 data-nosnippet>88</a>	<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(McTxHash(result.transaction.id)))
 <a href=#89 id=89 data-nosnippet>89</a>}
@@ -136,7 +136,7 @@
 <a href=#136 id=136 data-nosnippet>136</a>	})<span class="question-mark">?</span>;
 <a href=#137 id=137 data-nosnippet>137</a>	<span class="kw">let </span>tx_id = result.transaction.id;
 <a href=#138 id=138 data-nosnippet>138</a>	<span class="macro">log::info!</span>(<span class="string">"✅ Transaction submitted. ID: {}"</span>, hex::encode(result.transaction.id));
-<a href=#139 id=139 data-nosnippet>139</a>	await_tx.await_tx_output(client, UtxoId::new(tx_id, <span class="number">0</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
+<a href=#139 id=139 data-nosnippet>139</a>	await_tx.await_tx_output(client, McTxHash(tx_id)).<span class="kw">await</span><span class="question-mark">?</span>;
 <a href=#140 id=140 data-nosnippet>140</a>
 <a href=#141 id=141 data-nosnippet>141</a>	<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(McTxHash(result.transaction.id)))
 <a href=#142 id=142 data-nosnippet>142</a>}
@@ -254,7 +254,7 @@
 <a href=#254 id=254 data-nosnippet>254</a>	};
 <a href=#255 id=255 data-nosnippet>255</a>
 <a href=#256 id=256 data-nosnippet>256</a>	<span class="kw">use </span>sidechain_domain::{
-<a href=#257 id=257 data-nosnippet>257</a>		AdaBasedStaking, AuraPublicKey, CandidateRegistration, GrandpaPublicKey, MainchainKeyHash,
+<a href=#257 id=257 data-nosnippet>257</a>		AdaBasedStaking, CandidateKeys, CandidateRegistration, MainchainKeyHash,
 <a href=#258 id=258 data-nosnippet>258</a>		MainchainSignature, McTxHash, SidechainPublicKey, SidechainSignature, UtxoId, UtxoIndex,
 <a href=#259 id=259 data-nosnippet>259</a>	};
 <a href=#260 id=260 data-nosnippet>260</a>
@@ -278,209 +278,208 @@
 <a href=#278 id=278 data-nosnippet>278</a>			partner_chain_signature: SidechainSignature(Vec::new()),
 <a href=#279 id=279 data-nosnippet>279</a>			registration_utxo,
 <a href=#280 id=280 data-nosnippet>280</a>			own_pkh: own_pkh(),
-<a href=#281 id=281 data-nosnippet>281</a>			aura_pub_key: AuraPublicKey(Vec::new()),
-<a href=#282 id=282 data-nosnippet>282</a>			grandpa_pub_key: GrandpaPublicKey(Vec::new()),
-<a href=#283 id=283 data-nosnippet>283</a>		}
-<a href=#284 id=284 data-nosnippet>284</a>	}
-<a href=#285 id=285 data-nosnippet>285</a>
-<a href=#286 id=286 data-nosnippet>286</a>	<span class="kw">fn </span>lesser_payment_utxo() -&gt; OgmiosUtxo {
-<a href=#287 id=287 data-nosnippet>287</a>		make_utxo(<span class="number">1u8</span>, <span class="number">0</span>, <span class="number">1200000</span>, <span class="kw-2">&amp;</span>payment_addr())
-<a href=#288 id=288 data-nosnippet>288</a>	}
-<a href=#289 id=289 data-nosnippet>289</a>
-<a href=#290 id=290 data-nosnippet>290</a>	<span class="kw">fn </span>greater_payment_utxo() -&gt; OgmiosUtxo {
-<a href=#291 id=291 data-nosnippet>291</a>		make_utxo(<span class="number">4u8</span>, <span class="number">1</span>, <span class="number">1200001</span>, <span class="kw-2">&amp;</span>payment_addr())
-<a href=#292 id=292 data-nosnippet>292</a>	}
-<a href=#293 id=293 data-nosnippet>293</a>
-<a href=#294 id=294 data-nosnippet>294</a>	<span class="kw">fn </span>registration_utxo() -&gt; OgmiosUtxo {
-<a href=#295 id=295 data-nosnippet>295</a>		make_utxo(<span class="number">11u8</span>, <span class="number">0</span>, <span class="number">1000000</span>, <span class="kw-2">&amp;</span>payment_addr())
-<a href=#296 id=296 data-nosnippet>296</a>	}
-<a href=#297 id=297 data-nosnippet>297</a>
-<a href=#298 id=298 data-nosnippet>298</a>	<span class="kw">fn </span>validator_addr() -&gt; Address {
-<a href=#299 id=299 data-nosnippet>299</a>		Address::from_bech32(<span class="string">"addr_test1wpha4546lvfcau5jsrwpht9h6350m3au86fev6nwmuqz9gqer2ung"</span>)
-<a href=#300 id=300 data-nosnippet>300</a>			.unwrap()
-<a href=#301 id=301 data-nosnippet>301</a>	}
-<a href=#302 id=302 data-nosnippet>302</a>
-<a href=#303 id=303 data-nosnippet>303</a>	<span class="attr">#[test]
-<a href=#304 id=304 data-nosnippet>304</a>	</span><span class="kw">fn </span>register_tx_regression_test() {
-<a href=#305 id=305 data-nosnippet>305</a>		<span class="kw">let </span>payment_key_utxos =
-<a href=#306 id=306 data-nosnippet>306</a>			<span class="macro">vec!</span>[lesser_payment_utxo(), greater_payment_utxo(), registration_utxo()];
-<a href=#307 id=307 data-nosnippet>307</a>		<span class="kw">let </span>ctx = TransactionContext {
-<a href=#308 id=308 data-nosnippet>308</a>			payment_key: payment_key(),
-<a href=#309 id=309 data-nosnippet>309</a>			payment_key_utxos: payment_key_utxos.clone(),
-<a href=#310 id=310 data-nosnippet>310</a>			network: NetworkIdKind::Testnet,
-<a href=#311 id=311 data-nosnippet>311</a>			protocol_parameters: protocol_parameters(),
-<a href=#312 id=312 data-nosnippet>312</a>			change_address: payment_addr(),
-<a href=#313 id=313 data-nosnippet>313</a>		};
-<a href=#314 id=314 data-nosnippet>314</a>		<span class="kw">let </span>own_registration_utxos = <span class="macro">vec!</span>[payment_key_utxos.get(<span class="number">1</span>).unwrap().clone()];
-<a href=#315 id=315 data-nosnippet>315</a>		<span class="kw">let </span>registration_utxo = payment_key_utxos.first().unwrap();
-<a href=#316 id=316 data-nosnippet>316</a>		<span class="kw">let </span>candidate_registration = candidate_registration(registration_utxo.utxo_id());
-<a href=#317 id=317 data-nosnippet>317</a>		<span class="kw">let </span>tx = register_tx(
-<a href=#318 id=318 data-nosnippet>318</a>			<span class="kw-2">&amp;</span>test_values::test_validator(),
-<a href=#319 id=319 data-nosnippet>319</a>			<span class="kw-2">&amp;</span>candidate_registration,
-<a href=#320 id=320 data-nosnippet>320</a>			registration_utxo,
-<a href=#321 id=321 data-nosnippet>321</a>			<span class="kw-2">&amp;</span>own_registration_utxos,
-<a href=#322 id=322 data-nosnippet>322</a>			Costs::ZeroCosts,
-<a href=#323 id=323 data-nosnippet>323</a>			<span class="kw-2">&amp;</span>ctx,
-<a href=#324 id=324 data-nosnippet>324</a>		)
-<a href=#325 id=325 data-nosnippet>325</a>		.unwrap();
-<a href=#326 id=326 data-nosnippet>326</a>
-<a href=#327 id=327 data-nosnippet>327</a>		<span class="kw">let </span>body = tx.body();
-<a href=#328 id=328 data-nosnippet>328</a>		<span class="kw">let </span>inputs = body.inputs();
-<a href=#329 id=329 data-nosnippet>329</a>		<span class="comment">// Both inputs are used to cover transaction
-<a href=#330 id=330 data-nosnippet>330</a>		</span><span class="macro">assert_eq!</span>(
-<a href=#331 id=331 data-nosnippet>331</a>			inputs.get(<span class="number">0</span>).to_string(),
-<a href=#332 id=332 data-nosnippet>332</a>			<span class="string">"0101010101010101010101010101010101010101010101010101010101010101#0"
-<a href=#333 id=333 data-nosnippet>333</a>		</span>);
-<a href=#334 id=334 data-nosnippet>334</a>		<span class="macro">assert_eq!</span>(
-<a href=#335 id=335 data-nosnippet>335</a>			inputs.get(<span class="number">1</span>).to_string(),
-<a href=#336 id=336 data-nosnippet>336</a>			<span class="string">"0404040404040404040404040404040404040404040404040404040404040404#1"
-<a href=#337 id=337 data-nosnippet>337</a>		</span>);
-<a href=#338 id=338 data-nosnippet>338</a>		<span class="kw">let </span>outputs = body.outputs();
-<a href=#339 id=339 data-nosnippet>339</a>
-<a href=#340 id=340 data-nosnippet>340</a>		<span class="kw">let </span>script_output = outputs.into_iter().find(|o| o.address() == validator_addr()).unwrap();
-<a href=#341 id=341 data-nosnippet>341</a>		<span class="kw">let </span>coins_sum = script_output.amount().coin().checked_add(<span class="kw-2">&amp;</span>body.fee()).unwrap();
-<a href=#342 id=342 data-nosnippet>342</a>		<span class="macro">assert_eq!</span>(
-<a href=#343 id=343 data-nosnippet>343</a>			coins_sum,
-<a href=#344 id=344 data-nosnippet>344</a>			(greater_payment_utxo().value.lovelace + lesser_payment_utxo().value.lovelace).into()
-<a href=#345 id=345 data-nosnippet>345</a>		);
-<a href=#346 id=346 data-nosnippet>346</a>		<span class="macro">assert_eq!</span>(
-<a href=#347 id=347 data-nosnippet>347</a>			script_output.plutus_data().unwrap(),
-<a href=#348 id=348 data-nosnippet>348</a>			candidate_registration_to_plutus_data(<span class="kw-2">&amp;</span>candidate_registration)
-<a href=#349 id=349 data-nosnippet>349</a>		);
-<a href=#350 id=350 data-nosnippet>350</a>	}
-<a href=#351 id=351 data-nosnippet>351</a>
-<a href=#352 id=352 data-nosnippet>352</a>	<span class="kw">fn </span>register_transaction_balancing_test(payment_utxos: Vec&lt;OgmiosUtxo&gt;) {
-<a href=#353 id=353 data-nosnippet>353</a>		<span class="kw">let </span>payment_key_utxos = payment_utxos.clone();
-<a href=#354 id=354 data-nosnippet>354</a>		<span class="kw">let </span>ctx = TransactionContext {
-<a href=#355 id=355 data-nosnippet>355</a>			payment_key: payment_key(),
-<a href=#356 id=356 data-nosnippet>356</a>			payment_key_utxos: payment_key_utxos.clone(),
-<a href=#357 id=357 data-nosnippet>357</a>			network: NetworkIdKind::Testnet,
-<a href=#358 id=358 data-nosnippet>358</a>			protocol_parameters: protocol_parameters(),
-<a href=#359 id=359 data-nosnippet>359</a>			change_address: payment_addr(),
-<a href=#360 id=360 data-nosnippet>360</a>		};
-<a href=#361 id=361 data-nosnippet>361</a>		<span class="kw">let </span>registration_utxo = payment_key_utxos.first().unwrap();
-<a href=#362 id=362 data-nosnippet>362</a>		<span class="kw">let </span>candidate_registration = candidate_registration(registration_utxo.utxo_id());
-<a href=#363 id=363 data-nosnippet>363</a>		<span class="kw">let </span>own_registration_utxos = <span class="kw">if </span>payment_utxos.len() &gt;= <span class="number">2 </span>{
-<a href=#364 id=364 data-nosnippet>364</a>			<span class="macro">vec!</span>[payment_utxos.get(<span class="number">1</span>).unwrap().clone()]
-<a href=#365 id=365 data-nosnippet>365</a>		} <span class="kw">else </span>{
-<a href=#366 id=366 data-nosnippet>366</a>			Vec::new()
-<a href=#367 id=367 data-nosnippet>367</a>		};
-<a href=#368 id=368 data-nosnippet>368</a>		<span class="kw">let </span>tx = register_tx(
-<a href=#369 id=369 data-nosnippet>369</a>			<span class="kw-2">&amp;</span>test_values::test_validator(),
-<a href=#370 id=370 data-nosnippet>370</a>			<span class="kw-2">&amp;</span>candidate_registration,
-<a href=#371 id=371 data-nosnippet>371</a>			registration_utxo,
-<a href=#372 id=372 data-nosnippet>372</a>			<span class="kw-2">&amp;</span>own_registration_utxos,
-<a href=#373 id=373 data-nosnippet>373</a>			Costs::ZeroCosts,
-<a href=#374 id=374 data-nosnippet>374</a>			<span class="kw-2">&amp;</span>ctx,
-<a href=#375 id=375 data-nosnippet>375</a>		)
-<a href=#376 id=376 data-nosnippet>376</a>		.unwrap();
-<a href=#377 id=377 data-nosnippet>377</a>
-<a href=#378 id=378 data-nosnippet>378</a>		<span class="kw">let </span>validator_address = <span class="kw-2">&amp;</span>test_values::test_validator().address(ctx.network);
-<a href=#379 id=379 data-nosnippet>379</a>
-<a href=#380 id=380 data-nosnippet>380</a>		used_inputs_lovelace_equals_outputs_and_fee(<span class="kw-2">&amp;</span>tx, <span class="kw-2">&amp;</span>payment_key_utxos.clone());
-<a href=#381 id=381 data-nosnippet>381</a>		fee_is_less_than_one_and_half_ada(<span class="kw-2">&amp;</span>tx);
-<a href=#382 id=382 data-nosnippet>382</a>		output_at_validator_has_register_candidate_datum(
-<a href=#383 id=383 data-nosnippet>383</a>			<span class="kw-2">&amp;</span>tx,
-<a href=#384 id=384 data-nosnippet>384</a>			<span class="kw-2">&amp;</span>candidate_registration,
-<a href=#385 id=385 data-nosnippet>385</a>			validator_address,
-<a href=#386 id=386 data-nosnippet>386</a>		);
-<a href=#387 id=387 data-nosnippet>387</a>		spends_own_registration_utxos(<span class="kw-2">&amp;</span>tx, <span class="kw-2">&amp;</span>own_registration_utxos);
-<a href=#388 id=388 data-nosnippet>388</a>	}
-<a href=#389 id=389 data-nosnippet>389</a>
-<a href=#390 id=390 data-nosnippet>390</a>	<span class="kw">fn </span>match_inputs(inputs: <span class="kw-2">&amp;</span>TransactionInputs, payment_utxos: <span class="kw-2">&amp;</span>[OgmiosUtxo]) -&gt; Vec&lt;OgmiosUtxo&gt; {
-<a href=#391 id=391 data-nosnippet>391</a>		inputs
-<a href=#392 id=392 data-nosnippet>392</a>			.into_iter()
-<a href=#393 id=393 data-nosnippet>393</a>			.map(|input| {
-<a href=#394 id=394 data-nosnippet>394</a>				payment_utxos
-<a href=#395 id=395 data-nosnippet>395</a>					.iter()
-<a href=#396 id=396 data-nosnippet>396</a>					.find(|utxo| utxo.to_csl_tx_input() == <span class="kw-2">*</span>input)
-<a href=#397 id=397 data-nosnippet>397</a>					.unwrap()
-<a href=#398 id=398 data-nosnippet>398</a>					.clone()
-<a href=#399 id=399 data-nosnippet>399</a>			})
-<a href=#400 id=400 data-nosnippet>400</a>			.collect()
-<a href=#401 id=401 data-nosnippet>401</a>	}
-<a href=#402 id=402 data-nosnippet>402</a>
-<a href=#403 id=403 data-nosnippet>403</a>	<span class="kw">fn </span>used_inputs_lovelace_equals_outputs_and_fee(tx: <span class="kw-2">&amp;</span>Transaction, payment_utxos: <span class="kw-2">&amp;</span>[OgmiosUtxo]) {
-<a href=#404 id=404 data-nosnippet>404</a>		<span class="kw">let </span>used_inputs: Vec&lt;OgmiosUtxo&gt; = match_inputs(<span class="kw-2">&amp;</span>tx.body().inputs(), payment_utxos);
-<a href=#405 id=405 data-nosnippet>405</a>		<span class="kw">let </span>used_inputs_value: u64 = sum_lovelace(<span class="kw-2">&amp;</span>used_inputs);
-<a href=#406 id=406 data-nosnippet>406</a>		<span class="kw">let </span>outputs_lovelace_sum: u64 = tx
-<a href=#407 id=407 data-nosnippet>407</a>			.body()
-<a href=#408 id=408 data-nosnippet>408</a>			.outputs()
-<a href=#409 id=409 data-nosnippet>409</a>			.into_iter()
-<a href=#410 id=410 data-nosnippet>410</a>			.map(|output| {
-<a href=#411 id=411 data-nosnippet>411</a>				<span class="kw">let </span>value: u64 = output.amount().coin().into();
-<a href=#412 id=412 data-nosnippet>412</a>				value
-<a href=#413 id=413 data-nosnippet>413</a>			})
-<a href=#414 id=414 data-nosnippet>414</a>			.sum();
-<a href=#415 id=415 data-nosnippet>415</a>		<span class="kw">let </span>fee: u64 = tx.body().fee().into();
-<a href=#416 id=416 data-nosnippet>416</a>		<span class="comment">// Used inputs are qual to the sum of the outputs plus the fee
-<a href=#417 id=417 data-nosnippet>417</a>		</span><span class="macro">assert_eq!</span>(used_inputs_value, outputs_lovelace_sum + fee);
-<a href=#418 id=418 data-nosnippet>418</a>	}
-<a href=#419 id=419 data-nosnippet>419</a>
-<a href=#420 id=420 data-nosnippet>420</a>	<span class="comment">// Exact fee depends on inputs and outputs, but it definately is less than 1.5 ADA
-<a href=#421 id=421 data-nosnippet>421</a>	</span><span class="kw">fn </span>fee_is_less_than_one_and_half_ada(tx: <span class="kw-2">&amp;</span>Transaction) {
-<a href=#422 id=422 data-nosnippet>422</a>		<span class="macro">assert!</span>(tx.body().fee() &lt;= <span class="number">1500000u64</span>.into());
-<a href=#423 id=423 data-nosnippet>423</a>	}
-<a href=#424 id=424 data-nosnippet>424</a>
-<a href=#425 id=425 data-nosnippet>425</a>	<span class="kw">fn </span>output_at_validator_has_register_candidate_datum(
-<a href=#426 id=426 data-nosnippet>426</a>		tx: <span class="kw-2">&amp;</span>Transaction,
-<a href=#427 id=427 data-nosnippet>427</a>		candidate_registration: <span class="kw-2">&amp;</span>CandidateRegistration,
-<a href=#428 id=428 data-nosnippet>428</a>		validator_address: <span class="kw-2">&amp;</span>Address,
-<a href=#429 id=429 data-nosnippet>429</a>	) {
-<a href=#430 id=430 data-nosnippet>430</a>		<span class="kw">let </span>outputs = tx.body().outputs();
-<a href=#431 id=431 data-nosnippet>431</a>		<span class="kw">let </span>validator_output =
-<a href=#432 id=432 data-nosnippet>432</a>			outputs.into_iter().find(|o| o.address() == <span class="kw-2">*</span>validator_address).unwrap();
-<a href=#433 id=433 data-nosnippet>433</a>		<span class="macro">assert_eq!</span>(
-<a href=#434 id=434 data-nosnippet>434</a>			validator_output.plutus_data().unwrap(),
-<a href=#435 id=435 data-nosnippet>435</a>			candidate_registration_to_plutus_data(candidate_registration)
-<a href=#436 id=436 data-nosnippet>436</a>		);
-<a href=#437 id=437 data-nosnippet>437</a>	}
-<a href=#438 id=438 data-nosnippet>438</a>
-<a href=#439 id=439 data-nosnippet>439</a>	<span class="kw">fn </span>spends_own_registration_utxos(tx: <span class="kw-2">&amp;</span>Transaction, own_registration_utxos: <span class="kw-2">&amp;</span>[OgmiosUtxo]) {
-<a href=#440 id=440 data-nosnippet>440</a>		<span class="kw">let </span>inputs = tx.body().inputs();
-<a href=#441 id=441 data-nosnippet>441</a>		<span class="macro">assert!</span>(
-<a href=#442 id=442 data-nosnippet>442</a>			own_registration_utxos
-<a href=#443 id=443 data-nosnippet>443</a>				.iter()
-<a href=#444 id=444 data-nosnippet>444</a>				.all(|p| inputs.into_iter().any(|i| <span class="kw-2">*</span>i == p.to_csl_tx_input()))
-<a href=#445 id=445 data-nosnippet>445</a>		);
-<a href=#446 id=446 data-nosnippet>446</a>	}
-<a href=#447 id=447 data-nosnippet>447</a>
-<a href=#448 id=448 data-nosnippet>448</a>	<span class="macro">proptest!</span> {
-<a href=#449 id=449 data-nosnippet>449</a>		<span class="attr">#[test]
-<a href=#450 id=450 data-nosnippet>450</a>		</span><span class="kw">fn </span>spends_input_utxo_and_outputs_to_validator_address(payment_utxos <span class="kw">in </span>arb_payment_utxos(<span class="number">10</span>)
-<a href=#451 id=451 data-nosnippet>451</a>			.prop_filter(<span class="string">"Inputs total lovelace too low"</span>, |utxos| sum_lovelace(utxos) &gt; <span class="number">4000000</span>)) {
-<a href=#452 id=452 data-nosnippet>452</a>			register_transaction_balancing_test(payment_utxos)
-<a href=#453 id=453 data-nosnippet>453</a>		}
-<a href=#454 id=454 data-nosnippet>454</a>	}
-<a href=#455 id=455 data-nosnippet>455</a>
-<a href=#456 id=456 data-nosnippet>456</a>	<span class="macro">prop_compose!</span> {
-<a href=#457 id=457 data-nosnippet>457</a>		<span class="comment">// Set is needed to be used, because we have to avoid UTXOs with the same id.
-<a href=#458 id=458 data-nosnippet>458</a>		</span><span class="kw">fn </span>arb_payment_utxos(n: usize)
-<a href=#459 id=459 data-nosnippet>459</a>			(utxo_ids <span class="kw">in </span>hash_set(arb_utxo_id(), <span class="number">1</span>..n))
-<a href=#460 id=460 data-nosnippet>460</a>			(utxo_ids <span class="kw">in </span>Just(utxo_ids.clone()), values <span class="kw">in </span>vec(arb_utxo_lovelace(), utxo_ids.len())
-<a href=#461 id=461 data-nosnippet>461</a>		) -&gt; Vec&lt;OgmiosUtxo&gt; {
-<a href=#462 id=462 data-nosnippet>462</a>			utxo_ids.into_iter().zip(values.into_iter()).map(|(utxo_id, value)| OgmiosUtxo {
-<a href=#463 id=463 data-nosnippet>463</a>				transaction: OgmiosTx { id: utxo_id.tx_hash.<span class="number">0 </span>},
-<a href=#464 id=464 data-nosnippet>464</a>				index: utxo_id.index.<span class="number">0</span>,
-<a href=#465 id=465 data-nosnippet>465</a>				value,
-<a href=#466 id=466 data-nosnippet>466</a>				address: PAYMENT_ADDR.into(),
-<a href=#467 id=467 data-nosnippet>467</a>				..Default::default()
-<a href=#468 id=468 data-nosnippet>468</a>			}).collect()
-<a href=#469 id=469 data-nosnippet>469</a>		}
-<a href=#470 id=470 data-nosnippet>470</a>	}
-<a href=#471 id=471 data-nosnippet>471</a>
-<a href=#472 id=472 data-nosnippet>472</a>	<span class="macro">prop_compose!</span> {
-<a href=#473 id=473 data-nosnippet>473</a>		<span class="kw">fn </span>arb_utxo_lovelace()(value <span class="kw">in </span>MIN_UTXO_LOVELACE..FIVE_ADA) -&gt; OgmiosValue {
-<a href=#474 id=474 data-nosnippet>474</a>			OgmiosValue::new_lovelace(value)
-<a href=#475 id=475 data-nosnippet>475</a>		}
-<a href=#476 id=476 data-nosnippet>476</a>	}
-<a href=#477 id=477 data-nosnippet>477</a>
-<a href=#478 id=478 data-nosnippet>478</a>	<span class="macro">prop_compose!</span> {
-<a href=#479 id=479 data-nosnippet>479</a>		<span class="kw">fn </span>arb_utxo_id()(tx_hash <span class="kw">in </span>uniform32(<span class="number">0u8</span>..<span class="number">255u8</span>), index <span class="kw">in </span>any::&lt;u16&gt;()) -&gt; UtxoId {
-<a href=#480 id=480 data-nosnippet>480</a>			UtxoId {
-<a href=#481 id=481 data-nosnippet>481</a>				tx_hash: McTxHash(tx_hash),
-<a href=#482 id=482 data-nosnippet>482</a>				index: UtxoIndex(index),
-<a href=#483 id=483 data-nosnippet>483</a>			}
-<a href=#484 id=484 data-nosnippet>484</a>		}
-<a href=#485 id=485 data-nosnippet>485</a>	}
-<a href=#486 id=486 data-nosnippet>486</a>}</code></pre></div></section></main></body></html>
+<a href=#281 id=281 data-nosnippet>281</a>			keys: CandidateKeys(<span class="macro">vec!</span>[]),
+<a href=#282 id=282 data-nosnippet>282</a>		}
+<a href=#283 id=283 data-nosnippet>283</a>	}
+<a href=#284 id=284 data-nosnippet>284</a>
+<a href=#285 id=285 data-nosnippet>285</a>	<span class="kw">fn </span>lesser_payment_utxo() -&gt; OgmiosUtxo {
+<a href=#286 id=286 data-nosnippet>286</a>		make_utxo(<span class="number">1u8</span>, <span class="number">0</span>, <span class="number">1200000</span>, <span class="kw-2">&amp;</span>payment_addr())
+<a href=#287 id=287 data-nosnippet>287</a>	}
+<a href=#288 id=288 data-nosnippet>288</a>
+<a href=#289 id=289 data-nosnippet>289</a>	<span class="kw">fn </span>greater_payment_utxo() -&gt; OgmiosUtxo {
+<a href=#290 id=290 data-nosnippet>290</a>		make_utxo(<span class="number">4u8</span>, <span class="number">1</span>, <span class="number">1200001</span>, <span class="kw-2">&amp;</span>payment_addr())
+<a href=#291 id=291 data-nosnippet>291</a>	}
+<a href=#292 id=292 data-nosnippet>292</a>
+<a href=#293 id=293 data-nosnippet>293</a>	<span class="kw">fn </span>registration_utxo() -&gt; OgmiosUtxo {
+<a href=#294 id=294 data-nosnippet>294</a>		make_utxo(<span class="number">11u8</span>, <span class="number">0</span>, <span class="number">1000000</span>, <span class="kw-2">&amp;</span>payment_addr())
+<a href=#295 id=295 data-nosnippet>295</a>	}
+<a href=#296 id=296 data-nosnippet>296</a>
+<a href=#297 id=297 data-nosnippet>297</a>	<span class="kw">fn </span>validator_addr() -&gt; Address {
+<a href=#298 id=298 data-nosnippet>298</a>		Address::from_bech32(<span class="string">"addr_test1wpha4546lvfcau5jsrwpht9h6350m3au86fev6nwmuqz9gqer2ung"</span>)
+<a href=#299 id=299 data-nosnippet>299</a>			.unwrap()
+<a href=#300 id=300 data-nosnippet>300</a>	}
+<a href=#301 id=301 data-nosnippet>301</a>
+<a href=#302 id=302 data-nosnippet>302</a>	<span class="attr">#[test]
+<a href=#303 id=303 data-nosnippet>303</a>	</span><span class="kw">fn </span>register_tx_regression_test() {
+<a href=#304 id=304 data-nosnippet>304</a>		<span class="kw">let </span>payment_key_utxos =
+<a href=#305 id=305 data-nosnippet>305</a>			<span class="macro">vec!</span>[lesser_payment_utxo(), greater_payment_utxo(), registration_utxo()];
+<a href=#306 id=306 data-nosnippet>306</a>		<span class="kw">let </span>ctx = TransactionContext {
+<a href=#307 id=307 data-nosnippet>307</a>			payment_key: payment_key(),
+<a href=#308 id=308 data-nosnippet>308</a>			payment_key_utxos: payment_key_utxos.clone(),
+<a href=#309 id=309 data-nosnippet>309</a>			network: NetworkIdKind::Testnet,
+<a href=#310 id=310 data-nosnippet>310</a>			protocol_parameters: protocol_parameters(),
+<a href=#311 id=311 data-nosnippet>311</a>			change_address: payment_addr(),
+<a href=#312 id=312 data-nosnippet>312</a>		};
+<a href=#313 id=313 data-nosnippet>313</a>		<span class="kw">let </span>own_registration_utxos = <span class="macro">vec!</span>[payment_key_utxos.get(<span class="number">1</span>).unwrap().clone()];
+<a href=#314 id=314 data-nosnippet>314</a>		<span class="kw">let </span>registration_utxo = payment_key_utxos.first().unwrap();
+<a href=#315 id=315 data-nosnippet>315</a>		<span class="kw">let </span>candidate_registration = candidate_registration(registration_utxo.utxo_id());
+<a href=#316 id=316 data-nosnippet>316</a>		<span class="kw">let </span>tx = register_tx(
+<a href=#317 id=317 data-nosnippet>317</a>			<span class="kw-2">&amp;</span>test_values::test_validator(),
+<a href=#318 id=318 data-nosnippet>318</a>			<span class="kw-2">&amp;</span>candidate_registration,
+<a href=#319 id=319 data-nosnippet>319</a>			registration_utxo,
+<a href=#320 id=320 data-nosnippet>320</a>			<span class="kw-2">&amp;</span>own_registration_utxos,
+<a href=#321 id=321 data-nosnippet>321</a>			Costs::ZeroCosts,
+<a href=#322 id=322 data-nosnippet>322</a>			<span class="kw-2">&amp;</span>ctx,
+<a href=#323 id=323 data-nosnippet>323</a>		)
+<a href=#324 id=324 data-nosnippet>324</a>		.unwrap();
+<a href=#325 id=325 data-nosnippet>325</a>
+<a href=#326 id=326 data-nosnippet>326</a>		<span class="kw">let </span>body = tx.body();
+<a href=#327 id=327 data-nosnippet>327</a>		<span class="kw">let </span>inputs = body.inputs();
+<a href=#328 id=328 data-nosnippet>328</a>		<span class="comment">// Both inputs are used to cover transaction
+<a href=#329 id=329 data-nosnippet>329</a>		</span><span class="macro">assert_eq!</span>(
+<a href=#330 id=330 data-nosnippet>330</a>			inputs.get(<span class="number">0</span>).to_string(),
+<a href=#331 id=331 data-nosnippet>331</a>			<span class="string">"0101010101010101010101010101010101010101010101010101010101010101#0"
+<a href=#332 id=332 data-nosnippet>332</a>		</span>);
+<a href=#333 id=333 data-nosnippet>333</a>		<span class="macro">assert_eq!</span>(
+<a href=#334 id=334 data-nosnippet>334</a>			inputs.get(<span class="number">1</span>).to_string(),
+<a href=#335 id=335 data-nosnippet>335</a>			<span class="string">"0404040404040404040404040404040404040404040404040404040404040404#1"
+<a href=#336 id=336 data-nosnippet>336</a>		</span>);
+<a href=#337 id=337 data-nosnippet>337</a>		<span class="kw">let </span>outputs = body.outputs();
+<a href=#338 id=338 data-nosnippet>338</a>
+<a href=#339 id=339 data-nosnippet>339</a>		<span class="kw">let </span>script_output = outputs.into_iter().find(|o| o.address() == validator_addr()).unwrap();
+<a href=#340 id=340 data-nosnippet>340</a>		<span class="kw">let </span>coins_sum = script_output.amount().coin().checked_add(<span class="kw-2">&amp;</span>body.fee()).unwrap();
+<a href=#341 id=341 data-nosnippet>341</a>		<span class="macro">assert_eq!</span>(
+<a href=#342 id=342 data-nosnippet>342</a>			coins_sum,
+<a href=#343 id=343 data-nosnippet>343</a>			(greater_payment_utxo().value.lovelace + lesser_payment_utxo().value.lovelace).into()
+<a href=#344 id=344 data-nosnippet>344</a>		);
+<a href=#345 id=345 data-nosnippet>345</a>		<span class="macro">assert_eq!</span>(
+<a href=#346 id=346 data-nosnippet>346</a>			script_output.plutus_data().unwrap(),
+<a href=#347 id=347 data-nosnippet>347</a>			candidate_registration_to_plutus_data(<span class="kw-2">&amp;</span>candidate_registration)
+<a href=#348 id=348 data-nosnippet>348</a>		);
+<a href=#349 id=349 data-nosnippet>349</a>	}
+<a href=#350 id=350 data-nosnippet>350</a>
+<a href=#351 id=351 data-nosnippet>351</a>	<span class="kw">fn </span>register_transaction_balancing_test(payment_utxos: Vec&lt;OgmiosUtxo&gt;) {
+<a href=#352 id=352 data-nosnippet>352</a>		<span class="kw">let </span>payment_key_utxos = payment_utxos.clone();
+<a href=#353 id=353 data-nosnippet>353</a>		<span class="kw">let </span>ctx = TransactionContext {
+<a href=#354 id=354 data-nosnippet>354</a>			payment_key: payment_key(),
+<a href=#355 id=355 data-nosnippet>355</a>			payment_key_utxos: payment_key_utxos.clone(),
+<a href=#356 id=356 data-nosnippet>356</a>			network: NetworkIdKind::Testnet,
+<a href=#357 id=357 data-nosnippet>357</a>			protocol_parameters: protocol_parameters(),
+<a href=#358 id=358 data-nosnippet>358</a>			change_address: payment_addr(),
+<a href=#359 id=359 data-nosnippet>359</a>		};
+<a href=#360 id=360 data-nosnippet>360</a>		<span class="kw">let </span>registration_utxo = payment_key_utxos.first().unwrap();
+<a href=#361 id=361 data-nosnippet>361</a>		<span class="kw">let </span>candidate_registration = candidate_registration(registration_utxo.utxo_id());
+<a href=#362 id=362 data-nosnippet>362</a>		<span class="kw">let </span>own_registration_utxos = <span class="kw">if </span>payment_utxos.len() &gt;= <span class="number">2 </span>{
+<a href=#363 id=363 data-nosnippet>363</a>			<span class="macro">vec!</span>[payment_utxos.get(<span class="number">1</span>).unwrap().clone()]
+<a href=#364 id=364 data-nosnippet>364</a>		} <span class="kw">else </span>{
+<a href=#365 id=365 data-nosnippet>365</a>			Vec::new()
+<a href=#366 id=366 data-nosnippet>366</a>		};
+<a href=#367 id=367 data-nosnippet>367</a>		<span class="kw">let </span>tx = register_tx(
+<a href=#368 id=368 data-nosnippet>368</a>			<span class="kw-2">&amp;</span>test_values::test_validator(),
+<a href=#369 id=369 data-nosnippet>369</a>			<span class="kw-2">&amp;</span>candidate_registration,
+<a href=#370 id=370 data-nosnippet>370</a>			registration_utxo,
+<a href=#371 id=371 data-nosnippet>371</a>			<span class="kw-2">&amp;</span>own_registration_utxos,
+<a href=#372 id=372 data-nosnippet>372</a>			Costs::ZeroCosts,
+<a href=#373 id=373 data-nosnippet>373</a>			<span class="kw-2">&amp;</span>ctx,
+<a href=#374 id=374 data-nosnippet>374</a>		)
+<a href=#375 id=375 data-nosnippet>375</a>		.unwrap();
+<a href=#376 id=376 data-nosnippet>376</a>
+<a href=#377 id=377 data-nosnippet>377</a>		<span class="kw">let </span>validator_address = <span class="kw-2">&amp;</span>test_values::test_validator().address(ctx.network);
+<a href=#378 id=378 data-nosnippet>378</a>
+<a href=#379 id=379 data-nosnippet>379</a>		used_inputs_lovelace_equals_outputs_and_fee(<span class="kw-2">&amp;</span>tx, <span class="kw-2">&amp;</span>payment_key_utxos.clone());
+<a href=#380 id=380 data-nosnippet>380</a>		fee_is_less_than_one_and_half_ada(<span class="kw-2">&amp;</span>tx);
+<a href=#381 id=381 data-nosnippet>381</a>		output_at_validator_has_register_candidate_datum(
+<a href=#382 id=382 data-nosnippet>382</a>			<span class="kw-2">&amp;</span>tx,
+<a href=#383 id=383 data-nosnippet>383</a>			<span class="kw-2">&amp;</span>candidate_registration,
+<a href=#384 id=384 data-nosnippet>384</a>			validator_address,
+<a href=#385 id=385 data-nosnippet>385</a>		);
+<a href=#386 id=386 data-nosnippet>386</a>		spends_own_registration_utxos(<span class="kw-2">&amp;</span>tx, <span class="kw-2">&amp;</span>own_registration_utxos);
+<a href=#387 id=387 data-nosnippet>387</a>	}
+<a href=#388 id=388 data-nosnippet>388</a>
+<a href=#389 id=389 data-nosnippet>389</a>	<span class="kw">fn </span>match_inputs(inputs: <span class="kw-2">&amp;</span>TransactionInputs, payment_utxos: <span class="kw-2">&amp;</span>[OgmiosUtxo]) -&gt; Vec&lt;OgmiosUtxo&gt; {
+<a href=#390 id=390 data-nosnippet>390</a>		inputs
+<a href=#391 id=391 data-nosnippet>391</a>			.into_iter()
+<a href=#392 id=392 data-nosnippet>392</a>			.map(|input| {
+<a href=#393 id=393 data-nosnippet>393</a>				payment_utxos
+<a href=#394 id=394 data-nosnippet>394</a>					.iter()
+<a href=#395 id=395 data-nosnippet>395</a>					.find(|utxo| utxo.to_csl_tx_input() == <span class="kw-2">*</span>input)
+<a href=#396 id=396 data-nosnippet>396</a>					.unwrap()
+<a href=#397 id=397 data-nosnippet>397</a>					.clone()
+<a href=#398 id=398 data-nosnippet>398</a>			})
+<a href=#399 id=399 data-nosnippet>399</a>			.collect()
+<a href=#400 id=400 data-nosnippet>400</a>	}
+<a href=#401 id=401 data-nosnippet>401</a>
+<a href=#402 id=402 data-nosnippet>402</a>	<span class="kw">fn </span>used_inputs_lovelace_equals_outputs_and_fee(tx: <span class="kw-2">&amp;</span>Transaction, payment_utxos: <span class="kw-2">&amp;</span>[OgmiosUtxo]) {
+<a href=#403 id=403 data-nosnippet>403</a>		<span class="kw">let </span>used_inputs: Vec&lt;OgmiosUtxo&gt; = match_inputs(<span class="kw-2">&amp;</span>tx.body().inputs(), payment_utxos);
+<a href=#404 id=404 data-nosnippet>404</a>		<span class="kw">let </span>used_inputs_value: u64 = sum_lovelace(<span class="kw-2">&amp;</span>used_inputs);
+<a href=#405 id=405 data-nosnippet>405</a>		<span class="kw">let </span>outputs_lovelace_sum: u64 = tx
+<a href=#406 id=406 data-nosnippet>406</a>			.body()
+<a href=#407 id=407 data-nosnippet>407</a>			.outputs()
+<a href=#408 id=408 data-nosnippet>408</a>			.into_iter()
+<a href=#409 id=409 data-nosnippet>409</a>			.map(|output| {
+<a href=#410 id=410 data-nosnippet>410</a>				<span class="kw">let </span>value: u64 = output.amount().coin().into();
+<a href=#411 id=411 data-nosnippet>411</a>				value
+<a href=#412 id=412 data-nosnippet>412</a>			})
+<a href=#413 id=413 data-nosnippet>413</a>			.sum();
+<a href=#414 id=414 data-nosnippet>414</a>		<span class="kw">let </span>fee: u64 = tx.body().fee().into();
+<a href=#415 id=415 data-nosnippet>415</a>		<span class="comment">// Used inputs are qual to the sum of the outputs plus the fee
+<a href=#416 id=416 data-nosnippet>416</a>		</span><span class="macro">assert_eq!</span>(used_inputs_value, outputs_lovelace_sum + fee);
+<a href=#417 id=417 data-nosnippet>417</a>	}
+<a href=#418 id=418 data-nosnippet>418</a>
+<a href=#419 id=419 data-nosnippet>419</a>	<span class="comment">// Exact fee depends on inputs and outputs, but it definately is less than 1.5 ADA
+<a href=#420 id=420 data-nosnippet>420</a>	</span><span class="kw">fn </span>fee_is_less_than_one_and_half_ada(tx: <span class="kw-2">&amp;</span>Transaction) {
+<a href=#421 id=421 data-nosnippet>421</a>		<span class="macro">assert!</span>(tx.body().fee() &lt;= <span class="number">1500000u64</span>.into());
+<a href=#422 id=422 data-nosnippet>422</a>	}
+<a href=#423 id=423 data-nosnippet>423</a>
+<a href=#424 id=424 data-nosnippet>424</a>	<span class="kw">fn </span>output_at_validator_has_register_candidate_datum(
+<a href=#425 id=425 data-nosnippet>425</a>		tx: <span class="kw-2">&amp;</span>Transaction,
+<a href=#426 id=426 data-nosnippet>426</a>		candidate_registration: <span class="kw-2">&amp;</span>CandidateRegistration,
+<a href=#427 id=427 data-nosnippet>427</a>		validator_address: <span class="kw-2">&amp;</span>Address,
+<a href=#428 id=428 data-nosnippet>428</a>	) {
+<a href=#429 id=429 data-nosnippet>429</a>		<span class="kw">let </span>outputs = tx.body().outputs();
+<a href=#430 id=430 data-nosnippet>430</a>		<span class="kw">let </span>validator_output =
+<a href=#431 id=431 data-nosnippet>431</a>			outputs.into_iter().find(|o| o.address() == <span class="kw-2">*</span>validator_address).unwrap();
+<a href=#432 id=432 data-nosnippet>432</a>		<span class="macro">assert_eq!</span>(
+<a href=#433 id=433 data-nosnippet>433</a>			validator_output.plutus_data().unwrap(),
+<a href=#434 id=434 data-nosnippet>434</a>			candidate_registration_to_plutus_data(candidate_registration)
+<a href=#435 id=435 data-nosnippet>435</a>		);
+<a href=#436 id=436 data-nosnippet>436</a>	}
+<a href=#437 id=437 data-nosnippet>437</a>
+<a href=#438 id=438 data-nosnippet>438</a>	<span class="kw">fn </span>spends_own_registration_utxos(tx: <span class="kw-2">&amp;</span>Transaction, own_registration_utxos: <span class="kw-2">&amp;</span>[OgmiosUtxo]) {
+<a href=#439 id=439 data-nosnippet>439</a>		<span class="kw">let </span>inputs = tx.body().inputs();
+<a href=#440 id=440 data-nosnippet>440</a>		<span class="macro">assert!</span>(
+<a href=#441 id=441 data-nosnippet>441</a>			own_registration_utxos
+<a href=#442 id=442 data-nosnippet>442</a>				.iter()
+<a href=#443 id=443 data-nosnippet>443</a>				.all(|p| inputs.into_iter().any(|i| <span class="kw-2">*</span>i == p.to_csl_tx_input()))
+<a href=#444 id=444 data-nosnippet>444</a>		);
+<a href=#445 id=445 data-nosnippet>445</a>	}
+<a href=#446 id=446 data-nosnippet>446</a>
+<a href=#447 id=447 data-nosnippet>447</a>	<span class="macro">proptest!</span> {
+<a href=#448 id=448 data-nosnippet>448</a>		<span class="attr">#[test]
+<a href=#449 id=449 data-nosnippet>449</a>		</span><span class="kw">fn </span>spends_input_utxo_and_outputs_to_validator_address(payment_utxos <span class="kw">in </span>arb_payment_utxos(<span class="number">10</span>)
+<a href=#450 id=450 data-nosnippet>450</a>			.prop_filter(<span class="string">"Inputs total lovelace too low"</span>, |utxos| sum_lovelace(utxos) &gt; <span class="number">4000000</span>)) {
+<a href=#451 id=451 data-nosnippet>451</a>			register_transaction_balancing_test(payment_utxos)
+<a href=#452 id=452 data-nosnippet>452</a>		}
+<a href=#453 id=453 data-nosnippet>453</a>	}
+<a href=#454 id=454 data-nosnippet>454</a>
+<a href=#455 id=455 data-nosnippet>455</a>	<span class="macro">prop_compose!</span> {
+<a href=#456 id=456 data-nosnippet>456</a>		<span class="comment">// Set is needed to be used, because we have to avoid UTXOs with the same id.
+<a href=#457 id=457 data-nosnippet>457</a>		</span><span class="kw">fn </span>arb_payment_utxos(n: usize)
+<a href=#458 id=458 data-nosnippet>458</a>			(utxo_ids <span class="kw">in </span>hash_set(arb_utxo_id(), <span class="number">1</span>..n))
+<a href=#459 id=459 data-nosnippet>459</a>			(utxo_ids <span class="kw">in </span>Just(utxo_ids.clone()), values <span class="kw">in </span>vec(arb_utxo_lovelace(), utxo_ids.len())
+<a href=#460 id=460 data-nosnippet>460</a>		) -&gt; Vec&lt;OgmiosUtxo&gt; {
+<a href=#461 id=461 data-nosnippet>461</a>			utxo_ids.into_iter().zip(values.into_iter()).map(|(utxo_id, value)| OgmiosUtxo {
+<a href=#462 id=462 data-nosnippet>462</a>				transaction: OgmiosTx { id: utxo_id.tx_hash.<span class="number">0 </span>},
+<a href=#463 id=463 data-nosnippet>463</a>				index: utxo_id.index.<span class="number">0</span>,
+<a href=#464 id=464 data-nosnippet>464</a>				value,
+<a href=#465 id=465 data-nosnippet>465</a>				address: PAYMENT_ADDR.into(),
+<a href=#466 id=466 data-nosnippet>466</a>				..Default::default()
+<a href=#467 id=467 data-nosnippet>467</a>			}).collect()
+<a href=#468 id=468 data-nosnippet>468</a>		}
+<a href=#469 id=469 data-nosnippet>469</a>	}
+<a href=#470 id=470 data-nosnippet>470</a>
+<a href=#471 id=471 data-nosnippet>471</a>	<span class="macro">prop_compose!</span> {
+<a href=#472 id=472 data-nosnippet>472</a>		<span class="kw">fn </span>arb_utxo_lovelace()(value <span class="kw">in </span>MIN_UTXO_LOVELACE..FIVE_ADA) -&gt; OgmiosValue {
+<a href=#473 id=473 data-nosnippet>473</a>			OgmiosValue::new_lovelace(value)
+<a href=#474 id=474 data-nosnippet>474</a>		}
+<a href=#475 id=475 data-nosnippet>475</a>	}
+<a href=#476 id=476 data-nosnippet>476</a>
+<a href=#477 id=477 data-nosnippet>477</a>	<span class="macro">prop_compose!</span> {
+<a href=#478 id=478 data-nosnippet>478</a>		<span class="kw">fn </span>arb_utxo_id()(tx_hash <span class="kw">in </span>uniform32(<span class="number">0u8</span>..<span class="number">255u8</span>), index <span class="kw">in </span>any::&lt;u16&gt;()) -&gt; UtxoId {
+<a href=#479 id=479 data-nosnippet>479</a>			UtxoId {
+<a href=#480 id=480 data-nosnippet>480</a>				tx_hash: McTxHash(tx_hash),
+<a href=#481 id=481 data-nosnippet>481</a>				index: UtxoIndex(index),
+<a href=#482 id=482 data-nosnippet>482</a>			}
+<a href=#483 id=483 data-nosnippet>483</a>		}
+<a href=#484 id=484 data-nosnippet>484</a>	}
+<a href=#485 id=485 data-nosnippet>485</a>}</code></pre></div></section></main></body></html>

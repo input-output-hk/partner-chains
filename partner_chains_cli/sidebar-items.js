@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["Command"],"mod":["config","create_chain_spec","generate_keys","io","keystore","register","runtime_bindings","start_node"],"struct":["CommonArguments"],"trait":["CmdRun"]};
+window.SIDEBAR_ITEMS = {"constant":["AURA","CROSS_CHAIN","GRANDPA"],"enum":["Command"],"struct":["CreateChainSpecConfig","DefaultCmdRunContext","KeyDefinition","ParsedPermissionedCandidatesKeys"],"trait":["CmdRun","PartnerChainRuntime"]};

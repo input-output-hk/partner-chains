@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"enum":["InherentProviderCreationError"],"struct":["AriadneInherentDataProvider"],"type":["InherentType"]};

@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"constant":["AURA","CROSS_CHAIN","GRANDPA"],"fn":["find_existing_key","keystore_path"],"struct":["KeyDefinition"]};

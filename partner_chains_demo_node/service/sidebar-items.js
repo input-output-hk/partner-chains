@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["new_full","new_partial"],"struct":["WasmExecutor"]};
+window.SIDEBAR_ITEMS = {"fn":["new_full","new_full_base","new_partial","new_pc_command_deps"],"struct":["WasmExecutor"]};
