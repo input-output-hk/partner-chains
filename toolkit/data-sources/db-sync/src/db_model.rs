@@ -23,15 +23,25 @@ pub(crate) enum TxInConfiguration {
 
 impl TxInConfiguration {
 	pub(crate) async fn from_connection(pool: &Pool<Postgres>) -> Result<Self, SqlxError> {
-		let query = sqlx::query_scalar::<_, i64>(
+		let tx_in_exists = sqlx::query_scalar::<_, i64>(
 			"select count(*) from information_schema.tables where table_name = 'tx_in';",
-		);
+		)
+		.fetch_one(pool)
+		.await? == 1;
 
-		if query.fetch_all(pool).await?.first() == Some(&0) {
-			Ok(Self::Consumed)
-		} else {
-			Ok(Self::Legacy)
+		if !tx_in_exists {
+			return Ok(Self::Consumed);
 		}
+
+		let tx_in_populated = sqlx::query_scalar::<_, bool>("SELECT EXISTS (SELECT 1 FROM tx_in);")
+			.fetch_one(pool)
+			.await?;
+
+		if tx_in_populated {
+			return Ok(Self::Legacy);
+		}
+
+		Ok(Self::Consumed)
 	}
 }
 
