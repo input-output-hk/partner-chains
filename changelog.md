@@ -6,11 +6,11 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Added
 
-* New `automatic-generate-keys` command in `partner-chains-cli`:
-  * Allows users to generate and save session keys by connecting to a running node via RPC (`author_rotateKeys`).
-  * Decodes session keys using the runtime API and saves them to the keystore and `partner-chains-public-keys.json`.
+* Enhanced `generate-keys` command in `partner-chains-cli`:
+  * Added `--url` parameter to enable automatic key generation via RPC (`author_rotateKeys`) when connecting to a running node.
+  * When `--url` is provided, the command automatically generates session keys by calling the node's RPC endpoint, decodes them using the runtime API, and saves them to the keystore and `partner-chains-public-keys.json`.
   * Provides fallback and error handling for various runtime formats.
-  * Fully integrated into the CLI as an alternative to `generate-keys` for all roles (Governance Authority, Registered Validator, Permissioned Validator).
+  * Maintains backward compatibility - when called without `--url`, it uses the traditional local key generation method.
   * Comprehensive test suite for SCALE decoding and key handling logic.
   * Help message and workflow documentation updated to show both key generation methods and when to use each.
 

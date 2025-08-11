@@ -49,7 +49,7 @@ sp-governed-map = { workspace = true, features = ["std"] }
 sidechain-slots = { workspace = true }
 authority-selection-inherents = { workspace = true, features = ["std"] }
 reqwest = { workspace = true }
-indexmap = { workspace = true }
+
 parity-scale-codec = { workspace = true }
 
 [dev-dependencies]

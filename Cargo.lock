@@ -4288,7 +4288,6 @@ checksum = "fe4cd85333e22411419a0bcae1297d25e58c9443848b11dc6a86fefe8c78a661"
 dependencies = [
  "equivalent",
  "hashbrown 0.15.4",
- "serde",
 ]
 
 [[package]]
@@ -7159,7 +7158,6 @@ dependencies = [
  "frame-system",
  "hex",
  "hex-literal 1.0.0",
- "indexmap 2.10.0",
  "inquire",
  "libp2p-identity",
  "log",

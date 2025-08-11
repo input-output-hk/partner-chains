@@ -2,7 +2,7 @@
 //! Interacts with Smart Contracts using [`partner_chains_cardano_offchain`] crate.
 #![deny(missing_docs)]
 
-mod automatic_generate_keys;
+
 mod cardano_key;
 mod cmd_traits;
 mod config;
@@ -56,9 +56,8 @@ impl CommonArguments {
 /// Partner Chains text "wizards" for setting up a chain.
 pub enum Command<T: PartnerChainRuntime + Send + Sync> {
 	/// This wizard generates the keys required for operating a partner-chains node, stores them in the keystore directory, and prints the public keys and keystore location.
+	/// When called with --url, it can also generate session keys by connecting to a running node via RPC (author_rotateKeys).
 	GenerateKeys(generate_keys::GenerateKeysCmd<T>),
-	/// Command to automatically generate and save session keys by connecting to a node.
-	AutomaticGenerateKeys(automatic_generate_keys::AutomaticGenerateKeysCmd),
 	/// Wizard to obtain the configuration needed for the partner-chain governance authority. This configuration should be shared with chain participants and used to create the chain spec json file.
 	PrepareConfiguration(prepare_configuration::PrepareConfigurationCmd),
 	/// Wizard for setting D-parameter and Permissioned Candidates list on the main chain.
@@ -84,7 +83,6 @@ impl<T: PartnerChainRuntime + Send + Sync> Command<T> {
 	pub fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
 		match self {
 			Command::GenerateKeys(cmd) => cmd.run(context),
-			Command::AutomaticGenerateKeys(cmd) => cmd.run(context),
 			Command::PrepareConfiguration(cmd) => cmd.run(context),
 			Command::CreateChainSpec(cmd) => cmd.run(context),
 			Command::SetupMainChainState(cmd) => cmd.run(context),
@@ -113,7 +111,6 @@ const HELP_EXAMPLES: &str = r#"
 ╟────────────────────────────────────────────────────────────────────────────────╢
 ║ Governance Authority:                                                          ║
 ║   1. generate-keys           : generate necessary cryptographic keys           ║
-║   2. automatic-generate-keys : generate keys via running node RPC              ║
 ║   3. prepare-configuration   : set up the partner chain configuration          ║
 ║   4. setup-main-chain-state  : configure the main chain parameters             ║
 ║   5. create-chain-spec       : create the chain specification file             ║
@@ -121,7 +118,6 @@ const HELP_EXAMPLES: &str = r#"
 ╟────────────────────────────────────────────────────────────────────────────────╢
 ║ Registered Validator:                                                          ║
 ║   1. generate-keys           : generate validator keys                         ║
-║   2. automatic-generate-keys : generate keys via running node RPC              ║
 ║   3. register1               : initiate the registration process               ║
 ║   4. register2               : complete registration with cold keys            ║
 ║   5. register3               : finalize registration                           ║
@@ -134,7 +130,6 @@ const HELP_EXAMPLES: &str = r#"
 ╟────────────────────────────────────────────────────────────────────────────────╢
 ║ Permissioned Validator:                                                        ║
 ║   1. generate-keys           : generate validator keys                         ║
-║   2. automatic-generate-keys : generate keys via running node RPC              ║
 ║   3. start-node              : start the validator node                        ║
 ║                                                                                ║
 ║   Note: After executing key generation, the generated keys must be shared      ║
