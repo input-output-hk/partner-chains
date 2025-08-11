@@ -82,15 +82,6 @@ pub(crate) struct MainchainTxOutputRow {
 }
 
 #[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
-pub(crate) struct MintAction {
-	pub tx_hash: [u8; 32],
-	pub asset_name: Vec<u8>,
-	pub block_no: BlockNumber,
-	pub tx_index_in_block: i32,
-	pub redeemer: Option<DbDatum>,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
 pub(crate) struct StakePoolEntry {
 	pub pool_hash: [u8; 28],
 	pub stake: StakeDelegation,
@@ -149,18 +140,6 @@ impl<'r> Decode<'r, Postgres> for NativeTokenAmount {
 		let decoded = <sqlx::types::BigDecimal as Decode<Postgres>>::decode(value)?;
 		let i = decoded.to_u128().ok_or("NativeTokenQuantity is always a u128".to_string())?;
 		Ok(Self(i))
-	}
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
-pub(crate) struct TxPosition {
-	pub block_number: BlockNumber,
-	pub index: TxIndexInBlock,
-}
-
-impl Default for TxPosition {
-	fn default() -> Self {
-		Self { block_number: BlockNumber(0), index: TxIndexInBlock(0) }
 	}
 }
 

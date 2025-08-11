@@ -225,9 +225,11 @@ Now the wizard will output `partner-chains-public-keys.json` containing three ke
 
 ```javascript
 {
-	"sidechain_pub_key": "0x<key>",
-	"aura_pub_key": "0x<key>",
-	"grandpa_pub_key": "0x<key>"
+	"partner_chains_key": "0x<key>",
+	"keys": {
+		"aura": "0x<key>",
+		"gran": "0x<key>"
+	}
 }
 ```
 
@@ -265,14 +267,17 @@ Example:
 ```
     "initial_permissioned_candidates": [
 		  {
-			  "aura_pub_key": "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d",
-			  "grandpa_pub_key": "0x88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee",
-			  "sidechain_pub_key": "0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1"
+			  "partner_chains_key": "0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1",
+			  "keys": {
+			    "aura": "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d",
+				"gran": "0x88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee"
 			},
 			{
-			  "aura_pub_key": "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
-			  "grandpa_pub_key": "0xd17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69",
-			  "sidechain_pub_key": "0x0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27"
+			  "partner_chains_key": "0x0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27",
+			  "keys": {
+			    "aura": "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
+				"gran": "0xd17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69"
+              }
 			}
 	  ],
 ```
@@ -320,17 +325,21 @@ A sample file:
     "genesis_utxo": "0000000000000000000000000000000000000000000000000000000000000000#0",
   },
   "initial_permissioned_candidates": [
-		  {
-			  "aura_pub_key": "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d",
-			  "grandpa_pub_key": "0x88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee",
-			  "sidechain_pub_key": "0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1"
-			},
-			{
-			  "aura_pub_key": "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
-			  "grandpa_pub_key": "0xd17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69",
-			  "sidechain_pub_key": "0x0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27"
-			}
-	  ],
+  		{
+   			"partner_chains_key": "0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1",
+     		"keys": {
+       			"aura": "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d",
+          		"gran": "0x88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee"
+            }
+        },
+        {
+        	"partner_chains_key": "0x0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27",
+         	"keys": {
+          		"aura": "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
+            	"gran": "0xd17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69"
+            }
+        }
+  ]
 }
 ```
 

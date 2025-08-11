@@ -53,22 +53,6 @@ pub struct ShelleyGenesisConfiguration {
 	pub start_time: u64,
 }
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct Utxo {
-	pub tx_id: [u8; 32],
-	pub index: u32,
-	pub value: UtxoValue,
-}
-
-type AssetName = Vec<u8>;
-type PolicyId = [u8; 28];
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct UtxoValue {
-	pub lovelace: u64,
-	pub assets: Vec<(PolicyId, Vec<(AssetName, i128)>)>,
-}
-
 pub fn ogmios_request(
 	config: &ServiceConfig,
 	req: OgmiosRequest,

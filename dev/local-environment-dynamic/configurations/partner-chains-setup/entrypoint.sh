@@ -161,18 +161,20 @@ for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
     echo "$sidechain_vkey:$aura_vkey:$grandpa_vkey" >> permissioned_candidates.csv
 done
 
-echo "Inserting permissioned candidates..."
-./partner-chains-node smart-contracts upsert-permissioned-candidates \
-    --ogmios-url http://ogmios:$OGMIOS_PORT \
-    --genesis-utxo $GENESIS_UTXO \
-    --permissioned-candidates-file permissioned_candidates.csv \
-    --payment-key-file /keys/funded_address.skey
+if [ "$NUM_PERMISSIONED_NODES_TO_PROCESS" -gt 0 ]; then
+    echo "Inserting permissioned candidates..."
+    ./partner-chains-node smart-contracts upsert-permissioned-candidates \
+        --ogmios-url http://ogmios:$OGMIOS_PORT \
+        --genesis-utxo $GENESIS_UTXO \
+        --permissioned-candidates-file permissioned_candidates.csv \
+        --payment-key-file /keys/funded_address.skey
 
-if [ $? -eq 0 ]; then
-    echo "Permissioned candidates inserted successfully!"
-else
-    echo "Failed to insert permissioned candidates..."
-    exit 1
+    if [ $? -eq 0 ]; then
+        echo "Permissioned candidates inserted successfully!"
+    else
+        echo "Failed to insert permissioned candidates..."
+        exit 1
+    fi
 fi
 
 # Generate and register registered nodes (1-300)
@@ -387,10 +389,19 @@ mv chain-spec.json.tmp chain-spec.json
 rm initial_balances.json # Clean up temporary file
 
 echo "Configuring Sudo Key..."
-# Use the Aura ss58Address of the first permissioned node as the sudo key
-sudo_account_key=$(jq -r '.ss58Address' "/shared/node-keys/permissioned-1/keys/aura.json") # MODIFIED PATH
-jq --arg sudo_key "$sudo_account_key" '.genesis.runtimeGenesis.config.sudo = { "key": $sudo_key }' chain-spec.json > chain-spec.json.tmp
-mv chain-spec.json.tmp chain-spec.json
+if [ "$NUM_PERMISSIONED_NODES_TO_PROCESS" -gt 0 ]; then
+    # Use the Aura ss58Address of the first permissioned node as the sudo key
+    sudo_account_key=$(jq -r '.ss58Address' "/shared/node-keys/permissioned-1/keys/aura.json")
+    jq --arg sudo_key "$sudo_account_key" '.genesis.runtimeGenesis.config.sudo = { "key": $sudo_key }' chain-spec.json > chain-spec.json.tmp
+    mv chain-spec.json.tmp chain-spec.json
+elif [ "$NUM_REGISTERED_NODES_TO_PROCESS" -gt 0 ]; then
+    # Use the Aura ss58Address of the first registered node as the sudo key
+    sudo_account_key=$(jq -r '.ss58Address' "/shared/node-keys/registered-1/keys/aura.json")
+    jq --arg sudo_key "$sudo_account_key" '.genesis.runtimeGenesis.config.sudo = { "key": $sudo_key }' chain-spec.json > chain-spec.json.tmp
+    mv chain-spec.json.tmp chain-spec.json
+else
+    echo "No permissioned or registered nodes to process, skipping sudo key configuration."
+fi
 
 echo "Configuring Epoch Length..."
 jq '.genesis.runtimeGenesis.config.sidechain.slotsPerEpoch = 5' chain-spec.json > tmp.json && mv tmp.json chain-spec.json

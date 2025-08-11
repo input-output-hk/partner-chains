@@ -1,3 +1,4 @@
+#![cfg(feature = "runtime-benchmarks")]
 //! Benchmarking setup for pallet-address-associations
 //!
 //! ## Running benchmarks
@@ -64,7 +65,6 @@
 //!
 //! Afterwards, the pallet can be benchmarked using Polkadot SDK's [omini-bencher](https://github.com/paritytech/polkadot-sdk/tree/master/substrate/utils/frame/omni-bencher).
 
-#![cfg(any(feature = "runtime-benchmarks", doc))]
 use super::*;
 use frame_benchmarking::v2::*;
 use frame_system::RawOrigin;

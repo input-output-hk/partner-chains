@@ -532,6 +532,7 @@ a connection string should be provided when running a Partner Chain's node in th
 
 ```sh
 export DB_SYNC_POSTGRES_CONNECTION_STRING="postgres://postgres-user:password@localhost/db-sync-db"
+export CARDANO_DATA_SOURCE="db-sync"
 ```
 
 Some data sources also expect environment variables that provide data on network

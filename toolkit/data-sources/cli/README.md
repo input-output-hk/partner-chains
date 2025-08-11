@@ -10,6 +10,7 @@ For configuration details refer to [docs](../../../docs/intro.md#data-source-con
 Example:
 ```sh
 # Postgres database location
+export CARDANO_DATA_SOURCE="db-sync"
 export DB_SYNC_POSTGRES_CONNECTION_STRING="postgres://postgres:password123@localhost/cexplorer"
 # Required configuration parameter. Use 0.
 export BLOCK_STABILITY_MARGIN=0

@@ -44,7 +44,7 @@ fn testnet_genesis(
 			dev_accounts: None,
 		},
 		aura: pallet_aura::GenesisConfig {
-			authorities: initial_authorities.iter().map(|x| (x.0.clone())).collect::<Vec<_>>(),
+			authorities: initial_authorities.iter().map(|x| x.0.clone()).collect::<Vec<_>>(),
 		},
 		beefy: pallet_beefy::GenesisConfig {
 			authorities: initial_authorities.iter().map(|x| (x.2.clone())).collect::<Vec<_>>(),

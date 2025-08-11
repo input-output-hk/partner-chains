@@ -248,35 +248,35 @@ mod tests {
 		ScriptsData {
 			addresses: Addresses {
 				committee_candidate_validator:
-					"addr_test1wz8z7eaac04rp75u47vqy9k3qgwcxxh92ff3h3hp2xae4kgzwdwp3".into(),
+					"addr_test1wzx9p24eryn2h8xnns583edq82y5qkwey7wgqygzr34y6dqny7nsj".into(),
 				d_parameter_validator:
-					"addr_test1wr5u23v0jrchn28dltzkmfdlrfuurjrngsduafyl48tm88g64zhwp".into(),
+					"addr_test1wqq69vap60sf6nw7q75xcqd6ecch95vx6qylju26qgp429szlhwea".into(),
 				permissioned_candidates_validator:
-					"addr_test1wqn02v9fcsqmk2mcrlyafn0uatagchphjd89qjdap30uvdcj9lueh".into(),
+					"addr_test1wqhp3xkm7ntcy0q9cjnttngx94vyn4a7fgyyk5cegw3rkhc4pjahq".into(),
 				illiquid_circulation_supply_validator:
-					"addr_test1wze23c6jxpq8afqwuhkd64vgx04eq2vs7cq25zt4uj2elesjn8jzg".into(),
+					"addr_test1wp7zc0geuxhq8sl5vnfsmgman5ezwstlkdl33mc2apyth6svtrlj2".into(),
 				reserve_validator:
-					"addr_test1wzjen9g538frq59sefpzz8mu00l48nx7uyv7r0qtskcpa6q6vuhdm".into(),
+					"addr_test1wpneq7pv2sna8fg3htmhv88pagjzfxrmjekn00f7kt2n5dcygk46p".into(),
 				version_oracle_validator:
-					"addr_test1wqzyf7wsvn4c4kkhtwd3v2tmq6zprs778cmxnqts635qdqgktqa74".into(),
+					"addr_test1wpadfxldpsgn3zk5yswm7ygwgmfmawxaj90dl40s77jajfgnker5v".into(),
 				governed_map_validator:
-					"addr_test1wqp0md7musykjawpl7s4yqlldfpea4z5qq5800ej33y8w2qfsfwtj".into(),
+					"addr_test1wr6unjvhtdvej4txavu5h4mt0xa0uylm39jm9fvg0tmt4pc5h4akm".into(),
 			},
 			policy_ids: PolicyIds {
 				d_parameter: PolicyId(hex!(
-					"d23b78d59d9158c12baf36f29d0f60eff1074e767f719126db656f3a"
+					"95543debb3d64e2c35fd48129d7a3584870ea9db47859c39ee906c1b"
 				)),
 				permissioned_candidates: PolicyId(hex!(
-					"e630f676ddbed1de1b2db60f550a8feb928b86609785c2af6d44e390"
+					"d29bc1e7643976641cd76888009207f20f0e92c1fca7f43deb8f0f0c"
 				)),
 				reserve_auth: PolicyId(hex!(
-					"3bebe4a01bbdc9675aece18cd904859d24e1885727fe19734492134e"
+					"1c736e05b90d6ea072b0dcf6fe358cbdbb0281138a72ff7c42359285"
 				)),
 				version_oracle: PolicyId(hex!(
-					"debd7853ad047d76f10dba6fde6a7dbd5cebe4165fb3e750a1ab3f75"
+					"d3d6eadae137f555653094f67fe29f7beab90d55d04ca05c1ab9d2af"
 				)),
 				governed_map: PolicyId(hex!(
-					"748efe9d1c8e5cdd6ae2ea04a33cff8732a2ad05ffe6d9c92d72bef5"
+					"1b7c0fa2b32502b8e92ec529f1fe3931febf0b7829f23dc514d88aa0"
 				)),
 			},
 		}

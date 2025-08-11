@@ -32,16 +32,8 @@ impl PlutusScript {
 		Self { bytes: cbor.into(), language }
 	}
 
-	/// This function is needed to create [PlutusScript] from scripts in [raw_scripts],
-	/// which are encoded as a cbor byte string containing the cbor of the script
-	/// itself. This function removes this layer of wrapping.
-	/// Language for all scrips in [raw_scripts] is [LanguageKind::PlutusV2].
-	pub fn from_wrapped_cbor(plutus_script_raw_cbor: &[u8]) -> anyhow::Result<Self> {
-		let plutus_script_bytes: uplc::PlutusData = minicbor::decode(plutus_script_raw_cbor)?;
-		let plutus_script_bytes = match plutus_script_bytes {
-			uplc::PlutusData::BoundedBytes(bb) => Ok(bb),
-			_ => Err(anyhow!("expected validator raw to be BoundedBytes")),
-		}?;
+	/// Constructs a V2 [PlutusScript].
+	pub fn v2_from_cbor(plutus_script_bytes: &[u8]) -> anyhow::Result<Self> {
 		Ok(Self::from_cbor(&plutus_script_bytes, Language::new_plutus_v2()))
 	}
 
@@ -184,7 +176,7 @@ impl From<PlutusScript> for ogmios_client::types::OgmiosScript {
 
 impl From<raw_scripts::RawScript> for PlutusScript {
 	fn from(value: raw_scripts::RawScript) -> Self {
-		PlutusScript::from_wrapped_cbor(value.0).expect("raw_scripts provides valid scripts")
+		PlutusScript::v2_from_cbor(value.0).expect("raw_scripts provides valid scripts")
 	}
 }
 
@@ -266,8 +258,8 @@ pub(crate) mod tests {
 	));
 
 	/// We know it is correct, because we are able to get the same hash as using code from smart-contract repository
-	pub(crate) const CANDIDATES_SCRIPT_WITH_APPLIED_PARAMS: [u8; 362] = hex!(
-		"5901670100003323322323322323232322222533553353232323233012225335001100f2215333573466e3c014dd7001080909802000980798051bac330033530040022200148040dd7198011a980180311000a4010660026a600400644002900019112999ab9a33710002900009805a490350543600133003001002300f22253350011300b49103505437002215333573466e1d20000041002133005337020089001000919199109198008018011aab9d001300735573c0026ea80044028402440204c01d2401035054350030092233335573e0024016466a0146ae84008c00cd5d100124c6010446666aae7c00480288cd4024d5d080118019aba20024988c98cd5ce00080109000891001091000980191299a800880211099a802801180200089100109109119800802001919180080091198019801001000a6012bd8799fd8799f58200000000000000000000000000000000000000000000000000000000000000000ff00ff0001"
+	pub(crate) const CANDIDATES_SCRIPT_WITH_APPLIED_PARAMS: &[u8] = &hex!(
+		"583559013830104c012bd8799fd8799f58200000000000000000000000000000000000000000000000000000000000000000ff00ff0001"
 	);
 
 	#[test]

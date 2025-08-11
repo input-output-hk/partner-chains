@@ -8,6 +8,7 @@ const DATA_PATH: &str = "/path/to/data";
 const CHAIN_SPEC_FILE: &str = "chain-spec.json";
 const DB_CONNECTION_STRING: &str =
 	"postgresql://postgres-user:postgres-password@localhost:5432/cexplorer";
+const CARDANO_DATA_SOURCE: &str = "db-sync";
 
 fn keystore_path() -> String {
 	format!("{DATA_PATH}/keystore")
@@ -23,7 +24,8 @@ fn default_config() -> StartNodeConfig {
 fn default_resources_config_json() -> serde_json::Value {
 	serde_json::json!({
 		"substrate_node_base_path": DATA_PATH,
-		"db_sync_postgres_connection_string": DB_CONNECTION_STRING
+		"db_sync_postgres_connection_string": DB_CONNECTION_STRING,
+		"cardano_data_source": CARDANO_DATA_SOURCE,
 	})
 }
 
@@ -31,6 +33,7 @@ fn expected_final_resources_config_json() -> serde_json::Value {
 	serde_json::json!({
 		"substrate_node_base_path": DATA_PATH,
 		"db_sync_postgres_connection_string": DB_CONNECTION_STRING,
+		"cardano_data_source": CARDANO_DATA_SOURCE,
 		"node_p2p_port": 30333
 	})
 }
@@ -72,6 +75,7 @@ fn default_chain_config_run_command() -> String {
 		"CARDANO_SECURITY_PARAMETER='{SECURITY_PARAMETER}' \\
          CARDANO_ACTIVE_SLOTS_COEFF='{ACTIVE_SLOTS_COEFF}' \\
          DB_SYNC_POSTGRES_CONNECTION_STRING='{DB_CONNECTION_STRING}' \\
+         CARDANO_DATA_SOURCE='{CARDANO_DATA_SOURCE}' \\
          MC__FIRST_EPOCH_TIMESTAMP_MILLIS='{FIRST_EPOCH_TIMESTAMP_MILLIS}' \\
          MC__EPOCH_DURATION_MILLIS='{EPOCH_DURATION_MILLIS}' \\
          MC__SLOT_DURATION_MILLIS='{SLOT_DURATION_MILLIS}' \\
@@ -97,9 +101,9 @@ fn value_check_prompt() -> MockIO {
         MockIO::eprint(&format!("        EPOCH_DURATION_MILLIS              = {}", EPOCH_DURATION_MILLIS)),
         MockIO::eprint(&format!("        FIRST_EPOCH_NUMBER                 = {}", FIRST_EPOCH_NUMBER)),
         MockIO::eprint(&format!("        FIRST_SLOT_NUMBER                  = {}", FIRST_SLOT_NUMBER)),
+        MockIO::eprint(&format!("        CARDANO_DATA_SOURCE                = {}", CARDANO_DATA_SOURCE)),
         MockIO::eprint(&format!("        DB_SYNC_POSTGRES_CONNECTION_STRING = {}", DB_CONNECTION_STRING)),
         MockIO::prompt_yes_no("Proceed?", true, true)
-
     ])
 }
 
