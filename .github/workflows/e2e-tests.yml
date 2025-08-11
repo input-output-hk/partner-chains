@@ -145,8 +145,8 @@ jobs:
         cd e2e-tests
         npm install github-actions-ctrf
 
-    # - name: Generate Summary Report
-    #   if: ${{ !cancelled() }}
-    #   run: |
-    #     cd e2e-tests
-    #     npx github-actions-ctrf logs/ctrf-report.json
+    - name: Generate Summary Report
+      if: ${{ !cancelled() }}
+      run: |
+        cd e2e-tests
+        npx github-actions-ctrf ctrf-report.json
