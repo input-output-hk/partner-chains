@@ -149,4 +149,4 @@ jobs:
       if: ${{ !cancelled() }}
       run: |
         cd e2e-tests
-        npx github-actions-ctrf logs/ctrf-report.json
+        npx github-actions-ctrf ctrf-report.json
