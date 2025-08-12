@@ -3,7 +3,7 @@
     "initial_pc_epoch": 4859579,
     "deployment_version": "v1.7.0-rc2",
 
-    "test_environment": "staging",
+    "test_environment": "jolteon_docker",
     "nodes_config": {
         "nodes": {
             "alice": {
