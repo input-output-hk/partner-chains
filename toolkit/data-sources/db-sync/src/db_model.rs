@@ -1,5 +1,5 @@
-use crate::SqlxError;
 use crate::db_datum::DbDatum;
+use crate::{DataSourceError, SqlxError};
 use bigdecimal::ToPrimitive;
 use cardano_serialization_lib::PlutusData;
 use chrono::NaiveDateTime;
@@ -9,8 +9,11 @@ use sidechain_domain::{
 	MainchainBlock, McBlockHash, McBlockNumber, McEpochNumber, McSlotNumber, McTxHash, UtxoId,
 	UtxoIndex,
 };
-use sqlx::{Decode, Pool, Postgres, database::Database, error::BoxDynError, postgres::PgTypeInfo};
-use std::str::FromStr;
+use sqlx::{
+	Decode, PgPool, Pool, Postgres, database::Database, error::BoxDynError, postgres::PgTypeInfo,
+};
+use std::{cell::OnceCell, str::FromStr, sync::Arc};
+use tokio::sync::Mutex;
 
 /// Db-Sync `tx_in.value` configuration field
 #[derive(Debug, PartialEq, Copy, Clone)]
@@ -42,6 +45,37 @@ impl TxInConfiguration {
 		}
 
 		Ok(Self::Consumed)
+	}
+}
+
+/// Structure that queries, caches and provides Db-Sync configuration
+pub struct DbSyncConfigurationProvider {
+	/// Postgres connection pool
+	pub(crate) pool: PgPool,
+	/// Transaction input configuration used by Db-Sync
+	pub(crate) tx_in_config: Arc<Mutex<OnceCell<TxInConfiguration>>>,
+}
+
+impl DbSyncConfigurationProvider {
+	pub(crate) fn new(pool: PgPool) -> Self {
+		Self { tx_in_config: Arc::new(Mutex::new(OnceCell::new())), pool }
+	}
+
+	pub(crate) async fn get_tx_in_config(
+		&self,
+	) -> std::result::Result<TxInConfiguration, DataSourceError> {
+		let lock = self.tx_in_config.lock().await;
+		if let Some(tx_in_config) = lock.get() {
+			return Ok(*tx_in_config);
+		} else {
+			let tx_in_config = TxInConfiguration::from_connection(&self.pool).await?;
+			lock.set(tx_in_config).map_err(|_| {
+				DataSourceError::InternalDataSourceError(
+					"Failed to set tx_in_config in GovernedMapDataSourceImpl".into(),
+				)
+			})?;
+			return Ok(tx_in_config);
+		}
 	}
 }
 

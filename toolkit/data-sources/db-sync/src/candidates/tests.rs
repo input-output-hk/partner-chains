@@ -1,11 +1,13 @@
 use crate::candidates::CandidatesDataSourceImpl;
-use crate::db_model::{TxInConfiguration, index_exists_unsafe};
+use crate::db_model::{DbSyncConfigurationProvider, TxInConfiguration, index_exists_unsafe};
 use crate::metrics::mock::test_metrics;
 use authority_selection_inherents::AuthoritySelectionDataSource;
 use hex_literal::hex;
 use sidechain_domain::*;
 use sqlx::PgPool;
+use std::cell::OnceCell;
 use std::str::FromStr;
+use std::sync::Arc;
 use tokio_test::assert_err;
 
 const D_PARAM_POLICY: [u8; 28] = hex!("500000000000000000000000000000000000434845434b504f494e69");
@@ -290,7 +292,14 @@ mod candidate_caching {
 }
 
 fn make_source(pool: PgPool, tx_in_config: TxInConfiguration) -> CandidatesDataSourceImpl {
-	CandidatesDataSourceImpl { pool, metrics_opt: Some(test_metrics()), tx_in_config }
+	CandidatesDataSourceImpl {
+		pool: pool.clone(),
+		metrics_opt: Some(test_metrics()),
+		db_sync_config: DbSyncConfigurationProvider {
+			pool,
+			tx_in_config: Arc::new(tokio::sync::Mutex::new(OnceCell::from(tx_in_config))),
+		},
+	}
 }
 
 fn candidates_address() -> MainchainAddress {

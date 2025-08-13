@@ -1,6 +1,6 @@
 use super::{Cache, GovernedMapDataSourceCachedImpl, GovernedMapDataSourceImpl};
 use crate::block::{BlockDataSourceImpl, DbSyncBlockDataSourceConfig};
-use crate::db_model::TxInConfiguration;
+use crate::db_model::{DbSyncConfigurationProvider, TxInConfiguration};
 use crate::metrics::mock::test_metrics;
 use hex_literal::hex;
 use pretty_assertions::assert_eq;
@@ -9,6 +9,7 @@ use sidechain_domain::mainchain_epoch::{Duration, MainchainEpochConfig, Timestam
 use sidechain_domain::*;
 use sp_governed_map::{GovernedMapDataSource, MainChainScriptsV1};
 use sqlx::PgPool;
+use std::cell::OnceCell;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use tokio_test::assert_err;
@@ -150,7 +151,14 @@ fn scripts() -> MainChainScriptsV1 {
 }
 
 fn make_source(pool: PgPool, tx_in_config: TxInConfiguration) -> GovernedMapDataSourceImpl {
-	GovernedMapDataSourceImpl { pool, metrics_opt: Some(test_metrics()), tx_in_config }
+	GovernedMapDataSourceImpl {
+		pool: pool.clone(),
+		metrics_opt: Some(test_metrics()),
+		db_sync_config: DbSyncConfigurationProvider {
+			pool,
+			tx_in_config: Arc::new(tokio::sync::Mutex::new(OnceCell::from(tx_in_config))),
+		},
+	}
 }
 
 async fn make_cached_source(
@@ -163,7 +171,7 @@ async fn make_cached_source(
 		cache_size: 10u16,
 		cache: Arc::new(Mutex::new(Cache::default())),
 		blocks: Arc::new(BlockDataSourceImpl::from_config(
-			pool,
+			pool.clone(),
 			DbSyncBlockDataSourceConfig {
 				cardano_security_parameter: 432,
 				cardano_active_slots_coeff: 0.05,
@@ -171,7 +179,10 @@ async fn make_cached_source(
 			},
 			&mainchain_epoch_config(),
 		)),
-		tx_in_config,
+		db_sync_config: DbSyncConfigurationProvider {
+			pool,
+			tx_in_config: Arc::new(tokio::sync::Mutex::new(OnceCell::from(tx_in_config))),
+		},
 	}
 }
 
