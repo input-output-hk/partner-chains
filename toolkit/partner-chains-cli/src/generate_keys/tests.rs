@@ -157,31 +157,39 @@ pub mod scenarios {
 			MockIO::eprint("if you wish to be included as a permissioned candidate."),
 		])
 	}
-
-	pub fn create_temp_chain_spec() -> MockIO {
-		MockIO::Group(vec![MockIO::new_tmp_dir()])
-	}
 }
 
 #[test]
 fn happy_path() {
-	let mock_context = MockIOContext::new().with_expected_io(vec![
-		scenarios::show_intro(),
-		MockIO::enewline(),
-		scenarios::create_temp_chain_spec(),
-		scenarios::prompt_all_config_fields(),
-		MockIO::enewline(),
-		scenarios::generate_all_spo_keys(AURA_KEY, GRANDPA_KEY, CROSS_CHAIN_KEY),
-		scenarios::write_key_file(AURA_KEY, GRANDPA_KEY, CROSS_CHAIN_KEY),
-		MockIO::enewline(),
-		scenarios::generate_network_key(),
-		MockIO::enewline(),
-		MockIO::eprint("🚀 All done!"),
-		MockIO::delete_file("/tmp/MockIOContext_tmp_dir/chain-spec.json"),
-	]);
+	let mock_context = MockIOContext::new()
+		.with_json_file(
+			RESOURCES_CONFIG_FILE_PATH,
+			serde_json::json!({
+				"substrate_node_base_path": DATA_PATH,
+			}),
+		)
+		.with_expected_io(vec![
+			scenarios::show_intro(),
+			MockIO::enewline(),
+			MockIO::new_tmp_dir(),
+			MockIO::eprint(&format!(
+				"🛠️ Loaded node base path from config ({RESOURCES_CONFIG_FILE_PATH}): {DATA_PATH}"
+			)),
+			MockIO::enewline(),
+			scenarios::generate_all_spo_keys(AURA_KEY, GRANDPA_KEY, CROSS_CHAIN_KEY),
+			scenarios::write_key_file(AURA_KEY, GRANDPA_KEY, CROSS_CHAIN_KEY),
+			MockIO::enewline(),
+			scenarios::generate_network_key(),
+			MockIO::enewline(),
+			MockIO::eprint("🚀 All done!"),
+			MockIO::delete_file("/tmp/MockIOContext_tmp_dir/chain-spec.json"),
+		]);
 
 	let result =
-		GenerateKeysCmd::<MockRuntime> { _phantom: std::marker::PhantomData }.run(&mock_context);
+		GenerateKeysCmd::<MockRuntime> { 
+			_phantom: std::marker::PhantomData,
+			node_url: None,
+		}.run(&mock_context);
 
 	result.expect("should succeed");
 	verify_json!(
@@ -370,14 +378,14 @@ mod generate_network_key {
 				MockIO::run_command(&format!("mkdir -p {DATA_PATH}/network"), "irrelevant"),
 				MockIO::run_command(
 					&format!(
-						"<mock executable> key generate-node-key --chain path/to/chain-spec.json --file {}",
-						network_key_file()
+						"<mock executable> key generate-node-key --chain {}/chain_spec.json --file {}",
+						DATA_PATH, network_key_file()
 					),
 					"irrelevant",
 				),
 			]);
 
-		let result = generate_network_key(&default_config(), "path/to/chain-spec.json", &context);
+		let result = generate_network_key(&default_config(), &format!("{}/chain_spec.json", DATA_PATH), &context);
 
 		assert!(result.is_ok());
 	}
@@ -386,4 +394,79 @@ mod generate_network_key {
 #[test]
 fn key_type_hex_works() {
 	assert_eq!(GRANDPA.key_type_hex(), "6772616e")
+}
+
+// Tests for automatic key generation functionality
+mod automatic_key_generation {
+	use super::*;
+	use anyhow::Result;
+	use parity_scale_codec::Encode;
+
+	#[tokio::test]
+	async fn test_parse_decoded_keys_response_modern_format() -> Result<()> {
+		// Test parsing modern Polkadot SDK format: Option<Vec<(Vec<u8>, u32)>>
+		let key_data = vec![
+			(b"aura_public_key".to_vec(), 0x61757261u32), // 'aura' as u32
+			(b"grandpa_public_key".to_vec(), 0x6772616eu32), // 'gran' as u32
+		];
+		let encoded = Some(key_data).encode();
+		
+		let result = parse_decoded_keys_response(&encoded)?;
+		
+		assert_eq!(result.len(), 2);
+		assert_eq!(result[0].0, 0x61757261u32.to_le_bytes().to_vec());
+		assert_eq!(result[0].1, b"aura_public_key".to_vec());
+		assert_eq!(result[1].0, 0x6772616eu32.to_le_bytes().to_vec());
+		assert_eq!(result[1].1, b"grandpa_public_key".to_vec());
+		
+		Ok(())
+	}
+
+	#[tokio::test]
+	async fn test_parse_decoded_keys_response_legacy_format() -> Result<()> {
+		// Test parsing legacy format: Vec<(Vec<u8>, Vec<u8>)>
+		let key_data = vec![
+			(b"aura".to_vec(), b"aura_public_key".to_vec()),
+			(b"gran".to_vec(), b"grandpa_public_key".to_vec()),
+		];
+		let encoded = key_data.encode();
+		
+		let result = parse_decoded_keys_response(&encoded)?;
+		
+		assert_eq!(result.len(), 2);
+		assert_eq!(result[0].0, b"aura".to_vec());
+		assert_eq!(result[0].1, b"aura_public_key".to_vec());
+		assert_eq!(result[1].0, b"gran".to_vec());
+		assert_eq!(result[1].1, b"grandpa_public_key".to_vec());
+		
+		Ok(())
+	}
+
+	#[tokio::test]
+	async fn test_parse_decoded_keys_response_empty() -> Result<()> {
+		// Test parsing empty response: Option<Vec<(Vec<u8>, u32)>> = None
+		let encoded = Option::<Vec<(Vec<u8>, u32)>>::None.encode();
+		
+		let result = parse_decoded_keys_response(&encoded)?;
+		
+		assert_eq!(result.len(), 0);
+		
+		Ok(())
+	}
+
+	#[tokio::test]
+	async fn test_parse_decoded_keys_response_invalid() {
+		// Test parsing invalid data
+		let invalid_data = b"invalid_data";
+		
+		let result = parse_decoded_keys_response(invalid_data);
+		
+		assert!(result.is_err());
+		assert!(result.unwrap_err().to_string().contains("Failed to SCALE decode keys"));
+	}
+
+	// The core SCALE decoding functionality is thoroughly tested above.
+	// The MockIO system in this codebase doesn't provide comprehensive file operation mocking,
+	// so more detailed integration tests would require a separate test framework or actual
+	// HTTP server setup for testing the full RPC workflow.
 }
