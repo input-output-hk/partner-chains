@@ -100,18 +100,9 @@ class TestSubstrateSmoke:
             error_msg = str(e)
             logger.error(f"Transaction failed: {e}")
             
-            # Check if this is the known WASM runtime validation error
-            if "wasm `unreachable` instruction executed" in error_msg and "TaggedTransactionQueue_validate_transaction" in error_msg:
-                logger.warning("Known runtime validation error detected - this appears to be a solochain template runtime issue")
-                logger.warning("The node connectivity and basic RPC functionality is working correctly")
-                logger.warning("Transaction test marked as expected failure due to runtime limitations")
-                
-                # Mark this as an expected failure for now
-                import pytest
-                pytest.skip("Transaction validation fails due to runtime WASM issue - connectivity and basic functionality confirmed")
-            else:
-                # For other errors, still fail the test
-                raise
+            # Log transaction error details for debugging
+            logger.error(f"Transaction failed: {error_msg}")
+            raise
 
     @mark.test_key('SUBSTRATE-003')
     def test_node_info(self, api: BlockchainApi):

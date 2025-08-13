@@ -95,12 +95,74 @@ class SubstrateApi(BlockchainApi):
         self.partner_chain_rpc = PartnerChainRpc(config.nodes_config.node.rpc_url)
         self.partner_chain_epoch_calculator = PartnerChainEpochCalculator(config)
         
-        try:
-            with open("src/runtime_api.json") as file:
-                self.custom_type_registry = json.load(file)
-        except Exception as e:
-            logger.warning(f"Failed to load custom type registry, using default: {e}")
-            self.custom_type_registry = {}
+        # Use Polkadot SDK compatible type registry for jolteon runtime
+        # This registry includes types required for compatibility with Polkadot SDK runtimes
+        # Key additions: MultiAddress, WeightV2, CheckMetadataHash support
+        # Required substrate-interface>=1.7.11 for full Polkadot SDK compatibility
+        self.custom_type_registry = {
+            "Address": "MultiAddress",
+            "LookupSource": "MultiAddress", 
+            "Weight": "WeightV2",
+            "MultiAddress": {
+                "type": "enum",
+                "type_mapping": [
+                    ["Id", "AccountId"],
+                    ["Index", "u32"],
+                    ["Raw", "Bytes"],
+                    ["Address32", "H256"],
+                    ["Address20", "H160"]
+                ]
+            },
+            "WeightV2": {
+                "type": "struct", 
+                "type_mapping": [
+                    ["ref_time", "Compact<u64>"],
+                    ["proof_size", "Compact<u64>"]
+                ]
+            },
+            "ChargeTransactionPayment": "u64",
+            "Balance": "u128",
+            "Index": "u32",
+            "AccountId": "AccountId32",
+            "AccountId32": "[u8; 32]",
+            "AccountIndex": "u32",
+            "Call": "GenericCall",
+            "CallHash": "H256",
+            "Era": {
+                "type": "enum",
+                "type_mapping": [
+                    ["Immortal", "Null"],
+                    ["Mortal1", "u8"],
+                    ["Mortal2", "u8"],
+                    ["Mortal3", "u8"],
+                    ["Mortal4", "u8"],
+                    ["Mortal5", "u8"],
+                    ["Mortal6", "u8"],
+                    ["Mortal7", "u8"],
+                    ["Mortal8", "u8"],
+                    ["Mortal9", "u8"],
+                    ["Mortal10", "u8"],
+                    ["Mortal11", "u8"],
+                    ["Mortal12", "u8"],
+                    ["Mortal13", "u8"],
+                    ["Mortal14", "u8"],
+                    ["Mortal15", "u8"]
+                ]
+            },
+            "ExtrinsicSignature": "MultiSignature",
+            "MultiSignature": {
+                "type": "enum", 
+                "type_mapping": [
+                    ["Ed25519", "Ed25519Signature"],
+                    ["Sr25519", "Sr25519Signature"],
+                    ["Ecdsa", "EcdsaSignature"]
+                ]
+            },
+            "Ed25519Signature": "[u8; 64]",
+            "Sr25519Signature": "[u8; 64]", 
+            "EcdsaSignature": "[u8; 65]",
+            "Signature": "MultiSignature"
+        }
 
     @property
     def substrate(self):
