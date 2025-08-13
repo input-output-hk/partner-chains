@@ -136,6 +136,7 @@ mod sidechain_rpc;
 #[cfg(feature = "block-participation")]
 mod stake_distribution;
 
+#[derive(Debug)]
 /// Wrapper error type for [sqlx::Error]
 pub struct SqlxError(sqlx::Error);
 

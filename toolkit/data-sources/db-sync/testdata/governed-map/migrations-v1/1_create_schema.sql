@@ -1,3 +1,4 @@
+
 CREATE DOMAIN hash28type AS bytea CONSTRAINT flyway_needs_this CHECK (octet_length(VALUE) = 28);
 
 CREATE DOMAIN hash32type AS bytea CONSTRAINT flyway_needs_this CHECK(octet_length(VALUE) = 32);
@@ -139,6 +140,15 @@ CREATE INDEX redeemer_data_tx_id_idx ON public.redeemer_data USING btree (tx_id)
 
 ALTER TABLE public.redeemer_data ADD CONSTRAINT redeemer_data_tx_id_fkey FOREIGN KEY (tx_id) REFERENCES tx(id) ON DELETE CASCADE ON UPDATE RESTRICT;
 
+CREATE TABLE tx_in (
+    id bigint NOT NULL,
+    tx_in_id bigint NOT NULL,
+    tx_out_id bigint NOT NULL,
+    tx_out_index txindex NOT NULL,
+    redeemer_id bigint,
+    CONSTRAINT tx_in_pkey PRIMARY KEY (id)
+);
+
 CREATE TABLE tx_out (
     id bigint NOT NULL,
     tx_id bigint NOT NULL,
@@ -150,9 +160,8 @@ CREATE TABLE tx_out (
     stake_address_id bigint,
     value lovelace NOT NULL,
     data_hash hash32type,
-    consumed_by_tx_id bigint
+    comment varchar
 );
-ALTER TABLE tx_out ADD CONSTRAINT consumed_by_tx_id_fkey FOREIGN KEY (consumed_by_tx_id) REFERENCES tx(id) ON DELETE CASCADE ON UPDATE RESTRICT;
 
 CREATE TABLE redeemer (
     id bigint PRIMARY KEY,
