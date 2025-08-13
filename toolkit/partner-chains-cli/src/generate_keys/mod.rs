@@ -98,6 +98,7 @@ impl<T: PartnerChainRuntime> CmdRun for GenerateKeysCmd<T> {
 				context.eprint("It will also generate a network key for your node if needed.");
 				context.enewline();
 
+				// Create a proper temporary chain spec as it was in master
 				let chain_spec_path = write_temp_chain_spec(
 					context,
 					T::create_chain_spec(&CreateChainSpecConfig::<T::Keys>::default()),
@@ -121,15 +122,6 @@ impl<T: PartnerChainRuntime> CmdRun for GenerateKeysCmd<T> {
 	}
 }
 
-fn write_temp_chain_spec<C: IOContext>(context: &C, chain_spec: serde_json::Value) -> String {
-	let dir_path = context.new_tmp_dir();
-	let dir_path = dir_path.to_str().expect("temp dir path is correct utf-8");
-	let path = format!("{dir_path}/chain-spec.json");
-	let content = format!("{chain_spec}");
-	context.write_file(&path, &content);
-	path
-}
-
 pub(crate) fn generate_spo_keys<C: IOContext, T: PartnerChainRuntime>(
 	config: &GenerateKeysConfig,
 	chain_spec_path: &str,
@@ -147,12 +139,18 @@ pub(crate) fn generate_spo_keys<C: IOContext, T: PartnerChainRuntime>(
 			keys.insert(key_definition.key_type.to_owned(), generated_key);
 		}
 
-		let permissioned_keys = PermissionedCandidateKeys { partner_chains_key, keys };
-		
-		// Use the shared function to save to JSON file
-		save_permissioned_keys_to_json_file(&permissioned_keys, context)?;
-		
-		// The save_permissioned_keys_to_json_file function already handles the output
+		let public_keys_json =
+			serde_json::to_string_pretty(&PermissionedCandidateKeys { partner_chains_key, keys })
+				.expect("PermissionedCandidateKeys have only UTF-8 encodable ids");
+		context.write_file(KEYS_FILE_PATH, &public_keys_json);
+
+		context.eprint(&format!(
+			"🔑 The following public keys were generated and saved to the {} file:",
+			KEYS_FILE_PATH,
+		));
+		context.print(&(public_keys_json).to_string());
+		context.eprint("You may share them with your chain governance authority");
+		context.eprint("if you wish to be included as a permissioned candidate.");
 	} else {
 		context.eprint("Refusing to overwrite keys file - skipping");
 	}
@@ -582,4 +580,13 @@ async fn send_rpc_request<T: for<'de> Deserialize<'de>>(
 	}
 
 	response.result.ok_or_else(|| "No result in response".into())
+}
+
+fn write_temp_chain_spec<C: IOContext>(context: &C, chain_spec: serde_json::Value) -> String {
+	let dir_path = context.new_tmp_dir();
+	let dir_path = dir_path.to_str().expect("temp dir path is correct utf-8");
+	let path = format!("{dir_path}/chain-spec.json");
+	let content = format!("{chain_spec}");
+	context.write_file(&path, &content);
+	path
 }

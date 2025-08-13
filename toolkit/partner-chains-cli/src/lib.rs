@@ -111,18 +111,20 @@ const HELP_EXAMPLES: &str = r#"
 ╟────────────────────────────────────────────────────────────────────────────────╢
 ║ Governance Authority:                                                          ║
 ║   1. generate-keys           : generate necessary cryptographic keys           ║
-║   3. prepare-configuration   : set up the partner chain configuration          ║
-║   4. setup-main-chain-state  : configure the main chain parameters             ║
-║   5. create-chain-spec       : create the chain specification file             ║
-║   6. start-node              : start the validator node                        ║
+║                                (use --url for automatic key generation)        ║
+║   2. prepare-configuration   : set up the partner chain configuration          ║
+║   3. setup-main-chain-state  : configure the main chain parameters             ║
+║   4. create-chain-spec       : create the chain specification file             ║
+║   5. start-node              : start the validator node                        ║
 ╟────────────────────────────────────────────────────────────────────────────────╢
 ║ Registered Validator:                                                          ║
 ║   1. generate-keys           : generate validator keys                         ║
-║   3. register1               : initiate the registration process               ║
-║   4. register2               : complete registration with cold keys            ║
-║   5. register3               : finalize registration                           ║
-║   6. start-node              : start the validator node                        ║
-║   7. deregister              : cancel registration                             ║
+║                                (use --url for automatic key generation)        ║
+║   2. register1               : initiate the registration process               ║
+║   3. register2               : complete registration with cold keys            ║
+║   4. register3               : finalize registration                           ║
+║   5. start-node              : start the validator node                        ║
+║   6. deregister              : cancel registration                             ║
 ║                                                                                ║
 ║   Note: This sequence assumes that the chain-spec.json and                     ║
 ║         pc-chain-config.json files have been obtained from                     ║
@@ -130,7 +132,8 @@ const HELP_EXAMPLES: &str = r#"
 ╟────────────────────────────────────────────────────────────────────────────────╢
 ║ Permissioned Validator:                                                        ║
 ║   1. generate-keys           : generate validator keys                         ║
-║   3. start-node              : start the validator node                        ║
+║                                (use --url for automatic key generation)        ║
+║   2. start-node              : start the validator node                        ║
 ║                                                                                ║
 ║   Note: After executing key generation, the generated keys must be shared      ║
 ║         with the Governance Authority. The 'start-node' command can only be    ║

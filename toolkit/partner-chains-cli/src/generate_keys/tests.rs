@@ -157,28 +157,33 @@ pub mod scenarios {
 			MockIO::eprint("if you wish to be included as a permissioned candidate."),
 		])
 	}
-
-	pub fn create_temp_chain_spec() -> MockIO {
-		MockIO::Group(vec![MockIO::new_tmp_dir()])
-	}
 }
 
 #[test]
 fn happy_path() {
-	let mock_context = MockIOContext::new().with_expected_io(vec![
-		scenarios::show_intro(),
-		MockIO::enewline(),
-		scenarios::create_temp_chain_spec(),
-		scenarios::prompt_all_config_fields(),
-		MockIO::enewline(),
-		scenarios::generate_all_spo_keys(AURA_KEY, GRANDPA_KEY, CROSS_CHAIN_KEY),
-		scenarios::write_key_file(AURA_KEY, GRANDPA_KEY, CROSS_CHAIN_KEY),
-		MockIO::enewline(),
-		scenarios::generate_network_key(),
-		MockIO::enewline(),
-		MockIO::eprint("🚀 All done!"),
-		MockIO::delete_file("/tmp/MockIOContext_tmp_dir/chain-spec.json"),
-	]);
+	let mock_context = MockIOContext::new()
+		.with_json_file(
+			RESOURCES_CONFIG_FILE_PATH,
+			serde_json::json!({
+				"substrate_node_base_path": DATA_PATH,
+			}),
+		)
+		.with_expected_io(vec![
+			scenarios::show_intro(),
+			MockIO::enewline(),
+			MockIO::new_tmp_dir(),
+			MockIO::eprint(&format!(
+				"🛠️ Loaded node base path from config ({RESOURCES_CONFIG_FILE_PATH}): {DATA_PATH}"
+			)),
+			MockIO::enewline(),
+			scenarios::generate_all_spo_keys(AURA_KEY, GRANDPA_KEY, CROSS_CHAIN_KEY),
+			scenarios::write_key_file(AURA_KEY, GRANDPA_KEY, CROSS_CHAIN_KEY),
+			MockIO::enewline(),
+			scenarios::generate_network_key(),
+			MockIO::enewline(),
+			MockIO::eprint("🚀 All done!"),
+			MockIO::delete_file("/tmp/MockIOContext_tmp_dir/chain-spec.json"),
+		]);
 
 	let result =
 		GenerateKeysCmd::<MockRuntime> { 
@@ -373,14 +378,14 @@ mod generate_network_key {
 				MockIO::run_command(&format!("mkdir -p {DATA_PATH}/network"), "irrelevant"),
 				MockIO::run_command(
 					&format!(
-						"<mock executable> key generate-node-key --chain path/to/chain-spec.json --file {}",
-						network_key_file()
+						"<mock executable> key generate-node-key --chain {}/chain_spec.json --file {}",
+						DATA_PATH, network_key_file()
 					),
 					"irrelevant",
 				),
 			]);
 
-		let result = generate_network_key(&default_config(), "path/to/chain-spec.json", &context);
+		let result = generate_network_key(&default_config(), &format!("{}/chain_spec.json", DATA_PATH), &context);
 
 		assert!(result.is_ok());
 	}
