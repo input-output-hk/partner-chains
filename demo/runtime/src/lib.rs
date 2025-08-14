@@ -681,6 +681,10 @@ impl pallet_governed_map::Config for Runtime {
 	type BenchmarkHelper = ();
 }
 
+impl pallet_session_keys_registration::Config for Runtime {
+	type PalletsOrigin = OriginCaller;
+}
+
 impl crate::test_helper_pallet::Config for Runtime {}
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -702,7 +706,8 @@ construct_runtime!(
 		BlockProducerMetadata: pallet_block_producer_metadata,
 		BlockProductionLog: pallet_block_production_log,
 		BlockParticipation: pallet_block_participation,
-		Session: pallet_session,
+		Session: pallet_session exclude_parts { Call },
+		SessionKeysRegistration: pallet_session_keys_registration,
 		// Historical: pallet_session::historical,
 		NativeTokenManagement: pallet_native_token_management,
 		GovernedMap: pallet_governed_map,
