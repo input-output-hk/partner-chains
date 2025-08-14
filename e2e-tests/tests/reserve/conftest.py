@@ -28,7 +28,7 @@ def governance_address(config: ApiConfig) -> str:
 
 
 @fixture(scope="session")
-def payment_key(config: ApiConfig, governance_skey_with_cli):
+def payment_key(config: ApiConfig, cardano_payment_key, governance_skey_with_cli):
     return config.nodes_config.governance_authority.mainchain_key
 
 
