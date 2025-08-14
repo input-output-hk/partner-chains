@@ -190,7 +190,7 @@ class SmartContracts:
                 f"--genesis-utxo {genesis_utxo} "
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
-            response = self.run_command.exec(cmd)
+            response = self.run_command.exec(cmd, timeout=self.config.timeouts.main_chain_tx)
             parsed_response = parse_json_response(response)
             return handle_governance_signature(parsed_response, self.parent)
 
@@ -217,7 +217,7 @@ class SmartContracts:
                 f"--genesis-utxo {genesis_utxo} "
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
-            response = self.run_command.exec(cmd)
+            response = self.run_command.exec(cmd, timeout=self.config.timeouts.main_chain_tx)
             return parse_json_response(response)
 
         def deposit(self, genesis_utxo: str, amount, payment_key):
@@ -228,7 +228,7 @@ class SmartContracts:
                 f"--genesis-utxo {genesis_utxo} "
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
-            response = self.run_command.exec(cmd)
+            response = self.run_command.exec(cmd, timeout=self.config.timeouts.main_chain_tx)
             parsed_response = parse_json_response(response)
             return handle_governance_signature(parsed_response, self.parent)
 
@@ -240,7 +240,7 @@ class SmartContracts:
                 f"--genesis-utxo {genesis_utxo} "
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
-            response = self.run_command.exec(cmd)
+            response = self.run_command.exec(cmd, timeout=self.config.timeouts.main_chain_tx)
             parsed_response = parse_json_response(response)
             return handle_governance_signature(parsed_response, self.parent)
 
@@ -251,7 +251,7 @@ class SmartContracts:
                 f"--genesis-utxo {genesis_utxo} "
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
-            response = self.run_command.exec(cmd)
+            response = self.run_command.exec(cmd, timeout=self.config.timeouts.main_chain_tx)
             parsed_response = parse_json_response(response)
             return handle_governance_signature(parsed_response, self.parent)
 
