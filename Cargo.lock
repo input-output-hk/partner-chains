@@ -1531,7 +1531,7 @@ checksum = "fe6d2e5af09e8c8ad56c969f2157a3d4238cebc7c55f0a517728c38f7b200f81"
 dependencies = [
  "serde",
  "termcolor",
- "unicode-width 0.2.1",
+ "unicode-width 0.1.14",
 ]
 
 [[package]]
@@ -3010,6 +3010,34 @@ dependencies = [
  "sp-runtime-interface",
  "sp-storage",
  "static_assertions",
+]
+
+[[package]]
+name = "frame-election-provider-solution-type"
+version = "16.1.1"
+source = "git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-stable2506#6fd693e6d9cfa46cd2acbcb41cd5b0451a62d67c"
+dependencies = [
+ "proc-macro-crate 3.3.0",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.104",
+]
+
+[[package]]
+name = "frame-election-provider-support"
+version = "41.0.0"
+source = "git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-stable2506#6fd693e6d9cfa46cd2acbcb41cd5b0451a62d67c"
+dependencies = [
+ "frame-election-provider-solution-type",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-npos-elections",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -6698,6 +6726,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-session-keys-registration"
+version = "1.7.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-session",
+ "pallet-staking",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-staking",
+ "sp-tracing",
+]
+
+[[package]]
 name = "pallet-session-validator-management"
 version = "1.7.0"
 dependencies = [
@@ -6793,6 +6838,27 @@ dependencies = [
  "sp-timestamp",
  "time-source",
  "tokio",
+]
+
+[[package]]
+name = "pallet-staking"
+version = "41.0.0"
+source = "git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-stable2506#6fd693e6d9cfa46cd2acbcb41cd5b0451a62d67c"
+dependencies = [
+ "frame-benchmarking",
+ "frame-election-provider-support",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-authorship",
+ "pallet-session",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-application-crypto",
+ "sp-io",
+ "sp-runtime",
+ "sp-staking",
 ]
 
 [[package]]
@@ -6894,7 +6960,7 @@ checksum = "4e69bf016dc406eff7d53a7d3f7cf1c2e72c82b9088aac1118591e36dd2cd3e9"
 dependencies = [
  "bitcoin_hashes 0.13.0",
  "rand 0.8.5",
- "rand_core 0.6.4",
+ "rand_core 0.4.2",
  "serde",
  "unicode-normalization",
 ]
@@ -7256,6 +7322,7 @@ dependencies = [
  "pallet-native-token-management",
  "pallet-partner-chains-session",
  "pallet-session",
+ "pallet-session-keys-registration",
  "pallet-session-validator-management",
  "pallet-session-validator-management-benchmarking",
  "pallet-sidechain",
@@ -11024,6 +11091,19 @@ dependencies = [
  "sp-version",
  "thiserror 2.0.12",
  "tokio",
+]
+
+[[package]]
+name = "sp-npos-elections"
+version = "37.0.0"
+source = "git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-stable2506#6fd693e6d9cfa46cd2acbcb41cd5b0451a62d67c"
+dependencies = [
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-runtime",
 ]
 
 [[package]]

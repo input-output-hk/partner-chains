@@ -57,6 +57,7 @@ members = [
 	"toolkit/governed-map/primitives",
 	"toolkit/governed-map/pallet",
 	"toolkit/committee-selection/selection-simulator",
+	"toolkit/session_keys_registration",
 ]
 resolver = "2"
 
@@ -198,6 +199,7 @@ pallet-aura = { default-features = false, git = "https://github.com/paritytech/p
 pallet-balances = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2506" }
 pallet-grandpa = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2506" }
 pallet-session = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2506" }
+pallet-staking = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2506" }
 pallet-sudo = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2506" }
 pallet-timestamp = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2506" }
 pallet-transaction-payment = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2506" }
@@ -329,6 +331,9 @@ partner-chains-mock-data-sources = { path = "toolkit/data-sources/mock", default
 # Governed Map
 sp-governed-map = { path = "toolkit/governed-map/primitives", default-features = false }
 pallet-governed-map = { path = "toolkit/governed-map/pallet", default-features = false }
+
+# Session Keys Registration
+pallet-session-keys-registration = { path = "toolkit/session_keys_registration", default-features = false }
 
 # demo node
 partner-chains-demo-runtime = { path = "demo/runtime" }
