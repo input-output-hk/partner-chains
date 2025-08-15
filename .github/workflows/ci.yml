@@ -71,7 +71,7 @@ jobs:
       
           echo "--- Cache preflight ---"
           RUSTC="$(nix develop -c rustc -vV 2>/dev/null || rustc -vV)"
-          LOCK_SHA="$(sha256sum Cargo.lock | awk '{print $1}')"
+          LOCK_SHA="$(sha256sum Cargo.lock | cut -d' ' -f1)"
           MAN="$CACHE/.manifest"; READY="$CACHE/.ready"
           WANT="$(printf '%s\n%s\n' "$RUSTC" "$LOCK_SHA")"
           BAD=0
@@ -136,7 +136,7 @@ jobs:
           echo "--- Verifying cache contents ---"
           ls -laR /tmp/rust-cache
           RUSTC="$(nix develop -c rustc -vV 2>/dev/null || rustc -vV)"
-          LOCK_SHA="$(sha256sum Cargo.lock | awk '{print $1}')"
+          LOCK_SHA="$(sha256sum Cargo.lock | cut -d' ' -f1)"
           printf '%s\n%s\n' "$RUSTC" "$LOCK_SHA" > /tmp/rust-cache/.manifest
           touch /tmp/rust-cache/.ready
       - name: Release cache lock
@@ -344,7 +344,7 @@ jobs:
       
           echo "--- Cache preflight ---"
           RUSTC="$(nix develop -c rustc -vV 2>/dev/null || rustc -vV)"
-          LOCK_SHA="$(sha256sum Cargo.lock | awk '{print $1}')"
+          LOCK_SHA="$(sha256sum Cargo.lock | cut -d' ' -f1)"
           MAN="$CACHE/.manifest"; READY="$CACHE/.ready"
           WANT="$(printf '%s\n%s\n' "$RUSTC" "$LOCK_SHA")"
           BAD=0
