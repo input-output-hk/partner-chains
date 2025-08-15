@@ -50,8 +50,8 @@ jobs:
         run: |
           set -e
           echo "--- Restoring Rust cache from host ---"
-          if [ -d /tmp/rust-cache ]; then
-            echo "Rust cache found. Restoring..."
+          if [ -d /tmp/rust-cache ] && [ -f /tmp/rust-cache/.ready ]; then
+            echo "Ready cache found. Restoring..."
             mkdir -p ~/.cargo/git ~/.cargo/registry ./target
             nix shell nixpkgs#rsync -c bash -c "
               rsync -a /tmp/rust-cache/cargo-git/ ~/.cargo/git/
@@ -59,7 +59,7 @@ jobs:
               rsync -a /tmp/rust-cache/target/ ./target/
             "
           else
-            echo "No Rust cache found. Will be created after build."
+            echo "No ready cache; skipping restore."
           fi
       - name: Validate Rust cache
         run: |
@@ -323,8 +323,8 @@ jobs:
         run: |
           set -e
           echo "--- Restoring Rust cache from host ---"
-          if [ -d /tmp/rust-cache ]; then
-            echo "Rust cache found. Restoring..."
+          if [ -d /tmp/rust-cache ] && [ -f /tmp/rust-cache/.ready ]; then
+            echo "Ready cache found. Restoring..."
             mkdir -p ~/.cargo/git ~/.cargo/registry ./target
             nix shell nixpkgs#rsync -c bash -c "
               rsync -a /tmp/rust-cache/cargo-git/ ~/.cargo/git/
@@ -332,7 +332,7 @@ jobs:
               rsync -a /tmp/rust-cache/target/ ./target/
             "
           else
-            echo "No Rust cache found. Will be created after build."
+            echo "No ready cache; skipping restore."
           fi
       - name: Validate Rust cache
         run: |
@@ -638,8 +638,8 @@ jobs:
         run: |
           set -e
           echo "--- Restoring Rust cache from host ---"
-          if [ -d /tmp/rust-cache ]; then
-            echo "Rust cache found. Restoring..."
+          if [ -d /tmp/rust-cache ] && [ -f /tmp/rust-cache/.ready ]; then
+            echo "Ready cache found. Restoring..."
             mkdir -p ~/.cargo/git ~/.cargo/registry ./target
             nix shell nixpkgs#rsync -c bash -c "
               rsync -a /tmp/rust-cache/cargo-git/ ~/.cargo/git/
@@ -647,7 +647,7 @@ jobs:
               rsync -a /tmp/rust-cache/target/ ./target/
             "
           else
-            echo "No Rust cache found. Will be created after build."
+            echo "No ready cache; skipping restore."
           fi
       - name: Validate Rust cache
         run: |
