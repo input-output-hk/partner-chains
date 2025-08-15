@@ -74,40 +74,57 @@ jobs:
           LOCK_SHA="$(sha256sum Cargo.lock | cut -d' ' -f1)"
           MAN="$CACHE/.manifest"; READY="$CACHE/.ready"
           WANT="$(printf '%s\n%s\n' "$RUSTC" "$LOCK_SHA")"
-          BAD=0
+      
+          BAD=0; REASONS=()
       
           echo "[1/4] Checking manifest and ready marker..."
           if [[ ! -f "$READY" || ! -f "$MAN" ]]; then
-            echo "manifest/ready missing"; BAD=1
+            echo "manifest/ready missing"
+            BAD=1; REASONS+=("manifest/ready missing")
           else
             HAVE="$(head -n 2 "$MAN" || true)"
             if [[ "$WANT" != "$HAVE" ]]; then
-              echo "manifest/ready mismatch"; BAD=1
+              echo "manifest/ready mismatch"
+              BAD=1; REASONS+=("manifest mismatch")
             fi
           fi
       
           echo "[2/4] Scanning for broken symlinks..."
           if find "$CARGO_HOME" "$TARGET_DIR" -xtype l -print -quit >/dev/null 2>&1; then
-            echo "Broken symlink detected"; BAD=1
+            echo "Broken symlink detected:"
+            find "$CARGO_HOME" "$TARGET_DIR" -xtype l -print 2>/dev/null | head -5 || true
+            BAD=1; REASONS+=("broken symlink(s)")
           fi
       
           echo "[3/4] Scanning for zero-byte files..."
           if find "$CARGO_HOME" "$TARGET_DIR" -type f -size 0 -print -quit >/dev/null 2>&1; then
-            echo "Zero-byte file detected"; BAD=1
+            echo "Zero-byte file detected:"
+            find "$CARGO_HOME" "$TARGET_DIR" -type f -size 0 -print 2>/dev/null | head -5 || true
+            BAD=1; REASONS+=("zero-byte file(s)")
           fi
       
           echo "[4/4] Running cargo fetch integrity check..."
           if ! nix develop -c cargo fetch --locked -q; then
-            echo "cargo fetch failed"; BAD=1
+            echo "cargo fetch failed"
+            BAD=1; REASONS+=("cargo fetch failed")
           fi
       
           if [[ $BAD -eq 1 ]]; then
             echo "--- Purging suspect parts of cache ---"
-            find "$TARGET_DIR" -type d -name build -prune -exec rm -rf {} + || true
+            if [[ ${#REASONS[@]} -gt 1 ]]; then
+              echo "Multiple issues (${REASONS[*]}): removing entire target/"
+              rm -rf "$TARGET_DIR" || true
+            else
+              echo "Single issue (${REASONS[*]}): purging build dirs"
+              find "$TARGET_DIR" -type d -name build -prune -exec rm -rf {} + || true
+            fi
+            echo "Clearing registry/src and git/checkouts..."
             rm -rf "$CARGO_HOME"/registry/src/* "$CARGO_HOME"/git/checkouts/* || true
           else
             echo "Cache looks healthy."
           fi
+      
+          echo "--- Preflight summary: ${REASONS[*]:-OK} ---"
       - name: Release cache lock
         if: always()
         run: rmdir /tmp/rust-cache.lock
@@ -344,7 +361,7 @@ jobs:
           else
             echo "No ready cache; skipping restore."
           fi
-      - name: Validate Rust cidate Rust cache
+      - name: Validate Rust cache
         run: |
           set -euo pipefail
           CACHE=/tmp/rust-cache
@@ -357,40 +374,57 @@ jobs:
           LOCK_SHA="$(sha256sum Cargo.lock | cut -d' ' -f1)"
           MAN="$CACHE/.manifest"; READY="$CACHE/.ready"
           WANT="$(printf '%s\n%s\n' "$RUSTC" "$LOCK_SHA")"
-          BAD=0
+      
+          BAD=0; REASONS=()
       
           echo "[1/4] Checking manifest and ready marker..."
           if [[ ! -f "$READY" || ! -f "$MAN" ]]; then
-            echo "manifest/ready missing"; BAD=1
+            echo "manifest/ready missing"
+            BAD=1; REASONS+=("manifest/ready missing")
           else
             HAVE="$(head -n 2 "$MAN" || true)"
             if [[ "$WANT" != "$HAVE" ]]; then
-              echo "manifest/ready mismatch"; BAD=1
+              echo "manifest/ready mismatch"
+              BAD=1; REASONS+=("manifest mismatch")
             fi
           fi
       
           echo "[2/4] Scanning for broken symlinks..."
           if find "$CARGO_HOME" "$TARGET_DIR" -xtype l -print -quit >/dev/null 2>&1; then
-            echo "Broken symlink detected"; BAD=1
+            echo "Broken symlink detected:"
+            find "$CARGO_HOME" "$TARGET_DIR" -xtype l -print 2>/dev/null | head -5 || true
+            BAD=1; REASONS+=("broken symlink(s)")
           fi
       
           echo "[3/4] Scanning for zero-byte files..."
           if find "$CARGO_HOME" "$TARGET_DIR" -type f -size 0 -print -quit >/dev/null 2>&1; then
-            echo "Zero-byte file detected"; BAD=1
+            echo "Zero-byte file detected:"
+            find "$CARGO_HOME" "$TARGET_DIR" -type f -size 0 -print 2>/dev/null | head -5 || true
+            BAD=1; REASONS+=("zero-byte file(s)")
           fi
       
           echo "[4/4] Running cargo fetch integrity check..."
           if ! nix develop -c cargo fetch --locked -q; then
-            echo "cargo fetch failed"; BAD=1
+            echo "cargo fetch failed"
+            BAD=1; REASONS+=("cargo fetch failed")
           fi
       
           if [[ $BAD -eq 1 ]]; then
             echo "--- Purging suspect parts of cache ---"
-            find "$TARGET_DIR" -type d -name build -prune -exec rm -rf {} + || true
+            if [[ ${#REASONS[@]} -gt 1 ]]; then
+              echo "Multiple issues (${REASONS[*]}): removing entire target/"
+              rm -rf "$TARGET_DIR" || true
+            else
+              echo "Single issue (${REASONS[*]}): purging build dirs"
+              find "$TARGET_DIR" -type d -name build -prune -exec rm -rf {} + || true
+            fi
+            echo "Clearing registry/src and git/checkouts..."
             rm -rf "$CARGO_HOME"/registry/src/* "$CARGO_HOME"/git/checkouts/* || true
           else
             echo "Cache looks healthy."
           fi
+      
+          echo "--- Preflight summary: ${REASONS[*]:-OK} ---"
       - name: Release cache lock
         if: always()
         run: rmdir /tmp/rust-cache.lock
@@ -669,7 +703,7 @@ jobs:
           else
             echo "No ready cache; skipping restore."
           fi
-      - name: Valiidate Rust cache
+      - name: Validate Rust cache
         run: |
           set -euo pipefail
           CACHE=/tmp/rust-cache
@@ -682,40 +716,57 @@ jobs:
           LOCK_SHA="$(sha256sum Cargo.lock | cut -d' ' -f1)"
           MAN="$CACHE/.manifest"; READY="$CACHE/.ready"
           WANT="$(printf '%s\n%s\n' "$RUSTC" "$LOCK_SHA")"
-          BAD=0
+      
+          BAD=0; REASONS=()
       
           echo "[1/4] Checking manifest and ready marker..."
           if [[ ! -f "$READY" || ! -f "$MAN" ]]; then
-            echo "manifest/ready missing"; BAD=1
+            echo "manifest/ready missing"
+            BAD=1; REASONS+=("manifest/ready missing")
           else
             HAVE="$(head -n 2 "$MAN" || true)"
             if [[ "$WANT" != "$HAVE" ]]; then
-              echo "manifest/ready mismatch"; BAD=1
+              echo "manifest/ready mismatch"
+              BAD=1; REASONS+=("manifest mismatch")
             fi
           fi
       
           echo "[2/4] Scanning for broken symlinks..."
           if find "$CARGO_HOME" "$TARGET_DIR" -xtype l -print -quit >/dev/null 2>&1; then
-            echo "Broken symlink detected"; BAD=1
+            echo "Broken symlink detected:"
+            find "$CARGO_HOME" "$TARGET_DIR" -xtype l -print 2>/dev/null | head -5 || true
+            BAD=1; REASONS+=("broken symlink(s)")
           fi
       
           echo "[3/4] Scanning for zero-byte files..."
           if find "$CARGO_HOME" "$TARGET_DIR" -type f -size 0 -print -quit >/dev/null 2>&1; then
-            echo "Zero-byte file detected"; BAD=1
+            echo "Zero-byte file detected:"
+            find "$CARGO_HOME" "$TARGET_DIR" -type f -size 0 -print 2>/dev/null | head -5 || true
+            BAD=1; REASONS+=("zero-byte file(s)")
           fi
       
           echo "[4/4] Running cargo fetch integrity check..."
           if ! nix develop -c cargo fetch --locked -q; then
-            echo "cargo fetch failed"; BAD=1
+            echo "cargo fetch failed"
+            BAD=1; REASONS+=("cargo fetch failed")
           fi
       
           if [[ $BAD -eq 1 ]]; then
             echo "--- Purging suspect parts of cache ---"
-            find "$TARGET_DIR" -type d -name build -prune -exec rm -rf {} + || true
+            if [[ ${#REASONS[@]} -gt 1 ]]; then
+              echo "Multiple issues (${REASONS[*]}): removing entire target/"
+              rm -rf "$TARGET_DIR" || true
+            else
+              echo "Single issue (${REASONS[*]}): purging build dirs"
+              find "$TARGET_DIR" -type d -name build -prune -exec rm -rf {} + || true
+            fi
+            echo "Clearing registry/src and git/checkouts..."
             rm -rf "$CARGO_HOME"/registry/src/* "$CARGO_HOME"/git/checkouts/* || true
           else
             echo "Cache looks healthy."
           fi
+      
+          echo "--- Preflight summary: ${REASONS[*]:-OK} ---"
       - name: Release cache lock
         if: always()
         run: rmdir /tmp/rust-cache.lock
