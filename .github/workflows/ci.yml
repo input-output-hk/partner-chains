@@ -76,23 +76,33 @@ jobs:
           WANT="$(printf '%s\n%s\n' "$RUSTC" "$LOCK_SHA")"
           BAD=0
       
-          # Manifest/ready check (fast drift detector)
-          if [[ ! -f "$READY" || ! -f "$MAN" ]] || ! diff -q <(printf '%s\n' "$WANT") <(sed -n '1,2p' "$MAN") >/dev/null; then
-            echo "manifest/ready mismatch"; BAD=1
+          echo "[1/4] Checking manifest and ready marker..."
+          if [[ ! -f "$READY" || ! -f "$MAN" ]]; then
+            echo "manifest/ready missing"; BAD=1
+          else
+            HAVE="$(head -n 2 "$MAN" || true)"
+            if [[ "$WANT" != "$HAVE" ]]; then
+              echo "manifest/ready mismatch"; BAD=1
+            fi
           fi
       
-          # Structural quick-scan (first broken symlink or zero-byte file trips)
-          find "$CARGO_HOME" "$TARGET_DIR" -xtype l -print -quit >/dev/null 2>&1 && BAD=1
-          find "$CARGO_HOME" "$TARGET_DIR" -type f -size 0 -print -quit >/dev/null 2>&1 && BAD=1
+          echo "[2/4] Scanning for broken symlinks..."
+          if find "$CARGO_HOME" "$TARGET_DIR" -xtype l -print -quit >/dev/null 2>&1; then
+            echo "Broken symlink detected"; BAD=1
+          fi
       
-          # Dependency integrity (checksum/git) — quiet fetch
+          echo "[3/4] Scanning for zero-byte files..."
+          if find "$CARGO_HOME" "$TARGET_DIR" -type f -size 0 -print -quit >/dev/null 2>&1; then
+            echo "Zero-byte file detected"; BAD=1
+          fi
+      
+          echo "[4/4] Running cargo fetch integrity check..."
           if ! nix develop -c cargo fetch --locked -q; then
             echo "cargo fetch failed"; BAD=1
           fi
       
-          # Surgical purge if suspect
           if [[ $BAD -eq 1 ]]; then
-            echo "Purging suspect parts of cache…"
+            echo "--- Purging suspect parts of cache ---"
             find "$TARGET_DIR" -type d -name build -prune -exec rm -rf {} + || true
             rm -rf "$CARGO_HOME"/registry/src/* "$CARGO_HOME"/git/checkouts/* || true
           else
@@ -334,7 +344,7 @@ jobs:
           else
             echo "No ready cache; skipping restore."
           fi
-      - name: Validate Rust cache
+      - name: Validate Rust cidate Rust cache
         run: |
           set -euo pipefail
           CACHE=/tmp/rust-cache
@@ -349,23 +359,33 @@ jobs:
           WANT="$(printf '%s\n%s\n' "$RUSTC" "$LOCK_SHA")"
           BAD=0
       
-          # Manifest/ready check (fast drift detector)
-          if [[ ! -f "$READY" || ! -f "$MAN" ]] || ! diff -q <(printf '%s\n' "$WANT") <(sed -n '1,2p' "$MAN") >/dev/null; then
-            echo "manifest/ready mismatch"; BAD=1
+          echo "[1/4] Checking manifest and ready marker..."
+          if [[ ! -f "$READY" || ! -f "$MAN" ]]; then
+            echo "manifest/ready missing"; BAD=1
+          else
+            HAVE="$(head -n 2 "$MAN" || true)"
+            if [[ "$WANT" != "$HAVE" ]]; then
+              echo "manifest/ready mismatch"; BAD=1
+            fi
           fi
       
-          # Structural quick-scan (first broken symlink or zero-byte file trips)
-          find "$CARGO_HOME" "$TARGET_DIR" -xtype l -print -quit >/dev/null 2>&1 && BAD=1
-          find "$CARGO_HOME" "$TARGET_DIR" -type f -size 0 -print -quit >/dev/null 2>&1 && BAD=1
+          echo "[2/4] Scanning for broken symlinks..."
+          if find "$CARGO_HOME" "$TARGET_DIR" -xtype l -print -quit >/dev/null 2>&1; then
+            echo "Broken symlink detected"; BAD=1
+          fi
       
-          # Dependency integrity (checksum/git) — quiet fetch
+          echo "[3/4] Scanning for zero-byte files..."
+          if find "$CARGO_HOME" "$TARGET_DIR" -type f -size 0 -print -quit >/dev/null 2>&1; then
+            echo "Zero-byte file detected"; BAD=1
+          fi
+      
+          echo "[4/4] Running cargo fetch integrity check..."
           if ! nix develop -c cargo fetch --locked -q; then
             echo "cargo fetch failed"; BAD=1
           fi
       
-          # Surgical purge if suspect
           if [[ $BAD -eq 1 ]]; then
-            echo "Purging suspect parts of cache…"
+            echo "--- Purging suspect parts of cache ---"
             find "$TARGET_DIR" -type d -name build -prune -exec rm -rf {} + || true
             rm -rf "$CARGO_HOME"/registry/src/* "$CARGO_HOME"/git/checkouts/* || true
           else
@@ -649,7 +669,7 @@ jobs:
           else
             echo "No ready cache; skipping restore."
           fi
-      - name: Validate Rust cache
+      - name: Valiidate Rust cache
         run: |
           set -euo pipefail
           CACHE=/tmp/rust-cache
@@ -659,28 +679,38 @@ jobs:
       
           echo "--- Cache preflight ---"
           RUSTC="$(nix develop -c rustc -vV 2>/dev/null || rustc -vV)"
-          LOCK_SHA="$(sha256sum Cargo.lock | awk '{print $1}')"
+          LOCK_SHA="$(sha256sum Cargo.lock | cut -d' ' -f1)"
           MAN="$CACHE/.manifest"; READY="$CACHE/.ready"
           WANT="$(printf '%s\n%s\n' "$RUSTC" "$LOCK_SHA")"
           BAD=0
       
-          # Manifest/ready check (fast drift detector)
-          if [[ ! -f "$READY" || ! -f "$MAN" ]] || ! diff -q <(printf '%s\n' "$WANT") <(sed -n '1,2p' "$MAN") >/dev/null; then
-            echo "manifest/ready mismatch"; BAD=1
+          echo "[1/4] Checking manifest and ready marker..."
+          if [[ ! -f "$READY" || ! -f "$MAN" ]]; then
+            echo "manifest/ready missing"; BAD=1
+          else
+            HAVE="$(head -n 2 "$MAN" || true)"
+            if [[ "$WANT" != "$HAVE" ]]; then
+              echo "manifest/ready mismatch"; BAD=1
+            fi
           fi
       
-          # Structural quick-scan (first broken symlink or zero-byte file trips)
-          find "$CARGO_HOME" "$TARGET_DIR" -xtype l -print -quit >/dev/null 2>&1 && BAD=1
-          find "$CARGO_HOME" "$TARGET_DIR" -type f -size 0 -print -quit >/dev/null 2>&1 && BAD=1
+          echo "[2/4] Scanning for broken symlinks..."
+          if find "$CARGO_HOME" "$TARGET_DIR" -xtype l -print -quit >/dev/null 2>&1; then
+            echo "Broken symlink detected"; BAD=1
+          fi
       
-          # Dependency integrity (checksum/git) — quiet fetch
+          echo "[3/4] Scanning for zero-byte files..."
+          if find "$CARGO_HOME" "$TARGET_DIR" -type f -size 0 -print -quit >/dev/null 2>&1; then
+            echo "Zero-byte file detected"; BAD=1
+          fi
+      
+          echo "[4/4] Running cargo fetch integrity check..."
           if ! nix develop -c cargo fetch --locked -q; then
             echo "cargo fetch failed"; BAD=1
           fi
       
-          # Surgical purge if suspect
           if [[ $BAD -eq 1 ]]; then
-            echo "Purging suspect parts of cache…"
+            echo "--- Purging suspect parts of cache ---"
             find "$TARGET_DIR" -type d -name build -prune -exec rm -rf {} + || true
             rm -rf "$CARGO_HOME"/registry/src/* "$CARGO_HOME"/git/checkouts/* || true
           else
