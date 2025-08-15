@@ -93,7 +93,7 @@ jobs:
           # Surgical purge if suspect
           if [[ $BAD -eq 1 ]]; then
             echo "Purging suspect parts of cache…"
-            rm -rf "$TARGET_DIR"/**/build/ || true
+            find "$TARGET_DIR" -type d -name build -prune -exec rm -rf {} + || true
             rm -rf "$CARGO_HOME"/registry/src/* "$CARGO_HOME"/git/checkouts/* || true
           else
             echo "Cache looks healthy."
@@ -366,7 +366,7 @@ jobs:
           # Surgical purge if suspect
           if [[ $BAD -eq 1 ]]; then
             echo "Purging suspect parts of cache…"
-            rm -rf "$TARGET_DIR"/**/build/ || true
+            find "$TARGET_DIR" -type d -name build -prune -exec rm -rf {} + || true
             rm -rf "$CARGO_HOME"/registry/src/* "$CARGO_HOME"/git/checkouts/* || true
           else
             echo "Cache looks healthy."
@@ -681,7 +681,7 @@ jobs:
           # Surgical purge if suspect
           if [[ $BAD -eq 1 ]]; then
             echo "Purging suspect parts of cache…"
-            rm -rf "$TARGET_DIR"/**/build/ || true
+            find "$TARGET_DIR" -type d -name build -prune -exec rm -rf {} + || true
             rm -rf "$CARGO_HOME"/registry/src/* "$CARGO_HOME"/git/checkouts/* || true
           else
             echo "Cache looks healthy."
