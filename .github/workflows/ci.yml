@@ -270,7 +270,7 @@ jobs:
       - name: Upload chain spec artifacts to Kubernetes
         uses: ./.github/actions/deploy/upload-chain-specs
         with:
-          sha: ${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
+          sha: ${{ github.sha }}
         env:
           kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
           K8S_SERVER: ${{ secrets.K8S_SERVER }}
