@@ -129,12 +129,16 @@ jobs:
           echo "--- Saving Rust cache to host cache ---"
           mkdir -p /tmp/rust-cache
           nix shell nixpkgs#rsync -c bash -c "
-            rsync -a ~/.cargo/git/ /tmp/rust-cache/cargo-git/
-            rsync -a ~/.cargo/registry/ /tmp/rust-cache/cargo-registry/
-            rsync -a ./target/ /tmp/rust-cache/target/
+            rsync -a --delete ~/.cargo/git/ /tmp/rust-cache/cargo-git/
+            rsync -a --delete ~/.cargo/registry/ /tmp/rust-cache/cargo-registry/
+            rsync -a --delete ./target/ /tmp/rust-cache/target/
           "
           echo "--- Verifying cache contents ---"
           ls -laR /tmp/rust-cache
+          RUSTC="$(nix develop -c rustc -vV 2>/dev/null || rustc -vV)"
+          LOCK_SHA="$(sha256sum Cargo.lock | awk '{print $1}')"
+          printf '%s\n%s\n' "$RUSTC" "$LOCK_SHA" > /tmp/rust-cache/.manifest
+          touch /tmp/rust-cache/.ready
       - name: Release cache lock
         if: always()
         run: rmdir /tmp/rust-cache.lock
@@ -428,6 +432,10 @@ jobs:
           "
           echo "--- Verifying cache contents ---"
           ls -laR /tmp/rust-cache
+          RUSTC="$(nix develop -c rustc -vV 2>/dev/null || rustc -vV)"
+          LOCK_SHA="$(sha256sum Cargo.lock | awk '{print $1}')"
+          printf '%s\n%s\n' "$RUSTC" "$LOCK_SHA" > /tmp/rust-cache/.manifest
+          touch /tmp/rust-cache/.ready
       - name: Release cache lock
         if: always()
         run: rmdir /tmp/rust-cache.lock
@@ -709,12 +717,16 @@ jobs:
           echo "--- Saving Rust cache to host cache ---"
           mkdir -p /tmp/rust-cache
           nix shell nixpkgs#rsync -c bash -c "
-            rsync -a ~/.cargo/git/ /tmp/rust-cache/cargo-git/
-            rsync -a ~/.cargo/registry/ /tmp/rust-cache/cargo-registry/
-            rsync -a ./target/ /tmp/rust-cache/target/
+            rsync -a --delete ~/.cargo/git/ /tmp/rust-cache/cargo-git/
+            rsync -a --delete ~/.cargo/registry/ /tmp/rust-cache/cargo-registry/
+            rsync -a --delete ./target/ /tmp/rust-cache/target/
           "
           echo "--- Verifying cache contents ---"
           ls -laR /tmp/rust-cache
+          RUSTC="$(nix develop -c rustc -vV 2>/dev/null || rustc -vV)"
+          LOCK_SHA="$(sha256sum Cargo.lock | awk '{print $1}')"
+          printf '%s\n%s\n' "$RUSTC" "$LOCK_SHA" > /tmp/rust-cache/.manifest
+          touch /tmp/rust-cache/.ready
       - name: Release cache lock
         if: always()
         run: rmdir /tmp/rust-cache.lock
