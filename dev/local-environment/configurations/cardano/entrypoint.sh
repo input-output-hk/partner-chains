@@ -180,8 +180,7 @@ echo "UTXO details for node-5 saved in /shared/node5.utxo."
 cat /shared/node5.utxo
 
 echo "Querying and saving the first UTXO details for new address to /shared/genesis.utxo:"
-cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" --out-file /tmp/utxo.json
-/busybox jq -r 'to_entries[0].key' /tmp/utxo.json > /shared/genesis.utxo
+cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" | /busybox awk -F'"' '/^[[:space:]]*"/ {print $2; exit}' > /shared/genesis.utxo
 cat /shared/genesis.utxo > /runtime-values/genesis.utxo
 cat /shared/genesis.utxo
 
