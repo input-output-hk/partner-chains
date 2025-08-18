@@ -373,7 +373,7 @@ sleep 45
 
 echo "[LOG] Querying and saving the first UTXO details for new address to /shared/genesis.utxo:"
 # Query UTXOs and extract the first UTXO key from JSON format
-cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" | /busybox awk 'NR>2 {print $1"#"$2; exit}' > /shared/genesis.utxo
+cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" | /busybox awk 'NR>2 && $1 ~ /^[0-9a-f]+$/ {print $1 "#" $2; exit}' > /shared/genesis.utxo
 
 cp /shared/genesis.utxo /runtime-values/genesis.utxo
 echo "[LOG] Created /shared/genesis.utxo with value: $(cat /shared/genesis.utxo)"
