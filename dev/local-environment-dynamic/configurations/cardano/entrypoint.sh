@@ -371,15 +371,9 @@ echo "[LOG] Main funding transaction submitted."
 echo "[LOG] Waiting 45 seconds for the main transaction to process and be confirmed..."
 sleep 45
 
-echo "[LOG] Waiting for UTXO at new_address..."
-while true; do
-  cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" \
-    | /busybox awk 'NR>2 && $1 ~ /^[0-9a-f]+$/ {print $1 "#" $2; exit}' > /shared/genesis.utxo
-  if [ -s /shared/genesis.utxo ]; then
-    break
-  fi
-  sleep 5
-done
+echo "[LOG] Querying and saving the first UTXO details for new address to /shared/genesis.utxo:"
+cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" | /busybox awk -F'"' '/#/ {gsub(":", "", $2); print $2; exit}' > /shared/genesis.utxo
+
 cp /shared/genesis.utxo /runtime-values/genesis.utxo
 echo "[LOG] Created /shared/genesis.utxo with value: $(cat /shared/genesis.utxo)"
 
