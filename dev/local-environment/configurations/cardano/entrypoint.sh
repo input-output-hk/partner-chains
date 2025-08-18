@@ -170,12 +170,12 @@ echo $new_address > /shared/FUNDED_ADDRESS
 echo "Created /shared/FUNDED_ADDRESS with value: $new_address"
 
 echo "Querying and saving the first UTXO details for node-4 address to /shared/node4.utxo:"
-cardano-cli latest query utxo --testnet-magic 42 --address "${node4_address}" | /busybox awk 'NR>2 { print $1 "#" $2; exit }' > /shared/node4.utxo
+cardano-cli latest query utxo --testnet-magic 42 --address "${node4_address}" | /busybox awk -F'"' '/^[[:space:]]*"/ {print $2; exit}' > /shared/node4.utxo
 echo "UTXO details for node-4 saved in /shared/node4.utxo."
 cat /shared/node4.utxo
 
 echo "Querying and saving the first UTXO details for node-5 address to /shared/node5.utxo:"
-cardano-cli latest query utxo --testnet-magic 42 --address "${node5_address}" | /busybox awk 'NR>2 { print $1 "#" $2; exit }' > /shared/node5.utxo
+cardano-cli latest query utxo --testnet-magic 42 --address "${node5_address}" | /busybox awk -F'"' '/^[[:space:]]*"/ {print $2; exit}' > /shared/node5.utxo
 echo "UTXO details for node-5 saved in /shared/node5.utxo."
 cat /shared/node5.utxo
 
