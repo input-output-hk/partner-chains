@@ -30,7 +30,7 @@
   "TestConwayHardForkAtEpoch": 0,
 
   "TraceOptions": {
-    "TracingVerbosity": "NormalVerbosity",
+    "TracingVerbosity": { "verbosity": "NormalVerbosity" },
     "TraceAcceptPolicy": { "isOn": true },
     "TraceBlockFetchClient": { "isOn": false },
     "TraceBlockFetchDecisions": { "isOn": false },
