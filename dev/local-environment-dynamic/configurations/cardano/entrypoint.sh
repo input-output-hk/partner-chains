@@ -373,7 +373,8 @@ sleep 45
 
 echo "[LOG] Querying and saving the first UTXO details for new address to /shared/genesis.utxo:"
 # Query UTXOs and extract the first UTXO key from JSON format
-cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" --out-file /dev/stdout | /busybox grep -o '"[a-f0-9]\{64\}#[0-9]\+":' | head -1 | /busybox sed 's/"//g' | /busybox sed 's/://g' > /shared/genesis.utxo
+cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" | /busybox awk 'NR>2 {print $1"#"$2; exit}' > /shared/genesis.utxo
+
 cp /shared/genesis.utxo /runtime-values/genesis.utxo
 echo "[LOG] Created /shared/genesis.utxo with value: $(cat /shared/genesis.utxo)"
 
@@ -690,7 +691,8 @@ if [ "$NUM_REGISTERED_NODES_TO_PROCESS" -gt 0 ]; then
         elif [ "$batch_num" -lt "$num_batches" ]; then 
             echo "[WARN] Batch $batch_num: No usable change output created. Attempting to find a new UTXO at $new_address for the next batch."
             sleep 5 
-            new_input_utxo_candidate=$(cardano-cli latest query utxo --address "$new_address" --testnet-magic 42 | /busybox grep lovelace | /busybox sort -k3 -nr | head -1 | /busybox awk '{print $1"#"$2}')
+            new_input_utxo_candidate=$(cardano-cli latest query utxo --address "$new_address" --testnet-magic 42 | /busybox awk 'NR>2 {print $1"#"$2; exit}')
+
             if [ -n "$new_input_utxo_candidate" ]; then
                 current_batch_input_utxo="$new_input_utxo_candidate"
                 echo "[LOG] Batch $batch_num: Found new input UTXO for next batch: $current_batch_input_utxo"
