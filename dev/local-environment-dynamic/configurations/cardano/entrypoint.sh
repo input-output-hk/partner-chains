@@ -131,7 +131,7 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     fi
 
     echo "[LOG] Generating Stake keys for registered-$i in $NODE_SPECIFIC_KEYS_DIR..."
-    cardano-cli shelley stake-address key-gen \
+    cardano-cli latest stake-address key-gen \
         --verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.vkey" \
         --signing-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.skey"
     if [ $? -ne 0 ]; then
@@ -147,7 +147,7 @@ registered_node_stake_addresses=() # Array to store stake addresses
 for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     NODE_SPECIFIC_KEYS_DIR="/shared/node-keys/registered-${i}/keys"
     echo "[LOG] Generating stake address for registered-$i in $NODE_SPECIFIC_KEYS_DIR..."
-    node_stake_address=$(cardano-cli shelley stake-address build \
+    node_stake_address=$(cardano-cli latest stake-address build \
         --stake-verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.vkey" \
         --testnet-magic 42)
 
