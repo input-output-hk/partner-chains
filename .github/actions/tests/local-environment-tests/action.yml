@@ -121,7 +121,7 @@ runs:
       shell: bash
 
     - name: Run Epoch 2 Tests
-      if: ${{ inputs.markers != 'full' && inputs.markers != 'ariadne' && inputs.markers != 'delegator_rewards' }}
+      if: ${{ inputs.markers != 'full' && inputs.markers != 'ariadne' && inputs.markers != 'delegator_rewards' && inputs.markers != 'wizards' && inputs.markers != 'reserve' }}
       uses: ./.github/actions/tests/run-e2e-tests
       with:
         env: ${{ env.TEST_ENVIRONMENT }}
@@ -131,7 +131,7 @@ runs:
         local-environment: "true"
 
     - name: Wait for Epoch 3
-      if: ${{ inputs.markers == 'full' || inputs.markers == 'ariadne' || inputs.markers == 'delegator_rewards' }}
+      if: ${{ inputs.markers == 'full' || inputs.markers == 'ariadne' || inputs.markers == 'delegator_rewards' || inputs.markers == 'wizards' || inputs.markers == 'reserve' }}
       uses: ./.github/actions/tests/wait-for-epoch
       with:
         epoch: 3
@@ -140,7 +140,7 @@ runs:
         environment:
 
     - name: Run Epoch 3 Tests
-      if: ${{ inputs.markers == 'full' || inputs.markers == 'ariadne' || inputs.markers == 'delegator_rewards' }}
+      if: ${{ inputs.markers == 'full' || inputs.markers == 'ariadne' || inputs.markers == 'delegator_rewards' || inputs.markers == 'wizards' || inputs.markers == 'reserve' }}
       uses: ./.github/actions/tests/run-e2e-tests
       with:
         env: ${{ env.TEST_ENVIRONMENT }}
