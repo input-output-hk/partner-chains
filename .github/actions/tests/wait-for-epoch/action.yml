@@ -22,11 +22,26 @@ runs:
       shell: bash
       run: |
         if [ "${{ inputs.deployment }}" == "docker" ]; then
-          epoch=$(docker exec ${{ inputs.node }} cardano-cli latest query tip --testnet-magic 42 | jq -r .epoch)
+          epoch=0
+          retries=0
+          max_retries=5
+          # Initial check can fail if node is not ready
+          until epoch=$(docker exec ${{ inputs.node }} cardano-cli latest query tip --testnet-magic 42 | jq -r .epoch); do
+            retries=$((retries+1))
+            if [ $retries -ge $max_retries ]; then
+              echo "Failed to get initial epoch after $max_retries retries."
+              exit 1
+            fi
+            echo "Waiting for cardano-node to be responsive..."
+            sleep 5
+          done
+
           while [ $epoch -lt ${{ inputs.epoch }} ]; do
-            echo "Epoch: $epoch"
+            echo "Waiting for epoch ${{ inputs.epoch }}. Current epoch: $epoch"
+            tip=$(docker exec ${{ inputs.node }} cardano-cli latest query tip --testnet-magic 42)
+            echo "Current tip: $tip"
             sleep 10
-            epoch=$(docker exec ${{ inputs.node }} cardano-cli latest query tip --testnet-magic 42 | jq -r .epoch)
+            epoch=$(docker exec ${{ inputs.node }} cardano-cli latest query tip --testnet-magic 42 | jq -r .epoch || echo $epoch)
           done
           echo "Epoch: $epoch"
 

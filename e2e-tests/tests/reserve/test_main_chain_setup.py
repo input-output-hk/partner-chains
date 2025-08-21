@@ -18,10 +18,14 @@ def test_mint_tokens_for_reserve(
     initial_balance = api.get_mc_balance(governance_address, reserve_asset_id)
     tokens_to_mint = 1000
     result = mint_token(tokens_to_mint)
+
     if isinstance(result, str):
-        logging.error(f"Mint token submission failed with error: {result}")
-        assert False, f"Mint token submission returned error: {result}"
-    assert "txhash" in result.json
+        assert "Transaction successfully submitted" in result
+    elif isinstance(result, dict):
+        assert "txhash" in result
+    else:
+        assert False, f"Unexpected result type from mint_token: {type(result)}"
+
     assert wait_until(
         lambda: api.get_mc_balance(governance_address, reserve_asset_id) == initial_balance + tokens_to_mint,
         timeout=config.timeouts.main_chain_tx,

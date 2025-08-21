@@ -52,7 +52,14 @@ class CardanoCli:
         result = self.run_command.exec(cmd)
         if result.stderr:
             logger.error(result.stderr)
-        return json.loads(result.stdout)
+        
+        parsed_stdout = json.loads(result.stdout)
+        
+        # In newer cardano-cli versions, the UTXO list might be nested under "unspentUtxos"
+        if isinstance(parsed_stdout, dict) and "unspentUtxos" in parsed_stdout:
+            return parsed_stdout["unspentUtxos"]
+        
+        return parsed_stdout
 
     def get_token_list_from_address(self, address):
         logger.debug("Getting list of tokens and ADA with amounts...")
@@ -229,10 +236,16 @@ class CardanoCli:
             logger.error(result.stderr)
         return signed_tx_filepath
 
-    def submit_transaction(self, signed_tx_filepath):
+    def submit_transaction(self, tx_filepath):
         logger.debug("Submitting transaction...")
-        cmd = f"{self.cli} latest transaction submit --tx-file {signed_tx_filepath} {self.network}"
+        cmd = f"{self.cli} latest transaction submit --tx-file {tx_filepath} {self.network}"
         result = self.run_command.exec(cmd)
         if result.stderr:
             logger.error(result.stderr)
-        return result.stdout.strip()
+            return result.stderr
+        try:
+            # New cardano-cli versions may output JSON with txhash
+            return json.loads(result.stdout)
+        except json.JSONDecodeError:
+            # Fallback for older versions
+            return result.stdout
