@@ -30,17 +30,17 @@ jobs:
 
 ### Pre merge workflow ###############################################################################################################
 
-  #build-linux-x86_64-pre-merge:
-  #  runs-on: nixos
-  #  if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
-  #  steps:
-  #    - name: Clean runner environment
-  #      run: rm -rf ./*
-  #    - name: Checkout repository
-  #      uses: actions/checkout@v4
-  #      with:
-  #        fetch-depth: 0
-  #        clean: true
+  build-linux-x86_64-pre-merge:
+    runs-on: nixos
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
+    steps:
+      - name: Clean runner environment
+        run: rm -rf ./*
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          clean: true
   #    - name: Acquire cache lock
   #      run: |
   #        until mkdir /tmp/rust-cache.lock 2>/dev/null; do
@@ -206,7 +206,7 @@ jobs:
 
   local-env:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
-    #needs: build-linux-x86_64-pre-merge
+    needs: build-linux-x86_64-pre-merge
     runs-on: ubuntu-latest
     strategy:
       matrix:
