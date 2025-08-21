@@ -187,7 +187,7 @@ class TestDepositFunds:
 class TestUpdateVFunction:
     @fixture(scope="class")
     def new_v_function(self, v_function_factory, config: ApiConfig):
-        v_function_path = config.nodes_config.reserve.v_function_script_path
+        v_function_path = config.nodes_config.reserve.v_function_updated_script_path
         v_function = v_function_factory(v_function_path)
         return v_function
 
@@ -203,8 +203,7 @@ class TestUpdateVFunction:
     def test_update_v_function(self, update_v_function):
         response = update_v_function
         assert response.returncode == 0
-        # The contract may return an empty JSON if the v_function is already set, which is valid.
-        assert response.json is not None
+        assert response.json
 
     def test_release_funds_with_updated_v_function(self, api: BlockchainApi, new_v_function: VFunction, genesis_utxo, payment_key, update_v_function):
         assert update_v_function.returncode == 0, f"Update V-function failed: {update_v_function.stderr}"
@@ -217,7 +216,6 @@ class TestUpdateVFunction:
         assert response.returncode == 0
         assert response.json
 
-    @mark.skip(reason="Temporarily disabled until a new, compatible v-function script is available for testing the update.")
     def test_release_funds_with_old_v_function(self, api: BlockchainApi, v_function: VFunction, genesis_utxo, payment_key, update_v_function):
         assert update_v_function.returncode == 0, f"Update V-function failed: {update_v_function.stderr}"
         response = api.partner_chains_node.smart_contracts.reserve.release(
