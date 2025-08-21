@@ -191,7 +191,7 @@ class TestUpdateVFunction:
         v_function = v_function_factory(v_function_path)
         return v_function
 
-    @fixture(scope="class", autouse=True)
+    @fixture(scope="class")
     def update_v_function(self, create_reserve, new_v_function: VFunction, api: BlockchainApi, genesis_utxo, payment_key):
         response = api.partner_chains_node.smart_contracts.reserve.update_settings(
             genesis_utxo,
@@ -205,7 +205,8 @@ class TestUpdateVFunction:
         assert response.returncode == 0
         assert response.json
 
-    def test_release_funds_with_updated_v_function(self, api: BlockchainApi, new_v_function: VFunction, genesis_utxo, payment_key):
+    def test_release_funds_with_updated_v_function(self, api: BlockchainApi, new_v_function: VFunction, genesis_utxo, payment_key, update_v_function):
+        assert update_v_function.returncode == 0, f"Update V-function failed: {update_v_function.stderr}"
         response = api.partner_chains_node.smart_contracts.reserve.release(
             genesis_utxo,
             reference_utxo=new_v_function.reference_utxo,
@@ -215,7 +216,8 @@ class TestUpdateVFunction:
         assert response.returncode == 0
         assert response.json
 
-    def test_release_funds_with_old_v_function(self, api: BlockchainApi, v_function: VFunction, genesis_utxo, payment_key):
+    def test_release_funds_with_old_v_function(self, api: BlockchainApi, v_function: VFunction, genesis_utxo, payment_key, update_v_function):
+        assert update_v_function.returncode == 0, f"Update V-function failed: {update_v_function.stderr}"
         response = api.partner_chains_node.smart_contracts.reserve.release(
             genesis_utxo,
             reference_utxo=v_function.reference_utxo,
@@ -227,7 +229,7 @@ class TestUpdateVFunction:
 
 
 class TestHandoverReserve:
-    @fixture(scope="class", autouse=True)
+    @fixture(scope="class")
     def handover_reserve(self, create_reserve, api: BlockchainApi, genesis_utxo, payment_key):
         response = api.partner_chains_node.smart_contracts.reserve.handover(genesis_utxo, payment_key)
         return response
@@ -237,7 +239,8 @@ class TestHandoverReserve:
         assert response.returncode == 0
         assert response.json
 
-    def test_reserve_balance_after_handover(self, api: BlockchainApi, reserve_asset_id, addresses):
+    def test_reserve_balance_after_handover(self, api: BlockchainApi, reserve_asset_id, addresses, handover_reserve):
+        assert handover_reserve.returncode == 0, f"Handover failed: {handover_reserve.stderr}"
         reserve_balance = api.get_mc_balance(addresses["ReserveValidator"], reserve_asset_id)
         assert reserve_balance == 0
 
@@ -248,6 +251,8 @@ class TestHandoverReserve:
         api: BlockchainApi,
         reserve_asset_id,
         addresses,
+        handover_reserve,
     ):
+        assert handover_reserve.returncode == 0, f"Handover failed: {handover_reserve.stderr}"
         circulation = api.get_mc_balance(addresses["IlliquidCirculationSupplyValidator"], reserve_asset_id)
         assert circulation_supply_initial_balance + reserve_initial_balance == circulation
