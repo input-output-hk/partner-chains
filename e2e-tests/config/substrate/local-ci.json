@@ -20,11 +20,5 @@
                 "host": "partner-chains-node-5"
             }
         }
-    },
-    "poll_intervals": {
-        "long_running_function": 10,
-        "register_cmd": 10,
-        "deregister_cmd": 10,
-        "main_chain_tx": 10
     }
 }
