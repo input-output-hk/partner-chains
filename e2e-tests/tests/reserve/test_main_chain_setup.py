@@ -19,8 +19,8 @@ def test_mint_tokens_for_reserve(
     tokens_to_mint = 1000
     result = mint_token(tokens_to_mint)
     if isinstance(result, str):
-        logging.error(f"Mint token submission failed: {result}")
-        assert False, "Mint token submission returned error string"
+        logging.error(f"Mint token submission failed with error: {result}")
+        assert False, f"Mint token submission returned error: {result}"
     assert "txhash" in result.json
     assert wait_until(
         lambda: api.get_mc_balance(governance_address, reserve_asset_id) == initial_balance + tokens_to_mint,

@@ -151,8 +151,9 @@ def v_function_factory(
         v_function_cbor = v_function_script["cborHex"]
         script_path = write_file(api.cardano_cli.run_command, v_function_script)
         script_hash = api.cardano_cli.get_policy_id(script_path)
-        attach_v_function_to_utxo(v_function_address, script_path)
-        utxo = wait_until(reference_utxo, v_function_address, v_function_cbor, timeout=180)
+        result = attach_v_function_to_utxo(v_function_address, script_path)
+        logging.info(f"Attached V-function to {v_function_address} with result: {result}")
+        utxo = wait_until(reference_utxo, v_function_address, v_function_cbor, timeout=600)
         v_function = VFunction(
             cbor=v_function_cbor,
             script_path=script_path,
