@@ -17,7 +17,7 @@ def test_mint_tokens_for_reserve(
     initial_balance = api.get_mc_balance(governance_address, reserve_asset_id)
     tokens_to_mint = 1000
     result = mint_token(tokens_to_mint)
-    assert "Transaction successfully submitted" in result
+    assert "txhash" in result.json
     assert wait_until(
         lambda: api.get_mc_balance(governance_address, reserve_asset_id) == initial_balance + tokens_to_mint,
         timeout=config.timeouts.main_chain_tx,
