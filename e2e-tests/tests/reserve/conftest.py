@@ -152,7 +152,7 @@ def v_function_factory(
         script_path = write_file(api.cardano_cli.run_command, v_function_script)
         script_hash = api.cardano_cli.get_policy_id(script_path)
         attach_v_function_to_utxo(v_function_address, script_path)
-        utxo = wait_until(reference_utxo, v_function_address, v_function_cbor, timeout=config.timeouts.main_chain_tx)
+        utxo = wait_until(reference_utxo, v_function_address, v_function_cbor, timeout=180)
         v_function = VFunction(
             cbor=v_function_cbor,
             script_path=script_path,
