@@ -2,7 +2,6 @@ from pytest import mark
 from config.api_config import ApiConfig
 from src.blockchain_api import BlockchainApi
 from src.partner_chains_node.models import VFunction
-import logging
 
 
 pytestmark = [mark.xdist_group(name="governance_action")]
@@ -18,14 +17,7 @@ def test_mint_tokens_for_reserve(
     initial_balance = api.get_mc_balance(governance_address, reserve_asset_id)
     tokens_to_mint = 1000
     result = mint_token(tokens_to_mint)
-
-    if isinstance(result, str):
-        assert "Transaction successfully submitted" in result
-    elif isinstance(result, dict):
-        assert "txhash" in result
-    else:
-        assert False, f"Unexpected result type from mint_token: {type(result)}"
-
+    assert "Transaction successfully submitted" in result
     assert wait_until(
         lambda: api.get_mc_balance(governance_address, reserve_asset_id) == initial_balance + tokens_to_mint,
         timeout=config.timeouts.main_chain_tx,

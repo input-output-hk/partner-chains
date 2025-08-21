@@ -5,8 +5,6 @@ from src.cardano_cli import cbor_to_bech32, hex_to_bech32
 from src.partner_chains_node.models import Reserve, VFunction
 import json
 import logging
-import binascii
-import cbor2
 
 
 def pytest_collection_modifyitems(items):
@@ -28,7 +26,7 @@ def governance_address(config: ApiConfig) -> str:
 
 
 @fixture(scope="session")
-def payment_key(config: ApiConfig, cardano_payment_key, governance_skey_with_cli):
+def payment_key(config: ApiConfig, governance_skey_with_cli):
     return config.nodes_config.governance_authority.mainchain_key
 
 
@@ -151,9 +149,8 @@ def v_function_factory(
         v_function_cbor = v_function_script["cborHex"]
         script_path = write_file(api.cardano_cli.run_command, v_function_script)
         script_hash = api.cardano_cli.get_policy_id(script_path)
-        result = attach_v_function_to_utxo(v_function_address, script_path)
-        logging.info(f"Attached V-function to {v_function_address} with result: {result}")
-        utxo = wait_until(reference_utxo, v_function_address, v_function_cbor, timeout=600)
+        attach_v_function_to_utxo(v_function_address, script_path)
+        utxo = wait_until(reference_utxo, v_function_address, v_function_cbor, timeout=config.timeouts.main_chain_tx)
         v_function = VFunction(
             cbor=v_function_cbor,
             script_path=script_path,
@@ -205,32 +202,14 @@ def attach_v_function_to_utxo(transaction_input, governance_address, cardano_pay
     return _attach_v_function_to_utxo
 
 
-def unwrap_cbor(data: bytes) -> bytes:
-    """Decode CBOR until we get raw bytes (Plutus script code)."""
-    decoded = cbor2.loads(data)
-    while isinstance(decoded, bytes):
-        try:
-            decoded = cbor2.loads(decoded)
-        except Exception:
-            break
-    return decoded
-
-
 @fixture(scope="package")
 def reference_utxo(api: BlockchainApi):
 
     def _reference_utxo(v_function_address, cbor):
-        target_inner = unwrap_cbor(binascii.unhexlify(cbor))
-
         utxo_dict = api.cardano_cli.get_utxos(v_function_address)
-
-        # Find the UTxO whose reference script matches (after CBOR unwrapping)
-        for utxo, details in utxo_dict.items():
-            ref_cbor_hex = details["referenceScript"]["script"]["cborHex"]
-            ref_inner = unwrap_cbor(binascii.unhexlify(ref_cbor_hex))
-            if ref_inner == target_inner:
-                return utxo
-
-        return None
+        reference_utxo = next(
+            filter(lambda utxo: utxo_dict[utxo]["referenceScript"]["script"]["cborHex"] == cbor, utxo_dict), None
+        )
+        return reference_utxo
 
     return _reference_utxo
