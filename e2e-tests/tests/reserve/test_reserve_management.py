@@ -187,7 +187,7 @@ class TestDepositFunds:
 class TestUpdateVFunction:
     @fixture(scope="class")
     def new_v_function(self, v_function_factory, config: ApiConfig):
-        v_function_path = config.nodes_config.reserve.v_function_updated_script_path
+        v_function_path = config.nodes_config.reserve.v_function_script_path
         v_function = v_function_factory(v_function_path)
         return v_function
 
