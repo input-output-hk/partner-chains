@@ -72,8 +72,28 @@ class TestCreateReserve:
     def test_enough_tokens_to_create_reserve(self, native_token_initial_balance):
         assert native_token_initial_balance >= INITIAL_RESERVE_DEPOSIT
 
-    def test_create_reserve(self, create_reserve):
+    def test_create_reserve(self, create_reserve, v_function: VFunction, api: BlockchainApi, addresses, reserve_asset_id):
+        """Test create reserve with debugging"""
+        logging.info("=== CREATE RESERVE TEST ===")
+        logging.info(f"Creating reserve with v-function script hash: {v_function.script_hash}")
+        logging.info(f"V-function reference UTxO: {v_function.reference_utxo}")
+        logging.info(f"Initial deposit amount: {INITIAL_RESERVE_DEPOSIT}")
+        
+        # Check balances before creation
+        reserve_balance_before = api.get_mc_balance(addresses["ReserveValidator"], reserve_asset_id)
+        logging.info(f"Reserve balance before creation: {reserve_balance_before}")
+        
         response = create_reserve
+        logging.info(f"Create reserve response code: {response.returncode}")
+        logging.info(f"Create reserve stdout: {response.stdout}")
+        if response.stderr:
+            logging.error(f"Create reserve stderr: {response.stderr}")
+        
+        # Check balances after creation
+        reserve_balance_after = api.get_mc_balance(addresses["ReserveValidator"], reserve_asset_id)
+        logging.info(f"Reserve balance after creation: {reserve_balance_after}")
+        logging.info("=== END CREATE RESERVE TEST ===")
+        
         assert response.returncode == 0
         assert response.json
 
@@ -114,8 +134,34 @@ class TestReleaseFunds:
         )
         return response
 
-    def test_release_funds(self, release_funds):
+    def test_release_funds(self, release_funds, amount_to_release, api: BlockchainApi, addresses, reserve_asset_id, v_function: VFunction):
+        """Test initial release funds with debugging"""
+        logging.info("=== INITIAL RELEASE FUNDS TEST ===")
+        logging.info(f"Amount to release: {amount_to_release}")
+        logging.info(f"Using v-function script hash: {v_function.script_hash}")
+        logging.info(f"Using v-function reference UTxO: {v_function.reference_utxo}")
+        
+        # Pre-release balances
+        reserve_balance_before = api.get_mc_balance(addresses["ReserveValidator"], reserve_asset_id)
+        circulation_balance_before = api.get_mc_balance(addresses["IlliquidCirculationSupplyValidator"], reserve_asset_id)
+        logging.info(f"Reserve balance before: {reserve_balance_before}")
+        logging.info(f"Circulation balance before: {circulation_balance_before}")
+        
         response = release_funds
+        logging.info(f"Initial release response code: {response.returncode}")
+        logging.info(f"Initial release stdout: {response.stdout}")
+        if response.stderr:
+            logging.error(f"Initial release stderr: {response.stderr}")
+            
+        # Post-release balances
+        reserve_balance_after = api.get_mc_balance(addresses["ReserveValidator"], reserve_asset_id)
+        circulation_balance_after = api.get_mc_balance(addresses["IlliquidCirculationSupplyValidator"], reserve_asset_id)
+        logging.info(f"Reserve balance after: {reserve_balance_after}")
+        logging.info(f"Circulation balance after: {circulation_balance_after}")
+        logging.info(f"Expected reserve change: -{amount_to_release}")
+        logging.info(f"Expected circulation change: +{amount_to_release}")
+        logging.info("=== END INITIAL RELEASE FUNDS TEST ===")
+        
         assert response.returncode == 0
         assert response.json
 
@@ -161,8 +207,32 @@ class TestDepositFunds:
         )
         return response
 
-    def test_deposit_funds(self, deposit_funds):
+    def test_deposit_funds(self, deposit_funds, amount_to_deposit, api: BlockchainApi, addresses, reserve_asset_id, governance_address):
+        """Test deposit funds with debugging"""
+        logging.info("=== DEPOSIT FUNDS TEST ===")
+        logging.info(f"Amount to deposit: {amount_to_deposit}")
+        
+        # Pre-deposit balances
+        reserve_balance_before = api.get_mc_balance(addresses["ReserveValidator"], reserve_asset_id)
+        governance_balance_before = api.get_mc_balance(governance_address, reserve_asset_id)
+        logging.info(f"Reserve balance before deposit: {reserve_balance_before}")
+        logging.info(f"Governance balance before deposit: {governance_balance_before}")
+        
         response = deposit_funds
+        logging.info(f"Deposit response code: {response.returncode}")
+        logging.info(f"Deposit stdout: {response.stdout}")
+        if response.stderr:
+            logging.error(f"Deposit stderr: {response.stderr}")
+            
+        # Post-deposit balances
+        reserve_balance_after = api.get_mc_balance(addresses["ReserveValidator"], reserve_asset_id)
+        governance_balance_after = api.get_mc_balance(governance_address, reserve_asset_id)
+        logging.info(f"Reserve balance after deposit: {reserve_balance_after}")
+        logging.info(f"Governance balance after deposit: {governance_balance_after}")
+        logging.info(f"Expected reserve change: +{amount_to_deposit}")
+        logging.info(f"Expected governance change: -{amount_to_deposit}")
+        logging.info("=== END DEPOSIT FUNDS TEST ===")
+        
         assert response.returncode == 0
         assert response.json
 
@@ -200,30 +270,117 @@ class TestUpdateVFunction:
         )
         return response
 
-    def test_update_v_function(self, update_v_function):
+    def test_update_v_function(self, update_v_function, api: BlockchainApi, addresses, reserve_asset_id, v_function: VFunction, new_v_function: VFunction):
+        """Test v-function update with detailed debugging"""
+        logging.info("=== BEFORE V-FUNCTION UPDATE ===")
+        logging.info(f"Original v-function (1975) script hash: {v_function.script_hash}")
+        logging.info(f"Original v-function reference UTxO: {v_function.reference_utxo}")
+        logging.info(f"New v-function (2025) script hash: {new_v_function.script_hash}")
+        logging.info(f"New v-function reference UTxO: {new_v_function.reference_utxo}")
+        
+        # Check reserve balance before update
+        reserve_balance_before = api.get_mc_balance(addresses["ReserveValidator"], reserve_asset_id)
+        logging.info(f"Reserve balance before update: {reserve_balance_before}")
+        
         response = update_v_function
+        logging.info(f"Update v-function response code: {response.returncode}")
+        logging.info(f"Update v-function stdout: {response.stdout}")
+        if response.stderr:
+            logging.info(f"Update v-function stderr: {response.stderr}")
+        
         assert response.returncode == 0
         assert response.json
+        
+        # Check reserve balance after update
+        reserve_balance_after = api.get_mc_balance(addresses["ReserveValidator"], reserve_asset_id)
+        logging.info(f"Reserve balance after update: {reserve_balance_after}")
+        logging.info("=== AFTER V-FUNCTION UPDATE ===")
 
-    def test_release_funds_with_updated_v_function(self, api: BlockchainApi, new_v_function: VFunction, genesis_utxo, payment_key, update_v_function):
+    def test_release_funds_with_updated_v_function(self, api: BlockchainApi, new_v_function: VFunction, genesis_utxo, payment_key, update_v_function, addresses, reserve_asset_id):
+        """Test release with updated v-function (2025) with detailed debugging"""
+        logging.info("=== TESTING RELEASE WITH UPDATED V-FUNCTION (2025) ===")
         assert update_v_function.returncode == 0, f"Update V-function failed: {update_v_function.stderr}"
+        
+        # Pre-release state
+        reserve_balance_before = api.get_mc_balance(addresses["ReserveValidator"], reserve_asset_id)
+        circulation_balance_before = api.get_mc_balance(addresses["IlliquidCirculationSupplyValidator"], reserve_asset_id)
+        logging.info(f"Reserve balance before release: {reserve_balance_before}")
+        logging.info(f"Circulation balance before release: {circulation_balance_before}")
+        logging.info(f"Using v-function reference UTxO: {new_v_function.reference_utxo}")
+        logging.info(f"Using v-function script hash: {new_v_function.script_hash}")
+        
+        # Check if reference UTxO exists and is valid
+        try:
+            # Parse UTxO to get address for querying
+            if '#' in new_v_function.reference_utxo:
+                utxo_hash, utxo_index = new_v_function.reference_utxo.split('#')
+                logging.info(f"Reference UTxO hash: {utxo_hash}, index: {utxo_index}")
+            logging.info(f"Reference UTxO: {new_v_function.reference_utxo}")
+        except Exception as e:
+            logging.error(f"Failed to parse reference UTxO: {e}")
+        
+        # Attempt release
         response = api.partner_chains_node.smart_contracts.reserve.release(
             genesis_utxo,
             reference_utxo=new_v_function.reference_utxo,
             amount=1,
             payment_key=payment_key
         )
-        assert response.returncode == 0
+        
+        logging.info(f"Release response code: {response.returncode}")
+        logging.info(f"Release stdout: {response.stdout}")
+        if response.stderr:
+            logging.error(f"Release stderr: {response.stderr}")
+        
+        if response.returncode != 0:
+            # Additional debugging for failed release
+            logging.error("=== RELEASE FAILED - DEBUGGING INFO ===")
+            logging.error(f"Genesis UTxO: {genesis_utxo}")
+            logging.error(f"Payment key: {payment_key}")
+            logging.error(f"Amount: 1")
+            
+            # Check current UTxO state
+            try:
+                reserve_utxos = api.cardano_cli.get_utxos(addresses["ReserveValidator"])
+                logging.error(f"Current reserve UTxOs: {reserve_utxos}")
+            except Exception as e:
+                logging.error(f"Failed to get reserve UTxOs: {e}")
+            
+        # Post-release state (regardless of success/failure)
+        reserve_balance_after = api.get_mc_balance(addresses["ReserveValidator"], reserve_asset_id)
+        circulation_balance_after = api.get_mc_balance(addresses["IlliquidCirculationSupplyValidator"], reserve_asset_id)
+        logging.info(f"Reserve balance after release: {reserve_balance_after}")
+        logging.info(f"Circulation balance after release: {circulation_balance_after}")
+        
+        assert response.returncode == 0, f"Release with updated v-function failed: {response.stderr}"
         assert response.json
 
-    def test_release_funds_with_old_v_function(self, api: BlockchainApi, v_function: VFunction, genesis_utxo, payment_key, update_v_function):
+    def test_release_funds_with_old_v_function(self, api: BlockchainApi, v_function: VFunction, genesis_utxo, payment_key, update_v_function, addresses, reserve_asset_id):
+        """Test release with old v-function (1975) - should fail with detailed debugging"""
+        logging.info("=== TESTING RELEASE WITH OLD V-FUNCTION (1975) - SHOULD FAIL ===")
         assert update_v_function.returncode == 0, f"Update V-function failed: {update_v_function.stderr}"
+        
+        # Pre-release state
+        reserve_balance_before = api.get_mc_balance(addresses["ReserveValidator"], reserve_asset_id)
+        circulation_balance_before = api.get_mc_balance(addresses["IlliquidCirculationSupplyValidator"], reserve_asset_id)
+        logging.info(f"Reserve balance before release: {reserve_balance_before}")
+        logging.info(f"Circulation balance before release: {circulation_balance_before}")
+        logging.info(f"Using OLD v-function reference UTxO: {v_function.reference_utxo}")
+        logging.info(f"Using OLD v-function script hash: {v_function.script_hash}")
+        
         response = api.partner_chains_node.smart_contracts.reserve.release(
             genesis_utxo,
             reference_utxo=v_function.reference_utxo,
             amount=1,
             payment_key=payment_key
         )
+        
+        logging.info(f"Old v-function release response code: {response.returncode}")
+        logging.info(f"Old v-function release stdout: {response.stdout}")
+        if response.stderr:
+            logging.info(f"Old v-function release stderr (expected): {response.stderr}")
+        
+        # This should fail as expected
         assert response.returncode == 1
         assert "Error" in response.stderr
 
