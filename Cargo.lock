@@ -6659,6 +6659,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-partner-chains-bridge"
+version = "1.7.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sidechain-domain",
+ "sp-core",
+ "sp-io",
+ "sp-partner-chains-bridge",
+ "sp-runtime",
+]
+
+[[package]]
 name = "pallet-partner-chains-session"
 version = "1.7.0"
 dependencies = [
@@ -7254,6 +7271,7 @@ dependencies = [
  "pallet-governed-map",
  "pallet-grandpa",
  "pallet-native-token-management",
+ "pallet-partner-chains-bridge",
  "pallet-partner-chains-session",
  "pallet-session",
  "pallet-session-validator-management",
@@ -7288,6 +7306,7 @@ dependencies = [
  "sp-keyring",
  "sp-native-token-management",
  "sp-offchain",
+ "sp-partner-chains-bridge",
  "sp-runtime",
  "sp-session",
  "sp-session-validator-management",
@@ -11043,6 +11062,23 @@ source = "git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-stable
 dependencies = [
  "backtrace",
  "regex",
+]
+
+[[package]]
+name = "sp-partner-chains-bridge"
+version = "1.7.0"
+dependencies = [
+ "async-trait",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sidechain-domain",
+ "sp-api",
+ "sp-core",
+ "sp-inherents",
+ "sp-runtime",
+ "thiserror 2.0.12",
 ]
 
 [[package]]
