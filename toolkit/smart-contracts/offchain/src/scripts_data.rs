@@ -3,7 +3,7 @@ use crate::{csl::NetworkTypeExt, plutus_script::PlutusScript};
 use cardano_serialization_lib::NetworkIdKind;
 use ogmios_client::query_network::QueryNetwork;
 use raw_scripts::ScriptId;
-use raw_scripts::{
+use raw_scripts_traced::{
 	COMMITTEE_CANDIDATE_VALIDATOR, D_PARAMETER_POLICY, D_PARAMETER_VALIDATOR, GOVERNED_MAP_POLICY,
 	GOVERNED_MAP_VALIDATOR, ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR, PERMISSIONED_CANDIDATES_POLICY,
 	PERMISSIONED_CANDIDATES_VALIDATOR, RESERVE_AUTH_POLICY, RESERVE_VALIDATOR,

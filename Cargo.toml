@@ -258,6 +258,7 @@ substrate-test-runtime-client = { default-features = false, git = "https://githu
 substrate-wasm-builder = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2506" }
 
 raw-scripts = { git = "https://github.com/input-output-hk/partner-chains-smart-contracts.git", tag = "v8.0.0" }
+raw-scripts-traced = { git = "https://github.com/input-output-hk/partner-chains-smart-contracts.git", tag = "v8.0.0" }
 # local dependencies
 
 # utils
