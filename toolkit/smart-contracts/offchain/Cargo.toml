@@ -28,6 +28,7 @@ ogmios-client = { workspace = true, features = ["jsonrpsee-client"] }
 pallas-primitives = { workspace = true }
 plutus = { workspace = true }
 raw-scripts = { workspace = true }
+raw-scripts-traced = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true, features = ["std"] }
 secp256k1 = { workspace = true, features = ["std"] }
