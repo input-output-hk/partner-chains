@@ -72,16 +72,9 @@ class TestCreateReserve:
     def test_enough_tokens_to_create_reserve(self, native_token_initial_balance):
         assert native_token_initial_balance >= INITIAL_RESERVE_DEPOSIT
 
-    def test_create_reserve(self, create_reserve, v_function: VFunction, api: BlockchainApi, addresses, reserve_asset_id):
+    def test_create_reserve(self, create_reserve):
         """Test create reserve with debugging"""
         logging.info("=== CREATE RESERVE TEST ===")
-        logging.info(f"Creating reserve with v-function script hash: {v_function.script_hash}")
-        logging.info(f"V-function reference UTxO: {v_function.reference_utxo}")
-        logging.info(f"Initial deposit amount: {INITIAL_RESERVE_DEPOSIT}")
-        
-        # Check balances before creation
-        reserve_balance_before = api.get_mc_balance(addresses["ReserveValidator"], reserve_asset_id)
-        logging.info(f"Reserve balance before creation: {reserve_balance_before}")
         
         response = create_reserve
         logging.info(f"Create reserve response code: {response.returncode}")
@@ -89,9 +82,6 @@ class TestCreateReserve:
         if response.stderr:
             logging.error(f"Create reserve stderr: {response.stderr}")
         
-        # Check balances after creation
-        reserve_balance_after = api.get_mc_balance(addresses["ReserveValidator"], reserve_asset_id)
-        logging.info(f"Reserve balance after creation: {reserve_balance_after}")
         logging.info("=== END CREATE RESERVE TEST ===")
         
         assert response.returncode == 0
