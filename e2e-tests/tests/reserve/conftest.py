@@ -215,20 +215,37 @@ def unwrap_cbor(data: bytes) -> bytes:
     return decoded
 
 
+def safe_unhexlify(hex_str: str) -> bytes:
+    """Safely convert hex string to bytes, handling odd-length strings."""
+    if len(hex_str) % 2 == 1:
+        # Pad odd-length strings with leading zero
+        hex_str = '0' + hex_str
+    return binascii.unhexlify(hex_str)
+
+
 @fixture(scope="package")
 def reference_utxo(api: BlockchainApi):
 
     def _reference_utxo(v_function_address, cbor):
-        target_inner = unwrap_cbor(binascii.unhexlify(cbor))
-
+        # Try the simple comparison first (original logic)
         utxo_dict = api.cardano_cli.get_utxos(v_function_address)
-
-        # Find the UTxO whose reference script matches (after CBOR unwrapping)
+        
+        # First try direct CBOR comparison (original approach)
         for utxo, details in utxo_dict.items():
             ref_cbor_hex = details["referenceScript"]["script"]["cborHex"]
-            ref_inner = unwrap_cbor(binascii.unhexlify(ref_cbor_hex))
-            if ref_inner == target_inner:
+            if ref_cbor_hex == cbor:
                 return utxo
+        
+        # If direct comparison fails, try CBOR unwrapping
+        try:
+            target_inner = unwrap_cbor(safe_unhexlify(cbor))
+            for utxo, details in utxo_dict.items():
+                ref_cbor_hex = details["referenceScript"]["script"]["cborHex"]
+                ref_inner = unwrap_cbor(safe_unhexlify(ref_cbor_hex))
+                if ref_inner == target_inner:
+                    return utxo
+        except Exception as e:
+            logger.warning(f"CBOR unwrapping failed: {e}")
 
         return None
 
