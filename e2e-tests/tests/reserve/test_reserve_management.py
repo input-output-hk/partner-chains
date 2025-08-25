@@ -152,7 +152,7 @@ class TestDepositFunds:
     def amount_to_deposit(self, reserve_initial_balance):
         return random.randint(1, min(reserve_initial_balance, 100))
 
-    @fixture(scope="class", autouse=True)
+    @fixture(scope="class")
     def deposit_funds(self, native_token_balance, amount_to_deposit, api: BlockchainApi, genesis_utxo, payment_key):
         response = api.partner_chains_node.smart_contracts.reserve.deposit(
             genesis_utxo,
@@ -161,13 +161,16 @@ class TestDepositFunds:
         )
         return response
 
+    def test_enough_tokens_to_deposit_to_reserve(self, native_token_balance, amount_to_deposit):
+        assert native_token_balance >= amount_to_deposit
+
     def test_deposit_funds(self, deposit_funds):
         response = deposit_funds
         assert response.returncode == 0
         assert response.json
 
     def test_reserve_balance_after_deposit(
-        self, reserve_initial_balance, amount_to_deposit, api: BlockchainApi, reserve_asset_id, addresses
+        self, reserve_initial_balance, amount_to_deposit, deposit_funds, api: BlockchainApi, reserve_asset_id, addresses
     ):
         reserve_balance = api.get_mc_balance(addresses["ReserveValidator"], reserve_asset_id)
         assert reserve_initial_balance + amount_to_deposit == reserve_balance
@@ -176,6 +179,7 @@ class TestDepositFunds:
         self,
         native_token_balance,
         amount_to_deposit,
+        deposit_funds,
         api: BlockchainApi,
         reserve_asset_id,
         governance_address,
