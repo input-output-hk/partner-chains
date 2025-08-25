@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 PARTNER_CHAINS_NODE_IMAGE="ghcr.io/input-output-hk/partner-chains/partner-chains-node-unstable:latest"
-CARDANO_IMAGE="ghcr.io/intersectmbo/cardano-node:10.1.4"
+CARDANO_IMAGE="ghcr.io/intersectmbo/cardano-node:10.5.1"
 DBSYNC_IMAGE="ghcr.io/intersectmbo/cardano-db-sync:13.6.0.4"
 OGMIOS_IMAGE="cardanosolutions/ogmios:v6.11.0"
 POSTGRES_IMAGE="postgres:17.2"
@@ -292,7 +292,7 @@ choose_deployment_option() {
     echo "2) Include Cardano testnet with Ogmios"
     echo "3) Include Cardano testnet, Ogmios, DB-Sync and Postgres"
     echo "4) Deploy a single Partner Chains node with network_mode: "host" for external connections (adjust partner-chains-external-node.txt before running this script)"
-    echo "5) Deploy a 3 node Partner Chain network using wizard" 
+    echo "5) Deploy a 3 node Partner Chain network using wizard"
     read -p "Enter your choice (1/2/3/4/5): " deployment_option
   else
     deployment_option=0
