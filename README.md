@@ -78,8 +78,8 @@ In order to ensure and demonstrate the correctness and liveliness of our partner
 reproducible simulations of the D-Parameter based committee selection mechanism and created end-to-end tests
 running hundreds of nodes to inspect and assert correct behavior:
 
-- Refer to the [selection-simulator/README.md](toolkit/committee-selection/selection-simulator/README.md) for details on the simulation.
-- Refert to the [liveliness testing report](./docs/liveliness-report.pdf) for details on the end-to-end tests.
+- Refer to [docs/reports/ariadne-liveness.pdf](docs/reports/ariadne-liveness.pdf) for the simulation report.
+- Refer to [docs/reports/liveliness-report.pdf](docs/reports/liveliness-report.pdf) for the end-to-end-testing report.
 
 ### 📃 License
 
