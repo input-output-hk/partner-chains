@@ -81,6 +81,9 @@ running hundreds of nodes to inspect and assert correct behavior:
 - Refer to [docs/reports/ariadne-liveness.pdf](docs/reports/ariadne-liveness.pdf) for the simulation report.
 - Refer to [docs/reports/liveliness-report.pdf](docs/reports/liveliness-report.pdf) for the end-to-end-testing report.
 
+If you want to learn more about the simulation and how to perform your own simulations with custom parameters you
+can learn more about this [here](toolkit/committee-selection/selection-simulator/README.md).
+
 ### 📃 License
 
 This project is primarly distributed under the Apache License 2.0. You can review the full license
