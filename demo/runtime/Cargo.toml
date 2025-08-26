@@ -32,7 +32,7 @@ pallet-grandpa = { workspace = true }
 pallet-partner-chains-session = { workspace = true, features = [
 	"pallet-session-compat",
 ] }
-pallet-session = { workspace = true }
+pallet-session = { workspace = true, features = ["historical"] }
 pallet-sudo = { workspace = true }
 frame-system = { workspace = true }
 frame-try-runtime = { workspace = true, optional = true }
@@ -93,6 +93,7 @@ pallet-governed-map = { workspace = true }
 sp-governed-map = { workspace = true }
 sp-block-producer-fees = { workspace = true }
 pallet-block-producer-fees = { workspace = true }
+pallet-session-keys-registration = { workspace = true }
 
 [dev-dependencies]
 sp-io = { workspace = true }
@@ -139,6 +140,7 @@ std = [
 	"pallet-transaction-payment/std",
 	"pallet-address-associations/std",
 	"pallet-block-producer-metadata/std",
+	"pallet-session-keys-registration/std",
 	"sp-block-producer-metadata/std",
 	"sp-api/std",
 	"sp-block-builder/std",
