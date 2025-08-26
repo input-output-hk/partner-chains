@@ -235,4 +235,10 @@ class CardanoCli:
         result = self.run_command.exec(cmd)
         if result.stderr:
             logger.error(result.stderr)
-        return result.stdout.strip()
+            return result.stderr
+        try:
+            # New cardano-cli versions may output JSON with txhash
+            return json.loads(result.stdout)
+        except json.JSONDecodeError:
+            # Fallback for older versions
+            return result.stdout
