@@ -103,6 +103,9 @@
     "Mempool.SyncNotNeeded": {
       "severity": "Silence"
     },
+    "TraceObject": { 
+      "severity": "Silence" 
+    },
     "Net.ConnectionManager.Remote": {
       "severity": "Info"
     },
@@ -145,7 +148,7 @@
   "UseTraceDispatchers": true,
   "defaultBackends": [],
   "defaultScribes": [],
-  "minSeverity": "Info",
+  "minSeverity": "Warning",
   "options": {},
   "setupBackends": [],
   "setupScribes": []
