@@ -25,10 +25,10 @@ echo "[LOG] Updated systemStart value in Shelley genesis.json to: $shelley_syste
 echo "[LOG] Updated Byron and Shelley genesis files with new start times."
 
 echo "[LOG] Parsing epochLength and slotLength from Shelley genesis.json..."
-/busybox awk -F':|,' '/"epochLength"/ {print $2}' /shared/shelley/genesis.json.base > /shared/mc-epoch-length
+jq -r '.epochLength' /shared/shelley/genesis.json.base > /shared/mc-epoch-length
 echo "[LOG] Created /shared/mc-epoch-length with value: $(cat /shared/mc-epoch-length)"
 
-/busybox awk -F':|,' '/"slotLength"/ {print $2}' /shared/shelley/genesis.json.base > /shared/mc-slot-length
+jq -r '.slotLength' /shared/shelley/genesis.json.base > /shared/mc-slot-length
 echo "[LOG] Created /shared/mc-slot-length with value: $(cat /shared/mc-slot-length)"
 
 echo "[LOG] Extracted mc-epoch-length and mc-slot-length."
@@ -372,7 +372,9 @@ echo "[LOG] Waiting 45 seconds for the main transaction to process and be confir
 sleep 45
 
 echo "[LOG] Querying and saving the first UTXO details for new address to /shared/genesis.utxo:"
-cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" | /busybox awk -F'"' '/#/ {gsub(":", "", $2); print $2; exit}' > /shared/genesis.utxo
+cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" --out-file /tmp/genesis_utxos.json
+jq -r 'keys[0]' /tmp/genesis_utxos.json > /shared/genesis.utxo
+rm -f /tmp/genesis_utxos.json
 
 cp /shared/genesis.utxo /runtime-values/genesis.utxo
 echo "[LOG] Created /shared/genesis.utxo with value: $(cat /shared/genesis.utxo)"
@@ -381,7 +383,13 @@ echo "[LOG] Main transaction submitted. Determining initial UTXO for batch fundi
 
 # Determine the TxId of the main transaction
 # /data/tx.signed was the file submitted for the main transaction.
-main_tx_id=$(cardano-cli latest transaction txid --tx-file /data/tx.signed)
+main_tx_id_raw=$(cardano-cli latest transaction txid --tx-file /data/tx.signed)
+# Handle JSON output from cardano-cli 10.5.1
+if echo "$main_tx_id_raw" | /busybox grep -q '^{'; then
+    main_tx_id=$(echo "$main_tx_id_raw" | jq -r 'to_entries[0].value')
+else
+    main_tx_id="$main_tx_id_raw"
+fi
 if [ -z "$main_tx_id" ]; then
     echo "[DEBUG] CRITICAL ERROR: Failed to get TxId from main signed transaction /data/tx.signed. Aborting batch funding."
     exit 1
@@ -484,11 +492,8 @@ if [ "$NUM_REGISTERED_NODES_TO_PROCESS" -gt 0 ]; then
                 if /busybox grep -q "$current_batch_input_utxo" "$address_utxos_file"; then
                     echo "[LOG] Batch $batch_num: Found target UTXO $current_batch_input_utxo in output"
                     
-                    # Extract the UTXO entry with context lines (get the full JSON object)
-                    utxo_context=$(/busybox grep -A 20 "$current_batch_input_utxo" "$address_utxos_file")
-                    
-                    # Extract lovelace amount from the context
-                    current_batch_input_utxo_amount=$(echo "$utxo_context" | /busybox grep '"lovelace":' | /busybox grep -o '[0-9]\+' | head -1)
+                    # Extract lovelace amount using jq
+                    current_batch_input_utxo_amount=$(jq -r ".[\"$current_batch_input_utxo\"].value.lovelace" "$address_utxos_file")
                     
                     if [[ "$current_batch_input_utxo_amount" =~ ^[0-9]+$ ]] && [ "$current_batch_input_utxo_amount" -gt 0 ]; then
                         echo "[LOG] Batch $batch_num: Successfully extracted UTXO amount: $current_batch_input_utxo_amount lovelace"
@@ -532,7 +537,7 @@ if [ "$NUM_REGISTERED_NODES_TO_PROCESS" -gt 0 ]; then
                 largest_utxo=""
                 
                 # Get all UTXO identifiers first
-                all_utxos=$(/busybox grep -o '[a-f0-9]\{64\}#[0-9]\+' "$fallback_utxos_file")
+                all_utxos=$(jq -r 'keys[]' "$fallback_utxos_file")
                 echo "[DEBUG] Batch $batch_num: Found UTXOs in fallback:"
                 echo "$all_utxos" | while IFS= read -r line; do echo "[DEBUG] UTXO: $line"; done
                 
@@ -540,8 +545,7 @@ if [ "$NUM_REGISTERED_NODES_TO_PROCESS" -gt 0 ]; then
                 while IFS= read -r utxo_id; do
                     if [ -n "$utxo_id" ]; then
                         echo "[DEBUG] Batch $batch_num: Checking UTXO $utxo_id..."
-                        utxo_context=$(/busybox grep -A 20 "$utxo_id" "$fallback_utxos_file")
-                        line_amount=$(echo "$utxo_context" | /busybox grep '"lovelace":' | /busybox grep -o '[0-9]\+' | head -1)
+                        line_amount=$(jq -r ".[\"$utxo_id\"].value.lovelace" "$fallback_utxos_file")
                         
                         if [[ "$line_amount" =~ ^[0-9]+$ ]] && [ "$line_amount" -gt "$largest_amount" ]; then
                             largest_amount="$line_amount"
@@ -776,7 +780,7 @@ if [ "$NUM_REGISTERED_NODES_TO_PROCESS" -gt 0 ]; then
             echo "[LOG] Querying address UTXOs for $NODE_LOG_NAME (Attempt $attempt)..."
             utxo_info=$(cardano-cli latest query utxo \
                 --testnet-magic 42 --address "$NODE_PAYMENT_ADDRESS" --out-file /dev/stdout 2>&1)
-            NODE_FUNDING_UTXO=$(echo "$utxo_info" | /busybox grep -o '[a-f0-9]\{64\}#[0-9]\+' | head -1)
+            NODE_FUNDING_UTXO=$(echo "$utxo_info" | jq -r 'keys[0]')
             if [ -n "$NODE_FUNDING_UTXO" ]; then
                 echo "[LOG] Found funding UTXO for $NODE_LOG_NAME: $NODE_FUNDING_UTXO"
                 break
@@ -791,8 +795,8 @@ if [ "$NUM_REGISTERED_NODES_TO_PROCESS" -gt 0 ]; then
             continue # Skip to the next node if funding UTXO not found
         fi
 
-        # Extract UTXO amount for fee calculation
-        NODE_FUNDING_UTXO_AMOUNT=$(echo "$utxo_info" | /busybox grep "$NODE_FUNDING_UTXO" -A 20 | /busybox grep '"lovelace":' | /busybox grep -o '[0-9]\+' | head -1)
+        # Extract UTXO amount for fee calculation using jq
+        NODE_FUNDING_UTXO_AMOUNT=$(echo "$utxo_info" | jq -r ".[\"$NODE_FUNDING_UTXO\"].value.lovelace")
         echo "[LOG] $NODE_LOG_NAME Funding UTXO amount: $NODE_FUNDING_UTXO_AMOUNT lovelace."
         if ! [[ "$NODE_FUNDING_UTXO_AMOUNT" =~ ^[0-9]+$ ]] || [ "$NODE_FUNDING_UTXO_AMOUNT" -eq 0 ]; then
              echo "[DEBUG] CRITICAL ERROR: Failed to get valid UTXO amount for $NODE_LOG_NAME. Skipping this node."
@@ -972,7 +976,7 @@ if [ "$NUM_REGISTERED_NODES_TO_PROCESS" -gt 0 ]; then
             echo "[LOG] Querying address UTXOs for $NODE_LOG_NAME (Delegation Attempt $attempt)..."
             utxo_info_deleg=$(cardano-cli latest query utxo \
                 --testnet-magic 42 --address "$NODE_PAYMENT_ADDRESS" --out-file /dev/stdout 2>&1)
-            NODE_FUNDING_UTXO_DELEG=$(echo "$utxo_info_deleg" | /busybox grep -o '[a-f0-9]\{64\}#[0-9]\+' | head -1)
+            NODE_FUNDING_UTXO_DELEG=$(echo "$utxo_info_deleg" | jq -r 'keys[0]')
             if [ -n "$NODE_FUNDING_UTXO_DELEG" ]; then
                 echo "[LOG] Found funding UTXO for $NODE_LOG_NAME delegation: $NODE_FUNDING_UTXO_DELEG"
                 break
@@ -986,7 +990,7 @@ if [ "$NUM_REGISTERED_NODES_TO_PROCESS" -gt 0 ]; then
             echo "[DEBUG] CRITICAL ERROR: Failed to find funding UTXO for $NODE_LOG_NAME delegation. Cannot perform delegation. Skipping this node."
             continue # Skip delegation if funding UTXO not found
         fi
-        NODE_FUNDING_UTXO_DELEG_AMOUNT=$(echo "$utxo_info_deleg" | /busybox grep "$NODE_FUNDING_UTXO_DELEG" -A 20 | /busybox grep '"lovelace":' | /busybox grep -o '[0-9]\+' | head -1)
+        NODE_FUNDING_UTXO_DELEG_AMOUNT=$(echo "$utxo_info_deleg" | jq -r ".[\"$NODE_FUNDING_UTXO_DELEG\"].value.lovelace")
         if ! [[ "$NODE_FUNDING_UTXO_DELEG_AMOUNT" =~ ^[0-9]+$ ]] || [ "$NODE_FUNDING_UTXO_DELEG_AMOUNT" -eq 0 ]; then
              echo "[DEBUG] CRITICAL ERROR: Failed to get valid UTXO amount for $NODE_LOG_NAME delegation. Skipping this node."
              continue
@@ -1200,7 +1204,7 @@ if [ "$NUM_REGISTERED_NODES_TO_PROCESS" -gt 0 ]; then
                 utxo_info_final=$(cardano-cli latest query utxo \
                     --testnet-magic 42 --address "$NODE_PAYMENT_ADDRESS" --out-file /dev/stdout 2>&1)
                 # Specifically look for a UTXO at the payment address that was created by our funding transaction.
-                NEW_REGISTRATION_UTXO=$(echo "$utxo_info_final" | /busybox grep "$TRANSFER_TX_ID" | /busybox grep -o '[a-f0-9]\{64\}#[0-9]\+')
+                NEW_REGISTRATION_UTXO=$(echo "$utxo_info_final" | jq -r --arg tx_id "$TRANSFER_TX_ID" 'to_entries[] | select(.key | startswith($tx_id)) | .key')
                 if [ -n "$NEW_REGISTRATION_UTXO" ]; then
                     echo "[LOG] Found new final UTXO for $NODE_LOG_NAME: $NEW_REGISTRATION_UTXO"
                     break
