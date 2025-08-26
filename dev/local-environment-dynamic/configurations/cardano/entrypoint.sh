@@ -499,8 +499,11 @@ if [ "$NUM_REGISTERED_NODES_TO_PROCESS" -gt 0 ]; then
                 if /busybox grep -q "$current_batch_input_utxo" "$address_utxos_file"; then
                     echo "[LOG] Batch $batch_num: Found target UTXO $current_batch_input_utxo in output"
                     
-                    # Extract lovelace amount using jq
-                    current_batch_input_utxo_amount=$(jq -r ".[\"$current_batch_input_utxo\"].value.lovelace" "$address_utxos_file")
+                    # Extract the UTXO entry with context lines (get the full JSON object)
+                    utxo_context=$(/busybox grep -A 20 "$current_batch_input_utxo" "$address_utxos_file")
+                    
+                    # Extract lovelace amount from the context
+                    current_batch_input_utxo_amount=$(echo "$utxo_context" | /busybox grep '"lovelace":' | /busybox grep -o '[0-9]\+' | head -1)
                     
                     if [[ "$current_batch_input_utxo_amount" =~ ^[0-9]+$ ]] && [ "$current_batch_input_utxo_amount" -gt 0 ]; then
                         echo "[LOG] Batch $batch_num: Successfully extracted UTXO amount: $current_batch_input_utxo_amount lovelace"
@@ -552,7 +555,8 @@ if [ "$NUM_REGISTERED_NODES_TO_PROCESS" -gt 0 ]; then
                 while IFS= read -r utxo_id; do
                     if [ -n "$utxo_id" ]; then
                         echo "[DEBUG] Batch $batch_num: Checking UTXO $utxo_id..."
-                        line_amount=$(jq -r ".[\"$utxo_id\"].value.lovelace" "$fallback_utxos_file")
+                        utxo_context=$(/busybox grep -A 20 "$utxo_id" "$fallback_utxos_file")
+                        line_amount=$(echo "$utxo_context" | /busybox grep '"lovelace":' | /busybox grep -o '[0-9]\+' | head -1)
                         
                         if [[ "$line_amount" =~ ^[0-9]+$ ]] && [ "$line_amount" -gt "$largest_amount" ]; then
                             largest_amount="$line_amount"
@@ -815,8 +819,8 @@ if [ "$NUM_REGISTERED_NODES_TO_PROCESS" -gt 0 ]; then
             continue # Skip to the next node if funding UTXO not found
         fi
 
-        # Extract UTXO amount for fee calculation using jq
-        NODE_FUNDING_UTXO_AMOUNT=$(echo "$utxo_info" | jq -r ".[\"$NODE_FUNDING_UTXO\"].value.lovelace")
+        # Extract UTXO amount for fee calculation
+        NODE_FUNDING_UTXO_AMOUNT=$(echo "$utxo_info" | /busybox grep "$NODE_FUNDING_UTXO" -A 20 | /busybox grep '"lovelace":' | /busybox grep -o '[0-9]\+' | head -1)
         echo "[LOG] $NODE_LOG_NAME Funding UTXO amount: $NODE_FUNDING_UTXO_AMOUNT lovelace."
         if ! [[ "$NODE_FUNDING_UTXO_AMOUNT" =~ ^[0-9]+$ ]] || [ "$NODE_FUNDING_UTXO_AMOUNT" -eq 0 ]; then
              echo "[DEBUG] CRITICAL ERROR: Failed to get valid UTXO amount for $NODE_LOG_NAME. Skipping this node."
@@ -1017,7 +1021,7 @@ if [ "$NUM_REGISTERED_NODES_TO_PROCESS" -gt 0 ]; then
             echo "[DEBUG] CRITICAL ERROR: Failed to find funding UTXO for $NODE_LOG_NAME delegation. Cannot perform delegation. Skipping this node."
             continue # Skip delegation if funding UTXO not found
         fi
-        NODE_FUNDING_UTXO_DELEG_AMOUNT=$(echo "$utxo_info_deleg" | jq -r ".[\"$NODE_FUNDING_UTXO_DELEG\"].value.lovelace")
+        NODE_FUNDING_UTXO_DELEG_AMOUNT=$(echo "$utxo_info_deleg" | /busybox grep "$NODE_FUNDING_UTXO_DELEG" -A 20 | /busybox grep '"lovelace":' | /busybox grep -o '[0-9]\+' | head -1)
         if ! [[ "$NODE_FUNDING_UTXO_DELEG_AMOUNT" =~ ^[0-9]+$ ]] || [ "$NODE_FUNDING_UTXO_DELEG_AMOUNT" -eq 0 ]; then
              echo "[DEBUG] CRITICAL ERROR: Failed to get valid UTXO amount for $NODE_LOG_NAME delegation. Skipping this node."
              continue
