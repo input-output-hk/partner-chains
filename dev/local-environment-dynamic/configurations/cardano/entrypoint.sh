@@ -379,9 +379,7 @@ echo "[LOG] Waiting 45 seconds for the main transaction to process and be confir
 sleep 45
 
 echo "[LOG] Querying and saving the first UTXO details for new address to /shared/genesis.utxo:"
-cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" --out-file /tmp/genesis_utxos.json
-jq -r 'keys[0]' /tmp/genesis_utxos.json > /shared/genesis.utxo
-rm -f /tmp/genesis_utxos.json
+cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" | /busybox awk -F'"' '/#/ {gsub(":", "", $2); print $2; exit}' > /shared/genesis.utxo
 
 cp /shared/genesis.utxo /runtime-values/genesis.utxo
 echo "[LOG] Created /shared/genesis.utxo with value: $(cat /shared/genesis.utxo)"
@@ -547,7 +545,7 @@ if [ "$NUM_REGISTERED_NODES_TO_PROCESS" -gt 0 ]; then
                 largest_utxo=""
                 
                 # Get all UTXO identifiers first
-                all_utxos=$(jq -r 'keys[]' "$fallback_utxos_file")
+                all_utxos=$(/busybox grep -o '[a-f0-9]\{64\}#[0-9]\+' "$fallback_utxos_file")
                 echo "[DEBUG] Batch $batch_num: Found UTXOs in fallback:"
                 echo "$all_utxos" | while IFS= read -r line; do echo "[DEBUG] UTXO: $line"; done
                 
@@ -804,7 +802,7 @@ if [ "$NUM_REGISTERED_NODES_TO_PROCESS" -gt 0 ]; then
             echo "[LOG] Querying address UTXOs for $NODE_LOG_NAME (Attempt $attempt)..."
             utxo_info=$(cardano-cli latest query utxo \
                 --testnet-magic 42 --address "$NODE_PAYMENT_ADDRESS" --out-file /dev/stdout 2>&1)
-            NODE_FUNDING_UTXO=$(echo "$utxo_info" | jq -r 'keys[0]')
+            NODE_FUNDING_UTXO=$(echo "$utxo_info" | /busybox grep -o '[a-f0-9]\{64\}#[0-9]\+' | head -1)
             if [ -n "$NODE_FUNDING_UTXO" ]; then
                 echo "[LOG] Found funding UTXO for $NODE_LOG_NAME: $NODE_FUNDING_UTXO"
                 break
@@ -1007,7 +1005,7 @@ if [ "$NUM_REGISTERED_NODES_TO_PROCESS" -gt 0 ]; then
             echo "[LOG] Querying address UTXOs for $NODE_LOG_NAME (Delegation Attempt $attempt)..."
             utxo_info_deleg=$(cardano-cli latest query utxo \
                 --testnet-magic 42 --address "$NODE_PAYMENT_ADDRESS" --out-file /dev/stdout 2>&1)
-            NODE_FUNDING_UTXO_DELEG=$(echo "$utxo_info_deleg" | jq -r 'keys[0]')
+            NODE_FUNDING_UTXO_DELEG=$(echo "$utxo_info_deleg" | /busybox grep -o '[a-f0-9]\{64\}#[0-9]\+' | head -1)
             if [ -n "$NODE_FUNDING_UTXO_DELEG" ]; then
                 echo "[LOG] Found funding UTXO for $NODE_LOG_NAME delegation: $NODE_FUNDING_UTXO_DELEG"
                 break
@@ -1254,7 +1252,7 @@ if [ "$NUM_REGISTERED_NODES_TO_PROCESS" -gt 0 ]; then
                 utxo_info_final=$(cardano-cli latest query utxo \
                     --testnet-magic 42 --address "$NODE_PAYMENT_ADDRESS" --out-file /dev/stdout 2>&1)
                 # Specifically look for a UTXO at the payment address that was created by our funding transaction.
-                NEW_REGISTRATION_UTXO=$(echo "$utxo_info_final" | jq -r --arg tx_id "$TRANSFER_TX_ID" 'to_entries[] | select(.key | startswith($tx_id)) | .key')
+                NEW_REGISTRATION_UTXO=$(echo "$utxo_info_final" | /busybox grep "$TRANSFER_TX_ID" | /busybox grep -o '[a-f0-9]\{64\}#[0-9]\+')
                 if [ -n "$NEW_REGISTRATION_UTXO" ]; then
                     echo "[LOG] Found new final UTXO for $NODE_LOG_NAME: $NEW_REGISTRATION_UTXO"
                     break
