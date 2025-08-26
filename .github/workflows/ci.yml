@@ -127,7 +127,7 @@ jobs:
           echo "--- Preflight summary: ${REASONS[*]:-OK} ---"
       - name: Release cache lock
         if: always()
-        run: rmdir /tmp/rust-cache.lock
+        run: rmdir /tmp/rust-cache.lock || true
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -168,7 +168,7 @@ jobs:
           touch /tmp/rust-cache/.ready
       - name: Release cache lock
         if: always()
-        run: rmdir /tmp/rust-cache.lock
+        run: rmdir /tmp/rust-cache.lock || true
       #- name: Run cargo-deny to check licenses
       #  uses: EmbarkStudios/cargo-deny-action@v1
       #  with:
@@ -427,7 +427,7 @@ jobs:
           echo "--- Preflight summary: ${REASONS[*]:-OK} ---"
       - name: Release cache lock
         if: always()
-        run: rmdir /tmp/rust-cache.lock
+        run: rmdir /tmp/rust-cache.lock || true
       - name: Get current commit SHA
         id: get_sha
         run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
@@ -492,7 +492,7 @@ jobs:
           touch /tmp/rust-cache/.ready
       - name: Release cache lock
         if: always()
-        run: rmdir /tmp/rust-cache.lock
+        run: rmdir /tmp/rust-cache.lock || true
       - name: Rename artifact
         run: |
           cp ./partner-chains-demo-node partner-chains-node-${{ steps.get_sha.outputs.sha }}-x86_64-linux
@@ -682,7 +682,7 @@ jobs:
         run: |
           until mkdir /tmp/rust-cache.lock 2>/dev/null; do sleep 2; done
           rm -rf /tmp/rust-cache/
-          rmdir /tmp/rust-cache.lock || true
+          rmdir /tmp/rust-cache.lock || true || true
       - name: Acquire cache lock
         run: |
           until mkdir /tmp/rust-cache.lock 2>/dev/null; do
@@ -769,7 +769,7 @@ jobs:
           echo "--- Preflight summary: ${REASONS[*]:-OK} ---"
       - name: Release cache lock
         if: always()
-        run: rmdir /tmp/rust-cache.lock
+        run: rmdir /tmp/rust-cache.lock || true
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -810,7 +810,7 @@ jobs:
           touch /tmp/rust-cache/.ready
       - name: Release cache lock
         if: always()
-        run: rmdir /tmp/rust-cache.lock
+        run: rmdir /tmp/rust-cache.lock || true
       #- name: Run cargo-deny to check licenses
       #  uses: EmbarkStudios/cargo-deny-action@v1
       #  with:
