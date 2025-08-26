@@ -150,3 +150,34 @@
         limits:
           cpus: ${CPU_PARTNER_CHAINS_NODE:-}
           memory: ${MEM_PARTNER_CHAINS_NODE:-}
+
+  partner-chains-node-6:
+    container_name: partner-chains-node-6
+    image: ${PARTNER_CHAINS_NODE_IMAGE}
+    platform: linux/amd64
+    volumes:
+      - partner-chains-node-6-data:/data
+      - shared-volume:/shared
+      - ./configurations/partner-chains-nodes/partner-chains-node-6/entrypoint.sh:/entrypoint.sh
+      - ./configurations/partner-chains-nodes/partner-chains-node-6/keystore:/keystore
+      - ./configurations/partner-chains-nodes/partner-chains-node-6/network:/network
+    environment:
+      DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/cexplorer"
+      CARDANO_DATA_SOURCE: "db-sync"
+      CARDANO_SECURITY_PARAMETER: "5"
+      CARDANO_ACTIVE_SLOTS_COEFF: "0.4"
+      MC__FIRST_EPOCH_NUMBER: "0"
+      MC__FIRST_SLOT_NUMBER: "0"
+      MC__EPOCH_DURATION_MILLIS: "120000"
+      BLOCK_STABILITY_MARGIN: "0"
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]
+    ports:
+      - "30338:30338"
+      - "9938:9938"
+      - "9620:9620"
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: ${CPU_PARTNER_CHAINS_NODE:-}
+          memory: ${MEM_PARTNER_CHAINS_NODE:-}

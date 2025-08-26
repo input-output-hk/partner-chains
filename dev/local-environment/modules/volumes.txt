@@ -8,5 +8,6 @@ volumes:
   partner-chains-node-3-data: {}
   partner-chains-node-4-data: {}
   partner-chains-node-5-data: {}
+  partner-chains-node-6-data: {}
   ogmios-data: {}
   ipc: {}

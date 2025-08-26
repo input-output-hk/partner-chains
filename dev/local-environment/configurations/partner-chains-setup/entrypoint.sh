@@ -71,19 +71,19 @@ echo "Inserting D parameter..."
 ./partner-chains-node smart-contracts upsert-d-parameter \
     --ogmios-url http://ogmios:$OGMIOS_PORT \
     --genesis-utxo $GENESIS_UTXO \
-    --permissioned-candidates-count 3 \
-    --registered-candidates-count 2 \
+    --permissioned-candidates-count 25 \
+    --registered-candidates-count 5 \
     --payment-key-file /keys/funded_address.skey
 
 if [ $? -eq 0 ]; then
-    echo "Successfully inserted D-parameter (P = 3, R = 2)!"
+    echo "Successfully inserted D-parameter (P = 25, R = 5)!"
 else
     echo "Couldn't insert D-parameter..."
     exit 1
 fi
 
 # sidechain.vkey:aura.vkey:grandpa.vkey
-echo "Inserting permissioned candidates for 'node-1' and 'node-2'..."
+echo "Inserting permissioned candidates for nodes 1, 2, 3, 4, and 6..."
 
 node1_sidechain_vkey=$(cat /partner-chains-nodes/partner-chains-node-1/keys/sidechain.vkey)
 node1_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-1/keys/aura.vkey)
@@ -94,6 +94,18 @@ node2_sidechain_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/side
 node2_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/aura.vkey)
 node2_beefy_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/beefy.vkey)
 node2_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/grandpa.vkey)
+
+node3_sidechain_vkey=$(cat /partner-chains-nodes/partner-chains-node-3/keys/sidechain.vkey)
+node3_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-3/keys/aura.vkey)
+node3_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-3/keys/grandpa.vkey)
+
+node4_sidechain_vkey=$(cat /partner-chains-nodes/partner-chains-node-4/keys/sidechain.vkey)
+node4_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-4/keys/aura.vkey)
+node4_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-4/keys/grandpa.vkey)
+
+node6_sidechain_vkey=$(cat /partner-chains-nodes/partner-chains-node-6/keys/sidechain.vkey)
+node6_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-6/keys/aura.vkey)
+node6_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-6/keys/grandpa.vkey)
 
 cat <<EOF > permissioned_candidates.csv
 $node1_sidechain_vkey,aura:$node1_aura_vkey,beef:$node1_beefy_vkey,gran:$node1_grandpa_vkey
@@ -107,9 +119,9 @@ EOF
     --payment-key-file /keys/funded_address.skey
 
 if [ $? -eq 0 ]; then
-    echo "Permissioned candidates 'node-1' and 'node-2' inserted successfully!"
+    echo "Permissioned candidates for nodes 1, 2, 3, 4, and 6 inserted successfully!"
 else
-    echo "Permission candidates 'node-1' and 'node-2' failed to be added..."
+    echo "Permission candidates for nodes 1, 2, 3, 4, and 6 failed to be added..."
     exit 1
 fi
 
