@@ -187,8 +187,20 @@ jobs:
           echo "--- Verifying cache contents ---"
           ls -la /tmp/rust-cache || true
           ls -la /tmp/rust-cache/cargo-git /tmp/rust-cache/cargo-registry || true
-          RUSTC_VER="$(nix develop -c rustc -V 2>/dev/null | awk '{print $2}' || rustc -V | awk '{print $2}')"
-          LOCK_SHA="$(sha256sum Cargo.lock | awk '{print $1}')"
+      
+          RUSTC_FULL="$({ nix develop -c rustc -V; } 2>/dev/null || { rustc -V; } 2>/dev/null || true)"
+          if [[ -n "${RUSTC_FULL:-}" ]]; then
+            RUSTC_VER="${RUSTC_FULL#rustc }"; RUSTC_VER="${RUSTC_VER%% *}"
+          else
+            RUSTC_VER="unknown"
+          fi
+          if [[ -f Cargo.lock ]]; then
+            LOCK_LINE="$(sha256sum Cargo.lock)"
+            LOCK_SHA="${LOCK_LINE%% *}"
+          else
+            LOCK_SHA="nolock"
+          fi
+      
           printf '%s\n%s\n' "$RUSTC_VER" "$LOCK_SHA" > /tmp/rust-cache/.manifest
           touch /tmp/rust-cache/.ready
 
@@ -541,8 +553,20 @@ jobs:
           echo "--- Verifying cache contents ---"
           ls -la /tmp/rust-cache || true
           ls -la /tmp/rust-cache/cargo-git /tmp/rust-cache/cargo-registry || true
-          RUSTC_VER="$(nix develop -c rustc -V 2>/dev/null | awk '{print $2}' || rustc -V | awk '{print $2}')"
-          LOCK_SHA="$(sha256sum Cargo.lock | awk '{print $1}')"
+      
+          RUSTC_FULL="$({ nix develop -c rustc -V; } 2>/dev/null || { rustc -V; } 2>/dev/null || true)"
+          if [[ -n "${RUSTC_FULL:-}" ]]; then
+            RUSTC_VER="${RUSTC_FULL#rustc }"; RUSTC_VER="${RUSTC_VER%% *}"
+          else
+            RUSTC_VER="unknown"
+          fi
+          if [[ -f Cargo.lock ]]; then
+            LOCK_LINE="$(sha256sum Cargo.lock)"
+            LOCK_SHA="${LOCK_LINE%% *}"
+          else
+            LOCK_SHA="nolock"
+          fi
+      
           printf '%s\n%s\n' "$RUSTC_VER" "$LOCK_SHA" > /tmp/rust-cache/.manifest
           touch /tmp/rust-cache/.ready
 
@@ -890,8 +914,20 @@ jobs:
           echo "--- Verifying cache contents ---"
           ls -la /tmp/rust-cache || true
           ls -la /tmp/rust-cache/cargo-git /tmp/rust-cache/cargo-registry || true
-          RUSTC_VER="$(nix develop -c rustc -V 2>/dev/null | awk '{print $2}' || rustc -V | awk '{print $2}')"
-          LOCK_SHA="$(sha256sum Cargo.lock | awk '{print $1}')"
+      
+          RUSTC_FULL="$({ nix develop -c rustc -V; } 2>/dev/null || { rustc -V; } 2>/dev/null || true)"
+          if [[ -n "${RUSTC_FULL:-}" ]]; then
+            RUSTC_VER="${RUSTC_FULL#rustc }"; RUSTC_VER="${RUSTC_VER%% *}"
+          else
+            RUSTC_VER="unknown"
+          fi
+          if [[ -f Cargo.lock ]]; then
+            LOCK_LINE="$(sha256sum Cargo.lock)"
+            LOCK_SHA="${LOCK_LINE%% *}"
+          else
+            LOCK_SHA="nolock"
+          fi
+      
           printf '%s\n%s\n' "$RUSTC_VER" "$LOCK_SHA" > /tmp/rust-cache/.manifest
           touch /tmp/rust-cache/.ready
 
