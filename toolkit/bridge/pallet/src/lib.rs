@@ -161,7 +161,7 @@ pub mod pallet {
 		}
 
 		fn check_inherent(call: &Self::Call, data: &InherentData) -> Result<(), Self::Error> {
-			let Some(expected_call) = Self::create_inherent(data) else {
+			let Some(expected_call) = Self::create_inherent_or_err(data)? else {
 				return Err(Self::Error::InherentNotExpected);
 			};
 
