@@ -87,12 +87,10 @@ echo "Inserting permissioned candidates for nodes 1, 2, 3, 4, and 6..."
 
 node1_sidechain_vkey=$(cat /partner-chains-nodes/partner-chains-node-1/keys/sidechain.vkey)
 node1_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-1/keys/aura.vkey)
-node1_beefy_vkey=$(cat /partner-chains-nodes/partner-chains-node-1/keys/beefy.vkey)
 node1_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-1/keys/grandpa.vkey)
 
 node2_sidechain_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/sidechain.vkey)
 node2_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/aura.vkey)
-node2_beefy_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/beefy.vkey)
 node2_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/grandpa.vkey)
 
 node3_sidechain_vkey=$(cat /partner-chains-nodes/partner-chains-node-3/keys/sidechain.vkey)
@@ -108,8 +106,11 @@ node6_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-6/keys/aura.vkey
 node6_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-6/keys/grandpa.vkey)
 
 cat <<EOF > permissioned_candidates.csv
-$node1_sidechain_vkey,aura:$node1_aura_vkey,beef:$node1_beefy_vkey,gran:$node1_grandpa_vkey
-$node2_sidechain_vkey,aura:$node2_aura_vkey,beef:$node2_beefy_vkey,gran:$node2_grandpa_vkey
+$node1_sidechain_vkey,aura:$node1_aura_vkey,gran:$node1_grandpa_vkey
+$node2_sidechain_vkey,aura:$node2_aura_vkey,gran:$node2_grandpa_vkey
+$node3_sidechain_vkey,aura:$node3_aura_vkey,gran:$node3_grandpa_vkey
+$node4_sidechain_vkey,aura:$node4_aura_vkey,gran:$node4_grandpa_vkey
+$node6_sidechain_vkey,aura:$node6_aura_vkey,gran:$node6_grandpa_vkey
 EOF
 
 ./partner-chains-node smart-contracts upsert-permissioned-candidates \
@@ -125,46 +126,7 @@ else
     exit 1
 fi
 
-echo "Inserting registered candidate 'node-4'..."
-
-# Prepare 'node-4' registration values
-node4_utxo=$(cat /shared/node4.utxo)
-node4_mainchain_signing_key=$(jq -r '.cborHex | .[4:]' /partner-chains-nodes/partner-chains-node-4/keys/cold.skey)
-node4_sidechain_signing_key=$(cat /partner-chains-nodes/partner-chains-node-4/keys/sidechain.skey)
-
-# Process registration signatures for node-4
-node4_output=$(./partner-chains-node registration-signatures \
-    --genesis-utxo $GENESIS_UTXO \
-    --mainchain-signing-key $node4_mainchain_signing_key \
-    --sidechain-signing-key $node4_sidechain_signing_key \
-    --registration-utxo $node4_utxo)
-
-# Extract signatures and keys from 'node-4' output
-node4_spo_public_key=$(echo "$node4_output" | jq -r ".spo_public_key")
-node4_spo_signature=$(echo "$node4_output" | jq -r ".spo_signature")
-node4_sidechain_public_key=$(echo "$node4_output" | jq -r ".sidechain_public_key")
-node4_sidechain_signature=$(echo "$node4_output" | jq -r ".sidechain_signature")
-node4_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-4/keys/aura.vkey)
-node4_beefy_vkey=$(cat /partner-chains-nodes/partner-chains-node-4/keys/beefy.vkey)
-node4_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-4/keys/grandpa.vkey)
-
-# Register 'node-4'
-./partner-chains-node smart-contracts register \
-    --ogmios-url http://ogmios:$OGMIOS_PORT \
-    --genesis-utxo $GENESIS_UTXO \
-    --spo-public-key $node4_spo_public_key \
-    --spo-signature $node4_spo_signature \
-    --partner-chain-public-keys $node4_sidechain_public_key,aura:$node4_aura_vkey,beef:$node4_beefy_vkey,gran:$node4_grandpa_vkey \
-    --sidechain-signature $node4_sidechain_signature \
-    --registration-utxo $node4_utxo \
-    --payment-key-file /partner-chains-nodes/partner-chains-node-4/keys/payment.skey
-
-if [ $? -eq 0 ]; then
-    echo "Registered candidate 'node-4' inserted successfully!"
-else
-    echo "Registration for 'node-4' failed."
-    exit 1
-fi
+# Node 4 is now permissioned, not registered
 
 echo "Inserting registered candidate 'node-5'..."
 
@@ -183,10 +145,11 @@ node5_output=$(./partner-chains-node registration-signatures \
 # Extract signatures and keys from node-5 output
 node5_spo_public_key=$(echo "$node5_output" | jq -r ".spo_public_key")
 node5_spo_signature=$(echo "$node5_output" | jq -r ".spo_signature")
-node5_sidechain_public_key=$(echo "$node5_output" | jq -r ".sidechain_public_key")
+node5_sidechain_public_key_raw=$(echo "$node5_output" | jq -r ".sidechain_public_key")
+# Remove 0x prefix from sidechain public key to match format of other keys
+node5_sidechain_public_key=${node5_sidechain_public_key_raw#0x}
 node5_sidechain_signature=$(echo "$node5_output" | jq -r ".sidechain_signature")
 node5_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-5/keys/aura.vkey)
-node5_beefy_vkey=$(cat /partner-chains-nodes/partner-chains-node-5/keys/beefy.vkey)
 node5_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-5/keys/grandpa.vkey)
 
 # Register 'node-5'
@@ -195,7 +158,7 @@ node5_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-5/keys/grandp
     --genesis-utxo $GENESIS_UTXO \
     --spo-public-key $node5_spo_public_key \
     --spo-signature $node5_spo_signature \
-    --partner-chain-public-keys $node5_sidechain_public_key,aura:$node5_aura_vkey,beefy:$node5_beefy_vkey,gran:$node5_grandpa_vkey \
+    --partner-chain-public-keys $node5_sidechain_public_key,aura:$node5_aura_vkey,gran:$node5_grandpa_vkey \
     --sidechain-signature $node5_sidechain_signature \
     --registration-utxo $node5_utxo \
     --payment-key-file /partner-chains-nodes/partner-chains-node-5/keys/payment.skey
@@ -210,49 +173,7 @@ fi
 echo "Generating chain-spec.json file for Partner chain Nodes..."
 ./partner-chains-node build-spec --disable-default-bootnode > chain-spec.json
 
-echo "Configuring Initial Validators..."
-jq '.genesis.runtimeGenesis.config.session.initialValidators = [
-     [
-         "5FnXTMg8UnfeGsMaGg24o3NY21VRFRDRdgxuLGmXuYLeZmin",
-         {
-             "aura": "5Cyx94iyji8namhRxvs4mAbURtPsvwjWCb68ZihNzfRysGLZ",
-             "beefy": "KW39r9CJjAVzmkf9zQ4YDb2hqfAVGdRqn53eRqyruqpxAP5YL",
-             "grandpa": "5Cc5eQhbPw4CjwZpWqZkWWumMiuZywfWRK2Rh9guXUJ3U89s"
-         }
-     ],
-     [
-         "5FJMH4MeZgd4fpiiAVLnr4uRop2EDFgzAFcvLmcduQ2cofCi",
-         {
-             "aura": "5E4op92Z2Di1GoVS9KqnoGVKQXG2R9x1vdh3RW892YLFsLrc",
-             "beefy": "KWByAN7WfZABWS5AoWqxriRmF5f2jnDqy3rB5pfHLGkY93ibN",
-             "grandpa": "5Ha53RXoJjXtcTThFA5XNW7H6f5L39HnTuVSXimxAyhoYLeL"
-         }
-     ]
- ]' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
-
-echo "Configuring Initial Authorities..."
-jq '.genesis.runtimeGenesis.config.sessionCommitteeManagement.initialAuthorities = [
-  {
-    "Permissioned": {
-      "id": "KW4wALva83fvah66ufXSxg6r84tTpJmDXna8A1PCYdbZdVL95",
-      "keys": {
-        "aura": "5Cyx94iyji8namhRxvs4mAbURtPsvwjWCb68ZihNzfRysGLZ",
-        "beefy": "KW39r9CJjAVzmkf9zQ4YDb2hqfAVGdRqn53eRqyruqpxAP5YL",
-        "grandpa": "5Cc5eQhbPw4CjwZpWqZkWWumMiuZywfWRK2Rh9guXUJ3U89s"
-      }
-    }
-  },
-  {
-    "Permissioned": {
-      "id": "KW92jBDRydnbyojCVF3USNFgEsrEvDGV3gvdgDvpfnbXvC13q",
-      "keys": {
-        "aura": "5E4op92Z2Di1GoVS9KqnoGVKQXG2R9x1vdh3RW892YLFsLrc",
-        "beefy": "KWByAN7WfZABWS5AoWqxriRmF5f2jnDqy3rB5pfHLGkY93ibN",
-        "grandpa": "5Ha53RXoJjXtcTThFA5XNW7H6f5L39HnTuVSXimxAyhoYLeL"
-      }
-    }
-  }
-]' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
+echo "Using original chain-spec with hex-encoded keys as generated by build-spec..."
 
 echo "Setting Governed Map scripts..."
 jq --arg address $GOVERNED_MAP_VALIDATOR_ADDRESS --arg policy_id $GOVERNED_MAP_POLICY_ID '.genesis.runtimeGenesis.config.governedMap.mainChainScripts = {
