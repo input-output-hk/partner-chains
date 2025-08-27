@@ -9,7 +9,6 @@ use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sidechain_domain::{AssetName, MainchainAddress, McBlockHash, PolicyId, UtxoId};
-use sp_api::ApiRef;
 use sp_inherents::*;
 
 #[cfg(feature = "std")]
@@ -248,7 +247,7 @@ impl<RecipientAddress: Encode + Send + Sync> TokenBridgeInherentDataProvider<Rec
 
 	/// Creates new [TokenBridgeInherentDataProvider::ActiveV1]
 	pub async fn new_v1<'a, Block, Api>(
-		api: ApiRef<'a, Api>,
+		api: sp_api::ApiRef<'a, Api>,
 		parent_hash: Block::Hash,
 		current_mc_hash: McBlockHash,
 		data_source: &dyn TokenBridgeDataSource<RecipientAddress>,
