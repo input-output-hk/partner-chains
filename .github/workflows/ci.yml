@@ -73,13 +73,18 @@ jobs:
       
           echo "--- Cache preflight ---"
       
-          # Helper: run a command inside the devshell (falls back to host if nix develop is absent)
-          indev() { nix develop -c bash -c "$*" 2>/dev/null || bash -c "$*"; }
+          # rustc version (no awk/cut; works even if only nix provides rustc)
+          RUSTC_FULL="$({ nix develop -c rustc -V; } 2>/dev/null || { rustc -V; } 2>/dev/null || true)"
+          if [[ -n "${RUSTC_FULL:-}" ]]; then
+            RUSTC_VER="${RUSTC_FULL#rustc }"; RUSTC_VER="${RUSTC_VER%% *}"
+          else
+            RUSTC_VER="unknown"
+          fi
       
-          # Get rustc semver and Cargo.lock sha *inside* the devshell so tools exist there.
-          RUSTC_VER="$(indev 'rustc -V | cut -d\" \" -f2' || echo unknown)"
+          # Cargo.lock SHA (no pipes that could SIGPIPE)
           if [[ -f Cargo.lock ]]; then
-            LOCK_SHA="$(indev 'sha256sum Cargo.lock | cut -d\" \" -f1')"
+            LOCK_LINE="$(sha256sum Cargo.lock)"
+            LOCK_SHA="${LOCK_LINE%% *}"
           else
             echo "Cargo.lock missing; skipping manifest check."
             LOCK_SHA="nolock"
@@ -109,8 +114,8 @@ jobs:
             REASONS+=("re-fetched dependencies")
           fi
       
-          # If manifest mismatched, clear target to avoid stale artifacts (we don't cache it).
-          if printf '%s\n' "${REASONS[@]}" | grep -q "manifest mismatch"; then
+          # If manifest mismatched, clear target (we don't cache it).
+          if [[ " ${REASONS[*]} " == *" manifest mismatch "* ]]; then
             echo "Clearing target/ due to manifest mismatch"
             rm -rf "$TARGET_DIR" || true
           fi
@@ -397,13 +402,18 @@ jobs:
       
           echo "--- Cache preflight ---"
       
-          # Helper: run a command inside the devshell (falls back to host if nix develop is absent)
-          indev() { nix develop -c bash -c "$*" 2>/dev/null || bash -c "$*"; }
+          # rustc version (no awk/cut; works even if only nix provides rustc)
+          RUSTC_FULL="$({ nix develop -c rustc -V; } 2>/dev/null || { rustc -V; } 2>/dev/null || true)"
+          if [[ -n "${RUSTC_FULL:-}" ]]; then
+            RUSTC_VER="${RUSTC_FULL#rustc }"; RUSTC_VER="${RUSTC_VER%% *}"
+          else
+            RUSTC_VER="unknown"
+          fi
       
-          # Get rustc semver and Cargo.lock sha *inside* the devshell so tools exist there.
-          RUSTC_VER="$(indev 'rustc -V | cut -d\" \" -f2' || echo unknown)"
+          # Cargo.lock SHA (no pipes that could SIGPIPE)
           if [[ -f Cargo.lock ]]; then
-            LOCK_SHA="$(indev 'sha256sum Cargo.lock | cut -d\" \" -f1')"
+            LOCK_LINE="$(sha256sum Cargo.lock)"
+            LOCK_SHA="${LOCK_LINE%% *}"
           else
             echo "Cargo.lock missing; skipping manifest check."
             LOCK_SHA="nolock"
@@ -433,8 +443,8 @@ jobs:
             REASONS+=("re-fetched dependencies")
           fi
       
-          # If manifest mismatched, clear target to avoid stale artifacts (we don't cache it).
-          if printf '%s\n' "${REASONS[@]}" | grep -q "manifest mismatch"; then
+          # If manifest mismatched, clear target (we don't cache it).
+          if [[ " ${REASONS[*]} " == *" manifest mismatch "* ]]; then
             echo "Clearing target/ due to manifest mismatch"
             rm -rf "$TARGET_DIR" || true
           fi
@@ -766,13 +776,18 @@ jobs:
       
           echo "--- Cache preflight ---"
       
-          # Helper: run a command inside the devshell (falls back to host if nix develop is absent)
-          indev() { nix develop -c bash -c "$*" 2>/dev/null || bash -c "$*"; }
+          # rustc version (no awk/cut; works even if only nix provides rustc)
+          RUSTC_FULL="$({ nix develop -c rustc -V; } 2>/dev/null || { rustc -V; } 2>/dev/null || true)"
+          if [[ -n "${RUSTC_FULL:-}" ]]; then
+            RUSTC_VER="${RUSTC_FULL#rustc }"; RUSTC_VER="${RUSTC_VER%% *}"
+          else
+            RUSTC_VER="unknown"
+          fi
       
-          # Get rustc semver and Cargo.lock sha *inside* the devshell so tools exist there.
-          RUSTC_VER="$(indev 'rustc -V | cut -d\" \" -f2' || echo unknown)"
+          # Cargo.lock SHA (no pipes that could SIGPIPE)
           if [[ -f Cargo.lock ]]; then
-            LOCK_SHA="$(indev 'sha256sum Cargo.lock | cut -d\" \" -f1')"
+            LOCK_LINE="$(sha256sum Cargo.lock)"
+            LOCK_SHA="${LOCK_LINE%% *}"
           else
             echo "Cargo.lock missing; skipping manifest check."
             LOCK_SHA="nolock"
@@ -802,8 +817,8 @@ jobs:
             REASONS+=("re-fetched dependencies")
           fi
       
-          # If manifest mismatched, clear target to avoid stale artifacts (we don't cache it).
-          if printf '%s\n' "${REASONS[@]}" | grep -q "manifest mismatch"; then
+          # If manifest mismatched, clear target (we don't cache it).
+          if [[ " ${REASONS[*]} " == *" manifest mismatch "* ]]; then
             echo "Clearing target/ due to manifest mismatch"
             rm -rf "$TARGET_DIR" || true
           fi
