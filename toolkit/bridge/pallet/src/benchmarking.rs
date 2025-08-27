@@ -42,6 +42,7 @@ mod benchmarks {
 		assert_ok!(Pallet::<T>::set_main_chain_scripts(
 			RawOrigin::Root.into(),
 			T::BenchmarkHelper::main_chain_scripts(),
+			None
 		));
 
 		let transfers = T::BenchmarkHelper::transfers(t);
@@ -54,9 +55,10 @@ mod benchmarks {
 	#[benchmark]
 	fn set_main_chain_scripts() {
 		let new_main_chain_scripts = T::BenchmarkHelper::main_chain_scripts();
+		let data_checkpoint = T::BenchmarkHelper::data_checkpoint();
 
 		#[extrinsic_call]
-		_(RawOrigin::Root, new_main_chain_scripts);
+		_(RawOrigin::Root, new_main_chain_scripts, Some(data_checkpoint));
 	}
 
 	impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);

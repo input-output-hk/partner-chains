@@ -126,26 +126,21 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Changes the main chain scripts used for observing native token transfers.
+		/// Changes the main chain scripts used for observing native token transfers along with a new data checkpoint.
 		///
 		/// This extrinsic must be run either using `sudo` or some other chain governance mechanism.
 		///
-		/// *IMPORTANT*: Changing the main chain scripts will reset the data checkpoint stored in the
-		/// pallet. This is to support a use case where a running Partner Chain needs to migrate to a
-		/// new version of smart contracts which requires changing the observed addresses. It is assumed
-		/// that a chain will always switch to a new set of addresses. Switching to a previously
-		/// observed address __will cause previously handled transactions to be observed again__.
+		///
 		#[pallet::call_index(1)]
 		#[pallet::weight(0)]
 		pub fn set_main_chain_scripts(
 			origin: OriginFor<T>,
 			new_scripts: MainChainScripts,
+			data_checkpoint: Option<BridgeDataCheckpoint>,
 		) -> DispatchResult {
 			T::GovernanceOrigin::ensure_origin(origin)?;
-			if MainChainScriptsConfiguration::<T>::get() != Some(new_scripts.clone()) {
-				MainChainScriptsConfiguration::<T>::put(new_scripts);
-				DataCheckpoint::<T>::set(None);
-			}
+			MainChainScriptsConfiguration::<T>::put(new_scripts);
+			DataCheckpoint::<T>::set(data_checkpoint);
 			Ok(())
 		}
 	}

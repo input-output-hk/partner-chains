@@ -36,22 +36,16 @@ mod set_main_chain_scripts {
 	use super::*;
 
 	#[test]
-	fn updates_scripts_in_storage() {
+	fn updates_scripts_and_data_checkpoint_in_storage() {
 		new_test_ext().execute_with(|| {
-			assert_ok!(Bridge::set_main_chain_scripts(RuntimeOrigin::root(), main_chain_scripts()));
+			assert_ok!(Bridge::set_main_chain_scripts(
+				RuntimeOrigin::root(),
+				main_chain_scripts(),
+				Some(data_checkpoint())
+			));
 
-			assert_eq!(Bridge::get_main_chain_scripts(), Some(main_chain_scripts()))
-		})
-	}
-
-	#[test]
-	fn resets_the_data_checkpoint() {
-		new_test_ext().execute_with(|| {
-			DataCheckpoint::<Test>::put(data_checkpoint());
-
-			assert_ok!(Bridge::set_main_chain_scripts(RuntimeOrigin::root(), main_chain_scripts()));
-
-			assert_eq!(Bridge::get_data_checkpoint(), None)
+			assert_eq!(Bridge::get_main_chain_scripts(), Some(main_chain_scripts()));
+			assert_eq!(Bridge::get_data_checkpoint(), Some(data_checkpoint()));
 		})
 	}
 }
@@ -172,8 +166,10 @@ mod provide_inherent {
 			data_checkpoint: data_checkpoint(),
 		};
 
-		let set_main_chain_scripts =
-			Call::set_main_chain_scripts { new_scripts: main_chain_scripts() };
+		let set_main_chain_scripts = Call::set_main_chain_scripts {
+			new_scripts: main_chain_scripts(),
+			data_checkpoint: Some(data_checkpoint()),
+		};
 
 		assert_eq!(Bridge::is_inherent(&handle_transfers), true);
 		assert_eq!(Bridge::is_inherent(&set_main_chain_scripts), false);
