@@ -39,5 +39,10 @@ jobs:
       - name: install rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
 
+      - uses: Swatinem/rust-cache@v2
+        with:
+          prefix-key: "v0-rust"
+          cache-workspace-crates: "true"
+
       - name: build project
         run: cargo build --release
