@@ -46,6 +46,7 @@ use sp_core::ByteArray;
 use sp_core::{OpaqueMetadata, crypto::KeyTypeId};
 use sp_governed_map::MainChainScriptsV1;
 use sp_inherents::InherentIdentifier;
+use sp_partner_chains_bridge::{BridgeDataCheckpoint, MainChainScripts as BridgeMainChainScripts};
 use sp_runtime::{
 	ApplyExtrinsicResult, MultiSignature, Perbill, generic, impl_opaque_keys,
 	traits::{
@@ -674,6 +675,20 @@ impl pallet_governed_map::Config for Runtime {
 
 impl crate::test_helper_pallet::Config for Runtime {}
 
+parameter_types! {
+pub const MaxTransfersPerBlock: u32 = 256;}
+
+impl pallet_partner_chains_bridge::Config for Runtime {
+	type GovernanceOrigin = EnsureRoot<Runtime>;
+	type Recipient = AccountId;
+	type TransferHandler = TestHelperPallet;
+	type MaxTransfersPerBlock = MaxTransfersPerBlock;
+	type WeightInfo = ();
+
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = ();
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub struct Runtime {
@@ -702,6 +717,7 @@ construct_runtime!(
 		Session: pallet_partner_chains_session,
 		NativeTokenManagement: pallet_native_token_management,
 		GovernedMap: pallet_governed_map,
+		Bridge: pallet_partner_chains_bridge,
 		TestHelperPallet: crate::test_helper_pallet,
 	}
 );
@@ -758,6 +774,7 @@ mod benches {
 		[pallet_block_producer_metadata, BlockProducerMetadata]
 		[pallet_block_participation, BlockParticipation]
 		[pallet_governed_map, GovernedMap]
+		[pallet_partner_chains_bridge, Bridge]
 	);
 }
 
@@ -1127,6 +1144,21 @@ impl_runtime_apis! {
 		}
 		fn get_pallet_version() -> u32 {
 			GovernedMap::get_version()
+		}
+	}
+
+	impl sp_partner_chains_bridge::TokenBridgeIDPRuntimeApi<Block> for Runtime {
+		fn get_pallet_version() -> u32 {
+			Bridge::get_pallet_version()
+		}
+		fn get_main_chain_scripts() -> Option<BridgeMainChainScripts> {
+			Bridge::get_main_chain_scripts()
+		}
+		fn get_max_transfers_per_block() -> u32 {
+			Bridge::get_max_transfers_per_block()
+		}
+		fn get_last_data_checkpoint() -> Option<BridgeDataCheckpoint> {
+			Bridge::get_data_checkpoint()
 		}
 	}
 }
