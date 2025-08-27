@@ -136,11 +136,11 @@ pub mod pallet {
 		pub fn set_main_chain_scripts(
 			origin: OriginFor<T>,
 			new_scripts: MainChainScripts,
-			data_checkpoint: Option<BridgeDataCheckpoint>,
+			data_checkpoint: BridgeDataCheckpoint,
 		) -> DispatchResult {
 			T::GovernanceOrigin::ensure_origin(origin)?;
 			MainChainScriptsConfiguration::<T>::put(new_scripts);
-			DataCheckpoint::<T>::set(data_checkpoint);
+			DataCheckpoint::<T>::put(data_checkpoint);
 			Ok(())
 		}
 	}

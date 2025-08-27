@@ -35,4 +35,5 @@ std = [
     "sp-runtime",
     "sp-runtime/std",
     "log/std",
+    "sidechain-domain/std",
 ]

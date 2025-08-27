@@ -137,7 +137,8 @@ pub trait TokenBridgeDataSource<RecipientAddress> {
 	/// Fetches at most `max_transfers` of token bridge transfers after `data_checkpoint` up to `current_mc_block`
 	async fn get_transfers(
 		&self,
-		data_checkpoint: Option<BridgeDataCheckpoint>,
+		main_chain_scripts: MainChainScripts,
+		data_checkpoint: BridgeDataCheckpoint,
 		max_transfers: u32,
 		current_mc_block: McBlockHash,
 	) -> Result<
@@ -234,8 +235,25 @@ impl<RecipientAddress: Encode + Send + Sync> TokenBridgeInherentDataProvider<Rec
 			return Ok(Self::Inert);
 		}
 
+		let (Some(last_checkpoint), Some(main_chain_scripts)) =
+			(api.get_last_data_checkpoint(parent_hash)?, api.get_main_chain_scripts(parent_hash)?)
+		else {
+			log::info!("💤 Skipping token bridge transfer observation. Pallet not configured.");
+			return Ok(Self::Inert);
+		};
+
 		match api.get_pallet_version(parent_hash)? {
-			1 => Self::new_v1(client, parent_hash, current_mc_hash, data_source).await,
+			1 => {
+				Self::new_v1(
+					client,
+					parent_hash,
+					current_mc_hash,
+					main_chain_scripts,
+					last_checkpoint,
+					data_source,
+				)
+				.await
+			},
 			unsupported_version => {
 				Err(InherentDataCreationError::UnsupportedPalletVersion(unsupported_version, 1))
 			},
@@ -247,6 +265,8 @@ impl<RecipientAddress: Encode + Send + Sync> TokenBridgeInherentDataProvider<Rec
 		client: &T,
 		parent_hash: Block::Hash,
 		current_mc_hash: McBlockHash,
+		main_chain_scripts: MainChainScripts,
+		last_checkpoint: BridgeDataCheckpoint,
 		data_source: &dyn TokenBridgeDataSource<RecipientAddress>,
 	) -> Result<Self, InherentDataCreationError>
 	where
@@ -256,11 +276,11 @@ impl<RecipientAddress: Encode + Send + Sync> TokenBridgeInherentDataProvider<Rec
 	{
 		let api = client.runtime_api();
 		let max_transfers = api.get_max_transfers_per_block(parent_hash)?;
-		let last_checkpoint = api.get_last_data_checkpoint(parent_hash)?;
 
-		let (transfers, new_checkpoint) =
-			(data_source.get_transfers(last_checkpoint, max_transfers, current_mc_hash).await)
-				.map_err(InherentDataCreationError::DataSourceError)?;
+		let (transfers, new_checkpoint) = data_source
+			.get_transfers(main_chain_scripts, last_checkpoint, max_transfers, current_mc_hash)
+			.await
+			.map_err(InherentDataCreationError::DataSourceError)?;
 
 		Ok(Self::ActiveV1 {
 			data: TokenBridgeTransfersV1 { transfers, data_checkpoint: new_checkpoint },

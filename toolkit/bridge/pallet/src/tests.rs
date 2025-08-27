@@ -41,7 +41,7 @@ mod set_main_chain_scripts {
 			assert_ok!(Bridge::set_main_chain_scripts(
 				RuntimeOrigin::root(),
 				main_chain_scripts(),
-				Some(data_checkpoint())
+				data_checkpoint()
 			));
 
 			assert_eq!(Bridge::get_main_chain_scripts(), Some(main_chain_scripts()));
@@ -168,7 +168,7 @@ mod provide_inherent {
 
 		let set_main_chain_scripts = Call::set_main_chain_scripts {
 			new_scripts: main_chain_scripts(),
-			data_checkpoint: Some(data_checkpoint()),
+			data_checkpoint: data_checkpoint(),
 		};
 
 		assert_eq!(Bridge::is_inherent(&handle_transfers), true);
