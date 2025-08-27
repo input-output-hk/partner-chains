@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["INHERENT_IDENTIFIER"],"enum":["BridgeTransferV1","InherentDataCreationError","InherentError","TokenBridgeInherentDataProvider"],"struct":["BridgeDataCheckpoint","MainChainScripts","TokenBridgeTransfersV1"],"trait":["TokenBridgeDataSource","TokenBridgeIDPRuntimeApi"]};

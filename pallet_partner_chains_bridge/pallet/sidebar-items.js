@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["PALLET_VERSION"],"enum":["Call","Error"],"mod":["dispatchables","storage_types"],"struct":["GenesisConfig","Pallet"],"trait":["Config"],"type":["DataCheckpoint","MainChainScriptsConfiguration","Module"]};

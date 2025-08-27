@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["handle_transfers","set_main_chain_scripts"]};
