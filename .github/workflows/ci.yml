@@ -23,7 +23,7 @@ permissions:
 
 jobs:
   build-linux-x86_64-pre-merge:
-    runs-on: nixos
+    runs-on: ubuntu-latest
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
     steps:
       - name: Checkout repository
