@@ -44,7 +44,7 @@ impl std::str::FromStr for DataSourceType {
 			"mock" => Ok(DataSourceType::Mock),
 			"dolos" => Ok(DataSourceType::Dolos),
 			_ => {
-				Err(format!("Invalid data source type: {}. Valid options: db-sync, mock, dolos", s))
+				Err(format!("UUU: Invalid data source type: {}. Valid options: db-sync, mock, dolos", s))
 			},
 		}
 	}
