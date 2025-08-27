@@ -88,18 +88,12 @@ pub enum InherentError {
 	/// Inherent was not produced when expected
 	#[error("Bridge inherent data was present but an inherent was not provided")]
 	InherentRequired,
-	/// Inherent data is not correctly encoded
-	#[error("Bridge inherent data is not correctly encoded")]
-	InvalidInherentData,
 	/// Inherent produced when inherent data not present
 	#[error("Bridge inherent produced when no data present")]
 	InherentNotExpected,
 	/// Inherent produced does not match inherent data
 	#[error("Inherent produced does not match inherent data")]
 	IncorrectInherent,
-	/// Too many transfers to be processed in a single block
-	#[error("Too many transfers, max: {0}")]
-	TooManyTransfers(u32),
 }
 
 impl IsFatalError for InherentError {

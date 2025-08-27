@@ -157,11 +157,15 @@ pub mod pallet {
 		const INHERENT_IDENTIFIER: InherentIdentifier = INHERENT_IDENTIFIER;
 
 		fn create_inherent(data: &InherentData) -> Option<Self::Call> {
-			Self::create_inherent_or_err(data).expect("Creating token bridge inherent failed")
+			let data = Self::decode_inherent_data(data)?;
+			let transfers = data.transfers.try_into().expect(
+				"The number of transfers in the inherent data must be within configured bounds",
+			);
+			Some(Call::handle_transfers { transfers, data_checkpoint: data.data_checkpoint })
 		}
 
 		fn check_inherent(call: &Self::Call, data: &InherentData) -> Result<(), Self::Error> {
-			let Some(expected_call) = Self::create_inherent_or_err(data)? else {
+			let Some(expected_call) = Self::create_inherent(data) else {
 				return Err(Self::Error::InherentNotExpected);
 			};
 
@@ -190,18 +194,6 @@ pub mod pallet {
 		) -> Option<TokenBridgeTransfersV1<T::Recipient>> {
 			data.get_data(&INHERENT_IDENTIFIER)
 				.expect("Bridge inherent data is not encoded correctly")
-		}
-
-		fn create_inherent_or_err(data: &InherentData) -> Result<Option<Call<T>>, InherentError> {
-			match Self::decode_inherent_data(data) {
-				None => Ok(None),
-				Some(data) => Ok(Some(Call::handle_transfers {
-					transfers: data.transfers.try_into().map_err(|_| {
-						InherentError::TooManyTransfers(T::MaxTransfersPerBlock::get())
-					})?,
-					data_checkpoint: data.data_checkpoint,
-				})),
-			}
 		}
 	}
 
