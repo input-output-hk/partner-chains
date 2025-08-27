@@ -1,0 +1,39 @@
+[package]
+name = "sp-partner-chains-bridge"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[dependencies]
+async-trait = { workspace = true }
+log = { workspace = true }
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
+serde = { workspace = true }
+sp-api = { workspace = true }
+sp-core = { workspace = true }
+sp-inherents = { workspace = true }
+sp-runtime = { workspace = true, optional = true }
+thiserror = { workspace = true }
+sidechain-domain = { workspace = true }
+
+[lints]
+workspace = true
+
+[features]
+default = ["std"]
+std = [
+	"sp-inherents/std",
+	"thiserror/std",
+    "parity-scale-codec/std",
+    "serde/std",
+    "sp-core/std",
+    "sp-api/std",
+    "sp-api/std",
+    "sp-runtime",
+    "sp-runtime/std",
+    "log/std",
+    "sidechain-domain/std",
+]

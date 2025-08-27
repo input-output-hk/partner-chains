@@ -57,6 +57,8 @@ members = [
 	"toolkit/governed-map/primitives",
 	"toolkit/governed-map/pallet",
 	"toolkit/committee-selection/selection-simulator",
+	"toolkit/bridge/pallet",
+	"toolkit/bridge/primitives",
 ]
 resolver = "2"
 
@@ -329,6 +331,10 @@ partner-chains-mock-data-sources = { path = "toolkit/data-sources/mock", default
 # Governed Map
 sp-governed-map = { path = "toolkit/governed-map/primitives", default-features = false }
 pallet-governed-map = { path = "toolkit/governed-map/pallet", default-features = false }
+
+# Bridge
+sp-partner-chains-bridge = { path = "toolkit/bridge/primitives", default-features = false }
+pallet-partner-chains-bridge = { path = "toolkit/bridge/pallet", default-features = false }
 
 # demo node
 partner-chains-demo-runtime = { path = "demo/runtime" }
