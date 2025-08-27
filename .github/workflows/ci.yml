@@ -41,26 +41,28 @@ jobs:
         with:
           fetch-depth: 0
           clean: true
+
       - name: Acquire cache lock
         run: |
           until mkdir /tmp/rust-cache.lock 2>/dev/null; do
             sleep 5
           done
+
       - name: Restore Rust cache from host
         run: |
           set -e
           echo "--- Restoring Rust cache from host ---"
           if [ -d /tmp/rust-cache ] && [ -f /tmp/rust-cache/.ready ]; then
             echo "Ready cache found. Restoring..."
-            mkdir -p ~/.cargo/git ~/.cargo/registry ./target
+            mkdir -p ~/.cargo/git ~/.cargo/registry
             nix shell nixpkgs#rsync -c bash -c "
               rsync -a /tmp/rust-cache/cargo-git/ ~/.cargo/git/
               rsync -a /tmp/rust-cache/cargo-registry/ ~/.cargo/registry/
-              rsync -a /tmp/rust-cache/target/ ./target/
             "
           else
             echo "No ready cache; skipping restore."
           fi
+
       - name: Validate Rust cache
         run: |
           set -euo pipefail
@@ -68,111 +70,122 @@ jobs:
           CARGO_HOME="${CARGO_HOME:-$HOME/.cargo}"
           TARGET_DIR="${CARGO_TARGET_DIR:-$GITHUB_WORKSPACE/target}"
           [[ -d "$CACHE" ]] || { echo "No shared cache present."; exit 0; }
-      
+
           echo "--- Cache preflight ---"
-          RUSTC="$(nix develop -c rustc -vV 2>/dev/null || rustc -vV)"
-          LOCK_SHA="$(sha256sum Cargo.lock | cut -d' ' -f1)"
+          RUSTC_VER="$(nix develop -c rustc -V 2>/dev/null | awk '{print $2}' || rustc -V | awk '{print $2}')"
+          LOCK_SHA="$(sha256sum Cargo.lock | awk '{print $1}')"
           MAN="$CACHE/.manifest"; READY="$CACHE/.ready"
-          WANT="$(printf '%s\n%s\n' "$RUSTC" "$LOCK_SHA")"
-      
-          BAD=0; REASONS=()
-      
-          echo "[1/4] Checking manifest and ready marker..."
+          WANT="$(printf '%s\n%s\n' "$RUSTC_VER" "$LOCK_SHA")"
+
+          REASONS=()
+
+          echo "[1/2] Checking manifest/ready..."
           if [[ ! -f "$READY" || ! -f "$MAN" ]]; then
             echo "manifest/ready missing"
-            BAD=1; REASONS+=("manifest/ready missing")
+            REASONS+=("manifest/ready missing")
           else
             HAVE="$(head -n 2 "$MAN" || true)"
             if [[ "$WANT" != "$HAVE" ]]; then
-              echo "manifest/ready mismatch"
-              BAD=1; REASONS+=("manifest mismatch")
+              echo "manifest mismatch"
+              REASONS+=("manifest mismatch")
             fi
           fi
-      
-          echo "[2/4] Scanning for broken symlinks..."
-          if find "$CARGO_HOME" "$TARGET_DIR" -xtype l -print -quit >/dev/null 2>&1; then
-            echo "Broken symlink detected:"
-            find "$CARGO_HOME" "$TARGET_DIR" -xtype l -print 2>/dev/null | head -5 || true
-            BAD=1; REASONS+=("broken symlink(s)")
-          fi
-      
-          echo "[3/4] Scanning for zero-byte files..."
-          if find "$CARGO_HOME" "$TARGET_DIR" -type f -size 0 -print -quit >/dev/null 2>&1; then
-            echo "Zero-byte file detected:"
-            find "$CARGO_HOME" "$TARGET_DIR" -type f -size 0 -print 2>/dev/null | head -5 || true
-            BAD=1; REASONS+=("zero-byte file(s)")
-          fi
-      
-          echo "[4/4] Running cargo fetch integrity check..."
+
+          echo "[2/2] cargo fetch --locked..."
           if ! nix develop -c cargo fetch --locked -q; then
-            echo "cargo fetch failed"
-            BAD=1; REASONS+=("cargo fetch failed")
-          fi
-      
-          if [[ $BAD -eq 1 ]]; then
-            echo "--- Purging suspect parts of cache ---"
-            if [[ ${#REASONS[@]} -gt 1 ]]; then
-              echo "Multiple issues (${REASONS[*]}): removing entire target/"
-              rm -rf "$TARGET_DIR" || true
-            else
-              echo "Single issue (${REASONS[*]}): purging build dirs"
-              find "$TARGET_DIR" -type d -name build -prune -exec rm -rf {} + || true
-            fi
-            echo "Clearing registry/src and git/checkouts..."
+            echo "cargo fetch failed → clearing registry/src + git/checkouts"
             rm -rf "$CARGO_HOME"/registry/src/* "$CARGO_HOME"/git/checkouts/* || true
-          else
-            echo "Cache looks healthy."
+            REASONS+=("re-fetch needed")
+            nix develop -c cargo fetch --locked
           fi
-      
+
+          # If manifest mismatched, clear target to avoid stale artifacts (we don't cache it).
+          if printf '%s\n' "${REASONS[@]}" | grep -q "manifest mismatch"; then
+            echo "Clearing target/ due to manifest mismatch"
+            rm -rf "$TARGET_DIR" || true
+          fi
+
           echo "--- Preflight summary: ${REASONS[*]:-OK} ---"
+
       - name: Release cache lock
         if: always()
         run: rmdir /tmp/rust-cache.lock || true
+
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN_SECRET }}
           aws-region: ${{ env.AWS_REGION }}
+
       - name: Login to container registry
         uses: docker/login-action@v3
         with:
           registry: ${{ secrets.ECR_REGISTRY_SECRET }}
+
+      - name: Enable sccache (RUSTC_WRAPPER)
+        run: |
+          set -e
+          if nix develop -c bash -lc 'command -v sccache' >/dev/null 2>&1; then
+            echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
+            echo "SCCACHE_DIR=/tmp/sccache" >> "$GITHUB_ENV"
+            echo "SCCACHE_CACHE_SIZE=30G" >> "$GITHUB_ENV"
+            echo "CARGO_INCREMENTAL=0" >> "$GITHUB_ENV"
+            mkdir -p /tmp/sccache
+            nix develop -c sccache --stop-server || true
+            nix develop -c sccache --start-server || true
+            nix develop -c sccache --version || true
+          else
+            echo "sccache not in devshell; skipping wrapper."
+          fi
+
       - name: Build
         run: nix develop -c bash -c "cargo build --locked --profile=release"
+
       - name: Test
         run: nix develop -c bash -c "cargo test --locked --profile=release --features=runtime-benchmarks"
+
       - name: Lint
         run: nix develop -c bash -c "RUSTFLAGS=-Dwarnings cargo clippy --all-targets --all-features"
+
       - name: Formatting
         run: nix develop -c bash -c "cargo fmt --check"
+
+      - name: sccache stats
+        if: always()
+        run: nix develop -c sccache -s || true
+
       - name: Acquire cache lock
         run: |
           until mkdir /tmp/rust-cache.lock 2>/dev/null; do
             sleep 5
           done
+
       - name: Save Rust cache to host
         run: |
           set -e
           echo "--- Saving Rust cache to host cache ---"
           mkdir -p /tmp/rust-cache
           nix shell nixpkgs#rsync -c bash -c "
-            rsync -a --delete ~/.cargo/git/ /tmp/rust-cache/cargo-git/
+            rsync -a --delete ~/.cargo/git/      /tmp/rust-cache/cargo-git/
             rsync -a --delete ~/.cargo/registry/ /tmp/rust-cache/cargo-registry/
-            rsync -a --delete ./target/ /tmp/rust-cache/target/
           "
           echo "--- Verifying cache contents ---"
-          ls -laR /tmp/rust-cache
-          RUSTC="$(nix develop -c rustc -vV 2>/dev/null || rustc -vV)"
-          LOCK_SHA="$(sha256sum Cargo.lock | cut -d' ' -f1)"
-          printf '%s\n%s\n' "$RUSTC" "$LOCK_SHA" > /tmp/rust-cache/.manifest
+          ls -la /tmp/rust-cache || true
+          ls -la /tmp/rust-cache/cargo-git /tmp/rust-cache/cargo-registry || true
+          RUSTC_VER="$(nix develop -c rustc -V 2>/dev/null | awk '{print $2}' || rustc -V | awk '{print $2}')"
+          LOCK_SHA="$(sha256sum Cargo.lock | awk '{print $1}')"
+          printf '%s\n%s\n' "$RUSTC_VER" "$LOCK_SHA" > /tmp/rust-cache/.manifest
           touch /tmp/rust-cache/.ready
+
       - name: Release cache lock
         if: always()
         run: rmdir /tmp/rust-cache.lock || true
+
       #- name: Run cargo-deny to check licenses
       #  uses: EmbarkStudios/cargo-deny-action@v1
       #  with:
       #    command: check licenses
+
       - name: Build chain specs
         run: |
             source ./dev/envs/devnet/.envrc
@@ -184,17 +197,20 @@ jobs:
             source ./dev/envs/staging-preview/.envrc
             target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
             nix develop -c bash -c "./dev/update-chain-spec.sh staging_preview_chain_spec.json"
+
       - name: Build and push docker image
         run: |
           cp target/release/partner-chains-demo-node .
           nix develop -c bash -c "patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 partner-chains-demo-node"
           docker build -f dev/ci/Dockerfile -t ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ github.sha }} .
           docker push ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ github.sha }}
+
       - name: Upload partner-chains-node artifact
         uses: actions/upload-artifact@v4
         with:
           name: partner-chains-node-artifact
           path: ./partner-chains-demo-node
+
       - name: Upload chain spec artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -247,7 +263,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.event_pull_request.head.sha || github.sha }}
       - name: Download test report
         uses: actions/download-artifact@v4
         with:
@@ -264,9 +280,7 @@ jobs:
           env: local-pre-merge
         run: |
           cd e2e-tests
-          # Ensure logs directory exists
           mkdir -p logs
-          # Copy downloaded artifacts to where the script expects them, including hidden files
           cp -r logs-${{ matrix.markers }}/. logs/
           ./report_slack.sh $repository $slack_ref_name $job_url $env $github_actor_username null "${{ matrix.markers }}"
         shell: bash
@@ -341,26 +355,28 @@ jobs:
           fetch-depth: 0
           ref: master
           clean: true
+
       - name: Acquire cache lock
         run: |
           until mkdir /tmp/rust-cache.lock 2>/dev/null; do
             sleep 5
           done
+
       - name: Restore Rust cache from host
         run: |
           set -e
           echo "--- Restoring Rust cache from host ---"
           if [ -d /tmp/rust-cache ] && [ -f /tmp/rust-cache/.ready ]; then
             echo "Ready cache found. Restoring..."
-            mkdir -p ~/.cargo/git ~/.cargo/registry ./target
+            mkdir -p ~/.cargo/git ~/.cargo/registry
             nix shell nixpkgs#rsync -c bash -c "
               rsync -a /tmp/rust-cache/cargo-git/ ~/.cargo/git/
               rsync -a /tmp/rust-cache/cargo-registry/ ~/.cargo/registry/
-              rsync -a /tmp/rust-cache/target/ ./target/
             "
           else
             echo "No ready cache; skipping restore."
           fi
+
       - name: Validate Rust cache
         run: |
           set -euo pipefail
@@ -368,86 +384,91 @@ jobs:
           CARGO_HOME="${CARGO_HOME:-$HOME/.cargo}"
           TARGET_DIR="${CARGO_TARGET_DIR:-$GITHUB_WORKSPACE/target}"
           [[ -d "$CACHE" ]] || { echo "No shared cache present."; exit 0; }
-      
+
           echo "--- Cache preflight ---"
-          RUSTC="$(nix develop -c rustc -vV 2>/dev/null || rustc -vV)"
-          LOCK_SHA="$(sha256sum Cargo.lock | cut -d' ' -f1)"
+          RUSTC_VER="$(nix develop -c rustc -V 2>/dev/null | awk '{print $2}' || rustc -V | awk '{print $2}')"
+          LOCK_SHA="$(sha256sum Cargo.lock | awk '{print $1}')"
           MAN="$CACHE/.manifest"; READY="$CACHE/.ready"
-          WANT="$(printf '%s\n%s\n' "$RUSTC" "$LOCK_SHA")"
-      
-          BAD=0; REASONS=()
-      
-          echo "[1/4] Checking manifest and ready marker..."
+          WANT="$(printf '%s\n%s\n' "$RUSTC_VER" "$LOCK_SHA")"
+
+          REASONS=()
+
+          echo "[1/2] Checking manifest/ready..."
           if [[ ! -f "$READY" || ! -f "$MAN" ]]; then
             echo "manifest/ready missing"
-            BAD=1; REASONS+=("manifest/ready missing")
+            REASONS+=("manifest/ready missing")
           else
             HAVE="$(head -n 2 "$MAN" || true)"
             if [[ "$WANT" != "$HAVE" ]]; then
-              echo "manifest/ready mismatch"
-              BAD=1; REASONS+=("manifest mismatch")
+              echo "manifest mismatch"
+              REASONS+=("manifest mismatch")
             fi
           fi
-      
-          echo "[2/4] Scanning for broken symlinks..."
-          if find "$CARGO_HOME" "$TARGET_DIR" -xtype l -print -quit >/dev/null 2>&1; then
-            echo "Broken symlink detected:"
-            find "$CARGO_HOME" "$TARGET_DIR" -xtype l -print 2>/dev/null | head -5 || true
-            BAD=1; REASONS+=("broken symlink(s)")
-          fi
-      
-          echo "[3/4] Scanning for zero-byte files..."
-          if find "$CARGO_HOME" "$TARGET_DIR" -type f -size 0 -print -quit >/dev/null 2>&1; then
-            echo "Zero-byte file detected:"
-            find "$CARGO_HOME" "$TARGET_DIR" -type f -size 0 -print 2>/dev/null | head -5 || true
-            BAD=1; REASONS+=("zero-byte file(s)")
-          fi
-      
-          echo "[4/4] Running cargo fetch integrity check..."
+
+          echo "[2/2] cargo fetch --locked..."
           if ! nix develop -c cargo fetch --locked -q; then
-            echo "cargo fetch failed"
-            BAD=1; REASONS+=("cargo fetch failed")
-          fi
-      
-          if [[ $BAD -eq 1 ]]; then
-            echo "--- Purging suspect parts of cache ---"
-            if [[ ${#REASONS[@]} -gt 1 ]]; then
-              echo "Multiple issues (${REASONS[*]}): removing entire target/"
-              rm -rf "$TARGET_DIR" || true
-            else
-              echo "Single issue (${REASONS[*]}): purging build dirs"
-              find "$TARGET_DIR" -type d -name build -prune -exec rm -rf {} + || true
-            fi
-            echo "Clearing registry/src and git/checkouts..."
+            echo "cargo fetch failed → clearing registry/src + git/checkouts"
             rm -rf "$CARGO_HOME"/registry/src/* "$CARGO_HOME"/git/checkouts/* || true
-          else
-            echo "Cache looks healthy."
+            REASONS+=("re-fetch needed")
+            nix develop -c cargo fetch --locked
           fi
-      
+
+          if printf '%s\n' "${REASONS[@]}" | grep -q "manifest mismatch"; then
+            echo "Clearing target/ due to manifest mismatch"
+            rm -rf "$TARGET_DIR" || true
+          fi
+
           echo "--- Preflight summary: ${REASONS[*]:-OK} ---"
+
       - name: Release cache lock
         if: always()
         run: rmdir /tmp/rust-cache.lock || true
+
       - name: Get current commit SHA
         id: get_sha
         run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN_SECRET }}
           aws-region: ${{ env.AWS_REGION }}
+
       - name: Login to container registry
         uses: docker/login-action@v3
         with:
           registry: ${{ secrets.ECR_REGISTRY_SECRET }}
+
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Enable sccache (RUSTC_WRAPPER)
+        run: |
+          set -e
+          if nix develop -c bash -lc 'command -v sccache' >/dev/null 2>&1; then
+            echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
+            echo "SCCACHE_DIR=/tmp/sccache" >> "$GITHUB_ENV"
+            echo "SCCACHE_CACHE_SIZE=30G" >> "$GITHUB_ENV"
+            echo "CARGO_INCREMENTAL=0" >> "$GITHUB_ENV"
+            mkdir -p /tmp/sccache
+            nix develop -c sccache --stop-server || true
+            nix develop -c sccache --start-server || true
+            nix develop -c sccache --version || true
+          else
+            echo "sccache not in devshell; skipping wrapper."
+          fi
+
       - name: Build
         run: nix develop -c bash -c "cargo build --locked --profile=release"
+
+      - name: sccache stats
+        if: always()
+        run: nix develop -c sccache -s || true
+
       - name: Build chain specs
         run: |
             source ./dev/envs/devnet/.envrc
@@ -459,6 +480,7 @@ jobs:
             source ./dev/envs/staging-preview/.envrc
             target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
             nix develop -c bash -c "./dev/update-chain-spec.sh staging_preview_chain_spec.json"
+
       - name: Build and push docker image
         run: |
           cp target/release/partner-chains-demo-node .
@@ -469,35 +491,40 @@ jobs:
           docker push ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ steps.get_sha.outputs.sha }}
           docker push ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:latest
           docker push ghcr.io/${{ github.repository }}/partner-chains-node-unstable:latest
+
       - name: Acquire cache lock
         run: |
           until mkdir /tmp/rust-cache.lock 2>/dev/null; do
             sleep 5
           done
+
       - name: Save Rust cache to host
         run: |
           set -e
           echo "--- Saving Rust cache to host cache ---"
           mkdir -p /tmp/rust-cache
           nix shell nixpkgs#rsync -c bash -c "
-            rsync -a --delete ~/.cargo/git/ /tmp/rust-cache/cargo-git/
+            rsync -a --delete ~/.cargo/git/      /tmp/rust-cache/cargo-git/
             rsync -a --delete ~/.cargo/registry/ /tmp/rust-cache/cargo-registry/
-            rsync -a --delete ./target/ /tmp/rust-cache/target/
           "
           echo "--- Verifying cache contents ---"
-          ls -laR /tmp/rust-cache
-          RUSTC="$(nix develop -c rustc -vV 2>/dev/null || rustc -vV)"
+          ls -la /tmp/rust-cache || true
+          ls -la /tmp/rust-cache/cargo-git /tmp/rust-cache/cargo-registry || true
+          RUSTC_VER="$(nix develop -c rustc -V 2>/dev/null | awk '{print $2}' || rustc -V | awk '{print $2}')"
           LOCK_SHA="$(sha256sum Cargo.lock | awk '{print $1}')"
-          printf '%s\n%s\n' "$RUSTC" "$LOCK_SHA" > /tmp/rust-cache/.manifest
+          printf '%s\n%s\n' "$RUSTC_VER" "$LOCK_SHA" > /tmp/rust-cache/.manifest
           touch /tmp/rust-cache/.ready
+
       - name: Release cache lock
         if: always()
         run: rmdir /tmp/rust-cache.lock || true
+
       - name: Rename artifact
         run: |
           cp ./partner-chains-demo-node partner-chains-node-${{ steps.get_sha.outputs.sha }}-x86_64-linux
           chmod +x ./partner-chains-node-${{ steps.get_sha.outputs.sha }}-x86_64-linux
           cp ./partner-chains-node-${{ steps.get_sha.outputs.sha }}-x86_64-linux partner-chains-node-binary
+
       #- name: Copy to binary-host
       #  uses: ./.github/actions/artifacts/copy-to-binary-host
       #  with:
@@ -509,11 +536,13 @@ jobs:
       #    kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
       #    K8S_SERVER: ${{ secrets.K8S_SERVER }}
       #    K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
+
       - name: Upload partner-chains-node artifact
         uses: actions/upload-artifact@v4
         with:
           name: partner-chains-node-linux-artifact
           path: partner-chains-node-${{ steps.get_sha.outputs.sha }}-x86_64-linux
+
       - name: Upload chain spec artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -677,32 +706,35 @@ jobs:
           fetch-depth: 0
           ref: ${{ inputs.sha }}
           clean: true
+
       - name: (Optional) Wipe shared Rust cache
         if: github.event_name == 'workflow_dispatch' && inputs.wipe_cache == true
         run: |
           until mkdir /tmp/rust-cache.lock 2>/dev/null; do sleep 2; done
           rm -rf /tmp/rust-cache/
           rmdir /tmp/rust-cache.lock || true || true
+
       - name: Acquire cache lock
         run: |
           until mkdir /tmp/rust-cache.lock 2>/dev/null; do
             sleep 5
           done
+
       - name: Restore Rust cache from host
         run: |
           set -e
           echo "--- Restoring Rust cache from host ---"
           if [ -d /tmp/rust-cache ] && [ -f /tmp/rust-cache/.ready ]; then
             echo "Ready cache found. Restoring..."
-            mkdir -p ~/.cargo/git ~/.cargo/registry ./target
+            mkdir -p ~/.cargo/git ~/.cargo/registry
             nix shell nixpkgs#rsync -c bash -c "
               rsync -a /tmp/rust-cache/cargo-git/ ~/.cargo/git/
               rsync -a /tmp/rust-cache/cargo-registry/ ~/.cargo/registry/
-              rsync -a /tmp/rust-cache/target/ ./target/
             "
           else
             echo "No ready cache; skipping restore."
           fi
+
       - name: Validate Rust cache
         run: |
           set -euo pipefail
@@ -710,111 +742,121 @@ jobs:
           CARGO_HOME="${CARGO_HOME:-$HOME/.cargo}"
           TARGET_DIR="${CARGO_TARGET_DIR:-$GITHUB_WORKSPACE/target}"
           [[ -d "$CACHE" ]] || { echo "No shared cache present."; exit 0; }
-      
+
           echo "--- Cache preflight ---"
-          RUSTC="$(nix develop -c rustc -vV 2>/dev/null || rustc -vV)"
-          LOCK_SHA="$(sha256sum Cargo.lock | cut -d' ' -f1)"
+          RUSTC_VER="$(nix develop -c rustc -V 2>/dev/null | awk '{print $2}' || rustc -V | awk '{print $2}')"
+          LOCK_SHA="$(sha256sum Cargo.lock | awk '{print $1}')"
           MAN="$CACHE/.manifest"; READY="$CACHE/.ready"
-          WANT="$(printf '%s\n%s\n' "$RUSTC" "$LOCK_SHA")"
-      
-          BAD=0; REASONS=()
-      
-          echo "[1/4] Checking manifest and ready marker..."
+          WANT="$(printf '%s\n%s\n' "$RUSTC_VER" "$LOCK_SHA")"
+
+          REASONS=()
+
+          echo "[1/2] Checking manifest/ready..."
           if [[ ! -f "$READY" || ! -f "$MAN" ]]; then
             echo "manifest/ready missing"
-            BAD=1; REASONS+=("manifest/ready missing")
+            REASONS+=("manifest/ready missing")
           else
             HAVE="$(head -n 2 "$MAN" || true)"
             if [[ "$WANT" != "$HAVE" ]]; then
-              echo "manifest/ready mismatch"
-              BAD=1; REASONS+=("manifest mismatch")
+              echo "manifest mismatch"
+              REASONS+=("manifest mismatch")
             fi
           fi
-      
-          echo "[2/4] Scanning for broken symlinks..."
-          if find "$CARGO_HOME" "$TARGET_DIR" -xtype l -print -quit >/dev/null 2>&1; then
-            echo "Broken symlink detected:"
-            find "$CARGO_HOME" "$TARGET_DIR" -xtype l -print 2>/dev/null | head -5 || true
-            BAD=1; REASONS+=("broken symlink(s)")
-          fi
-      
-          echo "[3/4] Scanning for zero-byte files..."
-          if find "$CARGO_HOME" "$TARGET_DIR" -type f -size 0 -print -quit >/dev/null 2>&1; then
-            echo "Zero-byte file detected:"
-            find "$CARGO_HOME" "$TARGET_DIR" -type f -size 0 -print 2>/dev/null | head -5 || true
-            BAD=1; REASONS+=("zero-byte file(s)")
-          fi
-      
-          echo "[4/4] Running cargo fetch integrity check..."
+
+          echo "[2/2] cargo fetch --locked..."
           if ! nix develop -c cargo fetch --locked -q; then
-            echo "cargo fetch failed"
-            BAD=1; REASONS+=("cargo fetch failed")
-          fi
-      
-          if [[ $BAD -eq 1 ]]; then
-            echo "--- Purging suspect parts of cache ---"
-            if [[ ${#REASONS[@]} -gt 1 ]]; then
-              echo "Multiple issues (${REASONS[*]}): removing entire target/"
-              rm -rf "$TARGET_DIR" || true
-            else
-              echo "Single issue (${REASONS[*]}): purging build dirs"
-              find "$TARGET_DIR" -type d -name build -prune -exec rm -rf {} + || true
-            fi
-            echo "Clearing registry/src and git/checkouts..."
+            echo "cargo fetch failed → clearing registry/src + git/checkouts"
             rm -rf "$CARGO_HOME"/registry/src/* "$CARGO_HOME"/git/checkouts/* || true
-          else
-            echo "Cache looks healthy."
+            REASONS+=("re-fetch needed")
+            nix develop -c cargo fetch --locked
           fi
-      
+
+          if printf '%s\n' "${REASONS[@]}" | grep -q "manifest mismatch"; then
+            echo "Clearing target/ due to manifest mismatch"
+            rm -rf "$TARGET_DIR" || true
+          fi
+
           echo "--- Preflight summary: ${REASONS[*]:-OK} ---"
+
       - name: Release cache lock
         if: always()
         run: rmdir /tmp/rust-cache.lock || true
+
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN_SECRET }}
           aws-region: ${{ env.AWS_REGION }}
+
       - name: Login to container registry
         uses: docker/login-action@v3
         with:
           registry: ${{ secrets.ECR_REGISTRY_SECRET }}
+
+      - name: Enable sccache (RUSTC_WRAPPER)
+        run: |
+          set -e
+          if nix develop -c bash -lc 'command -v sccache' >/dev/null 2>&1; then
+            echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
+            echo "SCCACHE_DIR=/tmp/sccache" >> "$GITHUB_ENV"
+            echo "SCCACHE_CACHE_SIZE=30G" >> "$GITHUB_ENV"
+            echo "CARGO_INCREMENTAL=0" >> "$GITHUB_ENV"
+            mkdir -p /tmp/sccache
+            nix develop -c sccache --stop-server || true
+            nix develop -c sccache --start-server || true
+            nix develop -c sccache --version || true
+          else
+            echo "sccache not in devshell; skipping wrapper."
+          fi
+
       - name: Build
         run: nix develop -c bash -c "cargo build --locked --profile=release"
+
       - name: Test
         run: nix develop -c bash -c "cargo test --locked --profile=release --features=runtime-benchmarks"
+
       - name: Lint
         run: nix develop -c bash -c "RUSTFLAGS=-Dwarnings cargo clippy --all-targets --all-features"
+
       - name: Formatting
         run: nix develop -c bash -c "cargo fmt --check"
+
+      - name: sccache stats
+        if: always()
+        run: nix develop -c sccache -s || true
+
       - name: Acquire cache lock
         run: |
           until mkdir /tmp/rust-cache.lock 2>/dev/null; do
             sleep 5
           done
+
       - name: Save Rust cache to host
         run: |
           set -e
           echo "--- Saving Rust cache to host cache ---"
           mkdir -p /tmp/rust-cache
           nix shell nixpkgs#rsync -c bash -c "
-            rsync -a --delete ~/.cargo/git/ /tmp/rust-cache/cargo-git/
+            rsync -a --delete ~/.cargo/git/      /tmp/rust-cache/cargo-git/
             rsync -a --delete ~/.cargo/registry/ /tmp/rust-cache/cargo-registry/
-            rsync -a --delete ./target/ /tmp/rust-cache/target/
           "
           echo "--- Verifying cache contents ---"
-          ls -laR /tmp/rust-cache
-          RUSTC="$(nix develop -c rustc -vV 2>/dev/null || rustc -vV)"
+          ls -la /tmp/rust-cache || true
+          ls -la /tmp/rust-cache/cargo-git /tmp/rust-cache/cargo-registry || true
+          RUSTC_VER="$(nix develop -c rustc -V 2>/dev/null | awk '{print $2}' || rustc -V | awk '{print $2}')"
           LOCK_SHA="$(sha256sum Cargo.lock | awk '{print $1}')"
-          printf '%s\n%s\n' "$RUSTC" "$LOCK_SHA" > /tmp/rust-cache/.manifest
+          printf '%s\n%s\n' "$RUSTC_VER" "$LOCK_SHA" > /tmp/rust-cache/.manifest
           touch /tmp/rust-cache/.ready
+
       - name: Release cache lock
         if: always()
         run: rmdir /tmp/rust-cache.lock || true
+
       #- name: Run cargo-deny to check licenses
       #  uses: EmbarkStudios/cargo-deny-action@v1
       #  with:
       #    command: check licenses
+
       - name: Build chain specs
         run: |
           source dev/envs/devnet/.envrc
@@ -826,23 +868,27 @@ jobs:
           source dev/envs/staging-preview/.envrc
           target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
           nix develop -c bash -c "./dev/update-chain-spec.sh staging_preview_chain_spec.json"
+
       - name: Build and push docker image
         run: |
           cp target/release/partner-chains-demo-node .
           nix develop -c bash -c "patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 partner-chains-demo-node"
           docker build -f dev/ci/Dockerfile -t ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ inputs.sha }} .
           docker push ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ inputs.sha }}
+
       - name: Rename and prepare artifact for workflow dispatch
         run: |
           ARTIFACT_NAME="partner-chains-node-${{ inputs.sha }}-x86_64-linux"
           cp ./partner-chains-demo-node "$ARTIFACT_NAME"
           chmod +x "$ARTIFACT_NAME"
         shell: bash
+
       - name: Upload partner-chains-node artifact
         uses: actions/upload-artifact@v4
         with:
           name: partner-chains-node-linux-artifact
           path: partner-chains-node-${{ inputs.sha }}-x86_64-linux
+
       - name: Upload chain spec artifacts
         uses: actions/upload-artifact@v4
         with:
