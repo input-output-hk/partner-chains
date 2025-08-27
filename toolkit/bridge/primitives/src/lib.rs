@@ -9,6 +9,7 @@ use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sidechain_domain::{AssetName, MainchainAddress, McBlockHash, PolicyId, UtxoId};
+use sp_api::ApiRef;
 use sp_inherents::*;
 
 #[cfg(feature = "std")]
@@ -228,32 +229,17 @@ impl<RecipientAddress: Encode + Send + Sync> TokenBridgeInherentDataProvider<Rec
 	{
 		let api = client.runtime_api();
 
-		if !api.has_api::<dyn TokenBridgeIDPRuntimeApi<Block>>(parent_hash)? {
+		let Some(pallet_version) =
+			api.api_version::<dyn TokenBridgeIDPRuntimeApi<Block>>(parent_hash)?
+		else {
 			log::info!(
 				"💤 Skipping token bridge transfer observation. Pallet not detected in the runtime."
 			);
 			return Ok(Self::Inert);
-		}
-
-		let (Some(last_checkpoint), Some(main_chain_scripts)) =
-			(api.get_last_data_checkpoint(parent_hash)?, api.get_main_chain_scripts(parent_hash)?)
-		else {
-			log::info!("💤 Skipping token bridge transfer observation. Pallet not configured.");
-			return Ok(Self::Inert);
 		};
 
-		match api.get_pallet_version(parent_hash)? {
-			1 => {
-				Self::new_v1(
-					client,
-					parent_hash,
-					current_mc_hash,
-					main_chain_scripts,
-					last_checkpoint,
-					data_source,
-				)
-				.await
-			},
+		match pallet_version {
+			1 => Self::new_v1(api, parent_hash, current_mc_hash, data_source).await,
 			unsupported_version => {
 				Err(InherentDataCreationError::UnsupportedPalletVersion(unsupported_version, 1))
 			},
@@ -261,21 +247,23 @@ impl<RecipientAddress: Encode + Send + Sync> TokenBridgeInherentDataProvider<Rec
 	}
 
 	/// Creates new [TokenBridgeInherentDataProvider::ActiveV1]
-	pub async fn new_v1<Block, T>(
-		client: &T,
+	pub async fn new_v1<'a, Block, Api>(
+		api: ApiRef<'a, Api>,
 		parent_hash: Block::Hash,
 		current_mc_hash: McBlockHash,
-		main_chain_scripts: MainChainScripts,
-		last_checkpoint: BridgeDataCheckpoint,
 		data_source: &dyn TokenBridgeDataSource<RecipientAddress>,
 	) -> Result<Self, InherentDataCreationError>
 	where
 		Block: BlockT,
-		T: ProvideRuntimeApi<Block> + Send + Sync,
-		T::Api: TokenBridgeIDPRuntimeApi<Block>,
+		Api: TokenBridgeIDPRuntimeApi<Block>,
 	{
-		let api = client.runtime_api();
 		let max_transfers = api.get_max_transfers_per_block(parent_hash)?;
+		let (Some(last_checkpoint), Some(main_chain_scripts)) =
+			(api.get_last_data_checkpoint(parent_hash)?, api.get_main_chain_scripts(parent_hash)?)
+		else {
+			log::info!("💤 Skipping token bridge transfer observation. Pallet not configured.");
+			return Ok(Self::Inert);
+		};
 
 		let (transfers, new_checkpoint) = data_source
 			.get_transfers(main_chain_scripts, last_checkpoint, max_transfers, current_mc_hash)
