@@ -6,7 +6,7 @@ lookup: slot and epoch. This crate provides a mechanism to quickly query for blo
 their Partner Chain epoch or slot by applying a binary search over historical blocks.</p>
 <h2 id="usage"><a class="doc-anchor" href="#usage">§</a>Usage</h2>
 <p>The binary search feature is provided via the <a href="trait.FindSidechainBlock.html" title="trait sidechain_block_search::FindSidechainBlock">FindSidechainBlock</a> trait. This trait is
-implemented for any runtime client that implements the [GetSidechainStatus] runtime API.
+implemented for any runtime client that implements the <a href="../sp_sidechain/api_declarations/trait.GetSidechainStatus.html" title="trait sp_sidechain::api_declarations::GetSidechainStatus">GetSidechainStatus</a> runtime API.
 To query the blockchain, a predicate must be passed to the query that defines the searched
 block. Some predefined targets are defined in the <a href="predicates/index.html" title="mod sidechain_block_search::predicates">predicates</a> module, otherwise a new target
 type can be defined by implementing the <a href="trait.CompareStrategy.html" title="trait sidechain_block_search::CompareStrategy">CompareStrategy</a> trait.</p>

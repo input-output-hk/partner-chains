@@ -7,7 +7,7 @@ The first argument is the script, the rest of the arguments are the datums that 
 <ul>
 <li>The script can be any type that implements <a href="https://doc.rust-lang.org/nightly/core/convert/trait.Into.html" title="trait core::convert::Into"><code>Into&lt;PlutusScript&gt;</code></a> for example [raw_scripts::RawScript].</li>
 <li>The arguments can be any type that implements <a href="https://doc.rust-lang.org/nightly/core/convert/trait.Into.html" title="trait core::convert::Into"><code>Into&lt;PlutusDataWrapper&gt;</code></a>. Implementations are provided for
-[uplc::PlutusData] and [plutus::Datum].
+[uplc::PlutusData] and <a href="../plutus/enum.Datum.html" title="enum plutus::Datum">plutus::Datum</a>.
 Returns <a href="https://docs.rs/anyhow/1.0.98/anyhow/type.Result.html" title="type anyhow::Result">anyhow::Result<a href="uplc::PlutusData">uplc::PlutusData</a></a>.</li>
 </ul>
 <p>Example:</p>

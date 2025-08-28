@@ -33,7 +33,7 @@ use a slot-based consensus mechanism such as Aura.</p>
 out block production rewards, update chain participant standings etc. For this purpose,
 the pallet can be configured with a handler that will be triggered during initialization
 of each first block of a new epoch.</p>
-<p>To create a new epoch handler, simply define a type and have it implement the [sp_sidechain::OnNewEpoch] trait:</p>
+<p>To create a new epoch handler, simply define a type and have it implement the <a href="../sp_sidechain/trait.OnNewEpoch.html" title="trait sp_sidechain::OnNewEpoch">sp_sidechain::OnNewEpoch</a> trait:</p>
 
 <div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>sidechain_domain::{ ScEpochNumber, ScSlotNumber };
 <span class="kw">use </span>sp_runtime::Weight;
