@@ -9,7 +9,7 @@ use std::str::FromStr;
 const BLOCK_4_TS_MILLIS: u64 = 1650561570000;
 const BLOCK_5_TS_MILLIS: u64 = 1650562570000;
 
-#[sqlx::test(migrations = "./testdata/migrations")]
+#[sqlx::test(migrations = "./testdata/migrations-tx-in-consumed")]
 async fn get_latest_block_info(pool: PgPool) {
 	let irrelevant_security_parameter = 1000;
 	let source = mk_datasource(pool, irrelevant_security_parameter);
@@ -29,7 +29,7 @@ async fn get_latest_block_info(pool: PgPool) {
 	assert_eq!(block, expected)
 }
 
-#[sqlx::test(migrations = "./testdata/migrations")]
+#[sqlx::test(migrations = "./testdata/migrations-tx-in-consumed")]
 async fn test_get_latest_stable_block(pool: PgPool) {
 	let security_parameter = 2;
 	let source = mk_datasource(pool, security_parameter);
@@ -43,7 +43,7 @@ async fn test_get_latest_stable_block(pool: PgPool) {
 	assert_eq!(block, Some(expected))
 }
 
-#[sqlx::test(migrations = "./testdata/migrations")]
+#[sqlx::test(migrations = "./testdata/migrations-tx-in-consumed")]
 async fn test_get_latest_stable_block_at_filters_out_by_max_slot_boundary(pool: PgPool) {
 	let security_parameter = 2;
 	let slots_distance_between_blocks = block_4().slot.0 - block_2().slot.0;
@@ -58,7 +58,7 @@ async fn test_get_latest_stable_block_at_filters_out_by_max_slot_boundary(pool: 
 	assert_eq!(block, None)
 }
 
-#[sqlx::test(migrations = "./testdata/migrations")]
+#[sqlx::test(migrations = "./testdata/migrations-tx-in-consumed")]
 async fn test_get_stable_block_at(pool: PgPool) {
 	let security_parameter = 2;
 	let source = mk_datasource(pool, security_parameter);
@@ -70,7 +70,7 @@ async fn test_get_stable_block_at(pool: PgPool) {
 	assert_eq!(block, Some(block_2()));
 }
 
-#[sqlx::test(migrations = "./testdata/migrations")]
+#[sqlx::test(migrations = "./testdata/migrations-tx-in-consumed")]
 async fn test_get_stable_block_at_returns_block_that_dont_have_k_blocks_on_them_at_given_timestamp(
 	pool: PgPool,
 ) {
@@ -85,7 +85,7 @@ async fn test_get_stable_block_at_returns_block_that_dont_have_k_blocks_on_them_
 	assert_eq!(block, Some(block_2()));
 }
 
-#[sqlx::test(migrations = "./testdata/migrations")]
+#[sqlx::test(migrations = "./testdata/migrations-tx-in-consumed")]
 async fn test_get_stable_block_at_filters_out_by_min_slots_boundary(pool: PgPool) {
 	let security_parameter = 3;
 	let slots_distance_between_blocks = block_4().slot.0 - block_2().slot.0;
@@ -104,7 +104,7 @@ async fn test_get_stable_block_at_filters_out_by_min_slots_boundary(pool: PgPool
 	assert_eq!(block, None);
 }
 
-#[sqlx::test(migrations = "./testdata/migrations")]
+#[sqlx::test(migrations = "./testdata/migrations-tx-in-consumed")]
 async fn test_get_stable_block_at_filters_out_by_max_slots_boundary(pool: PgPool) {
 	let security_parameter = 2;
 	let slots_distance_between_blocks = block_4().slot.0 - block_2().slot.0;
@@ -123,7 +123,7 @@ async fn test_get_stable_block_at_filters_out_by_max_slots_boundary(pool: PgPool
 	assert_eq!(block, None);
 }
 
-#[sqlx::test(migrations = "./testdata/migrations")]
+#[sqlx::test(migrations = "./testdata/migrations-tx-in-consumed")]
 async fn test_get_stable_block_info_by_hash_for_unknown_hash(pool: PgPool) {
 	let source = mk_datasource(pool, 2);
 	let unknown_hash =
@@ -135,7 +135,7 @@ async fn test_get_stable_block_info_by_hash_for_unknown_hash(pool: PgPool) {
 	assert_eq!(result, None)
 }
 
-#[sqlx::test(migrations = "./testdata/migrations")]
+#[sqlx::test(migrations = "./testdata/migrations-tx-in-consumed")]
 async fn test_get_latest_stable_block_with_stability_margin(pool: PgPool) {
 	let security_parameter = 2;
 	let stability_margin = 1;
@@ -164,7 +164,7 @@ async fn test_get_latest_stable_block_with_stability_margin(pool: PgPool) {
 	assert_eq!(block, None);
 }
 
-#[sqlx::test(migrations = "./testdata/migrations")]
+#[sqlx::test(migrations = "./testdata/migrations-tx-in-consumed")]
 async fn test_get_latest_stable_block_with_stability_margin_2(pool: PgPool) {
 	let security_parameter = 2;
 	let stability_margin = 0;
@@ -190,7 +190,7 @@ async fn test_get_latest_stable_block_with_stability_margin_2(pool: PgPool) {
 	assert_eq!(block, Some(block_0()));
 }
 
-#[sqlx::test(migrations = "./testdata/migrations")]
+#[sqlx::test(migrations = "./testdata/migrations-tx-in-consumed")]
 async fn test_get_stable_block_caching(pool: PgPool) {
 	fn dummy_hash(n: u8) -> McBlockHash {
 		McBlockHash([n; 32])

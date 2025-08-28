@@ -59,6 +59,8 @@ block producer rewards on-chain. Handling of the transfers is left to the chain 
 * `delete_metadata` extrinsic in `pallet-block-producer-metadata`
 * Added litep2p networking stack support to pc demo node as default. libp2p can be set with explicitly `--network-backend` parameter
 * Added `CARDANO_DATA_SOURCE` env variable to determine data source for partner-chains. `db-sync` value is used by default
+* Added support for querying Db-Sync database when `tx-in.value` configuration field is set to `"consumed"`.
+The data sources will automatically detect this option on startup and adjust their queries accordingly.
 
 ## Fixed
 
