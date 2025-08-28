@@ -25,10 +25,10 @@ echo "[LOG] Updated systemStart value in Shelley genesis.json to: $shelley_syste
 echo "[LOG] Updated Byron and Shelley genesis files with new start times."
 
 echo "[LOG] Parsing epochLength and slotLength from Shelley genesis.json..."
-/busybox awk -F':|,' '/"epochLength"/ {print $2}' /shared/shelley/genesis.json.base > /shared/mc-epoch-length
+jq -r '.epochLength' /shared/shelley/genesis.json.base > /shared/mc-epoch-length
 echo "[LOG] Created /shared/mc-epoch-length with value: $(cat /shared/mc-epoch-length)"
 
-/busybox awk -F':|,' '/"slotLength"/ {print $2}' /shared/shelley/genesis.json.base > /shared/mc-slot-length
+jq -r '.slotLength' /shared/shelley/genesis.json.base > /shared/mc-slot-length
 echo "[LOG] Created /shared/mc-slot-length with value: $(cat /shared/mc-slot-length)"
 
 echo "[LOG] Extracted mc-epoch-length and mc-slot-length."
@@ -131,7 +131,7 @@ for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     fi
 
     echo "[LOG] Generating Stake keys for registered-$i in $NODE_SPECIFIC_KEYS_DIR..."
-    cardano-cli shelley stake-address key-gen \
+    cardano-cli latest stake-address key-gen \
         --verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.vkey" \
         --signing-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.skey"
     if [ $? -ne 0 ]; then
@@ -147,7 +147,7 @@ registered_node_stake_addresses=() # Array to store stake addresses
 for i in $(seq 1 $NUM_REGISTERED_NODES_TO_PROCESS); do
     NODE_SPECIFIC_KEYS_DIR="/shared/node-keys/registered-${i}/keys"
     echo "[LOG] Generating stake address for registered-$i in $NODE_SPECIFIC_KEYS_DIR..."
-    node_stake_address=$(cardano-cli shelley stake-address build \
+    node_stake_address=$(cardano-cli latest stake-address build \
         --stake-verification-key-file "${NODE_SPECIFIC_KEYS_DIR}/stake.vkey" \
         --testnet-magic 42)
 
@@ -297,13 +297,20 @@ else
     main_tx_num_witnesses=2 # genesis-utxo.skey and funded_address.skey (for minting)
 
     echo "[LOG] Main Tx: Calculating min fee. Inputs: $main_tx_num_inputs, Outputs: $main_tx_num_outputs, Witnesses: $main_tx_num_witnesses, Protocol File: $protocol_params_file"
-    calculated_main_fee=$(cardano-cli latest transaction calculate-min-fee \
+    calculated_main_fee_raw=$(cardano-cli latest transaction calculate-min-fee \
         --tx-body-file "$dummy_main_tx_file" \
         --testnet-magic 42 \
         --protocol-params-file "$protocol_params_file" \
         --tx-in-count "$main_tx_num_inputs" \
         --tx-out-count "$main_tx_num_outputs" \
-        --witness-count "$main_tx_num_witnesses" | /busybox awk '{print $1}')
+        --witness-count "$main_tx_num_witnesses")
+    
+    # Handle JSON output from cardano-cli 10.5.1
+    if echo "$calculated_main_fee_raw" | /busybox grep -q '^{'; then
+        calculated_main_fee=$(echo "$calculated_main_fee_raw" | jq -r 'to_entries[0].value')
+    else
+        calculated_main_fee=$(echo "$calculated_main_fee_raw" | /busybox awk '{print $1}')
+    fi
 
     if ! [[ "$calculated_main_fee" =~ ^[0-9]+$ ]] || [ -z "$calculated_main_fee" ]; then
         echo "[DEBUG] Main Tx: ERROR calculating dynamic fee (Raw output: '$calculated_main_fee'). Using fallback static fee 300000."
@@ -372,8 +379,8 @@ echo "[LOG] Waiting 45 seconds for the main transaction to process and be confir
 sleep 45
 
 echo "[LOG] Querying and saving the first UTXO details for new address to /shared/genesis.utxo:"
-# Query UTXOs and extract the first UTXO key from JSON format
-cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" --out-file /dev/stdout | /busybox grep -o '"[a-f0-9]\{64\}#[0-9]\+":' | head -1 | /busybox sed 's/"//g' | /busybox sed 's/://g' > /shared/genesis.utxo
+cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" | /busybox awk -F'"' '/#/ {gsub(":", "", $2); print $2; exit}' > /shared/genesis.utxo
+
 cp /shared/genesis.utxo /runtime-values/genesis.utxo
 echo "[LOG] Created /shared/genesis.utxo with value: $(cat /shared/genesis.utxo)"
 
@@ -381,7 +388,13 @@ echo "[LOG] Main transaction submitted. Determining initial UTXO for batch fundi
 
 # Determine the TxId of the main transaction
 # /data/tx.signed was the file submitted for the main transaction.
-main_tx_id=$(cardano-cli latest transaction txid --tx-file /data/tx.signed)
+main_tx_id_raw=$(cardano-cli latest transaction txid --tx-file /data/tx.signed)
+# Handle JSON output from cardano-cli 10.5.1
+if echo "$main_tx_id_raw" | /busybox grep -q '^{'; then
+    main_tx_id=$(echo "$main_tx_id_raw" | jq -r 'to_entries[0].value')
+else
+    main_tx_id="$main_tx_id_raw"
+fi
 if [ -z "$main_tx_id" ]; then
     echo "[DEBUG] CRITICAL ERROR: Failed to get TxId from main signed transaction /data/tx.signed. Aborting batch funding."
     exit 1
@@ -590,13 +603,20 @@ if [ "$NUM_REGISTERED_NODES_TO_PROCESS" -gt 0 ]; then
             batch_tx_num_outputs=$((actual_nodes_in_this_batch + 1)) # N outputs to nodes + 1 change output
             batch_tx_num_witnesses=1 # Signed by funded_address.skey
 
-            calculated_batch_fee=$(cardano-cli latest transaction calculate-min-fee \
+            calculated_batch_fee_raw=$(cardano-cli latest transaction calculate-min-fee \
                 --tx-body-file "$dummy_batch_tx_file" \
                 --testnet-magic 42 \
                 --protocol-params-file "$protocol_params_file" \
                 --tx-in-count "$batch_tx_num_inputs" \
                 --tx-out-count "$batch_tx_num_outputs" \
-                --witness-count "$batch_tx_num_witnesses" | /busybox awk '{print $1}')
+                --witness-count "$batch_tx_num_witnesses")
+            
+            # Handle JSON output from cardano-cli 10.5.1
+            if echo "$calculated_batch_fee_raw" | /busybox grep -q '^{'; then
+                calculated_batch_fee=$(echo "$calculated_batch_fee_raw" | jq -r 'to_entries[0].value')
+            else
+                calculated_batch_fee=$(echo "$calculated_batch_fee_raw" | /busybox awk '{print $1}')
+            fi
 
             if ! [[ "$calculated_batch_fee" =~ ^[0-9]+$ ]] || [ -z "$calculated_batch_fee" ]; then
                 echo "[DEBUG] Batch $batch_num: ERROR calculating dynamic fee (Raw: '$calculated_batch_fee'). Using fallback 300000."
@@ -655,9 +675,15 @@ if [ "$NUM_REGISTERED_NODES_TO_PROCESS" -gt 0 ]; then
             exit 1
         fi
 
-        batch_tx_id=$(cardano-cli latest transaction txid --tx-file "$batch_tx_signed_file")
+        batch_tx_id_raw=$(cardano-cli latest transaction txid --tx-file "$batch_tx_signed_file")
+        # Handle JSON output from cardano-cli 10.5.1
+        if echo "$batch_tx_id_raw" | /busybox grep -q '^{'; then
+            batch_tx_id=$(echo "$batch_tx_id_raw" | jq -r 'to_entries[0].value')
+        else
+            batch_tx_id="$batch_tx_id_raw"
+        fi
         if [ -z "$batch_tx_id" ]; then
-            echo "[DEBUG] CRITICAL ERROR: Batch $batch_num: Failed to get TxId from signed transaction. Aborting."
+            echo "[DEBUG] CRITICAL ERROR: Batch $batch_num: Failed to get TxId from signed transaction. Raw: '$batch_tx_id_raw'"
             exit 1
         fi
         echo "[LOG] Batch $batch_num: Transaction ID is $batch_tx_id"
@@ -690,7 +716,8 @@ if [ "$NUM_REGISTERED_NODES_TO_PROCESS" -gt 0 ]; then
         elif [ "$batch_num" -lt "$num_batches" ]; then 
             echo "[WARN] Batch $batch_num: No usable change output created. Attempting to find a new UTXO at $new_address for the next batch."
             sleep 5 
-            new_input_utxo_candidate=$(cardano-cli latest query utxo --address "$new_address" --testnet-magic 42 | /busybox grep lovelace | /busybox sort -k3 -nr | head -1 | /busybox awk '{print $1"#"$2}')
+            new_input_utxo_candidate=$(cardano-cli latest query utxo --address "$new_address" --testnet-magic 42 | /busybox awk 'NR>2 {print $1"#"$2; exit}')
+
             if [ -n "$new_input_utxo_candidate" ]; then
                 current_batch_input_utxo="$new_input_utxo_candidate"
                 echo "[LOG] Batch $batch_num: Found new input UTXO for next batch: $current_batch_input_utxo"
@@ -863,13 +890,20 @@ if [ "$NUM_REGISTERED_NODES_TO_PROCESS" -gt 0 ]; then
         NUM_REG_TX_OUTPUTS=1 # Change output
         NUM_REG_TX_WITNESSES=3 # payment.skey, stake.skey, cold.skey
 
-        CALCULATED_REG_FEE=$(cardano-cli latest transaction calculate-min-fee \
+        CALCULATED_REG_FEE_RAW=$(cardano-cli latest transaction calculate-min-fee \
             --tx-body-file "$REG_TX_DUMMY" \
             --testnet-magic 42 \
             --protocol-params-file "$protocol_params_file" \
             --tx-in-count "$NUM_REG_TX_INPUTS" \
             --tx-out-count "$NUM_REG_TX_OUTPUTS" \
-            --witness-count "$NUM_REG_TX_WITNESSES" | /busybox awk '{print $1}')
+            --witness-count "$NUM_REG_TX_WITNESSES")
+        
+        # Handle JSON output from cardano-cli 10.5.1
+        if echo "$CALCULATED_REG_FEE_RAW" | /busybox grep -q '^{'; then
+            CALCULATED_REG_FEE=$(echo "$CALCULATED_REG_FEE_RAW" | jq -r 'to_entries[0].value')
+        else
+            CALCULATED_REG_FEE=$(echo "$CALCULATED_REG_FEE_RAW" | /busybox awk '{print $1}')
+        fi
 
         rm -f "$REG_TX_DUMMY"
 
@@ -1026,13 +1060,20 @@ if [ "$NUM_REGISTERED_NODES_TO_PROCESS" -gt 0 ]; then
         NUM_DELEG_TX_OUTPUTS=1 # Change output
         NUM_DELEG_TX_WITNESSES=2 # payment.skey, stake.skey
 
-        CALCULATED_DELEG_FEE=$(cardano-cli latest transaction calculate-min-fee \
+        CALCULATED_DELEG_FEE_RAW=$(cardano-cli latest transaction calculate-min-fee \
             --tx-body-file "$DELEG_TX_DUMMY" \
             --testnet-magic 42 \
             --protocol-params-file "$protocol_params_file" \
             --tx-in-count "$NUM_DELEG_TX_INPUTS" \
             --tx-out-count "$NUM_DELEG_TX_OUTPUTS" \
-            --witness-count "$NUM_DELEG_TX_WITNESSES" | /busybox awk '{print $1}')
+            --witness-count "$NUM_DELEG_TX_WITNESSES")
+        
+        # Handle JSON output from cardano-cli 10.5.1
+        if echo "$CALCULATED_DELEG_FEE_RAW" | /busybox grep -q '^{'; then
+            CALCULATED_DELEG_FEE=$(echo "$CALCULATED_DELEG_FEE_RAW" | jq -r 'to_entries[0].value')
+        else
+            CALCULATED_DELEG_FEE=$(echo "$CALCULATED_DELEG_FEE_RAW" | /busybox awk '{print $1}')
+        fi
 
         rm -f "$DELEG_TX_DUMMY"
 
@@ -1098,9 +1139,15 @@ if [ "$NUM_REGISTERED_NODES_TO_PROCESS" -gt 0 ]; then
             continue
         fi
 
-        DELEG_TX_ID=$(cardano-cli latest transaction txid --tx-file "$DELEG_TX_SIGNED")
+        DELEG_TX_ID_RAW=$(cardano-cli latest transaction txid --tx-file "$DELEG_TX_SIGNED")
+        # Handle JSON output from cardano-cli 10.5.1
+        if echo "$DELEG_TX_ID_RAW" | /busybox grep -q '^{'; then
+            DELEG_TX_ID=$(echo "$DELEG_TX_ID_RAW" | jq -r 'to_entries[0].value')
+        else
+            DELEG_TX_ID="$DELEG_TX_ID_RAW"
+        fi
         if [ -z "$DELEG_TX_ID" ]; then
-            echo "[DEBUG] CRITICAL ERROR: Could not get TxID for delegation tx for $NODE_LOG_NAME. Cannot save final UTXO."
+            echo "[DEBUG] CRITICAL ERROR: Could not get TxID for delegation tx for $NODE_LOG_NAME. Raw: '$DELEG_TX_ID_RAW'"
             rm -f "$DELEG_CERT" "$DELEG_TX_FINAL" "$DELEG_TX_SIGNED"
             continue
         fi
@@ -1187,7 +1234,13 @@ if [ "$NUM_REGISTERED_NODES_TO_PROCESS" -gt 0 ]; then
                 continue
             fi
 
-            TRANSFER_TX_ID=$(cardano-cli latest transaction txid --tx-file "$TRANSFER_TX_SIGNED_FILE")
+            TRANSFER_TX_ID_RAW=$(cardano-cli latest transaction txid --tx-file "$TRANSFER_TX_SIGNED_FILE")
+            # Handle JSON output from cardano-cli 10.5.1
+            if echo "$TRANSFER_TX_ID_RAW" | /busybox grep -q '^{'; then
+                TRANSFER_TX_ID=$(echo "$TRANSFER_TX_ID_RAW" | jq -r 'to_entries[0].value')
+            else
+                TRANSFER_TX_ID="$TRANSFER_TX_ID_RAW"
+            fi
             echo "[LOG] Stake funding transaction submitted for $NODE_LOG_NAME. TxID: $TRANSFER_TX_ID"
 
             echo "[LOG] Waiting 15s for funding transaction to confirm..."
