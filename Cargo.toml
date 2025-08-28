@@ -57,6 +57,8 @@ members = [
 	"toolkit/governed-map/primitives",
 	"toolkit/governed-map/pallet",
 	"toolkit/committee-selection/selection-simulator",
+	"toolkit/bridge/pallet",
+	"toolkit/bridge/primitives",
 ]
 resolver = "2"
 
@@ -185,6 +187,7 @@ sqlx = { version = "0.8.6", default-features = false, features = [
 ] }
 derive-where = { version = "1.2.7", default-features = false }
 once_cell = { version = "1.21.3", default-features = false }
+paste = { version = "1.0.15" }
 
 # substrate dependencies
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2506" }
@@ -329,6 +332,10 @@ partner-chains-mock-data-sources = { path = "toolkit/data-sources/mock", default
 # Governed Map
 sp-governed-map = { path = "toolkit/governed-map/primitives", default-features = false }
 pallet-governed-map = { path = "toolkit/governed-map/pallet", default-features = false }
+
+# Bridge
+sp-partner-chains-bridge = { path = "toolkit/bridge/primitives", default-features = false }
+pallet-partner-chains-bridge = { path = "toolkit/bridge/pallet", default-features = false }
 
 # demo node
 partner-chains-demo-runtime = { path = "demo/runtime" }

@@ -13,6 +13,7 @@ pub mod pallet {
 	use sp_block_participation::BlockProductionData;
 	use sp_core::bytes::*;
 	use sp_inherents::IsFatalError;
+	use sp_partner_chains_bridge::BridgeTransferV1;
 
 	type ParticipationData = BlockProductionData<BlockAuthor, DelegatorKey>;
 
@@ -115,6 +116,10 @@ pub mod pallet {
 				_ => { /* technically unreachable */ },
 			}
 		}
+	}
+
+	impl<T: Config> pallet_partner_chains_bridge::TransferHandler<AccountId> for Pallet<T> {
+		fn handle_incoming_transfer(_transfer: BridgeTransferV1<AccountId>) {}
 	}
 
 	#[pallet::call]

@@ -1,5 +1,6 @@
 use super::{Cache, GovernedMapDataSourceCachedImpl, GovernedMapDataSourceImpl};
 use crate::block::{BlockDataSourceImpl, DbSyncBlockDataSourceConfig};
+use crate::db_model::{DbSyncConfigurationProvider, TxInConfiguration};
 use crate::metrics::mock::test_metrics;
 use hex_literal::hex;
 use pretty_assertions::assert_eq;
@@ -8,6 +9,7 @@ use sidechain_domain::mainchain_epoch::{Duration, MainchainEpochConfig, Timestam
 use sidechain_domain::*;
 use sp_governed_map::{GovernedMapDataSource, MainChainScriptsV1};
 use sqlx::PgPool;
+use std::cell::OnceCell;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use tokio_test::assert_err;
@@ -25,105 +27,120 @@ const BLOCK_6: McBlockHash =
 const BLOCK_7: McBlockHash =
 	McBlockHash(hex!("b702000000000000000000000000000000000000000000000000000000000008"));
 
-#[sqlx::test(migrations = "./testdata/governed-map/migrations")]
-async fn test_governed_map_fails_on_wrong_block_hash(pool: PgPool) {
-	let source = make_source(pool);
-	let mc_block =
-		McBlockHash(hex!("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"));
-	let result = source.get_mapping_changes(None, mc_block, scripts()).await;
-	assert_err!(result);
+macro_rules! with_migration_versions {
+	($(async fn $name:ident($pool:ident: PgPool, $tx_in_cfg:ident: TxInConfiguration) $body:block )*) => {
+
+		$(
+            paste::paste!(
+				async fn $name($pool: PgPool, $tx_in_cfg: TxInConfiguration) $body
+
+				#[sqlx::test(migrations = "./testdata/governed-map/migrations-tx-in-enabled")]
+				async fn [<$name _v1>]($pool: PgPool) {
+					$name($pool, TxInConfiguration::Enabled).await
+				}
+
+				#[sqlx::test(migrations = "./testdata/governed-map/migrations-tx-in-consumed")]
+				async fn [<$name _v2>]($pool: PgPool) {
+					$name($pool, TxInConfiguration::Consumed).await
+				}
+			);
+		)*
+    };
 }
 
-#[sqlx::test(migrations = "./testdata/governed-map/migrations")]
-async fn test_cached_governed_map_fails_on_wrong_block_hash(pool: PgPool) {
-	let source = make_cached_source(pool).await;
-	let mc_block =
-		McBlockHash(hex!("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"));
-	let result = source.get_mapping_changes(None, mc_block, scripts()).await;
-	assert_err!(result);
-}
+with_migration_versions! {
+	async fn test_governed_map_fails_on_wrong_block_hash(pool: PgPool, tx_in_config: TxInConfiguration) {
+		let source = make_source(pool, tx_in_config);
+		let mc_block =
+			McBlockHash(hex!("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"));
+		let result = source.get_mapping_changes(None, mc_block, scripts()).await;
+		assert_err!(result);
+	}
 
-#[sqlx::test(migrations = "./testdata/governed-map/migrations")]
-async fn test_governed_map_insert(pool: PgPool) {
-	let source = make_source(pool);
-	let mut result = source.get_mapping_changes(None, BLOCK_1, scripts()).await.unwrap();
-	result.sort();
-	let expected = vec![
-		(
-			"key1".to_owned(),
-			Some(ByteString::from(hex!("11111111111111111111111111111111").to_vec())),
-		),
-		(
-			"key2".to_owned(),
-			Some(ByteString::from(hex!("22222222222222222222222222222222").to_vec())),
-		),
-	];
-	assert_eq!(result, expected);
-}
+	async fn test_cached_governed_map_fails_on_wrong_block_hash(pool: PgPool, tx_in_config: TxInConfiguration) {
+		let source = make_cached_source(pool, tx_in_config).await;
+		let mc_block =
+			McBlockHash(hex!("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"));
+		let result = source.get_mapping_changes(None, mc_block, scripts()).await;
+		assert_err!(result);
+	}
 
-#[sqlx::test(migrations = "./testdata/governed-map/migrations")]
-async fn test_cached_governed_map_insert(pool: PgPool) {
-	let source = make_cached_source(pool).await;
-	let result = source.get_mapping_changes(None, BLOCK_1, scripts()).await.unwrap();
+	async fn test_governed_map_insert(pool: PgPool, tx_in_config: TxInConfiguration) {
+		let source = make_source(pool, tx_in_config);
+		let mut result = source.get_mapping_changes(None, BLOCK_1, scripts()).await.unwrap();
+		result.sort();
+		let expected = vec![
+			(
+				"key1".to_owned(),
+				Some(ByteString::from(hex!("11111111111111111111111111111111").to_vec())),
+			),
+			(
+				"key2".to_owned(),
+				Some(ByteString::from(hex!("22222222222222222222222222222222").to_vec())),
+			),
+		];
+		assert_eq!(result, expected);
+	}
 
-	let expected = vec![
-		(
-			"key2".to_owned(),
-			Some(ByteString::from(hex!("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa").to_vec())),
-		),
-		(
-			"key1".to_owned(),
-			Some(ByteString::from(hex!("11111111111111111111111111111111").to_vec())),
-		),
-		(
-			"key2".to_owned(),
-			Some(ByteString::from(hex!("22222222222222222222222222222222").to_vec())),
-		),
-	];
-	assert_eq!(result, expected);
-}
+	async fn test_cached_governed_map_insert(pool: PgPool, tx_in_config: TxInConfiguration) {
+		let source = make_cached_source(pool, tx_in_config).await;
+		let result = source.get_mapping_changes(None, BLOCK_1, scripts()).await.unwrap();
 
-#[sqlx::test(migrations = "./testdata/governed-map/migrations")]
-async fn test_governed_map_delete(pool: PgPool) {
-	let source = make_source(pool);
-	let result = source.get_mapping_changes(Some(BLOCK_1), BLOCK_4, scripts()).await;
-	let expected = vec![("key1".to_owned(), None)];
-	assert_eq!(result.unwrap(), expected);
-}
+		let expected = vec![
+			(
+				"key2".to_owned(),
+				Some(ByteString::from(hex!("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa").to_vec())),
+			),
+			(
+				"key1".to_owned(),
+				Some(ByteString::from(hex!("11111111111111111111111111111111").to_vec())),
+			),
+			(
+				"key2".to_owned(),
+				Some(ByteString::from(hex!("22222222222222222222222222222222").to_vec())),
+			),
+		];
+		assert_eq!(result, expected);
+	}
 
-#[sqlx::test(migrations = "./testdata/governed-map/migrations")]
-async fn test_cached_governed_map_delete(pool: PgPool) {
-	let source = make_cached_source(pool).await;
-	let result = source.get_mapping_changes(Some(BLOCK_1), BLOCK_4, scripts()).await;
-	let expected = vec![("key1".to_owned(), None)];
-	assert_eq!(result.unwrap(), expected);
-}
+	async fn test_governed_map_delete(pool: PgPool, tx_in_config: TxInConfiguration) {
+		let source = make_source(pool, tx_in_config);
+		let result = source.get_mapping_changes(Some(BLOCK_1), BLOCK_4, scripts()).await;
+		let expected = vec![("key1".to_owned(), None)];
+		assert_eq!(result.unwrap(), expected);
+	}
 
-#[sqlx::test(migrations = "./testdata/governed-map/migrations")]
-async fn test_governed_map_upsert(pool: PgPool) {
-	let source = make_source(pool);
-	let mut result = source.get_mapping_changes(Some(BLOCK_6), BLOCK_7, scripts()).await.unwrap();
-	result.sort();
-	let expected = vec![(
-		"key3".to_owned(),
-		Some(ByteString::from(hex!("44444444444444444444444444444444").to_vec())),
-	)];
-	assert_eq!(result, expected);
-}
+	async fn test_cached_governed_map_delete(pool: PgPool, tx_in_config: TxInConfiguration) {
+		let source = make_cached_source(pool, tx_in_config).await;
+		let result = source.get_mapping_changes(Some(BLOCK_1), BLOCK_4, scripts()).await;
+		let expected = vec![("key1".to_owned(), None)];
+		assert_eq!(result.unwrap(), expected);
+	}
 
-#[sqlx::test(migrations = "./testdata/governed-map/migrations")]
-async fn test_cached_governed_map_upsert(pool: PgPool) {
-	let source = make_cached_source(pool).await;
-	let mut result = source.get_mapping_changes(Some(BLOCK_6), BLOCK_7, scripts()).await.unwrap();
-	result.sort();
-	let expected = vec![
-		("key3".to_owned(), None),
-		(
+	async fn test_governed_map_upsert(pool: PgPool, tx_in_config: TxInConfiguration) {
+		let source = make_source(pool, tx_in_config);
+		let mut result = source.get_mapping_changes(Some(BLOCK_6), BLOCK_7, scripts()).await.unwrap();
+		result.sort();
+		let expected = vec![(
 			"key3".to_owned(),
 			Some(ByteString::from(hex!("44444444444444444444444444444444").to_vec())),
-		),
-	];
-	assert_eq!(result, expected);
+		)];
+		assert_eq!(result, expected);
+	}
+
+	async fn test_cached_governed_map_upsert(pool: PgPool, tx_in_config: TxInConfiguration) {
+		let source = make_cached_source(pool, tx_in_config).await;
+		let mut result = source.get_mapping_changes(Some(BLOCK_6), BLOCK_7, scripts()).await.unwrap();
+		result.sort();
+		let expected = vec![
+			("key3".to_owned(), None),
+			(
+				"key3".to_owned(),
+				Some(ByteString::from(hex!("44444444444444444444444444444444").to_vec())),
+			),
+		];
+		assert_eq!(result, expected);
+	}
 }
 
 fn scripts() -> MainChainScriptsV1 {
@@ -133,18 +150,28 @@ fn scripts() -> MainChainScriptsV1 {
 	}
 }
 
-fn make_source(pool: PgPool) -> GovernedMapDataSourceImpl {
-	GovernedMapDataSourceImpl { pool, metrics_opt: Some(test_metrics()) }
+fn make_source(pool: PgPool, tx_in_config: TxInConfiguration) -> GovernedMapDataSourceImpl {
+	GovernedMapDataSourceImpl {
+		pool: pool.clone(),
+		metrics_opt: Some(test_metrics()),
+		db_sync_config: DbSyncConfigurationProvider {
+			pool,
+			tx_in_config: Arc::new(tokio::sync::Mutex::new(OnceCell::from(tx_in_config))),
+		},
+	}
 }
 
-async fn make_cached_source(pool: PgPool) -> GovernedMapDataSourceCachedImpl {
+async fn make_cached_source(
+	pool: PgPool,
+	tx_in_config: TxInConfiguration,
+) -> GovernedMapDataSourceCachedImpl {
 	GovernedMapDataSourceCachedImpl {
 		pool: pool.clone(),
 		metrics_opt: Some(test_metrics()),
 		cache_size: 10u16,
 		cache: Arc::new(Mutex::new(Cache::default())),
 		blocks: Arc::new(BlockDataSourceImpl::from_config(
-			pool,
+			pool.clone(),
 			DbSyncBlockDataSourceConfig {
 				cardano_security_parameter: 432,
 				cardano_active_slots_coeff: 0.05,
@@ -152,6 +179,10 @@ async fn make_cached_source(pool: PgPool) -> GovernedMapDataSourceCachedImpl {
 			},
 			&mainchain_epoch_config(),
 		)),
+		db_sync_config: DbSyncConfigurationProvider {
+			pool,
+			tx_in_config: Arc::new(tokio::sync::Mutex::new(OnceCell::from(tx_in_config))),
+		},
 	}
 }
 

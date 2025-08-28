@@ -46,11 +46,21 @@ In SCALE encoding of inherent data custom implementations of `Encode` and `Decod
 
 `getAriadneParameters` and `getRegistrations` RPC results format has changed, `auraPubKey` and `grandpaPubKey` are replaced by `"keys": {"aura": "...", "gran": "..."}`.
 
+### Unidirectional Token Bridge (Work-in-progress)
+
+A set of modules implementing observability layer, runtime pallet and offchain commands for a trustless token bridge moving tokens from Cardano to the Partner Chain.
+
+This bridge feature works by monitoring an *illiquid supply validator address* on Cardano for new UTXOs. These UTXOs are interpreted as being either user-initiated
+transfers sent to a specified address on the Partner Chain, or reserve transfers made as part of the chain's operations for the purposes of distributing them as
+block producer rewards on-chain. Handling of the transfers is left to the chain builders themselves to implement according to their business needs and ledger structure.
+
 ### Other additions
 
 * `delete_metadata` extrinsic in `pallet-block-producer-metadata`
 * Added litep2p networking stack support to pc demo node as default. libp2p can be set with explicitly `--network-backend` parameter
 * Added `CARDANO_DATA_SOURCE` env variable to determine data source for partner-chains. `db-sync` value is used by default
+* Added support for querying Db-Sync database when `tx-in.value` configuration field is set to `"consumed"`.
+The data sources will automatically detect this option on startup and adjust their queries accordingly.
 
 ## Fixed
 
