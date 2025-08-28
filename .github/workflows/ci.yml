@@ -47,3 +47,6 @@ jobs:
 
       - name: build project
         run: cargo build --release
+
+      - name: test with all features
+        run: cargo test --release --all-features
