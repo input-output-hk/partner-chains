@@ -73,6 +73,16 @@ Chain Toolkit offers and how to use it for different use-cases.
 
 Rust Docs for all crates provided by the toolkit are available to browse online [here](https://input-output-hk.github.io/partner-chains/)
 
+#### Correctness & Liveliness
+In order to ensure and demonstrate the correctness and liveliness of our partner chain toolkit, we created
+reproducible simulations of the D-Parameter based committee selection mechanism and created end-to-end tests
+running hundreds of nodes to inspect and assert correct behavior:
+
+- Refer to [docs/reports/ariadne-liveness.pdf](docs/reports/ariadne-liveness.pdf) for the simulation report.
+- Refer to [docs/reports/liveliness-report.pdf](docs/reports/liveliness-report.pdf) for the end-to-end-testing report.
+
+If you want to learn more about the simulation and how to perform your own simulations with custom parameters you
+can learn more about this [here](toolkit/committee-selection/selection-simulator/README.md).
 
 ### 📃 License
 

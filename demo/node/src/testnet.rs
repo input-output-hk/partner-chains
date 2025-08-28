@@ -213,6 +213,7 @@ pub fn testnet_genesis(
 			participation_data_release_period: 30,
 			..Default::default()
 		},
+		bridge: Default::default(),
 	};
 
 	Ok(serde_json::to_value(config).expect("Genesis config must be serialized correctly"))
