@@ -1,3 +1,4 @@
+
 CREATE DOMAIN hash28type AS bytea CONSTRAINT flyway_needs_this CHECK (octet_length(VALUE) = 28);
 
 CREATE DOMAIN hash32type AS bytea CONSTRAINT flyway_needs_this CHECK(octet_length(VALUE) = 32);
@@ -150,7 +151,8 @@ CREATE TABLE tx_out (
     stake_address_id bigint,
     value lovelace NOT NULL,
     data_hash hash32type,
-    consumed_by_tx_id bigint
+    consumed_by_tx_id bigint,
+    comment varchar
 );
 ALTER TABLE tx_out ADD CONSTRAINT consumed_by_tx_id_fkey FOREIGN KEY (consumed_by_tx_id) REFERENCES tx(id) ON DELETE CASCADE ON UPDATE RESTRICT;
 

@@ -187,6 +187,7 @@ sqlx = { version = "0.8.6", default-features = false, features = [
 ] }
 derive-where = { version = "1.2.7", default-features = false }
 once_cell = { version = "1.21.3", default-features = false }
+paste = { version = "1.0.15" }
 
 # substrate dependencies
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2506" }

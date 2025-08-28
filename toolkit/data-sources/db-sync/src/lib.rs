@@ -63,8 +63,10 @@
 //! Partner Chains data sources require specific Db-Sync configuration to be set for them to
 //! operate correctly:
 //! - `insert_options.tx_out.value`: must be either `"enable"` (default) or `"consumed"`.
-//!   When `"consumed"` is used then `tx_out.force_tx_in` has to be `true`.
-//!   Code in this crate depends on `tx_in` table being present.
+//!   The data sources in this crate that need to query transaction intputs automatically detect
+//!   which option is used and adjust their queries accordingly. This requires the database to be
+//!   already initialized by db-sync. When run for an uninitialized database, the data sources
+//!   will default to the `"enable"` option.
 //! - `insert_options.tx_out.use_address_table`: must be `false` (default).
 //! - `insert_options.ledger`: must be `"enable"` (default).
 //! - `insert_options.multi_asset`: must be `true` (default).
@@ -97,7 +99,7 @@
 #![allow(rustdoc::private_intra_doc_links)]
 
 pub use crate::{
-	data_sources::{ConnectionConfig, PgPool, get_connection_from_env, read_mc_epoch_config},
+	data_sources::{ConnectionConfig, PgPool, get_connection_from_env},
 	metrics::{McFollowerMetrics, register_metrics_warn_errors},
 };
 
@@ -136,6 +138,7 @@ mod sidechain_rpc;
 #[cfg(feature = "block-participation")]
 mod stake_distribution;
 
+#[derive(Debug)]
 /// Wrapper error type for [sqlx::Error]
 pub struct SqlxError(sqlx::Error);
 
