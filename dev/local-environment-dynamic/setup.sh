@@ -7,7 +7,7 @@ NUM_REGISTERED_NODES_TO_PROCESS=5
 PARTNER_CHAINS_NODE_IMAGE="ghcr.io/input-output-hk/partner-chains/partner-chains-node-unstable:latest"
 CARDANO_IMAGE="ghcr.io/intersectmbo/cardano-node:10.1.4"
 DBSYNC_IMAGE="ghcr.io/intersectmbo/cardano-db-sync:13.6.0.5"
-OGMIOS_IMAGE="cardanosolutions/ogmios:v6.12.0"
+OGMIOS_IMAGE="cardanosolutions/ogmios:v6.13.0"
 POSTGRES_IMAGE="postgres:17.2"
 
 display_banner() {
@@ -402,7 +402,7 @@ EOF
     for ((i=1; i<=NUM_REGISTERED_NODES_TO_PROCESS; i++)); do
         node_name="registered-$i"
         mkdir -p configurations/partner-chains-nodes/$node_name
-        
+
         # Check if this should be the bootnode
         is_bootnode=false
         if [ "$NUM_PERMISSIONED_NODES_TO_PROCESS" -eq 0 ] && [ "$i" -eq 1 ]; then
@@ -544,7 +544,7 @@ EOF
         rpc_port=$((11000 + i - 1))
         prometheus_port=$((9615 + i - 1))
         db_sync_instance=$(( (i - 1) % NUM_DBSYNC_INSTANCES + 1 ))
-        
+
         cat >> docker-compose.yml <<EOF
   partner-chains-node-$node_name:
     container_name: partner-chains-node-$node_name
@@ -577,7 +577,7 @@ EOF
 EOF
             fi
         fi
-        
+
         cat >> docker-compose.yml <<EOF
     environment:
       DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:\${POSTGRES_PASSWORD}@postgres-${db_sync_instance}:5432/cexplorer"
@@ -608,7 +608,7 @@ EOF
         rpc_port=$((11000 + i - 1 + NUM_PERMISSIONED_NODES_TO_PROCESS))
         prometheus_port=$((9615 + i - 1 + NUM_PERMISSIONED_NODES_TO_PROCESS))
         db_sync_instance=$(( (i - 1 + NUM_PERMISSIONED_NODES_TO_PROCESS) % NUM_DBSYNC_INSTANCES + 1 ))
-        
+
         cat >> docker-compose.yml <<EOF
   partner-chains-node-$node_name:
     container_name: partner-chains-node-$node_name
@@ -641,7 +641,7 @@ EOF
 EOF
             fi
         fi
-        
+
         cat >> docker-compose.yml <<EOF
     environment:
       DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:\${POSTGRES_PASSWORD}@postgres-${db_sync_instance}:5432/cexplorer"
