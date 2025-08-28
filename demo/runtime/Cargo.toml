@@ -93,6 +93,8 @@ pallet-governed-map = { workspace = true }
 sp-governed-map = { workspace = true }
 sp-block-producer-fees = { workspace = true }
 pallet-block-producer-fees = { workspace = true }
+pallet-partner-chains-bridge = { workspace = true }
+sp-partner-chains-bridge = { workspace = true }
 
 [dev-dependencies]
 sp-io = { workspace = true }
@@ -172,6 +174,8 @@ std = [
 	"sp-block-participation/std",
 	"pallet-governed-map/std",
 	"sp-governed-map/std",
+	"pallet-partner-chains-bridge/std",
+	"sp-partner-chains-bridge/std",
 ]
 
 runtime-benchmarks = [
@@ -191,6 +195,7 @@ runtime-benchmarks = [
 	"pallet-block-producer-metadata/runtime-benchmarks",
 	"pallet-block-participation/runtime-benchmarks",
 	"pallet-governed-map/runtime-benchmarks",
+	"pallet-partner-chains-bridge/runtime-benchmarks",
 ]
 try-runtime = [
 	"frame-try-runtime/try-runtime",
