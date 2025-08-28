@@ -42,11 +42,11 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           prefix-key: "v0-rust"
-          save-if: ${{ github.ref == 'refs/heads/main' }}
+          save-if: ${{ github.ref == 'refs/heads/master' }}
           cache-workspace-crates: "true"
 
       - name: build project
-        run: cargo build --release
+        run: cargo build --release --all-features --all-targets
 
       - name: test with all features
-        run: cargo test --release --all-features
+        run: cargo test --release --all-features --all-targets
