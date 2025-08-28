@@ -45,11 +45,14 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/master' }}
           cache-workspace-crates: "true"
 
+      - name: Fmt check
+        run: cargo fmt --check
+
       - name: Build
-        run: cargo build --locked --release --all-features --all-targets
+        run: cargo build --locked --release
 
       - name: Test
         run: cargo test --locked --release --all-features --all-targets
 
       - name: Lint project crates
-        run: cargo test --locked --release --all-features --all-targets --no-deps
+        run: cargo clippy --locked --release --all-features --all-targets --no-deps
