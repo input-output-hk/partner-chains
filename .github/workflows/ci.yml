@@ -42,7 +42,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           prefix-key: "v0-rust"
-          save-if: ${{ github.ref == 'refs/heads/master' }}
+          save-if: "true"
           cache-workspace-crates: "true"
 
       - name: Fmt check
