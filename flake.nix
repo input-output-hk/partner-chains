@@ -57,7 +57,9 @@
               docker-compose
               earthly
               gawk
+              gnugrep
               gnumake
+	      jq
               kubectl
               libiconv
               nixfmt-rfc-style
@@ -69,6 +71,7 @@
               python312Packages.pip
               python312Packages.virtualenv
               rustToolchain
+              rsync
 	      sccache
               sops
               xxd
