@@ -69,6 +69,7 @@
               python312Packages.pip
               python312Packages.virtualenv
               rustToolchain
+	      sccache
               sops
               xxd
             ]
