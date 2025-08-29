@@ -59,7 +59,7 @@
               gawk
               gnugrep
               gnumake
-	      jq
+              jq
               kubectl
               libiconv
               nixfmt-rfc-style
@@ -72,7 +72,7 @@
               python312Packages.virtualenv
               rustToolchain
               rsync
-	      sccache
+              sccache
               sops
               xxd
             ]
