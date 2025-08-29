@@ -140,13 +140,13 @@ jobs:
       - name: Enable sccache (RUSTC_WRAPPER)
         run: |
           set -e
-          export SCCACHE_DIR=/tmp/sccache
-          export SCCACHE_CACHE_SIZE=30G
+          export SCCACHE_DIR=/tmp/sccache-${{ runner.name }}
+          export SCCACHE_CACHE_SIZE=0
           echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
-          echo "SCCACHE_DIR=/tmp/sccache" >> "$GITHUB_ENV"
-          echo "SCCACHE_CACHE_SIZE=0" >> "$GITHUB_ENV"
+          echo "SCCACHE_DIR=$SCCACHE_DIR" >> "$GITHUB_ENV"
+          echo "SCCACHE_CACHE_SIZE=$SCCACHE_CACHE_SIZE" >> "$GITHUB_ENV"
           echo "CARGO_INCREMENTAL=0" >> "$GITHUB_ENV"
-          mkdir -p /tmp/sccache
+          mkdir -p "$SCCACHE_DIR"
           nix develop -c sccache --stop-server || true
           nix develop -c sccache --start-server || true
           nix develop -c sccache --version || true
@@ -492,13 +492,13 @@ jobs:
       - name: Enable sccache (RUSTC_WRAPPER)
         run: |
           set -e
-          export SCCACHE_DIR=/tmp/sccache
-          export SCCACHE_CACHE_SIZE=30G
+          export SCCACHE_DIR=/tmp/sccache-${{ runner.name }}
+          export SCCACHE_CACHE_SIZE=0
           echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
-          echo "SCCACHE_DIR=/tmp/sccache" >> "$GITHUB_ENV"
-          echo "SCCACHE_CACHE_SIZE=0" >> "$GITHUB_ENV"
+          echo "SCCACHE_DIR=$SCCACHE_DIR" >> "$GITHUB_ENV"
+          echo "SCCACHE_CACHE_SIZE=$SCCACHE_CACHE_SIZE" >> "$GITHUB_ENV"
           echo "CARGO_INCREMENTAL=0" >> "$GITHUB_ENV"
-          mkdir -p /tmp/sccache
+          mkdir -p "$SCCACHE_DIR"
           nix develop -c sccache --stop-server || true
           nix develop -c sccache --start-server || true
           nix develop -c sccache --version || true
@@ -867,13 +867,13 @@ jobs:
       - name: Enable sccache (RUSTC_WRAPPER)
         run: |
           set -e
-          export SCCACHE_DIR=/tmp/sccache
-          export SCCACHE_CACHE_SIZE=30G
+          export SCCACHE_DIR=/tmp/sccache-${{ runner.name }}
+          export SCCACHE_CACHE_SIZE=0
           echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
-          echo "SCCACHE_DIR=/tmp/sccache" >> "$GITHUB_ENV"
-          echo "SCCACHE_CACHE_SIZE=0" >> "$GITHUB_ENV"
+          echo "SCCACHE_DIR=$SCCACHE_DIR" >> "$GITHUB_ENV"
+          echo "SCCACHE_CACHE_SIZE=$SCCACHE_CACHE_SIZE" >> "$GITHUB_ENV"
           echo "CARGO_INCREMENTAL=0" >> "$GITHUB_ENV"
-          mkdir -p /tmp/sccache
+          mkdir -p "$SCCACHE_DIR"
           nix develop -c sccache --stop-server || true
           nix develop -c sccache --start-server || true
           nix develop -c sccache --version || true
