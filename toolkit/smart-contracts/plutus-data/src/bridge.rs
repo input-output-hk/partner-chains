@@ -76,7 +76,6 @@ impl VersionedDatum for TokenTransferDatum {
 }
 
 fn decode_v1_token_transfer_datum(appendix: &PlutusData) -> Option<TokenTransferDatum> {
-	println!(">> {appendix:?}");
 	let constr = appendix.as_constr_plutus_data()?;
 	let alternative = u64::from(constr.alternative());
 	let data = constr.data();
