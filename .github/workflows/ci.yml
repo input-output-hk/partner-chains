@@ -142,7 +142,7 @@ jobs:
           set -e
           echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
           echo "SCCACHE_DIR=/tmp/sccache" >> "$GITHUB_ENV"
-          echo "SCCACHE_CACHE_SIZE=30G" >> "$GITHUB_ENV"
+          echo "SCCACHE_CACHE_SIZE=0" >> "$GITHUB_ENV"
           echo "CARGO_INCREMENTAL=0" >> "$GITHUB_ENV"
           mkdir -p /tmp/sccache
           nix develop -c sccache --stop-server || true
@@ -492,7 +492,7 @@ jobs:
           set -e
           echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
           echo "SCCACHE_DIR=/tmp/sccache" >> "$GITHUB_ENV"
-          echo "SCCACHE_CACHE_SIZE=30G" >> "$GITHUB_ENV"
+          echo "SCCACHE_CACHE_SIZE=0" >> "$GITHUB_ENV"
           echo "CARGO_INCREMENTAL=0" >> "$GITHUB_ENV"
           mkdir -p /tmp/sccache
           nix develop -c sccache --stop-server || true
@@ -865,7 +865,7 @@ jobs:
           set -e
           echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
           echo "SCCACHE_DIR=/tmp/sccache" >> "$GITHUB_ENV"
-          echo "SCCACHE_CACHE_SIZE=30G" >> "$GITHUB_ENV"
+          echo "SCCACHE_CACHE_SIZE=0" >> "$GITHUB_ENV"
           echo "CARGO_INCREMENTAL=0" >> "$GITHUB_ENV"
           mkdir -p /tmp/sccache
           nix develop -c sccache --stop-server || true
