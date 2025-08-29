@@ -140,14 +140,17 @@ jobs:
       - name: Enable sccache (RUSTC_WRAPPER)
         run: |
           set -e
+          export SCCACHE_DIR=/tmp/sccache
+          export SCCACHE_CACHE_SIZE=30G
           echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
           echo "SCCACHE_DIR=/tmp/sccache" >> "$GITHUB_ENV"
-          echo "SCCACHE_CACHE_SIZE=0" >> "$GITHUB_ENV"
+          echo "SCCACHE_CACHE_SIZE=30G" >> "$GITHUB_ENV"
           echo "CARGO_INCREMENTAL=0" >> "$GITHUB_ENV"
           mkdir -p /tmp/sccache
           nix develop -c sccache --stop-server || true
           nix develop -c sccache --start-server || true
           nix develop -c sccache --version || true
+          nix develop -c sccache -s || true
 
       - name: Build
         run: nix develop -c bash -c "cargo build --locked --profile=release"
@@ -490,14 +493,17 @@ jobs:
       - name: Enable sccache (RUSTC_WRAPPER)
         run: |
           set -e
+          export SCCACHE_DIR=/tmp/sccache
+          export SCCACHE_CACHE_SIZE=30G
           echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
           echo "SCCACHE_DIR=/tmp/sccache" >> "$GITHUB_ENV"
-          echo "SCCACHE_CACHE_SIZE=0" >> "$GITHUB_ENV"
+          echo "SCCACHE_CACHE_SIZE=30G" >> "$GITHUB_ENV"
           echo "CARGO_INCREMENTAL=0" >> "$GITHUB_ENV"
           mkdir -p /tmp/sccache
           nix develop -c sccache --stop-server || true
           nix develop -c sccache --start-server || true
           nix develop -c sccache --version || true
+          nix develop -c sccache -s || true
 
       - name: Build
         run: nix develop -c bash -c "cargo build --locked --profile=release"
@@ -863,14 +869,17 @@ jobs:
       - name: Enable sccache (RUSTC_WRAPPER)
         run: |
           set -e
+          export SCCACHE_DIR=/tmp/sccache
+          export SCCACHE_CACHE_SIZE=30G
           echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
           echo "SCCACHE_DIR=/tmp/sccache" >> "$GITHUB_ENV"
-          echo "SCCACHE_CACHE_SIZE=0" >> "$GITHUB_ENV"
+          echo "SCCACHE_CACHE_SIZE=30G" >> "$GITHUB_ENV"
           echo "CARGO_INCREMENTAL=0" >> "$GITHUB_ENV"
           mkdir -p /tmp/sccache
           nix develop -c sccache --stop-server || true
           nix develop -c sccache --start-server || true
           nix develop -c sccache --version || true
+          nix develop -c sccache -s || true
 
       - name: Build
         run: nix develop -c bash -c "cargo build --locked --profile=release"
