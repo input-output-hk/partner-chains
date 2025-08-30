@@ -31,8 +31,19 @@ def payment_key(config: ApiConfig, governance_skey_with_cli):
 
 
 @fixture(scope="session")
-def cardano_payment_key(config: ApiConfig, api: BlockchainApi, write_file):
-    payment_key_path = config.nodes_config.governance_authority.mainchain_key
+def governance_skey_with_cardano_cli(config: ApiConfig, api: BlockchainApi, write_file):
+    """
+    Securely copy the governance authority's init skey (a secret key used by the smart-contracts to authorize admin
+    operations) to a temporary file on the remote machine.
+    The temporary file is deleted after the test completes.
+
+    The skey is copied to a remote host only if both conditions are met:
+    - you call this fixture in test or other fixture
+    - tools.cardano_cli.runner.copy_secrets is set to true in the config file `<env>_stack.json`
+
+    WARNING: This fixture copies secret file to a remote host and should be used with caution.
+    """
+    payment_key_path = config.nodes_config.governance_authority.mainchain_key_local_path
     if api.cardano_cli.run_command.copy_secrets:
         with open(payment_key_path, "r") as f:
             content = json.load(f)
@@ -91,7 +102,7 @@ def mint_token(
     transaction_input: str,
     minting_policy_filepath,
     api: BlockchainApi,
-    cardano_payment_key,
+    governance_skey_with_cardano_cli,
 ):
     lovelace_amount = MIN_LOVELACE_FOR_TX - MIN_LOVELACE_TO_COVER_FEES
 
@@ -106,7 +117,9 @@ def mint_token(
             policy_script_filepath=minting_policy_filepath,
         )
 
-        signed_tx_filepath = api.cardano_cli.sign_transaction(tx_filepath=tx_filepath, signing_key=cardano_payment_key)
+        signed_tx_filepath = api.cardano_cli.sign_transaction(
+            tx_filepath=tx_filepath, signing_key=governance_skey_with_cardano_cli
+        )
 
         result = api.cardano_cli.submit_transaction(signed_tx_filepath)
         return result
@@ -180,7 +193,9 @@ def transaction_input(governance_address: str, api: BlockchainApi):
 
 
 @fixture(scope="package")
-def attach_v_function_to_utxo(transaction_input, governance_address, cardano_payment_key, api: BlockchainApi):
+def attach_v_function_to_utxo(
+    transaction_input, governance_address, governance_skey_with_cardano_cli, api: BlockchainApi
+):
     def _attach_v_function_to_utxo(address, filepath):
         logging.info(f"Attaching V-function to {address}...")
         lovelace_amount = MIN_LOVELACE_FOR_TX - MIN_LOVELACE_TO_COVER_FEES
@@ -193,7 +208,7 @@ def attach_v_function_to_utxo(transaction_input, governance_address, cardano_pay
         )
 
         signed_tx_filepath = api.cardano_cli.sign_transaction(
-            tx_filepath=raw_tx_filepath, signing_key=cardano_payment_key
+            tx_filepath=raw_tx_filepath, signing_key=governance_skey_with_cardano_cli
         )
 
         result = api.cardano_cli.submit_transaction(signed_tx_filepath)
