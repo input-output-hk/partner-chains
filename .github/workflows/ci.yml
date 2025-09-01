@@ -146,7 +146,7 @@ jobs:
         run: |
           echo $PATH
           RUSTC_PATH=$(nix develop -c bash -c 'command -v rustc')
-          CARGO_PATH=$(nix develop -c bash -c 'command -v rustc')
+          CARGO_PATH=$(nix develop -c bash -c 'command -v cargo')
           mkdir -p $HOME/bin
           echo "$HOME/bin" >> $GITHUB_PATH
           ln -s $RUSTC_PATH $HOME/bin/rustc
@@ -163,16 +163,16 @@ jobs:
           cache-workspace-crates: "true"
 
       - name: Formatting
-        run: cargo fmt --check
+        run: nix develop -c bash -c "cargo fmt --check"
 
       - name: Build
-        run: cargo build --locked --release
+        run: nix develop -c bash -c "cargo build --locked --release"
 
       - name: Test
-        run: cargo test --locked --release --all-features
+        run: nix develop -c bash -c "cargo test --locked --release --all-features"
 
       - name: Lint
-        run: RUSTFLAGS=-Dwarnings cargo clippy --locked --release --all-features
+        run: nix develop -c bash -c "RUSTFLAGS=-Dwarnings cargo clippy --locked --release --all-features"
 
       - name: Acquire cache lock
         run: |
