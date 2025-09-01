@@ -163,16 +163,16 @@ jobs:
           cache-workspace-crates: "true"
 
       - name: Formatting
-        run: nix develop -c bash -c "cargo fmt --check"
+        run: cargo fmt --check
 
       - name: Build
-        run: nix develop -c bash -c "cargo build --locked --release"
+        run: cargo build --locked --release
 
       - name: Test
-        run: nix develop -c bash -c "cargo test --locked --release --all-features"
+        run: cargo test --locked --release --all-features
 
       - name: Lint
-        run: nix develop -c bash -c "RUSTFLAGS=-Dwarnings cargo clippy --locked --release --all-features"
+        run: RUSTFLAGS=-Dwarnings cargo clippy --locked --release --all-features
 
       - name: Acquire cache lock
         run: |
