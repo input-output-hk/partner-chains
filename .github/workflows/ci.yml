@@ -142,6 +142,11 @@ jobs:
         with:
           registry: ${{ secrets.ECR_REGISTRY_SECRET }}
 
+      - name: Link rustc to nix store for rust-chache action
+        run: |
+          mkdir $HOME/bin
+          ln -s $(nix develop -c command -v rustc) $HOME/rustc
+
       - uses: Swatinem/rust-cache@v2
         with:
           prefix-key: "v0-rust"
