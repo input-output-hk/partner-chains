@@ -151,17 +151,17 @@ jobs:
           nix develop -c sccache --start-server || true
           nix develop -c sccache --version || true
 
-      - name: Build
-        run: nix develop -c bash -c "cargo build --locked --profile=release"
-
-      - name: Test
-        run: nix develop -c bash -c "cargo test --locked --profile=release --features=runtime-benchmarks"
-
-      - name: Lint
-        run: nix develop -c bash -c "RUSTFLAGS=-Dwarnings cargo clippy --all-targets --all-features"
-
       - name: Formatting
         run: nix develop -c bash -c "cargo fmt --check"
+
+      - name: Build
+        run: nix develop -c bash -c "cargo build --locked --release"
+
+      - name: Test
+        run: nix develop -c bash -c "cargo test --locked --release --all-features"
+
+      - name: Lint
+        run: nix develop -c bash -c "RUSTFLAGS=-Dwarnings cargo clippy --locked --release --all-features"
 
       - name: sccache stats
         if: always()
@@ -878,17 +878,17 @@ jobs:
           nix develop -c sccache --start-server || true
           nix develop -c sccache --version || true
 
-      - name: Build
-        run: nix develop -c bash -c "cargo build --locked --profile=release"
-
-      - name: Test
-        run: nix develop -c bash -c "cargo test --locked --profile=release --features=runtime-benchmarks"
-
-      - name: Lint
-        run: nix develop -c bash -c "RUSTFLAGS=-Dwarnings cargo clippy --all-targets --all-features"
-
       - name: Formatting
         run: nix develop -c bash -c "cargo fmt --check"
+
+      - name: Build
+        run: nix develop -c bash -c "cargo build --locked --release"
+
+      - name: Test
+        run: nix develop -c bash -c "cargo test --locked --release --all-features"
+
+      - name: Lint
+        run: nix develop -c bash -c "RUSTFLAGS=-Dwarnings cargo clippy --locked --release --all-features"
 
       - name: sccache stats
         if: always()
