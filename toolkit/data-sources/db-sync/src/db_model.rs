@@ -876,9 +876,9 @@ FROM block
 
 #[cfg(test)]
 mod tests {
+	use super::*;
+	use hex_literal::hex;
 	use sqlx::PgPool;
-
-	use super::TxInConfiguration;
 
 	#[sqlx::test(migrations = "./testdata/migrations-tx-in-enabled")]
 	async fn tx_in_configuration_is_enabled_if_tx_in_table_exists(pool: PgPool) {
@@ -893,4 +893,157 @@ mod tests {
 
 		assert_eq!(tx_in_config, TxInConfiguration::Consumed)
 	}
+
+	#[sqlx::test(migrations = "./testdata/migrations-tx-in-consumed")]
+	async fn get_block_info_for_utxo_works(pool: PgPool) {
+		// utxo 1 of `consumed_tx_id` in test migration
+		let utxo = UtxoId::new(
+			hex!("cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13"),
+			1,
+		);
+
+		let result = get_block_info_for_utxo(&pool, utxo.tx_hash.into(), utxo.index.into())
+			.await
+			.expect("Should succeed")
+			.expect("Should find data");
+
+		assert_eq!(
+			result,
+			TxBlockInfo {
+				block_number: BlockNumber(0),
+				tx_ix: TxIndexInBlock(0),
+				tx_hash: utxo.tx_hash.into(),
+				tx_out_ix: utxo.index.into()
+			}
+		);
+	}
+}
+
+#[cfg(feature = "bridge")]
+#[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
+pub(crate) struct BridgeUtxo {
+	pub(crate) block_number: BlockNumber,
+	pub(crate) tx_ix: TxIndexInBlock,
+	pub(crate) tx_hash: TxHash,
+	pub(crate) utxo_ix: TxIndex,
+	pub(crate) tokens_out: NativeTokenAmount,
+	pub(crate) tokens_in: NativeTokenAmount,
+	pub(crate) datum: DbDatum,
+}
+#[cfg(feature = "bridge")]
+impl BridgeUtxo {
+	pub fn utxo_id(&self) -> UtxoId {
+		UtxoId { tx_hash: self.tx_hash.clone().into(), index: self.utxo_ix.clone().into() }
+	}
+}
+
+#[cfg(feature = "bridge")]
+pub(crate) async fn get_bridge_utxos_tx(
+	tx_in_configuration: TxInConfiguration,
+	pool: &Pool<Postgres>,
+	icp_addr: &Address,
+	asset: Asset,
+	checkpoint: (BlockNumber, TxIndexInBlock, TxIndex),
+	to_block: BlockNumber,
+	max_utxos: u32,
+) -> Result<Vec<BridgeUtxo>, SqlxError> {
+	match tx_in_configuration {
+		TxInConfiguration::Consumed => {
+			get_bridge_utxos_tx_in_consumed(pool, icp_addr, asset, checkpoint, to_block, max_utxos)
+				.await
+		},
+		_ => unimplemented!(),
+	}
+}
+
+#[cfg(feature = "bridge")]
+#[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
+pub(crate) struct TxBlockInfo {
+	pub(crate) block_number: BlockNumber,
+	pub(crate) tx_ix: TxIndexInBlock,
+	pub(crate) tx_hash: TxHash,
+	pub(crate) tx_out_ix: TxIndex,
+}
+
+#[cfg(feature = "bridge")]
+pub(crate) async fn get_block_info_for_utxo(
+	pool: &Pool<Postgres>,
+	tx_hash: TxHash,
+	tx_ix: TxIndex,
+) -> Result<Option<TxBlockInfo>, SqlxError> {
+	let query = sqlx::query_as::<_, TxBlockInfo>(
+		"
+SELECT
+	block.block_no AS block_number,
+	tx.block_index AS tx_ix,
+	tx.hash        AS tx_hash,
+	tx_out.index   AS tx_out_ix
+FROM tx
+JOIN tx_out ON tx.id = tx_out.tx_id
+JOIN block  ON block.id = tx.block_id
+WHERE tx.hash = $1
+  AND tx_out.index = $2
+;
+",
+	)
+	.bind(tx_hash)
+	.bind(tx_ix);
+
+	Ok(query.fetch_optional(pool).await?)
+}
+
+#[cfg(feature = "bridge")]
+async fn get_bridge_utxos_tx_in_consumed(
+	pool: &Pool<Postgres>,
+	icp_address: &Address,
+	native_token: Asset,
+	(from_block, from_tx_ix, from_utxo_ix): (BlockNumber, TxIndexInBlock, TxIndex),
+	to_block: BlockNumber,
+	max_utxos: u32,
+) -> Result<Vec<BridgeUtxo>, SqlxError> {
+	let query = sqlx::query_as::<_, BridgeUtxo>(
+		"
+SELECT
+      block.block_no                          AS block_number
+    , tx.block_index                          AS tx_ix
+    , tx.hash                                 AS tx_hash
+    , outputs.index                           AS utxo_ix
+    , output_tokens.quantity                  AS tokens_out
+    , coalesce(sum(input_tokens.quantity), 0) AS tokens_in
+    , datum.value                             AS datum
+
+FROM tx_out      outputs
+JOIN tx                        ON outputs.tx_id = tx.id
+JOIN block                     ON tx.block_id = block.id
+JOIN ma_tx_out   output_tokens ON output_tokens.tx_out_id = outputs.id
+JOIN multi_asset native_token  ON native_token.id = output_tokens.ident
+JOIN datum                     ON datum.tx_id = tx.id
+
+LEFT JOIN tx_out     inputs        ON inputs.consumed_by_tx_id = tx.id
+LEFT JOIN ma_tx_out  input_tokens  ON input_tokens.tx_out_id = inputs.id AND input_tokens.ident = native_token.id
+
+WHERE native_token.policy = $2
+  AND native_token.name = $3
+  AND outputs.address = $1
+  AND (block_no, tx.block_index, outputs.index) > ($4, $5, $6)
+  AND block_no <= $7
+
+GROUP BY tx.hash, outputs.id, output_tokens.quantity, datum.value, block.block_no, tx.block_index, outputs.index
+
+ORDER BY block.block_no, tx.block_index, outputs.index
+
+limit $8
+;
+    ",
+	)
+	.bind(&icp_address.0)
+	.bind(&native_token.policy_id.0)
+	.bind(&native_token.asset_name.0)
+	.bind(from_block)
+	.bind(from_tx_ix)
+	.bind(from_utxo_ix)
+	.bind(to_block)
+	.bind(max_utxos as i64);
+
+	Ok(query.fetch_all(pool).await?)
 }

@@ -105,6 +105,8 @@ pub use crate::{
 
 #[cfg(feature = "block-source")]
 pub use crate::block::{BlockDataSourceImpl, DbSyncBlockDataSourceConfig};
+#[cfg(feature = "bridge")]
+pub use crate::bridge::TokenBridgeDataSourceImpl;
 #[cfg(feature = "candidate-source")]
 pub use crate::candidates::CandidatesDataSourceImpl;
 #[cfg(feature = "governed-map")]
@@ -125,6 +127,8 @@ mod metrics;
 
 #[cfg(feature = "block-source")]
 mod block;
+#[cfg(feature = "bridge")]
+mod bridge;
 #[cfg(feature = "candidate-source")]
 mod candidates;
 #[cfg(feature = "governed-map")]
