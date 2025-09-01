@@ -15,7 +15,7 @@
 //! - Reserve Validator script
 //! - Illiquid Supply Validator script
 
-use super::{ReserveData, TokenAmount, reserve_utxo_input_with_validator_script_reference};
+use super::{ReserveData, TokenAmount, add_reserve_utxo_input_with_validator_script_reference};
 use crate::{
 	await_tx::AwaitTx,
 	cardano_keys::CardanoPaymentSigningKey,
@@ -29,7 +29,7 @@ use crate::{
 };
 use cardano_serialization_lib::{
 	JsError, MultiAsset, Transaction, TransactionBuilder, TransactionOutput,
-	TransactionOutputBuilder,
+	TransactionOutputBuilder, TxInputsBuilder,
 };
 use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
@@ -95,12 +95,17 @@ fn deposit_to_reserve_tx(
 
 	tx_builder.add_output(&validator_output(parameters, current_utxo, &reserve.scripts, ctx)?)?;
 
-	tx_builder.set_inputs(&reserve_utxo_input_with_validator_script_reference(
+	let mut tx_inputs = TxInputsBuilder::new();
+
+	add_reserve_utxo_input_with_validator_script_reference(
+		&mut tx_inputs,
 		current_utxo,
 		reserve,
 		ReserveRedeemer::DepositToReserve,
 		&costs.get_one_spend(),
-	)?);
+	)?;
+
+	tx_builder.set_inputs(&tx_inputs);
 
 	tx_builder.add_mint_one_script_token_using_reference_script(
 		&governance.policy.script(),

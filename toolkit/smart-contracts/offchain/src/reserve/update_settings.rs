@@ -16,7 +16,7 @@
 //!   * Reserve Validator Version Utxo
 //!   * Governance Policy Script
 
-use super::{ReserveData, reserve_utxo_input_with_validator_script_reference};
+use super::{ReserveData, add_reserve_utxo_input_with_validator_script_reference};
 use crate::{
 	await_tx::AwaitTx,
 	cardano_keys::CardanoPaymentSigningKey,
@@ -96,13 +96,17 @@ fn update_reserve_settings_tx(
 ) -> anyhow::Result<Transaction> {
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 
-	// spend old settings
-	tx_builder.set_inputs(&reserve_utxo_input_with_validator_script_reference(
+	let mut tx_inputs = TxInputsBuilder::new();
+
+	add_reserve_utxo_input_with_validator_script_reference(
+		&mut tx_inputs,
 		reserve_utxo,
 		reserve,
 		ReserveRedeemer::UpdateReserve,
 		&costs.get_one_spend(),
-	)?);
+	)?;
+	// spend old settings
+	tx_builder.set_inputs(&tx_inputs);
 	{
 		let amount_builder = TransactionOutputBuilder::new()
 			.with_address(&reserve.scripts.validator.address(ctx.network))

@@ -91,6 +91,9 @@ pub struct CreateReserveCmd {
 	#[arg(long)]
 	/// Reserve token asset id encoded in form <policy_id_hex>.<asset_name_hex>.
 	token: AssetId,
+	#[arg(long, default_value = "1")]
+	/// Amount of illiquid circulation supply authority tokens to mint.
+	ics_auth_token_amount: u64,
 }
 
 impl CreateReserveCmd {
@@ -103,6 +106,7 @@ impl CreateReserveCmd {
 				total_accrued_function_script_hash: self.total_accrued_function_script_hash,
 				token: self.token,
 				initial_deposit: self.initial_deposit_amount,
+				ics_auth_token_amount: self.ics_auth_token_amount,
 			},
 			self.genesis_utxo.into(),
 			&payment_key,

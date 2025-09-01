@@ -184,7 +184,7 @@ async fn reserve_management_scenario() {
 	let genesis_utxo = run_init_governance(&client).await;
 	let _ = run_update_governance(&client, genesis_utxo).await;
 	let results = run_init_reserve_management(genesis_utxo, &client).await;
-	assert_eq!(results.len(), 3);
+	assert_eq!(results.len(), 4);
 	for result in results {
 		run_assemble_and_sign(result, &[EVE_PAYMENT_KEY, GOVERNANCE_AUTHORITY_KEY], &client).await;
 	}
@@ -237,7 +237,7 @@ async fn reserve_release_to_zero_scenario() {
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_governance(&client).await;
 	let txs = run_init_reserve_management(genesis_utxo, &client).await;
-	assert_eq!(txs.len(), 3);
+	assert_eq!(txs.len(), 4);
 	let _ = run_create_reserve_management(genesis_utxo, V_FUNCTION_HASH, &client).await;
 	assert_reserve_deposited(genesis_utxo, INITIAL_DEPOSIT_AMOUNT, &client).await;
 	run_release_reserve_funds(genesis_utxo, INITIAL_DEPOSIT_AMOUNT, V_FUNCTION_UTXO, &client).await;
@@ -587,6 +587,7 @@ async fn run_create_reserve_management<
 				asset_name: AssetName::from_hex_unsafe(REWARDS_TOKEN_ASSET_NAME_STR),
 			},
 			initial_deposit: INITIAL_DEPOSIT_AMOUNT,
+			ics_auth_token_amount: 100,
 		},
 		genesis_utxo,
 		&governance_authority_payment_key(),
