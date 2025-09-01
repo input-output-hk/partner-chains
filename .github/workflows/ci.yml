@@ -144,8 +144,17 @@ jobs:
 
       - name: Link rustc to nix store for rust-chache action
         run: |
-          mkdir $HOME/bin
-          ln -s $(nix develop -c command -v rustc) $HOME/rustc
+          echo $PATH
+          RUSTC_PATH=$(nix develop -c bash -c 'command -v rustc')
+          CARGO_PATH=$(nix develop -c bash -c 'command -v rustc')
+          mkdir -p $HOME/bin
+          echo "$HOME/bin" >> $GITHUB_PATH
+          ln -s $RUSTC_PATH $HOME/bin/rustc
+          ln -s $CARGO_PATH $HOME/bin/cargo
+
+      - name: Print cargo version
+        run: |
+          cargo --version
 
       - uses: Swatinem/rust-cache@v2
         with:
