@@ -7387,6 +7387,7 @@ dependencies = [
  "sp-block-participation",
  "sp-governed-map",
  "sp-native-token-management",
+ "sp-partner-chains-bridge",
  "sp-timestamp",
  "sqlx",
  "substrate-prometheus-endpoint",

@@ -29,7 +29,7 @@ fn main_chain_scripts() -> MainChainScripts {
 }
 
 fn data_checkpoint() -> BridgeDataCheckpoint {
-	BridgeDataCheckpoint(UtxoId::new([1; 32], 3))
+	BridgeDataCheckpoint::Utxo(UtxoId::new([1; 32], 3))
 }
 
 mod set_main_chain_scripts {
