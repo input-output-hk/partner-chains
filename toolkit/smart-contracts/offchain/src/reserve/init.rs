@@ -377,10 +377,7 @@ mod tests {
 			let constr_plutus_data = ConstrPlutusData::new(&BigNum::one(), &list);
 			PlutusData::new_constr_plutus_data(&constr_plutus_data)
 		};
-		println!("expected_vo_redeemer_data: {:?}", expected_vo_redeemer_data);
-		println!("redeemers: {:?}", redeemers);
-		println!("versioning_script_cost: {:?}", versioning_script_cost());
-		println!("governance_script_cost: {:?}", governance_script_cost());
+
 		let _ = redeemers
 			.iter()
 			.find(|r| {
