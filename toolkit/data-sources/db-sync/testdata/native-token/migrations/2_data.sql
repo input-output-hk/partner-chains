@@ -88,7 +88,7 @@ INSERT INTO tx_out
 VALUES
 ( transfer_utxo_id_1      , transfer_tx_id_1      , 0    , validator_addr  , ''         , TRUE              , NULL        , NULL            , 0    , NULL      ),
 ( transfer_utxo_id_2      , transfer_tx_id_2      , 1    , validator_addr  , ''         , TRUE              , NULL        , NULL            , 0    , NULL      ),
-( irrelevant_utxo_id_1    , irrelevant_tx_id      , 0    , 'other_addr'    , ''         , TRUE              , NULL        , NULL            , 0    , NULL      ),
+( irrelevant_utxo_id_1    , irrelevant_tx_id      , 0    , validator_addr  , ''         , TRUE              , NULL        , NULL            , 0    , NULL      ),
 ( irrelevant_utxo_id_2    , irrelevant_tx_id      , 1    , 'another_addr'  , ''         , TRUE              , NULL        , NULL            , 0    , NULL      ),
 ( transfer_utxo_id_3      , transfer_tx_id_3      , 2    , validator_addr  , ''         , TRUE              , NULL        , NULL            , 0    , NULL      ),
 ( transfer_utxo_id_4      , transfer_tx_id_4      , 0    , validator_addr  , ''         , TRUE              , NULL        , NULL            , 0    , NULL      ),

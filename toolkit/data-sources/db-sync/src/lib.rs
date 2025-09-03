@@ -188,7 +188,7 @@ pub(crate) type Result<T> = std::result::Result<T, DataSourceError>;
 mod tests {
 	use ctor::{ctor, dtor};
 	use std::sync::OnceLock;
-	use testcontainers_modules::testcontainers::Container;
+	use testcontainers_modules::testcontainers::{Container, RunnableImage};
 	use testcontainers_modules::{postgres::Postgres as PostgresImg, testcontainers::clients::Cli};
 
 	static POSTGRES: OnceLock<Container<PostgresImg>> = OnceLock::new();
@@ -196,7 +196,7 @@ mod tests {
 
 	fn init_postgres() -> Container<'static, PostgresImg> {
 		let docker = CLI.get_or_init(Cli::default);
-		docker.run(PostgresImg::default())
+		docker.run(RunnableImage::from(PostgresImg::default()).with_tag("17.2"))
 	}
 
 	#[ctor]

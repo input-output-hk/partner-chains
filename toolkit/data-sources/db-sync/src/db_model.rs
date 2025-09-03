@@ -851,17 +851,19 @@ pub(crate) async fn get_native_token_transfers(
 	let query = sqlx::query_as::<_, BlockTokenAmount>(
 		"
 SELECT
-    block.hash as block_hash, COALESCE(SUM(ma_tx_out.quantity), 0) as amount
+	block.hash as block_hash, COALESCE(a.amount, 0) as amount
 FROM block
-    LEFT JOIN tx ON block.id = tx.block_id
-    LEFT JOIN tx_out ON tx.id = tx_out.tx_id AND tx_out.address = $1
-    LEFT JOIN ma_tx_out    ON ma_tx_out.tx_out_id = tx_out.id
-    LEFT JOIN multi_asset  ON multi_asset.id = ma_tx_out.ident AND multi_asset.policy = $2 AND multi_asset.name = $3
-WHERE
-    $4 <= block.block_no AND block.block_no <= $5
-GROUP BY block.block_no, block.hash
-ORDER BY block.block_no ASC;
-    ",
+	LEFT JOIN (SELECT tx.block_id as block_id, SUM(ma_tx_out.quantity) as amount FROM tx
+		INNER JOIN tx_out ON tx.id = tx_out.tx_id AND tx_out.address = $1
+		INNER JOIN ma_tx_out    ON ma_tx_out.tx_out_id = tx_out.id
+		INNER JOIN multi_asset  ON multi_asset.id = ma_tx_out.ident
+		WHERE multi_asset.policy = $2 AND multi_asset.name = $3
+		GROUP BY tx.block_id
+		) as a ON block.id = a.block_id
+	WHERE
+		$4 <= block.block_no AND block.block_no <= $5
+	ORDER BY block.block_no ASC;
+",
 	)
 	.bind(&illiquid_supply_address.0)
 	.bind(&asset.policy_id.0)
