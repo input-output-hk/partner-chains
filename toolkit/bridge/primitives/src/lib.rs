@@ -133,7 +133,7 @@ pub struct BridgeDataCheckpoint(pub UtxoId);
 /// Interface for data sources that can be used by [TokenBridgeInherentDataProvider]
 #[cfg(feature = "std")]
 #[async_trait::async_trait]
-pub trait TokenBridgeDataSource<RecipientAddress> {
+pub trait TokenBridgeDataSource<RecipientAddress>: Send + Sync {
 	/// Fetches at most `max_transfers` of token bridge transfers after `data_checkpoint` up to `current_mc_block`
 	async fn get_transfers(
 		&self,
@@ -219,7 +219,7 @@ impl<RecipientAddress: Encode + Send + Sync> TokenBridgeInherentDataProvider<Rec
 		client: &T,
 		parent_hash: Block::Hash,
 		current_mc_hash: McBlockHash,
-		data_source: &dyn TokenBridgeDataSource<RecipientAddress>,
+		data_source: &(dyn TokenBridgeDataSource<RecipientAddress> + Send + Sync),
 	) -> Result<Self, InherentDataCreationError>
 	where
 		Block: BlockT,

@@ -82,4 +82,9 @@ mod stake_distribution;
 #[cfg(feature = "block-participation")]
 pub use stake_distribution::StakeDistributionDataSourceMock;
 
+#[cfg(feature = "bridge")]
+mod bridge;
+#[cfg(feature = "bridge")]
+pub use bridge::TokenBridgeDataSourceMock;
+
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
