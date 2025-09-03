@@ -146,8 +146,7 @@ impl ReserveData {
 
 		let ics_utxo = validator_utxos
 			.into_iter()
-			.filter(|utxo| utxo.get_asset_amount(&auth_token_asset_id) == 1u64)
-			.min_by_key(|utxo| (utxo.transaction.id, utxo.index))
+			.find(|utxo| utxo.get_asset_amount(&auth_token_asset_id) == 1u64)
 			.ok_or_else(|| {
 				anyhow!("Reserve Utxo not found, is the Reserve Token Management initialized?")
 			})?;
@@ -159,6 +158,23 @@ impl ReserveData {
 pub(crate) struct TokenAmount {
 	pub token: AssetId,
 	pub amount: u64,
+}
+
+pub(crate) fn reserve_utxo_input_with_validator_script_reference(
+	reserve_utxo: &OgmiosUtxo,
+	reserve: &ReserveData,
+	redeemer: ReserveRedeemer,
+	cost: &ExUnits,
+) -> Result<TxInputsBuilder, JsError> {
+	let mut inputs = TxInputsBuilder::new();
+	add_reserve_utxo_input_with_validator_script_reference(
+		&mut inputs,
+		reserve_utxo,
+		reserve,
+		redeemer,
+		cost,
+	)?;
+	Ok(inputs)
 }
 
 pub(crate) fn add_reserve_utxo_input_with_validator_script_reference(

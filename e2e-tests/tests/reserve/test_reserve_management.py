@@ -141,6 +141,7 @@ class TestReleaseFunds:
         assert observed_transfer == amount_to_release
 
 
+
 class TestDepositFunds:
     @fixture(scope="class")
     def native_token_balance(self, api: BlockchainApi, governance_address, reserve_asset_id):

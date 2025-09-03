@@ -189,10 +189,7 @@ fn reserve_release_tx(
 
 	assets.insert(
 		&token.asset_name.to_csl()?,
-		&amount_to_transfer
-			.checked_add(ics_balance)
-			.expect("Total transfer amount can't overflow u64")
-			.into(),
+		&amount_to_transfer.saturating_add(ics_balance).into(),
 	);
 
 	ics_tokens.insert(&token.policy_id.0.into(), &assets);
@@ -473,7 +470,7 @@ mod tests {
 	}
 
 	fn reserve_release_test_tx() -> Transaction {
-		let x = reserve_release_tx(
+		reserve_release_tx(
 			&tx_context(),
 			&reserve_data(),
 			&previous_reserve_utxo(),
@@ -482,9 +479,8 @@ mod tests {
 			5,
 			0,
 			Costs::ZeroCosts,
-		);
-		println!("{:?}", x);
-		x.unwrap()
+		)
+		.unwrap()
 	}
 
 	#[test]

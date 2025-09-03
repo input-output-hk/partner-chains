@@ -18,7 +18,7 @@
 //! - Reserve Validator script
 //! - Illiquid Supply Validator script
 
-use super::{ReserveUtxo, TokenAmount, add_reserve_utxo_input_with_validator_script_reference};
+use super::{ReserveUtxo, TokenAmount, reserve_utxo_input_with_validator_script_reference};
 use crate::{
 	await_tx::AwaitTx,
 	cardano_keys::CardanoPaymentSigningKey,
@@ -95,16 +95,14 @@ fn build_tx(
 		&costs,
 	)?;
 
-	let mut tx_inputs = TxInputsBuilder::new();
 	// Spends UTXO with Reserve Auth Policy Token and Reserve (Reward) tokens
-	add_reserve_utxo_input_with_validator_script_reference(
-		&mut tx_inputs,
+
+	tx_builder.set_inputs(&reserve_utxo_input_with_validator_script_reference(
 		reserve_utxo,
 		reserve,
 		ReserveRedeemer::Handover,
 		&reserve_auth_policy_spend_cost,
-	)?;
-	tx_builder.set_inputs(&tx_inputs);
+	)?);
 
 	// burn reserve auth policy token
 	tx_builder.add_mint_script_token_using_reference_script(

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-PARTNER_CHAINS_NODE_IMAGE="docker.io/library/partner-chains-node:latest"
+PARTNER_CHAINS_NODE_IMAGE="ghcr.io/input-output-hk/partner-chains/partner-chains-node-unstable:latest"
 CARDANO_IMAGE="ghcr.io/intersectmbo/cardano-node:10.5.1"
 DBSYNC_IMAGE="ghcr.io/intersectmbo/cardano-db-sync:13.6.0.4"
 OGMIOS_IMAGE="cardanosolutions/ogmios:v6.13.0"

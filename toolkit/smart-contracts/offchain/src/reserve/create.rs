@@ -16,6 +16,7 @@
 //!   * Governance Policy Script
 
 use super::ReserveData;
+use crate::csl::unit_plutus_data;
 use crate::reserve::create::Script::Plutus;
 use crate::{
 	await_tx::AwaitTx,
@@ -37,7 +38,6 @@ use ogmios_client::{
 	query_network::QueryNetwork,
 	transactions::Transactions,
 };
-use partner_chains_plutus_data::bridge::TokenTransferDatumV1;
 use partner_chains_plutus_data::reserve::{
 	ReserveDatum, ReserveImmutableSettings, ReserveMutableSettings, ReserveStats,
 };
@@ -162,7 +162,7 @@ fn ics_validator_output(
 ) -> Result<TransactionOutput, JsError> {
 	let amount_builder = TransactionOutputBuilder::new()
 		.with_address(&scripts.illiquid_circulation_supply_validator.address(ctx.network))
-		.with_plutus_data(&TokenTransferDatumV1::ReserveTransfer.into())
+		.with_plutus_data(&unit_plutus_data())
 		.next()?;
 	let ma = MultiAsset::new().with_asset_amount(
 		&scripts.illiquid_circulation_supply_auth_token_policy.empty_name_asset(),
