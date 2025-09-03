@@ -487,8 +487,8 @@ def new_wallet(api: BlockchainApi) -> Wallet:
 
 @fixture(scope="session")
 def get_wallet(api: BlockchainApi, secrets, config: ApiConfig) -> Wallet:
-    # For jolteon_docker environment, use Alice's development account which has balance
-    if config.test_environment == "jolteon_docker":
+    # For jolteon_docker and jolteon_local environments, use Alice's development account which has balance
+    if config.test_environment in ["jolteon_docker", "jolteon_local"]:
         # Alice's well-known development account (//Alice)
         from substrateinterface import Keypair, KeypairType
         alice_keypair = Keypair.create_from_uri("//Alice")
