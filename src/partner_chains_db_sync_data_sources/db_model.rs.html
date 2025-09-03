@@ -851,44 +851,46 @@
 <a href=#851 id=851 data-nosnippet>851</a>	<span class="kw">let </span>query = sqlx::query_as::&lt;<span class="kw">_</span>, BlockTokenAmount&gt;(
 <a href=#852 id=852 data-nosnippet>852</a>		<span class="string">"
 <a href=#853 id=853 data-nosnippet>853</a>SELECT
-<a href=#854 id=854 data-nosnippet>854</a>    block.hash as block_hash, COALESCE(SUM(ma_tx_out.quantity), 0) as amount
+<a href=#854 id=854 data-nosnippet>854</a>	block.hash as block_hash, COALESCE(a.amount, 0) as amount
 <a href=#855 id=855 data-nosnippet>855</a>FROM block
-<a href=#856 id=856 data-nosnippet>856</a>    LEFT JOIN tx ON block.id = tx.block_id
-<a href=#857 id=857 data-nosnippet>857</a>    LEFT JOIN tx_out ON tx.id = tx_out.tx_id AND tx_out.address = $1
-<a href=#858 id=858 data-nosnippet>858</a>    LEFT JOIN ma_tx_out    ON ma_tx_out.tx_out_id = tx_out.id
-<a href=#859 id=859 data-nosnippet>859</a>    LEFT JOIN multi_asset  ON multi_asset.id = ma_tx_out.ident AND multi_asset.policy = $2 AND multi_asset.name = $3
-<a href=#860 id=860 data-nosnippet>860</a>WHERE
-<a href=#861 id=861 data-nosnippet>861</a>    $4 &lt;= block.block_no AND block.block_no &lt;= $5
-<a href=#862 id=862 data-nosnippet>862</a>GROUP BY block.block_no, block.hash
-<a href=#863 id=863 data-nosnippet>863</a>ORDER BY block.block_no ASC;
-<a href=#864 id=864 data-nosnippet>864</a>    "</span>,
-<a href=#865 id=865 data-nosnippet>865</a>	)
-<a href=#866 id=866 data-nosnippet>866</a>	.bind(<span class="kw-2">&amp;</span>illiquid_supply_address.<span class="number">0</span>)
-<a href=#867 id=867 data-nosnippet>867</a>	.bind(<span class="kw-2">&amp;</span>asset.policy_id.<span class="number">0</span>)
-<a href=#868 id=868 data-nosnippet>868</a>	.bind(<span class="kw-2">&amp;</span>asset.asset_name.<span class="number">0</span>)
-<a href=#869 id=869 data-nosnippet>869</a>	.bind(from_block)
-<a href=#870 id=870 data-nosnippet>870</a>	.bind(to_block);
-<a href=#871 id=871 data-nosnippet>871</a>
-<a href=#872 id=872 data-nosnippet>872</a>	<span class="prelude-val">Ok</span>(query.fetch_all(pool).<span class="kw">await</span><span class="question-mark">?</span>)
-<a href=#873 id=873 data-nosnippet>873</a>}
-<a href=#874 id=874 data-nosnippet>874</a>
-<a href=#875 id=875 data-nosnippet>875</a><span class="attr">#[cfg(test)]
-<a href=#876 id=876 data-nosnippet>876</a></span><span class="kw">mod </span>tests {
-<a href=#877 id=877 data-nosnippet>877</a>	<span class="kw">use </span>sqlx::PgPool;
-<a href=#878 id=878 data-nosnippet>878</a>
-<a href=#879 id=879 data-nosnippet>879</a>	<span class="kw">use </span><span class="kw">super</span>::TxInConfiguration;
+<a href=#856 id=856 data-nosnippet>856</a>	LEFT JOIN (SELECT tx.block_id as block_id, SUM(ma_tx_out.quantity) as amount FROM tx
+<a href=#857 id=857 data-nosnippet>857</a>		INNER JOIN tx_out ON tx.id = tx_out.tx_id AND tx_out.address = $1
+<a href=#858 id=858 data-nosnippet>858</a>		INNER JOIN ma_tx_out    ON ma_tx_out.tx_out_id = tx_out.id
+<a href=#859 id=859 data-nosnippet>859</a>		INNER JOIN multi_asset  ON multi_asset.id = ma_tx_out.ident
+<a href=#860 id=860 data-nosnippet>860</a>		WHERE multi_asset.policy = $2 AND multi_asset.name = $3
+<a href=#861 id=861 data-nosnippet>861</a>		GROUP BY tx.block_id
+<a href=#862 id=862 data-nosnippet>862</a>		) as a ON block.id = a.block_id
+<a href=#863 id=863 data-nosnippet>863</a>	WHERE
+<a href=#864 id=864 data-nosnippet>864</a>		$4 &lt;= block.block_no AND block.block_no &lt;= $5
+<a href=#865 id=865 data-nosnippet>865</a>	ORDER BY block.block_no ASC;
+<a href=#866 id=866 data-nosnippet>866</a>"</span>,
+<a href=#867 id=867 data-nosnippet>867</a>	)
+<a href=#868 id=868 data-nosnippet>868</a>	.bind(<span class="kw-2">&amp;</span>illiquid_supply_address.<span class="number">0</span>)
+<a href=#869 id=869 data-nosnippet>869</a>	.bind(<span class="kw-2">&amp;</span>asset.policy_id.<span class="number">0</span>)
+<a href=#870 id=870 data-nosnippet>870</a>	.bind(<span class="kw-2">&amp;</span>asset.asset_name.<span class="number">0</span>)
+<a href=#871 id=871 data-nosnippet>871</a>	.bind(from_block)
+<a href=#872 id=872 data-nosnippet>872</a>	.bind(to_block);
+<a href=#873 id=873 data-nosnippet>873</a>
+<a href=#874 id=874 data-nosnippet>874</a>	<span class="prelude-val">Ok</span>(query.fetch_all(pool).<span class="kw">await</span><span class="question-mark">?</span>)
+<a href=#875 id=875 data-nosnippet>875</a>}
+<a href=#876 id=876 data-nosnippet>876</a>
+<a href=#877 id=877 data-nosnippet>877</a><span class="attr">#[cfg(test)]
+<a href=#878 id=878 data-nosnippet>878</a></span><span class="kw">mod </span>tests {
+<a href=#879 id=879 data-nosnippet>879</a>	<span class="kw">use </span>sqlx::PgPool;
 <a href=#880 id=880 data-nosnippet>880</a>
-<a href=#881 id=881 data-nosnippet>881</a>	<span class="attr">#[sqlx::test(migrations = <span class="string">"./testdata/migrations-tx-in-enabled"</span>)]
-<a href=#882 id=882 data-nosnippet>882</a>	</span><span class="kw">async fn </span>tx_in_configuration_is_enabled_if_tx_in_table_exists(pool: PgPool) {
-<a href=#883 id=883 data-nosnippet>883</a>		<span class="kw">let </span>tx_in_config = TxInConfiguration::from_connection(<span class="kw-2">&amp;</span>pool).<span class="kw">await</span>.unwrap();
-<a href=#884 id=884 data-nosnippet>884</a>
-<a href=#885 id=885 data-nosnippet>885</a>		<span class="macro">assert_eq!</span>(tx_in_config, TxInConfiguration::Enabled)
-<a href=#886 id=886 data-nosnippet>886</a>	}
-<a href=#887 id=887 data-nosnippet>887</a>
-<a href=#888 id=888 data-nosnippet>888</a>	<span class="attr">#[sqlx::test(migrations = <span class="bool-val">false</span>)]
-<a href=#889 id=889 data-nosnippet>889</a>	</span><span class="kw">async fn </span>tx_in_configuration_is_consumed_if_tx_in_table_does_not_exist(pool: PgPool) {
-<a href=#890 id=890 data-nosnippet>890</a>		<span class="kw">let </span>tx_in_config = TxInConfiguration::from_connection(<span class="kw-2">&amp;</span>pool).<span class="kw">await</span>.unwrap();
-<a href=#891 id=891 data-nosnippet>891</a>
-<a href=#892 id=892 data-nosnippet>892</a>		<span class="macro">assert_eq!</span>(tx_in_config, TxInConfiguration::Consumed)
-<a href=#893 id=893 data-nosnippet>893</a>	}
-<a href=#894 id=894 data-nosnippet>894</a>}</code></pre></div></section></main></body></html>
+<a href=#881 id=881 data-nosnippet>881</a>	<span class="kw">use </span><span class="kw">super</span>::TxInConfiguration;
+<a href=#882 id=882 data-nosnippet>882</a>
+<a href=#883 id=883 data-nosnippet>883</a>	<span class="attr">#[sqlx::test(migrations = <span class="string">"./testdata/migrations-tx-in-enabled"</span>)]
+<a href=#884 id=884 data-nosnippet>884</a>	</span><span class="kw">async fn </span>tx_in_configuration_is_enabled_if_tx_in_table_exists(pool: PgPool) {
+<a href=#885 id=885 data-nosnippet>885</a>		<span class="kw">let </span>tx_in_config = TxInConfiguration::from_connection(<span class="kw-2">&amp;</span>pool).<span class="kw">await</span>.unwrap();
+<a href=#886 id=886 data-nosnippet>886</a>
+<a href=#887 id=887 data-nosnippet>887</a>		<span class="macro">assert_eq!</span>(tx_in_config, TxInConfiguration::Enabled)
+<a href=#888 id=888 data-nosnippet>888</a>	}
+<a href=#889 id=889 data-nosnippet>889</a>
+<a href=#890 id=890 data-nosnippet>890</a>	<span class="attr">#[sqlx::test(migrations = <span class="bool-val">false</span>)]
+<a href=#891 id=891 data-nosnippet>891</a>	</span><span class="kw">async fn </span>tx_in_configuration_is_consumed_if_tx_in_table_does_not_exist(pool: PgPool) {
+<a href=#892 id=892 data-nosnippet>892</a>		<span class="kw">let </span>tx_in_config = TxInConfiguration::from_connection(<span class="kw-2">&amp;</span>pool).<span class="kw">await</span>.unwrap();
+<a href=#893 id=893 data-nosnippet>893</a>
+<a href=#894 id=894 data-nosnippet>894</a>		<span class="macro">assert_eq!</span>(tx_in_config, TxInConfiguration::Consumed)
+<a href=#895 id=895 data-nosnippet>895</a>	}
+<a href=#896 id=896 data-nosnippet>896</a>}</code></pre></div></section></main></body></html>

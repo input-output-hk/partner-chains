@@ -188,7 +188,7 @@
 <a href=#188 id=188 data-nosnippet>188</a></span><span class="kw">mod </span>tests {
 <a href=#189 id=189 data-nosnippet>189</a>	<span class="kw">use </span>ctor::{ctor, dtor};
 <a href=#190 id=190 data-nosnippet>190</a>	<span class="kw">use </span>std::sync::OnceLock;
-<a href=#191 id=191 data-nosnippet>191</a>	<span class="kw">use </span>testcontainers_modules::testcontainers::Container;
+<a href=#191 id=191 data-nosnippet>191</a>	<span class="kw">use </span>testcontainers_modules::testcontainers::{Container, RunnableImage};
 <a href=#192 id=192 data-nosnippet>192</a>	<span class="kw">use </span>testcontainers_modules::{postgres::Postgres <span class="kw">as </span>PostgresImg, testcontainers::clients::Cli};
 <a href=#193 id=193 data-nosnippet>193</a>
 <a href=#194 id=194 data-nosnippet>194</a>	<span class="kw">static </span>POSTGRES: OnceLock&lt;Container&lt;PostgresImg&gt;&gt; = OnceLock::new();
@@ -196,7 +196,7 @@
 <a href=#196 id=196 data-nosnippet>196</a>
 <a href=#197 id=197 data-nosnippet>197</a>	<span class="kw">fn </span>init_postgres() -&gt; Container&lt;<span class="lifetime">'static</span>, PostgresImg&gt; {
 <a href=#198 id=198 data-nosnippet>198</a>		<span class="kw">let </span>docker = CLI.get_or_init(Cli::default);
-<a href=#199 id=199 data-nosnippet>199</a>		docker.run(PostgresImg::default())
+<a href=#199 id=199 data-nosnippet>199</a>		docker.run(RunnableImage::from(PostgresImg::default()).with_tag(<span class="string">"17.2"</span>))
 <a href=#200 id=200 data-nosnippet>200</a>	}
 <a href=#201 id=201 data-nosnippet>201</a>
 <a href=#202 id=202 data-nosnippet>202</a>	<span class="attr">#[ctor]
