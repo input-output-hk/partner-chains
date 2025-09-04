@@ -71,6 +71,7 @@ derive-new = { workspace = true }
 partner-chains-cli = { workspace = true }
 partner-chains-node-commands = { workspace = true }
 envy = { workspace = true }
+sp-partner-chains-bridge = { workspace = true }
 
 # These dependencies are used for the node template's RPCs
 jsonrpsee = { workspace = true }
@@ -109,6 +110,7 @@ partner-chains-mock-data-sources = { workspace = true, features = [
 	"mc-hash",
 	"sidechain-rpc",
 	"block-participation",
+	"bridge",
 ] }
 tokio = { workspace = true }
 sp-block-participation = { workspace = true, features = ["std"] }

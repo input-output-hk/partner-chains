@@ -146,6 +146,21 @@ sp_api::mock_impl_runtime_apis! {
 			1
 		}
 	}
+
+	impl sp_partner_chains_bridge::TokenBridgeIDPRuntimeApi<Block> for TestApi {
+		fn get_pallet_version() -> u32 {
+			1
+		}
+		fn get_main_chain_scripts() -> Option<sp_partner_chains_bridge::MainChainScripts> {
+			None
+		}
+		fn get_max_transfers_per_block() -> u32 {
+			32
+		}
+		fn get_last_data_checkpoint() -> Option<sp_partner_chains_bridge::BridgeDataCheckpoint> {
+			None
+		}
+	}
 }
 
 impl HeaderBackend<Block> for TestApi {

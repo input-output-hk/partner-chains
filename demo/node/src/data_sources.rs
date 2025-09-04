@@ -5,16 +5,18 @@ use partner_chains_db_sync_data_sources::{
 	McFollowerMetrics, McHashDataSourceImpl, NativeTokenManagementDataSourceImpl,
 	SidechainRpcDataSourceImpl, StakeDistributionDataSourceImpl,
 };
+use partner_chains_demo_runtime::AccountId;
 use partner_chains_mock_data_sources::{
 	AuthoritySelectionDataSourceMock, BlockDataSourceMock, GovernedMapDataSourceMock,
 	McHashDataSourceMock, NativeTokenDataSourceMock, SidechainRpcDataSourceMock,
-	StakeDistributionDataSourceMock,
+	StakeDistributionDataSourceMock, TokenBridgeDataSourceMock,
 };
 use sc_service::error::Error as ServiceError;
 use sidechain_mc_hash::McHashDataSource;
 use sp_block_participation::inherent_data::BlockParticipationDataSource;
 use sp_governed_map::GovernedMapDataSource;
 use sp_native_token_management::NativeTokenManagementDataSource;
+use sp_partner_chains_bridge::TokenBridgeDataSource;
 use std::{error::Error, sync::Arc};
 
 pub const DATA_SOURCE_VAR: &str = "CARDANO_DATA_SOURCE";
@@ -68,6 +70,7 @@ pub struct DataSources {
 	pub sidechain_rpc: Arc<dyn SidechainRpcDataSource + Send + Sync>,
 	pub block_participation: Arc<dyn BlockParticipationDataSource + Send + Sync>,
 	pub governed_map: Arc<dyn GovernedMapDataSource + Send + Sync>,
+	pub bridge: Arc<dyn TokenBridgeDataSource<AccountId> + Send + Sync>,
 }
 
 pub(crate) async fn create_cached_data_sources(
@@ -105,6 +108,7 @@ pub fn create_mock_data_sources()
 		native_token: Arc::new(NativeTokenDataSourceMock::new()),
 		block_participation: Arc::new(StakeDistributionDataSourceMock::new()),
 		governed_map: Arc::new(GovernedMapDataSourceMock::default()),
+		bridge: Arc::new(TokenBridgeDataSourceMock::new()),
 	})
 }
 
@@ -140,12 +144,13 @@ pub async fn create_cached_db_sync_data_sources(
 		)),
 		governed_map: Arc::new(
 			GovernedMapDataSourceCachedImpl::new(
-				pool,
+				pool.clone(),
 				metrics_opt.clone(),
 				GOVERNED_MAP_CACHE_SIZE,
 				block,
 			)
 			.await?,
 		),
+		bridge: Arc::new(TokenBridgeDataSourceMock::new()),
 	})
 }
