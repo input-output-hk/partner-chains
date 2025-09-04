@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `demo/node/src/service.rs`."><title>service.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-e56847b5.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="partner_chains_demo_node" data-themes="" data-resource-suffix="" data-rustdoc-version="1.91.0-nightly (51ff89506 2025-09-02)" data-channel="nightly" data-search-js="search-272972ce.js" data-stringdex-js="stringdex-0e748618.js" data-settings-js="settings-c38705f0.js" ><script src="../../static.files/storage-e2aeef58.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-6dc2a7f3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">partner_chains_demo_node/</div>service.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `demo/node/src/service.rs`."><title>service.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-e56847b5.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="partner_chains_demo_node" data-themes="" data-resource-suffix="" data-rustdoc-version="1.91.0-nightly (a1208bf76 2025-09-03)" data-channel="nightly" data-search-js="search-272972ce.js" data-stringdex-js="stringdex-0e748618.js" data-settings-js="settings-c38705f0.js" ><script src="../../static.files/storage-e2aeef58.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-6dc2a7f3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">partner_chains_demo_node/</div>service.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 <a href=#2 id=2 data-nosnippet>2</a>
 <a href=#3 id=3 data-nosnippet>3</a></span><span class="kw">use </span><span class="kw">crate</span>::data_sources::DataSources;
 <a href=#4 id=4 data-nosnippet>4</a><span class="kw">use </span><span class="kw">crate</span>::inherent_data::{CreateInherentDataConfig, ProposalCIDP, VerifierCIDP};
@@ -163,171 +163,171 @@
 <a href=#163 id=163 data-nosnippet>163</a>			data_sources.native_token.clone(),
 <a href=#164 id=164 data-nosnippet>164</a>			data_sources.block_participation.clone(),
 <a href=#165 id=165 data-nosnippet>165</a>			data_sources.governed_map.clone(),
-<a href=#166 id=166 data-nosnippet>166</a>		),
-<a href=#167 id=167 data-nosnippet>167</a>		spawner: <span class="kw-2">&amp;</span>task_manager.spawn_essential_handle(),
-<a href=#168 id=168 data-nosnippet>168</a>		registry: config.prometheus_registry(),
-<a href=#169 id=169 data-nosnippet>169</a>		check_for_equivocation: Default::default(),
-<a href=#170 id=170 data-nosnippet>170</a>		telemetry: telemetry.as_ref().map(|x| x.handle()),
-<a href=#171 id=171 data-nosnippet>171</a>		compatibility_mode: Default::default(),
-<a href=#172 id=172 data-nosnippet>172</a>	})<span class="question-mark">?</span>;
-<a href=#173 id=173 data-nosnippet>173</a>
-<a href=#174 id=174 data-nosnippet>174</a>	<span class="prelude-val">Ok</span>(sc_service::PartialComponents {
-<a href=#175 id=175 data-nosnippet>175</a>		client,
-<a href=#176 id=176 data-nosnippet>176</a>		backend,
-<a href=#177 id=177 data-nosnippet>177</a>		task_manager,
-<a href=#178 id=178 data-nosnippet>178</a>		import_queue,
-<a href=#179 id=179 data-nosnippet>179</a>		keystore_container,
-<a href=#180 id=180 data-nosnippet>180</a>		select_chain,
-<a href=#181 id=181 data-nosnippet>181</a>		transaction_pool,
-<a href=#182 id=182 data-nosnippet>182</a>		other: (grandpa_block_import, grandpa_link, telemetry, data_sources, mc_follower_metrics),
-<a href=#183 id=183 data-nosnippet>183</a>	})
-<a href=#184 id=184 data-nosnippet>184</a>}
-<a href=#185 id=185 data-nosnippet>185</a>
-<a href=#186 id=186 data-nosnippet>186</a><span class="kw">pub async fn </span>new_full(config: Configuration) -&gt; <span class="prelude-ty">Result</span>&lt;TaskManager, ServiceError&gt; {
-<a href=#187 id=187 data-nosnippet>187</a>	<span class="kw">let </span>task_manager = <span class="kw">match </span>config.network.network_backend {
-<a href=#188 id=188 data-nosnippet>188</a>		sc_network::config::NetworkBackendType::Libp2p =&gt; {
-<a href=#189 id=189 data-nosnippet>189</a>			new_full_base::&lt;sc_network::NetworkWorker&lt;<span class="kw">_</span>, <span class="kw">_</span>&gt;&gt;(config).<span class="kw">await</span><span class="question-mark">?
-<a href=#190 id=190 data-nosnippet>190</a>		</span>},
-<a href=#191 id=191 data-nosnippet>191</a>		sc_network::config::NetworkBackendType::Litep2p =&gt; {
-<a href=#192 id=192 data-nosnippet>192</a>			new_full_base::&lt;sc_network::Litep2pNetworkBackend&gt;(config).<span class="kw">await</span><span class="question-mark">?
-<a href=#193 id=193 data-nosnippet>193</a>		</span>},
-<a href=#194 id=194 data-nosnippet>194</a>	};
-<a href=#195 id=195 data-nosnippet>195</a>
-<a href=#196 id=196 data-nosnippet>196</a>	<span class="prelude-val">Ok</span>(task_manager)
-<a href=#197 id=197 data-nosnippet>197</a>}
-<a href=#198 id=198 data-nosnippet>198</a>
-<a href=#199 id=199 data-nosnippet>199</a><span class="kw">pub async fn </span>new_full_base&lt;Network: sc_network::NetworkBackend&lt;Block, &lt;Block <span class="kw">as </span>BlockT&gt;::Hash&gt;&gt;(
-<a href=#200 id=200 data-nosnippet>200</a>	config: Configuration,
-<a href=#201 id=201 data-nosnippet>201</a>) -&gt; <span class="prelude-ty">Result</span>&lt;TaskManager, ServiceError&gt; {
-<a href=#202 id=202 data-nosnippet>202</a>	<span class="kw">if let </span><span class="prelude-val">Some</span>(git_hash) = <span class="macro">std::option_env!</span>(<span class="string">"EARTHLY_GIT_HASH"</span>) {
-<a href=#203 id=203 data-nosnippet>203</a>		<span class="macro">log::info!</span>(<span class="string">"🌱 Running version: {}"</span>, git_hash);
-<a href=#204 id=204 data-nosnippet>204</a>	}
-<a href=#205 id=205 data-nosnippet>205</a>
-<a href=#206 id=206 data-nosnippet>206</a>	<span class="kw">let </span>sc_service::PartialComponents {
-<a href=#207 id=207 data-nosnippet>207</a>		client,
-<a href=#208 id=208 data-nosnippet>208</a>		backend,
-<a href=#209 id=209 data-nosnippet>209</a>		<span class="kw-2">mut </span>task_manager,
-<a href=#210 id=210 data-nosnippet>210</a>		import_queue,
-<a href=#211 id=211 data-nosnippet>211</a>		keystore_container,
-<a href=#212 id=212 data-nosnippet>212</a>		select_chain,
-<a href=#213 id=213 data-nosnippet>213</a>		transaction_pool,
-<a href=#214 id=214 data-nosnippet>214</a>		other: (block_import, grandpa_link, <span class="kw-2">mut </span>telemetry, data_sources, <span class="kw">_</span>),
-<a href=#215 id=215 data-nosnippet>215</a>	} = new_partial(<span class="kw-2">&amp;</span>config)<span class="question-mark">?</span>;
-<a href=#216 id=216 data-nosnippet>216</a>
-<a href=#217 id=217 data-nosnippet>217</a>	<span class="kw">let </span>metrics = Network::register_notification_metrics(config.prometheus_registry());
-<a href=#218 id=218 data-nosnippet>218</a>	<span class="kw">let </span><span class="kw-2">mut </span>net_config = sc_network::config::FullNetworkConfiguration::&lt;<span class="kw">_</span>, <span class="kw">_</span>, Network&gt;::new(
-<a href=#219 id=219 data-nosnippet>219</a>		<span class="kw-2">&amp;</span>config.network,
-<a href=#220 id=220 data-nosnippet>220</a>		config.prometheus_registry().cloned(),
-<a href=#221 id=221 data-nosnippet>221</a>	);
-<a href=#222 id=222 data-nosnippet>222</a>
-<a href=#223 id=223 data-nosnippet>223</a>	<span class="kw">let </span>grandpa_protocol_name = sc_consensus_grandpa::protocol_standard_name(
-<a href=#224 id=224 data-nosnippet>224</a>		<span class="kw-2">&amp;</span>client.block_hash(<span class="number">0</span>).ok().flatten().expect(<span class="string">"Genesis block exists; qed"</span>),
-<a href=#225 id=225 data-nosnippet>225</a>		<span class="kw-2">&amp;</span>config.chain_spec,
-<a href=#226 id=226 data-nosnippet>226</a>	);
-<a href=#227 id=227 data-nosnippet>227</a>	<span class="kw">let </span>peer_store_handle = net_config.peer_store_handle();
-<a href=#228 id=228 data-nosnippet>228</a>	<span class="kw">let </span>(grandpa_protocol_config, grandpa_notification_service) =
-<a href=#229 id=229 data-nosnippet>229</a>		sc_consensus_grandpa::grandpa_peers_set_config::&lt;<span class="kw">_</span>, Network&gt;(
-<a href=#230 id=230 data-nosnippet>230</a>			grandpa_protocol_name.clone(),
-<a href=#231 id=231 data-nosnippet>231</a>			metrics.clone(),
-<a href=#232 id=232 data-nosnippet>232</a>			Arc::clone(<span class="kw-2">&amp;</span>peer_store_handle),
-<a href=#233 id=233 data-nosnippet>233</a>		);
-<a href=#234 id=234 data-nosnippet>234</a>	net_config.add_notification_protocol(grandpa_protocol_config);
-<a href=#235 id=235 data-nosnippet>235</a>
-<a href=#236 id=236 data-nosnippet>236</a>	<span class="kw">let </span>warp_sync = Arc::new(sc_consensus_grandpa::warp_proof::NetworkProvider::new(
-<a href=#237 id=237 data-nosnippet>237</a>		backend.clone(),
-<a href=#238 id=238 data-nosnippet>238</a>		grandpa_link.shared_authority_set().clone(),
-<a href=#239 id=239 data-nosnippet>239</a>		Vec::default(),
-<a href=#240 id=240 data-nosnippet>240</a>	));
-<a href=#241 id=241 data-nosnippet>241</a>
-<a href=#242 id=242 data-nosnippet>242</a>	<span class="kw">let </span>(network, system_rpc_tx, tx_handler_controller, sync_service) =
-<a href=#243 id=243 data-nosnippet>243</a>		sc_service::build_network(sc_service::BuildNetworkParams {
-<a href=#244 id=244 data-nosnippet>244</a>			config: <span class="kw-2">&amp;</span>config,
-<a href=#245 id=245 data-nosnippet>245</a>			net_config,
-<a href=#246 id=246 data-nosnippet>246</a>			client: client.clone(),
-<a href=#247 id=247 data-nosnippet>247</a>			transaction_pool: transaction_pool.clone(),
-<a href=#248 id=248 data-nosnippet>248</a>			spawn_handle: task_manager.spawn_handle(),
-<a href=#249 id=249 data-nosnippet>249</a>			import_queue,
-<a href=#250 id=250 data-nosnippet>250</a>			block_announce_validator_builder: <span class="prelude-val">None</span>,
-<a href=#251 id=251 data-nosnippet>251</a>			warp_sync_config: <span class="prelude-val">Some</span>(WarpSyncConfig::WithProvider(warp_sync)),
-<a href=#252 id=252 data-nosnippet>252</a>			block_relay: <span class="prelude-val">None</span>,
-<a href=#253 id=253 data-nosnippet>253</a>			metrics,
-<a href=#254 id=254 data-nosnippet>254</a>		})<span class="question-mark">?</span>;
-<a href=#255 id=255 data-nosnippet>255</a>
-<a href=#256 id=256 data-nosnippet>256</a>	<span class="kw">let </span>role = config.role;
-<a href=#257 id=257 data-nosnippet>257</a>	<span class="kw">let </span>force_authoring = config.force_authoring;
-<a href=#258 id=258 data-nosnippet>258</a>	<span class="kw">let </span>backoff_authoring_blocks: <span class="prelude-ty">Option</span>&lt;()&gt; = <span class="prelude-val">None</span>;
-<a href=#259 id=259 data-nosnippet>259</a>	<span class="kw">let </span>name = config.network.node_name.clone();
-<a href=#260 id=260 data-nosnippet>260</a>	<span class="kw">let </span>enable_grandpa = !config.disable_grandpa;
-<a href=#261 id=261 data-nosnippet>261</a>	<span class="kw">let </span>prometheus_registry = config.prometheus_registry().cloned();
-<a href=#262 id=262 data-nosnippet>262</a>	<span class="kw">let </span>shared_voter_state = SharedVoterState::empty();
-<a href=#263 id=263 data-nosnippet>263</a>
-<a href=#264 id=264 data-nosnippet>264</a>	<span class="kw">let </span>rpc_extensions_builder = {
-<a href=#265 id=265 data-nosnippet>265</a>		<span class="kw">let </span>client = client.clone();
-<a href=#266 id=266 data-nosnippet>266</a>		<span class="kw">let </span>pool = transaction_pool.clone();
-<a href=#267 id=267 data-nosnippet>267</a>		<span class="kw">let </span>backend = backend.clone();
-<a href=#268 id=268 data-nosnippet>268</a>		<span class="kw">let </span>shared_voter_state = shared_voter_state.clone();
-<a href=#269 id=269 data-nosnippet>269</a>		<span class="kw">let </span>shared_authority_set = grandpa_link.shared_authority_set().clone();
-<a href=#270 id=270 data-nosnippet>270</a>		<span class="kw">let </span>justification_stream = grandpa_link.justification_stream();
-<a href=#271 id=271 data-nosnippet>271</a>		<span class="kw">let </span>data_sources = data_sources.clone();
-<a href=#272 id=272 data-nosnippet>272</a>
-<a href=#273 id=273 data-nosnippet>273</a>		<span class="kw">move </span>|subscription_executor| {
-<a href=#274 id=274 data-nosnippet>274</a>			<span class="kw">let </span>grandpa = GrandpaDeps {
-<a href=#275 id=275 data-nosnippet>275</a>				shared_voter_state: shared_voter_state.clone(),
-<a href=#276 id=276 data-nosnippet>276</a>				shared_authority_set: shared_authority_set.clone(),
-<a href=#277 id=277 data-nosnippet>277</a>				justification_stream: justification_stream.clone(),
-<a href=#278 id=278 data-nosnippet>278</a>				subscription_executor,
-<a href=#279 id=279 data-nosnippet>279</a>				finality_provider: sc_consensus_grandpa::FinalityProofProvider::new_for_service(
-<a href=#280 id=280 data-nosnippet>280</a>					backend.clone(),
-<a href=#281 id=281 data-nosnippet>281</a>					<span class="prelude-val">Some</span>(shared_authority_set.clone()),
-<a href=#282 id=282 data-nosnippet>282</a>				),
-<a href=#283 id=283 data-nosnippet>283</a>			};
-<a href=#284 id=284 data-nosnippet>284</a>			<span class="kw">let </span>deps = <span class="kw">crate</span>::rpc::FullDeps {
-<a href=#285 id=285 data-nosnippet>285</a>				client: client.clone(),
-<a href=#286 id=286 data-nosnippet>286</a>				pool: pool.clone(),
-<a href=#287 id=287 data-nosnippet>287</a>				grandpa,
-<a href=#288 id=288 data-nosnippet>288</a>				data_sources: data_sources.clone(),
-<a href=#289 id=289 data-nosnippet>289</a>				time_source: Arc::new(SystemTimeSource),
-<a href=#290 id=290 data-nosnippet>290</a>			};
-<a href=#291 id=291 data-nosnippet>291</a>			<span class="kw">crate</span>::rpc::create_full(deps).map_err(Into::into)
-<a href=#292 id=292 data-nosnippet>292</a>		}
-<a href=#293 id=293 data-nosnippet>293</a>	};
-<a href=#294 id=294 data-nosnippet>294</a>
-<a href=#295 id=295 data-nosnippet>295</a>	<span class="kw">let </span>_rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
-<a href=#296 id=296 data-nosnippet>296</a>		network: network.clone(),
-<a href=#297 id=297 data-nosnippet>297</a>		client: client.clone(),
-<a href=#298 id=298 data-nosnippet>298</a>		keystore: keystore_container.keystore(),
-<a href=#299 id=299 data-nosnippet>299</a>		task_manager: <span class="kw-2">&amp;mut </span>task_manager,
-<a href=#300 id=300 data-nosnippet>300</a>		transaction_pool: transaction_pool.clone(),
-<a href=#301 id=301 data-nosnippet>301</a>		rpc_builder: Box::new(rpc_extensions_builder),
-<a href=#302 id=302 data-nosnippet>302</a>		backend,
-<a href=#303 id=303 data-nosnippet>303</a>		system_rpc_tx,
-<a href=#304 id=304 data-nosnippet>304</a>		tx_handler_controller,
-<a href=#305 id=305 data-nosnippet>305</a>		sync_service: sync_service.clone(),
-<a href=#306 id=306 data-nosnippet>306</a>		config,
-<a href=#307 id=307 data-nosnippet>307</a>		telemetry: telemetry.as_mut(),
-<a href=#308 id=308 data-nosnippet>308</a>	})<span class="question-mark">?</span>;
-<a href=#309 id=309 data-nosnippet>309</a>
-<a href=#310 id=310 data-nosnippet>310</a>	<span class="kw">if </span>role.is_authority() {
-<a href=#311 id=311 data-nosnippet>311</a>		<span class="kw">let </span>basic_authorship_proposer_factory = sc_basic_authorship::ProposerFactory::new(
-<a href=#312 id=312 data-nosnippet>312</a>			task_manager.spawn_handle(),
-<a href=#313 id=313 data-nosnippet>313</a>			client.clone(),
-<a href=#314 id=314 data-nosnippet>314</a>			transaction_pool.clone(),
-<a href=#315 id=315 data-nosnippet>315</a>			prometheus_registry.as_ref(),
-<a href=#316 id=316 data-nosnippet>316</a>			telemetry.as_ref().map(|x| x.handle()),
-<a href=#317 id=317 data-nosnippet>317</a>		);
-<a href=#318 id=318 data-nosnippet>318</a>		<span class="kw">let </span>proposer_factory: PartnerChainsProposerFactory&lt;<span class="kw">_</span>, <span class="kw">_</span>, McHashInherentDigest&gt; =
-<a href=#319 id=319 data-nosnippet>319</a>			PartnerChainsProposerFactory::new(basic_authorship_proposer_factory);
-<a href=#320 id=320 data-nosnippet>320</a>
-<a href=#321 id=321 data-nosnippet>321</a>		<span class="kw">let </span>sc_slot_config = sidechain_slots::runtime_api_client::slot_config(<span class="kw-2">&amp;*</span>client)
-<a href=#322 id=322 data-nosnippet>322</a>			.map_err(sp_blockchain::Error::from)<span class="question-mark">?</span>;
-<a href=#323 id=323 data-nosnippet>323</a>		<span class="kw">let </span>time_source = Arc::new(SystemTimeSource);
-<a href=#324 id=324 data-nosnippet>324</a>		<span class="kw">let </span>mc_epoch_config = MainchainEpochConfig::read_from_env()
-<a href=#325 id=325 data-nosnippet>325</a>			.map_err(|err| ServiceError::Application(err.into()))<span class="question-mark">?</span>;
-<a href=#326 id=326 data-nosnippet>326</a>		<span class="kw">let </span>inherent_config =
-<a href=#327 id=327 data-nosnippet>327</a>			CreateInherentDataConfig::new(mc_epoch_config, sc_slot_config.clone(), time_source);
-<a href=#328 id=328 data-nosnippet>328</a>		<span class="kw">let </span>aura = sc_partner_chains_consensus_aura::start_aura::&lt;
-<a href=#329 id=329 data-nosnippet>329</a>			AuraPair,
-<a href=#330 id=330 data-nosnippet>330</a>			<span class="kw">_</span>,
+<a href=#166 id=166 data-nosnippet>166</a>			data_sources.bridge.clone(),
+<a href=#167 id=167 data-nosnippet>167</a>		),
+<a href=#168 id=168 data-nosnippet>168</a>		spawner: <span class="kw-2">&amp;</span>task_manager.spawn_essential_handle(),
+<a href=#169 id=169 data-nosnippet>169</a>		registry: config.prometheus_registry(),
+<a href=#170 id=170 data-nosnippet>170</a>		check_for_equivocation: Default::default(),
+<a href=#171 id=171 data-nosnippet>171</a>		telemetry: telemetry.as_ref().map(|x| x.handle()),
+<a href=#172 id=172 data-nosnippet>172</a>		compatibility_mode: Default::default(),
+<a href=#173 id=173 data-nosnippet>173</a>	})<span class="question-mark">?</span>;
+<a href=#174 id=174 data-nosnippet>174</a>
+<a href=#175 id=175 data-nosnippet>175</a>	<span class="prelude-val">Ok</span>(sc_service::PartialComponents {
+<a href=#176 id=176 data-nosnippet>176</a>		client,
+<a href=#177 id=177 data-nosnippet>177</a>		backend,
+<a href=#178 id=178 data-nosnippet>178</a>		task_manager,
+<a href=#179 id=179 data-nosnippet>179</a>		import_queue,
+<a href=#180 id=180 data-nosnippet>180</a>		keystore_container,
+<a href=#181 id=181 data-nosnippet>181</a>		select_chain,
+<a href=#182 id=182 data-nosnippet>182</a>		transaction_pool,
+<a href=#183 id=183 data-nosnippet>183</a>		other: (grandpa_block_import, grandpa_link, telemetry, data_sources, mc_follower_metrics),
+<a href=#184 id=184 data-nosnippet>184</a>	})
+<a href=#185 id=185 data-nosnippet>185</a>}
+<a href=#186 id=186 data-nosnippet>186</a>
+<a href=#187 id=187 data-nosnippet>187</a><span class="kw">pub async fn </span>new_full(config: Configuration) -&gt; <span class="prelude-ty">Result</span>&lt;TaskManager, ServiceError&gt; {
+<a href=#188 id=188 data-nosnippet>188</a>	<span class="kw">let </span>task_manager = <span class="kw">match </span>config.network.network_backend {
+<a href=#189 id=189 data-nosnippet>189</a>		sc_network::config::NetworkBackendType::Libp2p =&gt; {
+<a href=#190 id=190 data-nosnippet>190</a>			new_full_base::&lt;sc_network::NetworkWorker&lt;<span class="kw">_</span>, <span class="kw">_</span>&gt;&gt;(config).<span class="kw">await</span><span class="question-mark">?
+<a href=#191 id=191 data-nosnippet>191</a>		</span>},
+<a href=#192 id=192 data-nosnippet>192</a>		sc_network::config::NetworkBackendType::Litep2p =&gt; {
+<a href=#193 id=193 data-nosnippet>193</a>			new_full_base::&lt;sc_network::Litep2pNetworkBackend&gt;(config).<span class="kw">await</span><span class="question-mark">?
+<a href=#194 id=194 data-nosnippet>194</a>		</span>},
+<a href=#195 id=195 data-nosnippet>195</a>	};
+<a href=#196 id=196 data-nosnippet>196</a>
+<a href=#197 id=197 data-nosnippet>197</a>	<span class="prelude-val">Ok</span>(task_manager)
+<a href=#198 id=198 data-nosnippet>198</a>}
+<a href=#199 id=199 data-nosnippet>199</a>
+<a href=#200 id=200 data-nosnippet>200</a><span class="kw">pub async fn </span>new_full_base&lt;Network: sc_network::NetworkBackend&lt;Block, &lt;Block <span class="kw">as </span>BlockT&gt;::Hash&gt;&gt;(
+<a href=#201 id=201 data-nosnippet>201</a>	config: Configuration,
+<a href=#202 id=202 data-nosnippet>202</a>) -&gt; <span class="prelude-ty">Result</span>&lt;TaskManager, ServiceError&gt; {
+<a href=#203 id=203 data-nosnippet>203</a>	<span class="kw">if let </span><span class="prelude-val">Some</span>(git_hash) = <span class="macro">std::option_env!</span>(<span class="string">"EARTHLY_GIT_HASH"</span>) {
+<a href=#204 id=204 data-nosnippet>204</a>		<span class="macro">log::info!</span>(<span class="string">"🌱 Running version: {}"</span>, git_hash);
+<a href=#205 id=205 data-nosnippet>205</a>	}
+<a href=#206 id=206 data-nosnippet>206</a>
+<a href=#207 id=207 data-nosnippet>207</a>	<span class="kw">let </span>sc_service::PartialComponents {
+<a href=#208 id=208 data-nosnippet>208</a>		client,
+<a href=#209 id=209 data-nosnippet>209</a>		backend,
+<a href=#210 id=210 data-nosnippet>210</a>		<span class="kw-2">mut </span>task_manager,
+<a href=#211 id=211 data-nosnippet>211</a>		import_queue,
+<a href=#212 id=212 data-nosnippet>212</a>		keystore_container,
+<a href=#213 id=213 data-nosnippet>213</a>		select_chain,
+<a href=#214 id=214 data-nosnippet>214</a>		transaction_pool,
+<a href=#215 id=215 data-nosnippet>215</a>		other: (block_import, grandpa_link, <span class="kw-2">mut </span>telemetry, data_sources, <span class="kw">_</span>),
+<a href=#216 id=216 data-nosnippet>216</a>	} = new_partial(<span class="kw-2">&amp;</span>config)<span class="question-mark">?</span>;
+<a href=#217 id=217 data-nosnippet>217</a>
+<a href=#218 id=218 data-nosnippet>218</a>	<span class="kw">let </span>metrics = Network::register_notification_metrics(config.prometheus_registry());
+<a href=#219 id=219 data-nosnippet>219</a>	<span class="kw">let </span><span class="kw-2">mut </span>net_config = sc_network::config::FullNetworkConfiguration::&lt;<span class="kw">_</span>, <span class="kw">_</span>, Network&gt;::new(
+<a href=#220 id=220 data-nosnippet>220</a>		<span class="kw-2">&amp;</span>config.network,
+<a href=#221 id=221 data-nosnippet>221</a>		config.prometheus_registry().cloned(),
+<a href=#222 id=222 data-nosnippet>222</a>	);
+<a href=#223 id=223 data-nosnippet>223</a>
+<a href=#224 id=224 data-nosnippet>224</a>	<span class="kw">let </span>grandpa_protocol_name = sc_consensus_grandpa::protocol_standard_name(
+<a href=#225 id=225 data-nosnippet>225</a>		<span class="kw-2">&amp;</span>client.block_hash(<span class="number">0</span>).ok().flatten().expect(<span class="string">"Genesis block exists; qed"</span>),
+<a href=#226 id=226 data-nosnippet>226</a>		<span class="kw-2">&amp;</span>config.chain_spec,
+<a href=#227 id=227 data-nosnippet>227</a>	);
+<a href=#228 id=228 data-nosnippet>228</a>	<span class="kw">let </span>peer_store_handle = net_config.peer_store_handle();
+<a href=#229 id=229 data-nosnippet>229</a>	<span class="kw">let </span>(grandpa_protocol_config, grandpa_notification_service) =
+<a href=#230 id=230 data-nosnippet>230</a>		sc_consensus_grandpa::grandpa_peers_set_config::&lt;<span class="kw">_</span>, Network&gt;(
+<a href=#231 id=231 data-nosnippet>231</a>			grandpa_protocol_name.clone(),
+<a href=#232 id=232 data-nosnippet>232</a>			metrics.clone(),
+<a href=#233 id=233 data-nosnippet>233</a>			Arc::clone(<span class="kw-2">&amp;</span>peer_store_handle),
+<a href=#234 id=234 data-nosnippet>234</a>		);
+<a href=#235 id=235 data-nosnippet>235</a>	net_config.add_notification_protocol(grandpa_protocol_config);
+<a href=#236 id=236 data-nosnippet>236</a>
+<a href=#237 id=237 data-nosnippet>237</a>	<span class="kw">let </span>warp_sync = Arc::new(sc_consensus_grandpa::warp_proof::NetworkProvider::new(
+<a href=#238 id=238 data-nosnippet>238</a>		backend.clone(),
+<a href=#239 id=239 data-nosnippet>239</a>		grandpa_link.shared_authority_set().clone(),
+<a href=#240 id=240 data-nosnippet>240</a>		Vec::default(),
+<a href=#241 id=241 data-nosnippet>241</a>	));
+<a href=#242 id=242 data-nosnippet>242</a>
+<a href=#243 id=243 data-nosnippet>243</a>	<span class="kw">let </span>(network, system_rpc_tx, tx_handler_controller, sync_service) =
+<a href=#244 id=244 data-nosnippet>244</a>		sc_service::build_network(sc_service::BuildNetworkParams {
+<a href=#245 id=245 data-nosnippet>245</a>			config: <span class="kw-2">&amp;</span>config,
+<a href=#246 id=246 data-nosnippet>246</a>			net_config,
+<a href=#247 id=247 data-nosnippet>247</a>			client: client.clone(),
+<a href=#248 id=248 data-nosnippet>248</a>			transaction_pool: transaction_pool.clone(),
+<a href=#249 id=249 data-nosnippet>249</a>			spawn_handle: task_manager.spawn_handle(),
+<a href=#250 id=250 data-nosnippet>250</a>			import_queue,
+<a href=#251 id=251 data-nosnippet>251</a>			block_announce_validator_builder: <span class="prelude-val">None</span>,
+<a href=#252 id=252 data-nosnippet>252</a>			warp_sync_config: <span class="prelude-val">Some</span>(WarpSyncConfig::WithProvider(warp_sync)),
+<a href=#253 id=253 data-nosnippet>253</a>			block_relay: <span class="prelude-val">None</span>,
+<a href=#254 id=254 data-nosnippet>254</a>			metrics,
+<a href=#255 id=255 data-nosnippet>255</a>		})<span class="question-mark">?</span>;
+<a href=#256 id=256 data-nosnippet>256</a>
+<a href=#257 id=257 data-nosnippet>257</a>	<span class="kw">let </span>role = config.role;
+<a href=#258 id=258 data-nosnippet>258</a>	<span class="kw">let </span>force_authoring = config.force_authoring;
+<a href=#259 id=259 data-nosnippet>259</a>	<span class="kw">let </span>backoff_authoring_blocks: <span class="prelude-ty">Option</span>&lt;()&gt; = <span class="prelude-val">None</span>;
+<a href=#260 id=260 data-nosnippet>260</a>	<span class="kw">let </span>name = config.network.node_name.clone();
+<a href=#261 id=261 data-nosnippet>261</a>	<span class="kw">let </span>enable_grandpa = !config.disable_grandpa;
+<a href=#262 id=262 data-nosnippet>262</a>	<span class="kw">let </span>prometheus_registry = config.prometheus_registry().cloned();
+<a href=#263 id=263 data-nosnippet>263</a>	<span class="kw">let </span>shared_voter_state = SharedVoterState::empty();
+<a href=#264 id=264 data-nosnippet>264</a>
+<a href=#265 id=265 data-nosnippet>265</a>	<span class="kw">let </span>rpc_extensions_builder = {
+<a href=#266 id=266 data-nosnippet>266</a>		<span class="kw">let </span>client = client.clone();
+<a href=#267 id=267 data-nosnippet>267</a>		<span class="kw">let </span>pool = transaction_pool.clone();
+<a href=#268 id=268 data-nosnippet>268</a>		<span class="kw">let </span>backend = backend.clone();
+<a href=#269 id=269 data-nosnippet>269</a>		<span class="kw">let </span>shared_voter_state = shared_voter_state.clone();
+<a href=#270 id=270 data-nosnippet>270</a>		<span class="kw">let </span>shared_authority_set = grandpa_link.shared_authority_set().clone();
+<a href=#271 id=271 data-nosnippet>271</a>		<span class="kw">let </span>justification_stream = grandpa_link.justification_stream();
+<a href=#272 id=272 data-nosnippet>272</a>		<span class="kw">let </span>data_sources = data_sources.clone();
+<a href=#273 id=273 data-nosnippet>273</a>
+<a href=#274 id=274 data-nosnippet>274</a>		<span class="kw">move </span>|subscription_executor| {
+<a href=#275 id=275 data-nosnippet>275</a>			<span class="kw">let </span>grandpa = GrandpaDeps {
+<a href=#276 id=276 data-nosnippet>276</a>				shared_voter_state: shared_voter_state.clone(),
+<a href=#277 id=277 data-nosnippet>277</a>				shared_authority_set: shared_authority_set.clone(),
+<a href=#278 id=278 data-nosnippet>278</a>				justification_stream: justification_stream.clone(),
+<a href=#279 id=279 data-nosnippet>279</a>				subscription_executor,
+<a href=#280 id=280 data-nosnippet>280</a>				finality_provider: sc_consensus_grandpa::FinalityProofProvider::new_for_service(
+<a href=#281 id=281 data-nosnippet>281</a>					backend.clone(),
+<a href=#282 id=282 data-nosnippet>282</a>					<span class="prelude-val">Some</span>(shared_authority_set.clone()),
+<a href=#283 id=283 data-nosnippet>283</a>				),
+<a href=#284 id=284 data-nosnippet>284</a>			};
+<a href=#285 id=285 data-nosnippet>285</a>			<span class="kw">let </span>deps = <span class="kw">crate</span>::rpc::FullDeps {
+<a href=#286 id=286 data-nosnippet>286</a>				client: client.clone(),
+<a href=#287 id=287 data-nosnippet>287</a>				pool: pool.clone(),
+<a href=#288 id=288 data-nosnippet>288</a>				grandpa,
+<a href=#289 id=289 data-nosnippet>289</a>				data_sources: data_sources.clone(),
+<a href=#290 id=290 data-nosnippet>290</a>				time_source: Arc::new(SystemTimeSource),
+<a href=#291 id=291 data-nosnippet>291</a>			};
+<a href=#292 id=292 data-nosnippet>292</a>			<span class="kw">crate</span>::rpc::create_full(deps).map_err(Into::into)
+<a href=#293 id=293 data-nosnippet>293</a>		}
+<a href=#294 id=294 data-nosnippet>294</a>	};
+<a href=#295 id=295 data-nosnippet>295</a>
+<a href=#296 id=296 data-nosnippet>296</a>	<span class="kw">let </span>_rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
+<a href=#297 id=297 data-nosnippet>297</a>		network: network.clone(),
+<a href=#298 id=298 data-nosnippet>298</a>		client: client.clone(),
+<a href=#299 id=299 data-nosnippet>299</a>		keystore: keystore_container.keystore(),
+<a href=#300 id=300 data-nosnippet>300</a>		task_manager: <span class="kw-2">&amp;mut </span>task_manager,
+<a href=#301 id=301 data-nosnippet>301</a>		transaction_pool: transaction_pool.clone(),
+<a href=#302 id=302 data-nosnippet>302</a>		rpc_builder: Box::new(rpc_extensions_builder),
+<a href=#303 id=303 data-nosnippet>303</a>		backend,
+<a href=#304 id=304 data-nosnippet>304</a>		system_rpc_tx,
+<a href=#305 id=305 data-nosnippet>305</a>		tx_handler_controller,
+<a href=#306 id=306 data-nosnippet>306</a>		sync_service: sync_service.clone(),
+<a href=#307 id=307 data-nosnippet>307</a>		config,
+<a href=#308 id=308 data-nosnippet>308</a>		telemetry: telemetry.as_mut(),
+<a href=#309 id=309 data-nosnippet>309</a>	})<span class="question-mark">?</span>;
+<a href=#310 id=310 data-nosnippet>310</a>
+<a href=#311 id=311 data-nosnippet>311</a>	<span class="kw">if </span>role.is_authority() {
+<a href=#312 id=312 data-nosnippet>312</a>		<span class="kw">let </span>basic_authorship_proposer_factory = sc_basic_authorship::ProposerFactory::new(
+<a href=#313 id=313 data-nosnippet>313</a>			task_manager.spawn_handle(),
+<a href=#314 id=314 data-nosnippet>314</a>			client.clone(),
+<a href=#315 id=315 data-nosnippet>315</a>			transaction_pool.clone(),
+<a href=#316 id=316 data-nosnippet>316</a>			prometheus_registry.as_ref(),
+<a href=#317 id=317 data-nosnippet>317</a>			telemetry.as_ref().map(|x| x.handle()),
+<a href=#318 id=318 data-nosnippet>318</a>		);
+<a href=#319 id=319 data-nosnippet>319</a>		<span class="kw">let </span>proposer_factory: PartnerChainsProposerFactory&lt;<span class="kw">_</span>, <span class="kw">_</span>, McHashInherentDigest&gt; =
+<a href=#320 id=320 data-nosnippet>320</a>			PartnerChainsProposerFactory::new(basic_authorship_proposer_factory);
+<a href=#321 id=321 data-nosnippet>321</a>
+<a href=#322 id=322 data-nosnippet>322</a>		<span class="kw">let </span>sc_slot_config = sidechain_slots::runtime_api_client::slot_config(<span class="kw-2">&amp;*</span>client)
+<a href=#323 id=323 data-nosnippet>323</a>			.map_err(sp_blockchain::Error::from)<span class="question-mark">?</span>;
+<a href=#324 id=324 data-nosnippet>324</a>		<span class="kw">let </span>time_source = Arc::new(SystemTimeSource);
+<a href=#325 id=325 data-nosnippet>325</a>		<span class="kw">let </span>mc_epoch_config = MainchainEpochConfig::read_from_env()
+<a href=#326 id=326 data-nosnippet>326</a>			.map_err(|err| ServiceError::Application(err.into()))<span class="question-mark">?</span>;
+<a href=#327 id=327 data-nosnippet>327</a>		<span class="kw">let </span>inherent_config =
+<a href=#328 id=328 data-nosnippet>328</a>			CreateInherentDataConfig::new(mc_epoch_config, sc_slot_config.clone(), time_source);
+<a href=#329 id=329 data-nosnippet>329</a>		<span class="kw">let </span>aura = sc_partner_chains_consensus_aura::start_aura::&lt;
+<a href=#330 id=330 data-nosnippet>330</a>			AuraPair,
 <a href=#331 id=331 data-nosnippet>331</a>			<span class="kw">_</span>,
 <a href=#332 id=332 data-nosnippet>332</a>			<span class="kw">_</span>,
 <a href=#333 id=333 data-nosnippet>333</a>			<span class="kw">_</span>,
@@ -337,84 +337,86 @@
 <a href=#337 id=337 data-nosnippet>337</a>			<span class="kw">_</span>,
 <a href=#338 id=338 data-nosnippet>338</a>			<span class="kw">_</span>,
 <a href=#339 id=339 data-nosnippet>339</a>			<span class="kw">_</span>,
-<a href=#340 id=340 data-nosnippet>340</a>			McHashInherentDigest,
-<a href=#341 id=341 data-nosnippet>341</a>		&gt;(StartAuraParams {
-<a href=#342 id=342 data-nosnippet>342</a>			slot_duration: sc_slot_config.slot_duration,
-<a href=#343 id=343 data-nosnippet>343</a>			client: client.clone(),
-<a href=#344 id=344 data-nosnippet>344</a>			select_chain,
-<a href=#345 id=345 data-nosnippet>345</a>			block_import,
-<a href=#346 id=346 data-nosnippet>346</a>			proposer_factory,
-<a href=#347 id=347 data-nosnippet>347</a>			create_inherent_data_providers: ProposalCIDP::new(
-<a href=#348 id=348 data-nosnippet>348</a>				inherent_config,
-<a href=#349 id=349 data-nosnippet>349</a>				client.clone(),
-<a href=#350 id=350 data-nosnippet>350</a>				data_sources.mc_hash.clone(),
-<a href=#351 id=351 data-nosnippet>351</a>				data_sources.authority_selection.clone(),
-<a href=#352 id=352 data-nosnippet>352</a>				data_sources.native_token.clone(),
-<a href=#353 id=353 data-nosnippet>353</a>				data_sources.block_participation,
-<a href=#354 id=354 data-nosnippet>354</a>				data_sources.governed_map,
-<a href=#355 id=355 data-nosnippet>355</a>			),
-<a href=#356 id=356 data-nosnippet>356</a>			force_authoring,
-<a href=#357 id=357 data-nosnippet>357</a>			backoff_authoring_blocks,
-<a href=#358 id=358 data-nosnippet>358</a>			keystore: keystore_container.keystore(),
-<a href=#359 id=359 data-nosnippet>359</a>			sync_oracle: sync_service.clone(),
-<a href=#360 id=360 data-nosnippet>360</a>			justification_sync_link: sync_service.clone(),
-<a href=#361 id=361 data-nosnippet>361</a>			block_proposal_slot_portion: SlotProportion::new(<span class="number">2f32 </span>/ <span class="number">3f32</span>),
-<a href=#362 id=362 data-nosnippet>362</a>			max_block_proposal_slot_portion: <span class="prelude-val">None</span>,
-<a href=#363 id=363 data-nosnippet>363</a>			telemetry: telemetry.as_ref().map(|x| x.handle()),
-<a href=#364 id=364 data-nosnippet>364</a>			compatibility_mode: Default::default(),
-<a href=#365 id=365 data-nosnippet>365</a>		})<span class="question-mark">?</span>;
-<a href=#366 id=366 data-nosnippet>366</a>
-<a href=#367 id=367 data-nosnippet>367</a>		<span class="comment">// the AURA authoring task is considered essential, i.e. if it
-<a href=#368 id=368 data-nosnippet>368</a>		// fails we take down the service with it.
-<a href=#369 id=369 data-nosnippet>369</a>		</span>task_manager
-<a href=#370 id=370 data-nosnippet>370</a>			.spawn_essential_handle()
-<a href=#371 id=371 data-nosnippet>371</a>			.spawn_blocking(<span class="string">"aura"</span>, <span class="prelude-val">Some</span>(<span class="string">"block-authoring"</span>), aura);
-<a href=#372 id=372 data-nosnippet>372</a>	}
-<a href=#373 id=373 data-nosnippet>373</a>
-<a href=#374 id=374 data-nosnippet>374</a>	<span class="kw">if </span>enable_grandpa {
-<a href=#375 id=375 data-nosnippet>375</a>		<span class="comment">// if the node isn't actively participating in consensus then it doesn't
-<a href=#376 id=376 data-nosnippet>376</a>		// need a keystore, regardless of which protocol we use below.
-<a href=#377 id=377 data-nosnippet>377</a>		</span><span class="kw">let </span>keystore = <span class="kw">if </span>role.is_authority() { <span class="prelude-val">Some</span>(keystore_container.keystore()) } <span class="kw">else </span>{ <span class="prelude-val">None </span>};
-<a href=#378 id=378 data-nosnippet>378</a>
-<a href=#379 id=379 data-nosnippet>379</a>		<span class="kw">let </span>grandpa_config = sc_consensus_grandpa::Config {
-<a href=#380 id=380 data-nosnippet>380</a>			<span class="comment">// FIXME #1578 make this available through chainspec
-<a href=#381 id=381 data-nosnippet>381</a>			</span>gossip_duration: Duration::from_millis(<span class="number">333</span>),
-<a href=#382 id=382 data-nosnippet>382</a>			justification_generation_period: GRANDPA_JUSTIFICATION_PERIOD,
-<a href=#383 id=383 data-nosnippet>383</a>			name: <span class="prelude-val">Some</span>(name),
-<a href=#384 id=384 data-nosnippet>384</a>			observer_enabled: <span class="bool-val">false</span>,
-<a href=#385 id=385 data-nosnippet>385</a>			keystore,
-<a href=#386 id=386 data-nosnippet>386</a>			local_role: role,
-<a href=#387 id=387 data-nosnippet>387</a>			telemetry: telemetry.as_ref().map(|x| x.handle()),
-<a href=#388 id=388 data-nosnippet>388</a>			protocol_name: grandpa_protocol_name,
-<a href=#389 id=389 data-nosnippet>389</a>		};
-<a href=#390 id=390 data-nosnippet>390</a>
-<a href=#391 id=391 data-nosnippet>391</a>		<span class="comment">// start the full GRANDPA voter
-<a href=#392 id=392 data-nosnippet>392</a>		// NOTE: non-authorities could run the GRANDPA observer protocol, but at
-<a href=#393 id=393 data-nosnippet>393</a>		// this point the full voter should provide better guarantees of block
-<a href=#394 id=394 data-nosnippet>394</a>		// and vote data availability than the observer. The observer has not
-<a href=#395 id=395 data-nosnippet>395</a>		// been tested extensively yet and having most nodes in a network run it
-<a href=#396 id=396 data-nosnippet>396</a>		// could lead to finality stalls.
-<a href=#397 id=397 data-nosnippet>397</a>		</span><span class="kw">let </span>grandpa_config = sc_consensus_grandpa::GrandpaParams {
-<a href=#398 id=398 data-nosnippet>398</a>			config: grandpa_config,
-<a href=#399 id=399 data-nosnippet>399</a>			link: grandpa_link,
-<a href=#400 id=400 data-nosnippet>400</a>			network,
-<a href=#401 id=401 data-nosnippet>401</a>			sync: Arc::new(sync_service),
-<a href=#402 id=402 data-nosnippet>402</a>			notification_service: grandpa_notification_service,
-<a href=#403 id=403 data-nosnippet>403</a>			voting_rule: sc_consensus_grandpa::VotingRulesBuilder::default().build(),
-<a href=#404 id=404 data-nosnippet>404</a>			prometheus_registry,
-<a href=#405 id=405 data-nosnippet>405</a>			shared_voter_state,
-<a href=#406 id=406 data-nosnippet>406</a>			telemetry: telemetry.as_ref().map(|x| x.handle()),
-<a href=#407 id=407 data-nosnippet>407</a>			offchain_tx_pool_factory: OffchainTransactionPoolFactory::new(transaction_pool),
-<a href=#408 id=408 data-nosnippet>408</a>		};
-<a href=#409 id=409 data-nosnippet>409</a>
-<a href=#410 id=410 data-nosnippet>410</a>		<span class="comment">// the GRANDPA voter task is considered infallible, i.e.
-<a href=#411 id=411 data-nosnippet>411</a>		// if it fails we take down the service with it.
-<a href=#412 id=412 data-nosnippet>412</a>		</span>task_manager.spawn_essential_handle().spawn_blocking(
-<a href=#413 id=413 data-nosnippet>413</a>			<span class="string">"grandpa-voter"</span>,
-<a href=#414 id=414 data-nosnippet>414</a>			<span class="prelude-val">None</span>,
-<a href=#415 id=415 data-nosnippet>415</a>			sc_consensus_grandpa::run_grandpa_voter(grandpa_config)<span class="question-mark">?</span>,
-<a href=#416 id=416 data-nosnippet>416</a>		);
-<a href=#417 id=417 data-nosnippet>417</a>	}
-<a href=#418 id=418 data-nosnippet>418</a>
-<a href=#419 id=419 data-nosnippet>419</a>	<span class="prelude-val">Ok</span>(task_manager)
-<a href=#420 id=420 data-nosnippet>420</a>}</code></pre></div></section></main></body></html>
+<a href=#340 id=340 data-nosnippet>340</a>			<span class="kw">_</span>,
+<a href=#341 id=341 data-nosnippet>341</a>			McHashInherentDigest,
+<a href=#342 id=342 data-nosnippet>342</a>		&gt;(StartAuraParams {
+<a href=#343 id=343 data-nosnippet>343</a>			slot_duration: sc_slot_config.slot_duration,
+<a href=#344 id=344 data-nosnippet>344</a>			client: client.clone(),
+<a href=#345 id=345 data-nosnippet>345</a>			select_chain,
+<a href=#346 id=346 data-nosnippet>346</a>			block_import,
+<a href=#347 id=347 data-nosnippet>347</a>			proposer_factory,
+<a href=#348 id=348 data-nosnippet>348</a>			create_inherent_data_providers: ProposalCIDP::new(
+<a href=#349 id=349 data-nosnippet>349</a>				inherent_config,
+<a href=#350 id=350 data-nosnippet>350</a>				client.clone(),
+<a href=#351 id=351 data-nosnippet>351</a>				data_sources.mc_hash.clone(),
+<a href=#352 id=352 data-nosnippet>352</a>				data_sources.authority_selection.clone(),
+<a href=#353 id=353 data-nosnippet>353</a>				data_sources.native_token.clone(),
+<a href=#354 id=354 data-nosnippet>354</a>				data_sources.block_participation,
+<a href=#355 id=355 data-nosnippet>355</a>				data_sources.governed_map,
+<a href=#356 id=356 data-nosnippet>356</a>				data_sources.bridge.clone(),
+<a href=#357 id=357 data-nosnippet>357</a>			),
+<a href=#358 id=358 data-nosnippet>358</a>			force_authoring,
+<a href=#359 id=359 data-nosnippet>359</a>			backoff_authoring_blocks,
+<a href=#360 id=360 data-nosnippet>360</a>			keystore: keystore_container.keystore(),
+<a href=#361 id=361 data-nosnippet>361</a>			sync_oracle: sync_service.clone(),
+<a href=#362 id=362 data-nosnippet>362</a>			justification_sync_link: sync_service.clone(),
+<a href=#363 id=363 data-nosnippet>363</a>			block_proposal_slot_portion: SlotProportion::new(<span class="number">2f32 </span>/ <span class="number">3f32</span>),
+<a href=#364 id=364 data-nosnippet>364</a>			max_block_proposal_slot_portion: <span class="prelude-val">None</span>,
+<a href=#365 id=365 data-nosnippet>365</a>			telemetry: telemetry.as_ref().map(|x| x.handle()),
+<a href=#366 id=366 data-nosnippet>366</a>			compatibility_mode: Default::default(),
+<a href=#367 id=367 data-nosnippet>367</a>		})<span class="question-mark">?</span>;
+<a href=#368 id=368 data-nosnippet>368</a>
+<a href=#369 id=369 data-nosnippet>369</a>		<span class="comment">// the AURA authoring task is considered essential, i.e. if it
+<a href=#370 id=370 data-nosnippet>370</a>		// fails we take down the service with it.
+<a href=#371 id=371 data-nosnippet>371</a>		</span>task_manager
+<a href=#372 id=372 data-nosnippet>372</a>			.spawn_essential_handle()
+<a href=#373 id=373 data-nosnippet>373</a>			.spawn_blocking(<span class="string">"aura"</span>, <span class="prelude-val">Some</span>(<span class="string">"block-authoring"</span>), aura);
+<a href=#374 id=374 data-nosnippet>374</a>	}
+<a href=#375 id=375 data-nosnippet>375</a>
+<a href=#376 id=376 data-nosnippet>376</a>	<span class="kw">if </span>enable_grandpa {
+<a href=#377 id=377 data-nosnippet>377</a>		<span class="comment">// if the node isn't actively participating in consensus then it doesn't
+<a href=#378 id=378 data-nosnippet>378</a>		// need a keystore, regardless of which protocol we use below.
+<a href=#379 id=379 data-nosnippet>379</a>		</span><span class="kw">let </span>keystore = <span class="kw">if </span>role.is_authority() { <span class="prelude-val">Some</span>(keystore_container.keystore()) } <span class="kw">else </span>{ <span class="prelude-val">None </span>};
+<a href=#380 id=380 data-nosnippet>380</a>
+<a href=#381 id=381 data-nosnippet>381</a>		<span class="kw">let </span>grandpa_config = sc_consensus_grandpa::Config {
+<a href=#382 id=382 data-nosnippet>382</a>			<span class="comment">// FIXME #1578 make this available through chainspec
+<a href=#383 id=383 data-nosnippet>383</a>			</span>gossip_duration: Duration::from_millis(<span class="number">333</span>),
+<a href=#384 id=384 data-nosnippet>384</a>			justification_generation_period: GRANDPA_JUSTIFICATION_PERIOD,
+<a href=#385 id=385 data-nosnippet>385</a>			name: <span class="prelude-val">Some</span>(name),
+<a href=#386 id=386 data-nosnippet>386</a>			observer_enabled: <span class="bool-val">false</span>,
+<a href=#387 id=387 data-nosnippet>387</a>			keystore,
+<a href=#388 id=388 data-nosnippet>388</a>			local_role: role,
+<a href=#389 id=389 data-nosnippet>389</a>			telemetry: telemetry.as_ref().map(|x| x.handle()),
+<a href=#390 id=390 data-nosnippet>390</a>			protocol_name: grandpa_protocol_name,
+<a href=#391 id=391 data-nosnippet>391</a>		};
+<a href=#392 id=392 data-nosnippet>392</a>
+<a href=#393 id=393 data-nosnippet>393</a>		<span class="comment">// start the full GRANDPA voter
+<a href=#394 id=394 data-nosnippet>394</a>		// NOTE: non-authorities could run the GRANDPA observer protocol, but at
+<a href=#395 id=395 data-nosnippet>395</a>		// this point the full voter should provide better guarantees of block
+<a href=#396 id=396 data-nosnippet>396</a>		// and vote data availability than the observer. The observer has not
+<a href=#397 id=397 data-nosnippet>397</a>		// been tested extensively yet and having most nodes in a network run it
+<a href=#398 id=398 data-nosnippet>398</a>		// could lead to finality stalls.
+<a href=#399 id=399 data-nosnippet>399</a>		</span><span class="kw">let </span>grandpa_config = sc_consensus_grandpa::GrandpaParams {
+<a href=#400 id=400 data-nosnippet>400</a>			config: grandpa_config,
+<a href=#401 id=401 data-nosnippet>401</a>			link: grandpa_link,
+<a href=#402 id=402 data-nosnippet>402</a>			network,
+<a href=#403 id=403 data-nosnippet>403</a>			sync: Arc::new(sync_service),
+<a href=#404 id=404 data-nosnippet>404</a>			notification_service: grandpa_notification_service,
+<a href=#405 id=405 data-nosnippet>405</a>			voting_rule: sc_consensus_grandpa::VotingRulesBuilder::default().build(),
+<a href=#406 id=406 data-nosnippet>406</a>			prometheus_registry,
+<a href=#407 id=407 data-nosnippet>407</a>			shared_voter_state,
+<a href=#408 id=408 data-nosnippet>408</a>			telemetry: telemetry.as_ref().map(|x| x.handle()),
+<a href=#409 id=409 data-nosnippet>409</a>			offchain_tx_pool_factory: OffchainTransactionPoolFactory::new(transaction_pool),
+<a href=#410 id=410 data-nosnippet>410</a>		};
+<a href=#411 id=411 data-nosnippet>411</a>
+<a href=#412 id=412 data-nosnippet>412</a>		<span class="comment">// the GRANDPA voter task is considered infallible, i.e.
+<a href=#413 id=413 data-nosnippet>413</a>		// if it fails we take down the service with it.
+<a href=#414 id=414 data-nosnippet>414</a>		</span>task_manager.spawn_essential_handle().spawn_blocking(
+<a href=#415 id=415 data-nosnippet>415</a>			<span class="string">"grandpa-voter"</span>,
+<a href=#416 id=416 data-nosnippet>416</a>			<span class="prelude-val">None</span>,
+<a href=#417 id=417 data-nosnippet>417</a>			sc_consensus_grandpa::run_grandpa_voter(grandpa_config)<span class="question-mark">?</span>,
+<a href=#418 id=418 data-nosnippet>418</a>		);
+<a href=#419 id=419 data-nosnippet>419</a>	}
+<a href=#420 id=420 data-nosnippet>420</a>
+<a href=#421 id=421 data-nosnippet>421</a>	<span class="prelude-val">Ok</span>(task_manager)
+<a href=#422 id=422 data-nosnippet>422</a>}</code></pre></div></section></main></body></html>
