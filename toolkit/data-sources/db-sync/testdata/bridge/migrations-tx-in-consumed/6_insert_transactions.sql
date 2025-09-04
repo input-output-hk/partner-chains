@@ -30,7 +30,9 @@ DECLARE
 
 
  native_token_policy hash28type := decode('500000000000000000000000000000000000434845434b504f494e69', 'hex');
+ irrelevant_token_policy hash28type := decode('50000000000000000000000000000000000000000000000000000042', 'hex');
  native_token_id integer := 1;
+ irrelevant_token_id integer := 2;
 
  init_ics_tx integer = 1;
  reserve_transfer_tx integer   := 10;
@@ -79,8 +81,9 @@ INSERT INTO datum ( id, hash                        , tx_id                  , v
                  ,( 3 , invalid_transfer_datum      , invalid_transfer_tx_1  , invalid_datum    )
 ;
 
-INSERT INTO multi_asset ( id              , policy              , name           , fingerprint   )
-VALUES                  ( native_token_id , native_token_policy , 'native token' , 'nativeToken' )
+INSERT INTO multi_asset ( id                  , policy                  , name               , fingerprint       )
+VALUES                  ( native_token_id     , native_token_policy     , 'native token'     , 'nativeToken'     )
+                       ,( irrelevant_token_id , native_token_policy     , 'irrelevant token' , 'irrelevantToken' )
 ;
 
 INSERT INTO ma_tx_out (id , quantity , tx_out_id , ident )
@@ -88,6 +91,11 @@ VALUES                (1  , 100      , 21        , native_token_id )
                      ,(2  , 110      , 31        , native_token_id )
                      ,(3  , 120      , 32        , native_token_id )
                      ,(4  , 1000     , 41        , native_token_id )
+
+                     ,(5  , 9999     , 21        , irrelevant_token_id )
+                     ,(6  , 9999     , 31        , irrelevant_token_id )
+                     ,(7  , 9999     , 32        , irrelevant_token_id )
+                     ,(8  , 9999     , 41        , irrelevant_token_id )
 ;
 
 END $$;
