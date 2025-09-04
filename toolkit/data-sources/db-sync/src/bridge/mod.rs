@@ -50,6 +50,11 @@ observed_async_trait!(
 				policy_id: main_chain_scripts.token_policy_id.into(),
 				asset_name: main_chain_scripts.token_asset_name.into(),
 			};
+
+			let current_mc_block = get_block_by_hash(&self.pool, current_mc_block_hash.clone())
+				.await?
+				.ok_or(format!("Could not find block for hash {current_mc_block_hash:?}"))?;
+
 			let TxBlockInfo { block_number, tx_ix, tx_out_ix, .. } = get_block_info_for_utxo(
 				&self.pool,
 				data_checkpoint.0.tx_hash.into(),
@@ -57,9 +62,7 @@ observed_async_trait!(
 			)
 			.await?
 			.ok_or(format!("Could not find block info for data checkpoint: {data_checkpoint:?}"))?;
-			let current_mc_block = get_block_by_hash(&self.pool, current_mc_block_hash.clone())
-				.await?
-				.ok_or(format!("Could not find block for hash {current_mc_block_hash:?}"))?;
+
 			let utxos = get_bridge_utxos_tx(
 				self.db_sync_config.get_tx_in_config().await?,
 				&self.pool,
@@ -71,43 +74,46 @@ observed_async_trait!(
 			)
 			.await?;
 
-			let mut transfers = vec![];
-
-			for utxo in &utxos {
-				let token_delta = (utxo.tokens_out.0 - utxo.tokens_in.0) as u64;
-				if token_delta > 0 {
-					let transfer = match TokenTransferDatum::try_from(utxo.datum.0.clone()) {
-						Ok(TokenTransferDatum::V1(TokenTransferDatumV1::UserTransfer {
-							receiver,
-						})) => match RecipientAddress::try_from(receiver.0.as_ref()) {
-							Ok(recipient) => BridgeTransferV1::UserTransfer {
-								token_amount: token_delta,
-								recipient,
-							},
-							Err(_) => BridgeTransferV1::InvalidTransfer {
-								token_amount: token_delta,
-								utxo_id: utxo.utxo_id(),
-							},
-						},
-						Ok(TokenTransferDatum::V1(TokenTransferDatumV1::ReserveTransfer)) => {
-							BridgeTransferV1::ReserveTransfer { token_amount: token_delta }
-						},
-						Err(_) => BridgeTransferV1::InvalidTransfer {
-							token_amount: token_delta,
-							utxo_id: utxo.utxo_id(),
-						},
-					};
-
-					transfers.push(transfer);
-				}
-			}
-
 			let new_checkpoint = match utxos.last() {
 				None => data_checkpoint,
 				Some(utxo) => BridgeDataCheckpoint(utxo.utxo_id()),
 			};
 
+			let transfers = utxos.into_iter().flat_map(utxo_to_transfer).collect();
+
 			Ok((transfers, new_checkpoint))
 		}
 	}
 );
+
+fn utxo_to_transfer<RecipientAddress>(
+	utxo: BridgeUtxo,
+) -> Option<BridgeTransferV1<RecipientAddress>>
+where
+	RecipientAddress: for<'a> TryFrom<&'a [u8]>,
+{
+	let token_delta = (utxo.tokens_out.0 as i128) - (utxo.tokens_in.0 as i128);
+
+	if token_delta <= 0 {
+		return None;
+	}
+
+	let token_amount = token_delta as u64;
+
+	let transfer = match TokenTransferDatum::try_from(utxo.datum.0.clone()) {
+		Ok(TokenTransferDatum::V1(TokenTransferDatumV1::UserTransfer { receiver })) => {
+			match RecipientAddress::try_from(receiver.0.as_ref()) {
+				Ok(recipient) => BridgeTransferV1::UserTransfer { token_amount, recipient },
+				Err(_) => {
+					BridgeTransferV1::InvalidTransfer { token_amount, utxo_id: utxo.utxo_id() }
+				},
+			}
+		},
+		Ok(TokenTransferDatum::V1(TokenTransferDatumV1::ReserveTransfer)) => {
+			BridgeTransferV1::ReserveTransfer { token_amount }
+		},
+		Err(_) => BridgeTransferV1::InvalidTransfer { token_amount, utxo_id: utxo.utxo_id() },
+	};
+
+	Some(transfer)
+}
