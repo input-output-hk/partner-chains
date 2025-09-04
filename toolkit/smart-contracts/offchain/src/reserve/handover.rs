@@ -96,7 +96,6 @@ fn build_tx(
 	)?;
 
 	// Spends UTXO with Reserve Auth Policy Token and Reserve (Reward) tokens
-
 	tx_builder.set_inputs(&reserve_utxo_input_with_validator_script_reference(
 		reserve_utxo,
 		reserve,

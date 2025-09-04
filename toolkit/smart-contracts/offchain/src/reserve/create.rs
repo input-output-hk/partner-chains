@@ -122,16 +122,21 @@ fn create_reserve_tx(
 		&reserve.validator_version_utxo.to_csl_tx_input(),
 		reserve.scripts.validator.bytes.len(),
 	);
-	tx_builder.add_mint_script_token_using_reference_script(
-		&Plutus(reserve.scripts.illiquid_circulation_supply_auth_token_policy.clone()),
-		&reserve
-			.illiquid_circulation_supply_authority_token_policy_version_utxo
-			.to_csl_tx_input(),
-		&Int::new(&parameters.ics_auth_token_amount.into()),
-		&costs,
-	)?;
-	for _ in 0..parameters.ics_auth_token_amount {
-		tx_builder.add_output(&ics_validator_output(&reserve.scripts, ctx)?)?;
+
+	if parameters.ics_auth_token_amount > 0 {
+		tx_builder.add_mint_script_token_using_reference_script(
+			&Plutus(reserve.scripts.illiquid_circulation_supply_auth_token_policy.clone()),
+			&reserve
+				.illiquid_circulation_supply_authority_token_policy_version_utxo
+				.to_csl_tx_input(),
+			&Int::new(&parameters.ics_auth_token_amount.into()),
+			&costs,
+		)?;
+		// Create ICS Authorized Outputs. These contain special ICS Authority Token,
+		// that prevents UTxOs from being merged all into one.
+		for _ in 0..parameters.ics_auth_token_amount {
+			tx_builder.add_output(&ics_validator_output(&reserve.scripts, ctx)?)?;
+		}
 	}
 
 	let tx = tx_builder.balance_update_and_build(ctx)?.remove_native_script_witnesses();
