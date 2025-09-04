@@ -47,11 +47,17 @@ run_tests() {
         "advanced")
             pytest tests/test_jolteon_advanced.py -v -s --env $env --blockchain $blockchain
             ;;
+        "rpc")
+            pytest tests/test_jolteon_consensus_rpc.py -v -s --env $env --blockchain $blockchain
+            ;;
+        "2chain")
+            pytest tests/test_jolteon_two_chain_commit.py -v -s --env $env --blockchain $blockchain
+            ;;
         "all")
             pytest tests/ -m jolteon -v -s --env $env --blockchain $blockchain
             ;;
         "smoke")
-            pytest tests/test_jolteon_consensus.py::TestJolteonConsensus::test_qc_formation_and_round_advancement -v -s --env $env --blockchain $blockchain
+            pytest tests/test_jolteon_consensus_rpc.py::TestJolteonConsensusRPC::test_replica_state_retrieval -v -s --env $env --blockchain $blockchain
             ;;
         *)
             echo -e "${RED}Unknown test type: ${test_type}${NC}"
@@ -68,8 +74,10 @@ show_help() {
     echo -e "${BLUE}Test Types:${NC}"
     echo "  basic     - Run basic Jolteon consensus tests"
     echo "  advanced  - Run advanced Jolteon consensus tests"
+    echo "  rpc       - Run Jolteon consensus RPC tests"
+    echo "  2chain    - Run Jolteon 2-chain commit rule tests"
     echo "  all       - Run all Jolteon consensus tests"
-    echo "  smoke     - Run single smoke test (JOLTEON-001)"
+    echo "  smoke     - Run single smoke test (JOLTEON-RPC-001)"
     echo ""
     echo -e "${BLUE}Options:${NC}"
     echo "  --env <environment>     - Set test environment (default: local)"
@@ -80,6 +88,8 @@ show_help() {
     echo "  $0 basic                           # Run basic tests with defaults"
     echo "  $0 all --env jolteon_docker       # Run all tests in jolteon_docker env"
     echo "  $0 smoke --blockchain substrate   # Run smoke test for substrate"
+    echo "  $0 rpc --env jolteon_docker       # Run RPC-based consensus tests"
+    echo "  $0 2chain --env jolteon_docker    # Run 2-chain commit rule tests"
     echo ""
 }
 
@@ -128,7 +138,7 @@ fi
 
 # Validate test type
 case $TEST_TYPE in
-    basic|advanced|all|smoke)
+    basic|advanced|rpc|2chain|all|smoke)
         ;;
     *)
         echo -e "${RED}Error: Invalid test type: ${TEST_TYPE}${NC}"
