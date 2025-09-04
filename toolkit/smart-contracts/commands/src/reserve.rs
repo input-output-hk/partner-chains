@@ -99,6 +99,9 @@ pub struct CreateReserveCmd {
 impl CreateReserveCmd {
 	/// Creates the reserve for your chain
 	pub async fn execute(self) -> crate::SubCmdResult {
+		if self.ics_auth_token_amount == 0 {
+			return Err("ICS Auth Token amount must be greater than 0".into());
+		}
 		let payment_key = self.payment_key_file.read_key()?;
 		let client = self.common_arguments.get_ogmios_client().await?;
 		let result = create_reserve_utxo(
