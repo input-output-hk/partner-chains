@@ -80,53 +80,77 @@ fn invalid_transfer_1_utxo() -> UtxoId {
 	UtxoId::new(hex!("c000000000000000000000000000000000000000000000000000000000000005"), 0)
 }
 
-#[sqlx::test(migrations = "./testdata/bridge/migrations-tx-in-consumed")]
-async fn gets_transfers_from_init_to_block_2(pool: PgPool) {
-	let data_source: &dyn TokenBridgeDataSource<ByteString> =
-		&TokenBridgeDataSourceImpl::new(pool, None);
-	let main_chain_scripts = MainChainScripts {
-		token_policy_id: token_policy_id(),
-		token_asset_name: token_asset_name(),
-		illiquid_supply_validator_address: illiquid_supply_validator_address(),
-	};
-	let data_checkpoint = BridgeDataCheckpoint(last_ics_init_utxo());
-	let current_mc_block = block_2_hash();
-	let max_transfers = 32;
+macro_rules! with_migration_versions {
+	($(async fn $name:ident($pool:ident: PgPool) $body:block )*) => {
+		$(
+		mod $name {
+				use super::*;
+				use pretty_assertions::assert_eq;
 
-	let (transfers, new_checkpoint) = data_source
-		.get_transfers(main_chain_scripts, data_checkpoint, max_transfers, current_mc_block)
-		.await
-		.unwrap();
+				async fn $name($pool: PgPool) $body
 
-	// There's two transfers done in block 2
-	assert_eq!(transfers, vec![reserve_transfer(), user_transfer_1()]);
+				#[sqlx::test(migrations = "./testdata/bridge/migrations-tx-in-enabled")]
+				async fn tx_in_enabled($pool: PgPool) {
+					$name($pool).await
+				}
 
-	assert_eq!(new_checkpoint, BridgeDataCheckpoint(user_transfer_1_utxo()))
+				#[sqlx::test(migrations = "./testdata/bridge/migrations-tx-in-consumed")]
+				async fn tx_in_consumed($pool: PgPool) {
+					$name($pool).await
+				}
+		}
+		)*
+	}
 }
 
-#[sqlx::test(migrations = "./testdata/bridge/migrations-tx-in-consumed")]
-async fn gets_transfers_from_init_to_block_4(pool: PgPool) {
-	let data_source: &dyn TokenBridgeDataSource<ByteString> =
-		&TokenBridgeDataSourceImpl::new(pool, None);
-	let main_chain_scripts = MainChainScripts {
-		token_policy_id: token_policy_id(),
-		token_asset_name: token_asset_name(),
-		illiquid_supply_validator_address: illiquid_supply_validator_address(),
-	};
-	let data_checkpoint = BridgeDataCheckpoint(last_ics_init_utxo());
-	let current_mc_block = block_4_hash();
-	let max_transfers = 32;
+with_migration_versions! {
+	async fn gets_transfers_from_init_to_block_2(pool: PgPool) {
+		let data_source: &dyn TokenBridgeDataSource<ByteString> =
+			&TokenBridgeDataSourceImpl::new(pool, None);
+		let main_chain_scripts = MainChainScripts {
+			token_policy_id: token_policy_id(),
+			token_asset_name: token_asset_name(),
+			illiquid_supply_validator_address: illiquid_supply_validator_address(),
+		};
+		let data_checkpoint = BridgeDataCheckpoint(last_ics_init_utxo());
+		let current_mc_block = block_2_hash();
+		let max_transfers = 32;
 
-	let (transfers, new_checkpoint) = data_source
-		.get_transfers(main_chain_scripts, data_checkpoint, max_transfers, current_mc_block)
-		.await
-		.unwrap();
+		let (transfers, new_checkpoint) = data_source
+			.get_transfers(main_chain_scripts, data_checkpoint, max_transfers, current_mc_block)
+			.await
+			.unwrap();
 
-	// There's three valid transfers and one invalid done between blocks 2 and 4
-	assert_eq!(
-		transfers,
-		vec![reserve_transfer(), user_transfer_1(), user_transfer_2(), invalid_transfer_1()]
-	);
+		// There's two transfers done in block 2
+		assert_eq!(transfers, vec![reserve_transfer(), user_transfer_1()]);
 
-	assert_eq!(new_checkpoint, BridgeDataCheckpoint(invalid_transfer_1_utxo()))
+		assert_eq!(new_checkpoint, BridgeDataCheckpoint(user_transfer_1_utxo()))
+	}
+
+	async fn gets_transfers_from_init_to_block_4(pool: PgPool) {
+		let data_source: &dyn TokenBridgeDataSource<ByteString> =
+			&TokenBridgeDataSourceImpl::new(pool, None);
+		let main_chain_scripts = MainChainScripts {
+			token_policy_id: token_policy_id(),
+			token_asset_name: token_asset_name(),
+			illiquid_supply_validator_address: illiquid_supply_validator_address(),
+		};
+		let data_checkpoint = BridgeDataCheckpoint(last_ics_init_utxo());
+		let current_mc_block = block_4_hash();
+		let max_transfers = 32;
+
+		let (transfers, new_checkpoint) = data_source
+			.get_transfers(main_chain_scripts, data_checkpoint, max_transfers, current_mc_block)
+			.await
+			.unwrap();
+
+		// There's three valid transfers and one invalid done between blocks 2 and 4
+		assert_eq!(
+			transfers,
+			vec![reserve_transfer(), user_transfer_1(), user_transfer_2(), invalid_transfer_1()]
+		);
+
+		assert_eq!(new_checkpoint, BridgeDataCheckpoint(invalid_transfer_1_utxo()))
+	}
+
 }
