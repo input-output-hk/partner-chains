@@ -20,10 +20,6 @@ fn illiquid_supply_validator_address() -> MainchainAddress {
 	MainchainAddress::from_str("ics address").unwrap()
 }
 
-fn block_1_hash() -> McBlockHash {
-	McBlockHash(hex!("b000000000000000000000000000000000000000000000000000000000000001"))
-}
-
 fn block_2_hash() -> McBlockHash {
 	McBlockHash(hex!("b000000000000000000000000000000000000000000000000000000000000002"))
 }
@@ -70,10 +66,6 @@ fn invalid_transfer_1() -> BridgeTransferV1<ByteString> {
 
 fn user_transfer_1_utxo() -> UtxoId {
 	UtxoId::new(hex!("c000000000000000000000000000000000000000000000000000000000000003"), 0)
-}
-
-fn user_transfer_2_utxo() -> UtxoId {
-	UtxoId::new(hex!("c000000000000000000000000000000000000000000000000000000000000004"), 1)
 }
 
 fn invalid_transfer_1_utxo() -> UtxoId {

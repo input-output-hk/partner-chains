@@ -933,7 +933,7 @@ pub(crate) struct BridgeUtxo {
 #[cfg(feature = "bridge")]
 impl BridgeUtxo {
 	pub fn utxo_id(&self) -> UtxoId {
-		UtxoId { tx_hash: self.tx_hash.clone().into(), index: self.utxo_ix.clone().into() }
+		UtxoId { tx_hash: self.tx_hash.into(), index: self.utxo_ix.clone().into() }
 	}
 }
 
