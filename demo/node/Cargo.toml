@@ -101,6 +101,7 @@ partner-chains-db-sync-data-sources = { workspace = true, features = [
 	"mc-hash",
 	"sidechain-rpc",
 	"block-participation",
+	"bridge",
 ] }
 partner-chains-mock-data-sources = { workspace = true, features = [
 	"block-source",
