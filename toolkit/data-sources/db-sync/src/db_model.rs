@@ -902,20 +902,12 @@ mod tests {
 			1,
 		);
 
-		let result = get_block_info_for_utxo(&pool, utxo.tx_hash.into(), utxo.index.into())
+		let result = get_block_info_for_utxo(&pool, utxo.tx_hash.into())
 			.await
 			.expect("Should succeed")
 			.expect("Should find data");
 
-		assert_eq!(
-			result,
-			TxBlockInfo {
-				block_number: BlockNumber(0),
-				tx_ix: TxIndexInBlock(0),
-				tx_hash: utxo.tx_hash.into(),
-				tx_out_ix: utxo.index.into()
-			}
-		);
+		assert_eq!(result, TxBlockInfo { block_number: BlockNumber(0), tx_ix: TxIndexInBlock(0) });
 	}
 }
 
@@ -964,33 +956,25 @@ pub(crate) async fn get_bridge_utxos_tx(
 pub(crate) struct TxBlockInfo {
 	pub(crate) block_number: BlockNumber,
 	pub(crate) tx_ix: TxIndexInBlock,
-	pub(crate) tx_hash: TxHash,
-	pub(crate) tx_out_ix: TxIndex,
 }
 
 #[cfg(feature = "bridge")]
 pub(crate) async fn get_block_info_for_utxo(
 	pool: &Pool<Postgres>,
 	tx_hash: TxHash,
-	tx_ix: TxIndex,
 ) -> Result<Option<TxBlockInfo>, SqlxError> {
 	let query = sqlx::query_as::<_, TxBlockInfo>(
 		"
 SELECT
 	block.block_no AS block_number,
-	tx.block_index AS tx_ix,
-	tx.hash        AS tx_hash,
-	tx_out.index   AS tx_out_ix
+	tx.block_index AS tx_ix
 FROM tx
-JOIN tx_out ON tx.id = tx_out.tx_id
 JOIN block  ON block.id = tx.block_id
 WHERE tx.hash = $1
-  AND tx_out.index = $2
 ;
 ",
 	)
-	.bind(tx_hash)
-	.bind(tx_ix);
+	.bind(tx_hash);
 
 	Ok(query.fetch_optional(pool).await?)
 }

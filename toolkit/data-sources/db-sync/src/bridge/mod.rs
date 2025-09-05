@@ -55,20 +55,19 @@ observed_async_trait!(
 				.await?
 				.ok_or(format!("Could not find block for hash {current_mc_block_hash:?}"))?;
 
-			let TxBlockInfo { block_number, tx_ix, tx_out_ix, .. } = get_block_info_for_utxo(
-				&self.pool,
-				data_checkpoint.0.tx_hash.into(),
-				data_checkpoint.0.index.into(),
-			)
-			.await?
-			.ok_or(format!("Could not find block info for data checkpoint: {data_checkpoint:?}"))?;
+			let TxBlockInfo { block_number, tx_ix } =
+				get_block_info_for_utxo(&self.pool, data_checkpoint.0.tx_hash.into())
+					.await?
+					.ok_or(format!(
+						"Could not find block info for data checkpoint: {data_checkpoint:?}"
+					))?;
 
 			let utxos = get_bridge_utxos_tx(
 				self.db_sync_config.get_tx_in_config().await?,
 				&self.pool,
 				&main_chain_scripts.illiquid_supply_validator_address.into(),
 				asset,
-				(block_number, tx_ix, tx_out_ix),
+				(block_number, tx_ix, data_checkpoint.0.index.into()),
 				current_mc_block.block_no,
 				max_transfers,
 			)
