@@ -1,4 +1,15 @@
 //! Db-Sync data source used by the Partner Chain token bridge observability
+//!
+//! # Assumptions
+//!
+//! The data source implementation assumes that the utxos found at the illiquid circulating
+//! supply address conform to rules that are enforced by the Partner Chains smart contracts.
+//!
+//! Most importantly, transactions that spend any UTXOs from the ICS can only create exactly
+//! one new UTXO at the ICS address. Conversely, transactions that create more than one UTXO
+//! at the illiquid supply address can only spend UTXOs from outside of it. This guarantees
+//! that the observability layer can always correctly identify the number of tokens transfered
+//! by calculating the delta of `tokens in the new UTXO` - `tokens in the old ICS UTXOs`.
 
 use crate::McFollowerMetrics;
 use crate::db_model::*;
