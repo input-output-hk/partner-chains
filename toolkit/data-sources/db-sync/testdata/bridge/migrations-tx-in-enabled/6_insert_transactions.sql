@@ -105,7 +105,6 @@ VALUES                (11 , 100      , 21        , native_token_id )
 
 INSERT INTO tx_in (id, tx_in_id               , tx_out_id           , tx_out_index, redeemer_id )
            VALUES (1 , reserve_transfer_tx    , init_ics_tx         , 0           , NULL        )
-                 ,(2 , reserve_transfer_tx    , init_ics_tx         , 3           , NULL        )
                  ,(3 , user_transfer_tx_1     , reserve_transfer_tx , 0           , NULL        )
                  ,(4 , user_transfer_tx_2     , user_transfer_tx_1  , 0           , NULL        )
                  ,(5 , invalid_transfer_tx_1  , user_transfer_tx_2  , 0           , NULL        )
