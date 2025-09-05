@@ -16,6 +16,8 @@
 //!   * Governance Policy Script
 
 use super::ReserveData;
+use crate::csl::unit_plutus_data;
+use crate::reserve::create::Script::Plutus;
 use crate::{
 	await_tx::AwaitTx,
 	cardano_keys::CardanoPaymentSigningKey,
@@ -28,7 +30,7 @@ use crate::{
 	scripts_data::ReserveScripts,
 };
 use cardano_serialization_lib::{
-	JsError, MultiAsset, Transaction, TransactionBuilder, TransactionOutput,
+	Int, JsError, MultiAsset, Transaction, TransactionBuilder, TransactionOutput,
 	TransactionOutputBuilder,
 };
 use ogmios_client::{
@@ -40,6 +42,7 @@ use partner_chains_plutus_data::reserve::{
 	ReserveDatum, ReserveImmutableSettings, ReserveMutableSettings, ReserveStats,
 };
 use sidechain_domain::{AssetId, PolicyId, UtxoId};
+use std::num::NonZero;
 
 /// Creates new reserve with the given [ReserveParameters].
 pub async fn create_reserve_utxo<
@@ -75,6 +78,8 @@ pub struct ReserveParameters {
 	pub token: AssetId,
 	/// Initial deposit amount.
 	pub initial_deposit: u64,
+	/// Amount of illiquid circulation supply authority tokens to mint.
+	pub ics_initial_utxos_amount: NonZero<u64>,
 }
 
 impl From<&ReserveParameters> for ReserveDatum {
@@ -118,7 +123,24 @@ fn create_reserve_tx(
 		&reserve.validator_version_utxo.to_csl_tx_input(),
 		reserve.scripts.validator.bytes.len(),
 	);
-	Ok(tx_builder.balance_update_and_build(ctx)?.remove_native_script_witnesses())
+
+	tx_builder.add_mint_script_token_using_reference_script(
+		&Plutus(reserve.scripts.illiquid_circulation_supply_auth_token_policy.clone()),
+		&reserve
+			.illiquid_circulation_supply_authority_token_policy_version_utxo
+			.to_csl_tx_input(),
+		&Int::new(&parameters.ics_initial_utxos_amount.get().into()),
+		&costs,
+	)?;
+	// Create ICS Authorized Outputs. These contain special ICS Authority Token,
+	// that prevents UTxOs from being merged all into one.
+	for _ in 0..parameters.ics_initial_utxos_amount.into() {
+		tx_builder.add_output(&ics_validator_output(&reserve.scripts, ctx)?)?;
+	}
+
+	let tx = tx_builder.balance_update_and_build(ctx)?.remove_native_script_witnesses();
+
+	Ok(tx)
 }
 
 // Creates output with reserve token and the initial deposit
@@ -134,6 +156,22 @@ fn reserve_validator_output(
 	let ma = MultiAsset::new()
 		.with_asset_amount(&scripts.auth_policy.empty_name_asset(), 1u64)?
 		.with_asset_amount(&parameters.token, parameters.initial_deposit)?;
+
+	amount_builder.with_minimum_ada_and_asset(&ma, ctx)?.build()
+}
+
+fn ics_validator_output(
+	scripts: &ReserveScripts,
+	ctx: &TransactionContext,
+) -> Result<TransactionOutput, JsError> {
+	let amount_builder = TransactionOutputBuilder::new()
+		.with_address(&scripts.illiquid_circulation_supply_validator.address(ctx.network))
+		.with_plutus_data(&unit_plutus_data())
+		.next()?;
+	let ma = MultiAsset::new().with_asset_amount(
+		&scripts.illiquid_circulation_supply_auth_token_policy.empty_name_asset(),
+		1u64,
+	)?;
 
 	amount_builder.with_minimum_ada_and_asset(&ma, ctx)?.build()
 }
