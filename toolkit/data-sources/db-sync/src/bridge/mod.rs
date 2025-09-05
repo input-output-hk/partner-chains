@@ -55,27 +55,39 @@ observed_async_trait!(
 				.await?
 				.ok_or(format!("Could not find block for hash {current_mc_block_hash:?}"))?;
 
-			let TxBlockInfo { block_number, tx_ix } =
-				get_block_info_for_utxo(&self.pool, data_checkpoint.0.tx_hash.into())
-					.await?
-					.ok_or(format!(
-						"Could not find block info for data checkpoint: {data_checkpoint:?}"
-					))?;
+			let data_checkpoint = match data_checkpoint {
+				BridgeDataCheckpoint::Utxo(utxo) => {
+					let TxBlockInfo { block_number, tx_ix } =
+						get_block_info_for_utxo(&self.pool, utxo.tx_hash.into()).await?.ok_or(
+							format!(
+								"Could not find block info for data checkpoint: {data_checkpoint:?}"
+							),
+						)?;
+					BridgeCheckpoint::Utxo {
+						block_number: block_number.0,
+						tx_ix: tx_ix.0,
+						tx_out_ix: utxo.index.0,
+					}
+				},
+				BridgeDataCheckpoint::Block(checkpoint_block_number) => {
+					BridgeCheckpoint::Block { number: checkpoint_block_number.0 }
+				},
+			};
 
 			let utxos = get_bridge_utxos_tx(
 				self.db_sync_config.get_tx_in_config().await?,
 				&self.pool,
 				&main_chain_scripts.illiquid_supply_validator_address.into(),
 				asset,
-				(block_number, tx_ix, data_checkpoint.0.index.into()),
+				data_checkpoint,
 				current_mc_block.block_no,
 				max_transfers,
 			)
 			.await?;
 
 			let new_checkpoint = match utxos.last() {
-				None => data_checkpoint,
-				Some(utxo) => BridgeDataCheckpoint(utxo.utxo_id()),
+				None => BridgeDataCheckpoint::Block(current_mc_block.block_no.into()),
+				Some(utxo) => BridgeDataCheckpoint::Utxo(utxo.utxo_id()),
 			};
 
 			let transfers = utxos.into_iter().flat_map(utxo_to_transfer).collect();

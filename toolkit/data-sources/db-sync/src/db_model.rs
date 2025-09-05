@@ -930,12 +930,18 @@ impl BridgeUtxo {
 }
 
 #[cfg(feature = "bridge")]
+pub(crate) enum BridgeCheckpoint {
+	Utxo { block_number: u32, tx_ix: u32, tx_out_ix: u16 },
+	Block { number: u32 },
+}
+
+#[cfg(feature = "bridge")]
 pub(crate) async fn get_bridge_utxos_tx(
 	tx_in_configuration: TxInConfiguration,
 	pool: &Pool<Postgres>,
 	icp_addr: &Address,
 	asset: Asset,
-	checkpoint: (BlockNumber, TxIndexInBlock, TxIndex),
+	checkpoint: BridgeCheckpoint,
 	to_block: BlockNumber,
 	max_utxos: u32,
 ) -> Result<Vec<BridgeUtxo>, SqlxError> {
@@ -984,53 +990,57 @@ async fn get_bridge_utxos_tx_in_consumed(
 	pool: &Pool<Postgres>,
 	icp_address: &Address,
 	native_token: Asset,
-	(from_block, from_tx_ix, from_utxo_ix): (BlockNumber, TxIndexInBlock, TxIndex),
+	checkpoint: BridgeCheckpoint,
 	to_block: BlockNumber,
 	max_utxos: u32,
 ) -> Result<Vec<BridgeUtxo>, SqlxError> {
-	let query = sqlx::query_as::<_, BridgeUtxo>(
-		"
-SELECT
-      block.block_no                          AS block_number
-    , tx.block_index                          AS tx_ix
-    , tx.hash                                 AS tx_hash
-    , outputs.index                           AS utxo_ix
-    , output_tokens.quantity                  AS tokens_out
-    , coalesce(sum(input_tokens.quantity), 0) AS tokens_in
-    , datum.value                             AS datum
+	use sqlx::QueryBuilder;
+	let mut query_builder = QueryBuilder::new("
+	SELECT
+	      block.block_no                          AS block_number
+	    , tx.block_index                          AS tx_ix
+	    , tx.hash                                 AS tx_hash
+	    , outputs.index                           AS utxo_ix
+	    , output_tokens.quantity                  AS tokens_out
+	    , coalesce(sum(input_tokens.quantity), 0) AS tokens_in
+	    , datum.value                             AS datum
 
-FROM tx_out      outputs
-JOIN tx                        ON outputs.tx_id = tx.id
-JOIN block                     ON tx.block_id = block.id
-JOIN ma_tx_out   output_tokens ON output_tokens.tx_out_id = outputs.id
-JOIN multi_asset native_token  ON native_token.id = output_tokens.ident
-JOIN datum                     ON datum.tx_id = tx.id
+	FROM tx_out      outputs
+	JOIN tx                        ON outputs.tx_id = tx.id
+	JOIN block                     ON tx.block_id = block.id
+	JOIN ma_tx_out   output_tokens ON output_tokens.tx_out_id = outputs.id
+	JOIN multi_asset native_token  ON native_token.id = output_tokens.ident
+	JOIN datum                     ON datum.tx_id = tx.id
 
-LEFT JOIN tx_out     inputs        ON inputs.consumed_by_tx_id = tx.id   AND inputs.address = $1
-LEFT JOIN ma_tx_out  input_tokens  ON input_tokens.tx_out_id = inputs.id AND input_tokens.ident = native_token.id
+	LEFT JOIN tx_out     inputs        ON inputs.consumed_by_tx_id = tx.id   AND inputs.address = $1
+	LEFT JOIN ma_tx_out  input_tokens  ON input_tokens.tx_out_id = inputs.id AND input_tokens.ident = native_token.id
 
-WHERE native_token.policy = $2
-  AND native_token.name = $3
-  AND outputs.address = $1
-  AND (block_no, tx.block_index, outputs.index) > ($4, $5, $6)
-  AND block_no <= $7
+	WHERE native_token.policy = $2
+	  AND native_token.name = $3
+	  AND outputs.address = $1
+	  AND block_no <= $4
+	");
 
-GROUP BY tx.hash, outputs.id, output_tokens.quantity, datum.value, block.block_no, tx.block_index, outputs.index
+	match checkpoint {
+		BridgeCheckpoint::Block { number } => {
+			query_builder.push(&format!("AND block_no > {number}"));
+		},
+		BridgeCheckpoint::Utxo { block_number, tx_ix, tx_out_ix } => {
+			query_builder.push(&format!(
+				"AND (block_no, tx.block_index, outputs.index) > ({block_number}, {tx_ix}, {tx_out_ix})"
+			));
+		},
+	}
 
-ORDER BY block.block_no, tx.block_index, outputs.index
-
-limit $8
-;
-    ",
-	)
-	.bind(&icp_address.0)
-	.bind(&native_token.policy_id.0)
-	.bind(&native_token.asset_name.0)
-	.bind(from_block)
-	.bind(from_tx_ix)
-	.bind(from_utxo_ix)
-	.bind(to_block)
-	.bind(max_utxos as i64);
+	let query = query_builder
+		.push("GROUP BY tx.hash, outputs.id, output_tokens.quantity, datum.value, block.block_no, tx.block_index, outputs.index ")
+		.push("ORDER BY block.block_no, tx.block_index, outputs.index ")
+		.push(&format!("LIMIT {max_utxos};"))
+		.build_query_as::<BridgeUtxo>()
+		.bind(&icp_address.0)
+		.bind(&native_token.policy_id.0)
+		.bind(&native_token.asset_name.0)
+		.bind(to_block);
 
 	Ok(query.fetch_all(pool).await?)
 }
@@ -1040,54 +1050,59 @@ async fn get_bridge_utxos_tx_in_enabled(
 	pool: &Pool<Postgres>,
 	icp_address: &Address,
 	native_token: Asset,
-	(from_block, from_tx_ix, from_utxo_ix): (BlockNumber, TxIndexInBlock, TxIndex),
+	checkpoint: BridgeCheckpoint,
 	to_block: BlockNumber,
 	max_utxos: u32,
 ) -> Result<Vec<BridgeUtxo>, SqlxError> {
-	let query = sqlx::query_as::<_, BridgeUtxo>(
-		"
-SELECT
-      block.block_no                          AS block_number
-    , tx.block_index                          AS tx_ix
-    , tx.hash                                 AS tx_hash
-    , outputs.index                           AS utxo_ix
-    , output_tokens.quantity                  AS tokens_out
-    , coalesce(sum(input_tokens.quantity), 0) AS tokens_in
-    , datum.value                             AS datum
+	use sqlx::QueryBuilder;
 
-FROM tx_out      outputs
-JOIN tx                        ON outputs.tx_id = tx.id
-JOIN block                     ON tx.block_id = block.id
-JOIN ma_tx_out   output_tokens ON output_tokens.tx_out_id = outputs.id
-JOIN multi_asset native_token  ON native_token.id = output_tokens.ident
-JOIN datum                     ON datum.tx_id = tx.id
+	let mut query_builder = QueryBuilder::new("
+	SELECT
+		block.block_no                          AS block_number
+		, tx.block_index                          AS tx_ix
+		, tx.hash                                 AS tx_hash
+		, outputs.index                           AS utxo_ix
+		, output_tokens.quantity                  AS tokens_out
+		, coalesce(sum(input_tokens.quantity), 0) AS tokens_in
+		, datum.value                             AS datum
 
-LEFT JOIN tx_in      inputs_join   ON tx.id = inputs_join.tx_in_id
-LEFT JOIN tx_out     inputs        ON inputs_join.tx_out_id = inputs.tx_id and inputs_join.tx_out_index = inputs.index AND inputs.address = $1
-LEFT JOIN ma_tx_out  input_tokens  ON input_tokens.tx_out_id = inputs.id AND input_tokens.ident = native_token.id
+	FROM tx_out      outputs
+	JOIN tx                        ON outputs.tx_id = tx.id
+	JOIN block                     ON tx.block_id = block.id
+	JOIN ma_tx_out   output_tokens ON output_tokens.tx_out_id = outputs.id
+	JOIN multi_asset native_token  ON native_token.id = output_tokens.ident
+	JOIN datum                     ON datum.tx_id = tx.id
 
-WHERE native_token.policy = $2
-  AND native_token.name = $3
-  AND outputs.address = $1
-  AND (block_no, tx.block_index, outputs.index) > ($4, $5, $6)
-  AND block_no <= $7
+	LEFT JOIN tx_in      inputs_join   ON tx.id = inputs_join.tx_in_id
+	LEFT JOIN tx_out     inputs        ON inputs_join.tx_out_id = inputs.tx_id and inputs_join.tx_out_index = inputs.index AND inputs.address = $1
+	LEFT JOIN ma_tx_out  input_tokens  ON input_tokens.tx_out_id = inputs.id AND input_tokens.ident = native_token.id
 
-GROUP BY tx.hash, outputs.id, output_tokens.quantity, datum.value, block.block_no, tx.block_index, outputs.index
+	WHERE native_token.policy = $2
+      AND native_token.name = $3
+      AND outputs.address = $1
+      AND block_no <= $4
+	");
 
-ORDER BY block.block_no, tx.block_index, outputs.index
+	match checkpoint {
+		BridgeCheckpoint::Block { number } => {
+			query_builder.push(&format!("AND block_no > {number}"));
+		},
+		BridgeCheckpoint::Utxo { block_number, tx_ix, tx_out_ix } => {
+			query_builder.push(&format!(
+				"AND (block_no, tx.block_index, outputs.index) > ({block_number}, {tx_ix}, {tx_out_ix})"
+			));
+		},
+	}
 
-limit $8
-;
-    ",
-	)
-	.bind(&icp_address.0)
-	.bind(&native_token.policy_id.0)
-	.bind(&native_token.asset_name.0)
-	.bind(from_block)
-	.bind(from_tx_ix)
-	.bind(from_utxo_ix)
-	.bind(to_block)
-	.bind(max_utxos as i64);
+	let query = query_builder
+		.push("GROUP BY tx.hash, outputs.id, output_tokens.quantity, datum.value, block.block_no, tx.block_index, outputs.index ")
+		.push("ORDER BY block.block_no, tx.block_index, outputs.index ")
+		.push(&format!("LIMIT {max_utxos};"))
+		.build_query_as::<BridgeUtxo>()
+		.bind(&icp_address.0)
+		.bind(&native_token.policy_id.0)
+		.bind(&native_token.asset_name.0)
+		.bind(to_block);
 
 	Ok(query.fetch_all(pool).await?)
 }

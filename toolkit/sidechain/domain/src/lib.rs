@@ -150,6 +150,7 @@ impl Display for NativeTokenAmount {
 	PartialOrd,
 	Ord,
 	scale_info::TypeInfo,
+	MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize, FromStr))]
 /// Cardano block number. In range [0, 2^31-1].

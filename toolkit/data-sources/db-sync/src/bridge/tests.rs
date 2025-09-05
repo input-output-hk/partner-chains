@@ -104,7 +104,7 @@ with_migration_versions! {
 			token_asset_name: token_asset_name(),
 			illiquid_supply_validator_address: illiquid_supply_validator_address(),
 		};
-		let data_checkpoint = BridgeDataCheckpoint(last_ics_init_utxo());
+		let data_checkpoint = BridgeDataCheckpoint::Utxo(last_ics_init_utxo());
 		let current_mc_block = block_2_hash();
 		let max_transfers = 32;
 
@@ -116,7 +116,7 @@ with_migration_versions! {
 		// There's two transfers done in block 2
 		assert_eq!(transfers, vec![reserve_transfer(), user_transfer_1()]);
 
-		assert_eq!(new_checkpoint, BridgeDataCheckpoint(user_transfer_1_utxo()))
+		assert_eq!(new_checkpoint, BridgeDataCheckpoint::Utxo(user_transfer_1_utxo()))
 	}
 
 	async fn gets_transfers_from_init_to_block_4(pool: PgPool) {
@@ -127,7 +127,7 @@ with_migration_versions! {
 			token_asset_name: token_asset_name(),
 			illiquid_supply_validator_address: illiquid_supply_validator_address(),
 		};
-		let data_checkpoint = BridgeDataCheckpoint(last_ics_init_utxo());
+		let data_checkpoint = BridgeDataCheckpoint::Utxo(last_ics_init_utxo());
 		let current_mc_block = block_4_hash();
 		let max_transfers = 32;
 
@@ -142,7 +142,7 @@ with_migration_versions! {
 			vec![reserve_transfer(), user_transfer_1(), user_transfer_2(), invalid_transfer_1()]
 		);
 
-		assert_eq!(new_checkpoint, BridgeDataCheckpoint(invalid_transfer_1_utxo()))
+		assert_eq!(new_checkpoint, BridgeDataCheckpoint::Utxo(invalid_transfer_1_utxo()))
 	}
 
 }
