@@ -36,6 +36,7 @@ use sidechain_domain::{
 	PermissionedCandidateData, PolicyId, SidechainPublicKey, SidechainSignature,
 	StakePoolPublicKey, UtxoId, UtxoIndex, byte_string::ByteString,
 };
+use std::num::NonZero;
 use std::time::Duration;
 use testcontainers::{Container, GenericImage, clients::Cli};
 use tokio_retry::{Retry, strategy::FixedInterval};
@@ -587,7 +588,7 @@ async fn run_create_reserve_management<
 				asset_name: AssetName::from_hex_unsafe(REWARDS_TOKEN_ASSET_NAME_STR),
 			},
 			initial_deposit: INITIAL_DEPOSIT_AMOUNT,
-			ics_auth_token_amount: 100,
+			ics_initial_utxos_amount: NonZero::new(100).unwrap(),
 		},
 		genesis_utxo,
 		&governance_authority_payment_key(),

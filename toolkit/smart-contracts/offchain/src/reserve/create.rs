@@ -29,7 +29,6 @@ use crate::{
 	multisig::{MultiSigSmartContractResult, submit_or_create_tx_to_sign},
 	scripts_data::ReserveScripts,
 };
-use anyhow::anyhow;
 use cardano_serialization_lib::{
 	Int, JsError, MultiAsset, Transaction, TransactionBuilder, TransactionOutput,
 	TransactionOutputBuilder,
@@ -43,6 +42,7 @@ use partner_chains_plutus_data::reserve::{
 	ReserveDatum, ReserveImmutableSettings, ReserveMutableSettings, ReserveStats,
 };
 use sidechain_domain::{AssetId, PolicyId, UtxoId};
+use std::num::NonZero;
 
 /// Creates new reserve with the given [ReserveParameters].
 pub async fn create_reserve_utxo<
@@ -79,7 +79,7 @@ pub struct ReserveParameters {
 	/// Initial deposit amount.
 	pub initial_deposit: u64,
 	/// Amount of illiquid circulation supply authority tokens to mint.
-	pub ics_auth_token_amount: u64,
+	pub ics_initial_utxos_amount: NonZero<u64>,
 }
 
 impl From<&ReserveParameters> for ReserveDatum {
@@ -104,9 +104,6 @@ fn create_reserve_tx(
 	costs: Costs,
 	ctx: &TransactionContext,
 ) -> anyhow::Result<Transaction> {
-	if parameters.ics_auth_token_amount == 0 {
-		return Err(anyhow!("ICS Auth Token amount must be greater than 0"));
-	}
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 
 	tx_builder.add_mint_one_script_token_using_reference_script(
@@ -132,12 +129,12 @@ fn create_reserve_tx(
 		&reserve
 			.illiquid_circulation_supply_authority_token_policy_version_utxo
 			.to_csl_tx_input(),
-		&Int::new(&parameters.ics_auth_token_amount.into()),
+		&Int::new(&parameters.ics_initial_utxos_amount.get().into()),
 		&costs,
 	)?;
 	// Create ICS Authorized Outputs. These contain special ICS Authority Token,
 	// that prevents UTxOs from being merged all into one.
-	for _ in 0..parameters.ics_auth_token_amount {
+	for _ in 0..parameters.ics_initial_utxos_amount.into() {
 		tx_builder.add_output(&ics_validator_output(&reserve.scripts, ctx)?)?;
 	}
 

@@ -148,7 +148,7 @@ impl ReserveData {
 			.into_iter()
 			.find(|utxo| utxo.get_asset_amount(&auth_token_asset_id) == 1u64)
 			.ok_or_else(|| {
-				anyhow!("Reserve Utxo not found, is the Reserve Token Management initialized?")
+				anyhow!("Could not find any UTXO with ICS Auth token at ICS Validator, is the Reserve Token Management initialized?")
 			})?;
 
 		Ok(ics_utxo.clone())

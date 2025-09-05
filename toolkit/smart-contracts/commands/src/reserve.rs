@@ -93,15 +93,12 @@ pub struct CreateReserveCmd {
 	token: AssetId,
 	#[arg(long, default_value = "1")]
 	/// Amount of illiquid circulation supply authority tokens to mint.
-	ics_auth_token_amount: u64,
+	ics_initial_utxos_amount: NonZero<u64>,
 }
 
 impl CreateReserveCmd {
 	/// Creates the reserve for your chain
 	pub async fn execute(self) -> crate::SubCmdResult {
-		if self.ics_auth_token_amount == 0 {
-			return Err("ICS Auth Token amount must be greater than 0".into());
-		}
 		let payment_key = self.payment_key_file.read_key()?;
 		let client = self.common_arguments.get_ogmios_client().await?;
 		let result = create_reserve_utxo(
@@ -109,7 +106,7 @@ impl CreateReserveCmd {
 				total_accrued_function_script_hash: self.total_accrued_function_script_hash,
 				token: self.token,
 				initial_deposit: self.initial_deposit_amount,
-				ics_auth_token_amount: self.ics_auth_token_amount,
+				ics_initial_utxos_amount: self.ics_initial_utxos_amount,
 			},
 			self.genesis_utxo.into(),
 			&payment_key,
