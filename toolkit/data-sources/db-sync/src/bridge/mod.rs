@@ -87,6 +87,9 @@ observed_async_trait!(
 
 			let new_checkpoint = match utxos.last() {
 				None => BridgeDataCheckpoint::Block(current_mc_block.block_no.into()),
+				Some(_) if (utxos.len() as u32) < max_transfers => {
+					BridgeDataCheckpoint::Block(current_mc_block.block_no.into())
+				},
 				Some(utxo) => BridgeDataCheckpoint::Utxo(utxo.utxo_id()),
 			};
 

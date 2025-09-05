@@ -1023,11 +1023,11 @@ async fn get_bridge_utxos_tx_in_consumed(
 
 	match checkpoint {
 		BridgeCheckpoint::Block { number } => {
-			query_builder.push(&format!("AND block_no > {number}"));
+			query_builder.push(&format!("AND block_no > {number} "));
 		},
 		BridgeCheckpoint::Utxo { block_number, tx_ix, tx_out_ix } => {
 			query_builder.push(&format!(
-				"AND (block_no, tx.block_index, outputs.index) > ({block_number}, {tx_ix}, {tx_out_ix})"
+				"AND (block_no, tx.block_index, outputs.index) > ({block_number}, {tx_ix}, {tx_out_ix}) "
 			));
 		},
 	}
@@ -1085,11 +1085,11 @@ async fn get_bridge_utxos_tx_in_enabled(
 
 	match checkpoint {
 		BridgeCheckpoint::Block { number } => {
-			query_builder.push(&format!("AND block_no > {number}"));
+			query_builder.push(&format!("AND block_no > {number} "));
 		},
 		BridgeCheckpoint::Utxo { block_number, tx_ix, tx_out_ix } => {
 			query_builder.push(&format!(
-				"AND (block_no, tx.block_index, outputs.index) > ({block_number}, {tx_ix}, {tx_out_ix})"
+				"AND (block_no, tx.block_index, outputs.index) > ({block_number}, {tx_ix}, {tx_out_ix}) "
 			));
 		},
 	}
