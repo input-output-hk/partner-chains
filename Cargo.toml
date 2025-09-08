@@ -142,7 +142,7 @@ proptest = { version = "1.7.0" }
 scale-info = { version = "2.11.1", default-features = false, features = [
 	"derive",
 ] }
-testcontainers = { version = "0.15.0" }
+testcontainers = { version = "0.25.0" }
 quickcheck_macros = { version = "1" }
 quote = "1.0"
 rand_chacha = { version = "0.9.0", default-features = false }
