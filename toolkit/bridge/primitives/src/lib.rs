@@ -40,6 +40,36 @@ pub struct MainChainScripts {
 	pub illiquid_supply_validator_address: MainchainAddress,
 }
 
+#[cfg(feature = "std")]
+impl MainChainScripts {
+	/// Reads the main chain script values from environment
+	///
+	/// It expects the following variables to be set:
+	/// - `BRIDGE_TOKEN_POLICY_ID`
+	/// - `BRIDGE_TOKEN_ASSET_NAME`
+	/// - `ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR_ADDRESS`
+	pub fn read_from_env() -> Result<Self, envy::Error> {
+		#[derive(serde::Serialize, serde::Deserialize)]
+		pub struct MainChainScriptsEnvConfig {
+			pub bridge_token_policy_id: PolicyId,
+			pub bridge_token_asset_name: AssetName,
+			pub illiquid_circulation_supply_validator_address: MainchainAddress,
+		}
+
+		let MainChainScriptsEnvConfig {
+			bridge_token_policy_id,
+			bridge_token_asset_name,
+			illiquid_circulation_supply_validator_address,
+		} = envy::from_env::<MainChainScriptsEnvConfig>()?;
+
+		Ok(Self {
+			token_policy_id: bridge_token_policy_id,
+			token_asset_name: bridge_token_asset_name,
+			illiquid_supply_validator_address: illiquid_circulation_supply_validator_address,
+		})
+	}
+}
+
 /// Type containing all information needed to process a single transfer incoming from
 /// main chain, corresponding to a single UTXO on Cardano
 #[derive(

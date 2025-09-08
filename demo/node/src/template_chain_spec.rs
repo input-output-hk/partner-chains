@@ -1,8 +1,8 @@
 use crate::chain_spec::*;
 use partner_chains_demo_runtime::{
-	AuraConfig, BalancesConfig, GovernedMapConfig, GrandpaConfig, NativeTokenManagementConfig,
-	RuntimeGenesisConfig, SessionCommitteeManagementConfig, SessionConfig, SidechainConfig,
-	SudoConfig, SystemConfig, TestHelperPalletConfig,
+	AuraConfig, BalancesConfig, BridgeConfig, GovernedMapConfig, GrandpaConfig,
+	NativeTokenManagementConfig, RuntimeGenesisConfig, SessionCommitteeManagementConfig,
+	SessionConfig, SidechainConfig, SudoConfig, SystemConfig, TestHelperPalletConfig,
 };
 use sc_service::ChainType;
 
@@ -44,14 +44,17 @@ pub fn chain_spec() -> Result<ChainSpec, envy::Error> {
 			..Default::default()
 		},
 		governed_map: GovernedMapConfig {
-			main_chain_scripts: Some(Default::default()),
+			main_chain_scripts: Some(sp_governed_map::MainChainScriptsV1::read_from_env()?),
 			..Default::default()
 		},
 		test_helper_pallet: TestHelperPalletConfig {
 			participation_data_release_period: 30,
 			..Default::default()
 		},
-		bridge: Default::default(),
+		bridge: BridgeConfig {
+			main_chain_scripts: Some(sp_partner_chains_bridge::MainChainScripts::read_from_env()?),
+			..Default::default()
+		},
 	};
 	let genesis_json = serde_json::to_value(runtime_genesis_config)
 		.expect("Genesis config must be serialized correctly");

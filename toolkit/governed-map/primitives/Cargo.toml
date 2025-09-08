@@ -16,6 +16,7 @@ workspace = true
 
 [dependencies]
 async-trait = { workspace = true, optional = true }
+envy = { workspace = true, optional = true }
 log = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
@@ -34,6 +35,7 @@ pretty_assertions = { workspace = true }
 default = ["std"]
 std = [
     "async-trait",
+    "envy",
     "log/std",
     "scale-info/std",
     "serde",

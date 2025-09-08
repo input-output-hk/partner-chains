@@ -264,7 +264,7 @@ pub(crate) struct MainChainAddresses {
 	/// unused
 	pub(crate) permissioned_candidates_policy_id: String,
 	/// unused
-	pub(crate) native_token: NativeTokenConfig,
+	pub(crate) bridge: NativeTokenConfig,
 }
 
 #[derive(Deserialize, PartialEq, Clone, Debug)]
@@ -332,7 +332,7 @@ pub(crate) struct AssetConfig {
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub(crate) struct NativeTokenConfig {
 	pub(crate) asset: AssetConfig,
-	pub(crate) illiquid_supply_address: String,
+	pub(crate) illiquid_circulation_supply_validator_address: String,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -401,20 +401,20 @@ pub(crate) mod config_fields {
 	use super::*;
 	use sidechain_domain::{AssetName, MainchainAddress, PolicyId, UtxoId};
 
-	pub(crate) const NATIVE_TOKEN_POLICY: ConfigFieldDefinition<'static, PolicyId> =
+	pub(crate) const BRIDGE_TOKEN_POLICY: ConfigFieldDefinition<'static, PolicyId> =
 		ConfigFieldDefinition {
 			config_file: ConfigFile::Chain,
-			path: &["cardano_addresses", "native_token", "asset", "policy_id"],
-			name: "native token policy ID",
+			path: &["cardano_addresses", "bridge", "asset", "policy_id"],
+			name: "bridge token policy ID",
 			default: None,
 			_marker: PhantomData,
 		};
 
-	pub(crate) const NATIVE_TOKEN_ASSET_NAME: ConfigFieldDefinition<'static, AssetName> =
+	pub(crate) const BRIDGE_TOKEN_ASSET_NAME: ConfigFieldDefinition<'static, AssetName> =
 		ConfigFieldDefinition {
 			config_file: ConfigFile::Chain,
-			path: &["cardano_addresses", "native_token", "asset", "asset_name"],
-			name: "native token asset name in hex",
+			path: &["cardano_addresses", "bridge", "asset", "asset_name"],
+			name: "bridge token asset name in hex",
 			default: None,
 			_marker: PhantomData,
 		};
@@ -422,8 +422,8 @@ pub(crate) mod config_fields {
 	pub(crate) const ILLIQUID_SUPPLY_ADDRESS: ConfigFieldDefinition<'static, MainchainAddress> =
 		ConfigFieldDefinition {
 			config_file: ConfigFile::Chain,
-			path: &["cardano_addresses", "native_token", "illiquid_supply_address"],
-			name: "native token illiquid token supply address",
+			path: &["cardano_addresses", "bridge", "illiquid_circulation_supply_validator_address"],
+			name: "bridge token illiquid circullation supply address",
 			default: None,
 			_marker: PhantomData,
 		};

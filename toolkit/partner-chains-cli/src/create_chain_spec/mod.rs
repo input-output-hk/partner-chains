@@ -59,11 +59,14 @@ impl<T: PartnerChainRuntime> CreateChainSpecCmd<T> {
 			)
 			.as_str(),
 		);
-		context.print("Native Token Management Configuration (unused if empty):");
-		context.print(&format!("- asset name: {}", config.native_token_asset_name.to_hex_string()));
+		context.print("Bridge Configuration (unused if empty):");
+		context.print(&format!("- asset name: {}", config.bridge_token_asset_name.to_hex_string()));
 		context
-			.print(&format!("- asset policy ID: {}", config.native_token_policy.to_hex_string()));
-		context.print(&format!("- illiquid supply address: {}", config.illiquid_supply_address));
+			.print(&format!("- asset policy ID: {}", config.bridge_token_policy.to_hex_string()));
+		context.print(&format!(
+			"- illiquid circulation supply validator address: {}",
+			config.illiquid_circulation_supply_validator_address
+		));
 		context.print("Governed Map Configuration:");
 		context.print(&format!(
 			"- validator address: {}",
@@ -102,9 +105,9 @@ pub struct CreateChainSpecConfig<Keys> {
 	pub committee_candidate_address: MainchainAddress,
 	pub d_parameter_policy_id: PolicyId,
 	pub permissioned_candidates_policy_id: PolicyId,
-	pub native_token_policy: PolicyId,
-	pub native_token_asset_name: AssetName,
-	pub illiquid_supply_address: MainchainAddress,
+	pub bridge_token_policy: PolicyId,
+	pub bridge_token_asset_name: AssetName,
+	pub illiquid_circulation_supply_validator_address: MainchainAddress,
 	pub governed_map_validator_address: Option<MainchainAddress>,
 	pub governed_map_asset_policy_id: Option<PolicyId>,
 }
@@ -131,9 +134,12 @@ impl<Keys: MaybeFromCandidateKeys> CreateChainSpecConfig<Keys> {
 				c,
 				&config_fields::PERMISSIONED_CANDIDATES_POLICY_ID,
 			)?,
-			native_token_policy: load_config_field(c, &config_fields::NATIVE_TOKEN_POLICY)?,
-			native_token_asset_name: load_config_field(c, &config_fields::NATIVE_TOKEN_ASSET_NAME)?,
-			illiquid_supply_address: load_config_field(c, &config_fields::ILLIQUID_SUPPLY_ADDRESS)?,
+			bridge_token_policy: load_config_field(c, &config_fields::BRIDGE_TOKEN_POLICY)?,
+			bridge_token_asset_name: load_config_field(c, &config_fields::BRIDGE_TOKEN_ASSET_NAME)?,
+			illiquid_circulation_supply_validator_address: load_config_field(
+				c,
+				&config_fields::ILLIQUID_SUPPLY_ADDRESS,
+			)?,
 			governed_map_validator_address: config_fields::GOVERNED_MAP_VALIDATOR_ADDRESS
 				.load_from_file(c),
 			governed_map_asset_policy_id: config_fields::GOVERNED_MAP_POLICY_ID.load_from_file(c),
@@ -203,15 +209,33 @@ impl<Keys: MaybeFromCandidateKeys> CreateChainSpecConfig<Keys> {
 		}
 	}
 
+	/// Returns [pallet_partner_chains_bridge::GenesisConfig] derived from the config
+	pub fn bridge_config<T: pallet_partner_chains_bridge::Config>(
+		&self,
+	) -> pallet_partner_chains_bridge::GenesisConfig<T> {
+		pallet_partner_chains_bridge::GenesisConfig {
+			main_chain_scripts: Some(sp_partner_chains_bridge::MainChainScripts {
+				token_policy_id: self.bridge_token_policy.clone(),
+				token_asset_name: self.bridge_token_asset_name.clone(),
+				illiquid_supply_validator_address: self
+					.illiquid_circulation_supply_validator_address
+					.clone(),
+			}),
+			_marker: PhantomData,
+		}
+	}
+
 	/// Returns [pallet_native_token_management::GenesisConfig] derived from the config
 	pub fn native_token_management_config<T: pallet_native_token_management::Config>(
 		&self,
 	) -> pallet_native_token_management::GenesisConfig<T> {
 		pallet_native_token_management::GenesisConfig {
 			main_chain_scripts: Some(sp_native_token_management::MainChainScripts {
-				native_token_policy_id: self.native_token_policy.clone(),
-				native_token_asset_name: self.native_token_asset_name.clone(),
-				illiquid_supply_validator_address: self.illiquid_supply_address.clone(),
+				native_token_policy_id: self.bridge_token_policy.clone(),
+				native_token_asset_name: self.bridge_token_asset_name.clone(),
+				illiquid_supply_validator_address: self
+					.illiquid_circulation_supply_validator_address
+					.clone(),
 			}),
 			_marker: PhantomData,
 		}
@@ -244,9 +268,9 @@ impl<T> Default for CreateChainSpecConfig<T> {
 			committee_candidate_address: Default::default(),
 			d_parameter_policy_id: Default::default(),
 			permissioned_candidates_policy_id: Default::default(),
-			native_token_policy: Default::default(),
-			native_token_asset_name: Default::default(),
-			illiquid_supply_address: Default::default(),
+			bridge_token_policy: Default::default(),
+			bridge_token_asset_name: Default::default(),
+			illiquid_circulation_supply_validator_address: Default::default(),
 			governed_map_validator_address: Default::default(),
 			governed_map_asset_policy_id: Default::default(),
 		}
