@@ -23,16 +23,16 @@ class TestJolteonAdvanced:
         """
         logger.info("Starting Jolteon 2-chain commit rule test")
         
-        # Monitor blocks over a longer period to observe commit patterns
-        wait_time = 60  # Wait 1 minute to see multiple rounds
-        logger.info(f"Monitoring blocks for {wait_time} seconds to observe commit patterns...")
+        # Monitor blocks over a longer period to observe commit patterns - use configurable multiplier
+        wait_time = config.nodes_config.block_duration * config.jolteon_config.safety_monitoring_multiplier
+        logger.info(f"Monitoring blocks for {wait_time} seconds to observe commit patterns ({config.jolteon_config.safety_monitoring_multiplier}x block_duration={config.nodes_config.block_duration}s)...")
         
         # Track block information over time
         block_history = []
         start_time = time()
         
-        # Sample blocks every 10 seconds
-        sample_interval = 10
+        # Sample blocks every block_duration seconds
+        sample_interval = config.nodes_config.block_duration
         samples = wait_time // sample_interval
         
         for i in range(samples + 1):
@@ -176,10 +176,10 @@ class TestJolteonAdvanced:
         """
         logger.info("Starting Jolteon consensus liveness test")
         
-        # Monitor block production over time
-        test_duration = 120  # 2 minutes
-        check_interval = 15  # Check every 15 seconds
-        logger.info(f"Monitoring consensus liveness for {test_duration} seconds...")
+        # Monitor block production over time - use configurable multipliers
+        test_duration = config.nodes_config.block_duration * config.jolteon_config.liveness_monitoring_multiplier
+        check_interval = config.nodes_config.block_duration * config.jolteon_config.check_interval_multiplier
+        logger.info(f"Monitoring consensus liveness for {test_duration} seconds ({config.jolteon_config.liveness_monitoring_multiplier}x block_duration={config.nodes_config.block_duration}s)...")
         
         start_time = time()
         initial_block = api.substrate.get_block()

@@ -79,9 +79,9 @@ class TestJolteonConsensusRPC:
         initial_round = initial_result['result']
         logger.info(f"Initial round state: {initial_round}")
         
-        # Wait for round progression
-        wait_time = 30  # Wait 30 seconds for round advancement
-        logger.info(f"Waiting {wait_time} seconds for round progression...")
+        # Wait for round progression - use configurable multiplier
+        wait_time = config.nodes_config.block_duration * config.jolteon_config.round_progression_multiplier
+        logger.info(f"Waiting {wait_time} seconds for round progression ({config.jolteon_config.round_progression_multiplier}x block_duration={config.nodes_config.block_duration}s)...")
         sleep(wait_time)
         
         # Get final round state
@@ -128,9 +128,9 @@ class TestJolteonConsensusRPC:
         initial_qc = initial_result['result']
         logger.info(f"Initial QC: {initial_qc}")
         
-        # Wait for QC progression
-        wait_time = 45  # Wait 45 seconds for QC advancement
-        logger.info(f"Waiting {wait_time} seconds for QC progression...")
+        # Wait for QC progression - use configurable multiplier
+        wait_time = config.nodes_config.block_duration * config.jolteon_config.qc_advancement_multiplier
+        logger.info(f"Waiting {wait_time} seconds for QC progression ({config.jolteon_config.qc_advancement_multiplier}x block_duration={config.nodes_config.block_duration}s)...")
         sleep(wait_time)
         
         # Get final QC state
@@ -168,7 +168,8 @@ class TestJolteonConsensusRPC:
             logger.info(f"ℹ️  Initial state detected: QC round {final_qc['round']} with {final_qc['vote_count']} votes")
         else:
             # For non-initial rounds, we expect positive vote count
-            assert final_qc['vote_count'] > 0, f"QC should have positive vote count for round {final_qc['round']}"
+            assert final_qc['vote_count'] > config.jolteon_config.min_vote_count_threshold, \
+                f"QC should have vote count > {config.jolteon_config.min_vote_count_threshold} for round {final_qc['round']}"
         
         logger.info("✅ Quorum Certificate formation test passed")
 
@@ -284,10 +285,10 @@ class TestJolteonConsensusRPC:
         """
         logger.info("Starting Jolteon safety properties test")
         
-        # Monitor consensus state over time
-        wait_time = 60  # Monitor for 1 minute
-        check_interval = 15  # Check every 15 seconds
-        logger.info(f"Monitoring consensus state for {wait_time} seconds...")
+        # Monitor consensus state over time - use configurable multipliers
+        wait_time = config.nodes_config.block_duration * config.jolteon_config.safety_monitoring_multiplier
+        check_interval = config.nodes_config.block_duration * config.jolteon_config.check_interval_multiplier
+        logger.info(f"Monitoring consensus state for {wait_time} seconds ({config.jolteon_config.safety_monitoring_multiplier}x block_duration={config.nodes_config.block_duration}s)...")
         
         previous_states = []
         start_time = time()
@@ -349,10 +350,10 @@ class TestJolteonConsensusRPC:
         """
         logger.info("Starting Jolteon liveness properties test")
         
-        # Monitor progress over time
-        wait_time = 120  # Monitor for 2 minutes
-        check_interval = 20  # Check every 20 seconds
-        logger.info(f"Monitoring liveness for {wait_time} seconds...")
+        # Monitor progress over time - use configurable multipliers
+        wait_time = config.nodes_config.block_duration * config.jolteon_config.liveness_monitoring_multiplier
+        check_interval = config.nodes_config.block_duration * config.jolteon_config.check_interval_multiplier
+        logger.info(f"Monitoring liveness for {wait_time} seconds ({config.jolteon_config.liveness_monitoring_multiplier}x block_duration={config.nodes_config.block_duration}s)...")
         
         progress_checks = []
         start_time = time()

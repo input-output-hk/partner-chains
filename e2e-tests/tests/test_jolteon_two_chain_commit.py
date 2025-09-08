@@ -22,10 +22,10 @@ class TestJolteonTwoChainCommit:
         """
         logger.info("Starting Jolteon 2-chain commit rule test")
         
-        # Monitor consensus state over time to observe commit patterns
-        wait_time = 90  # Monitor for 1.5 minutes
-        check_interval = 10  # Check every 10 seconds
-        logger.info(f"Monitoring consensus state for {wait_time} seconds to observe 2-chain commit patterns...")
+        # Monitor consensus state over time to observe commit patterns - use configurable multipliers
+        wait_time = config.nodes_config.block_duration * config.jolteon_config.safety_monitoring_multiplier
+        check_interval = config.nodes_config.block_duration * config.jolteon_config.check_interval_multiplier
+        logger.info(f"Monitoring consensus state for {wait_time} seconds to observe 2-chain commit patterns ({config.jolteon_config.safety_monitoring_multiplier}x block_duration={config.nodes_config.block_duration}s)...")
         
         consensus_history = []
         start_time = time()
@@ -133,10 +133,10 @@ class TestJolteonTwoChainCommit:
         """
         logger.info("Starting Jolteon commit latency measurement test")
         
-        # Monitor for QC formation and subsequent commits
-        wait_time = 120  # Monitor for 2 minutes
-        check_interval = 5  # Check every 5 seconds for higher resolution
-        logger.info(f"Monitoring commit latency for {wait_time} seconds...")
+        # Monitor for QC formation and subsequent commits - use configurable multipliers
+        wait_time = config.nodes_config.block_duration * config.jolteon_config.liveness_monitoring_multiplier
+        check_interval = config.nodes_config.block_duration  # Use block_duration for higher resolution
+        logger.info(f"Monitoring commit latency for {wait_time} seconds ({config.jolteon_config.liveness_monitoring_multiplier}x block_duration={config.nodes_config.block_duration}s)...")
         
         qc_events = []
         commit_events = []
@@ -218,10 +218,10 @@ class TestJolteonTwoChainCommit:
                     logger.info(f"  Maximum: {max_latency:.2f} seconds")
                     
                     # Jolteon should have lower commit latency than 3-chain HotStuff
-                    if avg_latency < 30:  # Reasonable threshold
-                        logger.info("✅ Commit latency appears reasonable for Jolteon")
+                    if avg_latency < config.jolteon_config.commit_latency_threshold:
+                        logger.info(f"✅ Commit latency appears reasonable for Jolteon (< {config.jolteon_config.commit_latency_threshold}s)")
                     else:
-                        logger.warning(f"⚠️  High commit latency: {avg_latency:.2f} seconds")
+                        logger.warning(f"⚠️  High commit latency: {avg_latency:.2f} seconds (threshold: {config.jolteon_config.commit_latency_threshold}s)")
         
         logger.info("✅ Commit latency measurement test completed")
 
@@ -234,10 +234,10 @@ class TestJolteonTwoChainCommit:
         """
         logger.info("Starting consecutive certification patterns test")
         
-        # Monitor block production and certification
-        wait_time = 60  # Monitor for 1 minute
-        check_interval = 8  # Check every 8 seconds
-        logger.info(f"Monitoring certification patterns for {wait_time} seconds...")
+        # Monitor block production and certification - use configurable multipliers
+        wait_time = config.nodes_config.block_duration * config.jolteon_config.safety_monitoring_multiplier
+        check_interval = config.nodes_config.block_duration * config.jolteon_config.check_interval_multiplier
+        logger.info(f"Monitoring certification patterns for {wait_time} seconds ({config.jolteon_config.safety_monitoring_multiplier}x block_duration={config.nodes_config.block_duration}s)...")
         
         certification_history = []
         start_time = time()
