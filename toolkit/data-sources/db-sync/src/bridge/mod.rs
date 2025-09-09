@@ -91,7 +91,7 @@ observed_async_trait!(
 				asset,
 				data_checkpoint,
 				current_mc_block.block_no,
-				max_transfers,
+				Some(max_transfers),
 			)
 			.await?;
 

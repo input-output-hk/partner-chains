@@ -953,7 +953,7 @@ pub(crate) async fn get_bridge_utxos_tx(
 	asset: Asset,
 	checkpoint: BridgeCheckpoint,
 	to_block: BlockNumber,
-	max_utxos: u32,
+	max_utxos: Option<u32>,
 ) -> Result<Vec<BridgeUtxo>, SqlxError> {
 	match tx_in_configuration {
 		TxInConfiguration::Consumed => {
@@ -1002,7 +1002,7 @@ async fn get_bridge_utxos_tx_in_consumed(
 	native_token: Asset,
 	checkpoint: BridgeCheckpoint,
 	to_block: BlockNumber,
-	max_utxos: u32,
+	max_utxos: Option<u32>,
 ) -> Result<Vec<BridgeUtxo>, SqlxError> {
 	use sqlx::QueryBuilder;
 	let mut query_builder = QueryBuilder::new("
@@ -1042,10 +1042,15 @@ async fn get_bridge_utxos_tx_in_consumed(
 		},
 	}
 
-	let query = query_builder
+	query_builder
 		.push("GROUP BY tx.hash, outputs.id, output_tokens.quantity, datum.value, block.block_no, tx.block_index, outputs.index ")
-		.push("ORDER BY block.block_no, tx.block_index, outputs.index ")
-		.push(&format!("LIMIT {max_utxos};"))
+		.push("ORDER BY block.block_no, tx.block_index, outputs.index ");
+	if let Some(max_utxos) = max_utxos {
+		query_builder.push(&format!("LIMIT {max_utxos}"));
+	}
+	query_builder.push(";");
+
+	let query = query_builder
 		.build_query_as::<BridgeUtxo>()
 		.bind(&icp_address.0)
 		.bind(&native_token.policy_id.0)
@@ -1062,7 +1067,7 @@ async fn get_bridge_utxos_tx_in_enabled(
 	native_token: Asset,
 	checkpoint: BridgeCheckpoint,
 	to_block: BlockNumber,
-	max_utxos: u32,
+	max_utxos: Option<u32>,
 ) -> Result<Vec<BridgeUtxo>, SqlxError> {
 	use sqlx::QueryBuilder;
 
@@ -1104,10 +1109,16 @@ async fn get_bridge_utxos_tx_in_enabled(
 		},
 	}
 
-	let query = query_builder
+	query_builder
 		.push("GROUP BY tx.hash, outputs.id, output_tokens.quantity, datum.value, block.block_no, tx.block_index, outputs.index ")
-		.push("ORDER BY block.block_no, tx.block_index, outputs.index ")
-		.push(&format!("LIMIT {max_utxos};"))
+		.push("ORDER BY block.block_no, tx.block_index, outputs.index ");
+
+	if let Some(max_utxos) = max_utxos {
+		query_builder.push(&format!("LIMIT {max_utxos}"));
+	}
+	query_builder.push(";");
+
+	let query = query_builder
 		.build_query_as::<BridgeUtxo>()
 		.bind(&icp_address.0)
 		.bind(&native_token.policy_id.0)
