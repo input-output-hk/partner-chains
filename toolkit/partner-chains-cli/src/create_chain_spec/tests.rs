@@ -257,7 +257,7 @@ fn generated_chain_spec() -> serde_json::Value {
 			},
 			"bridge": {
 				"mainChainScripts": {
-					"illiquid_supply_validator_address": "addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz",
+					"illiquid_circulation_supply_validator_address": "addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz",
 					"token_asset_name": "0x5043546f6b656e44656d6f",
 					"token_policy_id": "0xada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4",
 				},

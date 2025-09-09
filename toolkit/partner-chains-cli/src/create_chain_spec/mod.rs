@@ -217,7 +217,7 @@ impl<Keys: MaybeFromCandidateKeys> CreateChainSpecConfig<Keys> {
 			main_chain_scripts: Some(sp_partner_chains_bridge::MainChainScripts {
 				token_policy_id: self.bridge_token_policy.clone(),
 				token_asset_name: self.bridge_token_asset_name.clone(),
-				illiquid_supply_validator_address: self
+				illiquid_circulation_supply_validator_address: self
 					.illiquid_circulation_supply_validator_address
 					.clone(),
 			}),

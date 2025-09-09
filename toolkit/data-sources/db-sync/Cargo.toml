@@ -50,6 +50,7 @@ partner-chains-plutus-data = { workspace = true }
 sp-block-participation = { workspace = true, features = [
     "std",
 ], optional = true }
+sp-partner-chains-bridge = { workspace = true, optional = true, features = ["std"] }
 
 [dev-dependencies]
 tokio-test = "0.4.3"
@@ -67,3 +68,4 @@ native-token = ["sp-native-token-management"]
 mc-hash = ["sidechain-mc-hash", "block-source"]
 sidechain-rpc = ["pallet-sidechain-rpc", "block-source"]
 block-participation = ["sp-block-participation"]
+bridge = ["sp-partner-chains-bridge"]

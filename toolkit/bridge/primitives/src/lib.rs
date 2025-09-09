@@ -8,7 +8,7 @@ use alloc::vec::*;
 use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
-use sidechain_domain::{AssetName, MainchainAddress, McBlockHash, PolicyId, UtxoId};
+use sidechain_domain::{AssetName, MainchainAddress, McBlockHash, McBlockNumber, PolicyId, UtxoId};
 use sp_inherents::*;
 
 #[cfg(feature = "std")]
@@ -37,7 +37,7 @@ pub struct MainChainScripts {
 	/// Address of the illiquid supply validator.
 	///
 	/// All tokens sent to that address are effectively locked and considered "sent" to the Partner Chain.
-	pub illiquid_supply_validator_address: MainchainAddress,
+	pub illiquid_circulation_supply_validator_address: MainchainAddress,
 }
 
 #[cfg(feature = "std")]
@@ -65,7 +65,7 @@ impl MainChainScripts {
 		Ok(Self {
 			token_policy_id: bridge_token_policy_id,
 			token_asset_name: bridge_token_asset_name,
-			illiquid_supply_validator_address: illiquid_circulation_supply_validator_address,
+			illiquid_circulation_supply_validator_address,
 		})
 	}
 }
@@ -145,20 +145,21 @@ pub enum TokenBridgeInherentDataProvider<RecipientAddress> {
 	},
 }
 
-/// Pointer to last data processed
+/// Value specifying the point in time up to which bridge transfers have been processed
+///
+/// This type is an enum wrapping either a block number or a utxo to handle both a case
+/// where all transfers up to a block have been handled and a case where there were more
+/// transfers than the limit allows and observability needs to pick up after the last
+/// utxo that could be observed
 #[derive(
-	Default,
-	Clone,
-	Debug,
-	Encode,
-	Decode,
-	DecodeWithMemTracking,
-	TypeInfo,
-	PartialEq,
-	Eq,
-	MaxEncodedLen,
+	Clone, Debug, Encode, Decode, DecodeWithMemTracking, TypeInfo, PartialEq, Eq, MaxEncodedLen,
 )]
-pub struct BridgeDataCheckpoint(pub UtxoId);
+pub enum BridgeDataCheckpoint {
+	/// Last transfer utxo that has been processed
+	Utxo(UtxoId),
+	/// Cardano block up to which data has been processed
+	Block(McBlockNumber),
+}
 
 /// Interface for data sources that can be used by [TokenBridgeInherentDataProvider]
 #[cfg(feature = "std")]
