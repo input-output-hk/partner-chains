@@ -198,7 +198,7 @@ impl From<NativeTokenAmount> for sidechain_domain::NativeTokenAmount {
 }
 
 impl NativeTokenAmount {
-	pub(crate) fn checked_sub_i128(self, rhs: NativeTokenAmount) -> Option<NativeTokenAmount> {
+	pub(crate) fn checked_sub(self, rhs: NativeTokenAmount) -> Option<NativeTokenAmount> {
 		self.0.checked_sub(rhs.0).map(NativeTokenAmount)
 	}
 
