@@ -167,6 +167,11 @@ impl McBlockNumber {
 	pub fn saturating_add<Rhs: Into<u32>>(self, rhs: Rhs) -> Self {
 		Self(self.0.saturating_add(rhs.into()))
 	}
+
+	/// Subtracts `rhs` from the block number without overflow
+	pub fn saturating_sub<Rhs: Into<u32>>(self, rhs: Rhs) -> Self {
+		Self(self.0.saturating_sub(rhs.into()))
+	}
 }
 
 #[derive(

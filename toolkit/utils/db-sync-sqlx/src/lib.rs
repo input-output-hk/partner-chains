@@ -90,6 +90,10 @@ impl BlockNumber {
 	pub fn saturating_add<Rhs: Into<u32>>(self, rhs: Rhs) -> Self {
 		Self(self.0.saturating_add(rhs.into()))
 	}
+
+	pub fn saturating_sub<Rhs: Into<u32>>(self, rhs: Rhs) -> Self {
+		Self(self.0.saturating_sub(rhs.into()))
+	}
 }
 
 /// Cardano epoch number

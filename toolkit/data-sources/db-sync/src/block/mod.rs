@@ -75,7 +75,7 @@ impl BlockDataSourceImpl {
 		let reference_timestamp = BlockDataSourceImpl::timestamp_to_db_type(reference_timestamp)?;
 		let latest = self.get_latest_block_info().await?;
 		let offset = self.security_parameter + self.block_stability_margin;
-		let stable = BlockNumber(latest.number.0.saturating_sub(offset));
+		let stable = latest.number.saturating_sub(offset).into();
 		let block = self.get_latest_block(stable, reference_timestamp).await?;
 		Ok(block.map(From::from))
 	}
@@ -274,10 +274,9 @@ impl BlockDataSourceImpl {
 				.ok_or(InternalDataSourceError(
 					"No latest block when filling the caches.".to_string(),
 				))?;
-		let latest_block_num = latest_block.block_no.0;
-		let stable_block_num = latest_block_num.saturating_sub(self.security_parameter);
+		let stable_block_num = latest_block.block_no.saturating_sub(self.security_parameter);
 
-		let to_block_no = from_block_no.saturating_add(size).min(BlockNumber(stable_block_num));
+		let to_block_no = from_block_no.saturating_add(size).min(stable_block_num);
 		let blocks = if to_block_no > from_block_no {
 			db_model::get_blocks_by_numbers(&self.pool, from_block_no, to_block_no).await?
 		} else {
