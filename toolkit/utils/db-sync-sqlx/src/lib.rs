@@ -112,7 +112,7 @@ sqlx_implementations_for_wrapper!(i64, "INT8", SlotNumber, McSlotNumber);
 /// ```sql
 /// CREATE DOMAIN txindex AS smallint CONSTRAINT txindex_check CHECK ((VALUE >= 0));
 /// ```
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct TxIndex(pub u16);
 sqlx_implementations_for_wrapper!(i16, "INT2", TxIndex, UtxoIndex);
 

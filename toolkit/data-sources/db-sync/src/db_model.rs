@@ -934,15 +934,33 @@ pub(crate) struct BridgeUtxo {
 }
 #[cfg(feature = "bridge")]
 impl BridgeUtxo {
-	pub fn utxo_id(&self) -> UtxoId {
+	pub(crate) fn utxo_id(&self) -> UtxoId {
 		UtxoId { tx_hash: self.tx_hash.into(), index: self.utxo_ix.clone().into() }
+	}
+
+	pub(crate) fn ordering_key(&self) -> UtxoOrderingKey {
+		(self.block_number, self.tx_ix, self.utxo_ix)
 	}
 }
 
 #[cfg(feature = "bridge")]
+pub(crate) type UtxoOrderingKey = (BlockNumber, TxIndexInBlock, TxIndex);
+
+#[cfg(feature = "bridge")]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub(crate) enum BridgeCheckpoint {
-	Utxo { block_number: u32, tx_ix: u32, tx_out_ix: u16 },
-	Block { number: u32 },
+	Utxo { block_number: BlockNumber, tx_ix: TxIndexInBlock, tx_out_ix: TxIndex },
+	Block { number: BlockNumber },
+}
+
+#[cfg(feature = "bridge")]
+impl BridgeCheckpoint {
+	pub(crate) fn get_block_number(&self) -> BlockNumber {
+		match self {
+			BridgeCheckpoint::Block { number } => number.clone(),
+			BridgeCheckpoint::Utxo { block_number, .. } => block_number.clone(),
+		}
+	}
 }
 
 #[cfg(feature = "bridge")]
@@ -1033,11 +1051,12 @@ async fn get_bridge_utxos_tx_in_consumed(
 
 	match checkpoint {
 		BridgeCheckpoint::Block { number } => {
-			query_builder.push(&format!("AND block_no > {number} "));
+			query_builder.push(&format!("AND block_no > {} ", number.0));
 		},
 		BridgeCheckpoint::Utxo { block_number, tx_ix, tx_out_ix } => {
 			query_builder.push(&format!(
-				"AND (block_no, tx.block_index, outputs.index) > ({block_number}, {tx_ix}, {tx_out_ix}) "
+				"AND (block_no, tx.block_index, outputs.index) > ({}, {}, {}) ",
+				block_number.0, tx_ix.0, tx_out_ix.0
 			));
 		},
 	}
@@ -1100,11 +1119,12 @@ async fn get_bridge_utxos_tx_in_enabled(
 
 	match checkpoint {
 		BridgeCheckpoint::Block { number } => {
-			query_builder.push(&format!("AND block_no > {number} "));
+			query_builder.push(&format!("AND block_no > {} ", number.0));
 		},
 		BridgeCheckpoint::Utxo { block_number, tx_ix, tx_out_ix } => {
 			query_builder.push(&format!(
-				"AND (block_no, tx.block_index, outputs.index) > ({block_number}, {tx_ix}, {tx_out_ix}) "
+				"AND (block_no, tx.block_index, outputs.index) > ({}, {}, {}) ",
+				block_number.0, tx_ix.0, tx_out_ix.0
 			));
 		},
 	}

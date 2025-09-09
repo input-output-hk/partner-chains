@@ -8,7 +8,9 @@ use alloc::vec::*;
 use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
-use sidechain_domain::{AssetName, MainchainAddress, McBlockHash, McBlockNumber, PolicyId, UtxoId};
+use sidechain_domain::{
+	AssetId, AssetName, MainchainAddress, McBlockHash, McBlockNumber, PolicyId, UtxoId,
+};
 use sp_inherents::*;
 
 #[cfg(feature = "std")]
@@ -38,6 +40,16 @@ pub struct MainChainScripts {
 	///
 	/// All tokens sent to that address are effectively locked and considered "sent" to the Partner Chain.
 	pub illiquid_circulation_supply_validator_address: MainchainAddress,
+}
+
+impl MainChainScripts {
+	/// Return full asset ID fo the bridged token (minting policy ID and asset name)
+	pub fn asset_id(&self) -> AssetId {
+		AssetId {
+			policy_id: self.token_policy_id.clone(),
+			asset_name: self.token_asset_name.clone(),
+		}
+	}
 }
 
 #[cfg(feature = "std")]

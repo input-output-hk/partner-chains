@@ -23,6 +23,8 @@ use std::fmt::Debug;
 #[cfg(test)]
 mod tests;
 
+pub(crate) mod cache;
+
 /// Db-Sync data source serving data for Partner Chains token bridge
 pub struct TokenBridgeDataSourceImpl {
 	/// Postgres connection pool
@@ -73,14 +75,10 @@ observed_async_trait!(
 								"Could not find block info for data checkpoint: {data_checkpoint:?}"
 							),
 						)?;
-					BridgeCheckpoint::Utxo {
-						block_number: block_number.0,
-						tx_ix: tx_ix.0,
-						tx_out_ix: utxo.index.0,
-					}
+					BridgeCheckpoint::Utxo { block_number, tx_ix, tx_out_ix: utxo.index.into() }
 				},
-				BridgeDataCheckpoint::Block(checkpoint_block_number) => {
-					BridgeCheckpoint::Block { number: checkpoint_block_number.0 }
+				BridgeDataCheckpoint::Block(number) => {
+					BridgeCheckpoint::Block { number: number.into() }
 				},
 			};
 
