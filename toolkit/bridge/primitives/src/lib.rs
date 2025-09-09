@@ -37,7 +37,7 @@ pub struct MainChainScripts {
 	/// Address of the illiquid supply validator.
 	///
 	/// All tokens sent to that address are effectively locked and considered "sent" to the Partner Chain.
-	pub illiquid_supply_validator_address: MainchainAddress,
+	pub illiquid_circulation_supply_validator_address: MainchainAddress,
 }
 
 /// Type containing all information needed to process a single transfer incoming from

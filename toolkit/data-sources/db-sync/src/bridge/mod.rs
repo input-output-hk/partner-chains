@@ -88,7 +88,7 @@ observed_async_trait!(
 			let utxos = get_bridge_utxos_tx(
 				self.db_sync_config.get_tx_in_config().await?,
 				&self.pool,
-				&main_chain_scripts.illiquid_supply_validator_address.into(),
+				&main_chain_scripts.illiquid_circulation_supply_validator_address.into(),
 				asset,
 				data_checkpoint,
 				current_mc_block.block_no,

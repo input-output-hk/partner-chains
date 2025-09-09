@@ -18,7 +18,7 @@ fn token_asset_name() -> AssetName {
 	AssetName(b"native token".to_vec().try_into().unwrap())
 }
 
-fn illiquid_supply_validator_address() -> MainchainAddress {
+fn illiquid_circulation_supply_validator_address() -> MainchainAddress {
 	MainchainAddress::from_str("ics address").unwrap()
 }
 
@@ -82,7 +82,8 @@ fn main_chain_scripts() -> MainChainScripts {
 	MainChainScripts {
 		token_policy_id: token_policy_id(),
 		token_asset_name: token_asset_name(),
-		illiquid_supply_validator_address: illiquid_supply_validator_address(),
+		illiquid_circulation_supply_validator_address:
+			illiquid_circulation_supply_validator_address(),
 	}
 }
 
