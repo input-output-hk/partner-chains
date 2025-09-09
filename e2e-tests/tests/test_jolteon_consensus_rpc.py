@@ -10,25 +10,79 @@ from time import time
 class TestJolteonConsensusRPC:
     """Test cases for Jolteon consensus using custom RPC endpoints"""
     
+    @mark.test_key('JOLTEON-RPC-001')
+    def test_replica_state_retrieval(self, api: BlockchainApi, config: ApiConfig):
+        """Test basic replica state retrieval via custom RPC endpoint
+        
+        This test verifies that the Jolteon consensus state is accessible
+        and contains the expected data structures.
+        """
+        logger.info("Starting Jolteon replica state retrieval test")
+        
+        try:
+            # Call the custom RPC endpoint
+            result = api.substrate.rpc_request("jolteon_getReplicaState", [])
+            
+            if result is None or 'result' not in result:
+                logger.error("No result from jolteon_getReplicaState")
+                assert False, "Failed to retrieve replica state"
+            
+            replica_state = result['result']
+            logger.info(f"Replica state: {json.dumps(replica_state, indent=2)}")
+            
+            # Verify required fields exist
+            required_fields = ['r_curr', 'r_vote', 'r_lock', 'qc_high', 'tc_last', 'storage_block_count']
+            for field in required_fields:
+                assert field in replica_state, f"Missing required field: {field}"
+            
+            # Verify data types and basic sanity checks
+            assert isinstance(replica_state['r_curr'], int), "r_curr should be an integer"
+            assert isinstance(replica_state['r_vote'], int), "r_vote should be an integer"
+            assert isinstance(replica_state['r_lock'], int), "r_lock should be an integer"
+            assert isinstance(replica_state['storage_block_count'], int), "storage_block_count should be an integer"
+            
+            # Verify round numbers are reasonable
+            assert replica_state['r_curr'] >= 0, "r_curr should be non-negative"
+            assert replica_state['r_vote'] >= 0, "r_vote should be non-negative"
+            assert replica_state['r_lock'] >= 0, "r_lock should be non-negative"
+            
+            # Verify QC structure
+            qc_high = replica_state['qc_high']
+            assert 'block_hash' in qc_high, "QC should have block_hash"
+            assert 'round' in qc_high, "QC should have round"
+            assert 'vote_count' in qc_high, "QC should have vote_count"
+            
+            logger.info(f"✅ Replica state test passed:")
+            logger.info(f"  Current round: {replica_state['r_curr']}")
+            logger.info(f"  Last voted round: {replica_state['r_vote']}")
+            logger.info(f"  Locked round: {replica_state['r_lock']}")
+            logger.info(f"  Storage blocks: {replica_state['storage_block_count']}")
+            
+        except Exception as e:
+            logger.error(f"Error testing replica state: {e}")
+            raise
+
     @mark.test_key('JOLTEON-RPC-002')
     def test_round_progression(self, api: BlockchainApi, config: ApiConfig):
-        """Test that rounds are progressing correctly
+        """Test that rounds are progressing correctly over time
         
-        This test analyzes the current block and its parent blocks to verify
+        This test monitors consensus state over time to verify
         that the Jolteon consensus is making progress through round advancement.
         """
         logger.info("Starting Jolteon round progression test")
         
         try:
-            # Get consensus states for blocks
-            consensus_states = self._get_consensus_states_for_blocks(api, max_blocks=5)
+            # Monitor consensus state over time
+            monitoring_duration = 60  # seconds
+            sample_interval = config.nodes_config.block_duration
+            consensus_states = self._get_consensus_states_over_time(api, monitoring_duration, sample_interval)
             
             if len(consensus_states) < 2:
                 logger.warning("Insufficient consensus data for round progression analysis")
                 return
             
-            # Analyze round progression across blocks
-            logger.info(f"Analyzed {len(consensus_states)} consensus states")
+            # Analyze round progression over time
+            logger.info(f"Analyzed {len(consensus_states)} consensus state samples over {monitoring_duration}s")
             
             # Verify round monotonicity (rounds should not decrease)
             for i in range(1, len(consensus_states)):
@@ -37,15 +91,15 @@ class TestJolteonConsensusRPC:
                 
                 # Current round should not decrease
                 assert curr_state['r_curr'] >= prev_state['r_curr'], \
-                    f"Round decreased: block {prev_state['block_number']} r_curr={prev_state['r_curr']} -> block {curr_state['block_number']} r_curr={curr_state['r_curr']}"
+                    f"Round decreased: sample {prev_state['sample']} r_curr={prev_state['r_curr']} -> sample {curr_state['sample']} r_curr={curr_state['r_curr']}"
                 
                 # Voted round should not decrease
                 assert curr_state['r_vote'] >= prev_state['r_vote'], \
-                    f"Voted round decreased: block {prev_state['block_number']} r_vote={prev_state['r_vote']} -> block {curr_state['block_number']} r_vote={curr_state['r_vote']}"
+                    f"Voted round decreased: sample {prev_state['sample']} r_vote={prev_state['r_vote']} -> sample {curr_state['sample']} r_vote={curr_state['r_vote']}"
                 
                 # Locked round should not decrease
                 assert curr_state['r_lock'] >= prev_state['r_lock'], \
-                    f"Locked round decreased: block {prev_state['block_number']} r_lock={prev_state['r_lock']} -> block {curr_state['block_number']} r_lock={curr_state['r_lock']}"
+                    f"Locked round decreased: sample {prev_state['sample']} r_lock={prev_state['r_lock']} -> sample {curr_state['sample']} r_lock={curr_state['r_lock']}"
             
             # Check for round advancement
             round_advancements = 0
@@ -54,11 +108,11 @@ class TestJolteonConsensusRPC:
                     round_advancements += 1
             
             if round_advancements > 0:
-                logger.info(f"✅ Round progression detected: {round_advancements} advancements across {len(consensus_states)} blocks")
+                logger.info(f"✅ Round progression detected: {round_advancements} advancements across {len(consensus_states)} samples")
             else:
-                logger.info("ℹ️  No round progression detected in analyzed blocks (may be normal)")
-        
-        logger.info("✅ Round progression test passed")
+                logger.info("ℹ️  No round progression detected in monitoring period (may be normal)")
+            
+            logger.info("✅ Round progression test passed")
             
         except Exception as e:
             logger.error(f"Error testing round progression: {e}")
@@ -91,8 +145,8 @@ class TestJolteonConsensusRPC:
                 assert 'qc_votes' in qc_state, "QC should have vote_count"
                 assert isinstance(qc_state['qc_round'], int), "QC round should be integer"
                 assert isinstance(qc_state['qc_votes'], int), "QC vote_count should be integer"
-        
-        # Verify QC progression (round should not decrease)
+            
+            # Verify QC progression (round should not decrease)
             for i in range(1, len(consensus_states)):
                 prev_qc = consensus_states[i-1]
                 curr_qc = consensus_states[i]
@@ -108,7 +162,7 @@ class TestJolteonConsensusRPC:
             
             if qc_advancements > 0:
                 logger.info(f"✅ QC progression detected: {qc_advancements} advancements across {len(consensus_states)} blocks")
-        else:
+            else:
                 logger.info("ℹ️  No QC progression detected in analyzed blocks (may be normal)")
             
             # Verify vote count is reasonable
@@ -122,8 +176,8 @@ class TestJolteonConsensusRPC:
                 # For non-initial rounds, we expect positive vote count
                 assert latest_qc['qc_votes'] > config.jolteon_config.min_vote_count_threshold, \
                     f"QC should have vote count > {config.jolteon_config.min_vote_count_threshold} for round {latest_qc['qc_round']}"
-        
-        logger.info("✅ Quorum Certificate formation test passed")
+            
+            logger.info("✅ Quorum Certificate formation test passed")
             
         except Exception as e:
             logger.error(f"Error testing QC formation: {e}")
@@ -246,27 +300,27 @@ class TestJolteonConsensusRPC:
             consensus_states = self._get_consensus_states_for_blocks(api, max_blocks=10)
             
             if len(consensus_states) < 2:
-            logger.warning("Insufficient data for safety analysis")
-            return
-        
+                logger.warning("Insufficient data for safety analysis")
+                return
+            
             logger.info(f"Analyzed {len(consensus_states)} consensus states for safety properties")
-        
-        # Check round monotonicity
+            
+            # Check round monotonicity
             rounds = [s['r_curr'] for s in consensus_states]
-        for i in range(1, len(rounds)):
-            assert rounds[i] >= rounds[i-1], \
+            for i in range(1, len(rounds)):
+                assert rounds[i] >= rounds[i-1], \
                     f"Round decreased: block {consensus_states[i-1]['block_number']} r_curr={rounds[i-1]} -> block {consensus_states[i]['block_number']} r_curr={rounds[i]}"
-        
-        # Check QC progression
+            
+            # Check QC progression
             qc_rounds = [s['qc_round'] for s in consensus_states]
-        for i in range(1, len(qc_rounds)):
-            assert qc_rounds[i] >= qc_rounds[i-1], \
+            for i in range(1, len(qc_rounds)):
+                assert qc_rounds[i] >= qc_rounds[i-1], \
                     f"QC round decreased: block {consensus_states[i-1]['block_number']} QC={qc_rounds[i-1]} -> block {consensus_states[i]['block_number']} QC={qc_rounds[i]}"
-        
-        # Check lock consistency
+            
+            # Check lock consistency
             locks = [s['r_lock'] for s in consensus_states]
-        for i in range(1, len(locks)):
-            assert locks[i] >= locks[i-1], \
+            for i in range(1, len(locks)):
+                assert locks[i] >= locks[i-1], \
                     f"Lock round decreased: block {consensus_states[i-1]['block_number']} r_lock={locks[i-1]} -> block {consensus_states[i]['block_number']} r_lock={locks[i]}"
             
             # Additional safety checks
@@ -282,8 +336,8 @@ class TestJolteonConsensusRPC:
                 # QC round should be <= current round
                 assert state['qc_round'] <= state['r_curr'], \
                     f"QC round > current round: block {state['block_number']} QC={state['qc_round']} > r_curr={state['r_curr']}"
-        
-        logger.info("✅ Jolteon safety properties test passed")
+            
+            logger.info("✅ Jolteon safety properties test passed")
             
         except Exception as e:
             logger.error(f"Error testing safety properties: {e}")
@@ -310,8 +364,8 @@ class TestJolteonConsensusRPC:
                 return
             
             logger.info(f"Analyzed {len(consensus_states)} consensus states for liveness properties")
-        
-        # Analyze liveness
+            
+            # Analyze liveness
             # Check for round progress
             round_progress_events = 0
             for i in range(1, len(consensus_states)):
@@ -328,16 +382,16 @@ class TestJolteonConsensusRPC:
             logger.info(f"  Total blocks analyzed: {len(consensus_states)}")
             logger.info(f"  Round progress events: {round_progress_events}")
             logger.info(f"  QC progress events: {qc_progress_events}")
-        
-        # Basic liveness assertions
+            
+            # Basic liveness assertions
             if round_progress_events > 0:
-            logger.info("✅ Round progression detected")
-        else:
+                logger.info("✅ Round progression detected")
+            else:
                 logger.info("ℹ️  No round progression detected in analyzed blocks (may be normal)")
-        
+            
             if qc_progress_events > 0:
-            logger.info("✅ QC progression detected")
-        else:
+                logger.info("✅ QC progression detected")
+            else:
                 logger.info("ℹ️  No QC progression detected in analyzed blocks (may be normal)")
             
             # Calculate progress rates
@@ -361,160 +415,69 @@ class TestJolteonConsensusRPC:
             assert latest_state['r_vote'] >= 0, "Voted round should be non-negative"
             assert latest_state['r_lock'] >= 0, "Locked round should be non-negative"
             assert latest_state['qc_round'] >= 0, "QC round should be non-negative"
-        
-        logger.info("✅ Jolteon liveness properties test passed")
+            
+            logger.info("✅ Jolteon liveness properties test passed")
             
         except Exception as e:
             logger.error(f"Error testing liveness properties: {e}")
             raise
 
-    def _get_consensus_states_for_blocks(self, api: BlockchainApi, max_blocks: int = 5, rpc_endpoint: str = "jolteon_getReplicaState") -> list:
-        """Get consensus states for current block and its parent blocks
+    def _get_consensus_states_over_time(self, api: BlockchainApi, monitoring_duration: int = 30, sample_interval: int = 6) -> list:
+        """Get consensus states over time to detect progression
         
         Args:
             api: Blockchain API instance
-            max_blocks: Maximum number of parent blocks to analyze
-            rpc_endpoint: RPC endpoint to use for consensus data ("jolteon_getReplicaState", "jolteon_getRoundInfo", "jolteon_getHighestQC")
+            monitoring_duration: Duration to monitor in seconds
+            sample_interval: Interval between samples in seconds
+            rpc_endpoint: RPC endpoint to use for consensus data
             
         Returns:
-            List of consensus states with block numbers
+            List of consensus states with timestamps
         """
         try:
-            # Get current block
-            current_block = api.substrate.get_block()
-            current_number = current_block['header']['number']
+            samples = monitoring_duration // sample_interval
+            logger.info(f"Monitoring consensus state for {monitoring_duration}s (every {sample_interval}s, {samples} samples)...")
             
-            logger.info(f"Analyzing consensus states for block {current_number} and up to {max_blocks} parent blocks using {rpc_endpoint}...")
-            
-            # Get parent blocks to analyze
-            blocks_to_analyze = min(max_blocks, current_number)
             consensus_states = []
             
-            for i in range(blocks_to_analyze + 1):
-                block_number = current_number - i
+            for i in range(samples + 1):
                 try:
-                    # Get block (for validation)
-                    block = api.substrate.get_block(block_number)
+                    # Get current block
+                    current_block = api.substrate.get_block()
+                    block_number = current_block['header']['number']
                     
-                    # Get consensus state using specified endpoint
-                    consensus_result = api.substrate.rpc_request(rpc_endpoint, [])
+                    # Get consensus state using RPC endpoint
+                    consensus_result = api.substrate.rpc_request("jolteon_getReplicaState", [])
                     
                     if consensus_result and 'result' in consensus_result:
                         consensus_state = consensus_result['result']
                         
-                        # Handle different RPC endpoint response formats
-                        if rpc_endpoint == "jolteon_getReplicaState":
-                            state_data = {
-                                'block_number': block_number,
-                                'r_curr': consensus_state['r_curr'],
-                                'r_vote': consensus_state['r_vote'],
-                                'r_lock': consensus_state['r_lock'],
-                                'qc_round': consensus_state['qc_high']['round'],
-                                'qc_votes': consensus_state['qc_high']['vote_count'],
-                                'qc_block': consensus_state['qc_high']['block_hash']
-                            }
-                        elif rpc_endpoint == "jolteon_getRoundInfo":
-                            state_data = {
-                                'block_number': block_number,
-                                'r_curr': consensus_state['r_curr'],
-                                'r_vote': consensus_state['r_vote'],
-                                'r_lock': consensus_state['r_lock'],
-                                'qc_round': None,  # Not available in RoundInfo
-                                'qc_votes': None,  # Not available in RoundInfo
-                                'qc_block': None   # Not available in RoundInfo
-                            }
-                        elif rpc_endpoint == "jolteon_getHighestQC":
-                            state_data = {
-                                'block_number': block_number,
-                                'r_curr': None,    # Not available in QC
-                                'r_vote': None,    # Not available in QC
-                                'r_lock': None,    # Not available in QC
-                                'qc_round': consensus_state['round'],
-                                'qc_votes': consensus_state['vote_count'],
-                                'qc_block': consensus_state['block_hash']
-                            }
-                        else:
-                            # Default to ReplicaState format for unknown endpoints
-                            state_data = {
-                                'block_number': block_number,
-                                'r_curr': consensus_state.get('r_curr'),
-                                'r_vote': consensus_state.get('r_vote'),
-                                'r_lock': consensus_state.get('r_lock'),
-                                'qc_round': consensus_state.get('qc_high', {}).get('round'),
-                                'qc_votes': consensus_state.get('qc_high', {}).get('vote_count'),
-                                'qc_block': consensus_state.get('qc_high', {}).get('block_hash')
-                            }
+                        state_data = {
+                            'sample': i + 1,
+                            'block_number': block_number,
+                            'r_curr': consensus_state['r_curr'],
+                            'r_vote': consensus_state['r_vote'],
+                            'r_lock': consensus_state['r_lock'],
+                            'qc_round': consensus_state['qc_high']['round'],
+                            'qc_votes': consensus_state['qc_high']['vote_count'],
+                            'qc_block': consensus_state['qc_high']['block_hash']
+                        }
                         
                         consensus_states.append(state_data)
                         
-                        # Log appropriate fields based on endpoint
-                        if rpc_endpoint == "jolteon_getReplicaState":
-                            logger.info(f"Block {block_number}: r_curr={consensus_state['r_curr']}, r_vote={consensus_state['r_vote']}, r_lock={consensus_state['r_lock']}, QC={consensus_state['qc_high']['round']}")
-                        elif rpc_endpoint == "jolteon_getRoundInfo":
-                            logger.info(f"Block {block_number}: r_curr={consensus_state['r_curr']}, r_vote={consensus_state['r_vote']}, r_lock={consensus_state['r_lock']}")
-                        elif rpc_endpoint == "jolteon_getHighestQC":
-                            logger.info(f"Block {block_number}: QC round={consensus_state['round']}, votes={consensus_state['vote_count']}")
+                        logger.info(f"Sample {i+1}: Block {block_number}, r_curr={consensus_state['r_curr']}, r_vote={consensus_state['r_vote']}, QC={consensus_state['qc_high']['round']}")
+                        
+                        # Don't sleep after the last sample
+                        if i < samples:
+                            sleep(sample_interval)
                     
                 except Exception as e:
-                    logger.warning(f"Could not get consensus state for block {block_number}: {e}")
+                    logger.warning(f"Error sampling consensus state {i+1}: {e}")
                     continue
             
-            logger.info(f"Successfully analyzed {len(consensus_states)} consensus states")
+            logger.info(f"Successfully collected {len(consensus_states)} consensus state samples")
             return consensus_states
             
         except Exception as e:
-            logger.error(f"Error getting consensus states for blocks: {e}")
+            logger.error(f"Error getting consensus states over time: {e}")
             return []
-    
-    @mark.test_key('JOLTEON-RPC-001')
-    def test_replica_state_retrieval(self, api: BlockchainApi, config: ApiConfig):
-        """Test basic replica state retrieval via custom RPC endpoint
-        
-        This test verifies that the Jolteon consensus state is accessible
-        and contains the expected data structures.
-        """
-        logger.info("Starting Jolteon replica state retrieval test")
-        
-        try:
-            # Call the custom RPC endpoint
-            result = api.substrate.rpc_request("jolteon_getReplicaState", [])
-            
-            if result is None or 'result' not in result:
-                logger.error("No result from jolteon_getReplicaState")
-                assert False, "Failed to retrieve replica state"
-            
-            replica_state = result['result']
-            logger.info(f"Replica state: {json.dumps(replica_state, indent=2)}")
-            
-            # Verify required fields exist
-            required_fields = ['r_curr', 'r_vote', 'r_lock', 'qc_high', 'tc_last', 'storage_block_count']
-            for field in required_fields:
-                assert field in replica_state, f"Missing required field: {field}"
-            
-            # Verify data types and basic sanity checks
-            assert isinstance(replica_state['r_curr'], int), "r_curr should be an integer"
-            assert isinstance(replica_state['r_vote'], int), "r_vote should be an integer"
-            assert isinstance(replica_state['r_lock'], int), "r_lock should be an integer"
-            assert isinstance(replica_state['storage_block_count'], int), "storage_block_count should be an integer"
-            
-            # Verify round numbers are reasonable
-            assert replica_state['r_curr'] >= 0, "r_curr should be non-negative"
-            assert replica_state['r_vote'] >= 0, "r_vote should be non-negative"
-            assert replica_state['r_lock'] >= 0, "r_lock should be non-negative"
-            
-            # Verify QC structure
-            qc_high = replica_state['qc_high']
-            assert 'block_hash' in qc_high, "QC should have block_hash"
-            assert 'round' in qc_high, "QC should have round"
-            assert 'vote_count' in qc_high, "QC should have vote_count"
-            
-            logger.info(f"✅ Replica state test passed:")
-            logger.info(f"  Current round: {replica_state['r_curr']}")
-            logger.info(f"  Last voted round: {replica_state['r_vote']}")
-            logger.info(f"  Locked round: {replica_state['r_lock']}")
-            logger.info(f"  Storage blocks: {replica_state['storage_block_count']}")
-            
-        except Exception as e:
-            logger.error(f"Error testing replica state: {e}")
-            raise
-
