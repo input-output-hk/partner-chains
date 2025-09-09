@@ -58,9 +58,9 @@ where
 		block_info: &BlockInfo,
 	) -> Result<Ordering, Self::Error> {
 		let slot_of_block = block_info.get_slot_of_block(block)?;
-		let ordering = if slot_of_block.0 < self.slot_range.start.0 {
+		let ordering = if slot_of_block < self.slot_range.start {
 			Ordering::Less
-		} else if slot_of_block.0 >= self.slot_range.end.0 {
+		} else if slot_of_block >= self.slot_range.end {
 			Ordering::Greater
 		} else {
 			Ordering::Equal

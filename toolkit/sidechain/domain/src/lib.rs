@@ -206,6 +206,8 @@ impl Display for McSlotNumber {
 	TypeInfo,
 	Hash,
 	MaxEncodedLen,
+	PartialOrd,
+	Ord,
 )]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize, FromStr))]
 /// Partner Chain slot number

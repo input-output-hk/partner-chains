@@ -277,8 +277,8 @@ impl BlockDataSourceImpl {
 		let latest_block_num = latest_block.block_no.0;
 		let stable_block_num = latest_block_num.saturating_sub(self.security_parameter);
 
-		let to_block_no = BlockNumber(from_block_no.0.saturating_add(size).min(stable_block_num));
-		let blocks = if to_block_no.0 > from_block_no.0 {
+		let to_block_no = from_block_no.saturating_add(size).min(BlockNumber(stable_block_num));
+		let blocks = if to_block_no > from_block_no {
 			db_model::get_blocks_by_numbers(&self.pool, from_block_no, to_block_no).await?
 		} else {
 			vec![from_block.clone()]
