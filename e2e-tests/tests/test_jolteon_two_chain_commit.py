@@ -111,6 +111,65 @@ class TestJolteonTwoChainCommit:
         except Exception as e:
             logger.error(f"Error getting consensus states for blocks: {e}")
             return []
+
+    def _get_consensus_states_over_time(self, api: BlockchainApi, monitoring_duration: int = 60, sample_interval: int = 6) -> list:
+        """Get consensus states over time to detect progression
+        
+        Args:
+            api: Blockchain API instance
+            monitoring_duration: Duration to monitor in seconds
+            sample_interval: Interval between samples in seconds
+            
+        Returns:
+            List of consensus states with timestamps
+        """
+        try:
+            samples = monitoring_duration // sample_interval
+            logger.info(f"Monitoring consensus state for {monitoring_duration}s (every {sample_interval}s, {samples} samples)...")
+            
+            consensus_states = []
+            
+            for i in range(samples + 1):
+                try:
+                    # Get current block
+                    current_block = api.substrate.get_block()
+                    block_number = current_block['header']['number']
+                    
+                    # Get consensus state using RPC endpoint
+                    consensus_result = api.substrate.rpc_request("jolteon_getReplicaState", [])
+                    
+                    if consensus_result and 'result' in consensus_result:
+                        consensus_state = consensus_result['result']
+                        
+                        state_data = {
+                            'sample': i + 1,
+                            'block_number': block_number,
+                            'r_curr': consensus_state['r_curr'],
+                            'r_vote': consensus_state['r_vote'],
+                            'r_lock': consensus_state['r_lock'],
+                            'qc_round': consensus_state['qc_high']['round'],
+                            'qc_votes': consensus_state['qc_high']['vote_count'],
+                            'qc_block': consensus_state['qc_high']['block_hash']
+                        }
+                        
+                        consensus_states.append(state_data)
+                        
+                        logger.info(f"Sample {i+1}: Block {block_number}, r_curr={consensus_state['r_curr']}, QC={consensus_state['qc_high']['round']}, Lock={consensus_state['r_lock']}")
+                        
+                        # Don't sleep after the last sample
+                        if i < samples:
+                            sleep(sample_interval)
+                    
+                except Exception as e:
+                    logger.warning(f"Error sampling consensus state {i+1}: {e}")
+                    continue
+            
+            logger.info(f"Successfully collected {len(consensus_states)} consensus state samples")
+            return consensus_states
+            
+        except Exception as e:
+            logger.error(f"Error getting consensus states over time: {e}")
+            return []
     
     @mark.test_key('JOLTEON-2CHAIN-001')
     def test_two_chain_commit_rule_verification(self, api: BlockchainApi, config: ApiConfig):
@@ -126,14 +185,16 @@ class TestJolteonTwoChainCommit:
         logger.info("Starting Jolteon 2-chain commit rule test")
         
         try:
-            # Get consensus states for blocks
-            consensus_states = self._get_consensus_states_for_blocks(api, max_blocks=10)
+            # Monitor consensus states over time to detect progression
+            monitoring_duration = 60  # seconds
+            sample_interval = config.nodes_config.block_duration
+            consensus_states = self._get_consensus_states_over_time(api, monitoring_duration, sample_interval)
             
             if len(consensus_states) < 3:
                 logger.warning("Insufficient data for 2-chain analysis")
                 return
             
-            logger.info(f"Analyzed {len(consensus_states)} consensus states for 2-chain commit patterns")
+            logger.info(f"Analyzed {len(consensus_states)} consensus state samples over {monitoring_duration}s for 2-chain commit patterns")
             
             # Look for 2-chain commit patterns
             # In Jolteon, a block is committed when there are two consecutive certified blocks
