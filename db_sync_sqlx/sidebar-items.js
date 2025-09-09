@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"macro":["sqlx_implementations_for_wrapper"],"struct":["Address","Asset","AssetName","BlockNumber","EpochNumber","EpochNumberRow","MainchainEpochNonce","PolicyId","SlotNumber","StakeDelegation","TxIndex","TxIndexInBlock","TxValue"]};
+window.SIDEBAR_ITEMS = {"macro":["sqlx_implementations_for_wrapper"],"struct":["Address","Asset","AssetName","BlockNumber","EpochNumber","EpochNumberRow","MainchainEpochNonce","PolicyId","SlotNumber","StakeDelegation","TxHash","TxIndex","TxIndexInBlock","TxValue"]};

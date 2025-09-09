@@ -3,7 +3,7 @@
 <a href=#3 id=3 data-nosnippet>3</a><span class="kw">use </span>partner_chains_db_sync_data_sources::{
 <a href=#4 id=4 data-nosnippet>4</a>	BlockDataSourceImpl, CandidatesDataSourceImpl, GovernedMapDataSourceCachedImpl,
 <a href=#5 id=5 data-nosnippet>5</a>	McFollowerMetrics, McHashDataSourceImpl, NativeTokenManagementDataSourceImpl,
-<a href=#6 id=6 data-nosnippet>6</a>	SidechainRpcDataSourceImpl, StakeDistributionDataSourceImpl,
+<a href=#6 id=6 data-nosnippet>6</a>	SidechainRpcDataSourceImpl, StakeDistributionDataSourceImpl, TokenBridgeDataSourceImpl,
 <a href=#7 id=7 data-nosnippet>7</a>};
 <a href=#8 id=8 data-nosnippet>8</a><span class="kw">use </span>partner_chains_demo_runtime::AccountId;
 <a href=#9 id=9 data-nosnippet>9</a><span class="kw">use </span>partner_chains_mock_data_sources::{
@@ -151,6 +151,6 @@
 <a href=#151 id=151 data-nosnippet>151</a>			)
 <a href=#152 id=152 data-nosnippet>152</a>			.<span class="kw">await</span><span class="question-mark">?</span>,
 <a href=#153 id=153 data-nosnippet>153</a>		),
-<a href=#154 id=154 data-nosnippet>154</a>		bridge: Arc::new(TokenBridgeDataSourceMock::new()),
+<a href=#154 id=154 data-nosnippet>154</a>		bridge: Arc::new(TokenBridgeDataSourceImpl::new(pool, metrics_opt)),
 <a href=#155 id=155 data-nosnippet>155</a>	})
 <a href=#156 id=156 data-nosnippet>156</a>}</code></pre></div></section></main></body></html>
