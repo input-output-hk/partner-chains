@@ -162,6 +162,13 @@ impl Display for McBlockNumber {
 	}
 }
 
+impl McBlockNumber {
+	/// Adds `rhs` to the block number without overflow
+	pub fn saturating_add<Rhs: Into<u32>>(self, rhs: Rhs) -> Self {
+		Self(self.0.saturating_add(rhs.into()))
+	}
+}
+
 #[derive(
 	Default,
 	Debug,

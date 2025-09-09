@@ -216,8 +216,7 @@ impl GovernedMapDataSource for GovernedMapDataSourceCachedImpl {
 				Some(block) => BlockNumber(block.number.0),
 				None => up_to_block_number,
 			};
-		let since_block_plus =
-			BlockNumber(since_block_number.unwrap_or(BlockNumber(0)).0 + self.cache_size as u32);
+		let since_block_plus = since_block_number.unwrap_or_default().saturating_add(self.cache_size);
 		let max_search_block = min(latest_stable_block, max(up_to_block_number, since_block_plus));
 
 		let changes = self

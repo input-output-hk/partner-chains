@@ -82,9 +82,15 @@ macro_rules! sqlx_implementations_for_wrapper {
 }
 
 /// Cardano block number
-#[derive(Debug, Copy, Ord, PartialOrd, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Ord, PartialOrd, Clone, PartialEq, Eq, Default)]
 pub struct BlockNumber(pub u32);
 sqlx_implementations_for_wrapper!(i32, "INT4", BlockNumber, McBlockNumber);
+
+impl BlockNumber {
+	pub fn saturating_add<Rhs: Into<u32>>(self, rhs: Rhs) -> Self {
+		Self(self.0.saturating_add(rhs.into()))
+	}
+}
 
 /// Cardano epoch number
 #[derive(Debug, Copy, Clone, PartialEq)]
