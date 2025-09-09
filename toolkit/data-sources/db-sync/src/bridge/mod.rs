@@ -116,7 +116,7 @@ fn utxo_to_transfer<RecipientAddress>(
 where
 	RecipientAddress: for<'a> TryFrom<&'a [u8]>,
 {
-	let token_delta = (utxo.tokens_out.0 as i128) - (utxo.tokens_in.0 as i128);
+	let token_delta = utxo.tokens_out.0 - utxo.tokens_in.0;
 
 	if token_delta <= 0 {
 		return None;

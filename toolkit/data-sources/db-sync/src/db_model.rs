@@ -12,6 +12,7 @@ use sidechain_domain::{
 use sqlx::{
 	Decode, PgPool, Pool, Postgres, database::Database, error::BoxDynError, postgres::PgTypeInfo,
 };
+use std::ops::Sub;
 use std::{cell::OnceCell, str::FromStr, sync::Arc};
 use tokio::sync::Mutex;
 
@@ -194,6 +195,13 @@ pub(crate) struct NativeTokenAmount(pub u128);
 impl From<NativeTokenAmount> for sidechain_domain::NativeTokenAmount {
 	fn from(value: NativeTokenAmount) -> Self {
 		Self(value.0)
+	}
+}
+
+impl Sub<NativeTokenAmount> for NativeTokenAmount {
+	type Output = i128;
+	fn sub(self, rhs: NativeTokenAmount) -> Self::Output {
+		return (self.0 as i128) - (rhs.0 as i128);
 	}
 }
 
