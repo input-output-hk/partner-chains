@@ -2,7 +2,7 @@ use crate::chain_spec::get_account_id_from_seed;
 use crate::chain_spec::*;
 use authority_selection_inherents::CommitteeMember;
 use partner_chains_demo_runtime::{
-	AccountId, AuraConfig, BalancesConfig, GovernedMapConfig, GrandpaConfig,
+	AccountId, AuraConfig, BalancesConfig, BeefyConfig, GovernedMapConfig, GrandpaConfig,
 	NativeTokenManagementConfig, RuntimeGenesisConfig, SessionCommitteeManagementConfig,
 	SessionConfig, SidechainConfig, SudoConfig, SystemConfig, TestHelperPalletConfig,
 };
@@ -123,6 +123,7 @@ pub fn staging_genesis(
 			dev_accounts: None,
 		},
 		aura: AuraConfig { authorities: vec![] },
+		beefy: BeefyConfig { authorities: vec![], genesis_block: Some(10) },
 		grandpa: GrandpaConfig { authorities: vec![], ..Default::default() },
 		sudo: SudoConfig {
 			// Assign network admin rights.
