@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `toolkit/partner-chains-cli/src/config.rs`."><title>config.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-e56847b5.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="partner_chains_cli" data-themes="" data-resource-suffix="" data-rustdoc-version="1.91.0-nightly (9c27f27ea 2025-09-08)" data-channel="nightly" data-search-js="search-d846cb6c.js" data-stringdex-js="stringdex-5af928a3.js" data-settings-js="settings-c38705f0.js" ><script src="../../static.files/storage-e2aeef58.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-6dc2a7f3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">partner_chains_cli/</div>config.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `toolkit/partner-chains-cli/src/config.rs`."><title>config.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-e56847b5.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="partner_chains_cli" data-themes="" data-resource-suffix="" data-rustdoc-version="1.91.0-nightly (7ad23f43a 2025-09-09)" data-channel="nightly" data-search-js="search-d846cb6c.js" data-stringdex-js="stringdex-5af928a3.js" data-settings-js="settings-c38705f0.js" ><script src="../../static.files/storage-e2aeef58.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-6dc2a7f3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">partner_chains_cli/</div>config.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{
 <a href=#2 id=2 data-nosnippet>2</a>	CARDANO_ACTIVE_SLOTS_COEFF, CARDANO_EPOCH_DURATION_MILLIS, CARDANO_FIRST_EPOCH_NUMBER,
 <a href=#3 id=3 data-nosnippet>3</a>	CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS, CARDANO_FIRST_SLOT_NUMBER, CARDANO_SECURITY_PARAMETER,
 <a href=#4 id=4 data-nosnippet>4</a>};
@@ -264,7 +264,7 @@
 <a href=#264 id=264 data-nosnippet>264</a>	<span class="doccomment">/// unused
 <a href=#265 id=265 data-nosnippet>265</a>	</span><span class="kw">pub</span>(<span class="kw">crate</span>) permissioned_candidates_policy_id: String,
 <a href=#266 id=266 data-nosnippet>266</a>	<span class="doccomment">/// unused
-<a href=#267 id=267 data-nosnippet>267</a>	</span><span class="kw">pub</span>(<span class="kw">crate</span>) native_token: NativeTokenConfig,
+<a href=#267 id=267 data-nosnippet>267</a>	</span><span class="kw">pub</span>(<span class="kw">crate</span>) bridge: NativeTokenConfig,
 <a href=#268 id=268 data-nosnippet>268</a>}
 <a href=#269 id=269 data-nosnippet>269</a>
 <a href=#270 id=270 data-nosnippet>270</a><span class="attr">#[derive(Deserialize, PartialEq, Clone, Debug)]
@@ -332,7 +332,7 @@
 <a href=#332 id=332 data-nosnippet>332</a><span class="attr">#[derive(Deserialize, Serialize, Clone, Debug)]
 <a href=#333 id=333 data-nosnippet>333</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>NativeTokenConfig {
 <a href=#334 id=334 data-nosnippet>334</a>	<span class="kw">pub</span>(<span class="kw">crate</span>) asset: AssetConfig,
-<a href=#335 id=335 data-nosnippet>335</a>	<span class="kw">pub</span>(<span class="kw">crate</span>) illiquid_supply_address: String,
+<a href=#335 id=335 data-nosnippet>335</a>	<span class="kw">pub</span>(<span class="kw">crate</span>) illiquid_circulation_supply_validator_address: String,
 <a href=#336 id=336 data-nosnippet>336</a>}
 <a href=#337 id=337 data-nosnippet>337</a>
 <a href=#338 id=338 data-nosnippet>338</a><span class="attr">#[derive(Deserialize, Serialize, Clone, Debug)]
@@ -401,20 +401,20 @@
 <a href=#401 id=401 data-nosnippet>401</a>	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 <a href=#402 id=402 data-nosnippet>402</a>	<span class="kw">use </span>sidechain_domain::{AssetName, MainchainAddress, PolicyId, UtxoId};
 <a href=#403 id=403 data-nosnippet>403</a>
-<a href=#404 id=404 data-nosnippet>404</a>	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>NATIVE_TOKEN_POLICY: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, PolicyId&gt; =
+<a href=#404 id=404 data-nosnippet>404</a>	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>BRIDGE_TOKEN_POLICY: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, PolicyId&gt; =
 <a href=#405 id=405 data-nosnippet>405</a>		ConfigFieldDefinition {
 <a href=#406 id=406 data-nosnippet>406</a>			config_file: ConfigFile::Chain,
-<a href=#407 id=407 data-nosnippet>407</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano_addresses"</span>, <span class="string">"native_token"</span>, <span class="string">"asset"</span>, <span class="string">"policy_id"</span>],
-<a href=#408 id=408 data-nosnippet>408</a>			name: <span class="string">"native token policy ID"</span>,
+<a href=#407 id=407 data-nosnippet>407</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano_addresses"</span>, <span class="string">"bridge"</span>, <span class="string">"asset"</span>, <span class="string">"policy_id"</span>],
+<a href=#408 id=408 data-nosnippet>408</a>			name: <span class="string">"bridge token policy ID"</span>,
 <a href=#409 id=409 data-nosnippet>409</a>			default: <span class="prelude-val">None</span>,
 <a href=#410 id=410 data-nosnippet>410</a>			_marker: PhantomData,
 <a href=#411 id=411 data-nosnippet>411</a>		};
 <a href=#412 id=412 data-nosnippet>412</a>
-<a href=#413 id=413 data-nosnippet>413</a>	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>NATIVE_TOKEN_ASSET_NAME: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, AssetName&gt; =
+<a href=#413 id=413 data-nosnippet>413</a>	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>BRIDGE_TOKEN_ASSET_NAME: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, AssetName&gt; =
 <a href=#414 id=414 data-nosnippet>414</a>		ConfigFieldDefinition {
 <a href=#415 id=415 data-nosnippet>415</a>			config_file: ConfigFile::Chain,
-<a href=#416 id=416 data-nosnippet>416</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano_addresses"</span>, <span class="string">"native_token"</span>, <span class="string">"asset"</span>, <span class="string">"asset_name"</span>],
-<a href=#417 id=417 data-nosnippet>417</a>			name: <span class="string">"native token asset name in hex"</span>,
+<a href=#416 id=416 data-nosnippet>416</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano_addresses"</span>, <span class="string">"bridge"</span>, <span class="string">"asset"</span>, <span class="string">"asset_name"</span>],
+<a href=#417 id=417 data-nosnippet>417</a>			name: <span class="string">"bridge token asset name in hex"</span>,
 <a href=#418 id=418 data-nosnippet>418</a>			default: <span class="prelude-val">None</span>,
 <a href=#419 id=419 data-nosnippet>419</a>			_marker: PhantomData,
 <a href=#420 id=420 data-nosnippet>420</a>		};
@@ -422,8 +422,8 @@
 <a href=#422 id=422 data-nosnippet>422</a>	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>ILLIQUID_SUPPLY_ADDRESS: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, MainchainAddress&gt; =
 <a href=#423 id=423 data-nosnippet>423</a>		ConfigFieldDefinition {
 <a href=#424 id=424 data-nosnippet>424</a>			config_file: ConfigFile::Chain,
-<a href=#425 id=425 data-nosnippet>425</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano_addresses"</span>, <span class="string">"native_token"</span>, <span class="string">"illiquid_supply_address"</span>],
-<a href=#426 id=426 data-nosnippet>426</a>			name: <span class="string">"native token illiquid token supply address"</span>,
+<a href=#425 id=425 data-nosnippet>425</a>			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano_addresses"</span>, <span class="string">"bridge"</span>, <span class="string">"illiquid_circulation_supply_validator_address"</span>],
+<a href=#426 id=426 data-nosnippet>426</a>			name: <span class="string">"bridge token illiquid circullation supply address"</span>,
 <a href=#427 id=427 data-nosnippet>427</a>			default: <span class="prelude-val">None</span>,
 <a href=#428 id=428 data-nosnippet>428</a>			_marker: PhantomData,
 <a href=#429 id=429 data-nosnippet>429</a>		};
