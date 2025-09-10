@@ -34,10 +34,7 @@ mod benchmarks {
 	use super::*;
 
 	#[benchmark]
-	fn handle_transfers(
-		t: Linear<1, { T::MaxTransfersPerBlock::get() }>,
-		s: Linear<1, { T::MaxTransfersPerBlock::get() }>,
-	) {
+	fn handle_transfers(t: Linear<1, { T::MaxTransfersPerBlock::get() }>) {
 		assert_ok!(Pallet::<T>::set_main_chain_scripts(
 			RawOrigin::Root.into(),
 			T::BenchmarkHelper::main_chain_scripts(),
