@@ -35,6 +35,7 @@ dev/local-environment/docker-compose.yml.bak
 dev/local-environment/configurations/tests/e2e-tests
 dev/local-environment/configurations/partner-chains-node/overrides
 dev/local-environment/runtime-values/*
+dev/local-environment/saved-binaries/*
 
 # Local environment dynamic
 dev/local-environment-dynamic/.env
