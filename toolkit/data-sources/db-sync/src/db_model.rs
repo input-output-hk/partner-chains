@@ -12,7 +12,6 @@ use sidechain_domain::{
 use sqlx::{
 	Decode, PgPool, Pool, Postgres, database::Database, error::BoxDynError, postgres::PgTypeInfo,
 };
-use std::ops::Sub;
 use std::{cell::OnceCell, str::FromStr, sync::Arc};
 use tokio::sync::Mutex;
 
@@ -190,7 +189,7 @@ pub(crate) struct DatumChangeOutput {
 	pub action: GovernedMapAction,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub(crate) struct NativeTokenAmount(pub u128);
 impl From<NativeTokenAmount> for sidechain_domain::NativeTokenAmount {
 	fn from(value: NativeTokenAmount) -> Self {
@@ -198,10 +197,9 @@ impl From<NativeTokenAmount> for sidechain_domain::NativeTokenAmount {
 	}
 }
 
-impl Sub<NativeTokenAmount> for NativeTokenAmount {
-	type Output = i128;
-	fn sub(self, rhs: NativeTokenAmount) -> Self::Output {
-		return (self.0 as i128) - (rhs.0 as i128);
+impl NativeTokenAmount {
+	pub fn checked_sub(self, rhs: NativeTokenAmount) -> Option<i128> {
+		i128::try_from(self.0).ok()?.checked_sub(i128::try_from(rhs.0).ok()?)
 	}
 }
 
