@@ -39,6 +39,7 @@ impl<Recipient> TransferHandler<Recipient> for () {
 #[frame_support::pallet(dev_mode)]
 pub mod pallet {
 	use super::*;
+	use crate::weights::WeightInfo;
 	use frame_support::pallet_prelude::*;
 	use frame_system::{ensure_none, pallet_prelude::OriginFor};
 	use parity_scale_codec::MaxEncodedLen;
@@ -112,7 +113,7 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Inherent extrinsic that handles all incoming transfers in the current block
 		#[pallet::call_index(0)]
-		#[pallet::weight(0)]
+		#[pallet::weight(T::WeightInfo::handle_transfers(transfers.len() as u32))]
 		pub fn handle_transfers(
 			origin: OriginFor<T>,
 			transfers: BoundedVec<BridgeTransferV1<T::Recipient>, T::MaxTransfersPerBlock>,
@@ -132,7 +133,7 @@ pub mod pallet {
 		///
 		///
 		#[pallet::call_index(1)]
-		#[pallet::weight(0)]
+		#[pallet::weight(T::WeightInfo::set_main_chain_scripts())]
 		pub fn set_main_chain_scripts(
 			origin: OriginFor<T>,
 			new_scripts: MainChainScripts,
