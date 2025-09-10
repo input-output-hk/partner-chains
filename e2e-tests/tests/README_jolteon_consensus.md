@@ -119,6 +119,7 @@ pytest tests/test_jolteon_consensus.py::TestJolteonConsensus::test_qc_formation_
 ## Contributing
 
 When adding new test cases:
+
 1. Implement tests incrementally (simple → complex)
 2. Include proper documentation and logging
 3. Test thoroughly in your Jolteon environment
