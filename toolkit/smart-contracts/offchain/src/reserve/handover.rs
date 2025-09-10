@@ -25,7 +25,6 @@ use crate::{
 	csl::{
 		AssetIdExt, CostStore, Costs, OgmiosUtxoExt, Script, TransactionBuilderExt,
 		TransactionContext, TransactionExt, TransactionOutputAmountBuilderExt, get_builder_config,
-		unit_plutus_data,
 	},
 	governance::GovernanceData,
 	multisig::{MultiSigSmartContractResult, submit_or_create_tx_to_sign},
@@ -39,7 +38,7 @@ use ogmios_client::{
 	transactions::Transactions,
 	types::OgmiosUtxo,
 };
-use partner_chains_plutus_data::reserve::ReserveRedeemer;
+use partner_chains_plutus_data::{bridge::TokenTransferDatumV1, reserve::ReserveRedeemer};
 use sidechain_domain::UtxoId;
 
 /// Spends current UTXO at validator address to illiquid supply validator and burn reserve auth policy token, preventing further operations.
@@ -135,7 +134,7 @@ fn illiquid_supply_validator_output(
 	if output_value.amount > 0 {
 		let ma = output_value.token.to_multi_asset(output_value.amount)?;
 		let amount_builder = tx_output_builder
-			.with_plutus_data(&illiquid_supply_validator_redeemer())
+			.with_plutus_data(&TokenTransferDatumV1::ReserveTransfer.into())
 			.next()?;
 		amount_builder.with_minimum_ada_and_asset(&ma, ctx)?.build()
 	} else {
@@ -144,8 +143,4 @@ fn illiquid_supply_validator_output(
 		let amount_builder = tx_output_builder.next()?;
 		amount_builder.with_minimum_ada(ctx)?.build()
 	}
-}
-
-fn illiquid_supply_validator_redeemer() -> PlutusData {
-	unit_plutus_data()
 }

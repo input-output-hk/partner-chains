@@ -6,9 +6,9 @@ use authority_selection_inherents::{
 	AuthoritySelectionInputs, mock::MockAuthoritySelectionDataSource,
 };
 use hex_literal::hex;
-use partner_chains_demo_runtime::BlockAuthor;
-use partner_chains_mock_data_sources::GovernedMapDataSourceMock;
+use partner_chains_demo_runtime::{AccountId, BlockAuthor};
 use partner_chains_mock_data_sources::StakeDistributionDataSourceMock;
+use partner_chains_mock_data_sources::{GovernedMapDataSourceMock, TokenBridgeDataSourceMock};
 use sidechain_domain::{
 	DelegatorKey, MainchainBlock, McBlockHash, McBlockNumber, McEpochNumber, McSlotNumber,
 	NativeTokenAmount, ScEpochNumber,
@@ -55,6 +55,7 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 		Arc::new(native_token_data_source),
 		Arc::new(StakeDistributionDataSourceMock::new()),
 		Arc::new(GovernedMapDataSourceMock::default()),
+		Arc::new(TokenBridgeDataSourceMock::<AccountId>::new()),
 	)
 	.create_inherent_data_providers(mock_header().hash(), ())
 	.await
@@ -153,6 +154,7 @@ async fn block_verification_cidp_should_be_created_correctly() {
 		Arc::new(native_token_data_source),
 		Arc::new(StakeDistributionDataSourceMock::new()),
 		Arc::new(GovernedMapDataSourceMock::default()),
+		Arc::new(TokenBridgeDataSourceMock::new()),
 	);
 
 	let inherent_data_providers = verifier_cidp

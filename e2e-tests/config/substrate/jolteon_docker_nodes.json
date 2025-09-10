@@ -7,8 +7,8 @@
     "nodes_config": {
         "nodes": {
             "alice": {
-                "host": "127.0.0.1",
-                "port": "9933",
+                "host": "alice.jolteon.sc.iog.io",
+                "port": "443",
                 "aura_ss58_address": "5GHLr2zBDNPXno9XdKgh541uRSiTxnZyzFcr4jK6HUbHMpit",
                 "pool_id": "da74fc8256d15c7ab3370a6ca28398986cb97c32e9ef66026ac61e99",
                 "public_key": "0x03b827f4da9711bab7292e5695576a841a4d20af9a07b1ba7a230168d2a78e9df4",

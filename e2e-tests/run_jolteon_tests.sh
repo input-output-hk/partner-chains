@@ -57,7 +57,7 @@ run_tests() {
             pytest tests/ -m jolteon -v -s --env $env --blockchain $blockchain
             ;;
         "smoke")
-            pytest tests/test_jolteon_consensus_rpc.py::TestJolteonConsensusRPC::test_replica_state_retrieval -v -s --env $env --blockchain $blockchain
+            pytest tests/test_jolteon_consensus.py::TestJolteonConsensus::test_qc_formation_and_round_advancement -v -s --env $env --blockchain $blockchain
             ;;
         *)
             echo -e "${RED}Unknown test type: ${test_type}${NC}"

@@ -105,6 +105,8 @@ pub use crate::{
 
 #[cfg(feature = "block-source")]
 pub use crate::block::{BlockDataSourceImpl, DbSyncBlockDataSourceConfig};
+#[cfg(feature = "bridge")]
+pub use crate::bridge::TokenBridgeDataSourceImpl;
 #[cfg(feature = "candidate-source")]
 pub use crate::candidates::CandidatesDataSourceImpl;
 #[cfg(feature = "governed-map")]
@@ -125,6 +127,8 @@ mod metrics;
 
 #[cfg(feature = "block-source")]
 mod block;
+#[cfg(feature = "bridge")]
+mod bridge;
 #[cfg(feature = "candidate-source")]
 mod candidates;
 #[cfg(feature = "governed-map")]
@@ -187,16 +191,19 @@ pub(crate) type Result<T> = std::result::Result<T, DataSourceError>;
 #[cfg(test)]
 mod tests {
 	use ctor::{ctor, dtor};
-	use std::sync::OnceLock;
-	use testcontainers_modules::testcontainers::Container;
-	use testcontainers_modules::{postgres::Postgres as PostgresImg, testcontainers::clients::Cli};
+	use std::sync::{OnceLock, mpsc};
+	use testcontainers_modules::postgres::Postgres;
+	use testcontainers_modules::testcontainers::{
+		Container, ImageExt,
+		bollard::query_parameters::{RemoveContainerOptions, StopContainerOptions},
+		core::client::docker_client_instance,
+		runners::SyncRunner,
+	};
 
-	static POSTGRES: OnceLock<Container<PostgresImg>> = OnceLock::new();
-	static CLI: OnceLock<Cli> = OnceLock::new();
+	static POSTGRES: OnceLock<Container<Postgres>> = OnceLock::new();
 
-	fn init_postgres() -> Container<'static, PostgresImg> {
-		let docker = CLI.get_or_init(Cli::default);
-		docker.run(PostgresImg::default())
+	fn init_postgres() -> Container<Postgres> {
+		Postgres::default().with_tag("17.2").start().unwrap()
 	}
 
 	#[ctor]
@@ -204,7 +211,7 @@ mod tests {
 		let postgres = POSTGRES.get_or_init(init_postgres);
 		let database_url = &format!(
 			"postgres://postgres:postgres@127.0.0.1:{}/postgres",
-			postgres.get_host_port_ipv4(5432)
+			postgres.get_host_port_ipv4(5432).unwrap()
 		);
 		// Needed for sqlx::test macro annotation
 		unsafe {
@@ -214,6 +221,18 @@ mod tests {
 
 	#[dtor]
 	fn on_shutdown() {
-		POSTGRES.get().iter().for_each(|postgres| postgres.rm());
+		let (tx, rx) = mpsc::channel();
+		std::thread::spawn(move || {
+			let runtime =
+				tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
+			runtime.block_on(async {
+				let docker = docker_client_instance().await.unwrap();
+				let id = POSTGRES.get().unwrap().id();
+				docker.stop_container(id, None::<StopContainerOptions>).await.unwrap();
+				docker.remove_container(id, None::<RemoveContainerOptions>).await.unwrap();
+				tx.send(());
+			});
+		});
+		let _: () = rx.recv().unwrap();
 	}
 }

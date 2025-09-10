@@ -1,9 +1,8 @@
 use super::*;
 use frame_benchmarking::v2::*;
-use frame_support::BoundedVec;
-use frame_support::assert_ok;
-use frame_support::traits::Get;
+use frame_support::{BoundedVec, assert_ok, traits::Get};
 use frame_system::RawOrigin;
+use sidechain_domain::McBlockNumber;
 use sp_partner_chains_bridge::*;
 
 /// Helper trait for injecting mock values for use in benchmarks
@@ -26,7 +25,7 @@ impl<T: crate::Config> BenchmarkHelper<T> for () {
 	}
 
 	fn data_checkpoint() -> BridgeDataCheckpoint {
-		Default::default()
+		BridgeDataCheckpoint::Block(McBlockNumber(0))
 	}
 }
 

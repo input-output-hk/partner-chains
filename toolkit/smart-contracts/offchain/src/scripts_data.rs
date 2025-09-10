@@ -5,7 +5,8 @@ use ogmios_client::query_network::QueryNetwork;
 use raw_scripts::ScriptId;
 use raw_scripts::{
 	COMMITTEE_CANDIDATE_VALIDATOR, D_PARAMETER_POLICY, D_PARAMETER_VALIDATOR, GOVERNED_MAP_POLICY,
-	GOVERNED_MAP_VALIDATOR, ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR, PERMISSIONED_CANDIDATES_POLICY,
+	GOVERNED_MAP_VALIDATOR, ILLIQUID_CIRCULATION_SUPPLY_AUTHORITY_TOKEN_POLICY,
+	ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR, PERMISSIONED_CANDIDATES_POLICY,
 	PERMISSIONED_CANDIDATES_VALIDATOR, RESERVE_AUTH_POLICY, RESERVE_VALIDATOR,
 	VERSION_ORACLE_POLICY, VERSION_ORACLE_VALIDATOR,
 };
@@ -58,6 +59,8 @@ pub struct PolicyIds {
 	pub version_oracle: PolicyId,
 	/// PolicyId of governed map minting policy
 	pub governed_map: PolicyId,
+	/// PolicyId of illiquid circulation supply auth token policy
+	pub illiquid_circulation_supply_auth_token: PolicyId,
 }
 
 /// Returns [ScriptsData] of the smart contracts for the partner chain identified by `genesis_utxo`.
@@ -95,6 +98,9 @@ pub fn get_scripts_data(
 			reserve_auth: reserve.auth_policy.policy_id(),
 			version_oracle: version_oracle_data.policy_id(),
 			governed_map: governed_map_data.policy_id(),
+			illiquid_circulation_supply_auth_token: reserve
+				.illiquid_circulation_supply_auth_token_policy
+				.policy_id(),
 		},
 	})
 }
@@ -213,6 +219,7 @@ pub(crate) struct ReserveScripts {
 	pub(crate) validator: PlutusScript,
 	pub(crate) auth_policy: PlutusScript,
 	pub(crate) illiquid_circulation_supply_validator: PlutusScript,
+	pub(crate) illiquid_circulation_supply_auth_token_policy: PlutusScript,
 }
 
 pub(crate) fn reserve_scripts(
@@ -228,7 +235,17 @@ pub(crate) fn reserve_scripts(
 		ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR,
 		version_oracle_data.policy_id_as_plutus_data()
 	]?;
-	Ok(ReserveScripts { validator, auth_policy, illiquid_circulation_supply_validator })
+	let illiquid_circulation_supply_auth_token_policy = plutus_script![
+		ILLIQUID_CIRCULATION_SUPPLY_AUTHORITY_TOKEN_POLICY,
+		ScriptId::IlliquidCirculationSupplyAuthorityTokenPolicy,
+		version_oracle_data.policy_id_as_plutus_data()
+	]?;
+	Ok(ReserveScripts {
+		validator,
+		auth_policy,
+		illiquid_circulation_supply_validator,
+		illiquid_circulation_supply_auth_token_policy,
+	})
 }
 
 #[cfg(test)]
@@ -254,9 +271,9 @@ mod tests {
 				permissioned_candidates_validator:
 					"addr_test1wqhp3xkm7ntcy0q9cjnttngx94vyn4a7fgyyk5cegw3rkhc4pjahq".into(),
 				illiquid_circulation_supply_validator:
-					"addr_test1wp7zc0geuxhq8sl5vnfsmgman5ezwstlkdl33mc2apyth6svtrlj2".into(),
+					"addr_test1wqzuuqa0q0le6t8j0gu4pz8mq3khmzfth0qgfc0r6cur7hcqy0py6".into(),
 				reserve_validator:
-					"addr_test1wpneq7pv2sna8fg3htmhv88pagjzfxrmjekn00f7kt2n5dcygk46p".into(),
+					"addr_test1wzfnr6alsdhyykph86k946yyrr5ry7exxt07fr40qdagvysj306ph".into(),
 				version_oracle_validator:
 					"addr_test1wpadfxldpsgn3zk5yswm7ygwgmfmawxaj90dl40s77jajfgnker5v".into(),
 				governed_map_validator:
@@ -270,13 +287,16 @@ mod tests {
 					"d29bc1e7643976641cd76888009207f20f0e92c1fca7f43deb8f0f0c"
 				)),
 				reserve_auth: PolicyId(hex!(
-					"1c736e05b90d6ea072b0dcf6fe358cbdbb0281138a72ff7c42359285"
+					"7b9a65e15549703c81ebaf402f209a55f3b40e655939ad0205aa3cff"
 				)),
 				version_oracle: PolicyId(hex!(
 					"d3d6eadae137f555653094f67fe29f7beab90d55d04ca05c1ab9d2af"
 				)),
 				governed_map: PolicyId(hex!(
 					"1b7c0fa2b32502b8e92ec529f1fe3931febf0b7829f23dc514d88aa0"
+				)),
+				illiquid_circulation_supply_auth_token: PolicyId(hex!(
+					"6bc5e936c143b2758caea2fbf6d4e921400b54f9f74bea55ed1b08e2"
 				)),
 			},
 		}
