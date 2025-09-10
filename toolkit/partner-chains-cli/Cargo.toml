@@ -39,9 +39,11 @@ plutus = { workspace = true }
 plutus-datum-derive = { workspace = true }
 ed25519-zebra = { workspace = true }
 sp-session-validator-management = { workspace = true, features = ["std"] }
+pallet-session-validator-management = { workspace = true, features = ["std"] }
+pallet-partner-chains-bridge = { workspace = true, features = ["std"] }
+sp-partner-chains-bridge = { workspace = true, features = ["std"] }
 pallet-native-token-management = { workspace = true, features = ["std"] }
 sp-native-token-management = { workspace = true, features = ["std"] }
-pallet-session-validator-management = { workspace = true, features = ["std"] }
 pallet-partner-chains-session = { workspace = true, features = ["std"] }
 pallet-sidechain = { workspace = true, features = ["std"] }
 pallet-governed-map = { workspace = true, features = ["std"] }

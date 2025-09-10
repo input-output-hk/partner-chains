@@ -17,7 +17,7 @@ impl PartnerChainRuntime for MockRuntime {
 			"sessionCommitteeManagement": config.pallet_session_validator_management_config::<MockRuntime>(),
 			"sidechain": config.pallet_sidechain_config::<MockRuntime>(SlotsPerEpoch(13)),
 			"governedMap":config.governed_map_config::<MockRuntime>(),
-			"nativeTokenManagement":config.native_token_management_config::<MockRuntime>(),
+			"bridge":config.bridge_config::<MockRuntime>(),
 		})
 	}
 
@@ -148,12 +148,12 @@ fn cardano_addresses_json() -> serde_json::Value {
 		"committee_candidates_address": "addr_test1wz5qc7fk2pat0058w4zwvkw35ytptej3nuc3je2kgtan5dq3rt4sc",
 		"d_parameter_policy_id": "0xd0ebb61e2ba362255a7c4a253c6578884603b56fb0a68642657602d6",
 		"permissioned_candidates_policy_id": "0x58b4ba68f641d58f7f1bba07182eca9386da1e88a34d47a14638c3fe",
-		"native_token": {
+		"bridge": {
 			"asset": {
 				"policy_id": "0xada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4",
 				"asset_name": "0x5043546f6b656e44656d6f",
 			},
-			"illiquid_supply_address": "addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz"
+			"illiquid_circulation_supply_validator_address": "addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz"
 		},
 		"governed_map": {
 			"validator_address": "addr_test1wqpjpjq08treyvmqjca0qy5kw8xgq4awgt945v46jsxgyhsafz4ws",
@@ -182,13 +182,13 @@ fn show_chain_parameters() -> MockIO {
 		MockIO::print(
 			"- permissioned_candidates_policy_id: 0x58b4ba68f641d58f7f1bba07182eca9386da1e88a34d47a14638c3fe",
 		),
-		MockIO::print("Native Token Management Configuration (unused if empty):"),
+		MockIO::print("Bridge Configuration (unused if empty):"),
 		MockIO::print("- asset name: 0x5043546f6b656e44656d6f"),
 		MockIO::print(
 			"- asset policy ID: 0xada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4",
 		),
 		MockIO::print(
-			"- illiquid supply address: addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz",
+			"- illiquid circulation supply validator address: addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz",
 		),
 		MockIO::print("Governed Map Configuration:"),
 		MockIO::print(
@@ -255,13 +255,13 @@ fn generated_chain_spec() -> serde_json::Value {
 				},
 				"marker": null,
 			},
-			"nativeTokenManagement": {
+			"bridge": {
 				"mainChainScripts": {
-					"illiquid_supply_validator_address": "addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz",
-					"native_token_asset_name": "0x5043546f6b656e44656d6f",
-					"native_token_policy_id": "0xada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4"
+					"illiquid_circulation_supply_validator_address": "addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz",
+					"token_asset_name": "0x5043546f6b656e44656d6f",
+					"token_policy_id": "0xada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4",
 				},
-				"marker": null
+				"marker": null,
 			}
 		}
 	)

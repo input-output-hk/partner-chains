@@ -58,7 +58,7 @@ impl MaybeFromCandidateKeys for TestSessionKeys {}
 construct_runtime! {
 	pub enum MockRuntime {
 		System: frame_system,
-		NativeToken: pallet_native_token_management::pallet,
+		Bridge: pallet_partner_chains_bridge::pallet,
 		GovernedMap: pallet_governed_map::pallet,
 		SessionCommitteeManagement: pallet_session_validator_management::pallet,
 		Session: pallet_partner_chains_session::pallet,
@@ -109,16 +109,14 @@ impl pallet_sidechain::Config for MockRuntime {
 	type OnNewEpoch = ();
 }
 
-impl pallet_native_token_management::TokenTransferHandler for Mock {
-	fn handle_token_transfer(_: sidechain_domain::NativeTokenAmount) -> dispatch::DispatchResult {
-		unimplemented!()
-	}
-}
-
-impl pallet_native_token_management::Config for MockRuntime {
-	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
-	type TokenTransferHandler = Mock;
+impl pallet_partner_chains_bridge::Config for MockRuntime {
+	type GovernanceOrigin = EnsureRoot<MockRuntime>;
+	type Recipient = AccountId32;
+	type TransferHandler = ();
+	type MaxTransfersPerBlock = ConstU32<3>;
 	type WeightInfo = ();
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = ();
 }
 
 pub(crate) const TEST_MAX_CHANGES: u32 = 8;
