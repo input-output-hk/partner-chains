@@ -1472,7 +1472,7 @@ impl alloc::fmt::Debug for DelegatorKey {
 }
 
 /// Amount of Lovelace staked by a Cardano delegator to a single stake pool
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
 pub struct DelegatorStakeAmount(pub u64);
 
 impl<T: Into<u64>> From<T> for DelegatorStakeAmount {
