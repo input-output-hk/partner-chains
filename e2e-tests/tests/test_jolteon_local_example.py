@@ -9,19 +9,30 @@ from src.partner_chain_rpc import PartnerChainRpc
 
 
 def test_jolteon_local_environment_connection(config):
-    """Test that we can connect to the Jolteon local environment."""
+    """Test that we can connect to the Jolteon environment."""
     
-    # Verify we're using the correct environment
-    assert config.test_environment == "jolteon_local", f"Expected jolteon_local, got {config.test_environment}"
+    # Verify we're using a Jolteon environment
+    assert config.test_environment in ["jolteon_local", "jolteon_docker"], f"Expected jolteon environment, got {config.test_environment}"
     
     # Verify the selected node configuration
     node = config.nodes_config.node
-    assert node.host == "127.0.0.1", f"Expected 127.0.0.1, got {node.host}"
-    assert node.port == 9933, f"Expected 9933, got {node.port}"
+    # For local environment, expect 127.0.0.1; for docker environment, expect the configured host
+    if config.test_environment == "jolteon_local":
+        assert node.host == "127.0.0.1", f"Expected 127.0.0.1 for local environment, got {node.host}"
+        assert node.port == 9933, f"Expected 9933 for local environment, got {node.port}"
+    else:
+        # For docker environment, just verify we have a valid host and port
+        assert node.host is not None, "Node host should not be None"
+        assert node.port is not None, "Node port should not be None"
     
     # Verify RPC URL construction
-    expected_rpc_url = "http://127.0.0.1:9933"
-    assert node.rpc_url == expected_rpc_url, f"Expected {expected_rpc_url}, got {node.rpc_url}"
+    if config.test_environment == "jolteon_local":
+        expected_rpc_url = "http://127.0.0.1:9933"
+        assert node.rpc_url == expected_rpc_url, f"Expected {expected_rpc_url}, got {node.rpc_url}"
+    else:
+        # For docker environment, just verify URL is constructed properly
+        assert node.rpc_url.startswith(("http://", "https://")), f"RPC URL should start with http:// or https://, got {node.rpc_url}"
+        assert f":{node.port}" in node.rpc_url, f"RPC URL should contain port {node.port}, got {node.rpc_url}"
     
     print(f"✅ Environment configured correctly:")
     print(f"   - Environment: {config.test_environment}")
@@ -32,7 +43,7 @@ def test_jolteon_local_environment_connection(config):
 
 
 def test_jolteon_local_node_list(config):
-    """Test that all nodes are configured for localhost."""
+    """Test that all nodes are configured correctly."""
     
     nodes = config.nodes_config.nodes
     
@@ -41,12 +52,20 @@ def test_jolteon_local_node_list(config):
     actual_nodes = list(nodes.keys())
     assert actual_nodes == expected_nodes, f"Expected {expected_nodes}, got {actual_nodes}"
     
-    # Verify all nodes point to localhost
+    # Verify all nodes are configured properly
     for node_name, node_config in nodes.items():
-        assert node_config.host == "127.0.0.1", f"Node {node_name} host is not 127.0.0.1"
-        assert node_config.port == 9933, f"Node {node_name} port is not 9933"
+        assert node_config.host is not None, f"Node {node_name} host is None"
+        assert node_config.port is not None, f"Node {node_name} port is None"
+        
+        # For local environment, expect 127.0.0.1; for docker environment, expect configured host
+        if config.test_environment == "jolteon_local":
+            assert node_config.host == "127.0.0.1", f"Node {node_name} host is not 127.0.0.1 for local environment"
+            assert node_config.port == 9933, f"Node {node_name} port is not 9933 for local environment"
+        else:
+            # For docker environment, just verify host is not localhost
+            assert node_config.host != "127.0.0.1", f"Node {node_name} host should not be 127.0.0.1 for docker environment"
     
-    print(f"✅ All {len(nodes)} nodes configured for localhost")
+    print(f"✅ All {len(nodes)} nodes configured correctly for {config.test_environment} environment")
 
 
 def test_jolteon_local_network_config(config):

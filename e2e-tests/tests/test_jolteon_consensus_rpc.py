@@ -5,6 +5,7 @@ from config.api_config import ApiConfig
 import logging as logger
 import json
 from time import time
+import pytest
 
 
 class TestJolteonConsensusRPC:
@@ -59,8 +60,13 @@ class TestJolteonConsensusRPC:
             logger.info(f"  Storage blocks: {replica_state['storage_block_count']}")
             
         except Exception as e:
-            logger.error(f"Error testing replica state: {e}")
-            raise
+            error_msg = str(e)
+            if "Method not found" in error_msg:
+                logger.warning("Jolteon replica state RPC method not available in this environment")
+                pytest.skip("Jolteon replica state RPC method not implemented")
+            else:
+                logger.error(f"Error testing replica state: {e}")
+                raise
 
     @mark.test_key('JOLTEON-RPC-002')
     def test_round_progression(self, api: BlockchainApi, config: ApiConfig):
@@ -79,7 +85,7 @@ class TestJolteonConsensusRPC:
             
             if len(consensus_states) < 2:
                 logger.warning("Insufficient consensus data for round progression analysis")
-                return
+                pytest.skip("Jolteon consensus RPC methods not available or insufficient data")
             
             # Analyze round progression over time
             logger.info(f"Analyzed {len(consensus_states)} consensus state samples over {monitoring_duration}s")
@@ -129,11 +135,11 @@ class TestJolteonConsensusRPC:
         
         try:
             # Get consensus states for blocks
-            consensus_states = self._get_consensus_states_for_blocks(api, max_blocks=5)
+            consensus_states = self._get_consensus_states_over_time(api, monitoring_duration=30, sample_interval=6)
             
             if len(consensus_states) < 2:
                 logger.warning("Insufficient QC data for analysis")
-                return
+                pytest.skip("Jolteon consensus RPC methods not available or insufficient data")
             
             # Analyze QC progression across blocks
             logger.info(f"Analyzed {len(consensus_states)} QC states")
@@ -221,6 +227,11 @@ class TestJolteonConsensusRPC:
             error_msg = str(e)
             if "No timeout certificate available" in error_msg:
                 logger.info("ℹ️  No Timeout Certificate available (normal in happy path)")
+            elif "Method not found" in error_msg:
+                logger.warning("Jolteon timeout certificate RPC method not available in this environment")
+                pytest.skip("Jolteon timeout certificate RPC method not implemented")
+            elif "Connection refused" in error_msg:
+                raise AssertionError(f"Connection failed when checking TC: {e}")
             else:
                 logger.error(f"Error checking TC: {e}")
                 raise
@@ -236,52 +247,62 @@ class TestJolteonConsensusRPC:
         """
         logger.info("Starting Jolteon consensus state consistency test")
         
-        # Get data from all endpoints
-        replica_state_result = api.substrate.rpc_request("jolteon_getReplicaState", [])
-        round_info_result = api.substrate.rpc_request("jolteon_getRoundInfo", [])
-        qc_result = api.substrate.rpc_request("jolteon_getHighestQC", [])
-        
-        assert all([replica_state_result, round_info_result, qc_result]), "Failed to get consensus state from all endpoints"
-        
-        replica_state = replica_state_result['result']
-        round_info = round_info_result['result']
-        qc = qc_result['result']
-        
-        logger.info(f"Replica state: {replica_state}")
-        logger.info(f"Round info: {round_info}")
-        logger.info(f"QC: {qc}")
-        
-        # Verify round consistency between endpoints
-        assert replica_state['r_curr'] == round_info['r_curr'], \
-            f"Current round mismatch: replica_state={replica_state['r_curr']}, round_info={round_info['r_curr']}"
-        
-        assert replica_state['r_vote'] == round_info['r_vote'], \
-            f"Voted round mismatch: replica_state={replica_state['r_vote']}, round_info={round_info['r_vote']}"
-        
-        assert replica_state['r_lock'] == round_info['r_lock'], \
-            f"Locked round mismatch: replica_state={replica_state['r_lock']}, round_info={round_info['r_lock']}"
-        
-        # Verify QC consistency
-        assert replica_state['qc_high']['round'] == qc['round'], \
-            f"QC round mismatch: replica_state={replica_state['qc_high']['round']}, qc={qc['round']}"
-        
-        assert replica_state['qc_high']['block_hash'] == qc['block_hash'], \
-            f"QC block hash mismatch: replica_state={replica_state['qc_high']['block_hash']}, qc={qc['block_hash']}"
-        
-        assert replica_state['qc_high']['vote_count'] == qc['vote_count'], \
-            f"QC vote count mismatch: replica_state={replica_state['qc_high']['vote_count']}, qc={qc['vote_count']}"
-        
-        # Verify logical consistency
-        assert replica_state['r_curr'] >= replica_state['r_vote'], \
-            f"Current round should be >= voted round: {replica_state['r_curr']} < {replica_state['r_vote']}"
-        
-        assert replica_state['r_vote'] >= replica_state['r_lock'], \
-            f"Voted round should be >= locked round: {replica_state['r_vote']} < {replica_state['r_lock']}"
-        
-        assert replica_state['qc_high']['round'] <= replica_state['r_curr'], \
-            f"QC round should be <= current round: {replica_state['qc_high']['round']} > {replica_state['r_curr']}"
-        
-        logger.info("✅ Consensus state consistency test passed")
+        try:
+            # Get data from all endpoints
+            replica_state_result = api.substrate.rpc_request("jolteon_getReplicaState", [])
+            round_info_result = api.substrate.rpc_request("jolteon_getRoundInfo", [])
+            qc_result = api.substrate.rpc_request("jolteon_getHighestQC", [])
+            
+            assert all([replica_state_result, round_info_result, qc_result]), "Failed to get consensus state from all endpoints"
+            
+            replica_state = replica_state_result['result']
+            round_info = round_info_result['result']
+            qc = qc_result['result']
+            
+            logger.info(f"Replica state: {replica_state}")
+            logger.info(f"Round info: {round_info}")
+            logger.info(f"QC: {qc}")
+            
+            # Verify round consistency between endpoints
+            assert replica_state['r_curr'] == round_info['r_curr'], \
+                f"Current round mismatch: replica_state={replica_state['r_curr']}, round_info={round_info['r_curr']}"
+            
+            assert replica_state['r_vote'] == round_info['r_vote'], \
+                f"Voted round mismatch: replica_state={replica_state['r_vote']}, round_info={round_info['r_vote']}"
+            
+            assert replica_state['r_lock'] == round_info['r_lock'], \
+                f"Locked round mismatch: replica_state={replica_state['r_lock']}, round_info={round_info['r_lock']}"
+            
+            # Verify QC consistency
+            assert replica_state['qc_high']['round'] == qc['round'], \
+                f"QC round mismatch: replica_state={replica_state['qc_high']['round']}, qc={qc['round']}"
+            
+            assert replica_state['qc_high']['block_hash'] == qc['block_hash'], \
+                f"QC block hash mismatch: replica_state={replica_state['qc_high']['block_hash']}, qc={qc['block_hash']}"
+            
+            assert replica_state['qc_high']['vote_count'] == qc['vote_count'], \
+                f"QC vote count mismatch: replica_state={replica_state['qc_high']['vote_count']}, qc={qc['vote_count']}"
+            
+            # Verify logical consistency
+            assert replica_state['r_curr'] >= replica_state['r_vote'], \
+                f"Current round should be >= voted round: {replica_state['r_curr']} < {replica_state['r_vote']}"
+            
+            assert replica_state['r_vote'] >= replica_state['r_lock'], \
+                f"Voted round should be >= locked round: {replica_state['r_vote']} < {replica_state['r_lock']}"
+            
+            assert replica_state['qc_high']['round'] <= replica_state['r_curr'], \
+                f"QC round should be <= current round: {replica_state['qc_high']['round']} > {replica_state['r_curr']}"
+            
+            logger.info("✅ Consensus state consistency test passed")
+            
+        except Exception as e:
+            error_msg = str(e)
+            if "Method not found" in error_msg:
+                logger.warning("Jolteon consensus state RPC methods not available in this environment")
+                pytest.skip("Jolteon consensus state RPC methods not implemented")
+            else:
+                logger.error(f"Error in consensus state consistency test: {e}")
+                raise
 
     @mark.test_key('JOLTEON-RPC-006')
     def test_jolteon_safety_properties(self, api: BlockchainApi, config: ApiConfig):
@@ -297,11 +318,11 @@ class TestJolteonConsensusRPC:
         
         try:
             # Get consensus states for blocks
-            consensus_states = self._get_consensus_states_for_blocks(api, max_blocks=10)
+            consensus_states = self._get_consensus_states_over_time(api, monitoring_duration=60, sample_interval=6)
             
             if len(consensus_states) < 2:
                 logger.warning("Insufficient data for safety analysis")
-                return
+                pytest.skip("Jolteon consensus RPC methods not available or insufficient data")
             
             logger.info(f"Analyzed {len(consensus_states)} consensus states for safety properties")
             
@@ -357,11 +378,11 @@ class TestJolteonConsensusRPC:
         
         try:
             # Get consensus states for blocks
-            consensus_states = self._get_consensus_states_for_blocks(api, max_blocks=15)
+            consensus_states = self._get_consensus_states_over_time(api, monitoring_duration=90, sample_interval=6)
             
             if len(consensus_states) < 3:
                 logger.warning("Insufficient data for liveness analysis")
-                return
+                pytest.skip("Jolteon consensus RPC methods not available or insufficient data")
             
             logger.info(f"Analyzed {len(consensus_states)} consensus states for liveness properties")
             

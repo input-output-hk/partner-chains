@@ -29,8 +29,10 @@ class TestJolteonSimpleDebug:
             logger.error(f"Error getting block: {e}")
             raise
         
-        # Always pass this test as it's exploratory
-        assert True, "Raw block dump completed"
+        # Test should fail if we couldn't get block data
+        assert block_info is not None, "Failed to retrieve block data"
+        assert isinstance(block_info, dict), "Block data should be a dictionary"
+        assert 'header' in block_info, "Block data missing header"
 
     @mark.test_key('JOLTEON-SIMPLE-DEBUG-002')
     def test_header_only_dump(self, api: BlockchainApi, config: ApiConfig):
@@ -54,8 +56,9 @@ class TestJolteonSimpleDebug:
             logger.error(f"Error getting header: {e}")
             raise
         
-        # Always pass this test as it's exploratory
-        assert True, "Header dump completed"
+        # Test should fail if we couldn't get header data
+        assert block_info is not None, "Failed to retrieve block data"
+        assert 'header' in block_info, "Block data missing header"
 
     @mark.test_key('JOLTEON-SIMPLE-DEBUG-003')
     def test_digest_analysis(self, api: BlockchainApi, config: ApiConfig):
@@ -88,7 +91,9 @@ class TestJolteonSimpleDebug:
             logger.error(f"Error analyzing digest: {e}")
             raise
         
-        # Always pass this test as it's exploratory
-        assert True, "Digest analysis completed"
+        # Test should fail if we couldn't get digest data
+        assert block_info is not None, "Failed to retrieve block data"
+        assert 'header' in block_info, "Block data missing header"
+        assert 'digest' in block_info['header'], "Header missing digest"
 
 

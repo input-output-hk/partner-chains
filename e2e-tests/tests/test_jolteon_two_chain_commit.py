@@ -5,6 +5,7 @@ from config.api_config import ApiConfig
 import logging as logger
 import json
 from time import time
+import pytest
 
 
 class TestJolteonTwoChainCommit:
@@ -192,7 +193,7 @@ class TestJolteonTwoChainCommit:
             
             if len(consensus_states) < 3:
                 logger.warning("Insufficient data for 2-chain analysis")
-                return
+                pytest.skip("Jolteon consensus RPC methods not available or insufficient data")
             
             logger.info(f"Analyzed {len(consensus_states)} consensus state samples over {monitoring_duration}s for 2-chain commit patterns")
             
@@ -277,7 +278,7 @@ class TestJolteonTwoChainCommit:
             
             if len(consensus_states) < 3:
                 logger.warning("Insufficient data for commit latency analysis")
-                return
+                pytest.skip("Jolteon consensus RPC methods not available or insufficient data")
             
             logger.info(f"Analyzed {len(consensus_states)} consensus states for commit latency patterns")
             
@@ -347,7 +348,7 @@ class TestJolteonTwoChainCommit:
             
             if len(consensus_states) < 3:
                 logger.warning("Insufficient data for certification pattern analysis")
-                return
+                pytest.skip("Jolteon consensus RPC methods not available or insufficient data")
             
             logger.info(f"Analyzed {len(consensus_states)} consensus states for certification patterns")
             
