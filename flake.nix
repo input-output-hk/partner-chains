@@ -1,24 +1,24 @@
 {
-  description = "Your devShell environment using flake-utils";
+  description = "Partner Chains";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-
     fenix = {
       url = "github:nix-community/fenix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
     flake-utils.url = "github:numtide/flake-utils";
-
     cardano-node = {
       url = "github:IntersectMBO/cardano-node/10.1.4";
       flake = false;
     };
-
     flake-compat = {
       url = "github:input-output-hk/flake-compat/fixes";
       flake = false;
+    };
+    uv2nix = {
+      url = "github:pyproject-nix/uv2nix";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
@@ -27,6 +27,7 @@
       nixpkgs,
       fenix,
       flake-utils,
+      uv2nix,
       ...
     }:
     flake-utils.lib.eachDefaultSystem (
@@ -40,9 +41,30 @@
           file = ./rust-toolchain.toml;
           sha256 = "SJwZ8g0zF2WrKDVmHrVG3pD2RGoQeo24MEXnNx5FyuI=";
         };
-
         isLinux = pkgs.stdenv.isLinux;
         isDarwin = pkgs.stdenv.isDarwin;
+
+        # Load e2e-tests workspace and create Python environment for it
+        workspace = uv2nix.lib.workspace.loadWorkspace { workspaceRoot = ./e2e-tests; };
+        
+        overlay = workspace.mkPyprojectOverlay {
+          sourcePreference = "wheel";
+        };
+        
+        pythonSet = (pkgs.callPackage uv2nix.inputs.pyproject-nix.build.packages {
+          python = pkgs.python313;
+        }).overrideScope (pkgs.lib.composeManyExtensions [
+          overlay
+          (final: prev: {
+            wheel = prev.wheel or pkgs.python313Packages.wheel;
+            setuptools = prev.setuptools or pkgs.python313Packages.setuptools;
+            pytest-dependency = pkgs.python313Packages.pytest-dependency or prev.pytest-dependency;
+            psycopg2-binary = pkgs.python313Packages.psycopg2;
+          })
+        ]);
+        
+        pythonEnv = pythonSet.mkVirtualEnv "e2e-tests-env" workspace.deps.default;
+
       in
       {
         devShells.default = pkgs.mkShell {
@@ -65,11 +87,12 @@
               patchelf
               pkg-config
               protobuf
-              python312
-              python312Packages.pip
-              python312Packages.virtualenv
+
+              pythonEnv
               rustToolchain
               sops
+              uv
+
               xxd
             ]
             ++ (if isDarwin then [ pkgs.darwin.apple_sdk.frameworks.SystemConfiguration ] else [ pkgs.clang ]);
@@ -84,17 +107,16 @@
                 pkgs.stdenv.cc.cc
               ]
             }"
-
             export OPENSSL_NO_VENDOR=1
             export OPENSSL_DIR="${pkgs.openssl.dev}"
             export OPENSSL_INCLUDE_DIR="${pkgs.openssl.dev}/include"
             export OPENSSL_LIB_DIR="${pkgs.openssl.out}/lib"
-
             export PYTHONNOUSERSITE=1
             export CRATE_CC_NO_DEFAULTS=1
             ${if isLinux then "export CFLAGS=-DJEMALLOC_STRERROR_R_RETURNS_CHAR_WITH_GNU_SOURCE" else ""}
           '';
         };
+
         formatter = pkgs.nixfmt-rfc-style;
       }
     );

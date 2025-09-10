@@ -89,13 +89,35 @@
         "type": "github"
       }
     },
+    "pyproject-nix": {
+      "inputs": {
+        "nixpkgs": [
+          "uv2nix",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1756395552,
+        "narHash": "sha256-5aJM14MpoLk2cdZAetu60OkLQrtFLWTICAyn1EP7ZpM=",
+        "owner": "pyproject-nix",
+        "repo": "pyproject.nix",
+        "rev": "030dffc235dcf240d918c651c78dc5f158067b51",
+        "type": "github"
+      },
+      "original": {
+        "owner": "pyproject-nix",
+        "repo": "pyproject.nix",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "cardano-node": "cardano-node",
         "fenix": "fenix",
         "flake-compat": "flake-compat",
         "flake-utils": "flake-utils",
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": "nixpkgs",
+        "uv2nix": "uv2nix"
       }
     },
     "rust-analyzer-src": {
@@ -127,6 +149,27 @@
       "original": {
         "owner": "nix-systems",
         "repo": "default",
+        "type": "github"
+      }
+    },
+    "uv2nix": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "pyproject-nix": "pyproject-nix"
+      },
+      "locked": {
+        "lastModified": 1756466761,
+        "narHash": "sha256-ALXRHIMXQ4qVNfCbcWykC23MjMwUoHn9BreoBfqmq0Y=",
+        "owner": "pyproject-nix",
+        "repo": "uv2nix",
+        "rev": "0529e6d8227517205afcd1b37eee3088db745730",
+        "type": "github"
+      },
+      "original": {
+        "owner": "pyproject-nix",
+        "repo": "uv2nix",
         "type": "github"
       }
     }
