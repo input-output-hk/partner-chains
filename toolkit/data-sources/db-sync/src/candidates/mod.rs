@@ -4,8 +4,7 @@ use crate::db_model::{
 	self, Address, Asset, BlockNumber, DbSyncConfigurationProvider, EpochNumber, MainchainTxOutput,
 	StakePoolEntry,
 };
-use crate::metrics::McFollowerMetrics;
-use crate::observed_async_trait;
+use crate::metrics::{McFollowerMetrics, observed_async_trait};
 use authority_selection_inherents::*;
 use itertools::Itertools;
 use log::error;

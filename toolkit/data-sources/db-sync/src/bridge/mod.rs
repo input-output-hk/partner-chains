@@ -13,9 +13,8 @@
 
 use crate::McFollowerMetrics;
 use crate::db_model::*;
-use crate::observed_async_trait;
-use partner_chains_plutus_data::bridge::TokenTransferDatum;
-use partner_chains_plutus_data::bridge::TokenTransferDatumV1;
+use crate::metrics::observed_async_trait;
+use partner_chains_plutus_data::bridge::{TokenTransferDatum, TokenTransferDatumV1};
 use sidechain_domain::McBlockHash;
 use sp_partner_chains_bridge::*;
 use sqlx::PgPool;

@@ -1,5 +1,7 @@
 //! Db-Sync data source used by Partner Chain Json RPC
-use crate::{block::BlockDataSourceImpl, metrics::McFollowerMetrics, observed_async_trait};
+use crate::{
+	block::BlockDataSourceImpl, metrics::McFollowerMetrics, metrics::observed_async_trait,
+};
 use pallet_sidechain_rpc::SidechainRpcDataSource;
 use sidechain_domain::MainchainBlock;
 use std::sync::Arc;
