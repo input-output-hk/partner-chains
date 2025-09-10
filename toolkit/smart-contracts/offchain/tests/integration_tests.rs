@@ -36,8 +36,9 @@ use sidechain_domain::{
 	PermissionedCandidateData, PolicyId, SidechainPublicKey, SidechainSignature,
 	StakePoolPublicKey, UtxoId, UtxoIndex, byte_string::ByteString,
 };
+use std::num::NonZero;
 use std::time::Duration;
-use testcontainers::{Container, GenericImage, clients::Cli};
+use testcontainers::{ContainerAsync, GenericImage, runners::AsyncRunner};
 use tokio_retry::{Retry, strategy::FixedInterval};
 
 const TEST_IMAGE: &str = "ghcr.io/input-output-hk/smart-contracts-tests-cardano-node-ogmios";
@@ -94,8 +95,7 @@ const UPDATED_TOTAL_ACCRUED_FUNCTION_SCRIPT_HASH: PolicyId = PolicyId([234u8; 28
 #[tokio::test]
 async fn governance_flow() {
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
-	let cli = Cli::default();
-	let container = cli.run(image);
+	let container = image.start().await.unwrap();
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_governance(&client).await;
 	let _ = run_update_governance(&client, genesis_utxo).await;
@@ -130,8 +130,7 @@ async fn governance_flow() {
 #[tokio::test]
 async fn upsert_d_param() {
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
-	let client = Cli::default();
-	let container = client.run(image);
+	let container = image.start().await.unwrap();
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_governance(&client).await;
 	assert!(
@@ -158,8 +157,7 @@ async fn upsert_d_param() {
 #[tokio::test]
 async fn upsert_permissioned_candidates() {
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
-	let client = Cli::default();
-	let container = client.run(image);
+	let container = image.start().await.unwrap();
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_governance(&client).await;
 	let network = client.shelley_genesis_configuration().await.unwrap().network.to_csl();
@@ -178,13 +176,12 @@ async fn upsert_permissioned_candidates() {
 #[tokio::test]
 async fn reserve_management_scenario() {
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
-	let client = Cli::default();
-	let container = client.run(image);
+	let container = image.start().await.unwrap();
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_governance(&client).await;
 	let _ = run_update_governance(&client, genesis_utxo).await;
 	let results = run_init_reserve_management(genesis_utxo, &client).await;
-	assert_eq!(results.len(), 3);
+	assert_eq!(results.len(), 4);
 	for result in results {
 		run_assemble_and_sign(result, &[EVE_PAYMENT_KEY, GOVERNANCE_AUTHORITY_KEY], &client).await;
 	}
@@ -232,12 +229,11 @@ async fn reserve_management_scenario() {
 #[tokio::test]
 async fn reserve_release_to_zero_scenario() {
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
-	let client = Cli::default();
-	let container = client.run(image);
+	let container = image.start().await.unwrap();
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_governance(&client).await;
 	let txs = run_init_reserve_management(genesis_utxo, &client).await;
-	assert_eq!(txs.len(), 3);
+	assert_eq!(txs.len(), 4);
 	let _ = run_create_reserve_management(genesis_utxo, V_FUNCTION_HASH, &client).await;
 	assert_reserve_deposited(genesis_utxo, INITIAL_DEPOSIT_AMOUNT, &client).await;
 	run_release_reserve_funds(genesis_utxo, INITIAL_DEPOSIT_AMOUNT, V_FUNCTION_UTXO, &client).await;
@@ -250,8 +246,7 @@ async fn reserve_release_to_zero_scenario() {
 #[tokio::test]
 async fn register() {
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
-	let client = Cli::default();
-	let container = client.run(image);
+	let container = image.start().await.unwrap();
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_governance(&client).await;
 	let signature = SidechainSignature([21u8; 33].to_vec());
@@ -265,8 +260,7 @@ async fn register() {
 async fn governed_map_operations() {
 	// Initialize client and container
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
-	let client = Cli::default();
-	let container = client.run(image);
+	let container = image.start().await.unwrap();
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_governance(&client).await;
 	let await_tx = FixedDelayRetries::new(Duration::from_millis(500), 100);
@@ -356,8 +350,7 @@ async fn governed_map_operations() {
 async fn governed_map_update() {
 	// Initialize client and container
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
-	let client = Cli::default();
-	let container = client.run(image);
+	let container = image.start().await.unwrap();
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_governance(&client).await;
 	let await_tx = FixedDelayRetries::new(Duration::from_millis(500), 100);
@@ -405,8 +398,7 @@ async fn governed_map_update() {
 #[tokio::test]
 async fn governance_action_can_be_initiated_by_non_governance() {
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
-	let client = Cli::default();
-	let container = client.run(image);
+	let container = image.start().await.unwrap();
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_governance(&client).await;
 	let tx_to_sign = run_upsert_d_param(genesis_utxo, 1, 1, &eve_payment_key(), &client)
@@ -415,8 +407,8 @@ async fn governance_action_can_be_initiated_by_non_governance() {
 	run_assemble_and_sign(tx_to_sign, &[GOVERNANCE_AUTHORITY_KEY], &client).await;
 }
 
-async fn initialize<'a>(container: &Container<'a, GenericImage>) -> OgmiosClients {
-	let ogmios_port = container.get_host_port_ipv4(1337);
+async fn initialize<'a>(container: &ContainerAsync<GenericImage>) -> OgmiosClients {
+	let ogmios_port = container.get_host_port_ipv4(1337).await.unwrap();
 	println!("Ogmios port: {}", ogmios_port);
 
 	let client = await_ogmios(ogmios_port).await.unwrap();
@@ -587,6 +579,7 @@ async fn run_create_reserve_management<
 				asset_name: AssetName::from_hex_unsafe(REWARDS_TOKEN_ASSET_NAME_STR),
 			},
 			initial_deposit: INITIAL_DEPOSIT_AMOUNT,
+			ics_initial_utxos_amount: NonZero::new(100).unwrap(),
 		},
 		genesis_utxo,
 		&governance_authority_payment_key(),

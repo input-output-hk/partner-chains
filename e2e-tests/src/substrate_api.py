@@ -47,32 +47,32 @@ class SubstrateApi(BlockchainApi):
         substrate_url = config.nodes_config.node.url
         
         # Handle different URL schemes and convert to appropriate WebSocket scheme
-        if substrate_url.startswith('https://'):
-            # HTTPS to WSS
-            substrate_url = substrate_url.replace('https://', 'wss://')
-            if not substrate_url.endswith('/ws'):
-                substrate_url += '/ws'
-        elif substrate_url.startswith('http://'):
-            # HTTP to WS
-            substrate_url = substrate_url.replace('http://', 'ws://')
-            if not substrate_url.endswith('/ws'):
-                substrate_url += '/ws'
-        elif substrate_url.startswith('ws://'):
-            # Plain WS - check if port suggests HTTPS (443) and upgrade to WSS
-            if ':443' in substrate_url:
-                substrate_url = substrate_url.replace('ws://', 'wss://')
-            if not substrate_url.endswith('/ws'):
-                substrate_url += '/ws'
-        elif substrate_url.startswith('wss://'):
-            # Already WSS, just ensure /ws path
-            if not substrate_url.endswith('/ws'):
-                substrate_url += '/ws'
-        else:
-            # No protocol specified, assume secure WebSocket for port 443, otherwise plain WS
-            if ':443' in substrate_url or substrate_url.endswith(':443'):
-                substrate_url = f'wss://{substrate_url}/ws'
-            else:
-                substrate_url = f'ws://{substrate_url}/ws'
+        def ensure_ws_path(url: str) -> str:
+            """Ensure the URL ends with /ws path"""
+            return url if url.endswith('/ws') else f"{url}/ws"
+        
+        match substrate_url.split('://', 1):
+            case ['https', rest]:
+                # HTTPS to WSS
+                substrate_url = ensure_ws_path(f'wss://{rest}')
+            case ['http', rest]:
+                # HTTP to WS
+                substrate_url = ensure_ws_path(f'ws://{rest}')
+            case ['ws', rest]:
+                # Plain WS - check if port suggests HTTPS (443) and upgrade to WSS
+                if ':443' in rest:
+                    substrate_url = ensure_ws_path(f'wss://{rest}')
+                else:
+                    substrate_url = ensure_ws_path(f'ws://{rest}')
+            case ['wss', rest]:
+                # Already WSS, just ensure /ws path
+                substrate_url = ensure_ws_path(f'wss://{rest}')
+            case _:
+                # No protocol specified, assume secure WebSocket for port 443, otherwise plain WS
+                if ':443' in substrate_url or substrate_url.endswith(':443'):
+                    substrate_url = f'wss://{substrate_url}/ws'
+                else:
+                    substrate_url = f'ws://{substrate_url}/ws'
         
         self.url = substrate_url
         logger.info(f"Substrate WebSocket URL: {self.url}")

@@ -14,6 +14,7 @@
 //! * a script reference input of the current Goveranance UTXO
 //! * signature of the current goveranance
 
+use crate::plutus_script;
 use crate::{
 	await_tx::AwaitTx,
 	cardano_keys::CardanoPaymentSigningKey,
@@ -38,7 +39,8 @@ use ogmios_client::{
 };
 use partner_chains_plutus_data::version_oracle::VersionOracleDatum;
 use raw_scripts::{
-	ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR, RESERVE_AUTH_POLICY, RESERVE_VALIDATOR, ScriptId,
+	ILLIQUID_CIRCULATION_SUPPLY_AUTHORITY_TOKEN_POLICY, ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR,
+	RESERVE_AUTH_POLICY, RESERVE_VALIDATOR, ScriptId,
 };
 use sidechain_domain::UtxoId;
 
@@ -71,10 +73,23 @@ pub async fn init_reserve_management<
 		ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR.0.to_vec(),
 		ScriptId::IlliquidCirculationSupplyValidator,
 	);
+	let ics_auth_token_policy = ScriptData::new(
+		"Illiquid Circulation Supply Auth Token Policy",
+		plutus_script![
+			ILLIQUID_CIRCULATION_SUPPLY_AUTHORITY_TOKEN_POLICY,
+			ScriptId::IlliquidCirculationSupplyAuthorityTokenPolicy
+		]?
+		.bytes
+		.to_vec(),
+		ScriptId::IlliquidCirculationSupplyAuthorityTokenPolicy,
+	);
+
 	Ok(vec![
 		initialize_script(reserve_validator, genesis_utxo, payment_key, client, await_tx).await?,
 		initialize_script(reserve_policy, genesis_utxo, payment_key, client, await_tx).await?,
 		initialize_script(ics_validator, genesis_utxo, payment_key, client, await_tx).await?,
+		initialize_script(ics_auth_token_policy, genesis_utxo, payment_key, client, await_tx)
+			.await?,
 	]
 	.into_iter()
 	.flatten()

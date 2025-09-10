@@ -29,6 +29,7 @@ sidechain-mc-hash = { workspace = true, optional = true }
 sp-block-participation = { workspace = true, optional = true }
 pallet-sidechain-rpc = { workspace = true, optional = true }
 authority-selection-inherents = { workspace = true, optional = true }
+sp-partner-chains-bridge = { workspace = true, optional = true }
 
 [features]
 default = ["std", "block-source", "candidate-source", "governed-map", "native-token"]
@@ -48,3 +49,4 @@ native-token = ["sp-native-token-management"]
 mc-hash = ["sidechain-mc-hash"]
 sidechain-rpc = ["pallet-sidechain-rpc"]
 block-participation = ["sp-block-participation"]
+bridge = ["sp-partner-chains-bridge"]

@@ -6,7 +6,8 @@ use crate::{
 };
 use anyhow::anyhow;
 use cardano_serialization_lib::{
-	ExUnits, JsError, PlutusScriptSource, PlutusWitness, Redeemer, RedeemerTag, TxInputsBuilder,
+	BigInt, ExUnits, JsError, PlutusData, PlutusScriptSource, PlutusWitness, Redeemer, RedeemerTag,
+	TxInputsBuilder,
 };
 use init::find_script_utxo;
 use ogmios_client::{query_ledger_state::QueryLedgerState, types::OgmiosUtxo};
@@ -26,6 +27,7 @@ pub(crate) struct ReserveData {
 	pub(crate) auth_policy_version_utxo: OgmiosUtxo,
 	pub(crate) validator_version_utxo: OgmiosUtxo,
 	pub(crate) illiquid_circulation_supply_validator_version_utxo: OgmiosUtxo,
+	pub(crate) illiquid_circulation_supply_authority_token_policy_version_utxo: OgmiosUtxo,
 }
 
 #[derive(Clone, Debug)]
@@ -75,12 +77,23 @@ impl ReserveData {
 		.ok_or_else(|| {
 			anyhow!("Illiquid Circulation Supply Validator Version Utxo not found, is the Reserve Token Management initialized?")
 		})?;
+		let illiquid_circulation_supply_authority_token_policy_version_utxo = find_script_utxo(
+			raw_scripts::ScriptId::IlliquidCirculationSupplyAuthorityTokenPolicy as u32,
+			&version_oracle,
+			ctx,
+			client,
+		)
+		.await?
+		.ok_or_else(|| {
+			anyhow!("Illiquid Circulation Supply Authority Token Policy Version Utxo not found, is the Reserve Token Management initialized?")
+		})?;
 		let scripts = scripts_data::reserve_scripts(genesis_utxo, ctx.network)?;
 		Ok(ReserveData {
 			scripts,
 			auth_policy_version_utxo,
 			validator_version_utxo,
 			illiquid_circulation_supply_validator_version_utxo,
+			illiquid_circulation_supply_authority_token_policy_version_utxo,
 		})
 	}
 
@@ -113,6 +126,33 @@ impl ReserveData {
 
 		Ok(ReserveUtxo { utxo: reserve_utxo, datum: reserve_settings })
 	}
+
+	pub(crate) async fn get_illiquid_circulation_supply_utxo<T: QueryLedgerState>(
+		&self,
+		ctx: &TransactionContext,
+		client: &T,
+	) -> Result<OgmiosUtxo, anyhow::Error> {
+		let validator_address = self
+			.scripts
+			.illiquid_circulation_supply_validator
+			.address(ctx.network)
+			.to_bech32(None)?;
+		let validator_utxos = client.query_utxos(&[validator_address]).await?;
+
+		let auth_token_asset_id = AssetId {
+			policy_id: self.scripts.illiquid_circulation_supply_auth_token_policy.policy_id(),
+			asset_name: AssetName::empty(),
+		};
+
+		let ics_utxo = validator_utxos
+			.into_iter()
+			.find(|utxo| utxo.get_asset_amount(&auth_token_asset_id) == 1u64)
+			.ok_or_else(|| {
+				anyhow!("Could not find any UTXO with ICS Auth token at ICS Validator, is the Reserve Token Management initialized?")
+			})?;
+
+		Ok(ics_utxo.clone())
+	}
 }
 
 pub(crate) struct TokenAmount {
@@ -127,6 +167,23 @@ pub(crate) fn reserve_utxo_input_with_validator_script_reference(
 	cost: &ExUnits,
 ) -> Result<TxInputsBuilder, JsError> {
 	let mut inputs = TxInputsBuilder::new();
+	add_reserve_utxo_input_with_validator_script_reference(
+		&mut inputs,
+		reserve_utxo,
+		reserve,
+		redeemer,
+		cost,
+	)?;
+	Ok(inputs)
+}
+
+pub(crate) fn add_reserve_utxo_input_with_validator_script_reference(
+	inputs: &mut TxInputsBuilder,
+	reserve_utxo: &OgmiosUtxo,
+	reserve: &ReserveData,
+	redeemer: ReserveRedeemer,
+	cost: &ExUnits,
+) -> Result<(), JsError> {
 	let input = reserve_utxo.to_csl_tx_input();
 	let amount = reserve_utxo.value.to_csl()?;
 	let script = &reserve.scripts.validator;
@@ -140,5 +197,32 @@ pub(crate) fn reserve_utxo_input_with_validator_script_reference(
 		&Redeemer::new(&RedeemerTag::new_spend(), &0u32.into(), &redeemer.into(), cost),
 	);
 	inputs.add_plutus_script_input(&witness, &input, &amount);
-	Ok(inputs)
+	Ok(())
+}
+
+pub(crate) fn add_ics_utxo_input_with_validator_script_reference(
+	inputs: &mut TxInputsBuilder,
+	ics_utxo: &OgmiosUtxo,
+	reserve: &ReserveData,
+	cost: &ExUnits,
+) -> Result<(), JsError> {
+	let input = ics_utxo.to_csl_tx_input();
+	let amount = ics_utxo.value.to_csl()?;
+	let script = &reserve.scripts.illiquid_circulation_supply_validator;
+	let witness = PlutusWitness::new_with_ref_without_datum(
+		&PlutusScriptSource::new_ref_input(
+			&script.csl_script_hash(),
+			&reserve.illiquid_circulation_supply_validator_version_utxo.to_csl_tx_input(),
+			&script.language,
+			script.bytes.len(),
+		),
+		&Redeemer::new(
+			&RedeemerTag::new_spend(),
+			&0u32.into(),
+			&PlutusData::new_integer(&BigInt::zero()),
+			cost,
+		),
+	);
+	inputs.add_plutus_script_input(&witness, &input, &amount);
+	Ok(())
 }

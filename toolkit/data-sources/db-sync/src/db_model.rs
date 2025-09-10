@@ -851,17 +851,19 @@ pub(crate) async fn get_native_token_transfers(
 	let query = sqlx::query_as::<_, BlockTokenAmount>(
 		"
 SELECT
-    block.hash as block_hash, COALESCE(SUM(ma_tx_out.quantity), 0) as amount
+	block.hash as block_hash, COALESCE(a.amount, 0) as amount
 FROM block
-    LEFT JOIN tx ON block.id = tx.block_id
-    LEFT JOIN tx_out ON tx.id = tx_out.tx_id AND tx_out.address = $1
-    LEFT JOIN ma_tx_out    ON ma_tx_out.tx_out_id = tx_out.id
-    LEFT JOIN multi_asset  ON multi_asset.id = ma_tx_out.ident AND multi_asset.policy = $2 AND multi_asset.name = $3
-WHERE
-    $4 <= block.block_no AND block.block_no <= $5
-GROUP BY block.block_no, block.hash
-ORDER BY block.block_no ASC;
-    ",
+	LEFT JOIN (SELECT tx.block_id as block_id, SUM(ma_tx_out.quantity) as amount FROM tx
+		INNER JOIN tx_out ON tx.id = tx_out.tx_id AND tx_out.address = $1
+		INNER JOIN ma_tx_out    ON ma_tx_out.tx_out_id = tx_out.id
+		INNER JOIN multi_asset  ON multi_asset.id = ma_tx_out.ident
+		WHERE multi_asset.policy = $2 AND multi_asset.name = $3
+		GROUP BY tx.block_id
+		) as a ON block.id = a.block_id
+	WHERE
+		$4 <= block.block_no AND block.block_no <= $5
+	ORDER BY block.block_no ASC;
+",
 	)
 	.bind(&illiquid_supply_address.0)
 	.bind(&asset.policy_id.0)
@@ -874,9 +876,9 @@ ORDER BY block.block_no ASC;
 
 #[cfg(test)]
 mod tests {
+	use super::*;
+	use hex_literal::hex;
 	use sqlx::PgPool;
-
-	use super::TxInConfiguration;
 
 	#[sqlx::test(migrations = "./testdata/migrations-tx-in-enabled")]
 	async fn tx_in_configuration_is_enabled_if_tx_in_table_exists(pool: PgPool) {
@@ -891,4 +893,216 @@ mod tests {
 
 		assert_eq!(tx_in_config, TxInConfiguration::Consumed)
 	}
+
+	#[sqlx::test(migrations = "./testdata/migrations-tx-in-consumed")]
+	async fn get_block_info_for_utxo_works(pool: PgPool) {
+		// utxo 1 of `consumed_tx_id` in test migration
+		let utxo = UtxoId::new(
+			hex!("cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13"),
+			1,
+		);
+
+		let result = get_block_info_for_utxo(&pool, utxo.tx_hash.into())
+			.await
+			.expect("Should succeed")
+			.expect("Should find data");
+
+		assert_eq!(result, TxBlockInfo { block_number: BlockNumber(0), tx_ix: TxIndexInBlock(0) });
+	}
+}
+
+#[cfg(feature = "bridge")]
+#[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
+pub(crate) struct BridgeUtxo {
+	pub(crate) block_number: BlockNumber,
+	pub(crate) tx_ix: TxIndexInBlock,
+	pub(crate) tx_hash: TxHash,
+	pub(crate) utxo_ix: TxIndex,
+	pub(crate) tokens_out: NativeTokenAmount,
+	pub(crate) tokens_in: NativeTokenAmount,
+	pub(crate) datum: DbDatum,
+}
+#[cfg(feature = "bridge")]
+impl BridgeUtxo {
+	pub fn utxo_id(&self) -> UtxoId {
+		UtxoId { tx_hash: self.tx_hash.into(), index: self.utxo_ix.clone().into() }
+	}
+}
+
+#[cfg(feature = "bridge")]
+pub(crate) enum BridgeCheckpoint {
+	Utxo { block_number: u32, tx_ix: u32, tx_out_ix: u16 },
+	Block { number: u32 },
+}
+
+#[cfg(feature = "bridge")]
+pub(crate) async fn get_bridge_utxos_tx(
+	tx_in_configuration: TxInConfiguration,
+	pool: &Pool<Postgres>,
+	icp_addr: &Address,
+	asset: Asset,
+	checkpoint: BridgeCheckpoint,
+	to_block: BlockNumber,
+	max_utxos: u32,
+) -> Result<Vec<BridgeUtxo>, SqlxError> {
+	match tx_in_configuration {
+		TxInConfiguration::Consumed => {
+			get_bridge_utxos_tx_in_consumed(pool, icp_addr, asset, checkpoint, to_block, max_utxos)
+				.await
+		},
+		TxInConfiguration::Enabled => {
+			get_bridge_utxos_tx_in_enabled(pool, icp_addr, asset, checkpoint, to_block, max_utxos)
+				.await
+		},
+	}
+}
+
+#[cfg(feature = "bridge")]
+#[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
+pub(crate) struct TxBlockInfo {
+	pub(crate) block_number: BlockNumber,
+	pub(crate) tx_ix: TxIndexInBlock,
+}
+
+#[cfg(feature = "bridge")]
+pub(crate) async fn get_block_info_for_utxo(
+	pool: &Pool<Postgres>,
+	tx_hash: TxHash,
+) -> Result<Option<TxBlockInfo>, SqlxError> {
+	let query = sqlx::query_as::<_, TxBlockInfo>(
+		"
+SELECT
+	block.block_no AS block_number,
+	tx.block_index AS tx_ix
+FROM tx
+JOIN block  ON block.id = tx.block_id
+WHERE tx.hash = $1
+;
+",
+	)
+	.bind(tx_hash);
+
+	Ok(query.fetch_optional(pool).await?)
+}
+
+#[cfg(feature = "bridge")]
+async fn get_bridge_utxos_tx_in_consumed(
+	pool: &Pool<Postgres>,
+	icp_address: &Address,
+	native_token: Asset,
+	checkpoint: BridgeCheckpoint,
+	to_block: BlockNumber,
+	max_utxos: u32,
+) -> Result<Vec<BridgeUtxo>, SqlxError> {
+	use sqlx::QueryBuilder;
+	let mut query_builder = QueryBuilder::new("
+	SELECT
+	      block.block_no                          AS block_number
+	    , tx.block_index                          AS tx_ix
+	    , tx.hash                                 AS tx_hash
+	    , outputs.index                           AS utxo_ix
+	    , output_tokens.quantity                  AS tokens_out
+	    , coalesce(sum(input_tokens.quantity), 0) AS tokens_in
+	    , datum.value                             AS datum
+
+	FROM tx_out      outputs
+	JOIN tx                        ON outputs.tx_id = tx.id
+	JOIN block                     ON tx.block_id = block.id
+	JOIN ma_tx_out   output_tokens ON output_tokens.tx_out_id = outputs.id
+	JOIN multi_asset native_token  ON native_token.id = output_tokens.ident
+	JOIN datum                     ON datum.tx_id = tx.id
+
+	LEFT JOIN tx_out     inputs        ON inputs.consumed_by_tx_id = tx.id   AND inputs.address = $1
+	LEFT JOIN ma_tx_out  input_tokens  ON input_tokens.tx_out_id = inputs.id AND input_tokens.ident = native_token.id
+
+	WHERE native_token.policy = $2
+	  AND native_token.name = $3
+	  AND outputs.address = $1
+	  AND block_no <= $4
+	");
+
+	match checkpoint {
+		BridgeCheckpoint::Block { number } => {
+			query_builder.push(&format!("AND block_no > {number} "));
+		},
+		BridgeCheckpoint::Utxo { block_number, tx_ix, tx_out_ix } => {
+			query_builder.push(&format!(
+				"AND (block_no, tx.block_index, outputs.index) > ({block_number}, {tx_ix}, {tx_out_ix}) "
+			));
+		},
+	}
+
+	let query = query_builder
+		.push("GROUP BY tx.hash, outputs.id, output_tokens.quantity, datum.value, block.block_no, tx.block_index, outputs.index ")
+		.push("ORDER BY block.block_no, tx.block_index, outputs.index ")
+		.push(&format!("LIMIT {max_utxos};"))
+		.build_query_as::<BridgeUtxo>()
+		.bind(&icp_address.0)
+		.bind(&native_token.policy_id.0)
+		.bind(&native_token.asset_name.0)
+		.bind(to_block);
+
+	Ok(query.fetch_all(pool).await?)
+}
+
+#[cfg(feature = "bridge")]
+async fn get_bridge_utxos_tx_in_enabled(
+	pool: &Pool<Postgres>,
+	icp_address: &Address,
+	native_token: Asset,
+	checkpoint: BridgeCheckpoint,
+	to_block: BlockNumber,
+	max_utxos: u32,
+) -> Result<Vec<BridgeUtxo>, SqlxError> {
+	use sqlx::QueryBuilder;
+
+	let mut query_builder = QueryBuilder::new("
+	SELECT
+		block.block_no                          AS block_number
+		, tx.block_index                          AS tx_ix
+		, tx.hash                                 AS tx_hash
+		, outputs.index                           AS utxo_ix
+		, output_tokens.quantity                  AS tokens_out
+		, coalesce(sum(input_tokens.quantity), 0) AS tokens_in
+		, datum.value                             AS datum
+
+	FROM tx_out      outputs
+	JOIN tx                        ON outputs.tx_id = tx.id
+	JOIN block                     ON tx.block_id = block.id
+	JOIN ma_tx_out   output_tokens ON output_tokens.tx_out_id = outputs.id
+	JOIN multi_asset native_token  ON native_token.id = output_tokens.ident
+	JOIN datum                     ON datum.tx_id = tx.id
+
+	LEFT JOIN tx_in      inputs_join   ON tx.id = inputs_join.tx_in_id
+	LEFT JOIN tx_out     inputs        ON inputs_join.tx_out_id = inputs.tx_id and inputs_join.tx_out_index = inputs.index AND inputs.address = $1
+	LEFT JOIN ma_tx_out  input_tokens  ON input_tokens.tx_out_id = inputs.id AND input_tokens.ident = native_token.id
+
+	WHERE native_token.policy = $2
+      AND native_token.name = $3
+      AND outputs.address = $1
+      AND block_no <= $4
+	");
+
+	match checkpoint {
+		BridgeCheckpoint::Block { number } => {
+			query_builder.push(&format!("AND block_no > {number} "));
+		},
+		BridgeCheckpoint::Utxo { block_number, tx_ix, tx_out_ix } => {
+			query_builder.push(&format!(
+				"AND (block_no, tx.block_index, outputs.index) > ({block_number}, {tx_ix}, {tx_out_ix}) "
+			));
+		},
+	}
+
+	let query = query_builder
+		.push("GROUP BY tx.hash, outputs.id, output_tokens.quantity, datum.value, block.block_no, tx.block_index, outputs.index ")
+		.push("ORDER BY block.block_no, tx.block_index, outputs.index ")
+		.push(&format!("LIMIT {max_utxos};"))
+		.build_query_as::<BridgeUtxo>()
+		.bind(&icp_address.0)
+		.bind(&native_token.policy_id.0)
+		.bind(&native_token.asset_name.0)
+		.bind(to_block);
+
+	Ok(query.fetch_all(pool).await?)
 }
