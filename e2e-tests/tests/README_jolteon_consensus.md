@@ -37,6 +37,58 @@ This directory contains test cases for the Jolteon consensus protocol implementa
 - Monitors block production rate and round advancement
 - **Complexity**: Medium - requires extended monitoring
 
+### 3. RPC-Based Consensus Tests (`test_jolteon_consensus_rpc.py`)
+**Test Key: JOLTEON-RPC-001** - Replica State Retrieval
+- Tests custom Jolteon RPC endpoints
+- Verifies consensus state accessibility
+- **Complexity**: Low - uses dedicated RPC methods
+
+**Test Key: JOLTEON-RPC-002** - Round Progression
+- Monitors round advancement via RPC
+- Verifies consensus progress over time
+- **Complexity**: Low - direct RPC monitoring
+
+**Test Key: JOLTEON-RPC-003** - Quorum Certificate Formation
+- Tests QC formation and progression
+- Verifies vote counting and certification
+- **Complexity**: Medium - QC-specific analysis
+
+**Test Key: JOLTEON-RPC-004** - Timeout Certificate Handling
+- Tests TC formation and view changes
+- Verifies fault tolerance mechanisms
+- **Complexity**: Medium - fault tolerance testing
+
+**Test Key: JOLTEON-RPC-005** - Consensus State Consistency
+- Verifies consistency between RPC endpoints
+- Tests data integrity across methods
+- **Complexity**: Low - consistency validation
+
+**Test Key: JOLTEON-RPC-006** - Safety Properties
+- Tests fundamental safety guarantees
+- Monitors round monotonicity and QC progression
+- **Complexity**: Medium - safety verification
+
+**Test Key: JOLTEON-RPC-007** - Liveness Properties
+- Tests system progress and liveness
+- Monitors continuous advancement
+- **Complexity**: Medium - liveness verification
+
+### 4. 2-Chain Commit Rule Tests (`test_jolteon_two_chain_commit.py`)
+**Test Key: JOLTEON-2CHAIN-001** - 2-Chain Commit Rule Verification
+- Tests Jolteon's core differentiation from HotStuff
+- Verifies commit patterns with consecutive QCs
+- **Complexity**: High - protocol-specific analysis
+
+**Test Key: JOLTEON-2CHAIN-002** - Commit Latency Measurement
+- Measures commit latency improvements
+- Compares to 3-chain HotStuff performance
+- **Complexity**: High - performance analysis
+
+**Test Key: JOLTEON-2CHAIN-003** - Consecutive Certification Patterns
+- Tests for consecutive certification patterns
+- Verifies 2-chain commit prerequisites
+- **Complexity**: Medium - pattern analysis
+
 ## Running the Tests
 
 ### Prerequisites
@@ -55,6 +107,12 @@ pytest tests/test_jolteon_consensus.py
 # Run only advanced consensus tests
 pytest tests/test_jolteon_advanced.py
 
+# Run RPC-based consensus tests
+pytest tests/test_jolteon_consensus_rpc.py
+
+# Run 2-chain commit rule tests
+pytest tests/test_jolteon_two_chain_commit.py
+
 # Run specific test by key
 pytest tests/ -k "JOLTEON-001"
 ```
@@ -67,6 +125,7 @@ pytest tests/ -m jolteon --env jolteon_docker
 # With specific blockchain type
 pytest tests/ -m jolteon --blockchain substrate
 ```
+
 
 ## Understanding the Tests
 

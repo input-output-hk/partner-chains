@@ -1,5 +1,6 @@
 from time import sleep, time
 from pytest import mark
+import pytest
 from src.blockchain_api import BlockchainApi, Wallet
 from config.api_config import ApiConfig
 import logging as logger
@@ -89,8 +90,8 @@ class TestJolteonConsensus:
             logger.info(f"✅ Consensus authorities test passed: {len(authorities)} authorities found")
             
         except Exception as e:
-            logger.warning(f"Could not retrieve authorities (may not be implemented yet): {e}")
-            # This is not a failure - the test infrastructure might not support this yet
+            logger.warning(f"Could not retrieve authorities: {e}")
+            pytest.skip(f"Authority rotation test skipped: {e}")
 
     def _extract_round_number(self, block_info):
         """Extract round number from block info if available
@@ -170,11 +171,9 @@ class TestJolteonConsensus:
             if 'stateRoot' in header:
                 logger.info(f"State root: {header['stateRoot']}")
         
-        # This test is informational - we're learning about the block structure
+        # This test should verify consensus metadata is available
         if has_consensus_info:
             logger.info("✅ Found consensus-related information in block")
         else:
-            logger.info("ℹ️  No obvious consensus metadata found - this may be normal for this implementation")
-        
-        # Always pass this test as it's exploratory
-        assert True, "Metadata availability test completed"
+            logger.warning("No consensus metadata found in block structure")
+            pytest.skip("Consensus metadata test skipped: no consensus information found in block structure")
