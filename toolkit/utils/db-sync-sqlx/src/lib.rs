@@ -11,6 +11,7 @@
 //! [sqlx]: https://github.com/launchbadge/sqlx
 //! [Db-Sync]: https://github.com/IntersectMBO/cardano-db-sync
 //! [Db-Sync schema]: https://github.com/IntersectMBO/cardano-db-sync/blob/master/doc/schema.md
+
 use num_traits::ToPrimitive;
 use sidechain_domain::*;
 use sqlx::database::Database;
@@ -109,6 +110,43 @@ sqlx_implementations_for_wrapper!(i16, "INT2", TxIndex, UtxoIndex);
 #[derive(Debug, Clone, Copy, PartialOrd, Ord, PartialEq, Eq)]
 pub struct TxIndexInBlock(pub u32);
 sqlx_implementations_for_wrapper!(i32, "INT4", TxIndexInBlock, McTxIndexInBlock);
+
+#[derive(Debug, Clone, Copy, PartialOrd, Ord, PartialEq, Eq)]
+pub struct TxHash(pub [u8; 32]);
+
+impl sqlx::Type<Postgres> for TxHash {
+	fn type_info() -> <Postgres as sqlx::Database>::TypeInfo {
+		PgTypeInfo::with_name("bytea")
+	}
+}
+
+impl<'r> Decode<'r, Postgres> for TxHash {
+	fn decode(value: <Postgres as Database>::ValueRef<'r>) -> Result<Self, BoxDynError> {
+		let decoded = <[u8; 32]>::decode(value)?;
+		Ok(Self(decoded))
+	}
+}
+
+impl<'r> Encode<'r, Postgres> for TxHash {
+	fn encode_by_ref(
+		&self,
+		buf: &mut <Postgres as Database>::ArgumentBuffer<'r>,
+	) -> std::result::Result<IsNull, BoxDynError> {
+		buf.extend(self.0.iter());
+		Ok(IsNull::No)
+	}
+}
+
+impl From<TxHash> for McTxHash {
+	fn from(hash: TxHash) -> Self {
+		Self(hash.0)
+	}
+}
+impl From<McTxHash> for TxHash {
+	fn from(hash: McTxHash) -> Self {
+		Self(hash.0)
+	}
+}
 
 /// Number of ADA expressed in Lovelace (1 million-th of ADA)
 ///

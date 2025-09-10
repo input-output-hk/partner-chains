@@ -129,6 +129,30 @@ pub struct MainChainScriptsV1 {
 	pub asset_policy_id: PolicyId,
 }
 
+#[cfg(feature = "std")]
+impl MainChainScriptsV1 {
+	/// Reads the main chain script values from environment
+	///
+	/// It expects the following variables to be set:
+	/// - `GOVERNED_MAP_VALIDATOR_ADDRESS`
+	/// - `GOVERNED_MAP_POLICY_ID`
+	pub fn read_from_env() -> Result<Self, envy::Error> {
+		#[derive(serde::Serialize, serde::Deserialize)]
+		pub struct MainChainScriptsEnvConfig {
+			pub governed_map_validator_address: MainchainAddress,
+			pub governed_map_policy_id: PolicyId,
+		}
+
+		let MainChainScriptsEnvConfig { governed_map_validator_address, governed_map_policy_id } =
+			envy::from_env::<MainChainScriptsEnvConfig>()?;
+
+		Ok(Self {
+			validator_address: governed_map_validator_address,
+			asset_policy_id: governed_map_policy_id,
+		})
+	}
+}
+
 /// Error type returned when creating or validating the Governed Map inherent
 #[derive(Decode, Encode, Debug, PartialEq)]
 #[cfg_attr(feature = "std", derive(thiserror::Error))]

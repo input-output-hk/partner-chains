@@ -20,9 +20,12 @@ fn pc_create_chain_spec_test() {
 		committee_candidate_address: MainchainAddress::from_str("addr_cca").unwrap(),
 		d_parameter_policy_id: PolicyId([2u8; 28]),
 		permissioned_candidates_policy_id: PolicyId([3u8; 28]),
-		native_token_policy: PolicyId([4u8; 28]),
-		native_token_asset_name: AssetName(vec![4, 4, 4].try_into().unwrap()),
-		illiquid_supply_address: MainchainAddress::from_str("addr_nativetokenisc").unwrap(),
+		bridge_token_policy: PolicyId([4u8; 28]),
+		bridge_token_asset_name: AssetName(vec![4, 4, 4].try_into().unwrap()),
+		illiquid_circulation_supply_validator_address: MainchainAddress::from_str(
+			"addr_nativetokenisc",
+		)
+		.unwrap(),
 		governed_map_validator_address: Some(MainchainAddress::from_str("addr_govmap").unwrap()),
 		governed_map_asset_policy_id: Some(PolicyId([5u8; 28])),
 	};
@@ -49,6 +52,18 @@ fn pc_create_chain_spec_test() {
 			"native_token_policy_id": "0x04040404040404040404040404040404040404040404040404040404",
 			"native_token_asset_name": "0x040404",
 			"illiquid_supply_validator_address": "addr_nativetokenisc"
+		  },
+		  "marker": null
+		})
+	);
+
+	assert_eq!(
+		config_obj.get("bridge").unwrap(),
+		&serde_json::json!({
+		  "mainChainScripts": {
+			"token_policy_id": "0x04040404040404040404040404040404040404040404040404040404",
+			"token_asset_name": "0x040404",
+			"illiquid_circulation_supply_validator_address": "addr_nativetokenisc"
 		  },
 		  "marker": null
 		})

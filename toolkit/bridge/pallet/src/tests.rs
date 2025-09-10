@@ -24,12 +24,15 @@ fn main_chain_scripts() -> MainChainScripts {
 	MainChainScripts {
 		token_policy_id: PolicyId([1; 28]),
 		token_asset_name: AssetName(bounded_vec![2;8]),
-		illiquid_supply_validator_address: MainchainAddress::from_str("validator address").unwrap(),
+		illiquid_circulation_supply_validator_address: MainchainAddress::from_str(
+			"validator address",
+		)
+		.unwrap(),
 	}
 }
 
 fn data_checkpoint() -> BridgeDataCheckpoint {
-	BridgeDataCheckpoint(UtxoId::new([1; 32], 3))
+	BridgeDataCheckpoint::Utxo(UtxoId::new([1; 32], 3))
 }
 
 mod set_main_chain_scripts {

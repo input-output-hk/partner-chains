@@ -8,6 +8,7 @@ version.workspace = true
 
 [dependencies]
 async-trait = { workspace = true }
+envy = { workspace = true, optional = true }
 log = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
@@ -25,6 +26,7 @@ workspace = true
 [features]
 default = ["std"]
 std = [
+	"envy",
 	"sp-inherents/std",
 	"thiserror/std",
     "parity-scale-codec/std",

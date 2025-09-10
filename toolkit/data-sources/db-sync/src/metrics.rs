@@ -63,12 +63,18 @@ pub fn register_metrics_warn_errors(
 /// Works only if return type is Result.
 #[macro_export]
 macro_rules! observed_async_trait {
-	(impl $trait_name:ident for $target_type:ty {
+	(impl $(<$($type_param:tt),+>)? $trait_name:ident $(<$($type_arg:ident),+>)? for $target_type:ty
+		$(where $($where_type:ident : $where_bound:tt ,)+)?
+
+		{
 		$(type $type_name:ident = $type:ty;)*
 		$(async fn $method:ident(&$self:tt $(,$param_name:ident: $param_type:ty)* $(,)?) -> $res:ty $body:block)*
 	})=> {
 		#[async_trait::async_trait]
-		impl $trait_name for $target_type {
+		impl $(<$($type_param),+>)? $trait_name $(<$($type_arg),+>)? for $target_type
+		$(where $($where_type : $where_bound ,)+)?
+
+		{
 		$(type $type_name = $type;)*
 		$(
 			async fn $method(&$self $(,$param_name: $param_type)*,) -> $res {

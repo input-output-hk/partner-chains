@@ -1,9 +1,9 @@
 use super::GetScriptsData;
 use crate::config::ServiceConfig;
 use crate::config::config_fields::{
-	COMMITTEE_CANDIDATES_ADDRESS, D_PARAMETER_POLICY_ID, GOVERNED_MAP_POLICY_ID,
-	GOVERNED_MAP_VALIDATOR_ADDRESS, ILLIQUID_SUPPLY_ADDRESS, INITIAL_PERMISSIONED_CANDIDATES,
-	NATIVE_TOKEN_ASSET_NAME, NATIVE_TOKEN_POLICY, PERMISSIONED_CANDIDATES_POLICY_ID,
+	BRIDGE_TOKEN_ASSET_NAME, BRIDGE_TOKEN_POLICY, COMMITTEE_CANDIDATES_ADDRESS,
+	D_PARAMETER_POLICY_ID, GOVERNED_MAP_POLICY_ID, GOVERNED_MAP_VALIDATOR_ADDRESS,
+	ILLIQUID_SUPPLY_ADDRESS, INITIAL_PERMISSIONED_CANDIDATES, PERMISSIONED_CANDIDATES_POLICY_ID,
 };
 use crate::io::IOContext;
 use crate::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
@@ -23,7 +23,7 @@ pub fn prepare_main_chain_config<C: IOContext>(
 	if INITIAL_PERMISSIONED_CANDIDATES.load_from_file(context).is_none() {
 		INITIAL_PERMISSIONED_CANDIDATES.save_to_file(&vec![], context)
 	}
-	prepare_native_token(context)?;
+	prepare_bridge_token(context)?;
 	context.eprint(OUTRO);
 	Ok(())
 }
@@ -62,35 +62,36 @@ fn set_up_cardano_addresses<C: IOContext>(
 - Committee Candidates Address: {committee_candidate_validator_addr}
 - D Parameter Policy ID: {d_parameter_policy_id}
 - Permissioned Candidates Policy ID: {permissioned_candidates_policy_id}
-- Illiquid Supply Address: {illiquid_supply_addr}
+- Illiquid Circulation Supply Validator Address: {illiquid_supply_addr}
 - Governed Map Validator Address: {governed_map_validator_addr}
 - Governed Map Policy Id: {governed_map_policy_id}"
 	));
 	Ok(())
 }
 
-fn prepare_native_token<C: IOContext>(context: &C) -> anyhow::Result<()> {
+fn prepare_bridge_token<C: IOContext>(context: &C) -> anyhow::Result<()> {
 	context.print(
-		"Partner Chains can store their initial token supply on Cardano as Cardano native tokens.",
+		"Partner Chains can store their initial token supply on Cardano as Cardano bridge tokens.",
 	);
-	context.print("Creation of the native token is not supported by this wizard and must be performed manually before this step.");
-	if context.prompt_yes_no("Do you want to configure a native token for you Partner Chain?", true)
+	context.print("Creation of the bridge tokens is not supported by this wizard and must be performed manually before this step.");
+	if context
+		.prompt_yes_no("Do you want to configure a token bridge for your Partner Chain?", true)
 	{
-		NATIVE_TOKEN_POLICY
+		BRIDGE_TOKEN_POLICY
 			.prompt_with_default_from_file_parse_and_save(context)
 			.map_err(|e| {
 				anyhow!(
 					"Could not parse PolicyId, expected hex string representing 28 bytes. Error: '{e}'."
 				)
 			})?;
-		NATIVE_TOKEN_ASSET_NAME
+		BRIDGE_TOKEN_ASSET_NAME
 			.prompt_with_default_from_file_parse_and_save(context)
 			.map_err(|e| {
 				anyhow!("Could not parse AssetName, expected valid hex string. Error: '{e}'")
 			})?;
 	} else {
-		NATIVE_TOKEN_POLICY.save_to_file(&PolicyId::default(), context);
-		NATIVE_TOKEN_ASSET_NAME.save_to_file(&AssetName::empty(), context);
+		BRIDGE_TOKEN_POLICY.save_to_file(&PolicyId::default(), context);
+		BRIDGE_TOKEN_ASSET_NAME.save_to_file(&AssetName::empty(), context);
 	}
 
 	Ok(())
@@ -166,23 +167,23 @@ mod tests {
 		pub fn prompt_native_asset_scripts() -> MockIO {
 			MockIO::Group(vec![
 				MockIO::print(
-					"Partner Chains can store their initial token supply on Cardano as Cardano native tokens.",
+					"Partner Chains can store their initial token supply on Cardano as Cardano bridge tokens.",
 				),
 				MockIO::print(
-					"Creation of the native token is not supported by this wizard and must be performed manually before this step.",
+					"Creation of the bridge tokens is not supported by this wizard and must be performed manually before this step.",
 				),
 				MockIO::prompt_yes_no(
-					"Do you want to configure a native token for you Partner Chain?",
+					"Do you want to configure a token bridge for your Partner Chain?",
 					true,
 					true,
 				),
 				MockIO::prompt(
-					&format!("Enter the {}", NATIVE_TOKEN_POLICY.name),
+					&format!("Enter the {}", BRIDGE_TOKEN_POLICY.name),
 					None,
 					"ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4",
 				),
 				MockIO::prompt(
-					&format!("Enter the {}", NATIVE_TOKEN_ASSET_NAME.name),
+					&format!("Enter the {}", BRIDGE_TOKEN_ASSET_NAME.name),
 					None,
 					"0x5043546f6b656e44656d6f",
 				),
@@ -283,7 +284,7 @@ mod tests {
 - Committee Candidates Address: {TEST_COMMITTEE_CANDIDATES_ADDRESS}
 - D Parameter Policy ID: {TEST_D_PARAMETER_POLICY_ID}
 - Permissioned Candidates Policy ID: {TEST_PERMISSIONED_CANDIDATES_POLICY_ID}
-- Illiquid Supply Address: {TEST_ILLIQUID_SUPPLY_ADDRESS}
+- Illiquid Circulation Supply Validator Address: {TEST_ILLIQUID_SUPPLY_ADDRESS}
 - Governed Map Validator Address: {TEST_GOVERNED_MAP_VALIDATOR_ADDRESS}
 - Governed Map Policy Id: {TEST_GOVERNED_MAP_POLICY_ID}",
 		))
@@ -331,8 +332,8 @@ mod tests {
 					"policy_id": TEST_GOVERNED_MAP_POLICY_ID,
 					"validator_address": TEST_GOVERNED_MAP_VALIDATOR_ADDRESS,
 				},
-				"native_token": {
-					"illiquid_supply_address": TEST_ILLIQUID_SUPPLY_ADDRESS,
+				"bridge": {
+					"illiquid_circulation_supply_validator_address": TEST_ILLIQUID_SUPPLY_ADDRESS,
 					"asset": {
 						"policy_id":"0xada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4",
 						"asset_name":"0x5043546f6b656e44656d6f"

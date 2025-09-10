@@ -27,6 +27,6 @@ impl<RecipientAddress: Send + Sync> TokenBridgeDataSource<RecipientAddress>
 		_max_transfers: u32,
 		_current_mc_block: McBlockHash,
 	) -> Result<(Vec<BridgeTransferV1<RecipientAddress>>, BridgeDataCheckpoint)> {
-		Ok((vec![], Default::default()))
+		Ok((vec![], BridgeDataCheckpoint::Block(McBlockNumber(0))))
 	}
 }
