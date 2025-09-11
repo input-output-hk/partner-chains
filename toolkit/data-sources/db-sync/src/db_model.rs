@@ -189,11 +189,21 @@ pub(crate) struct DatumChangeOutput {
 	pub action: GovernedMapAction,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub(crate) struct NativeTokenAmount(pub u128);
 impl From<NativeTokenAmount> for sidechain_domain::NativeTokenAmount {
 	fn from(value: NativeTokenAmount) -> Self {
 		Self(value.0)
+	}
+}
+
+impl NativeTokenAmount {
+	pub(crate) fn checked_sub_i128(self, rhs: NativeTokenAmount) -> Option<NativeTokenAmount> {
+		self.0.checked_sub(rhs.0).map(NativeTokenAmount)
+	}
+
+	pub(crate) fn is_zero(&self) -> bool {
+		self.0 == 0
 	}
 }
 

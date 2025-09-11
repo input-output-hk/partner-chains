@@ -162,6 +162,18 @@ impl Display for McBlockNumber {
 	}
 }
 
+impl McBlockNumber {
+	/// Adds `rhs` to the block number without overflow
+	pub fn saturating_add<Rhs: Into<u32>>(self, rhs: Rhs) -> Self {
+		Self(self.0.saturating_add(rhs.into()))
+	}
+
+	/// Subtracts `rhs` from the block number without overflow
+	pub fn saturating_sub<Rhs: Into<u32>>(self, rhs: Rhs) -> Self {
+		Self(self.0.saturating_sub(rhs.into()))
+	}
+}
+
 #[derive(
 	Default,
 	Debug,
@@ -199,6 +211,8 @@ impl Display for McSlotNumber {
 	TypeInfo,
 	Hash,
 	MaxEncodedLen,
+	PartialOrd,
+	Ord,
 )]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize, FromStr))]
 /// Partner Chain slot number
@@ -1458,7 +1472,7 @@ impl alloc::fmt::Debug for DelegatorKey {
 }
 
 /// Amount of Lovelace staked by a Cardano delegator to a single stake pool
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
 pub struct DelegatorStakeAmount(pub u64);
 
 impl<T: Into<u64>> From<T> for DelegatorStakeAmount {

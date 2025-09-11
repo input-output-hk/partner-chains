@@ -407,7 +407,7 @@ async fn governance_action_can_be_initiated_by_non_governance() {
 	run_assemble_and_sign(tx_to_sign, &[GOVERNANCE_AUTHORITY_KEY], &client).await;
 }
 
-async fn initialize<'a>(container: &ContainerAsync<GenericImage>) -> OgmiosClients {
+async fn initialize(container: &ContainerAsync<GenericImage>) -> OgmiosClients {
 	let ogmios_port = container.get_host_port_ipv4(1337).await.unwrap();
 	println!("Ogmios port: {}", ogmios_port);
 
