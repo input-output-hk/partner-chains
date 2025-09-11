@@ -1,9 +1,10 @@
 use authority_selection_inherents::AuthoritySelectionDataSource;
 use pallet_sidechain_rpc::SidechainRpcDataSource;
 use partner_chains_db_sync_data_sources::{
-	BlockDataSourceImpl, CandidatesDataSourceImpl, GovernedMapDataSourceCachedImpl,
-	McFollowerMetrics, McHashDataSourceImpl, NativeTokenManagementDataSourceImpl,
-	SidechainRpcDataSourceImpl, StakeDistributionDataSourceImpl, TokenBridgeDataSourceImpl,
+	BlockDataSourceImpl, CachedTokenBridgeDataSourceImpl, CandidatesDataSourceImpl,
+	GovernedMapDataSourceCachedImpl, McFollowerMetrics, McHashDataSourceImpl,
+	NativeTokenManagementDataSourceImpl, SidechainRpcDataSourceImpl,
+	StakeDistributionDataSourceImpl,
 };
 use partner_chains_demo_runtime::AccountId;
 use partner_chains_mock_data_sources::{
@@ -115,6 +116,7 @@ pub fn create_mock_data_sources()
 pub const CANDIDATES_FOR_EPOCH_CACHE_SIZE: usize = 64;
 pub const STAKE_CACHE_SIZE: usize = 100;
 pub const GOVERNED_MAP_CACHE_SIZE: u16 = 100;
+pub const BRIDGE_TRANSFER_CACHE_LOOKAHEAD: u32 = 1000;
 
 pub async fn create_cached_db_sync_data_sources(
 	metrics_opt: Option<McFollowerMetrics>,
@@ -147,10 +149,15 @@ pub async fn create_cached_db_sync_data_sources(
 				pool.clone(),
 				metrics_opt.clone(),
 				GOVERNED_MAP_CACHE_SIZE,
-				block,
+				block.clone(),
 			)
 			.await?,
 		),
-		bridge: Arc::new(TokenBridgeDataSourceImpl::new(pool, metrics_opt)),
+		bridge: Arc::new(CachedTokenBridgeDataSourceImpl::new(
+			pool,
+			metrics_opt,
+			block,
+			BRIDGE_TRANSFER_CACHE_LOOKAHEAD,
+		)),
 	})
 }
