@@ -58,9 +58,9 @@
 <a href=#58 id=58 data-nosnippet>58</a>		block_info: <span class="kw-2">&amp;</span>BlockInfo,
 <a href=#59 id=59 data-nosnippet>59</a>	) -&gt; <span class="prelude-ty">Result</span>&lt;Ordering, <span class="self">Self</span>::Error&gt; {
 <a href=#60 id=60 data-nosnippet>60</a>		<span class="kw">let </span>slot_of_block = block_info.get_slot_of_block(block)<span class="question-mark">?</span>;
-<a href=#61 id=61 data-nosnippet>61</a>		<span class="kw">let </span>ordering = <span class="kw">if </span>slot_of_block.<span class="number">0 </span>&lt; <span class="self">self</span>.slot_range.start.<span class="number">0 </span>{
+<a href=#61 id=61 data-nosnippet>61</a>		<span class="kw">let </span>ordering = <span class="kw">if </span>slot_of_block &lt; <span class="self">self</span>.slot_range.start {
 <a href=#62 id=62 data-nosnippet>62</a>			Ordering::Less
-<a href=#63 id=63 data-nosnippet>63</a>		} <span class="kw">else if </span>slot_of_block.<span class="number">0 </span>&gt;= <span class="self">self</span>.slot_range.end.<span class="number">0 </span>{
+<a href=#63 id=63 data-nosnippet>63</a>		} <span class="kw">else if </span>slot_of_block &gt;= <span class="self">self</span>.slot_range.end {
 <a href=#64 id=64 data-nosnippet>64</a>			Ordering::Greater
 <a href=#65 id=65 data-nosnippet>65</a>		} <span class="kw">else </span>{
 <a href=#66 id=66 data-nosnippet>66</a>			Ordering::Equal
