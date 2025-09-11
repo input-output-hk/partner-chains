@@ -935,7 +935,7 @@ pub(crate) struct BridgeUtxo {
 #[cfg(feature = "bridge")]
 impl BridgeUtxo {
 	pub(crate) fn utxo_id(&self) -> UtxoId {
-		UtxoId { tx_hash: self.tx_hash.into(), index: self.utxo_ix.clone().into() }
+		UtxoId { tx_hash: self.tx_hash.into(), index: self.utxo_ix.into() }
 	}
 
 	pub(crate) fn ordering_key(&self) -> UtxoOrderingKey {
@@ -957,8 +957,8 @@ pub(crate) enum BridgeCheckpoint {
 impl BridgeCheckpoint {
 	pub(crate) fn get_block_number(&self) -> BlockNumber {
 		match self {
-			BridgeCheckpoint::Block { number } => number.clone(),
-			BridgeCheckpoint::Utxo { block_number, .. } => block_number.clone(),
+			BridgeCheckpoint::Block { number } => *number,
+			BridgeCheckpoint::Utxo { block_number, .. } => *block_number,
 		}
 	}
 }
