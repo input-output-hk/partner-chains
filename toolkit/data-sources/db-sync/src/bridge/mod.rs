@@ -116,13 +116,13 @@ fn utxo_to_transfer<RecipientAddress>(
 where
 	RecipientAddress: for<'a> TryFrom<&'a [u8]>,
 {
-	let token_delta = utxo.tokens_out.checked_sub(utxo.tokens_in)?;
+	let token_delta = utxo.tokens_out.checked_sub_i128(utxo.tokens_in)?;
 
-	if token_delta <= 0 {
+	if token_delta.is_zero() {
 		return None;
 	}
 
-	let token_amount = token_delta as u64;
+	let token_amount = token_delta.0 as u64;
 
 	let transfer = match TokenTransferDatum::try_from(utxo.datum.0.clone()) {
 		Ok(TokenTransferDatum::V1(TokenTransferDatumV1::UserTransfer { receiver })) => {
