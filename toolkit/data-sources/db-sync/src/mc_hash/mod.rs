@@ -1,5 +1,8 @@
 //! Db-Sync data source used by Partner Chain MC Reference feature
-use crate::{block::BlockDataSourceImpl, metrics::McFollowerMetrics, observed_async_trait};
+use crate::{
+	block::BlockDataSourceImpl,
+	metrics::{McFollowerMetrics, observed_async_trait},
+};
 use sidechain_domain::{MainchainBlock, McBlockHash};
 use sidechain_mc_hash::McHashDataSource;
 use sp_timestamp::Timestamp;

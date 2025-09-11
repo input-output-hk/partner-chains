@@ -1,7 +1,6 @@
 //! Db-Sync data source used by Partner Chain Native Token Management feature
 use crate::db_model::{Block, BlockNumber};
-use crate::metrics::McFollowerMetrics;
-use crate::observed_async_trait;
+use crate::metrics::{McFollowerMetrics, observed_async_trait};
 use crate::{DataSourceError, Result};
 use itertools::Itertools;
 use sidechain_domain::*;

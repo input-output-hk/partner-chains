@@ -61,7 +61,6 @@ pub fn register_metrics_warn_errors(
 /// Has to be made at the level of trait, because otherwise #[async_trait] is expanded first.
 /// '&self' matching yields "__self" identifier not found error, so "&$self:tt" is required.
 /// Works only if return type is Result.
-#[macro_export]
 macro_rules! observed_async_trait {
 	(impl $(<$($type_param:tt),+>)? $trait_name:ident $(<$($type_arg:ident),+>)? for $target_type:ty
 		$(where $($where_type:ident : $where_bound:tt ,)+)?
@@ -100,6 +99,8 @@ macro_rules! observed_async_trait {
 		}
 	};
 }
+
+pub(crate) use observed_async_trait;
 
 #[cfg(test)]
 pub(crate) mod mock {

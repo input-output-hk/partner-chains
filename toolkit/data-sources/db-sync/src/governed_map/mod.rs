@@ -3,7 +3,7 @@ use crate::DataSourceError::ExpectedDataNotFound;
 use crate::Result;
 use crate::block::BlockDataSourceImpl;
 use crate::db_model::{DbSyncConfigurationProvider, GovernedMapAction, TxInConfiguration};
-use crate::{metrics::McFollowerMetrics, observed_async_trait};
+use crate::metrics::{McFollowerMetrics, observed_async_trait};
 use db_sync_sqlx::{Asset, BlockNumber};
 use itertools::Itertools;
 use log::warn;
