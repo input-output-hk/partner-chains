@@ -972,14 +972,54 @@ pub(crate) async fn get_bridge_utxos_tx(
 	from_block: BlockNumber,
 	to_block: BlockNumber,
 ) -> Result<Vec<BridgeUtxo>, SqlxError> {
-	match tx_in_configuration {
-		TxInConfiguration::Consumed => {
-			get_bridge_utxos_tx_in_consumed(pool, icp_addr, asset, from_block, to_block).await
-		},
-		TxInConfiguration::Enabled => {
-			get_bridge_utxos_tx_in_enabled(pool, icp_addr, asset, from_block, to_block).await
-		},
-	}
+	use sqlx::QueryBuilder;
+
+	let mut query_builder = QueryBuilder::<Postgres>::new(
+		"
+	SELECT
+		block.block_no                          AS block_number
+		, tx.block_index                          AS tx_ix
+		, tx.hash                                 AS tx_hash
+		, outputs.index                           AS utxo_ix
+		, output_tokens.quantity                  AS tokens_out
+		, coalesce(sum(input_tokens.quantity), 0) AS tokens_in
+		, datum.value                             AS datum
+
+	FROM tx_out      outputs
+	JOIN tx                        ON outputs.tx_id = tx.id
+	JOIN block                     ON tx.block_id = block.id
+	JOIN ma_tx_out   output_tokens ON output_tokens.tx_out_id = outputs.id
+	JOIN multi_asset native_token  ON native_token.id = output_tokens.ident
+	JOIN datum                     ON datum.tx_id = tx.id
+		",
+	);
+
+	query_builder.push(match tx_in_configuration {
+		TxInConfiguration::Consumed =>
+				"LEFT JOIN tx_out     inputs        ON inputs.consumed_by_tx_id = tx.id   AND inputs.address = $1",
+		TxInConfiguration::Enabled =>
+				"LEFT JOIN tx_in      inputs_join   ON tx.id = inputs_join.tx_in_id
+                 LEFT JOIN tx_out     inputs        ON inputs_join.tx_out_id = inputs.tx_id and inputs_join.tx_out_index = inputs.index AND inputs.address = $1",
+	});
+
+	query_builder.push("
+	LEFT JOIN ma_tx_out  input_tokens  ON input_tokens.tx_out_id = inputs.id AND input_tokens.ident = native_token.id
+	WHERE native_token.policy = $2
+      AND native_token.name = $3
+      AND outputs.address = $1
+      AND $4 <= block_no AND block_no <= $5
+	GROUP BY tx.hash, outputs.id, output_tokens.quantity, datum.value, block.block_no, tx.block_index, outputs.index
+	ORDER BY block.block_no, tx.block_index, outputs.index;");
+
+	let query = query_builder
+		.build_query_as::<BridgeUtxo>()
+		.bind(&icp_addr.0)
+		.bind(&asset.policy_id.0)
+		.bind(&asset.asset_name.0)
+		.bind(from_block)
+		.bind(to_block);
+
+	Ok(query.fetch_all(pool).await?)
 }
 
 #[cfg(feature = "bridge")]
@@ -1008,97 +1048,4 @@ WHERE tx.hash = $1
 	.bind(tx_hash);
 
 	Ok(query.fetch_optional(pool).await?)
-}
-
-#[cfg(feature = "bridge")]
-async fn get_bridge_utxos_tx_in_consumed(
-	pool: &Pool<Postgres>,
-	icp_address: &Address,
-	native_token: Asset,
-	from_block: BlockNumber,
-	to_block: BlockNumber,
-) -> Result<Vec<BridgeUtxo>, SqlxError> {
-	let query = "
-	SELECT
-	      block.block_no                          AS block_number
-	    , tx.block_index                          AS tx_ix
-	    , tx.hash                                 AS tx_hash
-	    , outputs.index                           AS utxo_ix
-	    , output_tokens.quantity                  AS tokens_out
-	    , coalesce(sum(input_tokens.quantity), 0) AS tokens_in
-	    , datum.value                             AS datum
-
-	FROM tx_out      outputs
-	JOIN tx                        ON outputs.tx_id = tx.id
-	JOIN block                     ON tx.block_id = block.id
-	JOIN ma_tx_out   output_tokens ON output_tokens.tx_out_id = outputs.id
-	JOIN multi_asset native_token  ON native_token.id = output_tokens.ident
-	JOIN datum                     ON datum.tx_id = tx.id
-
-	LEFT JOIN tx_out     inputs        ON inputs.consumed_by_tx_id = tx.id   AND inputs.address = $1
-	LEFT JOIN ma_tx_out  input_tokens  ON input_tokens.tx_out_id = inputs.id AND input_tokens.ident = native_token.id
-
-	WHERE native_token.policy = $2
-	  AND native_token.name = $3
-	  AND outputs.address = $1
-	  AND $4 <= block_no AND block_no <= $5
-	GROUP BY tx.hash, outputs.id, output_tokens.quantity, datum.value, block.block_no, tx.block_index, outputs.index
-	ORDER BY block.block_no, tx.block_index, outputs.index;
-	";
-
-	Ok(sqlx::query_as::<_, BridgeUtxo>(query)
-		.bind(&icp_address.0)
-		.bind(&native_token.policy_id.0)
-		.bind(&native_token.asset_name.0)
-		.bind(from_block)
-		.bind(to_block)
-		.fetch_all(pool)
-		.await?)
-}
-
-#[cfg(feature = "bridge")]
-async fn get_bridge_utxos_tx_in_enabled(
-	pool: &Pool<Postgres>,
-	icp_address: &Address,
-	native_token: Asset,
-	from_block: BlockNumber,
-	to_block: BlockNumber,
-) -> Result<Vec<BridgeUtxo>, SqlxError> {
-	let query = "
-	SELECT
-		block.block_no                          AS block_number
-		, tx.block_index                          AS tx_ix
-		, tx.hash                                 AS tx_hash
-		, outputs.index                           AS utxo_ix
-		, output_tokens.quantity                  AS tokens_out
-		, coalesce(sum(input_tokens.quantity), 0) AS tokens_in
-		, datum.value                             AS datum
-
-	FROM tx_out      outputs
-	JOIN tx                        ON outputs.tx_id = tx.id
-	JOIN block                     ON tx.block_id = block.id
-	JOIN ma_tx_out   output_tokens ON output_tokens.tx_out_id = outputs.id
-	JOIN multi_asset native_token  ON native_token.id = output_tokens.ident
-	JOIN datum                     ON datum.tx_id = tx.id
-
-	LEFT JOIN tx_in      inputs_join   ON tx.id = inputs_join.tx_in_id
-	LEFT JOIN tx_out     inputs        ON inputs_join.tx_out_id = inputs.tx_id and inputs_join.tx_out_index = inputs.index AND inputs.address = $1
-	LEFT JOIN ma_tx_out  input_tokens  ON input_tokens.tx_out_id = inputs.id AND input_tokens.ident = native_token.id
-
-	WHERE native_token.policy = $2
-      AND native_token.name = $3
-      AND outputs.address = $1
-      AND $4 <= block_no AND block_no <= $5
-	GROUP BY tx.hash, outputs.id, output_tokens.quantity, datum.value, block.block_no, tx.block_index, outputs.index
-	ORDER BY block.block_no, tx.block_index, outputs.index;
-	";
-
-	Ok(sqlx::query_as::<_, BridgeUtxo>(query)
-		.bind(&icp_address.0)
-		.bind(&native_token.policy_id.0)
-		.bind(&native_token.asset_name.0)
-		.bind(from_block)
-		.bind(to_block)
-		.fetch_all(pool)
-		.await?)
 }
