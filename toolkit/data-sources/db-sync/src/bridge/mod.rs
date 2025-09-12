@@ -122,8 +122,14 @@ impl TokenUtxoCache {
 		)
 	}
 
-	pub(crate) fn find_utxo_in_cache(&self, utxo_id: &UtxoId) -> Option<BridgeUtxo> {
-		self.utxo_cache.get(utxo_id).cloned()
+	pub(crate) fn try_get_checkpoint_for_utxo_from_cache(
+		&self,
+		utxo_id: &UtxoId,
+	) -> Option<BridgeCheckpoint> {
+		let BridgeUtxo { block_number, tx_ix, utxo_ix, .. } =
+			self.utxo_cache.get(utxo_id).cloned()?;
+
+		Some(BridgeCheckpoint::Utxo { block_number, tx_ix, tx_out_ix: utxo_ix })
 	}
 }
 
@@ -255,13 +261,15 @@ impl CachedTokenBridgeDataSourceImpl {
 			.map(|block| block.number.into()))
 	}
 
-	async fn get_block_info_for_utxo(
+	async fn get_checkpoint_for_utxo(
 		&self,
 		utxo_id: &UtxoId,
-	) -> Result<TxBlockInfo, Box<dyn Error + Send + Sync>> {
-		get_block_info_for_utxo(&self.pool, utxo_id.tx_hash.into())
-			.await?
-			.ok_or(format!("Could not find block info for utxo: {utxo_id:?}").into())
+	) -> Result<BridgeCheckpoint, Box<dyn Error + Send + Sync>> {
+		let TxBlockInfo { block_number, tx_ix } =
+			get_block_info_for_utxo(&self.pool, utxo_id.tx_hash.into())
+				.await?
+				.ok_or(format!("Could not find block info for utxo: {utxo_id:?}"))?;
+		Ok(BridgeCheckpoint::Utxo { block_number, tx_ix, tx_out_ix: utxo_id.index.into() })
 	}
 
 	async fn resolve_data_checkpoint(
@@ -273,21 +281,9 @@ impl CachedTokenBridgeDataSourceImpl {
 				Ok(BridgeCheckpoint::Block { number: (*number).into() })
 			},
 			BridgeDataCheckpoint::Utxo(utxo) => {
-				match self.cache.lock().await.find_utxo_in_cache(&utxo) {
-					Some(utxo) => Ok(BridgeCheckpoint::Utxo {
-						block_number: utxo.block_number,
-						tx_ix: utxo.tx_ix,
-						tx_out_ix: utxo.utxo_ix,
-					}),
-					None => {
-						let TxBlockInfo { block_number, tx_ix } =
-							self.get_block_info_for_utxo(&utxo).await?;
-						Ok(BridgeCheckpoint::Utxo {
-							block_number,
-							tx_ix,
-							tx_out_ix: utxo.index.into(),
-						})
-					},
+				match self.cache.lock().await.try_get_checkpoint_for_utxo_from_cache(&utxo) {
+					Some(checkpoint) => Ok(checkpoint),
+					None => self.get_checkpoint_for_utxo(&utxo).await,
 				}
 			},
 		}
