@@ -153,7 +153,8 @@ observed_async_trait!(
 				match self.try_serve_from_cache(&data_checkpoint, to_block, max_transfers).await {
 					Some(utxos) => utxos,
 					None => {
-						self.fill_cache(main_chain_scripts, &data_checkpoint, to_block).await?;
+						let from_block = data_checkpoint.get_block_number();
+						self.fill_cache(main_chain_scripts, from_block, to_block).await?;
 						self.try_serve_from_cache(&data_checkpoint, to_block, max_transfers)
 							.await
 							.ok_or("Data should be present in cache after filling cache succeeded")?
@@ -210,11 +211,9 @@ impl CachedTokenBridgeDataSourceImpl {
 	async fn fill_cache(
 		&self,
 		main_chain_scripts: MainChainScripts,
-		data_checkpoint: &BridgeCheckpoint,
+		from_block: BlockNumber,
 		to_block: BlockNumber,
 	) -> Result<(), Box<dyn Error + Send + Sync>> {
-		let from_block = data_checkpoint.get_block_number();
-
 		let latest_block = self.get_latest_stable_block().await?.unwrap_or(to_block);
 
 		let to_block: BlockNumber =
