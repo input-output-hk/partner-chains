@@ -1,5 +1,5 @@
 use crate::bridge::cache::CachedTokenBridgeDataSourceImpl;
-use crate::{BlockDataSourceImpl, DbSyncBlockDataSourceConfig, TokenBridgeDataSourceImpl};
+use crate::{BlockDataSourceImpl, DbSyncBlockDataSourceConfig};
 use hex_literal::hex;
 use sidechain_domain::byte_string::ByteString;
 use sidechain_domain::mainchain_epoch::{Duration, MainchainEpochConfig, Timestamp};
@@ -99,41 +99,20 @@ macro_rules! with_migration_versions_and_caching {
 		$(
 		mod $name {
 			use super::*;
+			#[allow(unused_imports)]
+			use pretty_assertions::assert_eq;
 
-			async fn $name($data_source: &dyn TokenBridgeDataSource<ByteString>) $body
+			async fn test_body($data_source: &dyn TokenBridgeDataSource<ByteString>) $body
 
-			mod uncached {
-				use super::*;
-				#[allow(unused_imports)]
-				use pretty_assertions::assert_eq;
-
-				#[sqlx::test(migrations = "./testdata/bridge/migrations-tx-in-enabled")]
-				async fn tx_in_enabled(pool: PgPool) {
-					$name(&create_data_source(pool)).await
-				}
-
-				#[sqlx::test(migrations = "./testdata/bridge/migrations-tx-in-consumed")]
-				async fn tx_in_consumed(pool: PgPool) {
-					$name(&create_data_source(pool)).await
-				}
+			#[sqlx::test(migrations = "./testdata/bridge/migrations-tx-in-enabled")]
+			async fn tx_in_enabled(pool: PgPool) {
+				test_body(&create_cached_source(pool)).await
 			}
 
-			mod cached {
-				use super::*;
-				#[allow(unused_imports)]
-				use pretty_assertions::assert_eq;
-
-				#[sqlx::test(migrations = "./testdata/bridge/migrations-tx-in-enabled")]
-				async fn tx_in_enabled(pool: PgPool) {
-					$name(&create_cached_source(pool)).await
-				}
-
-				#[sqlx::test(migrations = "./testdata/bridge/migrations-tx-in-consumed")]
-				async fn tx_in_consumed(pool: PgPool) {
-					$name(&create_cached_source(pool)).await
-				}
+			#[sqlx::test(migrations = "./testdata/bridge/migrations-tx-in-consumed")]
+			async fn tx_in_consumed(pool: PgPool) {
+				test_body(&create_cached_source(pool)).await
 			}
-
 		}
 		)*
 	}
@@ -155,10 +134,6 @@ fn block_data_source_config() -> DbSyncBlockDataSourceConfig {
 		cardano_active_slots_coeff: 0.05,
 		block_stability_margin: 0,
 	}
-}
-
-fn create_data_source(pool: PgPool) -> TokenBridgeDataSourceImpl {
-	TokenBridgeDataSourceImpl::new(pool, None)
 }
 
 fn create_cached_source(pool: PgPool) -> CachedTokenBridgeDataSourceImpl {
