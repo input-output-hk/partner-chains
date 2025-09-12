@@ -113,7 +113,7 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Inherent extrinsic that handles all incoming transfers in the current block
 		#[pallet::call_index(0)]
-		#[pallet::weight(T::WeightInfo::handle_transfers(transfers.len() as u32))]
+		#[pallet::weight((T::WeightInfo::handle_transfers(transfers.len() as u32), DispatchClass::Mandatory))]
 		pub fn handle_transfers(
 			origin: OriginFor<T>,
 			transfers: BoundedVec<BridgeTransferV1<T::Recipient>, T::MaxTransfersPerBlock>,
