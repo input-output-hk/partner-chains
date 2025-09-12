@@ -155,8 +155,11 @@ impl ReserveData {
 	}
 }
 
-pub(crate) struct TokenAmount {
+/// Simply wraps asset id with amount.
+pub struct TokenAmount {
+	/// The asset id
 	pub token: AssetId,
+	/// Amount of the assets
 	pub amount: u64,
 }
 

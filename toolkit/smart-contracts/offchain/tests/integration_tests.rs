@@ -18,6 +18,7 @@ use ogmios_client::{
 use partner_chains_cardano_offchain::{
 	assemble_and_submit_tx,
 	await_tx::{AwaitTx, FixedDelayRetries},
+	bridge,
 	cardano_keys::CardanoPaymentSigningKey,
 	csl::NetworkTypeExt,
 	d_param,
@@ -241,6 +242,18 @@ async fn reserve_release_to_zero_scenario() {
 	assert_illiquid_supply(genesis_utxo, INITIAL_DEPOSIT_AMOUNT, &client).await;
 	run_handover_reserve(genesis_utxo, &client).await.unwrap();
 	assert_reserve_handed_over(genesis_utxo, INITIAL_DEPOSIT_AMOUNT, &client).await;
+}
+
+#[tokio::test]
+async fn lock_in_ics() {
+	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
+	let container = image.start().await.unwrap();
+	let client = initialize(&container).await;
+	let genesis_utxo = run_init_governance(&client).await;
+	let _ = run_init_reserve_management(genesis_utxo, &client).await;
+	let _ = run_create_reserve_management(genesis_utxo, V_FUNCTION_HASH, &client).await;
+	let _ = run_deposit_to_ics(genesis_utxo, &client).await;
+	assert_illiquid_supply(genesis_utxo, DEPOSIT_AMOUNT, &client).await;
 }
 
 #[tokio::test]
@@ -629,6 +642,24 @@ async fn run_deposit_to_reserve<
 	.unwrap();
 	cleanup_temp_wallet_file(&result);
 	result
+}
+
+async fn run_deposit_to_ics<
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+>(
+	genesis_utxo: UtxoId,
+	client: &T,
+) -> McTxHash {
+	bridge::deposit_only(
+		genesis_utxo,
+		DEPOSIT_AMOUNT,
+		&[1u8; 32],
+		&governance_authority_payment_key(),
+		client,
+		&FixedDelayRetries::new(Duration::from_millis(50), 100),
+	)
+	.await
+	.unwrap()
 }
 
 async fn run_handover_reserve<
