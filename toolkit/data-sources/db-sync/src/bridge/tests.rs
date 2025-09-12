@@ -1,4 +1,4 @@
-use crate::bridge::cache::CachedTokenBridgeDataSourceImpl;
+use crate::bridge::CachedTokenBridgeDataSourceImpl;
 use crate::{BlockDataSourceImpl, DbSyncBlockDataSourceConfig};
 use hex_literal::hex;
 use sidechain_domain::byte_string::ByteString;
