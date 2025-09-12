@@ -89,7 +89,7 @@ impl TokenUtxoCache {
 
 	pub(crate) fn serve_from_cache(
 		&self,
-		checkpoint: &BridgeCheckpoint,
+		checkpoint: &ResolvedBridgeDataCheckpoint,
 		to_block: BlockNumber,
 		max_transfers: u32,
 	) -> Option<Vec<BridgeUtxo>> {
@@ -98,12 +98,12 @@ impl TokenUtxoCache {
 		}
 
 		let skip_pred: Box<dyn FnMut(&&BridgeUtxo) -> bool> = match checkpoint {
-			BridgeCheckpoint::Block { number }
+			ResolvedBridgeDataCheckpoint::Block { number }
 				if self.start_block <= number.saturating_add(1u32) =>
 			{
 				Box::new(move |utxo| *number > utxo.block_number)
 			},
-			BridgeCheckpoint::Utxo { block_number, tx_ix, tx_out_ix }
+			ResolvedBridgeDataCheckpoint::Utxo { block_number, tx_ix, tx_out_ix }
 				if self.start_block <= *block_number =>
 			{
 				Box::new(move |utxo| utxo.ordering_key() <= (*block_number, *tx_ix, *tx_out_ix))
@@ -125,11 +125,11 @@ impl TokenUtxoCache {
 	pub(crate) fn try_get_checkpoint_for_utxo_from_cache(
 		&self,
 		utxo_id: &UtxoId,
-	) -> Option<BridgeCheckpoint> {
+	) -> Option<ResolvedBridgeDataCheckpoint> {
 		let BridgeUtxo { block_number, tx_ix, utxo_ix, .. } =
 			self.utxo_cache.get(utxo_id).cloned()?;
 
-		Some(BridgeCheckpoint::Utxo { block_number, tx_ix, tx_out_ix: utxo_ix })
+		Some(ResolvedBridgeDataCheckpoint::Utxo { block_number, tx_ix, tx_out_ix: utxo_ix })
 	}
 }
 
@@ -181,6 +181,21 @@ observed_async_trait!(
 	}
 );
 
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub(crate) enum ResolvedBridgeDataCheckpoint {
+	Utxo { block_number: BlockNumber, tx_ix: TxIndexInBlock, tx_out_ix: TxIndex },
+	Block { number: BlockNumber },
+}
+
+impl ResolvedBridgeDataCheckpoint {
+	pub(crate) fn get_block_number(&self) -> BlockNumber {
+		match self {
+			ResolvedBridgeDataCheckpoint::Block { number } => *number,
+			ResolvedBridgeDataCheckpoint::Utxo { block_number, .. } => *block_number,
+		}
+	}
+}
+
 impl CachedTokenBridgeDataSourceImpl {
 	/// Crates a new token bridge data source
 	pub fn new(
@@ -206,7 +221,7 @@ impl CachedTokenBridgeDataSourceImpl {
 
 	async fn try_serve_from_cache(
 		&self,
-		data_checkpoint: &BridgeCheckpoint,
+		data_checkpoint: &ResolvedBridgeDataCheckpoint,
 		to_block: BlockNumber,
 		max_transfers: u32,
 	) -> Option<Vec<BridgeUtxo>> {
@@ -264,21 +279,25 @@ impl CachedTokenBridgeDataSourceImpl {
 	async fn get_checkpoint_for_utxo(
 		&self,
 		utxo_id: &UtxoId,
-	) -> Result<BridgeCheckpoint, Box<dyn Error + Send + Sync>> {
+	) -> Result<ResolvedBridgeDataCheckpoint, Box<dyn Error + Send + Sync>> {
 		let TxBlockInfo { block_number, tx_ix } =
 			get_block_info_for_utxo(&self.pool, utxo_id.tx_hash.into())
 				.await?
 				.ok_or(format!("Could not find block info for utxo: {utxo_id:?}"))?;
-		Ok(BridgeCheckpoint::Utxo { block_number, tx_ix, tx_out_ix: utxo_id.index.into() })
+		Ok(ResolvedBridgeDataCheckpoint::Utxo {
+			block_number,
+			tx_ix,
+			tx_out_ix: utxo_id.index.into(),
+		})
 	}
 
 	async fn resolve_data_checkpoint(
 		&self,
 		data_checkpoint: &BridgeDataCheckpoint,
-	) -> Result<BridgeCheckpoint, Box<dyn Error + Send + Sync>> {
+	) -> Result<ResolvedBridgeDataCheckpoint, Box<dyn Error + Send + Sync>> {
 		match data_checkpoint {
 			BridgeDataCheckpoint::Block(number) => {
-				Ok(BridgeCheckpoint::Block { number: (*number).into() })
+				Ok(ResolvedBridgeDataCheckpoint::Block { number: (*number).into() })
 			},
 			BridgeDataCheckpoint::Utxo(utxo) => {
 				match self.cache.lock().await.try_get_checkpoint_for_utxo_from_cache(&utxo) {

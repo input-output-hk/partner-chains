@@ -947,23 +947,6 @@ impl BridgeUtxo {
 pub(crate) type UtxoOrderingKey = (BlockNumber, TxIndexInBlock, TxIndex);
 
 #[cfg(feature = "bridge")]
-#[derive(Debug, PartialEq, Clone, Copy)]
-pub(crate) enum BridgeCheckpoint {
-	Utxo { block_number: BlockNumber, tx_ix: TxIndexInBlock, tx_out_ix: TxIndex },
-	Block { number: BlockNumber },
-}
-
-#[cfg(feature = "bridge")]
-impl BridgeCheckpoint {
-	pub(crate) fn get_block_number(&self) -> BlockNumber {
-		match self {
-			BridgeCheckpoint::Block { number } => *number,
-			BridgeCheckpoint::Utxo { block_number, .. } => *block_number,
-		}
-	}
-}
-
-#[cfg(feature = "bridge")]
 pub(crate) async fn get_bridge_utxos_tx(
 	tx_in_configuration: TxInConfiguration,
 	pool: &Pool<Postgres>,
