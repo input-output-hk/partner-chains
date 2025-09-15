@@ -38,7 +38,7 @@ use ogmios_client::{
 	types::OgmiosUtxo,
 };
 use partner_chains_plutus_data::reserve::ReserveRedeemer;
-use sidechain_domain::{AssetId, UtxoId};
+use sidechain_domain::UtxoId;
 
 /// Spends current UTXO at validator address and creates a new UTXO with increased token amount
 pub async fn deposit_to_reserve<
@@ -57,7 +57,7 @@ pub async fn deposit_to_reserve<
 	let reserve_utxo = reserve.get_reserve_utxo(&payment_context, client).await?;
 	let utxo = reserve_utxo.utxo;
 	let token = reserve_utxo.datum.immutable_settings.token;
-	let current_amount = get_token_amount(&utxo, &token);
+	let current_amount = utxo.get_asset_amount(&token);
 	let token_amount = TokenAmount { token, amount: current_amount + amount };
 
 	submit_or_create_tx_to_sign(
@@ -71,16 +71,6 @@ pub async fn deposit_to_reserve<
 		await_tx,
 	)
 	.await
-}
-
-fn get_token_amount(utxo: &OgmiosUtxo, token: &AssetId) -> u64 {
-	let AssetId { policy_id, asset_name } = token;
-	utxo.value
-		.native_tokens
-		.get(&policy_id.0)
-		.and_then(|assets| assets.iter().find(|asset| asset.name == asset_name.0.to_vec()))
-		.map(|asset| asset.amount)
-		.unwrap_or(0) // Token can be not found if the reserve was created with the initial deposit of 0 tokens
 }
 
 fn deposit_to_reserve_tx(

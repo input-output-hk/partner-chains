@@ -254,6 +254,16 @@ async fn lock_in_ics() {
 	let _ = run_create_reserve_management(genesis_utxo, V_FUNCTION_HASH, &client).await;
 	let _ = run_deposit_to_ics(genesis_utxo, &client).await;
 	assert_illiquid_supply(genesis_utxo, DEPOSIT_AMOUNT, &client).await;
+
+	let _ = run_deposit_to_ics_2(genesis_utxo, &client).await;
+	assert_illiquid_supply(genesis_utxo, 3 * DEPOSIT_AMOUNT, &client).await;
+
+	let data = scripts_data::get_scripts_data(genesis_utxo, NetworkIdKind::Testnet).unwrap();
+	let utxos = client
+		.query_utxos(&[data.addresses.illiquid_circulation_supply_validator])
+		.await
+		.unwrap();
+	println!("{utxos:?}");
 }
 
 #[tokio::test]
@@ -592,7 +602,7 @@ async fn run_create_reserve_management<
 				asset_name: AssetName::from_hex_unsafe(REWARDS_TOKEN_ASSET_NAME_STR),
 			},
 			initial_deposit: INITIAL_DEPOSIT_AMOUNT,
-			ics_initial_utxos_amount: NonZero::new(100).unwrap(),
+			ics_initial_utxos_amount: NonZero::new(3).unwrap(),
 		},
 		genesis_utxo,
 		&governance_authority_payment_key(),
@@ -654,6 +664,24 @@ async fn run_deposit_to_ics<
 		genesis_utxo,
 		DEPOSIT_AMOUNT,
 		&[1u8; 32],
+		&governance_authority_payment_key(),
+		client,
+		&FixedDelayRetries::new(Duration::from_millis(50), 100),
+	)
+	.await
+	.unwrap()
+}
+
+async fn run_deposit_to_ics_2<
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+>(
+	genesis_utxo: UtxoId,
+	client: &T,
+) -> McTxHash {
+	bridge::deposit_with_spend(
+		genesis_utxo,
+		2 * DEPOSIT_AMOUNT,
+		&[2u8; 32],
 		&governance_authority_payment_key(),
 		client,
 		&FixedDelayRetries::new(Duration::from_millis(50), 100),
