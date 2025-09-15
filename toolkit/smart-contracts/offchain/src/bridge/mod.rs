@@ -21,6 +21,8 @@ use ogmios_client::{
 	query_network::QueryNetwork,
 	transactions::Transactions,
 };
+use partner_chains_plutus_data::bridge::{TokenTransferDatum, TokenTransferDatumV1};
+use sidechain_domain::byte_string::ByteString;
 use sidechain_domain::crypto::blake2b;
 use sidechain_domain::{McTxHash, UtxoId};
 
@@ -91,7 +93,7 @@ fn deposit_only_tx(
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 	let output_builder = TransactionOutputBuilder::new()
 		.with_address(ics_address)
-		.with_plutus_data(&PlutusData::new_bytes(pc_address.to_vec()))
+		.with_plutus_data(&to_datum(ByteString(pc_address.to_vec())))
 		.next()?;
 	let ma = MultiAsset::new().with_asset_amount(&token_amount.token, token_amount.amount)?;
 	let output = output_builder.with_minimum_ada_and_asset(&ma, ctx)?.build()?;
@@ -206,7 +208,7 @@ fn deposit_tx(
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 	let output_builder = TransactionOutputBuilder::new()
 		.with_address(ics_address)
-		.with_plutus_data(&PlutusData::new_bytes(pc_address.to_vec()))
+		.with_plutus_data(&to_datum(ByteString(pc_address.to_vec())))
 		.next()?;
 	let mut ma = ics_utxo
 		.to_csl()
@@ -248,6 +250,10 @@ fn deposit_tx(
 	);
 
 	Ok(tx_builder.balance_update_and_build(ctx)?)
+}
+
+fn to_datum(pc_address: ByteString) -> PlutusData {
+	TokenTransferDatumV1::UserTransfer { receiver: pc_address }.into()
 }
 
 #[cfg(test)]

@@ -43,6 +43,7 @@ pub mod pallet {
 	use frame_support::pallet_prelude::*;
 	use frame_system::{ensure_none, pallet_prelude::OriginFor};
 	use parity_scale_codec::MaxEncodedLen;
+	use sidechain_domain::UtxoId;
 	use sp_partner_chains_bridge::{BridgeDataCheckpoint, TokenBridgeTransfersV1};
 	use sp_partner_chains_bridge::{INHERENT_IDENTIFIER, InherentError, MainChainScripts};
 
@@ -92,13 +93,15 @@ pub mod pallet {
 	pub struct GenesisConfig<T: Config> {
 		/// Initial main chain scripts
 		pub main_chain_scripts: Option<MainChainScripts>,
+		/// The initial data checkpoint. Chain Genesis UTXO is a good candidate for it.
+		pub initial_checkpoint: Option<UtxoId>,
 		#[allow(missing_docs)]
 		pub _marker: PhantomData<T>,
 	}
 
 	impl<T: Config> Default for GenesisConfig<T> {
 		fn default() -> Self {
-			Self { main_chain_scripts: None, _marker: Default::default() }
+			Self { main_chain_scripts: None, initial_checkpoint: None, _marker: Default::default() }
 		}
 	}
 
@@ -106,6 +109,7 @@ pub mod pallet {
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
 			MainChainScriptsConfiguration::<T>::set(self.main_chain_scripts.clone());
+			DataCheckpoint::<T>::set(self.initial_checkpoint.map(BridgeDataCheckpoint::Utxo));
 		}
 	}
 

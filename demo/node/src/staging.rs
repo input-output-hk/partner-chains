@@ -115,6 +115,7 @@ pub fn staging_genesis(
 	endowed_accounts: Vec<AccountId>,
 	_enable_println: bool,
 ) -> Result<serde_json::Value, envy::Error> {
+	let genesis_utxo = sp_sidechain::read_genesis_utxo_from_env_with_defaults()?;
 	let config = RuntimeGenesisConfig {
 		system: SystemConfig { ..Default::default() },
 		balances: BalancesConfig {
@@ -137,10 +138,7 @@ pub fn staging_genesis(
 				})
 				.collect(),
 		},
-		sidechain: SidechainConfig {
-			genesis_utxo: sp_sidechain::read_genesis_utxo_from_env_with_defaults()?,
-			..Default::default()
-		},
+		sidechain: SidechainConfig { genesis_utxo, ..Default::default() },
 		pallet_session: Default::default(),
 		session_committee_management: SessionCommitteeManagementConfig {
 			initial_authorities: initial_authorities
@@ -163,6 +161,7 @@ pub fn staging_genesis(
 		},
 		bridge: BridgeConfig {
 			main_chain_scripts: Some(sp_partner_chains_bridge::MainChainScripts::read_from_env()?),
+			initial_checkpoint: Some(genesis_utxo),
 			..Default::default()
 		},
 	};
