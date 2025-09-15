@@ -4,8 +4,9 @@ pub use pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use crate::{AccountId, BlockAuthor, MaxKeyLength, MaxValueLength};
+	use crate::{AccountId, Balances, BlockAuthor, MaxKeyLength, MaxValueLength};
 	use frame_support::pallet_prelude::*;
+	use frame_support::traits::Currency;
 	use frame_system::pallet_prelude::OriginFor;
 	use frame_system::{ensure_none, ensure_root};
 	use sidechain_domain::byte_string::BoundedString;
@@ -23,7 +24,9 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config {}
+	pub trait Config: frame_system::Config {
+		type ReserveAccount: Get<AccountId>;
+	}
 
 	#[pallet::storage]
 	#[pallet::unbounded]
@@ -120,7 +123,22 @@ pub mod pallet {
 
 	impl<T: Config> pallet_partner_chains_bridge::TransferHandler<AccountId> for Pallet<T> {
 		fn handle_incoming_transfer(transfer: BridgeTransferV1<AccountId>) {
-			log::info!("Bridge transfer: {transfer:?}");
+			match transfer {
+				BridgeTransferV1::InvalidTransfer { token_amount, utxo_id } => {
+					log::warn!(
+						"⚠️ Discarded an invalid transfer of {token_amount} (utxo {utxo_id})"
+					);
+				},
+				BridgeTransferV1::UserTransfer { token_amount, recipient } => {
+					log::info!("💸 Registered a tranfer of {token_amount} to {recipient:?}");
+					let _ = Balances::deposit_creating(&recipient, token_amount.into());
+				},
+				BridgeTransferV1::ReserveTransfer { token_amount } => {
+					log::info!("🏦 Registered a reserve transfer of {token_amount}.");
+					let _ =
+						Balances::deposit_creating(&T::ReserveAccount::get(), token_amount.into());
+				},
+			}
 		}
 	}
 
