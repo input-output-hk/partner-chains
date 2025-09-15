@@ -198,7 +198,7 @@ impl From<NativeTokenAmount> for sidechain_domain::NativeTokenAmount {
 }
 
 impl NativeTokenAmount {
-	pub(crate) fn checked_sub_i128(self, rhs: NativeTokenAmount) -> Option<NativeTokenAmount> {
+	pub(crate) fn checked_sub(self, rhs: NativeTokenAmount) -> Option<NativeTokenAmount> {
 		self.0.checked_sub(rhs.0).map(NativeTokenAmount)
 	}
 
@@ -934,15 +934,33 @@ pub(crate) struct BridgeUtxo {
 }
 #[cfg(feature = "bridge")]
 impl BridgeUtxo {
-	pub fn utxo_id(&self) -> UtxoId {
-		UtxoId { tx_hash: self.tx_hash.into(), index: self.utxo_ix.clone().into() }
+	pub(crate) fn utxo_id(&self) -> UtxoId {
+		UtxoId { tx_hash: self.tx_hash.into(), index: self.utxo_ix.into() }
+	}
+
+	pub(crate) fn ordering_key(&self) -> UtxoOrderingKey {
+		(self.block_number, self.tx_ix, self.utxo_ix)
 	}
 }
 
 #[cfg(feature = "bridge")]
+pub(crate) type UtxoOrderingKey = (BlockNumber, TxIndexInBlock, TxIndex);
+
+#[cfg(feature = "bridge")]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub(crate) enum BridgeCheckpoint {
-	Utxo { block_number: u32, tx_ix: u32, tx_out_ix: u16 },
-	Block { number: u32 },
+	Utxo { block_number: BlockNumber, tx_ix: TxIndexInBlock, tx_out_ix: TxIndex },
+	Block { number: BlockNumber },
+}
+
+#[cfg(feature = "bridge")]
+impl BridgeCheckpoint {
+	pub(crate) fn get_block_number(&self) -> BlockNumber {
+		match self {
+			BridgeCheckpoint::Block { number } => *number,
+			BridgeCheckpoint::Utxo { block_number, .. } => *block_number,
+		}
+	}
 }
 
 #[cfg(feature = "bridge")]
@@ -953,7 +971,7 @@ pub(crate) async fn get_bridge_utxos_tx(
 	asset: Asset,
 	checkpoint: BridgeCheckpoint,
 	to_block: BlockNumber,
-	max_utxos: u32,
+	max_utxos: Option<u32>,
 ) -> Result<Vec<BridgeUtxo>, SqlxError> {
 	match tx_in_configuration {
 		TxInConfiguration::Consumed => {
@@ -1002,7 +1020,7 @@ async fn get_bridge_utxos_tx_in_consumed(
 	native_token: Asset,
 	checkpoint: BridgeCheckpoint,
 	to_block: BlockNumber,
-	max_utxos: u32,
+	max_utxos: Option<u32>,
 ) -> Result<Vec<BridgeUtxo>, SqlxError> {
 	use sqlx::QueryBuilder;
 	let mut query_builder = QueryBuilder::new("
@@ -1033,19 +1051,25 @@ async fn get_bridge_utxos_tx_in_consumed(
 
 	match checkpoint {
 		BridgeCheckpoint::Block { number } => {
-			query_builder.push(&format!("AND block_no > {number} "));
+			query_builder.push(&format!("AND block_no > {} ", number.0));
 		},
 		BridgeCheckpoint::Utxo { block_number, tx_ix, tx_out_ix } => {
 			query_builder.push(&format!(
-				"AND (block_no, tx.block_index, outputs.index) > ({block_number}, {tx_ix}, {tx_out_ix}) "
+				"AND (block_no, tx.block_index, outputs.index) > ({}, {}, {}) ",
+				block_number.0, tx_ix.0, tx_out_ix.0
 			));
 		},
 	}
 
-	let query = query_builder
+	query_builder
 		.push("GROUP BY tx.hash, outputs.id, output_tokens.quantity, datum.value, block.block_no, tx.block_index, outputs.index ")
-		.push("ORDER BY block.block_no, tx.block_index, outputs.index ")
-		.push(&format!("LIMIT {max_utxos};"))
+		.push("ORDER BY block.block_no, tx.block_index, outputs.index ");
+	if let Some(max_utxos) = max_utxos {
+		query_builder.push(&format!("LIMIT {max_utxos}"));
+	}
+	query_builder.push(";");
+
+	let query = query_builder
 		.build_query_as::<BridgeUtxo>()
 		.bind(&icp_address.0)
 		.bind(&native_token.policy_id.0)
@@ -1062,7 +1086,7 @@ async fn get_bridge_utxos_tx_in_enabled(
 	native_token: Asset,
 	checkpoint: BridgeCheckpoint,
 	to_block: BlockNumber,
-	max_utxos: u32,
+	max_utxos: Option<u32>,
 ) -> Result<Vec<BridgeUtxo>, SqlxError> {
 	use sqlx::QueryBuilder;
 
@@ -1095,19 +1119,26 @@ async fn get_bridge_utxos_tx_in_enabled(
 
 	match checkpoint {
 		BridgeCheckpoint::Block { number } => {
-			query_builder.push(&format!("AND block_no > {number} "));
+			query_builder.push(&format!("AND block_no > {} ", number.0));
 		},
 		BridgeCheckpoint::Utxo { block_number, tx_ix, tx_out_ix } => {
 			query_builder.push(&format!(
-				"AND (block_no, tx.block_index, outputs.index) > ({block_number}, {tx_ix}, {tx_out_ix}) "
+				"AND (block_no, tx.block_index, outputs.index) > ({}, {}, {}) ",
+				block_number.0, tx_ix.0, tx_out_ix.0
 			));
 		},
 	}
 
-	let query = query_builder
+	query_builder
 		.push("GROUP BY tx.hash, outputs.id, output_tokens.quantity, datum.value, block.block_no, tx.block_index, outputs.index ")
-		.push("ORDER BY block.block_no, tx.block_index, outputs.index ")
-		.push(&format!("LIMIT {max_utxos};"))
+		.push("ORDER BY block.block_no, tx.block_index, outputs.index ");
+
+	if let Some(max_utxos) = max_utxos {
+		query_builder.push(&format!("LIMIT {max_utxos}"));
+	}
+	query_builder.push(";");
+
+	let query = query_builder
 		.build_query_as::<BridgeUtxo>()
 		.bind(&icp_address.0)
 		.bind(&native_token.policy_id.0)

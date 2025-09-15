@@ -1,14 +1,17 @@
-use super::TokenBridgeDataSourceImpl;
+use crate::bridge::cache::CachedTokenBridgeDataSourceImpl;
+use crate::{BlockDataSourceImpl, DbSyncBlockDataSourceConfig, TokenBridgeDataSourceImpl};
 use hex_literal::hex;
+use sidechain_domain::byte_string::ByteString;
+use sidechain_domain::mainchain_epoch::{Duration, MainchainEpochConfig, Timestamp};
 use sidechain_domain::{
 	AssetName, MainchainAddress, McBlockHash, McBlockNumber, McTxHash, PolicyId, UtxoId,
-	byte_string::ByteString,
 };
 use sp_partner_chains_bridge::{
 	BridgeDataCheckpoint, BridgeTransferV1, MainChainScripts, TokenBridgeDataSource,
 };
 use sqlx::PgPool;
 use std::str::FromStr;
+use std::sync::Arc;
 
 fn token_policy_id() -> PolicyId {
 	PolicyId(hex!("500000000000000000000000000000000000434845434b504f494e69"))
@@ -70,6 +73,10 @@ fn invalid_transfer_1() -> BridgeTransferV1<ByteString> {
 	}
 }
 
+fn reserve_transfer_utxo() -> UtxoId {
+	UtxoId::new(hex!("c000000000000000000000000000000000000000000000000000000000000002"), 0)
+}
+
 fn user_transfer_1_utxo() -> UtxoId {
 	UtxoId::new(hex!("c000000000000000000000000000000000000000000000000000000000000003"), 0)
 }
@@ -87,33 +94,85 @@ fn main_chain_scripts() -> MainChainScripts {
 	}
 }
 
-macro_rules! with_migration_versions {
-	($(async fn $name:ident($pool:ident: PgPool) $body:block )*) => {
+macro_rules! with_migration_versions_and_caching {
+	($(async fn $name:ident($data_source:ident: &dyn TokenBridgeDataSource<ByteString>) $body:block )*) => {
 		$(
 		mod $name {
+			use super::*;
+
+			async fn $name($data_source: &dyn TokenBridgeDataSource<ByteString>) $body
+
+			mod uncached {
 				use super::*;
+				#[allow(unused_imports)]
 				use pretty_assertions::assert_eq;
 
-				async fn $name($pool: PgPool) $body
-
 				#[sqlx::test(migrations = "./testdata/bridge/migrations-tx-in-enabled")]
-				async fn tx_in_enabled($pool: PgPool) {
-					$name($pool).await
+				async fn tx_in_enabled(pool: PgPool) {
+					$name(&create_data_source(pool)).await
 				}
 
 				#[sqlx::test(migrations = "./testdata/bridge/migrations-tx-in-consumed")]
-				async fn tx_in_consumed($pool: PgPool) {
-					$name($pool).await
+				async fn tx_in_consumed(pool: PgPool) {
+					$name(&create_data_source(pool)).await
 				}
+			}
+
+			mod cached {
+				use super::*;
+				#[allow(unused_imports)]
+				use pretty_assertions::assert_eq;
+
+				#[sqlx::test(migrations = "./testdata/bridge/migrations-tx-in-enabled")]
+				async fn tx_in_enabled(pool: PgPool) {
+					$name(&create_cached_source(pool)).await
+				}
+
+				#[sqlx::test(migrations = "./testdata/bridge/migrations-tx-in-consumed")]
+				async fn tx_in_consumed(pool: PgPool) {
+					$name(&create_cached_source(pool)).await
+				}
+			}
+
 		}
 		)*
 	}
 }
 
-with_migration_versions! {
-	async fn gets_transfers_from_init_to_block_2(pool: PgPool) {
-		let data_source: &dyn TokenBridgeDataSource<ByteString> =
-			&TokenBridgeDataSourceImpl::new(pool, None);
+fn main_chain_epoch_config() -> MainchainEpochConfig {
+	MainchainEpochConfig {
+		first_epoch_timestamp_millis: Timestamp::from_unix_millis(1650558070000),
+		epoch_duration_millis: Duration::from_millis(1000 * 1000),
+		first_epoch_number: 189,
+		first_slot_number: 189000,
+		slot_duration_millis: Duration::from_millis(1000),
+	}
+}
+
+fn block_data_source_config() -> DbSyncBlockDataSourceConfig {
+	DbSyncBlockDataSourceConfig {
+		cardano_security_parameter: 432,
+		cardano_active_slots_coeff: 0.05,
+		block_stability_margin: 0,
+	}
+}
+
+fn create_data_source(pool: PgPool) -> TokenBridgeDataSourceImpl {
+	TokenBridgeDataSourceImpl::new(pool, None)
+}
+
+fn create_cached_source(pool: PgPool) -> CachedTokenBridgeDataSourceImpl {
+	let blocks = Arc::new(BlockDataSourceImpl::from_config(
+		pool.clone(),
+		block_data_source_config(),
+		&main_chain_epoch_config(),
+	));
+	let cache_lookahead = 32;
+	CachedTokenBridgeDataSourceImpl::new(pool, None, blocks, cache_lookahead)
+}
+
+with_migration_versions_and_caching! {
+	async fn gets_transfers_from_init_to_block_2(data_source: &dyn TokenBridgeDataSource<ByteString>) {
 		let data_checkpoint = BridgeDataCheckpoint::Utxo(last_ics_init_utxo());
 		let current_mc_block = block_2_hash();
 		let max_transfers = 2;
@@ -129,9 +188,7 @@ with_migration_versions! {
 		assert_eq!(new_checkpoint, BridgeDataCheckpoint::Utxo(user_transfer_1_utxo()))
 	}
 
-	async fn gets_transfers_from_init_to_block_4(pool: PgPool) {
-		let data_source: &dyn TokenBridgeDataSource<ByteString> =
-			&TokenBridgeDataSourceImpl::new(pool, None);
+	async fn gets_transfers_from_init_to_block_4(data_source: &dyn TokenBridgeDataSource<ByteString>) {
 		let data_checkpoint = BridgeDataCheckpoint::Utxo(last_ics_init_utxo());
 		let current_mc_block = block_4_hash();
 		let max_transfers = 4;
@@ -150,9 +207,7 @@ with_migration_versions! {
 		assert_eq!(new_checkpoint, BridgeDataCheckpoint::Utxo(invalid_transfer_1_utxo()))
 	}
 
-	async fn accepts_block_checkpoint(pool: PgPool) {
-		let data_source: &dyn TokenBridgeDataSource<ByteString> =
-			&TokenBridgeDataSourceImpl::new(pool, None);
+	async fn accepts_block_checkpoint(data_source: &dyn TokenBridgeDataSource<ByteString>) {
 		let data_checkpoint = BridgeDataCheckpoint::Block(McBlockNumber(1));
 		let current_mc_block = block_4_hash();
 		let max_transfers = 4;
@@ -171,9 +226,7 @@ with_migration_versions! {
 		assert_eq!(new_checkpoint, BridgeDataCheckpoint::Utxo(invalid_transfer_1_utxo()))
 	}
 
-	async fn returns_block_checkpoint_when_no_transfers_are_found(pool: PgPool) {
-		let data_source: &dyn TokenBridgeDataSource<ByteString> =
-			&TokenBridgeDataSourceImpl::new(pool, None);
+	async fn returns_block_checkpoint_when_no_transfers_are_found(data_source: &dyn TokenBridgeDataSource<ByteString>) {
 		let data_checkpoint = BridgeDataCheckpoint::Block(McBlockNumber(6));
 		let current_mc_block = block_8_hash();
 		let max_transfers = 32;
@@ -188,9 +241,7 @@ with_migration_versions! {
 		assert_eq!(new_checkpoint, BridgeDataCheckpoint::Block(McBlockNumber(8)))
 	}
 
-	async fn returns_block_checkpoint_when_less_than_maximum_transfers_found(pool: PgPool) {
-		let data_source: &dyn TokenBridgeDataSource<ByteString> =
-			&TokenBridgeDataSourceImpl::new(pool, None);
+	async fn returns_block_checkpoint_when_less_than_maximum_transfers_found(data_source: &dyn TokenBridgeDataSource<ByteString>) {
 		let data_checkpoint = BridgeDataCheckpoint::Block(McBlockNumber(0));
 		let current_mc_block = block_8_hash();
 		let max_transfers = 32;
@@ -206,5 +257,21 @@ with_migration_versions! {
 		);
 
 		assert_eq!(new_checkpoint, BridgeDataCheckpoint::Block(McBlockNumber(8)))
+	}
+
+	async fn truncates_output_and_returns_utxo_checkpoint_if_max_output_is_reached(data_source: &dyn TokenBridgeDataSource<ByteString>) {
+		let data_checkpoint = BridgeDataCheckpoint::Utxo(last_ics_init_utxo());
+		let current_mc_block = block_2_hash();
+		let max_transfers = 1;
+
+		let (transfers, new_checkpoint) = data_source
+			.get_transfers(main_chain_scripts(), data_checkpoint, max_transfers, current_mc_block)
+			.await
+			.unwrap();
+
+		// There's two transfers done in block 2
+		assert_eq!(transfers, vec![reserve_transfer()]);
+
+		assert_eq!(new_checkpoint, BridgeDataCheckpoint::Utxo(reserve_transfer_utxo()))
 	}
 }
