@@ -75,10 +75,14 @@ observed_async_trait!(
 								"Could not find block info for data checkpoint: {data_checkpoint:?}"
 							),
 						)?;
-					BridgeCheckpoint::Utxo { block_number, tx_ix, tx_out_ix: utxo.index.into() }
+					ResolvedBridgeDataCheckpoint::Utxo {
+						block_number,
+						tx_ix,
+						tx_out_ix: utxo.index.into(),
+					}
 				},
 				BridgeDataCheckpoint::Block(number) => {
-					BridgeCheckpoint::Block { number: number.into() }
+					ResolvedBridgeDataCheckpoint::Block { number: number.into() }
 				},
 			};
 

@@ -67,7 +67,7 @@ impl TokenUtxoCache {
 
 	pub(crate) fn serve_from_cache(
 		&self,
-		checkpoint: &BridgeCheckpoint,
+		checkpoint: &ResolvedBridgeDataCheckpoint,
 		to_block: BlockNumber,
 		max_transfers: u32,
 	) -> Option<Vec<BridgeUtxo>> {
@@ -76,12 +76,12 @@ impl TokenUtxoCache {
 		}
 
 		let skip_pred: Box<dyn FnMut(&&BridgeUtxo) -> bool> = match checkpoint {
-			BridgeCheckpoint::Block { number }
+			ResolvedBridgeDataCheckpoint::Block { number }
 				if self.start_block <= number.saturating_add(1u32) =>
 			{
 				Box::new(move |utxo| *number >= utxo.block_number)
 			},
-			BridgeCheckpoint::Utxo { block_number, tx_ix, tx_out_ix }
+			ResolvedBridgeDataCheckpoint::Utxo { block_number, tx_ix, tx_out_ix }
 				if self.start_block <= *block_number =>
 			{
 				Box::new(move |utxo| utxo.ordering_key() <= (*block_number, *tx_ix, *tx_out_ix))
@@ -100,8 +100,14 @@ impl TokenUtxoCache {
 		)
 	}
 
-	pub(crate) fn find_utxo_in_cache(&self, utxo_id: &UtxoId) -> Option<BridgeUtxo> {
-		self.utxo_cache.get(utxo_id).cloned()
+	pub(crate) fn try_resolve_checkpoint_from_cache(
+		&self,
+		utxo_id: &UtxoId,
+	) -> Option<ResolvedBridgeDataCheckpoint> {
+		let BridgeUtxo { block_number, tx_ix, utxo_ix, .. } =
+			self.utxo_cache.get(utxo_id).cloned()?;
+
+		Some(ResolvedBridgeDataCheckpoint::Utxo { block_number, tx_ix, tx_out_ix: utxo_ix })
 	}
 }
 
@@ -177,7 +183,7 @@ impl CachedTokenBridgeDataSourceImpl {
 
 	async fn try_serve_from_cache(
 		&self,
-		data_checkpoint: &BridgeCheckpoint,
+		data_checkpoint: &ResolvedBridgeDataCheckpoint,
 		to_block: BlockNumber,
 		max_transfers: u32,
 	) -> Option<Vec<BridgeUtxo>> {
@@ -188,14 +194,14 @@ impl CachedTokenBridgeDataSourceImpl {
 	async fn fill_cache(
 		&self,
 		main_chain_scripts: MainChainScripts,
-		data_checkpoint: &BridgeCheckpoint,
+		data_checkpoint: &ResolvedBridgeDataCheckpoint,
 		to_block: BlockNumber,
 	) -> Result<(), Box<dyn Error + Send + Sync>> {
 		let from_block = data_checkpoint.get_block_number();
 
 		// We want to load all data in the block of `data_checkpoint`, so we go one block back.
 		let effective_data_checkpoint =
-			BridgeCheckpoint::Block { number: from_block.saturating_sub(1u32) };
+			ResolvedBridgeDataCheckpoint::Block { number: from_block.saturating_sub(1u32) };
 
 		let latest_block = self.get_latest_stable_block().await?.unwrap_or(to_block);
 
@@ -239,39 +245,33 @@ impl CachedTokenBridgeDataSourceImpl {
 			.map(|block| block.number.into()))
 	}
 
-	async fn get_block_info_for_utxo(
+	async fn resolve_checkpoint_for_utxo(
 		&self,
 		utxo_id: &UtxoId,
-	) -> Result<TxBlockInfo, Box<dyn Error + Send + Sync>> {
-		get_block_info_for_utxo(&self.pool, utxo_id.tx_hash.into())
-			.await?
-			.ok_or(format!("Could not find block info for utxo: {utxo_id:?}").into())
+	) -> Result<ResolvedBridgeDataCheckpoint, Box<dyn Error + Send + Sync>> {
+		let TxBlockInfo { block_number, tx_ix } =
+			get_block_info_for_utxo(&self.pool, utxo_id.tx_hash.into())
+				.await?
+				.ok_or(format!("Could not find block info for utxo: {utxo_id:?}"))?;
+		Ok(ResolvedBridgeDataCheckpoint::Utxo {
+			block_number,
+			tx_ix,
+			tx_out_ix: utxo_id.index.into(),
+		})
 	}
 
 	async fn resolve_data_checkpoint(
 		&self,
 		data_checkpoint: &BridgeDataCheckpoint,
-	) -> Result<BridgeCheckpoint, Box<dyn Error + Send + Sync>> {
+	) -> Result<ResolvedBridgeDataCheckpoint, Box<dyn Error + Send + Sync>> {
 		match data_checkpoint {
 			BridgeDataCheckpoint::Block(number) => {
-				Ok(BridgeCheckpoint::Block { number: (*number).into() })
+				Ok(ResolvedBridgeDataCheckpoint::Block { number: (*number).into() })
 			},
 			BridgeDataCheckpoint::Utxo(utxo) => {
-				match self.cache.lock().await.find_utxo_in_cache(&utxo) {
-					Some(utxo) => Ok(BridgeCheckpoint::Utxo {
-						block_number: utxo.block_number,
-						tx_ix: utxo.tx_ix,
-						tx_out_ix: utxo.utxo_ix,
-					}),
-					None => {
-						let TxBlockInfo { block_number, tx_ix } =
-							self.get_block_info_for_utxo(&utxo).await?;
-						Ok(BridgeCheckpoint::Utxo {
-							block_number,
-							tx_ix,
-							tx_out_ix: utxo.index.into(),
-						})
-					},
+				match self.cache.lock().await.try_resolve_checkpoint_from_cache(&utxo) {
+					Some(checkpoint) => Ok(checkpoint),
+					None => self.resolve_checkpoint_for_utxo(&utxo).await,
 				}
 			},
 		}
