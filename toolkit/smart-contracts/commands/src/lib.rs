@@ -33,6 +33,7 @@ use sidechain_domain::*;
 use std::time::Duration;
 
 pub mod assemble_tx;
+pub mod bridge;
 pub mod d_parameter;
 pub mod get_scripts;
 pub mod governance;
@@ -69,6 +70,8 @@ pub enum SmartContractsCmd {
 	#[command(subcommand)]
 	/// Manage the Governed Map key-value store on Cardano
 	GovernedMap(governed_map::GovernedMapCmd),
+	/// Send token to bridge contract
+	Bridge(bridge::BridgeCmd),
 }
 
 #[derive(Clone, Debug, clap::Parser)]
@@ -127,6 +130,7 @@ impl SmartContractsCmd {
 			Self::AssembleAndSubmitTx(cmd) => cmd.execute().await,
 			Self::SignTx(cmd) => cmd.execute().await,
 			Self::GovernedMap(cmd) => cmd.execute().await,
+			Self::Bridge(cmd) => cmd.execute().await,
 		}?;
 		println!("{}", result);
 		Ok(())

@@ -1,0 +1,55 @@
+use crate::{GenesisUtxo, PaymentFilePath};
+use partner_chains_cardano_offchain::bridge::{deposit_only, deposit_with_spend};
+use sidechain_domain::byte_string::ByteString;
+
+#[derive(Clone, Debug, clap::Parser)]
+/// Command for upserting the D-parameter on the main chain
+pub struct BridgeCmd {
+	#[clap(flatten)]
+	common_arguments: crate::CommonArguments,
+	#[arg(long)]
+	/// Number of tokens to transfer
+	amount: u64,
+	#[arg(long)]
+	/// Address in the partner chain to transfer the tokens, in hex format.
+	pc_address: ByteString,
+	#[arg(long)]
+	/// When true, the transaction won't spend an UTXO from ICS Validator. This costs more ada, but is simpler.
+	simple: bool,
+	#[clap(flatten)]
+	/// Path to the payment key file
+	payment_key_file: PaymentFilePath,
+	#[clap(flatten)]
+	/// Genesis UTXO
+	genesis_utxo: GenesisUtxo,
+}
+
+impl BridgeCmd {
+	/// Creates the D-parameter and upserts it on the main chain.
+	pub async fn execute(self) -> crate::SubCmdResult {
+		let payment_key = self.payment_key_file.read_key()?;
+		let client = self.common_arguments.get_ogmios_client().await?;
+		let tx_hash = if self.simple {
+			deposit_only(
+				self.genesis_utxo.into(),
+				self.amount,
+				&self.pc_address,
+				&payment_key,
+				&client,
+				&self.common_arguments.retries(),
+			)
+			.await?
+		} else {
+			deposit_with_spend(
+				self.genesis_utxo.into(),
+				self.amount,
+				&self.pc_address,
+				&payment_key,
+				&client,
+				&self.common_arguments.retries(),
+			)
+			.await?
+		};
+		Ok(serde_json::json!(tx_hash))
+	}
+}
