@@ -30,7 +30,7 @@ jobs:
 
 ### Pre merge workflow ###############################################################################################################
 
-  build-release-pre-merge:
+  build-linux-x86_64-pre-merge:
     runs-on: nixos
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
     steps:
@@ -240,7 +240,7 @@ jobs:
             ./ci_preview_chain_spec.json
             ./staging_preview_chain_spec.json
 
-  build-dev-pre-merge:
+  build-nightly-pre-merge:
     runs-on: nixos
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
     steps:
@@ -357,14 +357,14 @@ jobs:
             echo "sccache not in devshell; skipping wrapper."
           fi
 
-      - name: Build (Debug)
-        run: nix develop -c bash -c "cargo build --locked"
+      - name: Build (Nightly)
+        run: nix develop -c bash -c "RUSTUP_TOOLCHAIN=nightly cargo build --locked"
 
-      - name: Test
-        run: nix develop -c bash -c "cargo test --locked --all-features"
+      - name: Test (Nightly)
+        run: nix develop -c bash -c "RUSTUP_TOOLCHAIN=nightly cargo test --locked --all-features"
 
-      - name: Lint
-        run: nix develop -c bash -c "RUSTFLAGS=-Dwarnings cargo clippy --locked --all-features"
+      - name: Lint (Nightly)
+        run: nix develop -c bash -c "RUSTUP_TOOLCHAIN=nightly RUSTFLAGS=-Dwarnings cargo clippy --locked --all-features"
 
       - name: sccache stats
         if: always()
@@ -413,7 +413,7 @@ jobs:
 
   local-env:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
-    needs: build-release-pre-merge
+    needs: build-linux-x86_64-pre-merge
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -477,7 +477,7 @@ jobs:
         shell: bash
 
   documentation-tests:
-    needs: build-release-pre-merge
+    needs: build-linux-x86_64-pre-merge
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
     runs-on: ubuntu-latest
     steps:
@@ -491,7 +491,7 @@ jobs:
 
   upload-chain-specs-pre-merge:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
-    needs: build-release-pre-merge
+    needs: build-linux-x86_64-pre-merge
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -511,8 +511,8 @@ jobs:
   pre-merge-checks-complete:
     if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.merged == false }}
     needs: [
-      build-release-pre-merge,
-      build-dev-pre-merge,
+      build-linux-x86_64-pre-merge,
+      build-nightly-pre-merge,
       local-env,
       upload-chain-specs-pre-merge,
       documentation-tests
@@ -521,8 +521,8 @@ jobs:
     steps:
       - name: Check if any needed job failed
         run: |
-          if [[ "${{ needs.build-release-pre-merge.result }}" != "success" ||
-                "${{ needs.build-dev-pre-merge.result }}" != "success" ||
+          if [[ "${{ needs.build-linux-x86_64-pre-merge.result }}" != "success" ||
+                "${{ needs.build-nightly-pre-merge.result }}" != "success" ||
                 "${{ needs.local-env.result }}" != "success" ||
                 "${{ needs.upload-chain-specs-pre-merge.result }}" != "success" ||
                 "${{ needs.documentation-tests.result }}" != "success" ]]; then
