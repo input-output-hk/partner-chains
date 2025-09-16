@@ -1,6 +1,6 @@
 use crate::{GenesisUtxo, PaymentFilePath};
 use partner_chains_cardano_offchain::bridge::{deposit_with_ics_spend, deposit_without_ics_input};
-use sidechain_domain::byte_string::ByteString;
+use sp_runtime::AccountId32;
 
 #[derive(Clone, Debug, clap::Parser)]
 /// Command for upserting the D-parameter on the main chain
@@ -12,7 +12,7 @@ pub struct BridgeCmd {
 	amount: u64,
 	#[arg(long)]
 	/// Address in the partner chain to transfer the tokens, in hex format.
-	pc_address: ByteString,
+	pc_address: AccountId32,
 	#[arg(long)]
 	/// When true, the transaction won't spend an UTXO from ICS Validator. This costs more ada, but is simpler.
 	simple: bool,
@@ -33,7 +33,7 @@ impl BridgeCmd {
 			deposit_without_ics_input(
 				self.genesis_utxo.into(),
 				self.amount,
-				&self.pc_address,
+				self.pc_address.as_ref(),
 				&payment_key,
 				&client,
 				&self.common_arguments.retries(),
@@ -43,7 +43,7 @@ impl BridgeCmd {
 			deposit_with_ics_spend(
 				self.genesis_utxo.into(),
 				self.amount,
-				&self.pc_address,
+				self.pc_address.as_ref(),
 				&payment_key,
 				&client,
 				&self.common_arguments.retries(),
