@@ -38,6 +38,7 @@ DECLARE
  user_transfer_tx_1 integer := 21;
  user_transfer_tx_2 integer  := 22;
  invalid_transfer_tx_1 integer  := 31;
+ invalid_transfer_tx_2 integer  := 32;
  irrelevant_tx integer  := 41;
 
  -- those hashes are not really important but putting them in variables help to make the data more readable
@@ -46,6 +47,7 @@ DECLARE
  user_transfer_tx_hash_1 hash32type := decode('c000000000000000000000000000000000000000000000000000000000000003','hex');
  user_transfer_tx_hash_2 hash32type := decode('c000000000000000000000000000000000000000000000000000000000000004','hex');
  ivalid_transfer_tx_hash_1 hash32type := decode('c000000000000000000000000000000000000000000000000000000000000005','hex');
+ ivalid_transfer_tx_hash_2 hash32type := decode('c000000000000000000000000000000000000000000000000000000000000006','hex');
  irrelevant_tx_hash hash32type := decode('4242424242424242424242424242424242424242424242424242424242424242','hex');
 
  reserve_transfer_datum_hash hash32type := decode('0000000000000000000000000000000000000000000000000000000000000001','hex');
@@ -62,6 +64,7 @@ INSERT INTO tx ( id                    , hash                       , block_id, 
               ,( user_transfer_tx_1    , user_transfer_tx_hash_1    , 2       , 1          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        )
               ,( user_transfer_tx_2    , user_transfer_tx_hash_2    , 4       , 0          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        )
               ,( invalid_transfer_tx_1 , ivalid_transfer_tx_hash_1  , 4       , 1          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        )
+              ,( invalid_transfer_tx_2 , ivalid_transfer_tx_hash_2  , 4       , 2          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        )
 ;
 
 
@@ -74,14 +77,15 @@ INSERT INTO tx_out ( id, tx_id                 , index, address     , address_ra
                   ,( 21, reserve_transfer_tx   , 0    , 'ics address', ''         , TRUE              , NULL        , NULL            , 0    , reserve_transfer_datum_hash ) -- transfers 100 tokens
                   ,( 31, user_transfer_tx_1    , 0    , 'ics address', ''         , TRUE              , NULL        , NULL            , 0    , user_tranfer_datum_hash_1   ) -- transfers 10 tokens + 100 tokens from previous transaction's utxo
                   ,( 32, user_transfer_tx_2    , 0    , 'ics address', ''         , TRUE              , NULL        , NULL            , 0    , user_tranfer_datum_hash_2   ) -- transfers 10 tokens + 110 tokens from previous transaction's utxo
-                  ,( 41, invalid_transfer_tx_1 , 0    , 'ics address', ''         , TRUE              , NULL        , NULL            , 0    , invalid_transfer_datum      ) -- invalid transfer
+                  ,( 41, invalid_transfer_tx_1 , 0    , 'ics address', ''         , TRUE              , NULL        , NULL            , 0    , invalid_transfer_datum      ) -- invalid transfer, invalid datum
+                  ,( 42, invalid_transfer_tx_2 , 0    , 'ics address', ''         , TRUE              , NULL        , NULL            , 0    , NULL                        ) -- invalid transfer, no datum
 ;
 
 INSERT INTO datum ( id, hash                        , tx_id                  , value            )
-           VALUES ( 0 , reserve_transfer_datum_hash , reserve_transfer_tx    , reserve_datum    )
-                 ,( 1 , user_tranfer_datum_hash_2   , user_transfer_tx_1     , transfer_datum_1 )
-                 ,( 2 , user_tranfer_datum_hash_2   , user_transfer_tx_2     , transfer_datum_2 )
-                 ,( 3 , invalid_transfer_datum      , invalid_transfer_tx_1  , invalid_datum    )
+           VALUES ( 0 , reserve_transfer_datum_hash , irrelevant_tx          , reserve_datum    )
+                 ,( 1 , user_tranfer_datum_hash_1   , irrelevant_tx          , transfer_datum_1 )
+                 ,( 2 , user_tranfer_datum_hash_2   , irrelevant_tx          , transfer_datum_2 )
+                 ,( 3 , invalid_transfer_datum      , irrelevant_tx          , invalid_datum    )
 ;
 
 INSERT INTO multi_asset ( id                  , policy              , name               , fingerprint       )
@@ -94,7 +98,8 @@ VALUES                (11 , 100      , 21        , native_token_id )
                      ,(12 , 110      , 31        , native_token_id )
                      ,(13 , 120      , 32        , native_token_id )
                      ,(14 , 1000     , 41        , native_token_id )
-                     ,(15 , 1000     , 15        , native_token_id )
+                     ,(15 , 1000     , 42        , native_token_id )
+                     ,(16 , 1000     , 15        , native_token_id )
 
                      ,(21 , 9999     , 21        , irrelevant_token_id )
                      ,(22 , 9999     , 31        , irrelevant_token_id )

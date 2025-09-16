@@ -65,12 +65,18 @@ fn user_transfer_2() -> BridgeTransferV1<ByteString> {
 	}
 }
 
+// transfer with invalid datum
 fn invalid_transfer_1() -> BridgeTransferV1<ByteString> {
 	BridgeTransferV1::InvalidTransfer {
 		// invalid transfer consumes utxo from user transfer 2
 		token_amount: 1000 - 120,
 		utxo_id: invalid_transfer_1_utxo(),
 	}
+}
+
+// transfer with no datum
+fn invalid_transfer_2() -> BridgeTransferV1<ByteString> {
+	BridgeTransferV1::InvalidTransfer { token_amount: 1000, utxo_id: invalid_transfer_2_utxo() }
 }
 
 fn reserve_transfer_utxo() -> UtxoId {
@@ -83,6 +89,10 @@ fn user_transfer_1_utxo() -> UtxoId {
 
 fn invalid_transfer_1_utxo() -> UtxoId {
 	UtxoId::new(hex!("c000000000000000000000000000000000000000000000000000000000000005"), 0)
+}
+
+fn invalid_transfer_2_utxo() -> UtxoId {
+	UtxoId::new(hex!("c000000000000000000000000000000000000000000000000000000000000006"), 0)
 }
 
 fn main_chain_scripts() -> MainChainScripts {
@@ -99,6 +109,8 @@ macro_rules! with_migration_versions_and_caching {
 		$(
 		mod $name {
 			use super::*;
+			#[allow(unused_imports)]
+			use pretty_assertions::assert_eq;
 
 			async fn $name($data_source: &dyn TokenBridgeDataSource<ByteString>) $body
 
@@ -120,8 +132,6 @@ macro_rules! with_migration_versions_and_caching {
 
 			mod cached {
 				use super::*;
-				#[allow(unused_imports)]
-				use pretty_assertions::assert_eq;
 
 				#[sqlx::test(migrations = "./testdata/bridge/migrations-tx-in-enabled")]
 				async fn tx_in_enabled(pool: PgPool) {
@@ -191,7 +201,7 @@ with_migration_versions_and_caching! {
 	async fn gets_transfers_from_init_to_block_4(data_source: &dyn TokenBridgeDataSource<ByteString>) {
 		let data_checkpoint = BridgeDataCheckpoint::Utxo(last_ics_init_utxo());
 		let current_mc_block = block_4_hash();
-		let max_transfers = 4;
+		let max_transfers = 5;
 
 		let (transfers, new_checkpoint) = data_source
 			.get_transfers(main_chain_scripts(), data_checkpoint, max_transfers, current_mc_block)
@@ -201,16 +211,16 @@ with_migration_versions_and_caching! {
 		// There's three valid transfers and one invalid done between blocks 2 and 4
 		assert_eq!(
 			transfers,
-			vec![reserve_transfer(), user_transfer_1(), user_transfer_2(), invalid_transfer_1()]
+			vec![reserve_transfer(), user_transfer_1(), user_transfer_2(), invalid_transfer_1(), invalid_transfer_2()]
 		);
 
-		assert_eq!(new_checkpoint, BridgeDataCheckpoint::Utxo(invalid_transfer_1_utxo()))
+		assert_eq!(new_checkpoint, BridgeDataCheckpoint::Utxo(invalid_transfer_2_utxo()))
 	}
 
 	async fn accepts_block_checkpoint(data_source: &dyn TokenBridgeDataSource<ByteString>) {
 		let data_checkpoint = BridgeDataCheckpoint::Block(McBlockNumber(1));
 		let current_mc_block = block_4_hash();
-		let max_transfers = 4;
+		let max_transfers = 5;
 
 		let (transfers, new_checkpoint) = data_source
 			.get_transfers(main_chain_scripts(), data_checkpoint, max_transfers, current_mc_block)
@@ -220,10 +230,10 @@ with_migration_versions_and_caching! {
 		// There's three valid transfers and one invalid done between blocks 2 and 4
 		assert_eq!(
 			transfers,
-			vec![reserve_transfer(), user_transfer_1(), user_transfer_2(), invalid_transfer_1()]
+			vec![reserve_transfer(), user_transfer_1(), user_transfer_2(), invalid_transfer_1(), invalid_transfer_2()]
 		);
 
-		assert_eq!(new_checkpoint, BridgeDataCheckpoint::Utxo(invalid_transfer_1_utxo()))
+		assert_eq!(new_checkpoint, BridgeDataCheckpoint::Utxo(invalid_transfer_2_utxo()))
 	}
 
 	async fn returns_block_checkpoint_when_no_transfers_are_found(data_source: &dyn TokenBridgeDataSource<ByteString>) {
@@ -253,7 +263,7 @@ with_migration_versions_and_caching! {
 
 		assert_eq!(
 			transfers,
-			vec![reserve_transfer(), user_transfer_1(), user_transfer_2(), invalid_transfer_1()]
+			vec![reserve_transfer(), user_transfer_1(), user_transfer_2(), invalid_transfer_1(), invalid_transfer_2()]
 		);
 
 		assert_eq!(new_checkpoint, BridgeDataCheckpoint::Block(McBlockNumber(8)))
