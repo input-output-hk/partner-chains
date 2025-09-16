@@ -122,7 +122,11 @@ where
 
 	let token_amount = token_delta.0 as u64;
 
-	let transfer = match TokenTransferDatum::try_from(utxo.datum.0.clone()) {
+	let Some(datum) = utxo.datum.clone() else {
+		return Some(BridgeTransferV1::InvalidTransfer { token_amount, utxo_id: utxo.utxo_id() });
+	};
+
+	let transfer = match TokenTransferDatum::try_from(datum.0) {
 		Ok(TokenTransferDatum::V1(TokenTransferDatumV1::UserTransfer { receiver })) => {
 			match RecipientAddress::try_from(receiver.0.as_ref()) {
 				Ok(recipient) => BridgeTransferV1::UserTransfer { token_amount, recipient },
