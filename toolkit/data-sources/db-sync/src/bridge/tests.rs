@@ -73,6 +73,10 @@ fn invalid_transfer_1() -> BridgeTransferV1<ByteString> {
 	}
 }
 
+fn invalid_transfer_2() -> BridgeTransferV1<ByteString> {
+	BridgeTransferV1::InvalidTransfer { token_amount: 1000, utxo_id: invalid_transfer_2_utxo() }
+}
+
 fn reserve_transfer_utxo() -> UtxoId {
 	UtxoId::new(hex!("c000000000000000000000000000000000000000000000000000000000000002"), 0)
 }
@@ -83,6 +87,10 @@ fn user_transfer_1_utxo() -> UtxoId {
 
 fn invalid_transfer_1_utxo() -> UtxoId {
 	UtxoId::new(hex!("c000000000000000000000000000000000000000000000000000000000000005"), 0)
+}
+
+fn invalid_transfer_2_utxo() -> UtxoId {
+	UtxoId::new(hex!("c000000000000000000000000000000000000000000000000000000000000006"), 0)
 }
 
 fn main_chain_scripts() -> MainChainScripts {
@@ -201,10 +209,10 @@ with_migration_versions_and_caching! {
 		// There's three valid transfers and one invalid done between blocks 2 and 4
 		assert_eq!(
 			transfers,
-			vec![reserve_transfer(), user_transfer_1(), user_transfer_2(), invalid_transfer_1()]
+			vec![reserve_transfer(), user_transfer_1(), user_transfer_2(), invalid_transfer_1(), invalid_transfer_2()]
 		);
 
-		assert_eq!(new_checkpoint, BridgeDataCheckpoint::Utxo(invalid_transfer_1_utxo()))
+		assert_eq!(new_checkpoint, BridgeDataCheckpoint::Utxo(invalid_transfer_2_utxo()))
 	}
 
 	async fn accepts_block_checkpoint(data_source: &dyn TokenBridgeDataSource<ByteString>) {
@@ -220,10 +228,10 @@ with_migration_versions_and_caching! {
 		// There's three valid transfers and one invalid done between blocks 2 and 4
 		assert_eq!(
 			transfers,
-			vec![reserve_transfer(), user_transfer_1(), user_transfer_2(), invalid_transfer_1()]
+			vec![reserve_transfer(), user_transfer_1(), user_transfer_2(), invalid_transfer_1(), invalid_transfer_2()]
 		);
 
-		assert_eq!(new_checkpoint, BridgeDataCheckpoint::Utxo(invalid_transfer_1_utxo()))
+		assert_eq!(new_checkpoint, BridgeDataCheckpoint::Utxo(invalid_transfer_2_utxo()))
 	}
 
 	async fn returns_block_checkpoint_when_no_transfers_are_found(data_source: &dyn TokenBridgeDataSource<ByteString>) {
@@ -253,7 +261,7 @@ with_migration_versions_and_caching! {
 
 		assert_eq!(
 			transfers,
-			vec![reserve_transfer(), user_transfer_1(), user_transfer_2(), invalid_transfer_1()]
+			vec![reserve_transfer(), user_transfer_1(), user_transfer_2(), invalid_transfer_1(), invalid_transfer_2()]
 		);
 
 		assert_eq!(new_checkpoint, BridgeDataCheckpoint::Block(McBlockNumber(8)))
