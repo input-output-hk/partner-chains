@@ -99,6 +99,8 @@ macro_rules! with_migration_versions_and_caching {
 		$(
 		mod $name {
 			use super::*;
+			#[allow(unused_imports)]
+			use pretty_assertions::assert_eq;
 
 			async fn $name($data_source: &dyn TokenBridgeDataSource<ByteString>) $body
 
@@ -120,8 +122,6 @@ macro_rules! with_migration_versions_and_caching {
 
 			mod cached {
 				use super::*;
-				#[allow(unused_imports)]
-				use pretty_assertions::assert_eq;
 
 				#[sqlx::test(migrations = "./testdata/bridge/migrations-tx-in-enabled")]
 				async fn tx_in_enabled(pool: PgPool) {
