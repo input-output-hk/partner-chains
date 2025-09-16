@@ -245,25 +245,23 @@ async fn reserve_release_to_zero_scenario() {
 }
 
 #[tokio::test]
-async fn lock_in_ics() {
+async fn bridge_deposits() {
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
 	let container = image.start().await.unwrap();
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_governance(&client).await;
 	let _ = run_init_reserve_management(genesis_utxo, &client).await;
 	let _ = run_create_reserve_management(genesis_utxo, V_FUNCTION_HASH, &client).await;
-	let _ = run_deposit_to_ics(genesis_utxo, &client).await;
+	let ics_utxos_count_0 = get_isc_utxos_count(genesis_utxo, &client).await;
+	let _ = run_bridge_deposit_to_without_ics_spend(genesis_utxo, &client).await;
 	assert_illiquid_supply(genesis_utxo, DEPOSIT_AMOUNT, &client).await;
+	let ics_utxos_count_1 = get_isc_utxos_count(genesis_utxo, &client).await;
+	assert_eq!(ics_utxos_count_1, ics_utxos_count_0 + 1);
 
-	let _ = run_deposit_to_ics_2(genesis_utxo, &client).await;
-	assert_illiquid_supply(genesis_utxo, 3 * DEPOSIT_AMOUNT, &client).await;
-
-	let data = scripts_data::get_scripts_data(genesis_utxo, NetworkIdKind::Testnet).unwrap();
-	let utxos = client
-		.query_utxos(&[data.addresses.illiquid_circulation_supply_validator])
-		.await
-		.unwrap();
-	println!("{utxos:?}");
+	let _ = run_bridge_deposit_to_with_ics_spend(genesis_utxo, &client).await;
+	assert_illiquid_supply(genesis_utxo, 2 * DEPOSIT_AMOUNT, &client).await;
+	let ics_utxos_count_2 = get_isc_utxos_count(genesis_utxo, &client).await;
+	assert_eq!(ics_utxos_count_2, ics_utxos_count_1);
 }
 
 #[tokio::test]
@@ -654,13 +652,13 @@ async fn run_deposit_to_reserve<
 	result
 }
 
-async fn run_deposit_to_ics<
+async fn run_bridge_deposit_to_without_ics_spend<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 >(
 	genesis_utxo: UtxoId,
 	client: &T,
 ) -> McTxHash {
-	bridge::deposit_only(
+	bridge::deposit_without_ics_input(
 		genesis_utxo,
 		DEPOSIT_AMOUNT,
 		&[1u8; 32],
@@ -672,15 +670,15 @@ async fn run_deposit_to_ics<
 	.unwrap()
 }
 
-async fn run_deposit_to_ics_2<
+async fn run_bridge_deposit_to_with_ics_spend<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 >(
 	genesis_utxo: UtxoId,
 	client: &T,
 ) -> McTxHash {
-	bridge::deposit_with_spend(
+	bridge::deposit_with_ics_spend(
 		genesis_utxo,
-		2 * DEPOSIT_AMOUNT,
+		DEPOSIT_AMOUNT,
 		&[2u8; 32],
 		&governance_authority_payment_key(),
 		client,
@@ -881,6 +879,15 @@ async fn assert_illiquid_supply<T: QueryLedgerState>(
 		client,
 	)
 	.await;
+}
+
+async fn get_isc_utxos_count<T: QueryLedgerState>(genesis_utxo: UtxoId, client: &T) -> usize {
+	let data = scripts_data::get_scripts_data(genesis_utxo, NetworkIdKind::Testnet).unwrap();
+	let utxos = client
+		.query_utxos(&[data.addresses.illiquid_circulation_supply_validator])
+		.await
+		.unwrap();
+	utxos.len()
 }
 
 async fn run_assemble_and_sign<

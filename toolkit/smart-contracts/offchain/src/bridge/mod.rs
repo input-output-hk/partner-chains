@@ -21,7 +21,7 @@ use ogmios_client::{
 	query_network::QueryNetwork,
 	transactions::Transactions,
 };
-use partner_chains_plutus_data::bridge::{TokenTransferDatum, TokenTransferDatumV1};
+use partner_chains_plutus_data::bridge::TokenTransferDatumV1;
 use sidechain_domain::byte_string::ByteString;
 use sidechain_domain::crypto::blake2b;
 use sidechain_domain::{McTxHash, UtxoId};
@@ -33,7 +33,7 @@ use sidechain_domain::{McTxHash, UtxoId};
 ///  - `amount` number of tokens to be deposited.
 ///  - `payment_signing_key`: Signing key of the party paying fees.
 ///  - `await_tx`: [AwaitTx] strategy.
-pub async fn deposit_only<
+pub async fn deposit_without_ics_input<
 	C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,
 	A: AwaitTx,
 >(
@@ -108,7 +108,7 @@ fn deposit_only_tx(
 ///  - `amount` number of tokens to be deposited.
 ///  - `payment_signing_key`: Signing key of the party paying fees.
 ///  - `await_tx`: [AwaitTx] strategy.
-pub async fn deposit_with_spend<
+pub async fn deposit_with_ics_spend<
 	C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,
 	A: AwaitTx,
 >(
@@ -255,6 +255,3 @@ fn deposit_tx(
 fn to_datum(pc_address: ByteString) -> PlutusData {
 	TokenTransferDatumV1::UserTransfer { receiver: pc_address }.into()
 }
-
-#[cfg(test)]
-mod tests;

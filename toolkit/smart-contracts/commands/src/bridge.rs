@@ -1,5 +1,5 @@
 use crate::{GenesisUtxo, PaymentFilePath};
-use partner_chains_cardano_offchain::bridge::{deposit_only, deposit_with_spend};
+use partner_chains_cardano_offchain::bridge::{deposit_with_ics_spend, deposit_without_ics_input};
 use sidechain_domain::byte_string::ByteString;
 
 #[derive(Clone, Debug, clap::Parser)]
@@ -30,7 +30,7 @@ impl BridgeCmd {
 		let payment_key = self.payment_key_file.read_key()?;
 		let client = self.common_arguments.get_ogmios_client().await?;
 		let tx_hash = if self.simple {
-			deposit_only(
+			deposit_without_ics_input(
 				self.genesis_utxo.into(),
 				self.amount,
 				&self.pc_address,
@@ -40,7 +40,7 @@ impl BridgeCmd {
 			)
 			.await?
 		} else {
-			deposit_with_spend(
+			deposit_with_ics_spend(
 				self.genesis_utxo.into(),
 				self.amount,
 				&self.pc_address,
