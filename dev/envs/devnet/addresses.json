@@ -2,17 +2,17 @@
   "addresses": {
     "CommitteeCandidateValidator": "addr_test1wqv2cysju0zhxpx8p82xzggtckp35vn6zx59jkgtt2lx6kq7vk9uc",
     "DParameterValidator": "addr_test1wqprpkf7pl0gd6k3ktjkevctd3xw9kmtcdrqxn7fq7thwtcxdrz7f",
-    "GovernedMapValidator": "addr_test1wpgentvcgxuavj2usddz75cuxcmsmy0mu4ptvaa0pfwws6s4zawv4",
-    "IlliquidCirculationSupplyValidator": "addr_test1wzzyc3mcqh4phq0pa827dn756lfd045lzh3tgr9mt5p2ayqpxp55c",
+    "GovernedMapValidator": "addr_test1wp3l6psyjxclp56vzpqh0y8dd3d4ju0n0lurrlesk6x2s4qaed5vh",
+    "IlliquidCirculationSupplyValidator": "addr_test1wz66h2z7frszmxtkec0ny5cg7ugdrekx5ugup0h2yztavmqe77ult",
     "PermissionedCandidatesValidator": "addr_test1wq9rs56shtj0ntjsxpdp7jjx05t5njv06mmwz253c030vrgyu8zwh",
-    "ReserveValidator": "addr_test1wpzqdf6n42rw5gtrnffas8zp6qges08984a0xzhk77406rqtk5g77",
-    "VersionOracleValidator": "addr_test1wpjs63selkhp3tw9pgudh36wegy9prpcvqlzlmfxjvk0acg9zy0hs"
+    "ReserveValidator": "addr_test1wpp6d0ev704u3lwvwp9zul9hthdnt2234a20vlttkhp6krs3cz54a",
+    "VersionOracleValidator": "addr_test1wzs325t966cnx7gf507446mj320c463p27ha0glpyjm83wsxg5yt9"
   },
   "policyIds": {
     "DParameter": "0x88191b45e28c07f504c025be7c4150423f2dd329a3469314f1356f32",
-    "GovernedMap": "0xdefd7ef39e09b578430fd0a1552b3282dd24a15e9bdde3ba576c223f",
+    "GovernedMap": "0xde6cbc955242add82bee9d1bf285099eed4f4d56126280b123793687",
     "PermissionedCandidates": "0x05036e5b34be08829084abea1878131d1c51b204753e8fcfcbfea9f1",
-    "ReserveAuth": "0x2fe084ee6c648d3001ef9082840a58b75aab56b280485d098708f0bc",
-    "VersionOracle": "0x574dd87f8d90cd64be5eabf1e5b4537976acf61227954c2eff59c7bb"
+    "ReserveAuth": "0x614176ea42ae0d52eaf82747743ea01ea78e337efeabad4d52f67d6d",
+    "VersionOracle": "0xd4c62c08a7cc9abc970b2daf9c725c354c15909e185eea369a9ab586"
   }
 }

@@ -155,7 +155,7 @@ sp_api::mock_impl_runtime_apis! {
 			None
 		}
 		fn get_max_transfers_per_block() -> u32 {
-			32
+			2
 		}
 		fn get_last_data_checkpoint() -> Option<sp_partner_chains_bridge::BridgeDataCheckpoint> {
 			None
