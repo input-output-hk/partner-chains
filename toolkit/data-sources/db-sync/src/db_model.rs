@@ -1038,7 +1038,7 @@ async fn get_bridge_utxos_tx_in_consumed(
 	JOIN block                     ON tx.block_id = block.id
 	JOIN ma_tx_out   output_tokens ON output_tokens.tx_out_id = outputs.id
 	JOIN multi_asset native_token  ON native_token.id = output_tokens.ident
-	JOIN datum                     ON datum.tx_id = tx.id
+	JOIN datum                     ON datum.hash = outputs.data_hash
 
 	LEFT JOIN tx_out     inputs        ON inputs.consumed_by_tx_id = tx.id   AND inputs.address = $1
 	LEFT JOIN ma_tx_out  input_tokens  ON input_tokens.tx_out_id = inputs.id AND input_tokens.ident = native_token.id
@@ -1105,7 +1105,7 @@ async fn get_bridge_utxos_tx_in_enabled(
 	JOIN block                     ON tx.block_id = block.id
 	JOIN ma_tx_out   output_tokens ON output_tokens.tx_out_id = outputs.id
 	JOIN multi_asset native_token  ON native_token.id = output_tokens.ident
-	JOIN datum                     ON datum.tx_id = tx.id
+	JOIN datum                     ON datum.hash = outputs.data_hash
 
 	LEFT JOIN tx_in      inputs_join   ON tx.id = inputs_join.tx_in_id
 	LEFT JOIN tx_out     inputs        ON inputs_join.tx_out_id = inputs.tx_id and inputs_join.tx_out_index = inputs.index AND inputs.address = $1
