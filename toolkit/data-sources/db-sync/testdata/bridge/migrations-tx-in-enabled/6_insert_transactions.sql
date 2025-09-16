@@ -78,10 +78,10 @@ INSERT INTO tx_out ( id, tx_id                 , index, address     , address_ra
 ;
 
 INSERT INTO datum ( id, hash                        , tx_id                  , value            )
-           VALUES ( 0 , reserve_transfer_datum_hash , reserve_transfer_tx    , reserve_datum    )
-                 ,( 1 , user_tranfer_datum_hash_2   , user_transfer_tx_1     , transfer_datum_1 )
-                 ,( 2 , user_tranfer_datum_hash_2   , user_transfer_tx_2     , transfer_datum_2 )
-                 ,( 3 , invalid_transfer_datum      , invalid_transfer_tx_1  , invalid_datum    )
+           VALUES ( 0 , reserve_transfer_datum_hash , irrelevant_tx          , reserve_datum    )
+                 ,( 1 , user_tranfer_datum_hash_1   , irrelevant_tx          , transfer_datum_1 )
+                 ,( 2 , user_tranfer_datum_hash_2   , irrelevant_tx          , transfer_datum_2 )
+                 ,( 3 , invalid_transfer_datum      , irrelevant_tx          , invalid_datum    )
 ;
 
 INSERT INTO multi_asset ( id                  , policy              , name               , fingerprint       )
