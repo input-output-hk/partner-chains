@@ -161,7 +161,7 @@ jobs:
       - name: Formatting
         run: nix develop -c bash -c "cargo fmt --check"
 
-      - name: Build (Release)
+      - name: Build (Stable)
         run: nix develop -c bash -c "cargo build --locked --release"
 
       - name: sccache stats
