@@ -65,6 +65,7 @@ fn user_transfer_2() -> BridgeTransferV1<ByteString> {
 	}
 }
 
+// transfer with invalid datum
 fn invalid_transfer_1() -> BridgeTransferV1<ByteString> {
 	BridgeTransferV1::InvalidTransfer {
 		// invalid transfer consumes utxo from user transfer 2
@@ -73,6 +74,7 @@ fn invalid_transfer_1() -> BridgeTransferV1<ByteString> {
 	}
 }
 
+// transfer with no datum
 fn invalid_transfer_2() -> BridgeTransferV1<ByteString> {
 	BridgeTransferV1::InvalidTransfer { token_amount: 1000, utxo_id: invalid_transfer_2_utxo() }
 }
