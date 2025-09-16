@@ -191,7 +191,7 @@ with_migration_versions_and_caching! {
 	async fn gets_transfers_from_init_to_block_4(data_source: &dyn TokenBridgeDataSource<ByteString>) {
 		let data_checkpoint = BridgeDataCheckpoint::Utxo(last_ics_init_utxo());
 		let current_mc_block = block_4_hash();
-		let max_transfers = 4;
+		let max_transfers = 5;
 
 		let (transfers, new_checkpoint) = data_source
 			.get_transfers(main_chain_scripts(), data_checkpoint, max_transfers, current_mc_block)
@@ -210,7 +210,7 @@ with_migration_versions_and_caching! {
 	async fn accepts_block_checkpoint(data_source: &dyn TokenBridgeDataSource<ByteString>) {
 		let data_checkpoint = BridgeDataCheckpoint::Block(McBlockNumber(1));
 		let current_mc_block = block_4_hash();
-		let max_transfers = 4;
+		let max_transfers = 5;
 
 		let (transfers, new_checkpoint) = data_source
 			.get_transfers(main_chain_scripts(), data_checkpoint, max_transfers, current_mc_block)
