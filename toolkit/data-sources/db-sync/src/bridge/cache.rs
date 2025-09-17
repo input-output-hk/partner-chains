@@ -79,7 +79,7 @@ impl TokenUtxoCache {
 			BridgeCheckpoint::Block { number }
 				if self.start_block <= number.saturating_add(1u32) =>
 			{
-				Box::new(move |utxo| *number > utxo.block_number)
+				Box::new(move |utxo| *number >= utxo.block_number)
 			},
 			BridgeCheckpoint::Utxo { block_number, tx_ix, tx_out_ix }
 				if self.start_block <= *block_number =>
