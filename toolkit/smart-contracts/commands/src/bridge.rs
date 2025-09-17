@@ -3,7 +3,7 @@ use partner_chains_cardano_offchain::bridge::{deposit_with_ics_spend, deposit_wi
 use sp_runtime::AccountId32;
 
 #[derive(Clone, Debug, clap::Parser)]
-/// Command for upserting the D-parameter on the main chain
+/// Command for sending a native token bridge transfer. Token to be sent is defined in the Reserve Settings.
 pub struct BridgeCmd {
 	#[clap(flatten)]
 	common_arguments: crate::CommonArguments,

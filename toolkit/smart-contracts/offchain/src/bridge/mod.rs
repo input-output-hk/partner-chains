@@ -1,8 +1,10 @@
-//! D-parameter is stored on chain in an UTXO at the D-parameter validator address.
-//! There should be at most one UTXO at the validator address and it should contain the D-parameter.
-//! This UTXO should have 1 token of the D-parameter policy with an empty asset name.
-//! The datum encodes D-parameter using VersionedGenericDatum envelope with the D-parameter being
-//! `datum` field being `[num_permissioned_candidates, num_registered_candidates]`.
+//! Bride transaction deposit an UTXO that contains the token defined in the reserve settings
+//! at the IlliquidCirculationSupplyValidator.
+//! Such transaction can either be simple deposit or can involve consuming exactly one UTXO from
+//! the ICS Validator that has special token (for some reason called 'auth token').
+//! The former increases the number of UTXOs at ICS Validator, but the latter preserve it.
+//! Arbitrary number of UTXOs that does not have 'auth token' could be consumed, to decrese the number
+//! of UTXOs, but it is not implemented yet.
 
 use crate::await_tx::AwaitTx;
 use crate::cardano_keys::CardanoPaymentSigningKey;
@@ -29,8 +31,8 @@ use sidechain_domain::{McTxHash, UtxoId};
 /// This function deposits bridge token to the Illiquid Circulation Supply from the payment wallet.
 /// It does not consume existing UTXO at the validator address.
 ///  - `genesis_utxo`: UTxO identifying the Partner Chain.
-///  - `asset_id`: [DParameter] to be upserted.
 ///  - `amount` number of tokens to be deposited.
+///  - `pc_address` information to partner chain node, where to transfer funds
 ///  - `payment_signing_key`: Signing key of the party paying fees.
 ///  - `await_tx`: [AwaitTx] strategy.
 pub async fn deposit_without_ics_input<
@@ -93,7 +95,7 @@ fn deposit_only_tx(
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 	let output_builder = TransactionOutputBuilder::new()
 		.with_address(ics_address)
-		.with_plutus_data(&to_datum(ByteString(pc_address.to_vec())))
+		.with_plutus_data(&to_user_transfer_datum(pc_address))
 		.next()?;
 	let ma = MultiAsset::new().with_asset_amount(&token_amount.token, token_amount.amount)?;
 	let output = output_builder.with_minimum_ada_and_asset(&ma, ctx)?.build()?;
@@ -102,10 +104,10 @@ fn deposit_only_tx(
 }
 
 /// This function deposits bridge token to the Illiquid Circulation Supply from the payment wallet.
-/// It does not consume existing UTXO at the validator address.
+/// It does spend existing UTXO (containing 'auth token') at the validator address.
 ///  - `genesis_utxo`: UTxO identifying the Partner Chain.
-///  - `asset_id`: [DParameter] to be upserted.
 ///  - `amount` number of tokens to be deposited.
+///  - `pc_address` information to partner chain node, where to transfer funds
 ///  - `payment_signing_key`: Signing key of the party paying fees.
 ///  - `await_tx`: [AwaitTx] strategy.
 pub async fn deposit_with_ics_spend<
@@ -208,7 +210,7 @@ fn deposit_tx(
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 	let output_builder = TransactionOutputBuilder::new()
 		.with_address(ics_address)
-		.with_plutus_data(&to_datum(ByteString(pc_address.to_vec())))
+		.with_plutus_data(&to_user_transfer_datum(pc_address))
 		.next()?;
 	let mut ma = ics_utxo
 		.to_csl()
@@ -252,6 +254,6 @@ fn deposit_tx(
 	Ok(tx_builder.balance_update_and_build(ctx)?)
 }
 
-fn to_datum(pc_address: ByteString) -> PlutusData {
-	TokenTransferDatumV1::UserTransfer { receiver: pc_address }.into()
+fn to_user_transfer_datum(pc_address: &[u8]) -> PlutusData {
+	TokenTransferDatumV1::UserTransfer { receiver: ByteString(pc_address.to_vec()) }.into()
 }
