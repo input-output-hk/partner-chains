@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["deposit_with_ics_spend","deposit_without_ics_input"]};
