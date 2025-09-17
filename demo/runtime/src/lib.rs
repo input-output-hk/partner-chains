@@ -676,7 +676,7 @@ impl pallet_governed_map::Config for Runtime {
 impl crate::test_helper_pallet::Config for Runtime {}
 
 parameter_types! {
-pub const MaxTransfersPerBlock: u32 = 256;}
+pub const MaxTransfersPerBlock: u32 = 2;}
 
 impl pallet_partner_chains_bridge::Config for Runtime {
 	type GovernanceOrigin = EnsureRoot<Runtime>;
