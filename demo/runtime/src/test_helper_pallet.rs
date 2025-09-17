@@ -141,7 +141,7 @@ pub mod pallet {
 					TotalInvalidTransfers::<T>::mutate(|v| *v + token_amount);
 				},
 				BridgeTransferV1::UserTransfer { token_amount, recipient } => {
-					log::info!("💸 Registered a tranfer of {token_amount} to {recipient:?}");
+					log::info!("💸 Registered a transfer of {token_amount} to {recipient:?}");
 					let _ = Balances::deposit_creating(&recipient, token_amount.into());
 					let current_value =
 						UserTransferTotals::<T>::get(&recipient).unwrap_or_default();
