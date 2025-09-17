@@ -7628,6 +7628,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sidechain-domain",
+ "sp-runtime",
  "tokio",
 ]
 

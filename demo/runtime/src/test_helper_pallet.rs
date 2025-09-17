@@ -119,7 +119,9 @@ pub mod pallet {
 	}
 
 	impl<T: Config> pallet_partner_chains_bridge::TransferHandler<AccountId> for Pallet<T> {
-		fn handle_incoming_transfer(_transfer: BridgeTransferV1<AccountId>) {}
+		fn handle_incoming_transfer(transfer: BridgeTransferV1<AccountId>) {
+			log::info!("Bridge transfer: {transfer:?}");
+		}
 	}
 
 	#[pallet::call]

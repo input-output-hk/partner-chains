@@ -5,6 +5,8 @@
 pub mod assemble_and_submit_tx;
 /// Primitives used for awaiting for tx being observed on the blockchain
 pub mod await_tx;
+/// Deposits to (in the future withdrawals from as well) bridge validator
+pub mod bridge;
 /// Parsing and wrapping of Cardano keys
 pub mod cardano_keys;
 /// General purpose code for interacting with cardano-serialization-lib
