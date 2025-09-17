@@ -49,7 +49,7 @@ pub mod pallet {
 
 	#[pallet::storage]
 	pub type UserTransferTotals<T: Config> =
-		StorageMap<_, Twox64Concat, AccountId, u64, OptionQuery>;
+		StorageMap<_, Twox64Concat, AccountId, u64, ValueQuery>;
 
 	#[pallet::genesis_config]
 	#[derive(frame_support::DefaultNoBound)]
@@ -143,9 +143,7 @@ pub mod pallet {
 				BridgeTransferV1::UserTransfer { token_amount, recipient } => {
 					log::info!("💸 Registered a transfer of {token_amount} to {recipient:?}");
 					let _ = Balances::deposit_creating(&recipient, token_amount.into());
-					let current_value =
-						UserTransferTotals::<T>::get(&recipient).unwrap_or_default();
-					UserTransferTotals::<T>::set(recipient, Some(current_value + token_amount));
+					UserTransferTotals::<T>::mutate(recipient, |v| *v + token_amount);
 				},
 				BridgeTransferV1::ReserveTransfer { token_amount } => {
 					log::info!("🏦 Registered a reserve transfer of {token_amount}.");
