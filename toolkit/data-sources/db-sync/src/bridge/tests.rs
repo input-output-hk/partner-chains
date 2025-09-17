@@ -29,6 +29,10 @@ fn block_2_hash() -> McBlockHash {
 	McBlockHash(hex!("b000000000000000000000000000000000000000000000000000000000000002"))
 }
 
+fn block_3_hash() -> McBlockHash {
+	McBlockHash(hex!("b000000000000000000000000000000000000000000000000000000000000003"))
+}
+
 fn block_4_hash() -> McBlockHash {
 	McBlockHash(hex!("b000000000000000000000000000000000000000000000000000000000000004"))
 }
@@ -283,5 +287,21 @@ with_migration_versions_and_caching! {
 		assert_eq!(transfers, vec![reserve_transfer()]);
 
 		assert_eq!(new_checkpoint, BridgeDataCheckpoint::Utxo(reserve_transfer_utxo()))
+	}
+
+	async fn utxos_from_checkpoint_block_are_not_included_in_result(data_source: &dyn TokenBridgeDataSource<ByteString>) {
+		let data_checkpoint = BridgeDataCheckpoint::Block(McBlockNumber(2));
+		let current_mc_block = block_3_hash();
+		let max_transfers = 10;
+
+		let (transfers, new_checkpoint) = data_source
+			.get_transfers(main_chain_scripts(), data_checkpoint, max_transfers, current_mc_block)
+			.await
+			.unwrap();
+
+		// There's two transfers done in block 2
+		assert_eq!(transfers, vec![]);
+
+		assert_eq!(new_checkpoint, BridgeDataCheckpoint::Block(McBlockNumber(3)))
 	}
 }
