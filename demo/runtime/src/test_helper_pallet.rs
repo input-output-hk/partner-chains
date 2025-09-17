@@ -136,7 +136,7 @@ pub mod pallet {
 			match transfer {
 				BridgeTransferV1::InvalidTransfer { token_amount, utxo_id } => {
 					log::warn!(
-						"⚠️ Discarded an invalid transfer of {token_amount} (utxo {utxo_id})"
+						"⚠️ Recorded an invalid transfer of {token_amount} (utxo {utxo_id})"
 					);
 					TotalInvalidTransfers::<T>::mutate(|v| *v + token_amount);
 				},
