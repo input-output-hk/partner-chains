@@ -49,6 +49,7 @@ use sidechain_domain::UtxoId;
 ///  - Reserve Management Validator
 ///  - Reserve Management Policy
 ///  - Illiquid Circulation Supply Validator
+///  - Illiquid Circulation Auth Token Policy
 pub async fn init_reserve_management<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 	A: AwaitTx,

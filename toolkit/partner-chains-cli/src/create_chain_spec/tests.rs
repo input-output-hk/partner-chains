@@ -256,6 +256,7 @@ fn generated_chain_spec() -> serde_json::Value {
 				"marker": null,
 			},
 			"bridge": {
+				"initialCheckpoint": "0000000000000000000000000000000000000000000000000000000000000000#0",
 				"mainChainScripts": {
 					"illiquid_circulation_supply_validator_address": "addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz",
 					"token_asset_name": "0x5043546f6b656e44656d6f",

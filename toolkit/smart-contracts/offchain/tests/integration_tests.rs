@@ -18,6 +18,7 @@ use ogmios_client::{
 use partner_chains_cardano_offchain::{
 	assemble_and_submit_tx,
 	await_tx::{AwaitTx, FixedDelayRetries},
+	bridge,
 	cardano_keys::CardanoPaymentSigningKey,
 	csl::NetworkTypeExt,
 	d_param,
@@ -241,6 +242,26 @@ async fn reserve_release_to_zero_scenario() {
 	assert_illiquid_supply(genesis_utxo, INITIAL_DEPOSIT_AMOUNT, &client).await;
 	run_handover_reserve(genesis_utxo, &client).await.unwrap();
 	assert_reserve_handed_over(genesis_utxo, INITIAL_DEPOSIT_AMOUNT, &client).await;
+}
+
+#[tokio::test]
+async fn bridge_deposits() {
+	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
+	let container = image.start().await.unwrap();
+	let client = initialize(&container).await;
+	let genesis_utxo = run_init_governance(&client).await;
+	let _ = run_init_reserve_management(genesis_utxo, &client).await;
+	let _ = run_create_reserve_management(genesis_utxo, V_FUNCTION_HASH, &client).await;
+	let ics_utxos_count_0 = get_isc_utxos_count(genesis_utxo, &client).await;
+	let _ = run_bridge_deposit_to_without_ics_spend(genesis_utxo, &client).await;
+	assert_illiquid_supply(genesis_utxo, DEPOSIT_AMOUNT, &client).await;
+	let ics_utxos_count_1 = get_isc_utxos_count(genesis_utxo, &client).await;
+	assert_eq!(ics_utxos_count_1, ics_utxos_count_0 + 1);
+
+	let _ = run_bridge_deposit_to_with_ics_spend(genesis_utxo, &client).await;
+	assert_illiquid_supply(genesis_utxo, 2 * DEPOSIT_AMOUNT, &client).await;
+	let ics_utxos_count_2 = get_isc_utxos_count(genesis_utxo, &client).await;
+	assert_eq!(ics_utxos_count_2, ics_utxos_count_1);
 }
 
 #[tokio::test]
@@ -579,7 +600,7 @@ async fn run_create_reserve_management<
 				asset_name: AssetName::from_hex_unsafe(REWARDS_TOKEN_ASSET_NAME_STR),
 			},
 			initial_deposit: INITIAL_DEPOSIT_AMOUNT,
-			ics_initial_utxos_amount: NonZero::new(100).unwrap(),
+			ics_initial_utxos_amount: NonZero::new(3).unwrap(),
 		},
 		genesis_utxo,
 		&governance_authority_payment_key(),
@@ -629,6 +650,42 @@ async fn run_deposit_to_reserve<
 	.unwrap();
 	cleanup_temp_wallet_file(&result);
 	result
+}
+
+async fn run_bridge_deposit_to_without_ics_spend<
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+>(
+	genesis_utxo: UtxoId,
+	client: &T,
+) -> McTxHash {
+	bridge::deposit_without_ics_input(
+		genesis_utxo,
+		DEPOSIT_AMOUNT,
+		&[1u8; 32],
+		&governance_authority_payment_key(),
+		client,
+		&FixedDelayRetries::new(Duration::from_millis(50), 100),
+	)
+	.await
+	.unwrap()
+}
+
+async fn run_bridge_deposit_to_with_ics_spend<
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+>(
+	genesis_utxo: UtxoId,
+	client: &T,
+) -> McTxHash {
+	bridge::deposit_with_ics_spend(
+		genesis_utxo,
+		DEPOSIT_AMOUNT,
+		&[2u8; 32],
+		&governance_authority_payment_key(),
+		client,
+		&FixedDelayRetries::new(Duration::from_millis(50), 100),
+	)
+	.await
+	.unwrap()
 }
 
 async fn run_handover_reserve<
@@ -822,6 +879,15 @@ async fn assert_illiquid_supply<T: QueryLedgerState>(
 		client,
 	)
 	.await;
+}
+
+async fn get_isc_utxos_count<T: QueryLedgerState>(genesis_utxo: UtxoId, client: &T) -> usize {
+	let data = scripts_data::get_scripts_data(genesis_utxo, NetworkIdKind::Testnet).unwrap();
+	let utxos = client
+		.query_utxos(&[data.addresses.illiquid_circulation_supply_validator])
+		.await
+		.unwrap();
+	utxos.len()
 }
 
 async fn run_assemble_and_sign<

@@ -132,6 +132,17 @@ impl ReserveData {
 		ctx: &TransactionContext,
 		client: &T,
 	) -> Result<OgmiosUtxo, anyhow::Error> {
+		self.get_illiquid_circulation_supply_utxos(ctx, client).await?.first().cloned()
+			.ok_or_else(|| {
+				anyhow!("Could not find any UTXO with ICS Auth token at ICS Validator, is the Reserve Token Management initialized?")
+			})
+	}
+
+	pub(crate) async fn get_illiquid_circulation_supply_utxos<T: QueryLedgerState>(
+		&self,
+		ctx: &TransactionContext,
+		client: &T,
+	) -> Result<Vec<OgmiosUtxo>, anyhow::Error> {
 		let validator_address = self
 			.scripts
 			.illiquid_circulation_supply_validator
@@ -144,19 +155,19 @@ impl ReserveData {
 			asset_name: AssetName::empty(),
 		};
 
-		let ics_utxo = validator_utxos
+		Ok(validator_utxos
 			.into_iter()
-			.find(|utxo| utxo.get_asset_amount(&auth_token_asset_id) == 1u64)
-			.ok_or_else(|| {
-				anyhow!("Could not find any UTXO with ICS Auth token at ICS Validator, is the Reserve Token Management initialized?")
-			})?;
-
-		Ok(ics_utxo.clone())
+			.filter(|utxo| utxo.get_asset_amount(&auth_token_asset_id) == 1u64)
+			.collect())
 	}
 }
 
-pub(crate) struct TokenAmount {
+/// Simply wraps asset id with amount.
+#[derive(Clone)]
+pub struct TokenAmount {
+	/// The asset id
 	pub token: AssetId,
+	/// Amount of the assets
 	pub amount: u64,
 }
 
