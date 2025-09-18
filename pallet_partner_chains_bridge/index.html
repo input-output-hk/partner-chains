@@ -1,4 +1,140 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Pallet that tracks information about incoming token bridge transfers observed on Cardano."><title>pallet_partner_chains_bridge - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-e56847b5.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="pallet_partner_chains_bridge" data-themes="" data-resource-suffix="" data-rustdoc-version="1.92.0-nightly (4645a7988 2025-09-17)" data-channel="nightly" data-search-js="search-cb266a1a.js" data-stringdex-js="stringdex-5af928a3.js" data-settings-js="settings-c38705f0.js" ><script src="../static.files/storage-e2aeef58.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-6dc2a7f3.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Crate pallet_partner_chains_bridge</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../pallet_partner_chains_bridge/index.html">pallet_<wbr>partner_<wbr>chains_<wbr>bridge</a><span class="version">1.7.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#modules">Crate Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#traits" title="Traits">Traits</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>pallet_<wbr>partner_<wbr>chains_<wbr>bridge</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/pallet_partner_chains_bridge/lib.rs.html#1-221">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Pallet that tracks information about incoming token bridge transfers observed on Cardano.</p>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Pallet that tracks information about incoming token bridge transfers observed on Cardano."><title>pallet_partner_chains_bridge - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-e56847b5.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="pallet_partner_chains_bridge" data-themes="" data-resource-suffix="" data-rustdoc-version="1.92.0-nightly (4645a7988 2025-09-17)" data-channel="nightly" data-search-js="search-cb266a1a.js" data-stringdex-js="stringdex-5af928a3.js" data-settings-js="settings-c38705f0.js" ><script src="../static.files/storage-e2aeef58.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-6dc2a7f3.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Crate pallet_partner_chains_bridge</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../pallet_partner_chains_bridge/index.html">pallet_<wbr>partner_<wbr>chains_<wbr>bridge</a><span class="version">1.7.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#purpose-of-this-pallet" title="Purpose of this pallet">Purpose of this pallet</a></li><li><a href="#working-overview" title="Working overview">Working overview</a></li><li><a href="#usage" title="Usage">Usage</a><ul><li><a href="#define-the-recipient-type" title="Define the recipient type">Define the recipient type</a></li><li><a href="#implement-the-transfer-handler" title="Implement the transfer handler">Implement the transfer handler</a></li><li><a href="#providing-genesis-configuration" title="Providing genesis configuration">Providing genesis configuration</a></li><li><a href="#supplying-observability-data" title="Supplying observability data">Supplying observability data</a></li></ul></li></ul><h3><a href="#modules">Crate Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#traits" title="Traits">Traits</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>pallet_<wbr>partner_<wbr>chains_<wbr>bridge</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/pallet_partner_chains_bridge/lib.rs.html#1-393">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Pallet that tracks information about incoming token bridge transfers observed on Cardano.</p>
+<h2 id="purpose-of-this-pallet"><a class="doc-anchor" href="#purpose-of-this-pallet">§</a>Purpose of this pallet</h2>
+<p>This pallet implements runtime logic necessary for Partner Chains to receive
+token transfers from Cardano using the trustless token bridge. It exposes a
+callback API for chain builders to hook their own transfer handling logic into
+the pallet according to their business and ledger rules.</p>
+<h2 id="working-overview"><a class="doc-anchor" href="#working-overview">§</a>Working overview</h2>
+<p>Bridge transfers are initiated by transactions on Cardano that create UTXOs
+on the illiquid circulating supply (ICP) validator address, each containing
+a datum which marks them as transfer UTXOs. The observability layer of a
+Partner Chain node registers creation of these UTXOs and classifies them
+either as <em>user transfers</em>, ie. transfers sent by normal chain users to a
+Partner Chain address specified by the user; or special <em>reserve transfers</em>,
+which are a mechanism for a Partner Chain to gradually move their token
+reserve from Cardano to its own ledger.</p>
+<p>Newly observed and classified bridge transfers are provided to the runtime
+as inherent data. Based on this data, the pallet creates an inherent
+extrinsic to handle them in the runtime during block production. This
+inherent does not process the transfers directly, and instead calls the
+handler provided by the particular Partner Chain’s builders. This allows
+the pallet to not assume anything about the ledger structure and logic of
+the Partner Chain.</p>
+<h2 id="usage"><a class="doc-anchor" href="#usage">§</a>Usage</h2><h3 id="define-the-recipient-type"><a class="doc-anchor" href="#define-the-recipient-type">§</a>Define the recipient type</h3>
+<p>All user transfers handler by the pallet are addressed to a recipient
+specified in the datum of the transfer UTXO. This recipient can be any
+type that can be encoded and decoded as a Plutus byte string. A natural
+choice would be the account address used in the Partner Chain runtime,
+but a different type can be chosen as needed.</p>
+<h3 id="implement-the-transfer-handler"><a class="doc-anchor" href="#implement-the-transfer-handler">§</a>Implement the transfer handler</h3>
+<p>Because the Substrate framework leaves the developers a lot of freedom in
+structuring their ledger and defining runtime logic, the pallet does not
+handle the transfers by itself. Instead, it must be configured with a
+<a href="trait.TransferHandler.html" title="trait pallet_partner_chains_bridge::TransferHandler">TransferHandler</a> instance by the Partner Chain builder.</p>
+<p>This handler is expected to never fail and handle any errors internally,
+unless there exists a case in which the chain should very deliberately
+be unable to produce a block. In practice, this means that any invalid
+transfers should be either discarded or saved for reprocessing later.</p>
+<p>A minimal example for a runtime that uses <code>pallet_balances</code> and <code>AccountId32</code>
+as its recipient type could look like this:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">pub struct </span>BridgeTransferHelper;
+
+<span class="kw">impl </span>pallet_partner_chains_bridge::TransferHandler&lt;AccountId32&gt; <span class="kw">for </span>BridgeTransferHelper {
+	<span class="kw">fn </span>handle_incoming_transfer(transfer: BridgeTransferV1&lt;AccountId32&gt;) {
+		<span class="kw">match </span>transfer {
+			BridgeTransferV1::InvalidTransfer { token_amount, utxo_id } =&gt; {
+				<span class="macro">log::warn!</span>(<span class="string">"⚠️ Discarded an invalid transfer of {token_amount} (utxo {utxo_id})"</span>);
+			},
+			BridgeTransferV1::UserTransfer { token_amount, recipient } =&gt; {
+				<span class="macro">log::info!</span>(<span class="string">"💸 Registered a tranfer of {token_amount} to {recipient:?}"</span>);
+				<span class="kw">let _ </span>= Balances::deposit_creating(<span class="kw-2">&amp;</span>recipient, token_amount.into());
+			},
+			BridgeTransferV1::ReserveTransfer { token_amount } =&gt; {
+				<span class="macro">log::info!</span>(<span class="string">"🏦 Registered a reserve transfer of {token_amount}."</span>);
+				<span class="kw">let _ </span>= Balances::deposit_creating(<span class="kw-2">&amp;</span>T::ReserveAccount::get(), token_amount.into());
+			},
+		}
+	}
+}
+```rust
+
+For runtimes that require more complex transfer handling logic, it is a good
+practice to create a dedicated pallet <span class="kw">in </span>the runtime and have it implement
+[TransferHandler], so that any relevant state and configuration can be stored
+together.
+
+# Adding the pallet to the runtime
+
+Add the pallet to your runtime<span class="lifetime">'s </span>[construct_runtime] and configure it by supplying
+all relevant types from your runtime:
+
+```rust,ignore
+<span class="macro">parameter_types!</span> {
+    <span class="kw">pub const </span>MaxTransfersPerBlock: u32 = <span class="number">256</span>;
+}
+
+<span class="kw">impl </span>pallet_partner_chains_bridge::Config <span class="kw">for </span>Runtime {
+	<span class="kw">type </span>GovernanceOrigin = EnsureRoot&lt;Runtime&gt;;
+	<span class="kw">type </span>Recipient = AccountId;
+	<span class="kw">type </span>TransferHandler = BridgeTransferHelper;
+	<span class="kw">type </span>MaxTransfersPerBlock = MaxTransfersPerBlock;
+	<span class="kw">type </span>WeightInfo = ();
+
+	<span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
+	</span><span class="kw">type </span>BenchmarkHelper = ();
+}</code></pre></div>
+<p>In particular, the pallet needs to be configured with the value  <code>MaxTransfersPerBlock</code>,
+which determines the upper bound on the number of transactions that can be processed
+per block. All outstanding transfers beyond that limit will be processed in subsequent
+block. It is important to select a value high enough to guarantee that the chain will
+be able to keep up with the volume of transfers coming in.</p>
+<p>The last thing to implement in the runtime is the runtime API used by the observability
+layer to access the configuration stored in the pallet. This is straightforward and
+involves only calling methods defined on the pallet:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">impl </span>sp_partner_chains_bridge::TokenBridgeIDPRuntimeApi&lt;Block&gt; <span class="kw">for </span>Runtime {
+	<span class="kw">fn </span>get_pallet_version() -&gt; u32 {
+		Bridge::get_pallet_version()
+	}
+	<span class="kw">fn </span>get_main_chain_scripts() -&gt; <span class="prelude-ty">Option</span>&lt;BridgeMainChainScripts&gt; {
+		Bridge::get_main_chain_scripts()
+	}
+	<span class="kw">fn </span>get_max_transfers_per_block() -&gt; u32 {
+		Bridge::get_max_transfers_per_block()
+	}
+	<span class="kw">fn </span>get_last_data_checkpoint() -&gt; <span class="prelude-ty">Option</span>&lt;BridgeDataCheckpoint&gt; {
+		Bridge::get_data_checkpoint()
+	}
+}</code></pre></div><h3 id="providing-genesis-configuration"><a class="doc-anchor" href="#providing-genesis-configuration">§</a>Providing genesis configuration</h3>
+<p>The pallet’s genesis configuration only consists of optional values of
+the main chain scripts, that can be set after chain start. These scripts
+point the observability layer to the correct addresses and token asset
+to observe on Cardano. If they are left empty, the pallet and the
+observability components will be incactive until they are supplied in
+the future.</p>
+<p>An example of a bridge pallet section in a genesis config JSON would
+look like this:</p>
+<div class="example-wrap"><pre class="language-json"><code>{
+    &quot;bridge&quot;: {
+      &quot;mainChainScripts&quot;: {
+        &quot;illiquid_circulation_supply_validator_address&quot;: &quot;addr_test1wzzyc3mcqh4phq0pa827dn756lfd045lzh3tgr9mt5p2ayqpxp55c&quot;,
+        &quot;token_asset_name&quot;: &quot;0x5043546f6b656e44656d6f&quot;,
+        &quot;token_policy_id&quot;: &quot;0xada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4&quot;
+      }
+	}
+}</code></pre></div>
+<p>When programmatically assembling the genesis config, a utility function
+is supplied for reading the main chain script values from environment:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>	GenesisConfig {
+		main_chain_scripts: MainChainScripts::read_from_env().ok(),
+		..Default::default()
+	}</code></pre></div>
+<p>See <a href="../sp_partner_chains_bridge/struct.MainChainScripts.html#method.read_from_env" title="associated function sp_partner_chains_bridge::MainChainScripts::read_from_env">sp_partner_chains_bridge::MainChainScripts::read_from_env</a> for details.</p>
+<h3 id="supplying-observability-data"><a class="doc-anchor" href="#supplying-observability-data">§</a>Supplying observability data</h3>
+<p>See documentation of <a href="../sp_partner_chains_bridge/index.html" title="mod sp_partner_chains_bridge">sp_partner_chains_bridge</a> for instructions on adding
+the observability data source to your node and connecting it to the pallet.</p>
 </div></details><h2 id="reexports" class="section-header">Re-exports<a href="#reexports" class="anchor">§</a></h2><dl class="item-table reexports"><dt><code>pub use <a class="mod" href="pallet/index.html" title="mod pallet_partner_chains_bridge::pallet">pallet</a>::*;</code></dt></dl><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="pallet/index.html" title="mod pallet_partner_chains_bridge::pallet">pallet</a></dt><dd>The <code>pallet</code> module in each FRAME pallet hosts the most important items needed
 to construct this pallet.</dd><dt><a class="mod" href="weights/index.html" title="mod pallet_partner_chains_bridge::weights">weights</a></dt><dd>Weight types and default weight values
 Autogenerated weights for pallet_partner_chains_bridge</dd></dl><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><dl class="item-table"><dt><a class="trait" href="trait.TransferHandler.html" title="trait pallet_partner_chains_bridge::TransferHandler">Transfer<wbr>Handler</a></dt><dd>Runtime logic for handling incoming token bridge transfers from Cardano</dd></dl></section></div></main></body></html>

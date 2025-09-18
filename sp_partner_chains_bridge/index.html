@@ -1,4 +1,96 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Primitives and inherent data provider for the token bridge feature of Partner Chains Toolkit."><title>sp_partner_chains_bridge - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-e56847b5.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="sp_partner_chains_bridge" data-themes="" data-resource-suffix="" data-rustdoc-version="1.92.0-nightly (4645a7988 2025-09-17)" data-channel="nightly" data-search-js="search-cb266a1a.js" data-stringdex-js="stringdex-5af928a3.js" data-settings-js="settings-c38705f0.js" ><script src="../static.files/storage-e2aeef58.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-6dc2a7f3.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Crate sp_partner_chains_bridge</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../sp_partner_chains_bridge/index.html">sp_<wbr>partner_<wbr>chains_<wbr>bridge</a><span class="version">1.7.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#structs">Crate Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li><li><a href="#constants" title="Constants">Constants</a></li><li><a href="#traits" title="Traits">Traits</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>sp_<wbr>partner_<wbr>chains_<wbr>bridge</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/sp_partner_chains_bridge/lib.rs.html#1-319">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Primitives and inherent data provider for the token bridge feature of Partner Chains Toolkit.</p>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Partner Chain Token Bridge"><title>sp_partner_chains_bridge - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-e56847b5.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="sp_partner_chains_bridge" data-themes="" data-resource-suffix="" data-rustdoc-version="1.92.0-nightly (4645a7988 2025-09-17)" data-channel="nightly" data-search-js="search-cb266a1a.js" data-stringdex-js="stringdex-5af928a3.js" data-settings-js="settings-c38705f0.js" ><script src="../static.files/storage-e2aeef58.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-6dc2a7f3.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Crate sp_partner_chains_bridge</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../sp_partner_chains_bridge/index.html">sp_<wbr>partner_<wbr>chains_<wbr>bridge</a><span class="version">1.7.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#partner-chain-token-bridge" title="Partner Chain Token Bridge">Partner Chain Token Bridge</a><ul><li><a href="#overview" title="Overview">Overview</a></li><li><a href="#usage" title="Usage">Usage</a></li></ul></li></ul><h3><a href="#structs">Crate Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li><li><a href="#constants" title="Constants">Constants</a></li><li><a href="#traits" title="Traits">Traits</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>sp_<wbr>partner_<wbr>chains_<wbr>bridge</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/sp_partner_chains_bridge/lib.rs.html#1-438">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="partner-chain-token-bridge"><a class="doc-anchor" href="#partner-chain-token-bridge">§</a>Partner Chain Token Bridge</h2>
+<p>This crate defines common primitive types, the inherent data provider and data source API
+for the token bridge feature of Partner Chains Toolkit.</p>
+<h3 id="overview"><a class="doc-anchor" href="#overview">§</a>Overview</h3>
+<p>The bridge feature of the Partner Chains Toolkit allows sending the native token from
+Cardano to its Partner Chain in a trustless manner, making use of direct observation by
+the Partner Chain nodes of the Cardano ledger.</p>
+<p>Each token <em>transfer</em> is made by creating a UTXO on a specific <em>illiquid circulating
+supply</em> (ICS) address in which the tokens are locked so they can be released on the
+Partner Chain. The feature distinguishes two types of a transfer:</p>
+<ol>
+<li><em>User transfers</em>, which are sent by ordinary users and addressed to a recipient that
+is indicated in the datum attached to the transfer’s UTXO.</li>
+<li><em>Reserve transfers</em>, which are sent as part of the Partner Chain’s operation, and
+allow the chain to gradually move its token reserve (ie. the reserve of tokens used
+to pay block producer rewards) from Cardano to its own ledger.</li>
+</ol>
+<p>Newly made transfers are picked up by the observability layer once their blocks become
+stable, and are made available to the runtime as inherent data. The bridge pallet in turn
+makes this data available to the Partner Chains ledger by passing it to the transfer handler,
+which is left for each Partner Chain’s builders to implement according to their particular
+requirements.</p>
+<h3 id="usage"><a class="doc-anchor" href="#usage">§</a>Usage</h3><h4 id="prerequisites"><a class="doc-anchor" href="#prerequisites">§</a>Prerequisites</h4><h5 id="pallet-and-runtime-api"><a class="doc-anchor" href="#pallet-and-runtime-api">§</a>Pallet and runtime API</h5>
+<p>Consult the documentation of <code>pallet_partner_chains_bridge</code> for instructions on how to add
+the bridge pallet to the runtime and implement runtime APIs. The inherent data provider
+defined in this crate requires <a href="trait.TokenBridgeIDPRuntimeApi.html" title="trait sp_partner_chains_bridge::TokenBridgeIDPRuntimeApi">TokenBridgeIDPRuntimeApi</a> to be implemented in the runtime.</p>
+<h5 id="data-source"><a class="doc-anchor" href="#data-source">§</a>Data source</h5>
+<p>A data source implementing <a href="trait.TokenBridgeDataSource.html" title="trait sp_partner_chains_bridge::TokenBridgeDataSource">TokenBridgeDataSource</a> is required to be present in the node.
+The <code>partner_chains_db_sync_data_sources</code> crate provides a production ready Db-Sync-based
+implementation, and a mocked implementation is provided by <code>partner-chains-mock-data-sources</code>.
+See the documentation of those crates for instructions on how to add these data sources to
+your node.</p>
+<h5 id="recipient-type"><a class="doc-anchor" href="#recipient-type">§</a>Recipient type</h5>
+<p>All user transfers sent through the bridge are addressed to some recipient identified by a
+chain-specific type, usually an address or public key. Because the toolkit makes no assumptions
+about the ledger structure, this type must be provided in various places as a type parameter.
+This type can be arbitrary, as long as it conforms to the trait bounds required by the
+inherent data provider, data source and the pallet. For simple Substrate chains, the account ID
+type used by their ledgers is a good choice.</p>
+<h4 id="adding-the-inherent-data-provider"><a class="doc-anchor" href="#adding-the-inherent-data-provider">§</a>Adding the inherent data provider</h4>
+<p>Include <a href="enum.TokenBridgeInherentDataProvider.html" title="enum sp_partner_chains_bridge::TokenBridgeInherentDataProvider">TokenBridgeInherentDataProvider</a> in the list of <code>InherentDataProviders</code> of your
+implementation of [CreateInherentDataProviders]:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>sp_partner_chains_bridge::TokenBridgeInherentDataProvider;
+<span class="kw">struct </span>AccountId;
+<span class="kw">type </span>InherentDataProviders = (
+	<span class="comment">// sp_timestamp::InherentDataProvider,
+    // ...
+	</span>TokenBridgeInherentDataProvider&lt;AccountId&gt;,
+);</code></pre></div>
+<p>The IDP is created the same way when proposing and validating a block:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">type </span>InherentDataProviders = ( <span class="comment">/* other IDPs */ </span>TokenBridgeInherentDataProvider&lt;AccountId&gt;);
+
+<span class="kw">async fn </span>create_inherent_data_providers&lt;T, Block&gt;(
+    client: <span class="kw-2">&amp;</span>T,
+    bridge_data_source: <span class="kw-2">&amp;</span>(<span class="kw">impl </span>TokenBridgeDataSource&lt;AccountId&gt; + Send + Sync),
+    parent_hash: Block::Hash,
+) -&gt; <span class="prelude-ty">Result</span>&lt;InherentDataProviders, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt;
+<span class="kw">where
+    </span>Block: sp_runtime::traits::Block,
+    T: sp_api::ProvideRuntimeApi&lt;Block&gt; + Send + Sync,
+    T::Api: TokenBridgeIDPRuntimeApi&lt;Block&gt; + Send + Sync
+{
+    <span class="comment">/*
+     Create other IDPs
+     */
+    </span><span class="kw">let </span>mc_hash: McBlockHash = <span class="macro">todo!</span>(<span class="string">"provided by the MC Hash IDP from `sidechain_mc_hash` crate"</span>);
+
+    <span class="kw">let </span>bridge = TokenBridgeInherentDataProvider::new(
+    	client,
+    	parent_hash,
+    	mc_hash,
+    	bridge_data_source,
+    )
+    .<span class="kw">await</span><span class="question-mark">?</span>;
+
+    <span class="prelude-val">Ok</span>((<span class="comment">/* other IDPs */ </span>bridge))
+}</code></pre></div><h4 id="adding-to-a-running-chain"><a class="doc-anchor" href="#adding-to-a-running-chain">§</a>Adding to a running chain</h4>
+<p><a href="enum.TokenBridgeInherentDataProvider.html" title="enum sp_partner_chains_bridge::TokenBridgeInherentDataProvider">TokenBridgeInherentDataProvider</a> is version-aware and will stay inactive until the pallet
+is added and fully configured along with <a href="trait.TokenBridgeIDPRuntimeApi.html" title="trait sp_partner_chains_bridge::TokenBridgeIDPRuntimeApi">TokenBridgeIDPRuntimeApi</a>. Thus, the correct order
+of steps when adding the feature to an already running chain will be:</p>
+<ol start="0">
+<li>Initialize the bridge smart contracts on Cardano using the offchain provided by the
+<code>partner-chains-cardano-offchain</code> crate. This step can be performed independently from the
+order of other steps.</li>
+<li>Release a new version of the chain’s node, with added data source and inhrent data provider.</li>
+<li>Distribute the new version and wait until most of the network’s nodes have been updated.</li>
+<li>Perform a runtime upgrade to a runtime version containing the pallet.</li>
+<li>Complete the configuration of the pallet by setting the correct main chain script and data
+checkpoint via an extrinsic. This step requires the governance authority to know the main
+chain script values, which it should obtain using the offchain.</li>
+</ol>
 </div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.MainChainScripts.html" title="struct sp_partner_chains_bridge::MainChainScripts">Main<wbr>Chain<wbr>Scripts</a></dt><dd>Smart contract hashes and addresses used by the token bridge on Cardano.</dd><dt><a class="struct" href="struct.TokenBridgeTransfersV1.html" title="struct sp_partner_chains_bridge::TokenBridgeTransfersV1">Token<wbr>Bridge<wbr>Transfers<wbr>V1</a></dt><dd>Structure representing all token bridge transfers incoming from Cardano that are to be
 handled in one Partner Chain block.</dd></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.BridgeDataCheckpoint.html" title="enum sp_partner_chains_bridge::BridgeDataCheckpoint">Bridge<wbr>Data<wbr>Checkpoint</a></dt><dd>Value specifying the point in time up to which bridge transfers have been processed</dd><dt><a class="enum" href="enum.BridgeTransferV1.html" title="enum sp_partner_chains_bridge::BridgeTransferV1">Bridge<wbr>Transfer<wbr>V1</a></dt><dd>Type containing all information needed to process a single transfer incoming from
 main chain, corresponding to a single UTXO on Cardano</dd><dt><a class="enum" href="enum.InherentDataCreationError.html" title="enum sp_partner_chains_bridge::InherentDataCreationError">Inherent<wbr>Data<wbr>Creation<wbr>Error</a></dt><dd>Error type returned when creating <a href="enum.TokenBridgeInherentDataProvider.html" title="enum sp_partner_chains_bridge::TokenBridgeInherentDataProvider">TokenBridgeInherentDataProvider</a> fails</dd><dt><a class="enum" href="enum.InherentError.html" title="enum sp_partner_chains_bridge::InherentError">Inherent<wbr>Error</a></dt><dd>Error type returned by failing calls of the bridge inherent</dd><dt><a class="enum" href="enum.TokenBridgeInherentDataProvider.html" title="enum sp_partner_chains_bridge::TokenBridgeInherentDataProvider">Token<wbr>Bridge<wbr>Inherent<wbr>Data<wbr>Provider</a></dt><dd>Inherent data provider that provides data on token bridge transfers and special token transfers</dd></dl><h2 id="constants" class="section-header">Constants<a href="#constants" class="anchor">§</a></h2><dl class="item-table"><dt><a class="constant" href="constant.INHERENT_IDENTIFIER.html" title="constant sp_partner_chains_bridge::INHERENT_IDENTIFIER">INHERENT_<wbr>IDENTIFIER</a></dt><dd>Inherent identifier used by the Partner Chains token bridge</dd></dl><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><dl class="item-table"><dt><a class="trait" href="trait.TokenBridgeDataSource.html" title="trait sp_partner_chains_bridge::TokenBridgeDataSource">Token<wbr>Bridge<wbr>Data<wbr>Source</a></dt><dd>Interface for data sources that can be used by <a href="enum.TokenBridgeInherentDataProvider.html" title="enum sp_partner_chains_bridge::TokenBridgeInherentDataProvider">TokenBridgeInherentDataProvider</a></dd><dt><a class="trait" href="trait.TokenBridgeIDPRuntimeApi.html" title="trait sp_partner_chains_bridge::TokenBridgeIDPRuntimeApi">Token<wbr>BridgeIDP<wbr>Runtime<wbr>Api</a></dt><dd>Runtime API used by <a href="enum.TokenBridgeInherentDataProvider.html" title="enum sp_partner_chains_bridge::TokenBridgeInherentDataProvider">TokenBridgeInherentDataProvider</a></dd></dl></section></div></main></body></html>
