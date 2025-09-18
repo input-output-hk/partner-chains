@@ -7,14 +7,14 @@ use frame_support::{
 	assert_err, assert_ok,
 	inherent::{InherentData, ProvideInherent},
 };
-use sidechain_domain::{AssetName, MainchainAddress, PolicyId, UtxoId, bounded_str};
+use sidechain_domain::{AssetName, MainchainAddress, PolicyId, UtxoId};
 use sp_core::bounded_vec;
 use sp_partner_chains_bridge::*;
 use sp_runtime::{AccountId32, BoundedVec};
 
 fn transfers() -> BoundedVec<BridgeTransferV1<RecipientAddress>, MaxTransfersPerBlock> {
 	bounded_vec![
-		UserTransfer { token_amount: 100, recipient: bounded_str!("recipient") },
+		UserTransfer { token_amount: 100, recipient: AccountId32::new([2; 32]) },
 		ReserveTransfer { token_amount: 200 },
 		InvalidTransfer { token_amount: 300, utxo_id: UtxoId::new([1; 32], 1) }
 	]

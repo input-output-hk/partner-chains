@@ -4,8 +4,9 @@ pub use pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use crate::{AccountId, BlockAuthor, MaxKeyLength, MaxValueLength};
-	use frame_support::pallet_prelude::*;
+	use crate::{AccountId, Balances, BlockAuthor, MaxKeyLength, MaxValueLength};
+	use frame_support::pallet_prelude::{StorageMap, *};
+	use frame_support::traits::Currency;
 	use frame_system::pallet_prelude::OriginFor;
 	use frame_system::{ensure_none, ensure_root};
 	use sidechain_domain::byte_string::BoundedString;
@@ -23,7 +24,9 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config {}
+	pub trait Config: frame_system::Config {
+		type ReserveAccount: Get<AccountId>;
+	}
 
 	#[pallet::storage]
 	#[pallet::unbounded]
@@ -37,6 +40,16 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type ParticipationDataReleasePeriod<T: Config> =
 		StorageValue<_, u64, ValueQuery, DefaultParticipationDataReleasePeriod<T>>;
+
+	#[pallet::storage]
+	pub type TotalInvalidTransfers<T: Config> = StorageValue<_, u64, ValueQuery>;
+
+	#[pallet::storage]
+	pub type TotalReserveTransfers<T: Config> = StorageValue<_, u64, ValueQuery>;
+
+	#[pallet::storage]
+	pub type UserTransferTotals<T: Config> =
+		StorageMap<_, Twox64Concat, AccountId, u64, ValueQuery>;
 
 	#[pallet::genesis_config]
 	#[derive(frame_support::DefaultNoBound)]
@@ -120,7 +133,25 @@ pub mod pallet {
 
 	impl<T: Config> pallet_partner_chains_bridge::TransferHandler<AccountId> for Pallet<T> {
 		fn handle_incoming_transfer(transfer: BridgeTransferV1<AccountId>) {
-			log::info!("Bridge transfer: {transfer:?}");
+			match transfer {
+				BridgeTransferV1::InvalidTransfer { token_amount, utxo_id } => {
+					log::warn!(
+						"⚠️ Recorded an invalid transfer of {token_amount} (utxo {utxo_id})"
+					);
+					TotalInvalidTransfers::<T>::mutate(|v| *v + token_amount);
+				},
+				BridgeTransferV1::UserTransfer { token_amount, recipient } => {
+					log::info!("💸 Registered a transfer of {token_amount} to {recipient:?}");
+					let _ = Balances::deposit_creating(&recipient, token_amount.into());
+					UserTransferTotals::<T>::mutate(recipient, |v| *v += token_amount);
+				},
+				BridgeTransferV1::ReserveTransfer { token_amount } => {
+					log::info!("🏦 Registered a reserve transfer of {token_amount}.");
+					let _ =
+						Balances::deposit_creating(&T::ReserveAccount::get(), token_amount.into());
+					TotalReserveTransfers::<T>::mutate(|v| *v += token_amount);
+				},
+			}
 		}
 	}
 
