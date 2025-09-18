@@ -143,13 +143,13 @@ pub mod pallet {
 				BridgeTransferV1::UserTransfer { token_amount, recipient } => {
 					log::info!("💸 Registered a transfer of {token_amount} to {recipient:?}");
 					let _ = Balances::deposit_creating(&recipient, token_amount.into());
-					UserTransferTotals::<T>::mutate(recipient, |v| *v + token_amount);
+					UserTransferTotals::<T>::mutate(recipient, |v| *v += token_amount);
 				},
 				BridgeTransferV1::ReserveTransfer { token_amount } => {
 					log::info!("🏦 Registered a reserve transfer of {token_amount}.");
 					let _ =
 						Balances::deposit_creating(&T::ReserveAccount::get(), token_amount.into());
-					TotalReserveTransfers::<T>::mutate(|v| *v + token_amount);
+					TotalReserveTransfers::<T>::mutate(|v| *v += token_amount);
 				},
 			}
 		}
