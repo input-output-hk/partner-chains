@@ -4,7 +4,6 @@ use frame_support::{
 	traits::{ConstU16, ConstU64},
 };
 use frame_system::EnsureRoot;
-use sidechain_domain::byte_string::BoundedString;
 use sp_core::H256;
 use sp_partner_chains_bridge::BridgeTransferV1;
 use sp_runtime::{
@@ -14,7 +13,7 @@ use sp_runtime::{
 
 pub type Block = frame_system::mocking::MockBlock<Test>;
 pub type AccountId = AccountId32;
-pub type RecipientAddress = BoundedString<ConstU32<64>>;
+pub type RecipientAddress = AccountId32;
 pub type MaxTransfersPerBlock = ConstU32<32>;
 
 #[frame_support::pallet]
