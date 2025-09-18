@@ -10,6 +10,37 @@
 //! at the illiquid supply address can only spend UTXOs from outside of it. This guarantees
 //! that the observability layer can always correctly identify the number of tokens transfered
 //! by calculating the delta of `tokens in the new UTXO` - `tokens in the old ICS UTXOs`.
+//!
+//! # Usage
+//!
+//! ```rust
+//! use partner_chains_db_sync_data_sources::*;
+//! use sqlx::PgPool;
+//! use std::{ error::Error, sync::Arc };
+//!
+//! // Number of stable blocks ahead the bridge data source should try to cache.
+//! // This is only possible when the node is catching up and speeds up syncing.
+//! const BRIDGE_TRANSFER_CACHE_LOOKAHEAD: u32 = 128;
+//!
+//! pub async fn create_data_sources(
+//!     pool: PgPool,
+//!     metrics_opt: Option<McFollowerMetrics>,
+//! ) -> Result<(/* other data sources */ CachedTokenBridgeDataSourceImpl), Box<dyn Error + Send + Sync>> {
+//!     // block data source is reused between various other data sources
+//!     let block = Arc::new(BlockDataSourceImpl::new_from_env(pool.clone()).await?);
+//!
+//!     // create other data sources
+//!
+//!     let bridge = CachedTokenBridgeDataSourceImpl::new(
+//!         pool,
+//!         metrics_opt,
+//!         block,
+//!         BRIDGE_TRANSFER_CACHE_LOOKAHEAD,
+//!	    );
+//!
+//!     Ok((/* other data sources */ bridge))
+//! }
+//! ```
 
 use crate::McFollowerMetrics;
 use crate::db_model::*;
