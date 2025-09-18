@@ -271,7 +271,7 @@ mod tests {
 				permissioned_candidates_validator:
 					"addr_test1wqhp3xkm7ntcy0q9cjnttngx94vyn4a7fgyyk5cegw3rkhc4pjahq".into(),
 				illiquid_circulation_supply_validator:
-					"addr_test1wqtdkapdkpl9lj07hts97ngqaykkna89duk7ldlvf2cd6cg9hsutf".into(),
+					"addr_test1wr6e3h6crn97w8c2fjsw9aqaxyvm8qvny6vwd9w0444v92gk0mgf5".into(),
 				reserve_validator:
 					"addr_test1wqcs6zzh44mk0jny7c07eww7ztdmlgsczuw6syh94rhqfuga5lghq".into(),
 				version_oracle_validator:
@@ -296,7 +296,7 @@ mod tests {
 					"1b7c0fa2b32502b8e92ec529f1fe3931febf0b7829f23dc514d88aa0"
 				)),
 				illiquid_circulation_supply_auth_token: PolicyId(hex!(
-					"6bc5e936c143b2758caea2fbf6d4e921400b54f9f74bea55ed1b08e2"
+					"904868d6ec966b9a5a5b4bdd73858a17792821e10e99236c63c3b533"
 				)),
 			},
 		}
