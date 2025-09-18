@@ -75,13 +75,13 @@ async fn submit_deposit_only_tx<
 	let signed_tx = ctx.sign(&tx).to_bytes();
 	let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
 		anyhow::anyhow!(
-			"Reserve release transaction request failed: {}, tx bytes: {}",
+			"Bridge transfer transaction request failed: {}, tx bytes: {}",
 			e,
 			hex::encode(signed_tx)
 		)
 	})?;
 	let tx_id = res.transaction.id;
-	log::info!("Reserve release transaction submitted: {}", hex::encode(tx_id));
+	log::info!("Bridge transfer transaction submitted: {}", hex::encode(tx_id));
 	await_tx.await_tx_output(client, McTxHash(tx_id)).await?;
 	Ok(McTxHash(tx_id))
 }
@@ -187,13 +187,13 @@ async fn submit_tx<
 	let signed_tx = ctx.sign(&tx).to_bytes();
 	let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
 		anyhow::anyhow!(
-			"Reserve release transaction request failed: {}, tx bytes: {}",
+			"Bridge transfer transaction request failed: {}, tx bytes: {}",
 			e,
 			hex::encode(signed_tx)
 		)
 	})?;
 	let tx_id = res.transaction.id;
-	log::info!("Reserve release transaction submitted: {}", hex::encode(tx_id));
+	log::info!("Bridge transfer transaction submitted: {}", hex::encode(tx_id));
 	await_tx.await_tx_output(client, McTxHash(tx_id)).await?;
 	Ok(McTxHash(tx_id))
 }

@@ -673,7 +673,13 @@ impl pallet_governed_map::Config for Runtime {
 	type BenchmarkHelper = ();
 }
 
-impl crate::test_helper_pallet::Config for Runtime {}
+parameter_types! {
+	pub const ReserveAccount: AccountId = AccountId::new([1;32]);
+}
+
+impl crate::test_helper_pallet::Config for Runtime {
+	type ReserveAccount = ReserveAccount;
+}
 
 parameter_types! {
 pub const MaxTransfersPerBlock: u32 = 256;}
