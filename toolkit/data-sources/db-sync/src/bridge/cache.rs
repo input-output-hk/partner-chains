@@ -199,10 +199,6 @@ impl CachedTokenBridgeDataSourceImpl {
 	) -> Result<(), Box<dyn Error + Send + Sync>> {
 		let from_block = data_checkpoint.get_block_number();
 
-		// We want to load all data in the block of `data_checkpoint`, so we go one block back.
-		let effective_data_checkpoint =
-			ResolvedBridgeDataCheckpoint::Block { number: from_block.saturating_sub(1u32) };
-
 		let latest_block = self.get_latest_stable_block().await?.unwrap_or(to_block);
 
 		let to_block: BlockNumber =
@@ -213,9 +209,8 @@ impl CachedTokenBridgeDataSourceImpl {
 			&self.pool,
 			&main_chain_scripts.illiquid_circulation_supply_validator_address.clone().into(),
 			main_chain_scripts.asset_id().into(),
-			effective_data_checkpoint,
+			from_block.into(),
 			to_block.into(),
-			None,
 		)
 		.await?;
 

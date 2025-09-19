@@ -997,9 +997,8 @@ pub(crate) async fn get_bridge_utxos_tx(
 	pool: &Pool<Postgres>,
 	icp_address: &Address,
 	native_token: Asset,
-	checkpoint: ResolvedBridgeDataCheckpoint,
+	from_block: BlockNumber,
 	to_block: BlockNumber,
-	max_utxos: Option<u32>,
 ) -> Result<Vec<BridgeUtxo>, SqlxError> {
 	use sqlx::QueryBuilder;
 
@@ -1037,36 +1036,18 @@ pub(crate) async fn get_bridge_utxos_tx(
 	WHERE native_token.policy = $2
 	  AND native_token.name = $3
 	  AND outputs.address = $1
-	  AND block_no <= $4
+	  AND $4 <= block_no AND block_no <= $5
+	GROUP BY tx.hash, outputs.id, output_tokens.quantity, datum.value, block.block_no, tx.block_index, outputs.index
+	ORDER BY block.block_no, tx.block_index, outputs.index;
 ",
 	);
-
-	match checkpoint {
-		ResolvedBridgeDataCheckpoint::Block { number } => {
-			query_builder.push(&format!("AND block_no > {} ", number.0));
-		},
-		ResolvedBridgeDataCheckpoint::Utxo { block_number, tx_ix, tx_out_ix } => {
-			query_builder.push(&format!(
-				"AND (block_no, tx.block_index, outputs.index) > ({}, {}, {}) ",
-				block_number.0, tx_ix.0, tx_out_ix.0
-			));
-		},
-	}
-
-	query_builder
-		.push("GROUP BY tx.hash, outputs.id, output_tokens.quantity, datum.value, block.block_no, tx.block_index, outputs.index ")
-		.push("ORDER BY block.block_no, tx.block_index, outputs.index ");
-
-	if let Some(max_utxos) = max_utxos {
-		query_builder.push(&format!("LIMIT {max_utxos}"));
-	}
-	query_builder.push(";");
 
 	let query = query_builder
 		.build_query_as::<BridgeUtxo>()
 		.bind(&icp_address.0)
 		.bind(&native_token.policy_id.0)
 		.bind(&native_token.asset_name.0)
+		.bind(from_block)
 		.bind(to_block);
 
 	Ok(query.fetch_all(pool).await?)
