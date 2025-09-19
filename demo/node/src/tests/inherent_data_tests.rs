@@ -11,7 +11,7 @@ use partner_chains_mock_data_sources::StakeDistributionDataSourceMock;
 use partner_chains_mock_data_sources::{GovernedMapDataSourceMock, TokenBridgeDataSourceMock};
 use sidechain_domain::{
 	DelegatorKey, MainchainBlock, McBlockHash, McBlockNumber, McEpochNumber, McSlotNumber,
-	NativeTokenAmount, ScEpochNumber,
+	ScEpochNumber,
 };
 use sidechain_mc_hash::mock::MockMcHashDataSource;
 use sp_block_participation::BlockProductionData;
@@ -19,15 +19,11 @@ use sp_consensus_aura::Slot;
 use sp_core::ecdsa;
 use sp_inherents::CreateInherentDataProviders;
 use sp_inherents::{InherentData, InherentDataProvider};
-use sp_native_token_management::mock::MockNativeTokenDataSource;
 use sp_timestamp::Timestamp;
 use std::sync::Arc;
 
 #[tokio::test]
 async fn block_proposal_cidp_should_be_created_correctly() {
-	let native_token_data_source = MockNativeTokenDataSource::new(
-		[((Some(McBlockHash([0; 32])), McBlockHash([1; 32])), NativeTokenAmount(1000))].into(),
-	);
 	let parent_stable_block = MainchainBlock {
 		number: McBlockNumber(0),
 		hash: McBlockHash([0; 32]),
@@ -52,7 +48,6 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 			.into(),
 		Arc::new(mc_hash_data_source),
 		Arc::new(MockAuthoritySelectionDataSource::default()),
-		Arc::new(native_token_data_source),
 		Arc::new(StakeDistributionDataSourceMock::new()),
 		Arc::new(GovernedMapDataSourceMock::default()),
 		Arc::new(TokenBridgeDataSourceMock::<AccountId>::new()),
@@ -87,12 +82,6 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 			.get_data::<AuthoritySelectionInputs>(
 				&sp_session_validator_management::INHERENT_IDENTIFIER
 			)
-			.unwrap()
-			.is_some()
-	);
-	assert!(
-		inherent_data
-			.get_data::<NativeTokenAmount>(&sp_native_token_management::INHERENT_IDENTIFIER)
 			.unwrap()
 			.is_some()
 	);
@@ -133,9 +122,6 @@ async fn block_verification_cidp_should_be_created_correctly() {
 		timestamp: 4,
 	};
 	let mc_block_hash = McBlockHash([2; 32]);
-	let native_token_data_source = MockNativeTokenDataSource::new(
-		[((None, mc_block_hash.clone()), NativeTokenAmount(1000))].into(),
-	);
 	let mc_hash_data_source = MockMcHashDataSource::from(vec![MainchainBlock {
 		number: McBlockNumber(parent_stable_block.number.0 + 5),
 		hash: mc_block_hash.clone(),
@@ -151,7 +137,6 @@ async fn block_verification_cidp_should_be_created_correctly() {
 		test_client(),
 		Arc::new(mc_hash_data_source),
 		Arc::new(MockAuthoritySelectionDataSource::default()),
-		Arc::new(native_token_data_source),
 		Arc::new(StakeDistributionDataSourceMock::new()),
 		Arc::new(GovernedMapDataSourceMock::default()),
 		Arc::new(TokenBridgeDataSourceMock::new()),
@@ -173,12 +158,6 @@ async fn block_verification_cidp_should_be_created_correctly() {
 			.get_data::<AuthoritySelectionInputs>(
 				&sp_session_validator_management::INHERENT_IDENTIFIER
 			)
-			.unwrap()
-			.is_some()
-	);
-	assert!(
-		inherent_data
-			.get_data::<NativeTokenAmount>(&sp_native_token_management::INHERENT_IDENTIFIER)
 			.unwrap()
 			.is_some()
 	);

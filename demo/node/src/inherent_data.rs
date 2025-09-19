@@ -28,10 +28,6 @@ use sp_consensus_aura::{
 use sp_core::Pair;
 use sp_governed_map::{GovernedMapDataSource, GovernedMapIDPApi, GovernedMapInherentDataProvider};
 use sp_inherents::CreateInherentDataProviders;
-use sp_native_token_management::{
-	NativeTokenManagementApi, NativeTokenManagementDataSource,
-	NativeTokenManagementInherentDataProvider as NativeTokenIDP,
-};
 use sp_partner_chains_bridge::{
 	TokenBridgeDataSource, TokenBridgeIDPRuntimeApi, TokenBridgeInherentDataProvider,
 };
@@ -48,7 +44,6 @@ pub struct ProposalCIDP<T> {
 	client: Arc<T>,
 	mc_hash_data_source: Arc<dyn McHashDataSource + Send + Sync>,
 	authority_selection_data_source: Arc<dyn AuthoritySelectionDataSource + Send + Sync>,
-	native_token_data_source: Arc<dyn NativeTokenManagementDataSource + Send + Sync>,
 	block_participation_data_source: Arc<dyn BlockParticipationDataSource + Send + Sync>,
 	governed_map_data_source: Arc<dyn GovernedMapDataSource + Send + Sync>,
 	bridge_data_source: Arc<dyn TokenBridgeDataSource<AccountId> + Send + Sync>,
@@ -65,7 +60,6 @@ where
 			AuthoritySelectionInputs,
 			ScEpochNumber,
 		>,
-	T::Api: NativeTokenManagementApi<Block>,
 	T::Api: BlockProductionLogApi<Block, CommitteeMember<CrossChainPublic, SessionKeys>>,
 	T::Api: BlockParticipationApi<Block, BlockAuthor>,
 	T::Api: GovernedMapIDPApi<Block>,
@@ -77,7 +71,6 @@ where
 		McHashIDP,
 		AriadneIDP,
 		BlockAuthorInherentProvider<BlockAuthor>,
-		NativeTokenIDP,
 		BlockParticipationInherentDataProvider<BlockAuthor, DelegatorKey>,
 		GovernedMapInherentDataProvider,
 		TokenBridgeInherentDataProvider<AccountId>,
@@ -93,7 +86,6 @@ where
 			client,
 			mc_hash_data_source,
 			authority_selection_data_source,
-			native_token_data_source,
 			block_participation_data_source,
 			governed_map_data_source,
 			bridge_data_source,
@@ -123,15 +115,6 @@ where
 		.await?;
 		let block_producer_id_provider =
 			BlockAuthorInherentProvider::new(client.as_ref(), parent_hash, *slot)?;
-
-		let native_token = NativeTokenIDP::new(
-			client.clone(),
-			native_token_data_source.as_ref(),
-			mc_hash.mc_hash(),
-			mc_hash.previous_mc_hash(),
-			parent_hash,
-		)
-		.await?;
 
 		let payouts = BlockParticipationInherentDataProvider::new(
 			client.as_ref(),
@@ -166,7 +149,6 @@ where
 			mc_hash,
 			ariadne_data_provider,
 			block_producer_id_provider,
-			native_token,
 			payouts,
 			governed_map,
 			bridge,
@@ -180,7 +162,6 @@ pub struct VerifierCIDP<T> {
 	client: Arc<T>,
 	mc_hash_data_source: Arc<dyn McHashDataSource + Send + Sync>,
 	authority_selection_data_source: Arc<dyn AuthoritySelectionDataSource + Send + Sync>,
-	native_token_data_source: Arc<dyn NativeTokenManagementDataSource + Send + Sync>,
 	block_participation_data_source: Arc<dyn BlockParticipationDataSource + Send + Sync>,
 	governed_map_data_source: Arc<dyn GovernedMapDataSource + Send + Sync>,
 	bridge_data_source: Arc<dyn TokenBridgeDataSource<AccountId> + Send + Sync>,
@@ -202,7 +183,6 @@ where
 			AuthoritySelectionInputs,
 			ScEpochNumber,
 		>,
-	T::Api: NativeTokenManagementApi<Block>,
 	T::Api: BlockProductionLogApi<Block, CommitteeMember<CrossChainPublic, SessionKeys>>,
 	T::Api: BlockParticipationApi<Block, BlockAuthor>,
 	T::Api: GovernedMapIDPApi<Block>,
@@ -212,7 +192,6 @@ where
 		TimestampIDP,
 		AriadneIDP,
 		BlockAuthorInherentProvider<BlockAuthor>,
-		NativeTokenIDP,
 		BlockParticipationInherentDataProvider<BlockAuthor, DelegatorKey>,
 		GovernedMapInherentDataProvider,
 		TokenBridgeInherentDataProvider<AccountId>,
@@ -228,7 +207,6 @@ where
 			client,
 			mc_hash_data_source,
 			authority_selection_data_source,
-			native_token_data_source,
 			block_participation_data_source,
 			governed_map_data_source,
 			bridge_data_source,
@@ -256,15 +234,6 @@ where
 			verified_block_slot,
 			authority_selection_data_source.as_ref(),
 			mc_state_reference.epoch,
-		)
-		.await?;
-
-		let native_token = NativeTokenIDP::new(
-			client.clone(),
-			native_token_data_source.as_ref(),
-			mc_hash.clone(),
-			mc_state_reference.previous_mc_hash(),
-			parent_hash,
 		)
 		.await?;
 
@@ -302,7 +271,6 @@ where
 			timestamp,
 			ariadne_data_provider,
 			block_producer_id_provider,
-			native_token,
 			payouts,
 			governed_map,
 			bridge,
