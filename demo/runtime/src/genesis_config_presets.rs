@@ -60,7 +60,6 @@ fn testnet_genesis(
 		session_committee_management: Default::default(),
 		pallet_session: Default::default(),
 		session: Default::default(),
-		native_token_management: Default::default(),
 		governed_map: GovernedMapConfig {
 			main_chain_scripts: Some(sp_governed_map::MainChainScriptsV1::default()),
 			..Default::default()

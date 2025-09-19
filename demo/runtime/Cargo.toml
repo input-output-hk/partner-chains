@@ -82,8 +82,6 @@ sp-session-validator-management = { workspace = true, features = ["serde"] }
 pallet-session-validator-management-benchmarking = { workspace = true, optional = true }
 sidechain-domain = { workspace = true, features = ["serde"] }
 sidechain-slots = { workspace = true }
-pallet-native-token-management = { workspace = true }
-sp-native-token-management = { workspace = true, features = ["serde"] }
 pallet-address-associations = { workspace = true }
 pallet-block-producer-metadata = { workspace = true }
 sp-block-producer-metadata = { workspace = true }
@@ -167,8 +165,6 @@ std = [
 	"sidechain-slots/std",
 	"sidechain-domain/std",
 	"sp-inherents/std",
-	"pallet-native-token-management/std",
-	"sp-native-token-management/std",
 	"sp-block-production-log/std",
 	"pallet-block-participation/std",
 	"sp-block-participation/std",
@@ -189,7 +185,6 @@ runtime-benchmarks = [
 	"pallet-timestamp/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 	"pallet-block-production-log/runtime-benchmarks",
-	"pallet-native-token-management/runtime-benchmarks",
 	"pallet-address-associations/runtime-benchmarks",
 	"pallet-block-producer-fees/runtime-benchmarks",
 	"pallet-block-producer-metadata/runtime-benchmarks",

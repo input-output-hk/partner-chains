@@ -46,9 +46,6 @@
 //!     	.await?
 //!     	.cached(CANDIDATES_FOR_EPOCH_CACHE_SIZE)?;
 //!
-//!     let native_token =
-//!         NativeTokenManagementDataSourceImpl::new_from_env(pool.clone(), metrics.clone()).await?;
-//!
 //!     let block_participation =
 //!     	StakeDistributionDataSourceImpl::new(pool.clone(), metrics.clone(), STAKE_CACHE_SIZE);
 //!
@@ -113,8 +110,6 @@ pub use crate::candidates::CandidatesDataSourceImpl;
 pub use crate::governed_map::{GovernedMapDataSourceCachedImpl, GovernedMapDataSourceImpl};
 #[cfg(feature = "mc-hash")]
 pub use crate::mc_hash::McHashDataSourceImpl;
-#[cfg(feature = "native-token")]
-pub use crate::native_token::NativeTokenManagementDataSourceImpl;
 #[cfg(feature = "sidechain-rpc")]
 pub use crate::sidechain_rpc::SidechainRpcDataSourceImpl;
 #[cfg(feature = "block-participation")]
@@ -135,8 +130,6 @@ mod candidates;
 mod governed_map;
 #[cfg(feature = "mc-hash")]
 mod mc_hash;
-#[cfg(feature = "native-token")]
-mod native_token;
 #[cfg(feature = "sidechain-rpc")]
 mod sidechain_rpc;
 #[cfg(feature = "block-participation")]

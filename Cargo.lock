@@ -6843,21 +6843,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-native-token-management"
-version = "1.7.0"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "log",
- "parity-scale-codec",
- "scale-info",
- "sidechain-domain",
- "sp-io",
- "sp-native-token-management",
-]
-
-[[package]]
 name = "pallet-partner-chains-bridge"
 version = "1.7.0"
 dependencies = [
@@ -7306,7 +7291,6 @@ dependencies = [
  "log",
  "ogmios-client",
  "pallet-governed-map",
- "pallet-native-token-management",
  "pallet-partner-chains-bridge",
  "pallet-partner-chains-session",
  "pallet-session-validator-management",
@@ -7324,7 +7308,6 @@ dependencies = [
  "sidechain-slots",
  "sp-core",
  "sp-governed-map",
- "sp-native-token-management",
  "sp-partner-chains-bridge",
  "sp-runtime",
  "sp-session-validator-management",
@@ -7380,7 +7363,6 @@ dependencies = [
  "sidechain-mc-hash",
  "sp-block-participation",
  "sp-governed-map",
- "sp-native-token-management",
  "sp-partner-chains-bridge",
  "sp-timestamp",
  "sqlx",
@@ -7457,7 +7439,6 @@ dependencies = [
  "sp-inherents",
  "sp-io",
  "sp-keyring",
- "sp-native-token-management",
  "sp-partner-chains-bridge",
  "sp-partner-chains-consensus-aura",
  "sp-runtime",
@@ -7499,7 +7480,6 @@ dependencies = [
  "pallet-block-production-log",
  "pallet-governed-map",
  "pallet-grandpa",
- "pallet-native-token-management",
  "pallet-partner-chains-bridge",
  "pallet-partner-chains-session",
  "pallet-session",
@@ -7533,7 +7513,6 @@ dependencies = [
  "sp-inherents",
  "sp-io",
  "sp-keyring",
- "sp-native-token-management",
  "sp-offchain",
  "sp-partner-chains-bridge",
  "sp-runtime",
@@ -7566,7 +7545,6 @@ dependencies = [
  "sidechain-mc-hash",
  "sp-block-participation",
  "sp-governed-map",
- "sp-native-token-management",
  "sp-partner-chains-bridge",
  "sp-timestamp",
 ]
@@ -11272,25 +11250,6 @@ dependencies = [
  "scale-info",
  "sp-api",
  "sp-application-crypto",
-]
-
-[[package]]
-name = "sp-native-token-management"
-version = "1.7.0"
-dependencies = [
- "async-trait",
- "derive-new",
- "envy",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sidechain-domain",
- "sp-api",
- "sp-inherents",
- "sp-runtime",
- "sp-version",
- "thiserror 2.0.16",
- "tokio",
 ]
 
 [[package]]

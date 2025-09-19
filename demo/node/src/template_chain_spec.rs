@@ -1,8 +1,8 @@
 use crate::chain_spec::*;
 use partner_chains_demo_runtime::{
 	AuraConfig, BalancesConfig, BridgeConfig, GovernedMapConfig, GrandpaConfig,
-	NativeTokenManagementConfig, RuntimeGenesisConfig, SessionCommitteeManagementConfig,
-	SessionConfig, SidechainConfig, SudoConfig, SystemConfig, TestHelperPalletConfig,
+	RuntimeGenesisConfig, SessionCommitteeManagementConfig, SessionConfig, SidechainConfig,
+	SudoConfig, SystemConfig, TestHelperPalletConfig,
 };
 use sc_service::ChainType;
 
@@ -36,10 +36,6 @@ pub fn chain_spec() -> Result<ChainSpec, envy::Error> {
 			// Same as SessionConfig
 			initial_authorities: vec![],
 			main_chain_scripts: sp_session_validator_management::MainChainScripts::read_from_env()?,
-		},
-		native_token_management: NativeTokenManagementConfig {
-			main_chain_scripts: Some(sp_native_token_management::MainChainScripts::read_from_env()?),
-			..Default::default()
 		},
 		governed_map: GovernedMapConfig {
 			main_chain_scripts: Some(sp_governed_map::MainChainScriptsV1::read_from_env()?),

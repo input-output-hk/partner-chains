@@ -92,13 +92,6 @@ pub mod pallet {
 		}
 	}
 
-	impl<T: Config> pallet_native_token_management::TokenTransferHandler for Pallet<T> {
-		fn handle_token_transfer(token_amount: NativeTokenAmount) -> DispatchResult {
-			log::info!("💸 Registered transfer of {} native tokens", token_amount.0);
-			Ok(())
-		}
-	}
-
 	impl<T: Config> sp_governed_map::OnGovernedMappingChange<MaxKeyLength, MaxValueLength>
 		for Pallet<T>
 	{

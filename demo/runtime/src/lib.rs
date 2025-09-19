@@ -296,12 +296,6 @@ impl frame_system::Config for Runtime {
 	type PostTransactions = ();
 }
 
-impl pallet_native_token_management::Config for Runtime {
-	type TokenTransferHandler = TestHelperPallet;
-	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
-	type WeightInfo = pallet_native_token_management::weights::SubstrateWeight<Runtime>;
-}
-
 impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 	type DisabledValidators = ();
@@ -721,7 +715,6 @@ construct_runtime!(
 		PalletSession: pallet_session,
 		// The order matters!! pallet_partner_chains_session needs to come last for correct initialization order
 		Session: pallet_partner_chains_session,
-		NativeTokenManagement: pallet_native_token_management,
 		GovernedMap: pallet_governed_map,
 		Bridge: pallet_partner_chains_bridge,
 		TestHelperPallet: crate::test_helper_pallet,
@@ -773,7 +766,6 @@ mod benches {
 		[pallet_balances, Balances]
 		[pallet_timestamp, Timestamp]
 		[pallet_sudo, Sudo]
-		[pallet_native_token_management, NativeTokenManagement]
 		[pallet_block_production_log, BlockProductionLog]
 		[pallet_address_associations, AddressAssociations]
 		[pallet_block_producer_fees, BlockProducerFees]
@@ -1108,15 +1100,6 @@ impl_runtime_apis! {
 		}
 		fn validate_permissioned_candidate_data(candidate: PermissionedCandidateData) -> Option<PermissionedCandidateDataError> {
 			validate_permissioned_candidate_data::<SessionKeys>(candidate).err()
-		}
-	}
-
-	impl sp_native_token_management::NativeTokenManagementApi<Block> for Runtime {
-		fn get_main_chain_scripts() -> Option<sp_native_token_management::MainChainScripts> {
-			NativeTokenManagement::get_main_chain_scripts()
-		}
-		fn initialized() -> bool {
-			NativeTokenManagement::initialized()
 		}
 	}
 

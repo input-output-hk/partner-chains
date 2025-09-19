@@ -97,23 +97,6 @@ sp_api::mock_impl_runtime_apis! {
 		}
 	}
 
-	impl sp_native_token_management::NativeTokenManagementApi<Block> for TestApi {
-		fn get_main_chain_scripts() -> Option<sp_native_token_management::MainChainScripts> {
-			Some(
-				sp_native_token_management::MainChainScripts {
-					native_token_policy_id: Default::default(),
-					native_token_asset_name: Default::default(),
-					illiquid_supply_validator_address: Default::default(),
-
-				}
-			)
-		}
-
-		fn initialized() -> bool {
-			true
-		}
-	}
-
 	impl sp_block_production_log::BlockProductionLogApi<Block, CommitteeMember<CrossChainPublic, SessionKeys>> for TestApi {
 		fn get_author(_slot: Slot) -> Option<CommitteeMember<CrossChainPublic, SessionKeys>> {
 			Some(CommitteeMember::permissioned(
