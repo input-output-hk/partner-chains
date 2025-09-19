@@ -1,10 +1,9 @@
 use authority_selection_inherents::AuthoritySelectionDataSource;
 use pallet_sidechain_rpc::SidechainRpcDataSource;
 use partner_chains_db_sync_data_sources::{
-	BlockDataSourceImpl, CachedTokenBridgeDataSourceImpl, CandidatesDataSourceImpl,
-	GovernedMapDataSourceCachedImpl, McFollowerMetrics, McHashDataSourceImpl,
-	NativeTokenManagementDataSourceImpl, SidechainRpcDataSourceImpl,
-	StakeDistributionDataSourceImpl,
+	BlockDataSourceImpl, CandidatesDataSourceImpl, GovernedMapDataSourceCachedImpl,
+	McFollowerMetrics, McHashDataSourceImpl, NativeTokenManagementDataSourceImpl,
+	SidechainRpcDataSourceImpl, StakeDistributionDataSourceImpl, TokenBridgeDataSourceImpl,
 };
 use partner_chains_demo_runtime::AccountId;
 use partner_chains_mock_data_sources::{
@@ -153,7 +152,7 @@ pub async fn create_cached_db_sync_data_sources(
 			)
 			.await?,
 		),
-		bridge: Arc::new(CachedTokenBridgeDataSourceImpl::new(
+		bridge: Arc::new(TokenBridgeDataSourceImpl::new(
 			pool,
 			metrics_opt,
 			block,

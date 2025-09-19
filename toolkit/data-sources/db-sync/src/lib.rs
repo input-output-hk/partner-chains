@@ -106,7 +106,7 @@ pub use crate::{
 #[cfg(feature = "block-source")]
 pub use crate::block::{BlockDataSourceImpl, DbSyncBlockDataSourceConfig};
 #[cfg(feature = "bridge")]
-pub use crate::bridge::cache::CachedTokenBridgeDataSourceImpl;
+pub use crate::bridge::cache::CachedTokenBridgeDataSourceImpl as TokenBridgeDataSourceImpl;
 #[cfg(feature = "candidate-source")]
 pub use crate::candidates::CandidatesDataSourceImpl;
 #[cfg(feature = "governed-map")]
