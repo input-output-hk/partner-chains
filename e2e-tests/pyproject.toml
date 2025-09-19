@@ -1,0 +1,26 @@
+[project]
+name = "partner-chains-e2e-tests"
+version = "1.0.0"
+description = "E2E tests for Partner Chains"
+requires-python = ">=3.12"
+dependencies = [
+    "omegaconf==2.4.0.dev3",
+    "pytest==8.3.4",
+    "pytest-xdist==3.6.1",
+    "pytest-dependency==0.6.0",
+    "substrate-interface==1.7.11",
+    "sqlalchemy==2.0.38",
+    "psycopg2-binary==2.9.10",
+    "filelock==3.17.0",
+    "pytest-json-report==1.5.0",
+    "pydantic==2.10.6",
+    "scalecodec==1.2.11",
+    "pytest-json-ctrf==0.3.5",
+    "numpy==2.2.3",
+    "ecdsa==0.19.1",
+    "bech32==1.2.0",
+]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
