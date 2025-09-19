@@ -176,15 +176,16 @@ class SmartContracts:
         response = self.run_command.exec(cmd)
         return parse_json_response(response)
 
-    def bridge(self, genesis_utxo: str, amount, pc_address, payment_key, spend_ics_utxo):
+    def bridge(self, genesis_utxo: str, token, amount, pc_address, payment_key, spend_ics_utxo):
         if spend_ics_utxo:
             simple_param = ""
         else:
             simple_param = "--simple "
         cmd = (
-            f"{self.cli} smart-contracts bridge "
+            f"{self.cli} smart-contracts bridge deposit "
             f"--payment-key-file {payment_key} "
             f"--genesis-utxo {genesis_utxo} "
+            f"--token {token} "
             f"--amount {amount} "
             f"--pc-address {pc_address} "
             f"{simple_param}"

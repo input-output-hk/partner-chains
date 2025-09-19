@@ -250,8 +250,9 @@ async fn bridge_deposits() {
 	let container = image.start().await.unwrap();
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_governance(&client).await;
-	let _ = run_init_reserve_management(genesis_utxo, &client).await;
-	let _ = run_create_reserve_management(genesis_utxo, V_FUNCTION_HASH, &client).await;
+	let results = run_init_bridge(genesis_utxo, &client).await;
+	assert_eq!(results.len(), 2);
+	let _ = run_create_bridge_utxos(genesis_utxo, &client).await;
 	let ics_utxos_count_0 = get_isc_utxos_count(genesis_utxo, &client).await;
 	let _ = run_bridge_deposit_to_without_ics_spend(genesis_utxo, &client).await;
 	assert_illiquid_supply(genesis_utxo, DEPOSIT_AMOUNT, &client).await;
@@ -567,6 +568,41 @@ fn make_candidate(n: u8) -> PermissionedCandidateData {
 	}
 }
 
+async fn run_init_bridge<T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId>(
+	genesis_utxo: UtxoId,
+	client: &T,
+) -> Vec<MultiSigSmartContractResult> {
+	let results = bridge::init_ics_scripts(
+		genesis_utxo,
+		&governance_authority_payment_key(),
+		client,
+		&FixedDelayRetries::new(Duration::from_millis(500), 100),
+	)
+	.await
+	.unwrap();
+	results.iter().for_each(cleanup_temp_wallet_file);
+	results
+}
+
+async fn run_create_bridge_utxos<
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+>(
+	genesis_utxo: UtxoId,
+	client: &T,
+) -> MultiSigSmartContractResult {
+	let result = bridge::create_validator_utxos(
+		genesis_utxo,
+		4,
+		&governance_authority_payment_key(),
+		client,
+		&FixedDelayRetries::new(Duration::from_millis(500), 100),
+	)
+	.await
+	.unwrap();
+	cleanup_temp_wallet_file(&result);
+	result
+}
+
 async fn run_init_reserve_management<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 >(
@@ -658,8 +694,13 @@ async fn run_bridge_deposit_to_without_ics_spend<
 	genesis_utxo: UtxoId,
 	client: &T,
 ) -> McTxHash {
+	let token = AssetId {
+		policy_id: REWARDS_TOKEN_POLICY_ID,
+		asset_name: AssetName::from_hex_unsafe(REWARDS_TOKEN_ASSET_NAME_STR),
+	};
 	bridge::deposit_without_ics_input(
 		genesis_utxo,
+		token,
 		DEPOSIT_AMOUNT,
 		&[1u8; 32],
 		&governance_authority_payment_key(),
@@ -676,8 +717,13 @@ async fn run_bridge_deposit_to_with_ics_spend<
 	genesis_utxo: UtxoId,
 	client: &T,
 ) -> McTxHash {
+	let token = AssetId {
+		policy_id: REWARDS_TOKEN_POLICY_ID,
+		asset_name: AssetName::from_hex_unsafe(REWARDS_TOKEN_ASSET_NAME_STR),
+	};
 	bridge::deposit_with_ics_spend(
 		genesis_utxo,
+		token,
 		DEPOSIT_AMOUNT,
 		&[2u8; 32],
 		&governance_authority_payment_key(),

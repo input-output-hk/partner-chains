@@ -38,3 +38,14 @@ pub mod sign_tx;
 mod test_values;
 /// Supports governance updates
 pub mod update_governance;
+
+mod versioning_system;
+
+/// Simply wraps asset id with amount.
+#[derive(Clone)]
+pub struct TokenAmount {
+	/// The asset id
+	pub token: sidechain_domain::AssetId,
+	/// Amount of the assets
+	pub amount: u64,
+}
