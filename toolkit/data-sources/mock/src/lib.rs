@@ -33,7 +33,6 @@
 //!    let mc_hash             = Arc::new(McHashDataSourceMock::new(block.clone()));
 //!    let sidechain_rpc       = Arc::new(SidechainRpcDataSourceMock::new(block));
 //!    let authority_selection = Arc::new(AuthoritySelectionDataSourceMock::new_from_env()?);
-//!    let native_token        = Arc::new(NativeTokenDataSourceMock::new());
 //!    let block_participation = Arc::new(StakeDistributionDataSourceMock::new());
 //!    let governed_map        = Arc::new(GovernedMapDataSourceMock::default());
 //!
@@ -66,11 +65,6 @@ pub use governed_map::GovernedMapDataSourceMock;
 mod mc_hash;
 #[cfg(feature = "mc-hash")]
 pub use mc_hash::McHashDataSourceMock;
-
-#[cfg(feature = "native-token")]
-mod native_token;
-#[cfg(feature = "native-token")]
-pub use native_token::NativeTokenDataSourceMock;
 
 #[cfg(feature = "sidechain-rpc")]
 mod sidechain_rpc;
