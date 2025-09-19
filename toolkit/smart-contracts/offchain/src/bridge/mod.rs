@@ -1,5 +1,4 @@
-//! Bride transaction deposit an UTXO that contains the token defined in the reserve settings
-//! at the IlliquidCirculationSupplyValidator.
+//! Bride transaction deposits an UTXO that contains the specified token at the IlliquidCirculationSupplyValidator.
 //! Such transaction can either be simple deposit or can involve consuming exactly one UTXO from
 //! the ICS Validator that has special token (for some reason called 'auth token').
 //! The former increases the number of UTXOs at ICS Validator, but the latter preserve it.
@@ -26,7 +25,7 @@ use ogmios_client::{
 use partner_chains_plutus_data::bridge::TokenTransferDatumV1;
 use sidechain_domain::byte_string::ByteString;
 use sidechain_domain::crypto::blake2b;
-use sidechain_domain::{McTxHash, UtxoId};
+use sidechain_domain::{AssetId, McTxHash, UtxoId};
 
 /// This function deposits bridge token to the Illiquid Circulation Supply from the payment wallet.
 /// It does not consume existing UTXO at the validator address.
@@ -40,6 +39,7 @@ pub async fn deposit_without_ics_input<
 	A: AwaitTx,
 >(
 	genesis_utxo: UtxoId,
+	token: AssetId,
 	amount: u64,
 	pc_address: &[u8],
 	payment_signing_key: &CardanoPaymentSigningKey,
@@ -48,15 +48,17 @@ pub async fn deposit_without_ics_input<
 ) -> anyhow::Result<McTxHash> {
 	let ctx = TransactionContext::for_payment_key(payment_signing_key, client).await?;
 	let scripts = crate::scripts_data::get_scripts_data(genesis_utxo, ctx.network)?;
-	let reserve = ReserveData::get(genesis_utxo, &ctx, client).await?;
-	let reserve_utxo = reserve.get_reserve_utxo(&ctx, client).await?;
-	let token = reserve_utxo.datum.immutable_settings.token;
-	let token_amount = TokenAmount { token, amount };
 	let ics_address =
 		Address::from_bech32(&scripts.addresses.illiquid_circulation_supply_validator)?;
-	let tx_hash =
-		submit_deposit_only_tx(&ics_address, token_amount, pc_address, &ctx, client, await_tx)
-			.await?;
+	let tx_hash = submit_deposit_only_tx(
+		&ics_address,
+		TokenAmount { token, amount },
+		pc_address,
+		&ctx,
+		client,
+		await_tx,
+	)
+	.await?;
 	Ok(tx_hash)
 }
 
@@ -115,6 +117,7 @@ pub async fn deposit_with_ics_spend<
 	A: AwaitTx,
 >(
 	genesis_utxo: UtxoId,
+	token: AssetId,
 	amount: u64,
 	pc_address: &[u8],
 	payment_signing_key: &CardanoPaymentSigningKey,
@@ -124,8 +127,6 @@ pub async fn deposit_with_ics_spend<
 	let ctx = TransactionContext::for_payment_key(payment_signing_key, client).await?;
 	let scripts = crate::scripts_data::get_scripts_data(genesis_utxo, ctx.network)?;
 	let reserve = ReserveData::get(genesis_utxo, &ctx, client).await?;
-	let reserve_utxo = reserve.get_reserve_utxo(&ctx, client).await?;
-	let token = reserve_utxo.datum.immutable_settings.token;
 	let token_amount = TokenAmount { token, amount };
 	let ics_address =
 		Address::from_bech32(&scripts.addresses.illiquid_circulation_supply_validator)?;

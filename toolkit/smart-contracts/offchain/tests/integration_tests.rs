@@ -250,6 +250,7 @@ async fn bridge_deposits() {
 	let container = image.start().await.unwrap();
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_governance(&client).await;
+	// TODO: replace 'reserve init' with `bridge init` and remove `reserve_create`
 	let _ = run_init_reserve_management(genesis_utxo, &client).await;
 	let _ = run_create_reserve_management(genesis_utxo, V_FUNCTION_HASH, &client).await;
 	let ics_utxos_count_0 = get_isc_utxos_count(genesis_utxo, &client).await;
@@ -658,8 +659,13 @@ async fn run_bridge_deposit_to_without_ics_spend<
 	genesis_utxo: UtxoId,
 	client: &T,
 ) -> McTxHash {
+	let token = AssetId {
+		policy_id: REWARDS_TOKEN_POLICY_ID,
+		asset_name: AssetName::from_hex_unsafe(REWARDS_TOKEN_ASSET_NAME_STR),
+	};
 	bridge::deposit_without_ics_input(
 		genesis_utxo,
+		token,
 		DEPOSIT_AMOUNT,
 		&[1u8; 32],
 		&governance_authority_payment_key(),
@@ -676,8 +682,13 @@ async fn run_bridge_deposit_to_with_ics_spend<
 	genesis_utxo: UtxoId,
 	client: &T,
 ) -> McTxHash {
+	let token = AssetId {
+		policy_id: REWARDS_TOKEN_POLICY_ID,
+		asset_name: AssetName::from_hex_unsafe(REWARDS_TOKEN_ASSET_NAME_STR),
+	};
 	bridge::deposit_with_ics_spend(
 		genesis_utxo,
+		token,
 		DEPOSIT_AMOUNT,
 		&[2u8; 32],
 		&governance_authority_payment_key(),

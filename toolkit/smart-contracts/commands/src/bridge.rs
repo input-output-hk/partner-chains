@@ -1,5 +1,6 @@
 use crate::{GenesisUtxo, PaymentFilePath, transaction_submitted_json};
 use partner_chains_cardano_offchain::bridge::{deposit_with_ics_spend, deposit_without_ics_input};
+use sidechain_domain::AssetId;
 use sp_runtime::AccountId32;
 
 #[derive(Clone, Debug, clap::Parser)]
@@ -8,6 +9,8 @@ pub struct BridgeCmd {
 	#[clap(flatten)]
 	common_arguments: crate::CommonArguments,
 	#[arg(long)]
+	/// AssetId of tokens to transfer
+	token: AssetId,
 	/// Number of tokens to transfer
 	amount: u64,
 	#[arg(long)]
@@ -32,6 +35,7 @@ impl BridgeCmd {
 		let tx_hash = if self.simple {
 			deposit_without_ics_input(
 				self.genesis_utxo.into(),
+				self.token,
 				self.amount,
 				self.pc_address.as_ref(),
 				&payment_key,
@@ -42,6 +46,7 @@ impl BridgeCmd {
 		} else {
 			deposit_with_ics_spend(
 				self.genesis_utxo.into(),
+				self.token,
 				self.amount,
 				self.pc_address.as_ref(),
 				&payment_key,
