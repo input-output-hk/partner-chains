@@ -1,4 +1,4 @@
-use crate::{GenesisUtxo, PaymentFilePath};
+use crate::{GenesisUtxo, PaymentFilePath, transaction_submitted_json};
 use partner_chains_cardano_offchain::bridge::{deposit_with_ics_spend, deposit_without_ics_input};
 use sp_runtime::AccountId32;
 
@@ -50,6 +50,6 @@ impl BridgeCmd {
 			)
 			.await?
 		};
-		Ok(serde_json::json!(tx_hash))
+		Ok(transaction_submitted_json(tx_hash))
 	}
 }
