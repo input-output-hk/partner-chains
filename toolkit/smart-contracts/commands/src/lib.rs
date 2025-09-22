@@ -70,6 +70,7 @@ pub enum SmartContractsCmd {
 	#[command(subcommand)]
 	/// Manage the Governed Map key-value store on Cardano
 	GovernedMap(governed_map::GovernedMapCmd),
+	#[command(subcommand)]
 	/// Send token to bridge contract
 	Bridge(bridge::BridgeCmd),
 }
