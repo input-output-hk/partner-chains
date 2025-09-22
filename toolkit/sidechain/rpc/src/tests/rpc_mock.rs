@@ -24,7 +24,7 @@ impl Default for TestRuntimeApi {
 impl ProvideRuntimeApi<Block> for TestApi {
 	type Api = TestRuntimeApi;
 
-	fn runtime_api(&self) -> ApiRef<Self::Api> {
+	fn runtime_api(&self) -> ApiRef<'_, Self::Api> {
 		self.runtime_api.clone().into()
 	}
 }
