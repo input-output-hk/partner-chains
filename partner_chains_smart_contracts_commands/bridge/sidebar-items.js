@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["BridgeCmd"]};
+window.SIDEBAR_ITEMS = {"enum":["BridgeCmd"],"struct":["BridgeCreateUtxosCmd","BridgeDepositCmd","BridgeInitCmd"]};

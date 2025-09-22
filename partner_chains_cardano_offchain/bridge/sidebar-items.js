@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["deposit_with_ics_spend","deposit_without_ics_input"]};
+window.SIDEBAR_ITEMS = {"fn":["create_validator_utxos","deposit_with_ics_spend","deposit_without_ics_input","init_ics_scripts"]};
