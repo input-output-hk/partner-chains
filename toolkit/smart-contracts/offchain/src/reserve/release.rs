@@ -21,20 +21,24 @@
 //!       including the ones released in this transaction*. Ie. if N tokens were already released
 //!       and M tokens are being released, the transaction should mint N+M V-Function tokens.
 //!       These tokens are worthless and don't serve any purpose after the transaction is done.
-use super::{ReserveData, reserve_utxo_input_with_validator_script_reference};
+use super::{
+	ReserveData, add_ics_utxo_input_with_validator_script_reference,
+	add_reserve_utxo_input_with_validator_script_reference,
+};
 use crate::{
 	await_tx::AwaitTx, cardano_keys::CardanoPaymentSigningKey, csl::*, plutus_script::PlutusScript,
 	reserve::ReserveUtxo,
 };
 use anyhow::anyhow;
 use cardano_serialization_lib::{
-	Int, MultiAsset, PlutusData, Transaction, TransactionBuilder, TransactionOutputBuilder,
+	Assets, Int, MultiAsset, PlutusData, Transaction, TransactionBuilder, TransactionOutputBuilder,
+	TxInputsBuilder,
 };
 use ogmios_client::{
 	query_ledger_state::*, query_network::QueryNetwork, transactions::Transactions,
 	types::OgmiosUtxo,
 };
-use partner_chains_plutus_data::reserve::{IlliquidCirculationSupplyDatum, ReserveRedeemer};
+use partner_chains_plutus_data::{bridge::TokenTransferDatumV1, reserve::ReserveRedeemer};
 use sidechain_domain::{McTxHash, UtxoId};
 use std::num::NonZero;
 
@@ -58,6 +62,7 @@ pub async fn release_reserve_funds<
 	};
 
 	let reserve_utxo = reserve_data.get_reserve_utxo(&ctx, client).await?;
+	let ics_utxo = reserve_data.get_illiquid_circulation_supply_utxo(&ctx, client).await?;
 
 	let tx = Costs::calculate_costs(
 		|costs| {
@@ -65,6 +70,7 @@ pub async fn release_reserve_funds<
 				&ctx,
 				&reserve_data,
 				&reserve_utxo,
+				&ics_utxo,
 				&reference_utxo,
 				amount.into(),
 				tip.slot,
@@ -95,6 +101,7 @@ fn reserve_release_tx(
 	ctx: &TransactionContext,
 	reserve_data: &ReserveData,
 	previous_reserve: &ReserveUtxo,
+	ics_utxo: &OgmiosUtxo,
 	reference_utxo: &OgmiosUtxo,
 	amount_to_transfer: u64,
 	latest_slot: u64,
@@ -106,6 +113,7 @@ fn reserve_release_tx(
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 
 	let reserve_balance = previous_reserve.utxo.get_asset_amount(token);
+	let ics_balance = ics_utxo.get_asset_amount(token);
 	let token_total_amount_transferred = stats.token_total_amount_transferred;
 	let cumulative_total_transfer: u64 = token_total_amount_transferred
 		.checked_add(amount_to_transfer)
@@ -125,6 +133,12 @@ fn reserve_release_tx(
 			.to_csl_tx_input(),
 		reserve_data.scripts.illiquid_circulation_supply_validator.bytes.len(),
 	);
+	tx_builder.add_script_reference_input(
+		&reserve_data
+			.illiquid_circulation_supply_authority_token_policy_version_utxo
+			.to_csl_tx_input(),
+		reserve_data.scripts.illiquid_circulation_supply_auth_token_policy.bytes.len(),
+	);
 
 	// Mint v-function tokens in the number equal to the *total* number of tokens transferred.
 	// This serves as a validation of the v-function value.
@@ -136,13 +150,49 @@ fn reserve_release_tx(
 		&costs,
 	)?;
 
+	let mut tx_inputs = TxInputsBuilder::new();
+
+	let spend_indices = costs.get_spend_indices();
+
+	let mut spend_costs = vec![
+		costs.get_spend(*spend_indices.get(1).unwrap_or(&0)),
+		costs.get_spend(*spend_indices.get(0).unwrap_or(&0)),
+	];
+
+	spend_costs.sort();
+
 	// Remove tokens from the reserve
-	tx_builder.set_inputs(&reserve_utxo_input_with_validator_script_reference(
+	add_reserve_utxo_input_with_validator_script_reference(
+		&mut tx_inputs,
 		&previous_reserve.utxo,
 		reserve_data,
 		ReserveRedeemer::ReleaseFromReserve,
-		&costs.get_one_spend(),
-	)?);
+		spend_costs.get(1).unwrap(),
+	)?;
+
+	add_ics_utxo_input_with_validator_script_reference(
+		&mut tx_inputs,
+		ics_utxo,
+		reserve_data,
+		spend_costs.get(0).unwrap(),
+	)?;
+
+	tx_builder.set_inputs(&tx_inputs);
+
+	let mut ics_tokens = ics_utxo
+		.value
+		.to_csl()?
+		.multiasset()
+		.expect("ICS UTXO should have native tokens");
+
+	let mut assets = Assets::new();
+
+	assets.insert(
+		&token.asset_name.to_csl()?,
+		&amount_to_transfer.saturating_add(ics_balance).into(),
+	);
+
+	ics_tokens.insert(&token.policy_id.0.into(), &assets);
 
 	// Transfer released tokens to the illiquid supply
 	tx_builder.add_output(&{
@@ -150,9 +200,9 @@ fn reserve_release_tx(
 			.with_address(
 				&reserve_data.scripts.illiquid_circulation_supply_validator.address(ctx.network),
 			)
-			.with_plutus_data(&IlliquidCirculationSupplyDatum.into())
+			.with_plutus_data(&TokenTransferDatumV1::ReserveTransfer.into())
 			.next()?
-			.with_minimum_ada_and_asset(&token.to_multi_asset(amount_to_transfer)?, ctx)?
+			.with_minimum_ada_and_asset(&ics_tokens, ctx)?
 			.build()?
 	})?;
 
@@ -173,6 +223,7 @@ fn reserve_release_tx(
 	})?;
 
 	tx_builder.set_validity_start_interval_bignum(latest_slot.into());
+
 	Ok(tx_builder.balance_update_and_build(ctx)?.remove_native_script_witnesses())
 }
 
@@ -203,8 +254,8 @@ mod tests {
 	};
 	use pretty_assertions::assert_eq;
 	use raw_scripts::{
-		EXAMPLE_V_FUNCTION_POLICY, ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR, RESERVE_AUTH_POLICY,
-		RESERVE_VALIDATOR,
+		EXAMPLE_V_FUNCTION_POLICY, ILLIQUID_CIRCULATION_SUPPLY_AUTHORITY_TOKEN_POLICY,
+		ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR, RESERVE_AUTH_POLICY, RESERVE_VALIDATOR,
 	};
 	use sidechain_domain::{AssetName, PolicyId};
 
@@ -262,6 +313,10 @@ mod tests {
 		ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR.into()
 	}
 
+	fn illiquid_supply_auth_token_policy_script() -> PlutusScript {
+		ILLIQUID_CIRCULATION_SUPPLY_AUTHORITY_TOKEN_POLICY.into()
+	}
+
 	const UNIX_T0: u64 = 1736504093000u64;
 
 	fn applied_v_function() -> PlutusScript {
@@ -272,12 +327,18 @@ mod tests {
 		"addr_test1wqskkgpmsyf0yr2renk0spgsvea75rkq4yvalrpwwudwr5ga3relp".to_string()
 	}
 
+	fn ics_validator_address() -> String {
+		"addr_test1wz7s8uzkldpv7rvyu6v8wg4vk3ulxy23kzqyngk2yc76xucestz8f".to_string()
+	}
+
 	fn reserve_data() -> ReserveData {
 		ReserveData {
 			scripts: ReserveScripts {
 				validator: reserve_validator_script(),
 				auth_policy: auth_policy_script(),
 				illiquid_circulation_supply_validator: illiquid_supply_validator_script(),
+				illiquid_circulation_supply_auth_token_policy:
+					illiquid_supply_auth_token_policy_script(),
 			},
 			auth_policy_version_utxo: OgmiosUtxo {
 				transaction: OgmiosTx {
@@ -304,6 +365,15 @@ mod tests {
 				index: 0,
 				address: version_oracle_address(),
 				script: Some(illiquid_supply_validator_script().into()),
+				..Default::default()
+			},
+			illiquid_circulation_supply_authority_token_policy_version_utxo: OgmiosUtxo {
+				transaction: OgmiosTx {
+					id: hex!("f5890475177fcc7cf40679974751f66331c7b25fcf2f1a148c53cf7e0e147114"),
+				},
+				index: 1,
+				address: version_oracle_address(),
+				script: Some(illiquid_supply_auth_token_policy_script().into()),
 				..Default::default()
 			},
 		}
@@ -351,8 +421,33 @@ mod tests {
 		ReserveUtxo { utxo: previous_reserve_ogmios_utxo(), datum: previous_reserve_datum() }
 	}
 
+	fn ics_utxo() -> OgmiosUtxo {
+		OgmiosUtxo {
+			transaction: OgmiosTx {
+				id: hex!("23de508bbfeb6af651da305a2de022463f71e47d58365eba36d98fa6c4aed731"),
+			},
+			value: OgmiosValue {
+				lovelace: 1672280,
+				native_tokens: [(
+					// reserve token
+					ics_auth_token_policy().0,
+					vec![Asset { name: vec![], amount: 1 }],
+				)]
+				.into(),
+			},
+
+			index: 2,
+			address: ics_validator_address(),
+			..Default::default()
+		}
+	}
+
 	fn token_policy() -> PolicyId {
 		PolicyId(hex!("1fab25f376bc49a181d03a869ee8eaa3157a3a3d242a619ca7995b2b"))
+	}
+
+	fn ics_auth_token_policy() -> PolicyId {
+		PolicyId(hex!("d4a1d93484fa63847f8c4c271dc0c46a55b6e5916f46e14ee849a381"))
 	}
 
 	fn token_name() -> AssetName {
@@ -379,6 +474,7 @@ mod tests {
 			&tx_context(),
 			&reserve_data(),
 			&previous_reserve_utxo(),
+			&ics_utxo(),
 			&reference_utxo(),
 			5,
 			0,
@@ -403,11 +499,18 @@ mod tests {
 		assert!(
 			ref_inputs.contains(
 				&reserve_data()
+					.illiquid_circulation_supply_authority_token_policy_version_utxo
+					.to_csl_tx_input()
+			)
+		);
+		assert!(
+			ref_inputs.contains(
+				&reserve_data()
 					.illiquid_circulation_supply_validator_version_utxo
 					.to_csl_tx_input()
 			)
 		);
-		assert_eq!(ref_inputs.len(), 4)
+		assert_eq!(ref_inputs.len(), 5)
 	}
 
 	#[test]

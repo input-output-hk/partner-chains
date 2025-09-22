@@ -16,11 +16,14 @@ runs:
         curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
         chmod +x ./kubectl
         sudo mv ./kubectl /usr/local/bin/kubectl
-        curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
-        sudo apt-get install apt-transport-https --yes
-        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+        VERSION=$(curl --silent "https://api.github.com/repos/helm/helm/releases/latest" | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')
+        curl -L "https://get.helm.sh/helm-${VERSION}-linux-amd64.tar.gz" -o helm.tar.gz
+        tar -zxvf helm.tar.gz
+        sudo mv linux-amd64/helm /usr/local/bin/helm
+        rm -rf linux-amd64 helm.tar.gz
         sudo apt-get update
-        sudo apt-get install helm
+        sudo apt-get install -y python3-pip
+        pip3 install awscli --upgrade
       shell: bash
 
     - name: Configure kubectl

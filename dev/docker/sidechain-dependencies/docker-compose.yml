@@ -7,7 +7,7 @@ volumes:
 
 services:
   cardano-node:
-    image: ghcr.io/intersectmbo/cardano-node:10.1.4
+    image: ghcr.io/intersectmbo/cardano-node:10.5.1
     network_mode: "host"
     container_name: sidechains-cardano-node
     environment:
@@ -52,7 +52,7 @@ services:
       - db-sync-data:/var/lib
 
   ogmios:
-    image: cardanosolutions/ogmios:v6.11.0
+    image: cardanosolutions/ogmios:v6.13.0
     container_name: sidechains-ogmios
     platform: linux/amd64
     command: "--host 0.0.0.0 --node-config /config/preview/config.json --node-socket /ipc/node.socket"

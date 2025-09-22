@@ -81,7 +81,7 @@ expect "Initial Multisig Governance Threshold (1)"
 send "\r"
 expect "Do you want to continue? (y/N)"
 send "y\r"
-expect "Do you want to configure a native token for you Partner Chain? (Y/n)"
+expect "Do you want to configure a token bridge for your Partner Chain? (Y/n)"
 send "n\r"
 expect eof
 EOF

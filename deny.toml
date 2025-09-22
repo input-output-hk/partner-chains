@@ -95,7 +95,7 @@ allow = [
     "CC0-1.0",
     "Unicode-3.0",
     "CDLA-Permissive-2.0",
-    "Apache-2.0 WITH LLVM-exception"
+    "Apache-2.0 WITH LLVM-exception",
 ]
 # The confidence threshold for detecting a license from license text.
 # The higher the value, the more closely the license text must be to the
@@ -118,7 +118,7 @@ exceptions = [
 # Run `cargo deny check licenses` locally; its output will guide you.
 
 [[licenses.clarify]]
-crate = "ring" # Or "ring@<version-constraint>" e.g. "ring@^0.16"
+crate = "ring"                         # Or "ring@<version-constraint>" e.g. "ring@^0.16"
 expression = "ISC AND MIT AND OpenSSL" # SPDX conjunction
 # Correct paths and hashes are CRITICAL for this clarification to be accepted.
 # `cargo-deny` will tell you what it found when you run `cargo deny check licenses`.

@@ -29,6 +29,9 @@ def governance_address(config: ApiConfig) -> str:
 def payment_key(config: ApiConfig, governance_skey_with_cli):
     return config.nodes_config.governance_authority.mainchain_key
 
+@fixture(scope="session")
+def node_1_aura_pub_key(config: ApiConfig):
+    return list(config.nodes_config.nodes.values())[0].aura_public_key
 
 @fixture(scope="session")
 def cardano_payment_key(config: ApiConfig, api: BlockchainApi, write_file):

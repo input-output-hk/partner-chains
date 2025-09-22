@@ -54,9 +54,12 @@ echo "Permissioned candidates policy ID: $PERMISSIONED_CANDIDATES_POLICY_ID"
 
 echo "Setting values for NATIVE_TOKEN_POLICY_ID, NATIVE_TOKEN_ASSET_NAME, and ILLIQUID_SUPPLY_VALIDATOR_ADDRESS for chain-spec creation"
 export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS=$(jq -r '.addresses.IlliquidCirculationSupplyValidator' addresses.json)
+export ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR_ADDRESS=$(echo $ILLIQUID_SUPPLY_VALIDATOR_ADDRESS)
 echo "Illiquid Circulation Supply Validator address: $ILLIQUID_SUPPLY_VALIDATOR_ADDRESS"
 export NATIVE_TOKEN_POLICY_ID="1fab25f376bc49a181d03a869ee8eaa3157a3a3d242a619ca7995b2b"
 export NATIVE_TOKEN_ASSET_NAME="52657761726420746f6b656e"
+export BRIDGE_TOKEN_POLICY_ID=$(echo $NATIVE_TOKEN_POLICY_ID)
+export BRIDGE_TOKEN_ASSET_NAME=$(echo $NATIVE_TOKEN_ASSET_NAME)
 
 export GOVERNED_MAP_VALIDATOR_ADDRESS=$(jq -r '.addresses.GovernedMapValidator' addresses.json)
 echo "Governed Map Validator Address: $GOVERNED_MAP_VALIDATOR_ADDRESS"

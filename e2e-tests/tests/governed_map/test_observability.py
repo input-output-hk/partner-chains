@@ -42,14 +42,14 @@ class TestInitializeMap:
         assert observe_governed_map_initialization
 
     def test_map_is_equal_to_main_chain_data(self, api: BlockchainApi, genesis_utxo, wait_until, config: ApiConfig):
+        smart_contracts_list = api.partner_chains_node.smart_contracts.governed_map.list(genesis_utxo)
         current_mc_block = api.get_mc_block()
-        result = api.partner_chains_node.smart_contracts.governed_map.list(genesis_utxo)
         # wait for any changes in the map to become observable, i.e. teardown phase from smart-contracts tests
         wait_until(
             lambda: api.get_mc_block() > current_mc_block + config.main_chain.security_param,
             timeout=config.timeouts.main_chain_tx * config.main_chain.security_param,
         )
-        expected_map = result.json
+        expected_map = smart_contracts_list.json
         actual_map = api.get_governed_map()
         actual_map = {key: string_to_hex_bytes(value) for key, value in actual_map.items()}
         assert expected_map == actual_map

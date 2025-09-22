@@ -191,32 +191,13 @@ impl From<IlliquidCirculationSupplyRedeemer> for PlutusData {
 	}
 }
 
-#[derive(Debug, Clone, PartialEq)]
-/// Datum of the illiquid circulation supply.
-pub struct IlliquidCirculationSupplyDatum;
-
-impl From<IlliquidCirculationSupplyDatum> for PlutusData {
-	fn from(_value: IlliquidCirculationSupplyDatum) -> Self {
-		VersionedGenericDatum {
-			datum: PlutusData::new_empty_constr_plutus_data(
-				&cardano_serialization_lib::BigNum::zero(),
-			),
-			appendix: PlutusData::new_empty_constr_plutus_data(
-				&cardano_serialization_lib::BigNum::zero(),
-			),
-			version: 0,
-		}
-		.into()
-	}
-}
-
 #[cfg(test)]
 mod tests {
 	use cardano_serialization_lib::PlutusData;
 	use pretty_assertions::assert_eq;
 	use sidechain_domain::{AssetName, PolicyId};
 
-	use crate::{reserve::IlliquidCirculationSupplyDatum, test_helpers::test_plutus_data};
+	use crate::test_helpers::test_plutus_data;
 
 	use super::{ReserveDatum, ReserveImmutableSettings, ReserveMutableSettings, ReserveStats};
 
@@ -265,18 +246,6 @@ mod tests {
 		assert_eq!(
 			ReserveDatum::try_from(test_reserve_datum_plutus_data()).unwrap(),
 			test_reserve_datum()
-		)
-	}
-
-	#[test]
-	fn encode_ics_datum() {
-		assert_eq!(
-			PlutusData::from(IlliquidCirculationSupplyDatum),
-			test_plutus_data!({"list":[
-				{"constructor":0,"fields":[]},
-				{"constructor":0,"fields":[]},
-				{"int":0}
-			]})
 		)
 	}
 }

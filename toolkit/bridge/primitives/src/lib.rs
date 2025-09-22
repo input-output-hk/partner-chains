@@ -1,4 +1,123 @@
-//! Primitives and inherent data provider for the token bridge feature of Partner Chains Toolkit.
+//! # Partner Chain Token Bridge
+//!
+//! This crate defines common primitive types, the inherent data provider and data source API
+//! for the token bridge feature of Partner Chains Toolkit.
+//!
+//! ## Overview
+//!
+//! The bridge feature of the Partner Chains Toolkit allows sending the native token from
+//! Cardano to its Partner Chain in a trustless manner, making use of direct observation by
+//! the Partner Chain nodes of the Cardano ledger.
+//!
+//! Each token *transfer* is made by creating a UTXO on a specific *illiquid circulating
+//! supply* (ICS) address in which the tokens are locked so they can be released on the
+//! Partner Chain. The feature distinguishes two types of a transfer:
+//!
+//! 1. *User transfers*, which are sent by ordinary users and addressed to a recipient that
+//!    is indicated in the datum attached to the transfer's UTXO.
+//! 2. *Reserve transfers*, which are sent as part of the Partner Chain's operation, and
+//!    allow the chain to gradually move its token reserve (ie. the reserve of tokens used
+//!    to pay block producer rewards) from Cardano to its own ledger.
+//!
+//! Newly made transfers are picked up by the observability layer once their blocks become
+//! stable, and are made available to the runtime as inherent data. The bridge pallet in turn
+//! makes this data available to the Partner Chains ledger by passing it to the transfer handler,
+//! which is left for each Partner Chain's builders to implement according to their particular
+//! requirements.
+//!
+//! ## Usage
+//!
+//! ### Prerequisites
+//!
+//! #### Pallet and runtime API
+//!
+//! Consult the documentation of `pallet_partner_chains_bridge` for instructions on how to add
+//! the bridge pallet to the runtime and implement runtime APIs. The inherent data provider
+//! defined in this crate requires [TokenBridgeIDPRuntimeApi] to be implemented in the runtime.
+//!
+//! #### Data source
+//!
+//! A data source implementing [TokenBridgeDataSource] is required to be present in the node.
+//! The `partner_chains_db_sync_data_sources` crate provides a production ready Db-Sync-based
+//! implementation, and a mocked implementation is provided by `partner-chains-mock-data-sources`.
+//! See the documentation of those crates for instructions on how to add these data sources to
+//! your node.
+//!
+//! #### Recipient type
+//!
+//! All user transfers sent through the bridge are addressed to some recipient identified by a
+//! chain-specific type, usually an address or public key. Because the toolkit makes no assumptions
+//! about the ledger structure, this type must be provided in various places as a type parameter.
+//! This type can be arbitrary, as long as it conforms to the trait bounds required by the
+//! inherent data provider, data source and the pallet. For simple Substrate chains, the account ID
+//! type used by their ledgers is a good choice.
+//!
+//! ### Adding the inherent data provider
+//!
+//! Include [TokenBridgeInherentDataProvider] in the list of `InherentDataProviders` of your
+//! implementation of [CreateInherentDataProviders]:
+//!
+//! ```rust
+//! use sp_partner_chains_bridge::TokenBridgeInherentDataProvider;
+//! struct AccountId;
+//! type InherentDataProviders = (
+//! 	// sp_timestamp::InherentDataProvider,
+//!     // ...
+//! 	TokenBridgeInherentDataProvider<AccountId>,
+//! );
+//! ```
+//!
+//! The IDP is created the same way when proposing and validating a block:
+//! ```rust
+//! # use sp_partner_chains_bridge::*;
+//! # use sidechain_domain::*;
+//! # #[derive(sp_core::Encode)]
+//! # struct AccountId;
+//! type InherentDataProviders = ( /* other IDPs */ TokenBridgeInherentDataProvider<AccountId>);
+//!
+//! async fn create_inherent_data_providers<T, Block>(
+//!     client: &T,
+//!     bridge_data_source: &(impl TokenBridgeDataSource<AccountId> + Send + Sync),
+//!     parent_hash: Block::Hash,
+//! ) -> Result<InherentDataProviders, Box<dyn std::error::Error + Send + Sync>>
+//! where
+//!     Block: sp_runtime::traits::Block,
+//!     T: sp_api::ProvideRuntimeApi<Block> + Send + Sync,
+//!     T::Api: TokenBridgeIDPRuntimeApi<Block> + Send + Sync
+//! {
+//!     /*
+//!      Create other IDPs
+//!      */
+//!     let mc_hash: McBlockHash = todo!("provided by the MC Hash IDP from `sidechain_mc_hash` crate");
+//!
+//!     let bridge = TokenBridgeInherentDataProvider::new(
+//!     	client,
+//!     	parent_hash,
+//!     	mc_hash,
+//!     	bridge_data_source,
+//!     )
+//!     .await?;
+//!
+//!     Ok((/* other IDPs */ bridge))
+//! }
+//! ```
+//!
+//! ### Adding to a running chain
+//!
+//! [TokenBridgeInherentDataProvider] is version-aware and will stay inactive until the pallet
+//! is added and fully configured along with [TokenBridgeIDPRuntimeApi]. Thus, the correct order
+//! of steps when adding the feature to an already running chain will be:
+//!
+//! 0. Initialize the bridge smart contracts on Cardano using the offchain provided by the
+//!    `partner-chains-cardano-offchain` crate. This step can be performed independently from the
+//!    order of other steps.
+//! 1. Release a new version of the chain's node, with added data source and inhrent data provider.
+//! 2. Distribute the new version and wait until most of the network's nodes have been updated.
+//! 3. Perform a runtime upgrade to a runtime version containing the pallet.
+//! 4. Complete the configuration of the pallet by setting the correct main chain script and data
+//!    checkpoint via an extrinsic. This step requires the governance authority to know the main
+//!    chain script values, which it should obtain using the offchain.
+//!
 #![cfg_attr(not(feature = "std"), no_std)]
 #![deny(missing_docs)]
 
@@ -8,7 +127,9 @@ use alloc::vec::*;
 use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
-use sidechain_domain::{AssetName, MainchainAddress, McBlockHash, PolicyId, UtxoId};
+use sidechain_domain::{
+	AssetId, AssetName, MainchainAddress, McBlockHash, McBlockNumber, PolicyId, UtxoId,
+};
 use sp_inherents::*;
 
 #[cfg(feature = "std")]
@@ -37,7 +158,47 @@ pub struct MainChainScripts {
 	/// Address of the illiquid supply validator.
 	///
 	/// All tokens sent to that address are effectively locked and considered "sent" to the Partner Chain.
-	pub illiquid_supply_validator_address: MainchainAddress,
+	pub illiquid_circulation_supply_validator_address: MainchainAddress,
+}
+
+impl MainChainScripts {
+	/// Return full asset ID fo the bridged token (minting policy ID and asset name)
+	pub fn asset_id(&self) -> AssetId {
+		AssetId {
+			policy_id: self.token_policy_id.clone(),
+			asset_name: self.token_asset_name.clone(),
+		}
+	}
+}
+
+#[cfg(feature = "std")]
+impl MainChainScripts {
+	/// Reads the main chain script values from environment
+	///
+	/// It expects the following variables to be set:
+	/// - `BRIDGE_TOKEN_POLICY_ID`
+	/// - `BRIDGE_TOKEN_ASSET_NAME`
+	/// - `ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR_ADDRESS`
+	pub fn read_from_env() -> Result<Self, envy::Error> {
+		#[derive(serde::Serialize, serde::Deserialize)]
+		pub struct MainChainScriptsEnvConfig {
+			pub bridge_token_policy_id: PolicyId,
+			pub bridge_token_asset_name: AssetName,
+			pub illiquid_circulation_supply_validator_address: MainchainAddress,
+		}
+
+		let MainChainScriptsEnvConfig {
+			bridge_token_policy_id,
+			bridge_token_asset_name,
+			illiquid_circulation_supply_validator_address,
+		} = envy::from_env::<MainChainScriptsEnvConfig>()?;
+
+		Ok(Self {
+			token_policy_id: bridge_token_policy_id,
+			token_asset_name: bridge_token_asset_name,
+			illiquid_circulation_supply_validator_address,
+		})
+	}
 }
 
 /// Type containing all information needed to process a single transfer incoming from
@@ -115,25 +276,26 @@ pub enum TokenBridgeInherentDataProvider<RecipientAddress> {
 	},
 }
 
-/// Pointer to last data processed
+/// Value specifying the point in time up to which bridge transfers have been processed
+///
+/// This type is an enum wrapping either a block number or a utxo to handle both a case
+/// where all transfers up to a block have been handled and a case where there were more
+/// transfers than the limit allows and observability needs to pick up after the last
+/// utxo that could be observed
 #[derive(
-	Default,
-	Clone,
-	Debug,
-	Encode,
-	Decode,
-	DecodeWithMemTracking,
-	TypeInfo,
-	PartialEq,
-	Eq,
-	MaxEncodedLen,
+	Clone, Debug, Encode, Decode, DecodeWithMemTracking, TypeInfo, PartialEq, Eq, MaxEncodedLen,
 )]
-pub struct BridgeDataCheckpoint(pub UtxoId);
+pub enum BridgeDataCheckpoint {
+	/// Last transfer utxo that has been processed
+	Utxo(UtxoId),
+	/// Cardano block up to which data has been processed
+	Block(McBlockNumber),
+}
 
 /// Interface for data sources that can be used by [TokenBridgeInherentDataProvider]
 #[cfg(feature = "std")]
 #[async_trait::async_trait]
-pub trait TokenBridgeDataSource<RecipientAddress> {
+pub trait TokenBridgeDataSource<RecipientAddress>: Send + Sync {
 	/// Fetches at most `max_transfers` of token bridge transfers after `data_checkpoint` up to `current_mc_block`
 	async fn get_transfers(
 		&self,
@@ -219,7 +381,7 @@ impl<RecipientAddress: Encode + Send + Sync> TokenBridgeInherentDataProvider<Rec
 		client: &T,
 		parent_hash: Block::Hash,
 		current_mc_hash: McBlockHash,
-		data_source: &dyn TokenBridgeDataSource<RecipientAddress>,
+		data_source: &(dyn TokenBridgeDataSource<RecipientAddress> + Send + Sync),
 	) -> Result<Self, InherentDataCreationError>
 	where
 		Block: BlockT,

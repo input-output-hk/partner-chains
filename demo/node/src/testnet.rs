@@ -1,7 +1,7 @@
 use crate::chain_spec::*;
 use authority_selection_inherents::CommitteeMember;
 use partner_chains_demo_runtime::{
-	AccountId, AuraConfig, BalancesConfig, GovernedMapConfig, GrandpaConfig,
+	AccountId, AuraConfig, BalancesConfig, BridgeConfig, GovernedMapConfig, GrandpaConfig,
 	NativeTokenManagementConfig, RuntimeGenesisConfig, SessionCommitteeManagementConfig,
 	SessionConfig, SidechainConfig, SudoConfig, SystemConfig, TestHelperPalletConfig,
 };
@@ -166,6 +166,7 @@ pub fn testnet_genesis(
 	endowed_accounts: Vec<AccountId>,
 	_enable_println: bool,
 ) -> Result<serde_json::Value, envy::Error> {
+	let genesis_utxo = sp_sidechain::read_genesis_utxo_from_env_with_defaults()?;
 	let config = RuntimeGenesisConfig {
 		system: SystemConfig { ..Default::default() },
 		balances: BalancesConfig {
@@ -189,7 +190,7 @@ pub fn testnet_genesis(
 				.collect(),
 		},
 		sidechain: SidechainConfig {
-			genesis_utxo: sp_sidechain::read_genesis_utxo_from_env_with_defaults()?,
+			genesis_utxo,
 			slots_per_epoch: SlotsPerEpoch::read_from_env()?,
 			..Default::default()
 		},
@@ -206,14 +207,18 @@ pub fn testnet_genesis(
 			..Default::default()
 		},
 		governed_map: GovernedMapConfig {
-			main_chain_scripts: Some(Default::default()),
+			main_chain_scripts: Some(sp_governed_map::MainChainScriptsV1::read_from_env()?),
 			..Default::default()
 		},
 		test_helper_pallet: TestHelperPalletConfig {
 			participation_data_release_period: 30,
 			..Default::default()
 		},
-		bridge: Default::default(),
+		bridge: BridgeConfig {
+			main_chain_scripts: Some(sp_partner_chains_bridge::MainChainScripts::read_from_env()?),
+			initial_checkpoint: Some(genesis_utxo),
+			..Default::default()
+		},
 	};
 
 	Ok(serde_json::to_value(config).expect("Genesis config must be serialized correctly"))

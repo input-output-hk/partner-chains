@@ -3,7 +3,7 @@ use crate::DataSourceError::ExpectedDataNotFound;
 use crate::Result;
 use crate::block::BlockDataSourceImpl;
 use crate::db_model::{DbSyncConfigurationProvider, GovernedMapAction, TxInConfiguration};
-use crate::{metrics::McFollowerMetrics, observed_async_trait};
+use crate::metrics::{McFollowerMetrics, observed_async_trait};
 use db_sync_sqlx::{Asset, BlockNumber};
 use itertools::Itertools;
 use log::warn;
@@ -216,8 +216,7 @@ impl GovernedMapDataSource for GovernedMapDataSourceCachedImpl {
 				Some(block) => BlockNumber(block.number.0),
 				None => up_to_block_number,
 			};
-		let since_block_plus =
-			BlockNumber(since_block_number.unwrap_or(BlockNumber(0)).0 + self.cache_size as u32);
+		let since_block_plus = since_block_number.unwrap_or_default().saturating_add(self.cache_size);
 		let max_search_block = min(latest_stable_block, max(up_to_block_number, since_block_plus));
 
 		let changes = self
@@ -307,8 +306,8 @@ fn filter_changes_in_range(
 	changes
 		.into_iter()
 		.filter(|change| {
-			change.block_no.0 <= up_to_block.0
-				&& since_block.map(|b| change.block_no.0 > b.0).unwrap_or(true)
+			change.block_no <= up_to_block
+				&& since_block.map(|b| change.block_no > b).unwrap_or(true)
 		})
 		.map(|change| (change.key, change.value))
 		.collect()
@@ -327,8 +326,8 @@ impl Cache {
 			return None;
 		};
 
-		if highest_block_number.0 < up_to_block.0
-			|| since_block.map(|b| b.0 < lowest_block_number.0).unwrap_or(false)
+		if highest_block_number < up_to_block
+			|| since_block.map(|b| b < lowest_block_number).unwrap_or(false)
 		{
 			return None;
 		}

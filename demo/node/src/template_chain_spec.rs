@@ -1,8 +1,8 @@
 use crate::chain_spec::*;
 use partner_chains_demo_runtime::{
-	AuraConfig, BalancesConfig, GovernedMapConfig, GrandpaConfig, NativeTokenManagementConfig,
-	RuntimeGenesisConfig, SessionCommitteeManagementConfig, SessionConfig, SidechainConfig,
-	SudoConfig, SystemConfig, TestHelperPalletConfig,
+	AuraConfig, BalancesConfig, BridgeConfig, GovernedMapConfig, GrandpaConfig,
+	NativeTokenManagementConfig, RuntimeGenesisConfig, SessionCommitteeManagementConfig,
+	SessionConfig, SidechainConfig, SudoConfig, SystemConfig, TestHelperPalletConfig,
 };
 use sc_service::ChainType;
 
@@ -11,6 +11,7 @@ use sc_service::ChainType;
 /// `initial_validators` fields should be updated by the `partner-chains-node wizards chain-spec`.
 /// Add and modify other fields of `ChainSpec` accordingly to the needs of your chain.
 pub fn chain_spec() -> Result<ChainSpec, envy::Error> {
+	let genesis_utxo = sp_sidechain::read_genesis_utxo_from_env_with_defaults()?;
 	let runtime_genesis_config = RuntimeGenesisConfig {
 		system: SystemConfig { ..Default::default() },
 		balances: BalancesConfig {
@@ -29,10 +30,7 @@ pub fn chain_spec() -> Result<ChainSpec, envy::Error> {
 			// Initial validators are meant to be updated in the chain spec file, so it is empty here.
 			initial_validators: vec![],
 		},
-		sidechain: SidechainConfig {
-			genesis_utxo: sp_sidechain::read_genesis_utxo_from_env_with_defaults()?,
-			..Default::default()
-		},
+		sidechain: SidechainConfig { genesis_utxo, ..Default::default() },
 		pallet_session: Default::default(),
 		session_committee_management: SessionCommitteeManagementConfig {
 			// Same as SessionConfig
@@ -44,14 +42,18 @@ pub fn chain_spec() -> Result<ChainSpec, envy::Error> {
 			..Default::default()
 		},
 		governed_map: GovernedMapConfig {
-			main_chain_scripts: Some(Default::default()),
+			main_chain_scripts: Some(sp_governed_map::MainChainScriptsV1::read_from_env()?),
 			..Default::default()
 		},
 		test_helper_pallet: TestHelperPalletConfig {
 			participation_data_release_period: 30,
 			..Default::default()
 		},
-		bridge: Default::default(),
+		bridge: BridgeConfig {
+			main_chain_scripts: Some(sp_partner_chains_bridge::MainChainScripts::read_from_env()?),
+			initial_checkpoint: Some(genesis_utxo),
+			..Default::default()
+		},
 	};
 	let genesis_json = serde_json::to_value(runtime_genesis_config)
 		.expect("Genesis config must be serialized correctly");

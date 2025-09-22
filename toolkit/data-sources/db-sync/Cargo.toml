@@ -50,11 +50,12 @@ partner-chains-plutus-data = { workspace = true }
 sp-block-participation = { workspace = true, features = [
     "std",
 ], optional = true }
+sp-partner-chains-bridge = { workspace = true, optional = true, features = ["std"] }
 
 [dev-dependencies]
 tokio-test = "0.4.3"
-ctor = "0.4.1"
-testcontainers-modules = { version = "0.1.3", features = ["postgres"] }
+ctor = "0.5.0"
+testcontainers-modules = { version = "0.13.0", features = ["blocking", "postgres"] }
 pretty_assertions = { workspace = true }
 paste = { workspace = true }
 
@@ -67,3 +68,4 @@ native-token = ["sp-native-token-management"]
 mc-hash = ["sidechain-mc-hash", "block-source"]
 sidechain-rpc = ["pallet-sidechain-rpc", "block-source"]
 block-participation = ["sp-block-participation"]
+bridge = ["sp-partner-chains-bridge"]

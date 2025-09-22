@@ -5,7 +5,7 @@ use authority_selection_inherents::{
 use derive_new::new;
 use jsonrpsee::core::async_trait;
 use partner_chains_demo_runtime::{
-	BlockAuthor, CrossChainPublic,
+	AccountId, BlockAuthor, CrossChainPublic,
 	opaque::{Block, SessionKeys},
 };
 use sc_consensus_aura::{SlotDuration, find_pre_digest};
@@ -32,6 +32,9 @@ use sp_native_token_management::{
 	NativeTokenManagementApi, NativeTokenManagementDataSource,
 	NativeTokenManagementInherentDataProvider as NativeTokenIDP,
 };
+use sp_partner_chains_bridge::{
+	TokenBridgeDataSource, TokenBridgeIDPRuntimeApi, TokenBridgeInherentDataProvider,
+};
 use sp_partner_chains_consensus_aura::CurrentSlotProvider;
 use sp_runtime::traits::{Block as BlockT, Header, Zero};
 use sp_session_validator_management::SessionValidatorManagementApi;
@@ -48,6 +51,7 @@ pub struct ProposalCIDP<T> {
 	native_token_data_source: Arc<dyn NativeTokenManagementDataSource + Send + Sync>,
 	block_participation_data_source: Arc<dyn BlockParticipationDataSource + Send + Sync>,
 	governed_map_data_source: Arc<dyn GovernedMapDataSource + Send + Sync>,
+	bridge_data_source: Arc<dyn TokenBridgeDataSource<AccountId> + Send + Sync>,
 }
 
 #[async_trait]
@@ -65,6 +69,7 @@ where
 	T::Api: BlockProductionLogApi<Block, CommitteeMember<CrossChainPublic, SessionKeys>>,
 	T::Api: BlockParticipationApi<Block, BlockAuthor>,
 	T::Api: GovernedMapIDPApi<Block>,
+	T::Api: TokenBridgeIDPRuntimeApi<Block>,
 {
 	type InherentDataProviders = (
 		AuraIDP,
@@ -75,6 +80,7 @@ where
 		NativeTokenIDP,
 		BlockParticipationInherentDataProvider<BlockAuthor, DelegatorKey>,
 		GovernedMapInherentDataProvider,
+		TokenBridgeInherentDataProvider<AccountId>,
 	);
 
 	async fn create_inherent_data_providers(
@@ -90,6 +96,7 @@ where
 			native_token_data_source,
 			block_participation_data_source,
 			governed_map_data_source,
+			bridge_data_source,
 		} = self;
 		let CreateInherentDataConfig { mc_epoch_config, sc_slot_config, time_source } = config;
 
@@ -145,6 +152,14 @@ where
 		)
 		.await?;
 
+		let bridge = TokenBridgeInherentDataProvider::new(
+			client.as_ref(),
+			parent_hash,
+			mc_hash.mc_hash(),
+			bridge_data_source.as_ref(),
+		)
+		.await?;
+
 		Ok((
 			slot,
 			timestamp,
@@ -154,6 +169,7 @@ where
 			native_token,
 			payouts,
 			governed_map,
+			bridge,
 		))
 	}
 }
@@ -167,6 +183,7 @@ pub struct VerifierCIDP<T> {
 	native_token_data_source: Arc<dyn NativeTokenManagementDataSource + Send + Sync>,
 	block_participation_data_source: Arc<dyn BlockParticipationDataSource + Send + Sync>,
 	governed_map_data_source: Arc<dyn GovernedMapDataSource + Send + Sync>,
+	bridge_data_source: Arc<dyn TokenBridgeDataSource<AccountId> + Send + Sync>,
 }
 
 impl<T: Send + Sync> CurrentSlotProvider for VerifierCIDP<T> {
@@ -189,6 +206,7 @@ where
 	T::Api: BlockProductionLogApi<Block, CommitteeMember<CrossChainPublic, SessionKeys>>,
 	T::Api: BlockParticipationApi<Block, BlockAuthor>,
 	T::Api: GovernedMapIDPApi<Block>,
+	T::Api: TokenBridgeIDPRuntimeApi<Block>,
 {
 	type InherentDataProviders = (
 		TimestampIDP,
@@ -197,6 +215,7 @@ where
 		NativeTokenIDP,
 		BlockParticipationInherentDataProvider<BlockAuthor, DelegatorKey>,
 		GovernedMapInherentDataProvider,
+		TokenBridgeInherentDataProvider<AccountId>,
 	);
 
 	async fn create_inherent_data_providers(
@@ -212,6 +231,7 @@ where
 			native_token_data_source,
 			block_participation_data_source,
 			governed_map_data_source,
+			bridge_data_source,
 		} = self;
 		let CreateInherentDataConfig { mc_epoch_config, sc_slot_config, time_source, .. } = config;
 
@@ -264,9 +284,17 @@ where
 		let governed_map = GovernedMapInherentDataProvider::new(
 			client.as_ref(),
 			parent_hash,
-			mc_hash,
+			mc_hash.clone(),
 			mc_state_reference.previous_mc_hash(),
 			governed_map_data_source.as_ref(),
+		)
+		.await?;
+
+		let bridge = TokenBridgeInherentDataProvider::new(
+			client.as_ref(),
+			parent_hash,
+			mc_hash,
+			bridge_data_source.as_ref(),
 		)
 		.await?;
 
@@ -277,6 +305,7 @@ where
 			native_token,
 			payouts,
 			governed_map,
+			bridge,
 		))
 	}
 }

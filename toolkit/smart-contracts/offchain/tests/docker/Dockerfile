@@ -1,4 +1,4 @@
-FROM cardanosolutions/cardano-node-ogmios:v6.11.0_10.1.4
+FROM cardanosolutions/cardano-node-ogmios:v6.13.0_10.1.4
 
 COPY ./config /config
 COPY ./busybox /busybox

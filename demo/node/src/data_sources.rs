@@ -1,20 +1,23 @@
 use authority_selection_inherents::AuthoritySelectionDataSource;
 use pallet_sidechain_rpc::SidechainRpcDataSource;
 use partner_chains_db_sync_data_sources::{
-	BlockDataSourceImpl, CandidatesDataSourceImpl, GovernedMapDataSourceCachedImpl,
-	McFollowerMetrics, McHashDataSourceImpl, NativeTokenManagementDataSourceImpl,
-	SidechainRpcDataSourceImpl, StakeDistributionDataSourceImpl,
+	BlockDataSourceImpl, CachedTokenBridgeDataSourceImpl, CandidatesDataSourceImpl,
+	GovernedMapDataSourceCachedImpl, McFollowerMetrics, McHashDataSourceImpl,
+	NativeTokenManagementDataSourceImpl, SidechainRpcDataSourceImpl,
+	StakeDistributionDataSourceImpl,
 };
+use partner_chains_demo_runtime::AccountId;
 use partner_chains_mock_data_sources::{
 	AuthoritySelectionDataSourceMock, BlockDataSourceMock, GovernedMapDataSourceMock,
 	McHashDataSourceMock, NativeTokenDataSourceMock, SidechainRpcDataSourceMock,
-	StakeDistributionDataSourceMock,
+	StakeDistributionDataSourceMock, TokenBridgeDataSourceMock,
 };
 use sc_service::error::Error as ServiceError;
 use sidechain_mc_hash::McHashDataSource;
 use sp_block_participation::inherent_data::BlockParticipationDataSource;
 use sp_governed_map::GovernedMapDataSource;
 use sp_native_token_management::NativeTokenManagementDataSource;
+use sp_partner_chains_bridge::TokenBridgeDataSource;
 use std::{error::Error, sync::Arc};
 
 pub const DATA_SOURCE_VAR: &str = "CARDANO_DATA_SOURCE";
@@ -68,6 +71,7 @@ pub struct DataSources {
 	pub sidechain_rpc: Arc<dyn SidechainRpcDataSource + Send + Sync>,
 	pub block_participation: Arc<dyn BlockParticipationDataSource + Send + Sync>,
 	pub governed_map: Arc<dyn GovernedMapDataSource + Send + Sync>,
+	pub bridge: Arc<dyn TokenBridgeDataSource<AccountId> + Send + Sync>,
 }
 
 pub(crate) async fn create_cached_data_sources(
@@ -105,12 +109,14 @@ pub fn create_mock_data_sources()
 		native_token: Arc::new(NativeTokenDataSourceMock::new()),
 		block_participation: Arc::new(StakeDistributionDataSourceMock::new()),
 		governed_map: Arc::new(GovernedMapDataSourceMock::default()),
+		bridge: Arc::new(TokenBridgeDataSourceMock::new()),
 	})
 }
 
 pub const CANDIDATES_FOR_EPOCH_CACHE_SIZE: usize = 64;
 pub const STAKE_CACHE_SIZE: usize = 100;
 pub const GOVERNED_MAP_CACHE_SIZE: u16 = 100;
+pub const BRIDGE_TRANSFER_CACHE_LOOKAHEAD: u32 = 1000;
 
 pub async fn create_cached_db_sync_data_sources(
 	metrics_opt: Option<McFollowerMetrics>,
@@ -140,12 +146,18 @@ pub async fn create_cached_db_sync_data_sources(
 		)),
 		governed_map: Arc::new(
 			GovernedMapDataSourceCachedImpl::new(
-				pool,
+				pool.clone(),
 				metrics_opt.clone(),
 				GOVERNED_MAP_CACHE_SIZE,
-				block,
+				block.clone(),
 			)
 			.await?,
 		),
+		bridge: Arc::new(CachedTokenBridgeDataSourceImpl::new(
+			pool,
+			metrics_opt,
+			block,
+			BRIDGE_TRANSFER_CACHE_LOOKAHEAD,
+		)),
 	})
 }

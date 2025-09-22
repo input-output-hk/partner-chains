@@ -584,7 +584,7 @@ class BlockchainApi(ABC):
     @abstractmethod
     def get_governed_map(self) -> dict:
         """
-        Retrieves the governed map from the main chain.
+        Retrieves the governed map from the partner chain ledger.
 
         Returns:
             dict -- Governed map
@@ -594,7 +594,7 @@ class BlockchainApi(ABC):
     @abstractmethod
     def get_governed_map_key(self, key: str) -> str:
         """
-        Retrieves a specific key from the governed map.
+        Retrieves a specific key from the governed map from the partner chains ledger.
 
         Arguments:
             key {str} -- Key to retrieve

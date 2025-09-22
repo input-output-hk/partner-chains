@@ -29,6 +29,7 @@ match this change.
 need to transform the data in their own runtime code
 * Updates Rust dependency to v1.88, changes WASM target to 'wasm32v1-none'
 * Backward compatible Encode and Decode for legacy chains that operate with AURA and Grandpa keys as session keys.
+* Macro `observed_async_trait` in `partner-chains-db-sync-data-sources` crate has been made non-public.
 
 ## Added
 

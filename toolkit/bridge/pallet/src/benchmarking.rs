@@ -1,9 +1,9 @@
 use super::*;
 use frame_benchmarking::v2::*;
-use frame_support::BoundedVec;
-use frame_support::assert_ok;
-use frame_support::traits::Get;
+use frame_support::{BoundedVec, assert_ok, traits::Get};
 use frame_system::RawOrigin;
+use sidechain_domain::{McBlockNumber, UtxoId};
+use sp_core::{H256, crypto::UncheckedFrom};
 use sp_partner_chains_bridge::*;
 
 /// Helper trait for injecting mock values for use in benchmarks
@@ -20,13 +20,31 @@ pub trait BenchmarkHelper<T: crate::Config> {
 	fn data_checkpoint() -> BridgeDataCheckpoint;
 }
 
-impl<T: crate::Config> BenchmarkHelper<T> for () {
-	fn transfers(_t: u32) -> BoundedVec<BridgeTransferV1<T::Recipient>, T::MaxTransfersPerBlock> {
-		BoundedVec::new()
+impl<T: crate::Config> BenchmarkHelper<T> for ()
+where
+	T::Recipient: UncheckedFrom<H256>,
+{
+	fn transfers(t: u32) -> BoundedVec<BridgeTransferV1<T::Recipient>, T::MaxTransfersPerBlock> {
+		use BridgeTransferV1::*;
+
+		let recipient = T::Recipient::unchecked_from(Default::default());
+		let utxo_id = UtxoId::default();
+
+		let transfers = alloc::vec![
+			UserTransfer { token_amount: 1000, recipient },
+			ReserveTransfer { token_amount: 1000 },
+			InvalidTransfer { token_amount: 1000, utxo_id },
+		]
+		.into_iter()
+		.cycle()
+		.take(t as usize)
+		.collect();
+
+		BoundedVec::truncate_from(transfers)
 	}
 
 	fn data_checkpoint() -> BridgeDataCheckpoint {
-		Default::default()
+		BridgeDataCheckpoint::Block(McBlockNumber(0))
 	}
 }
 
@@ -35,10 +53,7 @@ mod benchmarks {
 	use super::*;
 
 	#[benchmark]
-	fn handle_transfers(
-		t: Linear<1, { T::MaxTransfersPerBlock::get() }>,
-		s: Linear<1, { T::MaxTransfersPerBlock::get() }>,
-	) {
+	fn handle_transfers(t: Linear<1, { T::MaxTransfersPerBlock::get() }>) {
 		assert_ok!(Pallet::<T>::set_main_chain_scripts(
 			RawOrigin::Root.into(),
 			T::BenchmarkHelper::main_chain_scripts(),

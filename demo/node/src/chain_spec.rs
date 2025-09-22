@@ -56,7 +56,7 @@ pub fn pc_create_chain_spec(config: &CreateChainSpecConfig<SessionKeys>) -> serd
 			participation_data_release_period: 30,
 			..Default::default()
 		},
-		bridge: Default::default(),
+		bridge: config.bridge_config(),
 	};
 	let genesis_json = serde_json::to_value(runtime_genesis_config)
 		.expect("Genesis config must be serialized correctly");

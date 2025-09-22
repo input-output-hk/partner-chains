@@ -7,14 +7,14 @@ use frame_support::{
 	assert_err, assert_ok,
 	inherent::{InherentData, ProvideInherent},
 };
-use sidechain_domain::{AssetName, MainchainAddress, PolicyId, UtxoId, bounded_str};
+use sidechain_domain::{AssetName, MainchainAddress, PolicyId, UtxoId};
 use sp_core::bounded_vec;
 use sp_partner_chains_bridge::*;
 use sp_runtime::{AccountId32, BoundedVec};
 
 fn transfers() -> BoundedVec<BridgeTransferV1<RecipientAddress>, MaxTransfersPerBlock> {
 	bounded_vec![
-		UserTransfer { token_amount: 100, recipient: bounded_str!("recipient") },
+		UserTransfer { token_amount: 100, recipient: AccountId32::new([2; 32]) },
 		ReserveTransfer { token_amount: 200 },
 		InvalidTransfer { token_amount: 300, utxo_id: UtxoId::new([1; 32], 1) }
 	]
@@ -24,12 +24,15 @@ fn main_chain_scripts() -> MainChainScripts {
 	MainChainScripts {
 		token_policy_id: PolicyId([1; 28]),
 		token_asset_name: AssetName(bounded_vec![2;8]),
-		illiquid_supply_validator_address: MainchainAddress::from_str("validator address").unwrap(),
+		illiquid_circulation_supply_validator_address: MainchainAddress::from_str(
+			"validator address",
+		)
+		.unwrap(),
 	}
 }
 
 fn data_checkpoint() -> BridgeDataCheckpoint {
-	BridgeDataCheckpoint(UtxoId::new([1; 32], 3))
+	BridgeDataCheckpoint::Utxo(UtxoId::new([1; 32], 3))
 }
 
 mod set_main_chain_scripts {

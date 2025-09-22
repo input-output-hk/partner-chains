@@ -18,6 +18,7 @@ use ogmios_client::{
 use partner_chains_cardano_offchain::{
 	assemble_and_submit_tx,
 	await_tx::{AwaitTx, FixedDelayRetries},
+	bridge,
 	cardano_keys::CardanoPaymentSigningKey,
 	csl::NetworkTypeExt,
 	d_param,
@@ -36,13 +37,14 @@ use sidechain_domain::{
 	PermissionedCandidateData, PolicyId, SidechainPublicKey, SidechainSignature,
 	StakePoolPublicKey, UtxoId, UtxoIndex, byte_string::ByteString,
 };
+use std::num::NonZero;
 use std::time::Duration;
-use testcontainers::{Container, GenericImage, clients::Cli};
+use testcontainers::{ContainerAsync, GenericImage, runners::AsyncRunner};
 use tokio_retry::{Retry, strategy::FixedInterval};
 
 const TEST_IMAGE: &str = "ghcr.io/input-output-hk/smart-contracts-tests-cardano-node-ogmios";
 
-const TEST_IMAGE_TAG: &str = "v10.1.4-v6.11.0";
+const TEST_IMAGE_TAG: &str = "v10.1.4-v6.13.0";
 
 const GOVERNANCE_AUTHORITY: MainchainKeyHash =
 	MainchainKeyHash(hex!("e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"));
@@ -94,8 +96,7 @@ const UPDATED_TOTAL_ACCRUED_FUNCTION_SCRIPT_HASH: PolicyId = PolicyId([234u8; 28
 #[tokio::test]
 async fn governance_flow() {
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
-	let cli = Cli::default();
-	let container = cli.run(image);
+	let container = image.start().await.unwrap();
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_governance(&client).await;
 	let _ = run_update_governance(&client, genesis_utxo).await;
@@ -130,8 +131,7 @@ async fn governance_flow() {
 #[tokio::test]
 async fn upsert_d_param() {
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
-	let client = Cli::default();
-	let container = client.run(image);
+	let container = image.start().await.unwrap();
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_governance(&client).await;
 	assert!(
@@ -158,8 +158,7 @@ async fn upsert_d_param() {
 #[tokio::test]
 async fn upsert_permissioned_candidates() {
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
-	let client = Cli::default();
-	let container = client.run(image);
+	let container = image.start().await.unwrap();
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_governance(&client).await;
 	let network = client.shelley_genesis_configuration().await.unwrap().network.to_csl();
@@ -178,13 +177,12 @@ async fn upsert_permissioned_candidates() {
 #[tokio::test]
 async fn reserve_management_scenario() {
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
-	let client = Cli::default();
-	let container = client.run(image);
+	let container = image.start().await.unwrap();
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_governance(&client).await;
 	let _ = run_update_governance(&client, genesis_utxo).await;
 	let results = run_init_reserve_management(genesis_utxo, &client).await;
-	assert_eq!(results.len(), 3);
+	assert_eq!(results.len(), 4);
 	for result in results {
 		run_assemble_and_sign(result, &[EVE_PAYMENT_KEY, GOVERNANCE_AUTHORITY_KEY], &client).await;
 	}
@@ -232,12 +230,11 @@ async fn reserve_management_scenario() {
 #[tokio::test]
 async fn reserve_release_to_zero_scenario() {
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
-	let client = Cli::default();
-	let container = client.run(image);
+	let container = image.start().await.unwrap();
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_governance(&client).await;
 	let txs = run_init_reserve_management(genesis_utxo, &client).await;
-	assert_eq!(txs.len(), 3);
+	assert_eq!(txs.len(), 4);
 	let _ = run_create_reserve_management(genesis_utxo, V_FUNCTION_HASH, &client).await;
 	assert_reserve_deposited(genesis_utxo, INITIAL_DEPOSIT_AMOUNT, &client).await;
 	run_release_reserve_funds(genesis_utxo, INITIAL_DEPOSIT_AMOUNT, V_FUNCTION_UTXO, &client).await;
@@ -248,10 +245,29 @@ async fn reserve_release_to_zero_scenario() {
 }
 
 #[tokio::test]
+async fn bridge_deposits() {
+	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
+	let container = image.start().await.unwrap();
+	let client = initialize(&container).await;
+	let genesis_utxo = run_init_governance(&client).await;
+	let _ = run_init_reserve_management(genesis_utxo, &client).await;
+	let _ = run_create_reserve_management(genesis_utxo, V_FUNCTION_HASH, &client).await;
+	let ics_utxos_count_0 = get_isc_utxos_count(genesis_utxo, &client).await;
+	let _ = run_bridge_deposit_to_without_ics_spend(genesis_utxo, &client).await;
+	assert_illiquid_supply(genesis_utxo, DEPOSIT_AMOUNT, &client).await;
+	let ics_utxos_count_1 = get_isc_utxos_count(genesis_utxo, &client).await;
+	assert_eq!(ics_utxos_count_1, ics_utxos_count_0 + 1);
+
+	let _ = run_bridge_deposit_to_with_ics_spend(genesis_utxo, &client).await;
+	assert_illiquid_supply(genesis_utxo, 2 * DEPOSIT_AMOUNT, &client).await;
+	let ics_utxos_count_2 = get_isc_utxos_count(genesis_utxo, &client).await;
+	assert_eq!(ics_utxos_count_2, ics_utxos_count_1);
+}
+
+#[tokio::test]
 async fn register() {
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
-	let client = Cli::default();
-	let container = client.run(image);
+	let container = image.start().await.unwrap();
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_governance(&client).await;
 	let signature = SidechainSignature([21u8; 33].to_vec());
@@ -265,8 +281,7 @@ async fn register() {
 async fn governed_map_operations() {
 	// Initialize client and container
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
-	let client = Cli::default();
-	let container = client.run(image);
+	let container = image.start().await.unwrap();
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_governance(&client).await;
 	let await_tx = FixedDelayRetries::new(Duration::from_millis(500), 100);
@@ -356,8 +371,7 @@ async fn governed_map_operations() {
 async fn governed_map_update() {
 	// Initialize client and container
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
-	let client = Cli::default();
-	let container = client.run(image);
+	let container = image.start().await.unwrap();
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_governance(&client).await;
 	let await_tx = FixedDelayRetries::new(Duration::from_millis(500), 100);
@@ -405,8 +419,7 @@ async fn governed_map_update() {
 #[tokio::test]
 async fn governance_action_can_be_initiated_by_non_governance() {
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
-	let client = Cli::default();
-	let container = client.run(image);
+	let container = image.start().await.unwrap();
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_governance(&client).await;
 	let tx_to_sign = run_upsert_d_param(genesis_utxo, 1, 1, &eve_payment_key(), &client)
@@ -415,8 +428,8 @@ async fn governance_action_can_be_initiated_by_non_governance() {
 	run_assemble_and_sign(tx_to_sign, &[GOVERNANCE_AUTHORITY_KEY], &client).await;
 }
 
-async fn initialize<'a>(container: &Container<'a, GenericImage>) -> OgmiosClients {
-	let ogmios_port = container.get_host_port_ipv4(1337);
+async fn initialize(container: &ContainerAsync<GenericImage>) -> OgmiosClients {
+	let ogmios_port = container.get_host_port_ipv4(1337).await.unwrap();
 	println!("Ogmios port: {}", ogmios_port);
 
 	let client = await_ogmios(ogmios_port).await.unwrap();
@@ -587,6 +600,7 @@ async fn run_create_reserve_management<
 				asset_name: AssetName::from_hex_unsafe(REWARDS_TOKEN_ASSET_NAME_STR),
 			},
 			initial_deposit: INITIAL_DEPOSIT_AMOUNT,
+			ics_initial_utxos_amount: NonZero::new(3).unwrap(),
 		},
 		genesis_utxo,
 		&governance_authority_payment_key(),
@@ -636,6 +650,42 @@ async fn run_deposit_to_reserve<
 	.unwrap();
 	cleanup_temp_wallet_file(&result);
 	result
+}
+
+async fn run_bridge_deposit_to_without_ics_spend<
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+>(
+	genesis_utxo: UtxoId,
+	client: &T,
+) -> McTxHash {
+	bridge::deposit_without_ics_input(
+		genesis_utxo,
+		DEPOSIT_AMOUNT,
+		&[1u8; 32],
+		&governance_authority_payment_key(),
+		client,
+		&FixedDelayRetries::new(Duration::from_millis(50), 150),
+	)
+	.await
+	.unwrap()
+}
+
+async fn run_bridge_deposit_to_with_ics_spend<
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+>(
+	genesis_utxo: UtxoId,
+	client: &T,
+) -> McTxHash {
+	bridge::deposit_with_ics_spend(
+		genesis_utxo,
+		DEPOSIT_AMOUNT,
+		&[2u8; 32],
+		&governance_authority_payment_key(),
+		client,
+		&FixedDelayRetries::new(Duration::from_millis(50), 100),
+	)
+	.await
+	.unwrap()
 }
 
 async fn run_handover_reserve<
@@ -829,6 +879,15 @@ async fn assert_illiquid_supply<T: QueryLedgerState>(
 		client,
 	)
 	.await;
+}
+
+async fn get_isc_utxos_count<T: QueryLedgerState>(genesis_utxo: UtxoId, client: &T) -> usize {
+	let data = scripts_data::get_scripts_data(genesis_utxo, NetworkIdKind::Testnet).unwrap();
+	let utxos = client
+		.query_utxos(&[data.addresses.illiquid_circulation_supply_validator])
+		.await
+		.unwrap();
+	utxos.len()
 }
 
 async fn run_assemble_and_sign<

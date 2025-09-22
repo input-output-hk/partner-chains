@@ -95,7 +95,6 @@ fn update_reserve_settings_tx(
 	ctx: &TransactionContext,
 ) -> anyhow::Result<Transaction> {
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
-
 	// spend old settings
 	tx_builder.set_inputs(&reserve_utxo_input_with_validator_script_reference(
 		reserve_utxo,
@@ -103,6 +102,7 @@ fn update_reserve_settings_tx(
 		ReserveRedeemer::UpdateReserve,
 		&costs.get_one_spend(),
 	)?);
+
 	{
 		let amount_builder = TransactionOutputBuilder::new()
 			.with_address(&reserve.scripts.validator.address(ctx.network))
