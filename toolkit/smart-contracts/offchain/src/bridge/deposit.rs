@@ -1,4 +1,4 @@
-//! Bride transaction deposits an UTXO that contains the specified token at the IlliquidCirculationSupplyValidator.
+//! Bridge transaction deposits an UTXO that contains the specified token at the IlliquidCirculationSupplyValidator.
 //! Such transaction can either be simple deposit or can involve consuming exactly one UTXO from
 //! the ICS Validator that has special token (for some reason called 'auth token').
 //! The former increases the number of UTXOs at ICS Validator, but the latter preserve it.
