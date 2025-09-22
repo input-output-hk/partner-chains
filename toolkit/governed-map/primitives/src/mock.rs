@@ -1,15 +1,14 @@
+#![cfg(all(test, feature = "std"))]
 use crate::*;
 use sidechain_domain::byte_string::ByteString;
 use sp_api::ProvideRuntimeApi;
 
-#[cfg(feature = "std")]
 #[derive(Debug, Default)]
 pub struct MockGovernedMapDataSource {
 	pub changes: Vec<(String, Option<ByteString>)>,
 	pub data: BTreeMap<String, ByteString>,
 }
 
-#[cfg(feature = "std")]
 #[async_trait::async_trait]
 impl GovernedMapDataSource for MockGovernedMapDataSource {
 	async fn get_mapping_changes(

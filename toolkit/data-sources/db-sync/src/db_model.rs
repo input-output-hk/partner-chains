@@ -222,12 +222,6 @@ impl<'r> Decode<'r, Postgres> for NativeTokenAmount {
 }
 
 #[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
-pub(crate) struct BlockTokenAmount {
-	pub block_hash: [u8; 32],
-	pub amount: NativeTokenAmount,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
 pub(crate) struct StakePoolDelegationOutputRow {
 	pub epoch_stake_amount: StakeDelegation,
 	pub pool_hash_raw: [u8; 28],
