@@ -50,7 +50,6 @@ pub fn pc_create_chain_spec(config: &CreateChainSpecConfig<SessionKeys>) -> serd
 		sidechain: config.pallet_sidechain_config(SlotsPerEpoch::default()),
 		pallet_session: Default::default(),
 		session_committee_management: config.pallet_session_validator_management_config(),
-		native_token_management: config.native_token_management_config(),
 		governed_map: config.governed_map_config(),
 		test_helper_pallet: partner_chains_demo_runtime::TestHelperPalletConfig {
 			participation_data_release_period: 30,

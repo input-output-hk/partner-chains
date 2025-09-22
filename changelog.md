@@ -70,6 +70,9 @@ The data sources will automatically detect this option on startup and adjust the
 
 ## Removed
 
+* All crates constituting the "native token management" feature (`pallet-native-token-management` and `sp-native-token-management`) were removed.
+This feature is superseded by the token bridge feature included in this release.
+
 # v1.7.0
 
 ## Changed

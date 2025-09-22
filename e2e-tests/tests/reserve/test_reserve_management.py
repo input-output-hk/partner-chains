@@ -137,8 +137,8 @@ class TestReleaseFunds:
         assert reserve_initial_balance - amount_to_release == reserve_balance
 
     def test_observe_released_funds(self, api: BlockchainApi, amount_to_release):
-        observed_transfer = api.subscribe_token_transfer()
-        assert observed_transfer == amount_to_release
+        observed_transfers = api.subscribe_token_transfer()
+        assert observed_transfers["reserve"] == amount_to_release
 
 
 class TestDepositFunds:

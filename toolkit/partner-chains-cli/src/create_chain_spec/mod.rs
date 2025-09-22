@@ -226,22 +226,6 @@ impl<Keys: MaybeFromCandidateKeys> CreateChainSpecConfig<Keys> {
 		}
 	}
 
-	/// Returns [pallet_native_token_management::GenesisConfig] derived from the config
-	pub fn native_token_management_config<T: pallet_native_token_management::Config>(
-		&self,
-	) -> pallet_native_token_management::GenesisConfig<T> {
-		pallet_native_token_management::GenesisConfig {
-			main_chain_scripts: Some(sp_native_token_management::MainChainScripts {
-				native_token_policy_id: self.bridge_token_policy.clone(),
-				native_token_asset_name: self.bridge_token_asset_name.clone(),
-				illiquid_supply_validator_address: self
-					.illiquid_circulation_supply_validator_address
-					.clone(),
-			}),
-			_marker: PhantomData,
-		}
-	}
-
 	/// Returns [pallet_governed_map::GenesisConfig] derived from the config
 	pub fn governed_map_config<T: pallet_governed_map::Config>(
 		&self,
