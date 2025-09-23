@@ -37,7 +37,7 @@ impl ICSData {
 	) -> Result<Self, anyhow::Error> {
 		let version_oracle = scripts_data::version_oracle(genesis_utxo, ctx.network)?;
 		let validator_version_utxo = find_script_utxo(
-			raw_scripts::ScriptId::IlliquidCirculationSupplyValidator as u32,
+			raw_scripts::ScriptId::IlliquidCirculationSupplyValidator,
 			&version_oracle,
 			ctx,
 			client,
@@ -49,7 +49,7 @@ impl ICSData {
 			)
 		})?;
 		let auth_policy_version_utxo = find_script_utxo(
-			raw_scripts::ScriptId::IlliquidCirculationSupplyAuthorityTokenPolicy as u32,
+			raw_scripts::ScriptId::IlliquidCirculationSupplyAuthorityTokenPolicy,
 			&version_oracle,
 			ctx,
 			client,
