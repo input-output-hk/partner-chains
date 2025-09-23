@@ -19,7 +19,7 @@ struct TestApi {
 
 impl ProvideRuntimeApi<Block> for TestApi {
 	type Api = Self;
-	fn runtime_api(&self) -> ApiRef<Self::Api> {
+	fn runtime_api(&self) -> ApiRef<'_, Self::Api> {
 		(*self).clone().into()
 	}
 }

@@ -211,13 +211,17 @@ jobs:
 
       - name: Build chain specs
         run: |
-          source ./dev/envs/devnet/.envrc
-          target/release/partner-chains-demo-node build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json
-          source ./dev/envs/ci-preview/.envrc
-          target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > ci_preview_chain_spec.json
-          source ./dev/envs/staging-preview/.envrc
-          target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
+          nix develop -c bash -c '
+            source ./dev/envs/devnet/.envrc
+            target/release/partner-chains-demo-node build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json
 
+            source ./dev/envs/ci-preview/.envrc
+            target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > ci_preview_chain_spec.json
+
+            source ./dev/envs/staging-preview/.envrc
+            target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
+          '
+          
       - name: Build and push docker image
         run: |
           cp target/release/partner-chains-demo-node .
@@ -685,12 +689,16 @@ jobs:
 
       - name: Build chain specs
         run: |
-          source ./dev/envs/devnet/.envrc
-          target/release/partner-chains-demo-node build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json
-          source ./dev/envs/ci-preview/.envrc
-          target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > ci_preview_chain_spec.json
-          source ./dev/envs/staging-preview/.envrc
-          target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
+          nix develop -c bash -c '
+            source ./dev/envs/devnet/.envrc
+            target/release/partner-chains-demo-node build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json
+
+            source ./dev/envs/ci-preview/.envrc
+            target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > ci_preview_chain_spec.json
+
+            source ./dev/envs/staging-preview/.envrc
+            target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
+          '
 
       - name: Build and push docker image
         run: |
@@ -1119,12 +1127,16 @@ jobs:
 
       - name: Build chain specs
         run: |
-          source dev/envs/devnet/.envrc
-          target/release/partner-chains-demo-node build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json
-          source dev/envs/ci-preview/.envrc
-          target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > ci_preview_chain_spec.json
-          source dev/envs/staging-preview/.envrc
-          target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
+          nix develop -c bash -c '
+            source ./dev/envs/devnet/.envrc
+            target/release/partner-chains-demo-node build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json
+
+            source ./dev/envs/ci-preview/.envrc
+            target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > ci_preview_chain_spec.json
+
+            source ./dev/envs/staging-preview/.envrc
+            target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
+          '
 
       - name: Build and push docker image
         run: |
