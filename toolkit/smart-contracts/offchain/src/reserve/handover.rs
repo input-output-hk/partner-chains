@@ -18,9 +18,11 @@
 //! - Reserve Validator script
 //! - Illiquid Supply Validator script
 
-use super::{ReserveUtxo, TokenAmount, reserve_utxo_input_with_validator_script_reference};
+use super::{ReserveUtxo, reserve_utxo_input_with_validator_script_reference};
 use crate::{
+	TokenAmount,
 	await_tx::AwaitTx,
+	bridge::ICSData,
 	cardano_keys::CardanoPaymentSigningKey,
 	csl::{
 		AssetIdExt, CostStore, Costs, OgmiosUtxoExt, Script, TransactionBuilderExt,
@@ -29,7 +31,7 @@ use crate::{
 	governance::GovernanceData,
 	multisig::{MultiSigSmartContractResult, submit_or_create_tx_to_sign},
 	reserve::ReserveData,
-	scripts_data::ReserveScripts,
+	scripts_data::ICSScripts,
 };
 use cardano_serialization_lib::*;
 use ogmios_client::{
@@ -54,6 +56,7 @@ pub async fn handover_reserve<
 	let ctx = TransactionContext::for_payment_key(payment_key, client).await?;
 	let governance = GovernanceData::get(genesis_utxo, client).await?;
 	let reserve = ReserveData::get(genesis_utxo, &ctx, client).await?;
+	let ics_data = ICSData::get(genesis_utxo, &ctx, client).await?;
 
 	let ref reserve_utxo @ ReserveUtxo { ref utxo, .. } =
 		reserve.get_reserve_utxo(&ctx, client).await?;
@@ -62,7 +65,7 @@ pub async fn handover_reserve<
 	submit_or_create_tx_to_sign(
 		&governance,
 		ctx,
-		|costs, ctx| build_tx(&amount, utxo, &reserve, &governance, costs, &ctx),
+		|costs, ctx| build_tx(&amount, utxo, &reserve, &ics_data, &governance, costs, &ctx),
 		"Handover Reserve",
 		client,
 		await_tx,
@@ -80,6 +83,7 @@ fn build_tx(
 	handover_amount: &TokenAmount,
 	reserve_utxo: &OgmiosUtxo,
 	reserve: &ReserveData,
+	ics_data: &ICSData,
 	governance: &GovernanceData,
 	costs: Costs,
 	ctx: &TransactionContext,
@@ -113,12 +117,13 @@ fn build_tx(
 
 	tx_builder.add_output(&illiquid_supply_validator_output(
 		handover_amount,
-		&reserve.scripts,
+		&ics_data.scripts,
 		ctx,
 	)?)?;
+	// This reference input is needed by the Reserve Validator with 'Handover' redeemer.
 	tx_builder.add_script_reference_input(
-		&reserve.illiquid_circulation_supply_validator_version_utxo.to_csl_tx_input(),
-		reserve.scripts.illiquid_circulation_supply_validator.bytes.len(),
+		&ics_data.validator_version_utxo.to_csl_tx_input(),
+		ics_data.scripts.validator.bytes.len(),
 	);
 	Ok(tx_builder.balance_update_and_build(ctx)?.remove_native_script_witnesses())
 }
@@ -126,11 +131,11 @@ fn build_tx(
 // Creates output with reserve token and updated deposit
 fn illiquid_supply_validator_output(
 	output_value: &TokenAmount,
-	scripts: &ReserveScripts,
+	scripts: &ICSScripts,
 	ctx: &TransactionContext,
 ) -> Result<TransactionOutput, JsError> {
-	let tx_output_builder = TransactionOutputBuilder::new()
-		.with_address(&scripts.illiquid_circulation_supply_validator.address(ctx.network));
+	let tx_output_builder =
+		TransactionOutputBuilder::new().with_address(&scripts.validator.address(ctx.network));
 	if output_value.amount > 0 {
 		let ma = output_value.token.to_multi_asset(output_value.amount)?;
 		let amount_builder = tx_output_builder

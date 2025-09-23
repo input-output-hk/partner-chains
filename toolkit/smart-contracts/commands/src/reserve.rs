@@ -91,9 +91,6 @@ pub struct CreateReserveCmd {
 	#[arg(long)]
 	/// Reserve token asset id encoded in form <policy_id_hex>.<asset_name_hex>.
 	token: AssetId,
-	#[arg(long, default_value = "1")]
-	/// Amount of illiquid circulation supply authority tokens to mint.
-	ics_initial_utxos_amount: NonZero<u64>,
 }
 
 impl CreateReserveCmd {
@@ -106,7 +103,6 @@ impl CreateReserveCmd {
 				total_accrued_function_script_hash: self.total_accrued_function_script_hash,
 				token: self.token,
 				initial_deposit: self.initial_deposit_amount,
-				ics_initial_utxos_amount: self.ics_initial_utxos_amount,
 			},
 			self.genesis_utxo.into(),
 			&payment_key,
@@ -131,7 +127,7 @@ pub struct DepositReserveCmd {
 	genesis_utxo: GenesisUtxo,
 	#[arg(long)]
 	/// Amount of reserve tokens to deposit. They must be present in the payment wallet.
-	amount: u64,
+	amount: NonZero<u64>,
 }
 
 impl DepositReserveCmd {

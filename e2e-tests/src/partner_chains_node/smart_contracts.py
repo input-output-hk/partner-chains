@@ -85,6 +85,7 @@ class SmartContracts:
         self.reserve = SmartContracts.Reserve(self)
         self.governance = SmartContracts.Governance(self)
         self.governed_map = SmartContracts.GovernedMap(self)
+        self.bridge = SmartContracts.Bridge(self)
 
     def get_scripts(self, genesis_utxo: str):
         cmd = (
@@ -176,23 +177,53 @@ class SmartContracts:
         response = self.run_command.exec(cmd)
         return parse_json_response(response)
 
-    def bridge(self, genesis_utxo: str, token, amount, pc_address, payment_key, spend_ics_utxo):
-        if spend_ics_utxo:
-            simple_param = ""
-        else:
-            simple_param = "--simple "
-        cmd = (
-            f"{self.cli} smart-contracts bridge deposit "
-            f"--payment-key-file {payment_key} "
-            f"--genesis-utxo {genesis_utxo} "
-            f"--token {token} "
-            f"--amount {amount} "
-            f"--pc-address {pc_address} "
-            f"{simple_param}"
-            f"--ogmios-url {self.config.stack_config.ogmios_url}"
-        )
-        response = self.run_command.exec(cmd)
-        return response
+    class Bridge:
+        def __init__(self, parent: "SmartContracts"):
+            self.cli = parent.cli
+            self.run_command = parent.run_command
+            self.config = parent.config
+            self.parent = parent
+
+        def init(self, genesis_utxo: str, payment_key):
+            cmd = (
+                f"{self.cli} smart-contracts bridge init "
+                f"--payment-key-file {payment_key} "
+                f"--genesis-utxo {genesis_utxo} "
+                f"--ogmios-url {self.config.stack_config.ogmios_url}"
+            )
+            response = self.run_command.exec(cmd)
+            parsed_response = parse_json_response(response)
+            return handle_governance_signature(parsed_response, self.parent)
+
+        def create_utxos(self, genesis_utxo: str, amount, payment_key):
+            cmd = (
+                f"{self.cli} smart-contracts bridge create-utxos "
+                f"--amount {amount} "
+                f"--payment-key-file {payment_key} "
+                f"--genesis-utxo {genesis_utxo} "
+                f"--ogmios-url {self.config.stack_config.ogmios_url}"
+            )
+            response = self.run_command.exec(cmd, timeout=self.config.timeouts.main_chain_tx)
+            parsed_response = parse_json_response(response)
+            return handle_governance_signature(parsed_response, self.parent)
+
+        def deposit(self, genesis_utxo: str, token, amount, pc_address, payment_key, spend_ics_utxo):
+            if spend_ics_utxo:
+                simple_param = ""
+            else:
+                simple_param = "--simple "
+            cmd = (
+                f"{self.cli} smart-contracts bridge deposit "
+                f"--payment-key-file {payment_key} "
+                f"--genesis-utxo {genesis_utxo} "
+                f"--token {token} "
+                f"--amount {amount} "
+                f"--pc-address {pc_address} "
+                f"{simple_param}"
+                f"--ogmios-url {self.config.stack_config.ogmios_url}"
+            )
+            response = self.run_command.exec(cmd)
+            return response
 
     class Reserve:
         def __init__(self, parent: "SmartContracts"):

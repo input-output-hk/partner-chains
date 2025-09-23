@@ -20,6 +20,7 @@ use ogmios_client::{
 	transactions::Transactions,
 };
 use sidechain_domain::UtxoId;
+use std::num::NonZero;
 
 /// Creates "blessed" UTXOs at the ICS (Bridge) validator.
 pub async fn create_validator_utxos<
@@ -27,7 +28,7 @@ pub async fn create_validator_utxos<
 	A: AwaitTx,
 >(
 	genesis_utxo: UtxoId,
-	amount: u64,
+	amount: NonZero<u64>,
 	payment_key: &CardanoPaymentSigningKey,
 	client: &T,
 	await_tx: &A,
@@ -39,7 +40,7 @@ pub async fn create_validator_utxos<
 	submit_or_create_tx_to_sign(
 		&governance,
 		payment_ctx,
-		|costs, ctx| create_reserve_tx(amount, &ics_data, &governance, costs, &ctx),
+		|costs, ctx| create_utxos_tx(amount.get(), &ics_data, &governance, costs, &ctx),
 		"Create Bridge UTXOs",
 		client,
 		await_tx,
@@ -47,7 +48,7 @@ pub async fn create_validator_utxos<
 	.await
 }
 
-fn create_reserve_tx(
+fn create_utxos_tx(
 	amount: u64,
 	ics_data: &ICSData,
 	governance: &GovernanceData,
