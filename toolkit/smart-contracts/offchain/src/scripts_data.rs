@@ -215,7 +215,7 @@ pub(crate) struct ReserveScripts {
 
 #[derive(Clone, Debug)]
 pub(crate) struct ICSScripts {
-	/// Illiquid Circulation Supply validator that prevents unauthrized spending from the bridge
+	/// Illiquid Circulation Supply validator that prevents unauthorized spending from the bridge
 	pub(crate) validator: PlutusScript,
 	/// Policy of tokens used to maintain some minimal number of UTXOs at the validator.
 	pub(crate) auth_policy: PlutusScript,
