@@ -13,10 +13,10 @@
 //! - Version Oracle Validator script
 //! - Reserve Auth Policy script
 //! - Reserve Validator script
-//! - Illiquid Supply Validator script
 
-use super::{ReserveData, TokenAmount, reserve_utxo_input_with_validator_script_reference};
+use super::{ReserveData, reserve_utxo_input_with_validator_script_reference};
 use crate::{
+	TokenAmount,
 	await_tx::AwaitTx,
 	cardano_keys::CardanoPaymentSigningKey,
 	csl::{
@@ -39,13 +39,14 @@ use ogmios_client::{
 };
 use partner_chains_plutus_data::reserve::ReserveRedeemer;
 use sidechain_domain::UtxoId;
+use std::num::NonZero;
 
 /// Spends current UTXO at validator address and creates a new UTXO with increased token amount
 pub async fn deposit_to_reserve<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 	A: AwaitTx,
 >(
-	amount: u64,
+	amount: NonZero<u64>,
 	genesis_utxo: UtxoId,
 	payment_key: &CardanoPaymentSigningKey,
 	client: &T,
@@ -58,7 +59,7 @@ pub async fn deposit_to_reserve<
 	let utxo = reserve_utxo.utxo;
 	let token = reserve_utxo.datum.immutable_settings.token;
 	let current_amount = utxo.get_asset_amount(&token);
-	let token_amount = TokenAmount { token, amount: current_amount + amount };
+	let token_amount = TokenAmount { token, amount: current_amount + amount.get() };
 
 	submit_or_create_tx_to_sign(
 		&governance,
@@ -101,10 +102,6 @@ fn deposit_to_reserve_tx(
 	tx_builder.add_script_reference_input(
 		&reserve.auth_policy_version_utxo.to_csl_tx_input(),
 		reserve.scripts.auth_policy.bytes.len(),
-	);
-	tx_builder.add_script_reference_input(
-		&reserve.illiquid_circulation_supply_validator_version_utxo.to_csl_tx_input(),
-		reserve.scripts.illiquid_circulation_supply_validator.bytes.len(),
 	);
 	Ok(tx_builder.balance_update_and_build(ctx)?.remove_native_script_witnesses())
 }

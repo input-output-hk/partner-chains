@@ -8,6 +8,7 @@
 use crate::{
 	TokenAmount,
 	await_tx::AwaitTx,
+	bridge::select_utxo_to_spend,
 	cardano_keys::CardanoPaymentSigningKey,
 	csl::{
 		CostStore, Costs, MultiAssetExt, OgmiosUtxoExt, TransactionBuilderExt, TransactionContext,
@@ -25,7 +26,8 @@ use ogmios_client::{
 	types::OgmiosUtxo,
 };
 use partner_chains_plutus_data::bridge::TokenTransferDatumV1;
-use sidechain_domain::{AssetId, McTxHash, UtxoId, byte_string::ByteString, crypto::blake2b};
+use sidechain_domain::{AssetId, McTxHash, UtxoId, byte_string::ByteString};
+use std::num::NonZero;
 
 use super::{ICSData, add_ics_utxo_input_with_validator_script_reference};
 
@@ -42,7 +44,7 @@ pub async fn deposit_without_ics_input<
 >(
 	genesis_utxo: UtxoId,
 	token: AssetId,
-	amount: u64,
+	amount: NonZero<u64>,
 	pc_address: &[u8],
 	payment_signing_key: &CardanoPaymentSigningKey,
 	client: &C,
@@ -54,7 +56,7 @@ pub async fn deposit_without_ics_input<
 		Address::from_bech32(&scripts.addresses.illiquid_circulation_supply_validator)?;
 	let tx_hash = submit_deposit_only_tx(
 		&ics_address,
-		TokenAmount { token, amount },
+		TokenAmount { token, amount: amount.get() },
 		pc_address,
 		&ctx,
 		client,
@@ -120,7 +122,7 @@ pub async fn deposit_with_ics_spend<
 >(
 	genesis_utxo: UtxoId,
 	token: AssetId,
-	amount: u64,
+	amount: NonZero<u64>,
 	pc_address: &[u8],
 	payment_signing_key: &CardanoPaymentSigningKey,
 	client: &C,
@@ -129,7 +131,7 @@ pub async fn deposit_with_ics_spend<
 	let ctx = TransactionContext::for_payment_key(payment_signing_key, client).await?;
 	let scripts = crate::scripts_data::get_scripts_data(genesis_utxo, ctx.network)?;
 	let ics_data = ICSData::get(genesis_utxo, &ctx, client).await?;
-	let token_amount = TokenAmount { token, amount };
+	let token_amount = TokenAmount { token, amount: amount.get() };
 	let ics_address =
 		Address::from_bech32(&scripts.addresses.illiquid_circulation_supply_validator)?;
 	let ics_utxos = ics_data.get_validator_utxos_with_auth_token(&ctx, client).await?;
@@ -148,22 +150,6 @@ pub async fn deposit_with_ics_spend<
 	)
 	.await?;
 	Ok(tx_hash)
-}
-
-// Selects one from input utxos. To avoid randomness we take the one that combined with user own utxo has the lowest hash.
-fn select_utxo_to_spend(utxos: &[OgmiosUtxo], ctx: &TransactionContext) -> Option<OgmiosUtxo> {
-	utxos
-		.into_iter()
-		.map(|u| {
-			let utxo_id = u.utxo_id();
-			let mut v: Vec<u8> = utxo_id.tx_hash.0.to_vec();
-			v.append(&mut utxo_id.index.0.to_be_bytes().to_vec());
-			v.append(&mut ctx.payment_key_hash().to_bytes());
-			let hash: [u8; 32] = blake2b(&v);
-			(hash, u)
-		})
-		.min_by_key(|k| k.0)
-		.map(|kv| kv.1.clone())
 }
 
 async fn submit_tx<

@@ -4,6 +4,7 @@ use partner_chains_cardano_offchain::bridge::{
 };
 use sidechain_domain::AssetId;
 use sp_runtime::AccountId32;
+use std::num::NonZero;
 
 #[derive(Clone, Debug, clap::Subcommand)]
 /// Command to initialize and make deposits to the bridge
@@ -68,7 +69,7 @@ pub struct BridgeCreateUtxosCmd {
 	genesis_utxo: GenesisUtxo,
 	#[arg(long)]
 	/// Number of UTXOs to create
-	amount: u64,
+	amount: NonZero<u64>,
 }
 
 impl BridgeCreateUtxosCmd {
@@ -97,7 +98,7 @@ pub struct BridgeDepositCmd {
 	token: AssetId,
 	#[arg(long)]
 	/// Number of tokens to transfer
-	amount: u64,
+	amount: NonZero<u64>,
 	#[arg(long)]
 	/// Address in the partner chain to transfer the tokens, in hex format.
 	pc_address: AccountId32,

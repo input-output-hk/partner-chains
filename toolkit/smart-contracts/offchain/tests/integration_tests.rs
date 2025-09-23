@@ -37,7 +37,6 @@ use sidechain_domain::{
 	PermissionedCandidateData, PolicyId, SidechainPublicKey, SidechainSignature,
 	StakePoolPublicKey, UtxoId, UtxoIndex, byte_string::ByteString,
 };
-use std::num::NonZero;
 use std::time::Duration;
 use testcontainers::{ContainerAsync, GenericImage, runners::AsyncRunner};
 use tokio_retry::{Retry, strategy::FixedInterval};
@@ -180,9 +179,11 @@ async fn reserve_management_scenario() {
 	let container = image.start().await.unwrap();
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_governance(&client).await;
+	let _ = run_init_bridge(genesis_utxo, &client).await;
+	let _ = run_create_bridge_utxos(genesis_utxo, &client).await;
 	let _ = run_update_governance(&client, genesis_utxo).await;
 	let results = run_init_reserve_management(genesis_utxo, &client).await;
-	assert_eq!(results.len(), 4);
+	assert_eq!(results.len(), 2);
 	for result in results {
 		run_assemble_and_sign(result, &[EVE_PAYMENT_KEY, GOVERNANCE_AUTHORITY_KEY], &client).await;
 	}
@@ -233,8 +234,10 @@ async fn reserve_release_to_zero_scenario() {
 	let container = image.start().await.unwrap();
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_governance(&client).await;
+	let _ = run_init_bridge(genesis_utxo, &client).await;
+	let _ = run_create_bridge_utxos(genesis_utxo, &client).await;
 	let txs = run_init_reserve_management(genesis_utxo, &client).await;
-	assert_eq!(txs.len(), 4);
+	assert_eq!(txs.len(), 2);
 	let _ = run_create_reserve_management(genesis_utxo, V_FUNCTION_HASH, &client).await;
 	assert_reserve_deposited(genesis_utxo, INITIAL_DEPOSIT_AMOUNT, &client).await;
 	run_release_reserve_funds(genesis_utxo, INITIAL_DEPOSIT_AMOUNT, V_FUNCTION_UTXO, &client).await;
@@ -592,7 +595,7 @@ async fn run_create_bridge_utxos<
 ) -> MultiSigSmartContractResult {
 	let result = bridge::create_validator_utxos(
 		genesis_utxo,
-		4,
+		4.try_into().unwrap(),
 		&governance_authority_payment_key(),
 		client,
 		&FixedDelayRetries::new(Duration::from_millis(500), 100),
@@ -636,7 +639,6 @@ async fn run_create_reserve_management<
 				asset_name: AssetName::from_hex_unsafe(REWARDS_TOKEN_ASSET_NAME_STR),
 			},
 			initial_deposit: INITIAL_DEPOSIT_AMOUNT,
-			ics_initial_utxos_amount: NonZero::new(3).unwrap(),
 		},
 		genesis_utxo,
 		&governance_authority_payment_key(),
@@ -676,7 +678,7 @@ async fn run_deposit_to_reserve<
 	client: &T,
 ) -> MultiSigSmartContractResult {
 	let result = reserve::deposit::deposit_to_reserve(
-		DEPOSIT_AMOUNT,
+		DEPOSIT_AMOUNT.try_into().unwrap(),
 		genesis_utxo,
 		&governance_authority_payment_key(),
 		client,
@@ -701,7 +703,7 @@ async fn run_bridge_deposit_to_without_ics_spend<
 	bridge::deposit_without_ics_input(
 		genesis_utxo,
 		token,
-		DEPOSIT_AMOUNT,
+		DEPOSIT_AMOUNT.try_into().unwrap(),
 		&[1u8; 32],
 		&governance_authority_payment_key(),
 		client,
@@ -724,11 +726,11 @@ async fn run_bridge_deposit_to_with_ics_spend<
 	bridge::deposit_with_ics_spend(
 		genesis_utxo,
 		token,
-		DEPOSIT_AMOUNT,
+		DEPOSIT_AMOUNT.try_into().unwrap(),
 		&[2u8; 32],
 		&governance_authority_payment_key(),
 		client,
-		&FixedDelayRetries::new(Duration::from_millis(50), 100),
+		&FixedDelayRetries::new(Duration::from_millis(100), 100),
 	)
 	.await
 	.unwrap()

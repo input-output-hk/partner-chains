@@ -18,11 +18,13 @@ pub use create_utxos::create_validator_utxos;
 pub use deposit::{deposit_with_ics_spend, deposit_without_ics_input};
 pub use init::init_ics_scripts;
 use ogmios_client::{query_ledger_state::QueryLedgerState, types::OgmiosUtxo};
-use sidechain_domain::{AssetId, AssetName, UtxoId};
+use sidechain_domain::{AssetId, AssetName, UtxoId, crypto::blake2b};
 
+/// Illiquid Circulation Supply smart contracts data
 #[derive(Clone, Debug)]
 pub(crate) struct ICSData {
 	pub(crate) scripts: scripts_data::ICSScripts,
+	/// Versioning System UTXO that keeps a policy of tokens used to maintain some minimal number of UTXOs at the validator.
 	pub(crate) auth_policy_version_utxo: OgmiosUtxo,
 	pub(crate) validator_version_utxo: OgmiosUtxo,
 }
@@ -78,6 +80,25 @@ impl ICSData {
 			.filter(|utxo| utxo.get_asset_amount(&auth_token_asset_id) == 1u64)
 			.collect())
 	}
+}
+
+/// Selects one from input utxos. To avoid randomness we take the one that combined with user own utxo has the lowest hash.
+pub(crate) fn select_utxo_to_spend(
+	utxos: &[OgmiosUtxo],
+	ctx: &TransactionContext,
+) -> Option<OgmiosUtxo> {
+	utxos
+		.into_iter()
+		.map(|u| {
+			let utxo_id = u.utxo_id();
+			let mut v: Vec<u8> = utxo_id.tx_hash.0.to_vec();
+			v.append(&mut utxo_id.index.0.to_be_bytes().to_vec());
+			v.append(&mut ctx.payment_key_hash().to_bytes());
+			let hash: [u8; 32] = blake2b(&v);
+			(hash, u)
+		})
+		.min_by_key(|k| k.0)
+		.map(|kv| kv.1.clone())
 }
 
 pub(crate) fn add_ics_utxo_input_with_validator_script_reference(

@@ -19,6 +19,7 @@
 use super::{ReserveData, reserve_utxo_input_with_validator_script_reference};
 use crate::{
 	await_tx::AwaitTx,
+	bridge::ICSData,
 	cardano_keys::CardanoPaymentSigningKey,
 	csl::*,
 	governance::GovernanceData,
@@ -51,6 +52,7 @@ pub async fn update_reserve_settings<
 	let reserve = ReserveData::get(genesis_utxo, &ctx, client).await?;
 	let ReserveUtxo { utxo: reserve_utxo, datum: mut reserve_datum } =
 		reserve.get_reserve_utxo(&ctx, client).await?;
+	let ics_data = ICSData::get(genesis_utxo, &ctx, client).await?;
 
 	if total_accrued_function_script_hash
 		== reserve_datum.mutable_settings.total_accrued_function_asset_name
@@ -72,6 +74,7 @@ pub async fn update_reserve_settings<
 				update_reserve_settings_tx(
 					&reserve_datum,
 					&reserve,
+					&ics_data,
 					&governance,
 					&reserve_utxo,
 					costs,
@@ -89,6 +92,7 @@ pub async fn update_reserve_settings<
 fn update_reserve_settings_tx(
 	datum: &ReserveDatum,
 	reserve: &ReserveData,
+	ics_data: &ICSData,
 	governance: &GovernanceData,
 	reserve_utxo: &OgmiosUtxo,
 	costs: Costs,
@@ -128,8 +132,8 @@ fn update_reserve_settings_tx(
 		&costs,
 	)?;
 	tx_builder.add_script_reference_input(
-		&reserve.illiquid_circulation_supply_validator_version_utxo.to_csl_tx_input(),
-		reserve.scripts.illiquid_circulation_supply_validator.bytes.len(),
+		&ics_data.validator_version_utxo.to_csl_tx_input(),
+		ics_data.scripts.validator.bytes.len(),
 	);
 	tx_builder.add_script_reference_input(
 		&reserve.auth_policy_version_utxo.to_csl_tx_input(),
