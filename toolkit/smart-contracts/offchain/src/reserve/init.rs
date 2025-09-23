@@ -1,5 +1,5 @@
 //! Initialization of the reserve management is execution of two similar transaction to
-//! initialize two scripts: Rerserve Management Validator and Reserve Management Policy
+//! initialize two scripts: Reserve Management Validator and Reserve Management Policy
 //!
 //! Transaction for each of these scripts should have:
 //! * an output to Version Oracle Validator address that should:
@@ -8,10 +8,10 @@
 //! * * * mint redeemer should be Constr(1, [Int: SCRIPT_ID, Bytes: Applied Script Hash])
 //! * * have Plutus Data that is [Int: SCRIPT_ID, Bytes: Version Oracle Policy Id]
 //! * an output to the current governance (holder of governance token) that should:
-//! * * contain a new Goveranance Policy token, minted in this transaction,
-//! * * * mint redeemer should be empty contructor Plutus Data
-//! * a script reference input of the current Goveranance UTXO
-//! * signature of the current goveranance
+//! * * contain a new Governance Policy token, minted in this transaction,
+//! * * * mint redeemer should be empty constructor Plutus Data
+//! * a script reference input of the current Governance UTXO
+//! * signature of the current governance
 
 use crate::{
 	await_tx::AwaitTx,

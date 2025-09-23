@@ -4,7 +4,7 @@ use crate::{
 };
 use cardano_serialization_lib::*;
 use ogmios_client::types::OgmiosUtxo;
-use partner_chains_plutus_data::version_oracle::VersionOracleDatum;
+use partner_chains_plutus_data::version_oracle::{VersionOracleDatum, VersionOraclePolicyRedeemer};
 
 pub(crate) fn init_governance_transaction(
 	governance_parameters: &MultiSigParameters,
@@ -20,7 +20,11 @@ pub(crate) fn init_governance_transaction(
 	tx_builder.add_mint_one_script_token(
 		&version_oracle.policy,
 		&version_oracle_asset_name(),
-		&mint_redeemer(&multi_sig_policy),
+		&VersionOraclePolicyRedeemer::InitializeVersionOracle(
+			raw_scripts::ScriptId::GovernancePolicy.into(),
+			multi_sig_policy.hash().into(),
+		)
+		.into(),
 		&costs.get_mint(&version_oracle.policy.clone()),
 	)?;
 
@@ -41,17 +45,6 @@ fn version_oracle_asset_name() -> AssetName {
 	AssetName::new(b"Version oracle".to_vec()).expect("Constant asset name should work")
 }
 
-fn mint_redeemer(multi_sig_policy: &NativeScript) -> PlutusData {
-	PlutusData::new_constr_plutus_data(&ConstrPlutusData::new(&0u64.into(), &{
-		let mut list = PlutusList::new();
-		list.add(&PlutusData::new_integer(
-			&(raw_scripts::ScriptId::GovernancePolicy as u32).into(),
-		));
-		list.add(&PlutusData::new_bytes(multi_sig_policy.hash().to_bytes()));
-		list
-	}))
-}
-
 pub(crate) fn version_oracle_datum_output(
 	version_oracle_validator: PlutusScript,
 	version_oracle_policy: PlutusScript,
@@ -60,8 +53,8 @@ pub(crate) fn version_oracle_datum_output(
 	tx_context: &TransactionContext,
 ) -> anyhow::Result<cardano_serialization_lib::TransactionOutput> {
 	let datum: PlutusData = VersionOracleDatum {
-		version_oracle: raw_scripts::ScriptId::GovernancePolicy as u32,
-		currency_symbol: version_oracle_policy.policy_id().0,
+		version_oracle: raw_scripts::ScriptId::GovernancePolicy.into(),
+		currency_symbol: version_oracle_policy.policy_id().0.into(),
 	}
 	.into();
 

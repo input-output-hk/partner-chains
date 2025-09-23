@@ -11,8 +11,8 @@ use crate::{
 	scripts_data::{self, PlutusScriptData},
 };
 use cardano_serialization_lib::{
-	AssetName, BigNum, ConstrPlutusData, JsError, MultiAsset, PlutusData, PlutusList, ScriptRef,
-	Transaction, TransactionBuilder, TransactionOutputBuilder,
+	AssetName, JsError, MultiAsset, ScriptRef, Transaction, TransactionBuilder,
+	TransactionOutputBuilder,
 };
 use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
@@ -20,21 +20,21 @@ use ogmios_client::{
 	transactions::Transactions,
 	types::OgmiosUtxo,
 };
-use partner_chains_plutus_data::version_oracle::VersionOracleDatum;
+use partner_chains_plutus_data::version_oracle::{VersionOracleDatum, VersionOraclePolicyRedeemer};
 use raw_scripts::ScriptId;
 use sidechain_domain::UtxoId;
 
 pub(crate) struct ScriptData {
 	name: String,
 	plutus_script: PlutusScript,
-	id: u32,
+	id: ScriptId,
 }
 
 impl ScriptData {
 	pub(crate) fn new(name: &str, raw_bytes: Vec<u8>, id: ScriptId) -> Self {
 		let plutus_script =
 			PlutusScript::v2_from_cbor(&raw_bytes).expect("Plutus script should be valid");
-		Self { name: name.to_string(), plutus_script, id: id as u32 }
+		Self { name: name.to_string(), plutus_script, id }
 	}
 
 	pub(crate) fn applied_plutus_script(
@@ -89,14 +89,14 @@ fn init_script_tx(
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 	let applied_script = script.applied_plutus_script(version_oracle)?;
 	{
-		let witness = PlutusData::new_constr_plutus_data(&ConstrPlutusData::new(
-			&BigNum::one(),
-			&version_oracle_plutus_list(script.id, &applied_script.script_hash()),
-		));
 		tx_builder.add_mint_one_script_token(
 			&version_oracle.policy,
 			&version_oracle_asset_name(),
-			&witness,
+			&VersionOraclePolicyRedeemer::MintVersionOracle(
+				script.id.into(),
+				applied_script.script_hash().into(),
+			)
+			.into(),
 			&costs.get_mint(&version_oracle.policy.clone()),
 		)?;
 	}
@@ -104,10 +104,13 @@ fn init_script_tx(
 		let script_ref = ScriptRef::new_plutus_script(&applied_script.to_csl());
 		let amount_builder = TransactionOutputBuilder::new()
 			.with_address(&version_oracle.validator.address(ctx.network))
-			.with_plutus_data(&PlutusData::new_list(&version_oracle_plutus_list(
-				script.id,
-				&version_oracle.policy.script_hash(),
-			)))
+			.with_plutus_data(
+				&VersionOracleDatum {
+					version_oracle: script.id.into(),
+					currency_symbol: version_oracle.policy.script_hash().into(),
+				}
+				.into(),
+			)
 			.with_script_ref(&script_ref)
 			.next()?;
 		let ma = MultiAsset::new()
@@ -129,13 +132,6 @@ fn version_oracle_asset_name() -> AssetName {
 	AssetName::new(b"Version oracle".to_vec()).unwrap()
 }
 
-fn version_oracle_plutus_list(script_id: u32, script_hash: &[u8]) -> PlutusList {
-	let mut list = PlutusList::new();
-	list.add(&PlutusData::new_integer(&script_id.into()));
-	list.add(&PlutusData::new_bytes(script_hash.to_vec()));
-	list
-}
-
 // There exist UTXO at Version Oracle Validator with Datum that contains
 // * script id of the script being initialized
 // * Version Oracle Policy Id
@@ -152,7 +148,7 @@ async fn script_is_initialized<T: QueryLedgerState>(
 /// * given script id
 /// * Version Oracle Policy Id
 pub(crate) async fn find_script_utxo<T: QueryLedgerState>(
-	script_id: u32,
+	script_id: ScriptId,
 	version_oracle: &PlutusScriptData,
 	ctx: &TransactionContext,
 	client: &T,
@@ -164,8 +160,8 @@ pub(crate) async fn find_script_utxo<T: QueryLedgerState>(
 		utxo.get_plutus_data()
 			.and_then(|data| TryInto::<VersionOracleDatum>::try_into(data).ok())
 			.is_some_and(|datum| {
-				datum.version_oracle == script_id
-					&& datum.currency_symbol == version_oracle.policy.script_hash()
+				datum.version_oracle.script_id == script_id as u32
+					&& datum.currency_symbol == version_oracle.policy.script_hash().into()
 			})
 	}))
 }
@@ -182,10 +178,11 @@ mod tests {
 		},
 	};
 	use cardano_serialization_lib::{
-		AssetName, BigNum, ConstrPlutusData, ExUnits, Int, NetworkIdKind, PlutusData, PlutusList,
-		RedeemerTag, ScriptHash, Transaction,
+		AssetName, BigNum, ExUnits, Int, NetworkIdKind, PlutusData, RedeemerTag, ScriptHash,
+		Transaction,
 	};
 	use ogmios_client::types::{OgmiosTx, OgmiosUtxo};
+	use partner_chains_plutus_data::version_oracle::VersionOraclePolicyRedeemer;
 	use raw_scripts::ScriptId;
 	use sidechain_domain::UtxoId;
 
@@ -224,7 +221,7 @@ mod tests {
 			.expect("Version Oracle Validator output should have Plutus Data of List type");
 		assert_eq!(
 			voo_plutus_data.get(0),
-			PlutusData::new_integer(&test_initialized_script().id.into())
+			PlutusData::new_integer(&(test_initialized_script().id as u32).into())
 		);
 		assert_eq!(
 			voo_plutus_data.get(1),
@@ -292,18 +289,15 @@ mod tests {
 		let redeemers = vec![ws.get(0), ws.get(1)];
 
 		let expected_vo_redeemer_data = {
-			let mut list = PlutusList::new();
-			let script_id: u64 = test_initialized_script().id.into();
-			list.add(&PlutusData::new_integer(&script_id.into()));
-			list.add(&PlutusData::new_bytes(
-				test_initialized_script()
-					.applied_plutus_script(&version_oracle_data())
-					.unwrap()
-					.script_hash()
-					.to_vec(),
-			));
-			let constr_plutus_data = ConstrPlutusData::new(&BigNum::one(), &list);
-			PlutusData::new_constr_plutus_data(&constr_plutus_data)
+			let script_hash = test_initialized_script()
+				.applied_plutus_script(&version_oracle_data())
+				.unwrap()
+				.script_hash();
+			VersionOraclePolicyRedeemer::MintVersionOracle(
+				test_initialized_script().id.into(),
+				script_hash.into(),
+			)
+			.into()
 		};
 
 		let _ = redeemers
