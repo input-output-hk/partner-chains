@@ -15,7 +15,7 @@ pub struct TestApi {
 impl sp_api::ProvideRuntimeApi<Block> for TestApi {
 	type Api = TestApi;
 
-	fn runtime_api(&self) -> sp_api::ApiRef<Self::Api> {
+	fn runtime_api(&self) -> sp_api::ApiRef<'_, Self::Api> {
 		self.clone().into()
 	}
 }

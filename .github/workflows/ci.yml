@@ -209,14 +209,57 @@ jobs:
         if: always()
         run: rmdir /tmp/rust-cache.lock || true
 
-      - name: Build chain specs
+      - name: Build chain specs (debug info)
+        continue-on-error: true
         run: |
+          echo "== ldd check =="
+          ldd target/release/partner-chains-demo-node || true
+
+          echo "== libstdc++ location =="
+          ls -l /usr/lib/x86_64-linux-gnu/libstdc++.so.* || true
+
+          echo "== build chain-specs =="
           source ./dev/envs/devnet/.envrc
           target/release/partner-chains-demo-node build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json
+
           source ./dev/envs/ci-preview/.envrc
           target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > ci_preview_chain_spec.json
+
           source ./dev/envs/staging-preview/.envrc
           target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
+
+      - name: Build chain specs (with apt fix)
+        continue-on-error: true
+        run: |
+          echo "== installing libstdc++6 =="
+          sudo apt-get update
+          sudo apt-get install -y libstdc++6
+
+          echo "== ldd check =="
+          ldd target/release/partner-chains-demo-node | grep stdc++
+
+          echo "== build chain-specs =="
+          source ./dev/envs/devnet/.envrc
+          target/release/partner-chains-demo-node build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json
+
+          source ./dev/envs/ci-preview/.envrc
+          target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > ci_preview_chain_spec.json
+
+          source ./dev/envs/staging-preview/.envrc
+          target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
+
+      - name: Build chain specs (inside nix devshell)
+        run: |
+          nix develop -c bash -c '
+            source ./dev/envs/devnet/.envrc
+            target/release/partner-chains-demo-node build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json
+
+            source ./dev/envs/ci-preview/.envrc
+            target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > ci_preview_chain_spec.json
+
+            source ./dev/envs/staging-preview/.envrc
+            target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
+          '
 
       - name: Build and push docker image
         run: |

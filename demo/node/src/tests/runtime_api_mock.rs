@@ -53,7 +53,7 @@ pub type Block = sp_runtime::generic::Block<
 impl ProvideRuntimeApi<Block> for TestApi {
 	type Api = TestApi;
 
-	fn runtime_api(&self) -> ApiRef<Self::Api> {
+	fn runtime_api(&self) -> ApiRef<'_, Self::Api> {
 		self.clone().into()
 	}
 }

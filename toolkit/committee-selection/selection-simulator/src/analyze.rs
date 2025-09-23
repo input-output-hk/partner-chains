@@ -73,7 +73,7 @@ impl Command {
 		);
 		log::info!("Number of permissioned candidates: {}", permissioned_candidates.len());
 
-		let output: &mut (dyn Write) = if self.output_to_terminal {
+		let output: &mut dyn Write = if self.output_to_terminal {
 			&mut io::stdout()
 		} else {
 			let file_name = format!(
