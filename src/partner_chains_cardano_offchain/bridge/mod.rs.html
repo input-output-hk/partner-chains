@@ -37,7 +37,7 @@
 <a href=#37 id=37 data-nosnippet>37</a>	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, anyhow::Error&gt; {
 <a href=#38 id=38 data-nosnippet>38</a>		<span class="kw">let </span>version_oracle = scripts_data::version_oracle(genesis_utxo, ctx.network)<span class="question-mark">?</span>;
 <a href=#39 id=39 data-nosnippet>39</a>		<span class="kw">let </span>validator_version_utxo = find_script_utxo(
-<a href=#40 id=40 data-nosnippet>40</a>			raw_scripts::ScriptId::IlliquidCirculationSupplyValidator <span class="kw">as </span>u32,
+<a href=#40 id=40 data-nosnippet>40</a>			raw_scripts::ScriptId::IlliquidCirculationSupplyValidator,
 <a href=#41 id=41 data-nosnippet>41</a>			<span class="kw-2">&amp;</span>version_oracle,
 <a href=#42 id=42 data-nosnippet>42</a>			ctx,
 <a href=#43 id=43 data-nosnippet>43</a>			client,
@@ -49,7 +49,7 @@
 <a href=#49 id=49 data-nosnippet>49</a>			</span>)
 <a href=#50 id=50 data-nosnippet>50</a>		})<span class="question-mark">?</span>;
 <a href=#51 id=51 data-nosnippet>51</a>		<span class="kw">let </span>auth_policy_version_utxo = find_script_utxo(
-<a href=#52 id=52 data-nosnippet>52</a>			raw_scripts::ScriptId::IlliquidCirculationSupplyAuthorityTokenPolicy <span class="kw">as </span>u32,
+<a href=#52 id=52 data-nosnippet>52</a>			raw_scripts::ScriptId::IlliquidCirculationSupplyAuthorityTokenPolicy,
 <a href=#53 id=53 data-nosnippet>53</a>			<span class="kw-2">&amp;</span>version_oracle,
 <a href=#54 id=54 data-nosnippet>54</a>			ctx,
 <a href=#55 id=55 data-nosnippet>55</a>			client,

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["VersionOracleDatum"]};
+window.SIDEBAR_ITEMS = {"enum":["VersionOraclePolicyRedeemer"],"struct":["VersionOracle","VersionOracleDatum"]};

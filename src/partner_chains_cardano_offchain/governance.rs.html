@@ -146,7 +146,7 @@
 <a href=#146 id=146 data-nosnippet>146</a>			<span class="kw">let </span>correct_datum = utxo
 <a href=#147 id=147 data-nosnippet>147</a>				.get_plutus_data()
 <a href=#148 id=148 data-nosnippet>148</a>				.and_then(|plutus_data| VersionOracleDatum::try_from(plutus_data).ok())
-<a href=#149 id=149 data-nosnippet>149</a>				.map(|data| data.version_oracle == <span class="number">32</span>)
+<a href=#149 id=149 data-nosnippet>149</a>				.map(|data| data.version_oracle == raw_scripts::ScriptId::GovernancePolicy.into())
 <a href=#150 id=150 data-nosnippet>150</a>				.unwrap_or(<span class="bool-val">false</span>);
 <a href=#151 id=151 data-nosnippet>151</a>
 <a href=#152 id=152 data-nosnippet>152</a>			<span class="kw">let </span>contains_version_oracle_token =
