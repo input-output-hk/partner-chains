@@ -74,7 +74,6 @@ impl DbSyncConfigurationProvider {
 					"Failed to set tx_in_config in DbSyncConfigurationProvider".into(),
 				)
 			})?;
-			log::info!("Using configuration: {tx_in_config:?}");
 			return Ok(tx_in_config);
 		}
 	}
