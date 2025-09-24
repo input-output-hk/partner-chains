@@ -216,8 +216,10 @@ pub mod pallet {
 	use frame_system::{ensure_none, pallet_prelude::OriginFor};
 	use parity_scale_codec::MaxEncodedLen;
 	use sidechain_domain::UtxoId;
-	use sp_partner_chains_bridge::{BridgeDataCheckpoint, TokenBridgeTransfersV1};
-	use sp_partner_chains_bridge::{INHERENT_IDENTIFIER, InherentError, MainChainScripts};
+	use sp_partner_chains_bridge::{
+		BridgeDataCheckpoint, INHERENT_IDENTIFIER, InherentError, MainChainScripts,
+		TokenBridgeTransfersV1,
+	};
 
 	/// Current version of the pallet
 	pub const PALLET_VERSION: u32 = 1;
