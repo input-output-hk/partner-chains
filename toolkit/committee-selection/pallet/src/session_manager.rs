@@ -43,12 +43,9 @@
 use crate::CommitteeMember;
 use core::marker::PhantomData;
 use derive_new::new;
-use frame_support::traits::UnfilteredDispatchable;
-use frame_system::RawOrigin;
 use frame_system::pallet_prelude::BlockNumberFor;
-use log::{debug, info};
+use log::info;
 use pallet_partner_chains_session::SessionIndex;
-use sp_std::collections::btree_set::BTreeSet;
 use sp_std::vec::Vec;
 
 #[derive(new)]
@@ -101,81 +98,9 @@ impl<T: crate::Config + pallet_session::Config>
 	}
 }
 
-impl<T: crate::Config + pallet_session::Config> pallet_session::SessionManager<T::AccountId>
-	for ValidatorManagementSessionManager<T>
-where
-	<T as pallet_session::Config>::Keys: From<T::AuthorityKeys>,
-{
-	fn new_session_genesis(_new_index: SessionIndex) -> Option<Vec<T::AccountId>> {
-		Some(
-			crate::Pallet::<T>::current_committee_storage()
-				.committee
-				.into_iter()
-				.map(|member| member.authority_id().into())
-				.collect::<Vec<_>>(),
-		)
-	}
-
-	// Instead of Some((*).expect) we could just use (*). However, we rather panic in presence of
-	// important programming errors.
-	fn new_session(new_index: SessionIndex) -> Option<Vec<T::AccountId>> {
-		info!("ValidatorManagementSessionManager: new_session {new_index}");
-		let new_committee = crate::Pallet::<T>::rotate_committee_to_next_epoch().expect(
-			"Session should never end without current epoch validators defined. \
-				Check ShouldEndSession implementation or if it is used before starting new session",
-		);
-		let mut keys_added: BTreeSet<T::AccountId> = BTreeSet::new();
-		for member in new_committee.iter() {
-			let account_id = member.authority_id().into();
-			if !keys_added.contains(&account_id) {
-				keys_added.insert(account_id.clone());
-				let keys = From::from(member.authority_keys());
-				let proof = sp_std::vec::Vec::new();
-				let call = pallet_session::Call::<T>::set_keys { keys, proof };
-				let res = call.dispatch_bypass_filter(RawOrigin::Signed(account_id.clone()).into());
-				match res {
-					Ok(_) => {
-						debug!("set_keys for {account_id:?}");
-					},
-					Err(e) => {
-						info!("Could not set_keys for {account_id:?}, error: {:?}", e.error)
-					},
-				}
-			}
-		}
-		Some(new_committee.into_iter().map(|member| member.authority_id().into()).collect())
-	}
-
-	fn end_session(end_index: SessionIndex) {
-		info!("ValidatorManagementSessionManager: end_session {end_index}");
-	}
-
-	// Session is expected to be at least 1 block behind sidechain epoch.
-	fn start_session(start_index: SessionIndex) {
-		let epoch_number = T::current_epoch_number();
-		info!("end_session: start_session {start_index}, epoch {epoch_number}");
-	}
-}
-
 /// This implementation tries to end each session in the first block of each sidechain epoch in which
 /// the committee for the epoch is defined.
 impl<T, ScEpochNumber> pallet_partner_chains_session::ShouldEndSession<BlockNumberFor<T>>
-	for ValidatorManagementSessionManager<T>
-where
-	T: crate::Config<ScEpochNumber = ScEpochNumber>,
-	ScEpochNumber: Clone + PartialOrd,
-{
-	fn should_end_session(_n: BlockNumberFor<T>) -> bool {
-		let current_epoch_number = T::current_epoch_number();
-
-		current_epoch_number > crate::Pallet::<T>::current_committee_storage().epoch
-			&& crate::Pallet::<T>::next_committee().is_some()
-	}
-}
-
-/// This implementation tries to end each session in the first block of each sidechain epoch in which
-/// the committee for the epoch is defined.
-impl<T, ScEpochNumber> pallet_session::ShouldEndSession<BlockNumberFor<T>>
 	for ValidatorManagementSessionManager<T>
 where
 	T: crate::Config<ScEpochNumber = ScEpochNumber>,
@@ -196,6 +121,7 @@ mod tests {
 	use crate::session_manager::*;
 	use crate::*;
 	use pallet_partner_chains_session::ShouldEndSession;
+	use sp_runtime::testing::UintAuthorityId;
 	pub const IRRELEVANT: u64 = 2;
 
 	type Manager = ValidatorManagementSessionManager<Test>;
@@ -219,6 +145,30 @@ mod tests {
 				committee: next_committee,
 			});
 			assert!(Manager::should_end_session(IRRELEVANT));
+		});
+	}
+
+	#[test]
+	fn register_session_keys_for_provided_authorities() {
+		new_test_ext().execute_with(|| {
+			System::inc_providers(&DAVE.authority_id);
+			System::inc_providers(&EVE.authority_id);
+			set_validators_directly(&[DAVE, EVE], 1).unwrap();
+			// By default, the session keys are not set for the account.
+			assert_eq!(Session::load_keys(&DAVE.authority_id), None);
+			assert_eq!(Session::load_keys(&EVE.authority_id), None);
+
+			start_session(1);
+
+			// After setting the keys, they should be stored in the session.
+			assert_eq!(
+				Session::load_keys(&DAVE.authority_id),
+				Some(SessionKeys { foo: UintAuthorityId(DAVE.authority_keys) })
+			);
+			assert_eq!(
+				Session::load_keys(&EVE.authority_id),
+				Some(SessionKeys { foo: UintAuthorityId(EVE.authority_keys) })
+			);
 		});
 	}
 }
