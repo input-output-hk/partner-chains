@@ -6,9 +6,7 @@
 
 pub mod migrations;
 /// [`pallet_session`] integration.
-#[cfg(feature = "pallet-session-compat")]
 pub mod pallet_session_support;
-#[cfg(feature = "pallet-session-compat")]
 pub mod session_manager;
 
 pub use pallet::*;
