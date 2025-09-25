@@ -27,7 +27,7 @@ use frame_system::EnsureRoot;
 use opaque::SessionKeys;
 use pallet_block_producer_metadata;
 use pallet_grandpa::AuthorityId as GrandpaId;
-use pallet_session_validator_management::session_manager::ValidatorManagementSessionManager;
+use pallet_session_validator_management::pallet_session_support::PalletSessionSupport;
 use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier};
 use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
@@ -309,20 +309,15 @@ impl pallet_session::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ValidatorId = AccountId;
 	type ValidatorIdOf = ConvertInto;
-	type ShouldEndSession = ValidatorManagementSessionManager<Runtime>;
+	type ShouldEndSession = PalletSessionSupport<Runtime>;
 	type NextSessionRotation = ();
-	type SessionManager = ValidatorManagementSessionManager<Runtime>;
+	type SessionManager = PalletSessionSupport<Runtime>;
 	type SessionHandler = <SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
 	type Keys = SessionKeys;
 	type DisablingStrategy = pallet_session::disabling::UpToLimitWithReEnablingDisablingStrategy;
 
 	type WeightInfo = pallet_session::weights::SubstrateWeight<Runtime>;
 }
-
-// impl pallet_session::historical::Config for Runtime {
-// 	type FullIdentification = ();
-// 	type FullIdentificationOf = ();
-// }
 
 impl pallet_grandpa::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -345,7 +340,7 @@ impl pallet_timestamp::Config for Runtime {
 }
 
 /// Existential deposit.
-pub const EXISTENTIAL_DEPOSIT: u128 = 500;
+pub const EXISTENTIAL_DEPOSIT: u128 = 1;
 
 impl pallet_balances::Config for Runtime {
 	type MaxLocks = ConstU32<50>;
