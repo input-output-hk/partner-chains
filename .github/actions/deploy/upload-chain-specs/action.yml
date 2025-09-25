@@ -46,13 +46,22 @@ runs:
         set -e
 
         if [ -f ./devnet_chain_spec.json ]; then
-          kubectl cp ./devnet_chain_spec.json sc/pvc-uploader-sc:/mnt/chain-spec/devnet-chain-spec-${{ inputs.sha }}.json
+          pod=$(kubectl get pod -n sc -l app=pvc-uploader-sc -o jsonpath='{.items[0].metadata.name}')
+          kubectl cp ./devnet_chain_spec.json sc/$pod:/mnt/chain-spec/devnet-chain-spec-${{ inputs.sha }}.json
         fi
 
         if [ -f ./ci_preview_chain_spec.json ]; then
-          kubectl cp ./ci_preview_chain_spec.json ci-preview/pvc-uploader-ci-preview:/mnt/chain-spec/ci-preview-chain-spec-${{ inputs.sha }}.json
+          pod=$(kubectl get pod -n ci-preview -l app=pvc-uploader-ci-preview -o jsonpath='{.items[0].metadata.name}')
+          kubectl cp ./ci_preview_chain_spec.json ci-preview/$pod:/mnt/chain-spec/ci-preview-chain-spec-${{ inputs.sha }}.json
         fi
 
         if [ -f ./staging_preview_chain_spec.json ]; then
-          kubectl cp ./staging_preview_chain_spec.json staging-preview/pvc-uploader-staging-preview:/mnt/chain-spec/staging-preview-chain-spec-${{ inputs.sha }}.json
+          pod=$(kubectl get pod -n staging-preview -l app=pvc-uploader-staging-preview -o jsonpath='{.items[0].metadata.name}')
+          kubectl cp ./staging_preview_chain_spec.json staging-preview/$pod:/mnt/chain-spec/staging-preview-chain-spec-${{ inputs.sha }}.json
         fi
+
+        if [ -f ./staging_preprod_chain_spec.json ]; then
+          pod=$(kubectl get pod -n staging-preprod -l app=pvc-uploader-staging-preprod -o jsonpath='{.items[0].metadata.name}')
+          kubectl cp ./staging_preprod_chain_spec.json staging-preprod/$pod:/mnt/chain-spec/staging-preprod-chain-spec-${{ inputs.sha }}.json
+        fi
+
