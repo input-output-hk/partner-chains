@@ -42,6 +42,7 @@ pub mod permissioned_candidates;
 pub mod register;
 pub mod reserve;
 pub mod sign_tx;
+pub mod versioning;
 
 #[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
@@ -73,6 +74,8 @@ pub enum SmartContractsCmd {
 	#[command(subcommand)]
 	/// Send token to bridge contract
 	Bridge(bridge::BridgeCmd),
+	/// Upsert versioned smart contract
+	UpsertScript(versioning::UpsertScriptCmd),
 }
 
 #[derive(Clone, Debug, clap::Parser)]
@@ -132,6 +135,7 @@ impl SmartContractsCmd {
 			Self::SignTx(cmd) => cmd.execute().await,
 			Self::GovernedMap(cmd) => cmd.execute().await,
 			Self::Bridge(cmd) => cmd.execute().await,
+			Self::UpsertScript(cmd) => cmd.execute().await,
 		}?;
 		println!("{}", result);
 		Ok(())

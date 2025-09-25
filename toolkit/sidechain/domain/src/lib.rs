@@ -661,6 +661,11 @@ impl From<ecdsa::Public> for SidechainPublicKey {
 	}
 }
 
+/// CBOR bytes of Plutus smart contract.
+#[derive(Clone, Encode, Decode, DecodeWithMemTracking, TypeInfo, PartialEq, Eq, Hash)]
+#[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
+pub struct PlutusScriptCbor(pub Vec<u8>);
+
 /// CBOR bytes of Cardano Transaction.
 #[derive(Clone, Encode, Decode, DecodeWithMemTracking, TypeInfo, PartialEq, Eq, Hash)]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]

@@ -16,7 +16,9 @@
 use crate::{
 	await_tx::AwaitTx,
 	cardano_keys::CardanoPaymentSigningKey,
+	csl::TransactionContext,
 	multisig::MultiSigSmartContractResult,
+	plutus_script, scripts_data,
 	versioning_system::{ScriptData, initialize_script},
 };
 use ogmios_client::{
@@ -42,14 +44,21 @@ pub async fn init_reserve_management<
 	client: &T,
 	await_tx: &A,
 ) -> anyhow::Result<Vec<MultiSigSmartContractResult>> {
+	let payment_ctx = TransactionContext::for_payment_key(payment_key, client).await?;
+	let version_oracle = scripts_data::version_oracle(genesis_utxo, payment_ctx.network)?;
+
 	let reserve_validator = ScriptData::new(
 		"Reserve Management Validator",
-		RESERVE_VALIDATOR.0.to_vec(),
+		plutus_script![RESERVE_VALIDATOR, version_oracle.policy_id_as_plutus_data()]?
+			.bytes
+			.to_vec(),
 		ScriptId::ReserveValidator,
 	);
 	let reserve_policy = ScriptData::new(
 		"Reserve Management Policy",
-		RESERVE_AUTH_POLICY.0.to_vec(),
+		plutus_script![RESERVE_AUTH_POLICY, version_oracle.policy_id_as_plutus_data()]?
+			.bytes
+			.to_vec(),
 		ScriptId::ReserveAuthPolicy,
 	);
 

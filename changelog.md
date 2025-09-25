@@ -6,11 +6,18 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Changed
 
+* **BREAKING**: Updated partner-chains-smart-contracts (raw-scripts) dependency to v8.2.0.
+  Possibility to interact with smart-contracts used by earlier versions is lost.
+  Governance authority will have to establish new partner chain on Cardano.
+  All initialization and candidates registrations have to be repeated.
+
 ## Removed
 
 ## Fixed
 
 ## Added
+
+* Added `partner-chains-node smart-contracts upsert-script` command for inserting and updating versioned scripts.
 
 # v1.8.0
 
