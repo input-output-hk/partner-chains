@@ -43,9 +43,12 @@
 use crate::CommitteeMember;
 use core::marker::PhantomData;
 use derive_new::new;
+use frame_support::traits::UnfilteredDispatchable;
+use frame_system::RawOrigin;
 use frame_system::pallet_prelude::BlockNumberFor;
-use log::info;
+use log::{debug, info};
 use pallet_partner_chains_session::SessionIndex;
+use sp_std::collections::btree_set::BTreeSet;
 use sp_std::vec::Vec;
 
 #[derive(new)]
@@ -100,6 +103,8 @@ impl<T: crate::Config + pallet_session::Config>
 
 impl<T: crate::Config + pallet_session::Config> pallet_session::SessionManager<T::AccountId>
 	for ValidatorManagementSessionManager<T>
+where
+	<T as pallet_session::Config>::Keys: From<T::AuthorityKeys>,
 {
 	fn new_session_genesis(_new_index: SessionIndex) -> Option<Vec<T::AccountId>> {
 		Some(
@@ -114,28 +119,41 @@ impl<T: crate::Config + pallet_session::Config> pallet_session::SessionManager<T
 	// Instead of Some((*).expect) we could just use (*). However, we rather panic in presence of
 	// important programming errors.
 	fn new_session(new_index: SessionIndex) -> Option<Vec<T::AccountId>> {
-		info!("New session {new_index}");
-		pallet_session::pallet::CurrentIndex::<T>::put(new_index);
-		Some(
-			crate::Pallet::<T>::rotate_committee_to_next_epoch()
-				.expect(
-					"Session should never end without current epoch validators defined. \
+		info!("ValidatorManagementSessionManager: new_session {new_index}");
+		let new_committee = crate::Pallet::<T>::rotate_committee_to_next_epoch().expect(
+			"Session should never end without current epoch validators defined. \
 				Check ShouldEndSession implementation or if it is used before starting new session",
-				)
-				.into_iter()
-				.map(|member| member.authority_id().into())
-				.collect(),
-		)
+		);
+		let mut keys_added: BTreeSet<T::AccountId> = BTreeSet::new();
+		for member in new_committee.iter() {
+			let account_id = member.authority_id().into();
+			if !keys_added.contains(&account_id) {
+				keys_added.insert(account_id.clone());
+				let keys = From::from(member.authority_keys());
+				let proof = sp_std::vec::Vec::new();
+				let call = pallet_session::Call::<T>::set_keys { keys, proof };
+				let res = call.dispatch_bypass_filter(RawOrigin::Signed(account_id.clone()).into());
+				match res {
+					Ok(_) => {
+						debug!("set_keys for {account_id:?}");
+					},
+					Err(e) => {
+						info!("Could not set_keys for {account_id:?}, error: {:?}", e.error)
+					},
+				}
+			}
+		}
+		Some(new_committee.into_iter().map(|member| member.authority_id().into()).collect())
 	}
 
 	fn end_session(end_index: SessionIndex) {
-		info!("End session {end_index}");
+		info!("ValidatorManagementSessionManager: end_session {end_index}");
 	}
 
 	// Session is expected to be at least 1 block behind sidechain epoch.
 	fn start_session(start_index: SessionIndex) {
 		let epoch_number = T::current_epoch_number();
-		info!("Start session {start_index}, epoch {epoch_number}");
+		info!("end_session: start_session {start_index}, epoch {epoch_number}");
 	}
 }
 

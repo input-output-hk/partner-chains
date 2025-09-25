@@ -6858,22 +6858,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-session-keys-registration"
-version = "1.7.0"
-dependencies = [
- "frame-support",
- "frame-system",
- "pallet-session",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-staking",
- "sp-tracing",
-]
-
-[[package]]
 name = "pallet-session-validator-management"
 version = "1.7.0"
 dependencies = [
@@ -7458,7 +7442,6 @@ dependencies = [
  "pallet-partner-chains-bridge",
  "pallet-partner-chains-session",
  "pallet-session",
- "pallet-session-keys-registration",
  "pallet-session-validator-management",
  "pallet-session-validator-management-benchmarking",
  "pallet-sidechain",

@@ -197,14 +197,6 @@ echo "Generating chain-spec.json file for Partner chain Nodes..."
 echo "Configuring Initial Validators..."
 jq '.genesis.runtimeGenesis.config.session.keys = [
      [
-         "5FnXTMg8UnfeGsMaGg24o3NY21VRFRDRdgxuLGmXuYLeZmin",
-         "5FnXTMg8UnfeGsMaGg24o3NY21VRFRDRdgxuLGmXuYLeZmin",
-         {
-             "aura": "5Cyx94iyji8namhRxvs4mAbURtPsvwjWCb68ZihNzfRysGLZ",
-             "grandpa": "5Cc5eQhbPw4CjwZpWqZkWWumMiuZywfWRK2Rh9guXUJ3U89s"
-         }
-     ],
-     [
          "5FJMH4MeZgd4fpiiAVLnr4uRop2EDFgzAFcvLmcduQ2cofCi",
          "5FJMH4MeZgd4fpiiAVLnr4uRop2EDFgzAFcvLmcduQ2cofCi",
          {
@@ -216,15 +208,6 @@ jq '.genesis.runtimeGenesis.config.session.keys = [
 
 echo "Configuring Initial Authorities..."
 jq '.genesis.runtimeGenesis.config.sessionCommitteeManagement.initialAuthorities = [
-  {
-    "Permissioned": {
-      "id": "KW4wALva83fvah66ufXSxg6r84tTpJmDXna8A1PCYdbZdVL95",
-      "keys": {
-        "aura": "5Cyx94iyji8namhRxvs4mAbURtPsvwjWCb68ZihNzfRysGLZ",
-        "grandpa": "5Cc5eQhbPw4CjwZpWqZkWWumMiuZywfWRK2Rh9guXUJ3U89s"
-      }
-    }
-  },
   {
     "Permissioned": {
       "id": "KW92jBDRydnbyojCVF3USNFgEsrEvDGV3gvdgDvpfnbXvC13q",

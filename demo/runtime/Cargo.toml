@@ -75,9 +75,7 @@ sp-block-production-log = { workspace = true }
 pallet-block-production-log = { workspace = true }
 sp-sidechain = { workspace = true }
 pallet-sidechain = { workspace = true }
-pallet-session-validator-management = { workspace = true, features = [
-	"pallet-session-compat",
-] }
+pallet-session-validator-management = { workspace = true, features = [] }
 sp-session-validator-management = { workspace = true, features = ["serde"] }
 pallet-session-validator-management-benchmarking = { workspace = true, optional = true }
 sidechain-domain = { workspace = true, features = ["serde"] }
@@ -93,7 +91,6 @@ sp-block-producer-fees = { workspace = true }
 pallet-block-producer-fees = { workspace = true }
 pallet-partner-chains-bridge = { workspace = true }
 sp-partner-chains-bridge = { workspace = true }
-pallet-session-keys-registration = { workspace = true }
 
 [dev-dependencies]
 sp-io = { workspace = true }
@@ -140,7 +137,6 @@ std = [
 	"pallet-transaction-payment/std",
 	"pallet-address-associations/std",
 	"pallet-block-producer-metadata/std",
-	"pallet-session-keys-registration/std",
 	"sp-block-producer-metadata/std",
 	"sp-api/std",
 	"sp-block-builder/std",
