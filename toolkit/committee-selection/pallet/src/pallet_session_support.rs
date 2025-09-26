@@ -64,6 +64,13 @@ where
 		for member in new_committee.iter() {
 			let account_id = member.authority_id().into();
 			if !keys_added.contains(&account_id) {
+				if !frame_system::Pallet::<T>::account_exists(&account_id) {
+					info!(
+						"Committee member's account {account_id:?} does not exist and will be created"
+					);
+					frame_system::Pallet::<T>::inc_providers(&account_id);
+					crate::ProvidedAccounts::<T>::append(&account_id);
+				}
 				keys_added.insert(account_id.clone());
 				let keys = From::from(member.authority_keys());
 				let proof = sp_std::vec::Vec::new();

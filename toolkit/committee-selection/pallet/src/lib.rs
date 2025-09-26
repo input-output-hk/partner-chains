@@ -111,6 +111,13 @@ pub mod pallet {
 	#[pallet::event]
 	pub enum Event<T: Config> {}
 
+	/// Hold reasons for this pallet
+	#[pallet::composite_enum]
+	pub enum HoldReason {
+		/// Tokens held in block producer accounts to ensure they exist
+		EnsureValidatorAccount,
+	}
+
 	use frame_support::{BoundedVec, CloneNoBound};
 	use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 	use scale_info::TypeInfo;
@@ -172,6 +179,14 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type MainChainScriptsConfiguration<T: Config> =
 		StorageValue<_, MainChainScripts, ValueQuery>;
+
+	// IDs of accounts that have been created by the pallet
+	//
+	// This is necessary when an account does not exist yet (due to holding no tokens)
+	// but has already been picked for a committee.
+	#[pallet::storage]
+	#[pallet::unbounded]
+	pub type ProvidedAccounts<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
 
 	#[pallet::error]
 	pub enum Error<T> {
