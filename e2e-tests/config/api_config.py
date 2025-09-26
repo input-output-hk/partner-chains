@@ -18,6 +18,18 @@ class PollInterval:
 
 
 @dataclass
+class JolteonConfig:
+    """Jolteon consensus-specific configuration parameters"""
+    round_progression_multiplier: int = 5  # Multiplier for block_duration when waiting for round progression
+    qc_advancement_multiplier: int = 7     # Multiplier for block_duration when waiting for QC advancement
+    safety_monitoring_multiplier: int = 10 # Multiplier for block_duration for safety monitoring
+    liveness_monitoring_multiplier: int = 20 # Multiplier for block_duration for liveness monitoring
+    check_interval_multiplier: int = 2     # Multiplier for block_duration for check intervals
+    commit_latency_threshold: int = 30     # Maximum acceptable commit latency in seconds
+    min_vote_count_threshold: int = 0      # Minimum vote count for non-initial rounds
+
+
+@dataclass
 class KeysFiles:
     cardano_payment_key: str = MISSING
     spo_signing_key: str = MISSING
@@ -146,6 +158,7 @@ class ApiConfig:
     timeouts: Timeout = MISSING
     keys_path: Optional[str] = None
     poll_intervals: PollInterval = MISSING
+    jolteon_config: JolteonConfig = MISSING
     nodes_config: NodesApiConfig = MISSING
     stack_config: StackApiConfig = MISSING
     deployment_mc_epoch: int = MISSING
