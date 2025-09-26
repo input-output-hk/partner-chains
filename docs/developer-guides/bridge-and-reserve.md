@@ -3,12 +3,11 @@
 ## Overview
 
 The bridge functionality allows to register movement of designated native token (minting policy of it is controlled by users) to the bridge (also called Illiquid Circulation Supply Validator).
-The Illiquid Circulation Supply Validator locks native tokens and prevent moving them out of the bridge.
-For operational resons (coin selection problem), system allows to create special UTXOs with special native token, that also can not be moved out of the bridge
-and has to be a single token per UTXO. This ensures that at the bridge there is at least as many UTXOs as was created.
+The Illiquid Circulation Supply Validator locks native tokens and prevents moving them out of the bridge.
+For operational reasons (coin selection problem), the system allows setting a minimum number of UTXOs that should always be present at the bridge address, by creating UTXOs that contain a special token. The validator ensures that this token can not be moved out of the address and any UTXOs there can only contain one token each.
 
 Additionally to the bridge there is the Reserve mechanism.
-Reserve is setup up by governance authority with some amount of designated native tokens.
+Reserve is set up by the governance authority with some amount of designated native tokens.
 More tokens can be deposited to the reserve later.
 Any user can release tokens from the reserve to the bridge - conceptually this should be observed at partner chain and some kind of rewards pool should be increased there.
 Release can be done only with the amount that is bounded by so-called `V-function` (release schedule function).
@@ -25,7 +24,7 @@ This guide covers the following tasks:
 - Connecting your partner chain to track the token and enable token operations across both chains
 - This involves following a step-by-step process for interacting with both the Cardano blockchain and your partner chain.
 
-After you complete the steps in this guide, you will have a fully functioning bridge and reserve systems that works across Cardano and your partner chain.
+After you complete the steps in this guide, you will have fully functioning bridge and reserve systems that work across Cardano and your Partner Chain.
 
 ![Native token management contract](native-token-mgt-contract.png "Native token management contract")
 
@@ -71,7 +70,7 @@ Generally speaking, however, the process includes these steps:
 
 ### 1.2 Configuring the token release schedule
 
-The release schedule is required if the reserve feature is used.
+The release schedule is only required if the reserve feature is used.
 
 #### 1.2.1 Implementing V(t) release function
 
@@ -353,8 +352,8 @@ Objective: Collect the essential parameters needed to configure the bridge palle
 
 - IlliquidCirculationSupplyValidatorAddress - can be obtained from the output of the `get-scripts` command (see below).
 
-- dataCheckpoint - it is the lower bound of observability. Chain genesis utxo is a good candidate,
-but it can be any UTXO on Cardano, created before the first bridge transfer that should be registered by the partner chain
+- dataCheckpoint - it is the lower bound of observability. Chain Genesis UTXO is a good candidate,
+but it can be any UTXO on Cardano, created before the first bridge transfer that should be registered by the Partner Chain
 
 
 #### 4.1.1 Retrieving the validator address
