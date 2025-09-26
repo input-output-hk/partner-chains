@@ -1,7 +1,7 @@
 //! Implements Substrate's [pallet_session].
 //!
 //! This implementation has lag of one additional PC epoch when applying committees to sessions.
-use crate::CommitteeMember;
+use crate::{CommitteeMember, InputsChangeHandlingStagePhases};
 use core::marker::PhantomData;
 use derive_new::new;
 use frame_support::traits::UnfilteredDispatchable;
@@ -42,6 +42,21 @@ where
 	// Instead of Some((*).expect) we could just use (*). However, we rather panic in presence of important programming errors.
 	fn new_session(new_index: SessionIndex) -> Option<Vec<T::AccountId>> {
 		info!("PalletSessionSupport: new_session {new_index}");
+		if crate::SelectionInputsChangeHandlingStage::<T>::get()
+			== InputsChangeHandlingStagePhases::ShouldEndSessionDone
+		{
+			crate::SelectionInputsChangeHandlingStage::<T>::put(
+				InputsChangeHandlingStagePhases::NewSessionDone,
+			);
+			let committee = crate::Pallet::<T>::current_committee_storage().committee;
+			info!(
+				"PalletSessionSupport: returning old committee without rotation to accelerate usage of the new selection inputs"
+			);
+			return Some(
+				committee.into_iter().map(|member| member.authority_id().into()).collect(),
+			);
+		}
+
 		let new_committee = crate::Pallet::<T>::rotate_committee_to_next_epoch().expect(
 			"Session should never end without current epoch validators defined. \
 				Check ShouldEndSession implementation or if it is used before starting new session",
@@ -91,7 +106,7 @@ where
 		let next_committee_is_defined = crate::Pallet::<T>::next_committee().is_some();
 		if current_epoch_number > current_committee_epoch {
 			if next_committee_is_defined {
-				debug!("PalletSessionSupport: should_end_session({n:?}) = true");
+				info!("PalletSessionSupport: should_end_session({n:?}) = true");
 				true
 			} else {
 				warn!(
@@ -100,8 +115,18 @@ where
 				false
 			}
 		} else {
-			debug!("PalletSessionSupport: should_end_session({n:?}) = false");
-			false
+			let end_session_to_use_new_inputs: bool =
+				crate::SelectionInputsChangeHandlingStage::<T>::get()
+					== InputsChangeHandlingStagePhases::InputsChanged;
+			info!(
+				"PalletSessionSupport: should_end_session({n:?}) = {end_session_to_use_new_inputs} (from selection inputs change)"
+			);
+			if end_session_to_use_new_inputs {
+				crate::SelectionInputsChangeHandlingStage::<T>::put(
+					InputsChangeHandlingStagePhases::ShouldEndSessionDone,
+				);
+			}
+			end_session_to_use_new_inputs
 		}
 	}
 }

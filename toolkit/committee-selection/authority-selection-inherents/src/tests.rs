@@ -9,6 +9,7 @@ use plutus::Datum::{ByteStringDatum, ConstructorDatum, IntegerDatum};
 use plutus::ToDatum;
 use sidechain_domain::*;
 use sidechain_domain::{CandidateKey, CandidateKeys};
+use sp_application_crypto::Ss58Codec;
 use sp_core::{ConstU32, Pair, ecdsa, ed25519};
 use sp_runtime::traits::Zero;
 use sp_runtime::{BoundToRuntimeAppPublic, RuntimeAppPublic, impl_opaque_keys};
@@ -19,6 +20,10 @@ fn registration_message_encoding() {
 	//Expected datum and cbor hex were obtained using partner-chains-smart-contracts tests vectors
 	//and are deemed as the source of truth.
 	//Test data is at https://github.com/input-output-hk/partner-chains-smart-contracts/blob/54e561d62732e37d8f3b6f9e7c02d343122a5d4c/onchain/test/Test/TrustlessSidechain/Types.hs
+
+	let public_key = hex!("147ca04f392b1a13ef8f36521f0fc41436f23607bb2e31caca7867fdeee199ab");
+	let ss58_address = sp_core::crypto::AccountId32::new(public_key).to_ss58check();
+	println!("addr: {ss58_address}");
 
 	let sample_utxo_id_hash_bytes: [u8; 32] =
 		hex!("e41c9b57841e582c207bb68d5e9736fb48c7af5f1ec29ade00692fa5e0e47efa");

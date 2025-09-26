@@ -225,12 +225,15 @@ jq --arg address $GOVERNED_MAP_VALIDATOR_ADDRESS --arg policy_id $GOVERNED_MAP_P
   "asset_policy_id": $policy_id
 }' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
 
-echo "Set initial funds to node-1 (ECDSA), node-1 (sr25519), node-4 (ECDSA) and node-4 (sr25519)"
+echo "Set initial funds to node-1 (ECDSA), node-1 (sr25519), node-4 (ECDSA), node-4 (sr25519), node-2 (ECDSA), node-3 (ECDSA), node-5 (ECDSA)"
 jq '.genesis.runtimeGenesis.config.balances.balances = [
     ["5FnXTMg8UnfeGsMaGg24o3NY21VRFRDRdgxuLGmXuYLeZmin", 1000000000000000],
     ["5Cyx94iyji8namhRxvs4mAbURtPsvwjWCb68ZihNzfRysGLZ", 1000000000000000],
     ["5GaTC1bjMYLxXo2DqnxxdCWLEdGZK86mWmSYtzkG6BKHzT2H", 1000000000000000],
-    ["5HKLH5ErLMNHReWGFGtrDPRdNqdKP56ArQA6DFmgANzunK7A", 1000000000000000]
+    ["5HKLH5ErLMNHReWGFGtrDPRdNqdKP56ArQA6DFmgANzunK7A", 1000000000000000],
+    ["5D4iVtH4WJ85EdajA7vXGN2tQ4j14go46c2AxGxofXkVfSfs", 1000000000000000],
+    ["5G1w8SajzahHMjh6VuSdohFB2yjF2hhfWwCdN7HJmo4NXYyW", 1000000000000000],
+    ["5CXZqUUoHPnWfjM2EBEK4q8mWgdT2SFmwuCj4eGGt3EcrHEq", 1000000000000000]
 ]' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
 
 echo "Configuring node-1 (sr25519) as sudo..."

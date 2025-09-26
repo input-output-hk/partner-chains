@@ -19,8 +19,22 @@ mod tests;
 
 pub mod weights;
 
+use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
+use scale_info::TypeInfo;
 pub use sp_session_validator_management::CommitteeMember;
 pub use weights::WeightInfo;
+
+/// For session state machine
+#[derive(Encode, Decode, Default, MaxEncodedLen, TypeInfo, PartialEq, Eq)]
+pub enum InputsChangeHandlingStagePhases {
+	/// Inputs has changed and special session should be created to accelerate usage of new inputs
+	InputsChanged,
+	/// Should end session returned true due selection inputs change
+	ShouldEndSessionDone,
+	/// Special session without committee rotation was executed
+	#[default]
+	NewSessionDone,
+}
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -145,6 +159,13 @@ pub mod pallet {
 		CommitteeInfo<T::ScEpochNumber, T::CommitteeMember, T::MaxValidators>,
 		OptionQuery,
 	>;
+
+	#[pallet::storage]
+	pub type LastAuthoritySelectionInputsHash<T: Config> = StorageValue<_, [u8; 32], ValueQuery>;
+
+	#[pallet::storage]
+	pub type SelectionInputsChangeHandlingStage<T: Config> =
+		StorageValue<_, InputsChangeHandlingStagePhases, ValueQuery>;
 
 	#[pallet::storage]
 	pub type MainChainScriptsConfiguration<T: Config> =
@@ -311,6 +332,14 @@ pub mod pallet {
 				epoch: for_epoch_number,
 				committee: validators,
 			});
+
+			let current_hash = LastAuthoritySelectionInputsHash::<T>::get();
+			if current_hash != selection_inputs_hash.0 {
+				SelectionInputsChangeHandlingStage::<T>::put(
+					InputsChangeHandlingStagePhases::InputsChanged,
+				);
+				LastAuthoritySelectionInputsHash::<T>::put(selection_inputs_hash.0);
+			}
 			Ok(())
 		}
 
