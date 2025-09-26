@@ -18,8 +18,22 @@ mod tests;
 
 pub mod weights;
 
+use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
+use scale_info::TypeInfo;
 pub use sp_session_validator_management::CommitteeMember;
 pub use weights::WeightInfo;
+
+/// For session state machine
+#[derive(Encode, Decode, Default, MaxEncodedLen, TypeInfo, PartialEq, Eq)]
+pub enum InputsChangeHandlingStages {
+	/// Inputs has changed and special session should be created to accelerate usage of new inputs
+	InputsChanged,
+	/// Should end session returned true due selection inputs change
+	ShouldEndSessionDone,
+	/// Special session without committee rotation was executed
+	#[default]
+	NewSessionDone,
+}
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -144,6 +158,16 @@ pub mod pallet {
 		CommitteeInfo<T::ScEpochNumber, T::CommitteeMember, T::MaxValidators>,
 		OptionQuery,
 	>;
+
+	/// Stores hash of the most recent selection inputs that were used to select a committee
+	#[pallet::storage]
+	pub type LastInputsHash<T: Config> = StorageValue<_, [u8; 32], ValueQuery>;
+
+	/// Stores the stage of handling the inputs change. Use by session manager, to decide
+	/// if the session should be ended quickly, to speed up using the newly selected committee.
+	#[pallet::storage]
+	pub type InputsChangeHandlingStage<T: Config> =
+		StorageValue<_, InputsChangeHandlingStages, ValueQuery>;
 
 	#[pallet::storage]
 	pub type MainChainScriptsConfiguration<T: Config> =
@@ -310,6 +334,12 @@ pub mod pallet {
 				epoch: for_epoch_number,
 				committee: validators,
 			});
+
+			let current_hash = LastInputsHash::<T>::get();
+			if current_hash != selection_inputs_hash.0 {
+				InputsChangeHandlingStage::<T>::put(InputsChangeHandlingStages::InputsChanged);
+				LastInputsHash::<T>::put(selection_inputs_hash.0);
+			}
 			Ok(())
 		}
 

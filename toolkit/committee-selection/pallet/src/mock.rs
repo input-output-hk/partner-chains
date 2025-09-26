@@ -148,8 +148,8 @@ impl pallet_session::SessionHandler<AccountId> for TestSessionHandler {
 impl pallet_session::Config for Test {
 	type ValidatorId = AuthorityId;
 	type ValidatorIdOf = sp_runtime::traits::ConvertInto;
-	type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
-	type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
+	type ShouldEndSession = PalletSessionSupport<Test>;
+	type NextSessionRotation = ();
 	type SessionManager = PalletSessionSupport<Test>;
 	type SessionHandler = TestSessionHandler;
 	type Keys = SessionKeys;
@@ -255,4 +255,27 @@ pub fn create_inherent_set_validators_call(
 
 pub(crate) fn current_epoch_number() -> u64 {
 	mock_pallet::CurrentEpoch::<Test>::get()
+}
+
+pub fn start_session(session_index: u32) {
+	for i in Session::current_index()..session_index {
+		System::on_finalize(System::block_number());
+		Session::on_finalize(System::block_number());
+
+		let parent_hash = if System::block_number() > 1 {
+			let hdr = System::finalize();
+			hdr.hash()
+		} else {
+			System::parent_hash()
+		};
+
+		System::reset_events();
+		System::initialize(&(i as u64 + 1), &parent_hash, &Default::default());
+		System::set_block_number((i + 1).into());
+
+		System::on_initialize(System::block_number());
+		Session::on_initialize(System::block_number());
+	}
+
+	assert_eq!(Session::current_index(), session_index);
 }
