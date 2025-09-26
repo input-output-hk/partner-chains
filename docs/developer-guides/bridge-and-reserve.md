@@ -1,20 +1,30 @@
-# Native token reserve management
+# Native token bridge and reserve management
 
 ## Overview
+
+The bridge functionality allows to register movement of designated native token (minting policy of it is controlled by users) to the bridge (also called Illiquid Circulation Supply Validator).
+The Illiquid Circulation Supply Validator locks native tokens and prevents moving them out of the bridge.
+For operational reasons (coin selection problem), the system allows setting a minimum number of UTXOs that should always be present at the bridge address, by creating UTXOs that contain a special token. The validator ensures that this token can not be moved out of the address and any UTXOs there can only contain one token each.
+
+Additionally to the bridge there is the Reserve mechanism.
+Reserve is set up by the governance authority with some amount of designated native tokens.
+More tokens can be deposited to the reserve later.
+Any user can release tokens from the reserve to the bridge - conceptually this should be observed at partner chain and some kind of rewards pool should be increased there.
+Release can be done only with the amount that is bounded by so-called `V-function` (release schedule function).
 
 This guide covers the following tasks:
 
 1. **On Cardano:**
 
-- Creating your new token and setting up rules for how tokens are released over time
-- This involves setting up and managing a token management contract on the Cardano blockchain, enabling proper observability on your partner chain.
+- Creating your new token, and optionally setting up rules for how tokens can be released from the reserve over time
+- This involves setting up and managing a bridge and reserve contracts on the Cardano blockchain, enabling proper observability on your partner chain.
 
 2. **On your partner chain:**
 
 - Connecting your partner chain to track the token and enable token operations across both chains
 - This involves following a step-by-step process for interacting with both the Cardano blockchain and your partner chain.
 
-After you complete the steps in this guide, you will have a fully functioning token system that works across Cardano and your partner chain.
+After you complete the steps in this guide, you will have fully functioning bridge and reserve systems that work across Cardano and your Partner Chain.
 
 ![Native token management contract](native-token-mgt-contract.png "Native token management contract")
 
@@ -34,7 +44,7 @@ Please note that rewards schemes for token release is the responsibility of the 
 
 # Initialization
 
-Initialization includes creating the native token on Cardano, writing the `VFunction`, running the commands `smart-contracts reserve init` and `smart-contracts reserve create` at the `partner-chains-node` side.
+Initialization includes creating the native token on Cardano, writing the `VFunction`, running the commands `smart-contracts bridge init` and `smart-contracts reserve create-utxos`, `smart-contracts reserve init`, and `smart-contracts reserve create` at the `partner-chains-node` side.
 
 ## 1. Setting up your token on Cardano
 
@@ -60,26 +70,17 @@ Generally speaking, however, the process includes these steps:
 
 ### 1.2 Configuring the token release schedule
 
+The release schedule is only required if the reserve feature is used.
+
 #### 1.2.1 Implementing V(t) release function
 
 **Understanding the `VFunction`:**
 
 - The `VFunction` policy defines the schedule of allowed reserve token movement from the reserve supply to the circulating supply over time
 
-- `VFunction` is a minting policy that has to accept 2 parameters (or more if you like)
+- `VFunction` is a minting policy. Offchain code will apply `ScriptContext` with the validity interval start of `T`, where `T` is the timestamp of currently observed chain tip.
 
-   - The first parameter is the `VFunction` Redeemer (which can be anything)
-   - The second parameter is the `ScriptContext` (every smart contract takes this as parameter)
-
-- The Validity interval is to be present and equal to `[T, infinity]`, where `T` is time in the recent past, close to the current time
-
-- The Transaction input with ReserveAuthPolicy token is to be present
-
-- The `VFunction` should be able to mint X tokens and be invoked repeatedly, each time minting X new tokens. The value of X should grow in time and represent the total number of tokens to be released from the reserve to IlliquidCirculationSupply up to the current moment in time
-
-- Smart contracts do not pass anything to each other directly. However, each smart contract in a given single transaction has access to the context of the whole transaction, including input UTXOs, datums, etc
-
-- Implementers of the `VFunction` should expect the validity interval to be correctly set up by the offchain release command.
+- The `VFunction` should allow to mint at most the maximum number of tokens that are allowed to be released from the reserve until `T`.
 
 **User responsibility:**
 
@@ -128,6 +129,38 @@ cardano-cli conway transaction submit --tx-file tx.signed --testnet-magic 2
 4. Add `reference.json` to the transaction and submit it to Cardano.
 
 5. Find and note the hash#id for the transaction that has the `VFunction` script attached.
+
+### 1.3 Initializing bridge scripts
+
+Objective: Initialize the bridge scripts for your partner chain.
+
+#### 1.3.1 Run the `bridge init` command
+
+Command template:
+
+```bash
+./partner-chains-node smart-contracts bridge init \
+  --genesis-utxo <GENESIS_UTXO> \
+  --ogmios-url <OGMIOS_URL> \
+  --payment-key-file <PAYMENT_KEY_FILE>
+```
+
+The command is idempotent. If it fails at first attempt it is safe to repeat execution.
+The command is a governance action, so it might not submit transactions but instead output the transactions to sign.
+
+#### 1.3.2 Run the `bridge create-utxos` command
+
+Command template:
+
+```bash
+./partner-chains-node smart-contracts bridge create-utxos \
+  --genesis-utxo <GENESIS_UTXO> \
+  --ogmios-url <OGMIOS_URL> \
+  --payment-key-file <PAYMENT_KEY_FILE> \
+  --amount <AMOUNT>
+```
+
+The command is a governance action, so it might not submit transactions but instead output the transactions to sign.
 
 ### 1.3 Initializing token reserve controls
 
@@ -207,9 +240,9 @@ Usage includes the `reserve release` and `reserve handover` commands.
 - `reserve handover` &ndash; a command for finishing the flow (either there is nothing to release or the governance authority user wants to finish the flow)
 - `reserve release` &ndash; a command to "move" the flow until the end.
 
-## 2. Releasing tokens from reserve to circulation
+## 2. Releasing tokens from Cardano Reserve to bridge
 
-Objective: Release available reserve tokens (defined by the `VFunction`).
+Objective: Release available reserve tokens (maximum amount is bounded by `VFunction`)
 
 ### 2.1 Run the `reserve release` command
 
@@ -301,7 +334,7 @@ Objective: increase the pool of reserve tokens.
 
 # Configuration
 
-Configuration includes `reserve update-settings` commands used to either change token in reserve or `VFunction`.
+Configuration includes `reserve update-settings` commands used to change the `VFunction`.
 
 <!-- Only "initialize", "create" and "update settings" are related to configuration.  -->
 
@@ -309,15 +342,19 @@ Configuration includes `reserve update-settings` commands used to either change 
 
 ### 4.1 Gathering required token parameters
 
-Objective: Collect the essential parameters needed to configure the native token management contract on the partner chain.
+Objective: Collect the essential parameters needed to configure the bridge pallet on the partner chain.
 
 #### Required parameters
 
-- NATIVE_TOKEN_POLICY_ID - the policy ID from Step 1.1
+- tokenPolicyId - the policy ID from Step 1.1
 
-- NATIVE_TOKEN_ASSET_NAME - the asset name from Step 1.1
+- tokenAssetName - the asset name from Step 1.1
 
-- ILLIQUID_SUPPLY_VALIDATOR_ADDRESS - can be obtained from the output of the `get-scripts` command (see below).
+- IlliquidCirculationSupplyValidatorAddress - can be obtained from the output of the `get-scripts` command (see below).
+
+- dataCheckpoint - it is the lower bound of observability. Chain Genesis UTXO is a good candidate,
+but it can be any UTXO on Cardano, created before the first bridge transfer that should be registered by the Partner Chain
+
 
 #### 4.1.1 Retrieving the validator address
 
@@ -341,13 +378,13 @@ Locate the validator address in the command output:
 }
 ```
 
-### 4.2 Following the native token migration guide
+### 4.2 Following the bridge migration guide
 
 Objective: Migrate and synchronize the token state between Cardano and the partner chain.
 
 #### Steps
 
-1. Open the [native token migration guide](https://github.com/input-output-hk/partner-chains/blob/master/docs/developer-guides/native-token-migration-guide.md).
+1. Open the [bridge migration guide](https://github.com/input-output-hk/partner-chains/blob/master/docs/developer-guides/bridge-migration-guide.md).
 
 2. Follow each step outlined in the guide.
 
@@ -361,13 +398,13 @@ Objective: Update native token configuration if migration has already happened.
 
 **Warning:** The following steps need to be executed by the governance authority from the sudo account in the Polkadot UI.
 
-1. Run `set_main_chain_scripts` extrinsic on the nativeTokenManagement pallet via the Polkadot UI portal to set the native token `policy ID`, `asset name`, and `illiquid supply validator address`.
+1. Run `set_main_chain_scripts` extrinsic on the bridge pallet via the Polkadot UI portal to set the native token `tokenPolicyId`, `tokenAssetName`, `IlliquidCirculationSupplyValidatorAddress`, and `dataCheckpoint`.
 
 ![Polkadot UI portal](Polkadot-UI-portal-native-token-mgt.png)
 
 2. After submitting a transaction, the native token configuration can be checked via the Polkadot UI portal: developer → chain state
 
-   - `selected state query`: nativeTokenManagement → mainchainScriptsConfiguration
+   - `selected state query`: bridge → mainchainScriptsConfiguration
 
 Example native token configuration:
 

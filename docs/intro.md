@@ -37,6 +37,10 @@
       * [upsert-permissioned-candidates](#upsert-permissioned-candidates)
       * [register](#register)
       * [deregister](#deregister)
+      * [bridge](#bridge)
+        * [init](#init)
+        * [create](#create)
+        * [deposit](#deposit)
       * [reserve](#reserve)
         * [init](#init)
         * [create](#create)
@@ -780,6 +784,52 @@ $ pc-node smart-contracts deregister
 
 After this action, it takes 2 Cardano epochs for the registration to deactivate.
 
+##### bridge
+
+Set of subcommands for management of the native token bridge.
+`init` and `create-utxos` are governance actions.
+
+###### init
+
+Initializes the bridge smart contracts in versioning system.
+
+```shell
+pc-node smart-contracts bridge init
+    --payment-key-file <PAYMENT_KEY_FILE>
+    --genesis-utxo <GENESIS_UTXO>
+```
+
+This command only sets up the scripts in the versioning system.
+
+###### create-utxos
+
+Creates the 'concurrency' UTXOs that are used to keep some minimal number of UTXOs at the bridge (ICS, Illiquid Circulation Supply) validator.
+
+```shell
+$ pc-node smart-contracts bridge create-utxos
+    --payment-key-file <PAYMENT_KEY_FILE>
+    --genesis-utxo <GENESIS_UTXO>
+    --amount <AMOUNT>
+```
+
+This command deposits UTXOs at the bridge validator address. Each UTXO has a special token.
+Such token cannot be moved out of the validator and no more than one token in a UTXO is allowed.
+This prevents having low number of UTXOs at the validator and taming concurrency of transactions
+that involved spending UTXOs at the bridge.
+
+###### deposit
+
+Deposits tokens from payment key wallet to the bridge. It locks these tokens at the bridge.
+
+```shell
+$ pc-node smart-contracts bridge deposit
+    --payment-key-file <PAYMENT_KEY_FILE>
+    --genesis-utxo <GENESIS_UTXO>
+    --amount <AMOUNT>
+```
+
+This transaction can be submitted by any wallet to transfer more tokens into the bridge.
+
 ##### reserve
 
 Set of subcommands for management of the native token rewards reserve.
@@ -821,7 +871,7 @@ the number of releasable tokens. Consult the smart contracts documentation for d
 Deposits tokens from payment key wallet to the reserve
 
 ```shell
-$ pc-node smart-contracts deposit
+$ pc-node smart-contracts reserve deposit
     --payment-key-file <PAYMENT_KEY_FILE>
     --genesis-utxo <GENESIS_UTXO>
     --amount <AMOUNT>

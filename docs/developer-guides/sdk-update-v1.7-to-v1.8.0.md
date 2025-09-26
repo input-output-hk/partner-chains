@@ -60,3 +60,7 @@ fn current_time() -> u64 {
 	pallet_timestamp::Now::<Runtime>::get() / 1000
 }
 ```
+
+## Bridge
+
+For the bridge please read documents specific to this feature: [operational guide](./bridge-and-reserve.md) and [migration guide](./bridge-migration-guide.md)
