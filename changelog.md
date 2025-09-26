@@ -6,7 +6,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Changed
 
-* **BREAKING**: Updated partner-chains-smart-contracts (raw-scripts) dependency to v8.0.0.
+* **BREAKING**: Updated partner-chains-smart-contracts (raw-scripts) dependency to v8.2.0.
   Possibility to interact with smart-contracts used by earlier versions is lost.
   Governance authority will have to establish new partner chain on Cardano.
   All initialization and candidates registrations have to be repeated.
@@ -59,6 +59,7 @@ block producer rewards on-chain. Handling of the transfers is left to the chain 
 * Added `CARDANO_DATA_SOURCE` env variable to determine data source for partner-chains. `db-sync` value is used by default
 * Added support for querying Db-Sync database when `tx-in.value` configuration field is set to `"consumed"`.
 The data sources will automatically detect this option on startup and adjust their queries accordingly.
+* Added `partner-chains-node smart-contracts upsert-script` command for inserting and updating versioned scripts.
 
 ## Fixed
 

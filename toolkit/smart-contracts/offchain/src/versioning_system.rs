@@ -2,17 +2,18 @@ use crate::{
 	await_tx::AwaitTx,
 	cardano_keys::CardanoPaymentSigningKey,
 	csl::{
-		CostStore, Costs, MultiAssetExt, OgmiosUtxoExt, TransactionBuilderExt, TransactionContext,
-		TransactionExt, TransactionOutputAmountBuilderExt, get_builder_config,
+		CostStore, Costs, InputsBuilderExt, MultiAssetExt, OgmiosUtxoExt, TransactionBuilderExt,
+		TransactionContext, TransactionExt, TransactionOutputAmountBuilderExt, get_builder_config,
 	},
 	governance::GovernanceData,
 	multisig::{MultiSigSmartContractResult, submit_or_create_tx_to_sign},
 	plutus_script::PlutusScript,
 	scripts_data::{self, PlutusScriptData},
 };
+use anyhow::anyhow;
 use cardano_serialization_lib::{
-	AssetName, JsError, MultiAsset, ScriptRef, Transaction, TransactionBuilder,
-	TransactionOutputBuilder,
+	AssetName, BigInt, MultiAsset, PlutusData, ScriptRef, Transaction, TransactionBuilder,
+	TransactionOutputBuilder, TxInputsBuilder,
 };
 use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
@@ -35,16 +36,6 @@ impl ScriptData {
 		let plutus_script =
 			PlutusScript::v2_from_cbor(&raw_bytes).expect("Plutus script should be valid");
 		Self { name: name.to_string(), plutus_script, id }
-	}
-
-	pub(crate) fn applied_plutus_script(
-		&self,
-		version_oracle: &PlutusScriptData,
-	) -> Result<PlutusScript, JsError> {
-		self.plutus_script
-			.clone()
-			.apply_data_uplc(version_oracle.policy_id_as_plutus_data())
-			.map_err(|e| JsError::from_str(&e.to_string()))
 	}
 }
 
@@ -79,6 +70,75 @@ pub(crate) async fn initialize_script<
 	))
 }
 
+pub(crate) async fn update_script<
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+	A: AwaitTx,
+>(
+	script: ScriptData,
+	genesis_utxo: UtxoId,
+	old_versioned_utxo: OgmiosUtxo,
+	payment_key: &CardanoPaymentSigningKey,
+	client: &T,
+	await_tx: &A,
+) -> anyhow::Result<Option<MultiSigSmartContractResult>> {
+	let payment_ctx = TransactionContext::for_payment_key(payment_key, client).await?;
+	let governance = GovernanceData::get(genesis_utxo, client).await?;
+	let version_oracle = scripts_data::version_oracle(genesis_utxo, payment_ctx.network)?;
+
+	if !script_is_initialized(&script, &version_oracle, &payment_ctx, client).await? {
+		log::info!("Script '{}' isn't initialized yet", script.name);
+		return Ok(None);
+	}
+	Ok(Some(
+		submit_or_create_tx_to_sign(
+			&governance,
+			payment_ctx,
+			|costs, ctx| {
+				update_script_tx(
+					&script,
+					&governance,
+					&version_oracle,
+					&old_versioned_utxo,
+					costs,
+					&ctx,
+				)
+			},
+			&format!("Update {}", script.name),
+			client,
+			await_tx,
+		)
+		.await?,
+	))
+}
+
+/// Upserts a Plutus script into the versioning system
+pub async fn upsert_script<
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+	A: AwaitTx,
+>(
+	plutus_script: PlutusScript,
+	script_id: u32,
+	genesis_utxo: UtxoId,
+	payment_key: &CardanoPaymentSigningKey,
+	client: &T,
+	await_tx: &A,
+) -> anyhow::Result<Option<MultiSigSmartContractResult>> {
+	let payment_ctx = TransactionContext::for_payment_key(payment_key, client).await?;
+	let version_oracle = scripts_data::version_oracle(genesis_utxo, payment_ctx.network)?;
+
+	let script_id = script_id.try_into().map_err(|_| anyhow!("Invalid script id"))?;
+	let versioned_utxo = find_script_utxo(script_id, &version_oracle, &payment_ctx, client).await?;
+	let script_data = ScriptData { name: format!("{:?}", script_id), plutus_script, id: script_id };
+
+	match versioned_utxo {
+		Some(utxo) => {
+			update_script(script_data, genesis_utxo, utxo, payment_key, client, await_tx).await
+		},
+
+		None => initialize_script(script_data, genesis_utxo, payment_key, client, await_tx).await,
+	}
+}
+
 fn init_script_tx(
 	script: &ScriptData,
 	governance: &GovernanceData,
@@ -87,21 +147,70 @@ fn init_script_tx(
 	ctx: &TransactionContext,
 ) -> anyhow::Result<Transaction> {
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
-	let applied_script = script.applied_plutus_script(version_oracle)?;
 	{
 		tx_builder.add_mint_one_script_token(
 			&version_oracle.policy,
 			&version_oracle_asset_name(),
 			&VersionOraclePolicyRedeemer::MintVersionOracle(
 				script.id.into(),
-				applied_script.script_hash().into(),
+				script.plutus_script.script_hash().into(),
 			)
 			.into(),
 			&costs.get_mint(&version_oracle.policy.clone()),
 		)?;
 	}
 	{
-		let script_ref = ScriptRef::new_plutus_script(&applied_script.to_csl());
+		let script_ref = ScriptRef::new_plutus_script(&script.plutus_script.to_csl());
+		let amount_builder = TransactionOutputBuilder::new()
+			.with_address(&version_oracle.validator.address(ctx.network))
+			.with_plutus_data(
+				&VersionOracleDatum {
+					version_oracle: script.id.into(),
+					currency_symbol: version_oracle.policy.script_hash().into(),
+				}
+				.into(),
+			)
+			.with_script_ref(&script_ref)
+			.next()?;
+		let ma = MultiAsset::new()
+			.with_asset_amount(&version_oracle.policy.asset(version_oracle_asset_name())?, 1u64)?;
+		let output = amount_builder.with_minimum_ada_and_asset(&ma, ctx)?.build()?;
+		tx_builder.add_output(&output)?;
+	}
+	// Mint governance token
+	let gov_tx_input = governance.utxo_id_as_tx_input();
+	tx_builder.add_mint_one_script_token_using_reference_script(
+		&governance.policy.script(),
+		&gov_tx_input,
+		&costs,
+	)?;
+	Ok(tx_builder.balance_update_and_build(ctx)?.remove_native_script_witnesses())
+}
+
+fn update_script_tx(
+	script: &ScriptData,
+	governance: &GovernanceData,
+	version_oracle: &PlutusScriptData,
+	old_versioned_utxo: &OgmiosUtxo,
+	costs: Costs,
+	ctx: &TransactionContext,
+) -> anyhow::Result<Transaction> {
+	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
+	{
+		tx_builder.set_inputs(&{
+			let mut inputs = TxInputsBuilder::new();
+			inputs.add_script_utxo_input(
+				&old_versioned_utxo,
+				&version_oracle.validator,
+				&PlutusData::new_integer(&BigInt::from(script.id as u32)),
+				&costs.get_one_spend(),
+			)?;
+
+			inputs
+		});
+	}
+	{
+		let script_ref = ScriptRef::new_plutus_script(&script.plutus_script.to_csl());
 		let amount_builder = TransactionOutputBuilder::new()
 			.with_address(&version_oracle.validator.address(ctx.network))
 			.with_plutus_data(
@@ -166,12 +275,24 @@ pub(crate) async fn find_script_utxo<T: QueryLedgerState>(
 	}))
 }
 
+/// Gets an UTXO at Version Oracle Validator with correct Datum and reference script
+pub async fn get_script_utxo<T: QueryLedgerState + QueryNetwork>(
+	script_id: ScriptId,
+	version_oracle: &PlutusScriptData,
+	payment_key: &CardanoPaymentSigningKey,
+	client: &T,
+) -> Result<Option<OgmiosUtxo>, anyhow::Error> {
+	let ctx = TransactionContext::for_payment_key(payment_key, client).await?;
+	find_script_utxo(script_id, version_oracle, &ctx, client).await
+}
+
 #[cfg(test)]
 mod tests {
 	use super::{ScriptData, init_script_tx};
 	use crate::{
 		csl::{Costs, OgmiosUtxoExt, TransactionContext, unit_plutus_data},
 		governance::GovernanceData,
+		plutus_script,
 		scripts_data::{self, PlutusScriptData},
 		test_values::{
 			make_utxo, payment_addr, payment_key, protocol_parameters, test_governance_policy,
@@ -199,13 +320,7 @@ mod tests {
 		let voo_plutus_script = voo_script_ref
 			.plutus_script()
 			.expect("Script reference should be Plutus script");
-		assert_eq!(
-			voo_plutus_script,
-			test_initialized_script()
-				.applied_plutus_script(&version_oracle_data())
-				.unwrap()
-				.to_csl()
-		);
+		assert_eq!(voo_plutus_script, test_initialized_script().plutus_script.to_csl());
 		let amount = voo
 			.amount()
 			.multiasset()
@@ -289,10 +404,7 @@ mod tests {
 		let redeemers = vec![ws.get(0), ws.get(1)];
 
 		let expected_vo_redeemer_data = {
-			let script_hash = test_initialized_script()
-				.applied_plutus_script(&version_oracle_data())
-				.unwrap()
-				.script_hash();
+			let script_hash = test_initialized_script().plutus_script.script_hash();
 			VersionOraclePolicyRedeemer::MintVersionOracle(
 				test_initialized_script().id.into(),
 				script_hash.into(),
@@ -332,7 +444,13 @@ mod tests {
 	fn test_initialized_script() -> ScriptData {
 		ScriptData::new(
 			"Test Script",
-			raw_scripts::RESERVE_VALIDATOR.0.to_vec(),
+			plutus_script![
+				raw_scripts::RESERVE_VALIDATOR,
+				version_oracle_data().policy_id_as_plutus_data()
+			]
+			.unwrap()
+			.bytes
+			.to_vec(),
 			ScriptId::ReserveValidator,
 		)
 	}
