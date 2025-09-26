@@ -78,7 +78,7 @@ The release schedule is only required if the reserve feature is used.
 
 - The `VFunction` policy defines the schedule of allowed reserve token movement from the reserve supply to the circulating supply over time
 
-- `VFunction` is a minting policy. Offchain code will apply `ScriptContext` with the validity interval `[T, infinity]`, where `T` is the current timestamp.
+- `VFunction` is a minting policy. Offchain code will apply `ScriptContext` with the validity interval start of `T`, where `T` is the timestamp of currently observed chain tip.
 
 - The `VFunction` should allow to mint at most the maximum number of tokens that are allowed to be released from the reserve until `T`.
 
