@@ -27,7 +27,8 @@ def set_governed_map_scripts(api: BlockchainApi, addresses, policy_ids, sudo):
 
 
 @fixture(scope="session", autouse=True)
-def observe_governed_map_initialization(api: BlockchainApi, set_governed_map_scripts):
+@mark.usefixtures("set_governed_map_scripts")
+def observe_governed_map_initialization(api: BlockchainApi):
     result = api.subscribe_governed_map_initialization()
     return result
 
@@ -56,14 +57,16 @@ class TestInitializeMap:
 
 
 class TestObserveMapChanges:
-    def test_new_data_is_observed(self, insert_data, api: BlockchainApi, random_key, random_value):
+    @mark.usefixtures("insert_data")
+    def test_new_data_is_observed(self, api: BlockchainApi, random_key, random_value):
         registered_change = api.subscribe_governed_map_change(key_value=(random_key, random_value))
         logging.info(f"Registered change: {registered_change}")
         actual_value = api.get_governed_map_key(random_key)
         assert random_value == actual_value
 
+    @mark.usefixtures("insert_data")
     def test_updated_data_is_observed(
-        self, insert_data, api: BlockchainApi, genesis_utxo, random_key, new_value_hex_bytes, payment_key, new_value
+        self, api: BlockchainApi, genesis_utxo, random_key, new_value_hex_bytes, payment_key, new_value
     ):
         api.partner_chains_node.smart_contracts.governed_map.update(genesis_utxo, random_key, new_value_hex_bytes, payment_key)
         registered_change = api.subscribe_governed_map_change(key_value=(random_key, new_value))
@@ -71,7 +74,8 @@ class TestObserveMapChanges:
         actual_value = api.get_governed_map_key(random_key)
         assert new_value == actual_value
 
-    def test_removed_data_is_observed(self, insert_data, api: BlockchainApi, genesis_utxo, random_key, payment_key):
+    @mark.usefixtures("insert_data")
+    def test_removed_data_is_observed(self, api: BlockchainApi, genesis_utxo, random_key, payment_key):
         api.partner_chains_node.smart_contracts.governed_map.remove(genesis_utxo, random_key, payment_key)
         registered_change = api.subscribe_governed_map_change(key_value=(random_key, None))
         logging.info(f"Registered change: {registered_change}")
@@ -81,7 +85,8 @@ class TestObserveMapChanges:
 
 class TestReinitializeMap:
     @fixture(scope="class")
-    def insert_data_and_wait_until_observed(self, insert_data, api: BlockchainApi, random_key, random_value):
+    @mark.usefixtures("insert_data")
+    def insert_data_and_wait_until_observed(self, api: BlockchainApi, random_key, random_value):
         api.subscribe_governed_map_change(key_value=(random_key, random_value))
         return api.get_governed_map()
 
@@ -95,15 +100,17 @@ class TestReinitializeMap:
         return new_address
 
     @fixture(scope="class", autouse=True)
+    @mark.usefixtures("insert_data_and_wait_until_observed")
     def set_new_governed_map_scripts(
-        self, create_new_governed_map_address, insert_data_and_wait_until_observed, api: BlockchainApi, policy_ids, sudo
+        self, create_new_governed_map_address, api: BlockchainApi, policy_ids, sudo
     ):
         new_address = create_new_governed_map_address
         tx = api.set_governed_map_main_chain_scripts(new_address, policy_ids["GovernedMap"], sudo)
         return tx
 
     @fixture(scope="class", autouse=True)
-    def observe_governed_map_reinitialization(self, api: BlockchainApi, set_new_governed_map_scripts):
+    @mark.usefixtures("set_new_governed_map_scripts")
+    def observe_governed_map_reinitialization(self, api: BlockchainApi):
         result = api.subscribe_governed_map_initialization()
         return result
 

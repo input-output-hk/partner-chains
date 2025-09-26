@@ -3,7 +3,7 @@ import json
 import logging
 import subprocess
 from omegaconf import OmegaConf
-from pytest import fixture, skip, Config, Metafunc, UsageError
+from pytest import fixture, skip, mark, Config, Metafunc, UsageError
 from src.log_filter import sensitive_filter
 from src.blockchain_api import BlockchainApi, Wallet
 from src.blockchain_types import BlockchainTypes
@@ -334,7 +334,8 @@ def secrets_ci(secrets, decrypt, ci_path):
 
 
 @fixture(scope="session", autouse=True)
-def decrypt_keys(tmp_path_factory, config, blockchain, nodes_env, decrypt, ci_run):
+@mark.usefixtures("ci_run")
+def decrypt_keys(tmp_path_factory, config, blockchain, nodes_env, decrypt):
     if decrypt:
         root_tmp_dir = tmp_path_factory.getbasetemp().parent
         fn = root_tmp_dir / "secrets"
@@ -421,7 +422,8 @@ def teardown(request, api: BlockchainApi):
 
 
 @fixture(scope="session", autouse=True)
-def check_mc_sync_progress(api: BlockchainApi, decrypt_keys) -> Wallet:
+@mark.usefixtures("decrypt_keys")
+def check_mc_sync_progress(api: BlockchainApi) -> Wallet:
     logging.info("Checking if cardano node is fully synced")
     sync_progress = api.get_mc_sync_progress()
     if float(sync_progress) != 100.00:

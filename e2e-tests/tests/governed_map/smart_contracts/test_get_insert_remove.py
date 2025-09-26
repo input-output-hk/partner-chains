@@ -36,14 +36,16 @@ class TestGet:
 
 class TestInsertTwice:
     @fixture(scope="class")
-    def insert_twice_with_the_same_value(self, api: BlockchainApi, insert_data, genesis_utxo, random_key, random_value, payment_key):
+    @mark.usefixtures("insert_data")
+    def insert_twice_with_the_same_value(self, api: BlockchainApi, genesis_utxo, random_key, random_value, payment_key):
         hex_data = string_to_hex_bytes(random_value)
         result = api.partner_chains_node.smart_contracts.governed_map.insert(genesis_utxo, random_key, hex_data, payment_key)
         return result
 
     @fixture(scope="class")
+    @mark.usefixtures("insert_data")
     def insert_twice_with_different_value(
-        self, api: BlockchainApi, insert_data, genesis_utxo, random_key, new_value_hex_bytes, payment_key
+        self, api: BlockchainApi, genesis_utxo, random_key, new_value_hex_bytes, payment_key
     ):
         hex_data = string_to_hex_bytes(new_value_hex_bytes)
         result = api.partner_chains_node.smart_contracts.governed_map.insert(genesis_utxo, random_key, hex_data, payment_key)
@@ -54,8 +56,9 @@ class TestInsertTwice:
         assert 0 == result.returncode
         assert {} == result.json
 
+    @mark.usefixtures("insert_twice_with_the_same_value")
     def test_value_remains_the_same(
-        self, api: BlockchainApi, insert_twice_with_the_same_value, genesis_utxo, random_key, random_value
+        self, api: BlockchainApi, genesis_utxo, random_key, random_value
     ):
         get_result = api.partner_chains_node.smart_contracts.governed_map.get(genesis_utxo, random_key)
         value = hex_bytes_to_string(get_result.json)
@@ -66,8 +69,9 @@ class TestInsertTwice:
         assert 1 == result.returncode
         assert "There is already a value stored for key" in result.stderr
 
+    @mark.usefixtures("insert_twice_with_different_value")
     def test_value_was_not_updated(
-        self, api: BlockchainApi, insert_twice_with_different_value, genesis_utxo, random_key, random_value
+        self, api: BlockchainApi, genesis_utxo, random_key, random_value
     ):
         get_result = api.partner_chains_node.smart_contracts.governed_map.get(genesis_utxo, random_key)
         value = hex_bytes_to_string(get_result.json)
@@ -77,14 +81,16 @@ class TestInsertTwice:
 
 class TestRemove:
     @fixture(scope="class")
-    def remove_data(self, api: BlockchainApi, insert_data, genesis_utxo, random_key, payment_key):
+    @mark.usefixtures("insert_data")
+    def remove_data(self, api: BlockchainApi, genesis_utxo, random_key, payment_key):
         result = api.partner_chains_node.smart_contracts.governed_map.remove(genesis_utxo, random_key, payment_key)
         return result
 
     def test_remove_returncode(self, remove_data):
         assert 0 == remove_data.returncode
 
-    def test_get_after_remove(self, api: BlockchainApi, remove_data, genesis_utxo, random_key):
+    @mark.usefixtures("remove_data")
+    def test_get_after_remove(self, api: BlockchainApi, genesis_utxo, random_key):
         result = api.partner_chains_node.smart_contracts.governed_map.get(genesis_utxo, random_key)
         assert {} == result.json
         assert 0 == result.returncode

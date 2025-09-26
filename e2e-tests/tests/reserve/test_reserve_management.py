@@ -17,12 +17,14 @@ def init_bridge(api: BlockchainApi, genesis_utxo, payment_key):
     return response
 
 @fixture(scope="module", autouse=True)
-def create_bridge_utxos(api: BlockchainApi, genesis_utxo, payment_key, init_bridge):
+@mark.usefixtures("init_bridge")
+def create_bridge_utxos(api: BlockchainApi, genesis_utxo, payment_key):
     response = api.partner_chains_node.smart_contracts.bridge.create_utxos(genesis_utxo, 1, payment_key)
     return response
 
 @fixture(scope="module", autouse=True)
-def init_reserve(api: BlockchainApi, genesis_utxo, payment_key, create_bridge_utxos):
+@mark.usefixtures("create_bridge_utxos")
+def init_reserve(api: BlockchainApi, genesis_utxo, payment_key):
     response = api.partner_chains_node.smart_contracts.reserve.init(genesis_utxo, payment_key)
     return response
 
@@ -58,13 +60,15 @@ def create_reserve(api: BlockchainApi, reserve, genesis_utxo, payment_key):
 
 
 @fixture(scope="class")
-def reserve_initial_balance(create_reserve, api: BlockchainApi, addresses, reserve_asset_id):
+@mark.usefixtures("create_reserve")
+def reserve_initial_balance(api: BlockchainApi, addresses, reserve_asset_id):
     balance = api.get_mc_balance(addresses["ReserveValidator"], reserve_asset_id)
     return balance
 
 
 @fixture(scope="class")
-def circulation_supply_initial_balance(create_reserve, api: BlockchainApi, reserve_asset_id, addresses):
+@mark.usefixtures("create_reserve")
+def circulation_supply_initial_balance(api: BlockchainApi, reserve_asset_id, addresses):
     circulation_balance = api.get_mc_balance(addresses["IlliquidCirculationSupplyValidator"], reserve_asset_id)
     return circulation_balance
 
@@ -105,10 +109,10 @@ class TestReleaseFunds:
         return random.randint(1, min(reserve_initial_balance, 100))
 
     @fixture(scope="class", autouse=True)
+    @mark.usefixtures("circulation_supply_initial_balance")
     def release_funds(
         self,
         amount_to_release,
-        circulation_supply_initial_balance,
         api: BlockchainApi,
         v_function: VFunction,
         genesis_utxo,
@@ -162,7 +166,8 @@ class TestDepositFunds:
         return random.randint(1, min(reserve_initial_balance, 100))
 
     @fixture(scope="class", autouse=True)
-    def deposit_funds(self, native_token_balance, amount_to_deposit, api: BlockchainApi, genesis_utxo, payment_key):
+    @mark.usefixtures("native_token_balance")
+    def deposit_funds(self, amount_to_deposit, api: BlockchainApi, genesis_utxo, payment_key):
         response = api.partner_chains_node.smart_contracts.reserve.deposit(
             genesis_utxo,
             amount=amount_to_deposit,
@@ -201,7 +206,8 @@ class TestUpdateVFunction:
         return v_function
 
     @fixture(scope="class", autouse=True)
-    def update_v_function(self, create_reserve, new_v_function: VFunction, api: BlockchainApi, genesis_utxo, payment_key):
+    @mark.usefixtures("create_reserve")
+    def update_v_function(self, new_v_function: VFunction, api: BlockchainApi, genesis_utxo, payment_key):
         response = api.partner_chains_node.smart_contracts.reserve.update_settings(
             genesis_utxo,
             v_function_hash=new_v_function.script_hash,
@@ -262,7 +268,8 @@ class TestBridge:
 
 class TestHandoverReserve:
     @fixture(scope="class", autouse=True)
-    def handover_reserve(self, create_reserve, api: BlockchainApi, genesis_utxo, payment_key):
+    @mark.usefixtures("create_reserve")
+    def handover_reserve(self, api: BlockchainApi, genesis_utxo, payment_key):
         response = api.partner_chains_node.smart_contracts.reserve.handover(genesis_utxo, payment_key)
         return response
 
