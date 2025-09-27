@@ -121,6 +121,7 @@ mod tests {
 	use crate::session_manager::*;
 	use crate::*;
 	use pallet_partner_chains_session::ShouldEndSession;
+	use sp_runtime::testing::UintAuthorityId;
 	pub const IRRELEVANT: u64 = 2;
 
 	type Manager = ValidatorManagementSessionManager<Test>;
@@ -144,6 +145,30 @@ mod tests {
 				committee: next_committee,
 			});
 			assert!(Manager::should_end_session(IRRELEVANT));
+		});
+	}
+
+	#[test]
+	fn register_session_keys_for_provided_authorities() {
+		new_test_ext().execute_with(|| {
+			System::inc_providers(&DAVE.authority_id);
+			System::inc_providers(&EVE.authority_id);
+			set_validators_directly(&[DAVE, EVE], 1).unwrap();
+			// By default, the session keys are not set for the account.
+			assert_eq!(Session::load_keys(&DAVE.authority_id), None);
+			assert_eq!(Session::load_keys(&EVE.authority_id), None);
+
+			start_session(1);
+
+			// After setting the keys, they should be stored in the session.
+			assert_eq!(
+				Session::load_keys(&DAVE.authority_id),
+				Some(SessionKeys { foo: UintAuthorityId(DAVE.authority_keys) })
+			);
+			assert_eq!(
+				Session::load_keys(&EVE.authority_id),
+				Some(SessionKeys { foo: UintAuthorityId(EVE.authority_keys) })
+			);
 		});
 	}
 }

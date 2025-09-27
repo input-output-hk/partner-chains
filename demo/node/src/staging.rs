@@ -131,15 +131,19 @@ pub fn staging_genesis(
 		},
 		transaction_payment: Default::default(),
 		session: SessionConfig {
-			initial_validators: initial_authorities
+			keys: initial_authorities
 				.iter()
 				.map(|authority_keys| {
-					(authority_keys.cross_chain.clone().into(), authority_keys.session.clone())
+					(
+						authority_keys.cross_chain.clone().into(),
+						authority_keys.cross_chain.clone().into(),
+						authority_keys.session.clone(),
+					)
 				})
 				.collect(),
+			non_authority_keys: Default::default(),
 		},
 		sidechain: SidechainConfig { genesis_utxo, ..Default::default() },
-		pallet_session: Default::default(),
 		session_committee_management: SessionCommitteeManagementConfig {
 			initial_authorities: initial_authorities
 				.into_iter()

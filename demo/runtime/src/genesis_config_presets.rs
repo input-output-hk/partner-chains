@@ -58,7 +58,6 @@ fn testnet_genesis(
 		transaction_payment: Default::default(),
 		sidechain: Default::default(),
 		session_committee_management: Default::default(),
-		pallet_session: Default::default(),
 		session: Default::default(),
 		governed_map: GovernedMapConfig {
 			main_chain_scripts: Some(sp_governed_map::MainChainScriptsV1::default()),
