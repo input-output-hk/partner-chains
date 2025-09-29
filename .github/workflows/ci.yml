@@ -30,7 +30,7 @@ jobs:
 
 ### Pre merge workflow ###############################################################################################################
 
-  build-release-pre-merge:
+  build-linux-x86_64-pre-merge:
     runs-on: nixos
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
     steps:
@@ -413,7 +413,7 @@ jobs:
 
   local-env:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
-    needs: build-release-pre-merge
+    needs: build-linux-x86_64-pre-merge
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -439,45 +439,8 @@ jobs:
           ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
           TEST_ENVIRONMENT: local
 
-  local-env-alert:
-    needs: local-env
-    if: >-
-      always() && (
-        needs.local-env.result != 'skipped'
-      ) && github.event_name == 'pull_request' && github.event.pull_request.merged == false
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        markers: [smoke, rpc, reserve, governed_map, delegator_rewards, ariadne, wizards]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - name: Download test report
-        uses: actions/download-artifact@v4
-        with:
-          name: test-results-${{ matrix.markers }}
-          path: e2e-tests/logs-${{ matrix.markers }}
-      - name: Report to slack
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          JIRA_URL: ${{ secrets.JIRA_URL }}
-          repository: ${{ github.repository }}
-          slack_ref_name: ${{ github.ref_name }}
-          job_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          github_actor_username: ${{ github.actor }}
-          env: local-pre-merge
-        run: |
-          cd e2e-tests
-          mkdir -p logs
-          cp -r logs-${{ matrix.markers }}/. logs/
-          ./report_slack.sh $repository $slack_ref_name $job_url $env $github_actor_username null "${{ matrix.markers }}"
-        shell: bash
-
   documentation-tests:
-    needs: build-release-pre-merge
+    needs: build-linux-x86_64-pre-merge
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
     runs-on: ubuntu-latest
     steps:
@@ -491,7 +454,7 @@ jobs:
 
   upload-chain-specs-pre-merge:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
-    needs: build-release-pre-merge
+    needs: build-linux-x86_64-pre-merge
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -511,7 +474,7 @@ jobs:
   pre-merge-checks-complete:
     if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.merged == false }}
     needs: [
-      build-release-pre-merge,
+      build-linux-x86_64-pre-merge,
       build-dev-pre-merge,
       local-env,
       upload-chain-specs-pre-merge,
@@ -521,7 +484,7 @@ jobs:
     steps:
       - name: Check if any needed job failed
         run: |
-          if [[ "${{ needs.build-release-pre-merge.result }}" != "success" ||
+          if [[ "${{ needs.build-linux-x86_64-pre-merge.result }}" != "success" ||
                 "${{ needs.build-dev-pre-merge.result }}" != "success" ||
                 "${{ needs.local-env.result }}" != "success" ||
                 "${{ needs.upload-chain-specs-pre-merge.result }}" != "success" ||
