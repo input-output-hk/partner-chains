@@ -3,8 +3,8 @@ use crate::chain_spec::*;
 use authority_selection_inherents::CommitteeMember;
 use partner_chains_demo_runtime::{
 	AccountId, AuraConfig, BalancesConfig, BridgeConfig, GovernedMapConfig, GrandpaConfig,
-	NativeTokenManagementConfig, RuntimeGenesisConfig, SessionCommitteeManagementConfig,
-	SessionConfig, SidechainConfig, SudoConfig, SystemConfig, TestHelperPalletConfig,
+	RuntimeGenesisConfig, SessionCommitteeManagementConfig, SessionConfig, SidechainConfig,
+	SudoConfig, SystemConfig, TestHelperPalletConfig,
 };
 use sc_service::ChainType;
 use sidechain_domain::*;
@@ -146,10 +146,6 @@ pub fn staging_genesis(
 				.map(|keys| CommitteeMember::permissioned(keys.cross_chain, keys.session))
 				.collect(),
 			main_chain_scripts: sp_session_validator_management::MainChainScripts::read_from_env()?,
-		},
-		native_token_management: NativeTokenManagementConfig {
-			main_chain_scripts: Some(sp_native_token_management::MainChainScripts::read_from_env()?),
-			..Default::default()
 		},
 		governed_map: GovernedMapConfig {
 			main_chain_scripts: Some(sp_governed_map::MainChainScriptsV1::read_from_env()?),

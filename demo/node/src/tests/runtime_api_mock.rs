@@ -53,7 +53,7 @@ pub type Block = sp_runtime::generic::Block<
 impl ProvideRuntimeApi<Block> for TestApi {
 	type Api = TestApi;
 
-	fn runtime_api(&self) -> ApiRef<Self::Api> {
+	fn runtime_api(&self) -> ApiRef<'_, Self::Api> {
 		self.clone().into()
 	}
 }
@@ -94,23 +94,6 @@ sp_api::mock_impl_runtime_apis! {
 				d_parameter_policy_id: PolicyId::default(),
 				permissioned_candidates_policy_id: PolicyId::default(),
 			}
-		}
-	}
-
-	impl sp_native_token_management::NativeTokenManagementApi<Block> for TestApi {
-		fn get_main_chain_scripts() -> Option<sp_native_token_management::MainChainScripts> {
-			Some(
-				sp_native_token_management::MainChainScripts {
-					native_token_policy_id: Default::default(),
-					native_token_asset_name: Default::default(),
-					illiquid_supply_validator_address: Default::default(),
-
-				}
-			)
-		}
-
-		fn initialized() -> bool {
-			true
 		}
 	}
 

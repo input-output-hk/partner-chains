@@ -40,8 +40,6 @@ members = [
 	"toolkit/committee-selection/primitives",
 	"toolkit/committee-selection/query",
 	"toolkit/partner-chains-cli",
-	"toolkit/native-token-management/pallet",
-	"toolkit/native-token-management/primitives",
 	"toolkit/smart-contracts/offchain",
 	"toolkit/smart-contracts/plutus-data",
 	"toolkit/address-associations/pallet",
@@ -305,10 +303,6 @@ authority-selection-inherents = { path = "toolkit/committee-selection/authority-
 sc-partner-chains-consensus-aura = { path = "substrate-extensions/aura/consensus", default-features = false }
 sp-partner-chains-consensus-aura = { path = "substrate-extensions/aura/primitives", default-features = false }
 pallet-partner-chains-session = { path = "substrate-extensions/partner-chains-session", default-features = false }
-
-# native token management
-pallet-native-token-management = { path = "toolkit/native-token-management/pallet", default-features = false }
-sp-native-token-management = { path = "toolkit/native-token-management/primitives", default-features = false }
 
 # block production and rewards
 pallet-block-production-log = { path = "toolkit/block-production-log/pallet", default-features = false }

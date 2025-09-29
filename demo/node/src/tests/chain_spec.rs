@@ -46,18 +46,6 @@ fn pc_create_chain_spec_test() {
 	);
 
 	assert_eq!(
-		config_obj.get("nativeTokenManagement").unwrap(),
-		&serde_json::json!({
-		  "mainChainScripts": {
-			"native_token_policy_id": "0x04040404040404040404040404040404040404040404040404040404",
-			"native_token_asset_name": "0x040404",
-			"illiquid_supply_validator_address": "addr_nativetokenisc"
-		  },
-		  "marker": null
-		})
-	);
-
-	assert_eq!(
 		config_obj.get("bridge").unwrap(),
 		&serde_json::json!({
 		  "initialCheckpoint": "0101010101010101010101010101010101010101010101010101010101010101#7",

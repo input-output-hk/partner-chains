@@ -3,20 +3,18 @@ use pallet_sidechain_rpc::SidechainRpcDataSource;
 use partner_chains_db_sync_data_sources::{
 	BlockDataSourceImpl, CachedTokenBridgeDataSourceImpl, CandidatesDataSourceImpl,
 	GovernedMapDataSourceCachedImpl, McFollowerMetrics, McHashDataSourceImpl,
-	NativeTokenManagementDataSourceImpl, SidechainRpcDataSourceImpl,
-	StakeDistributionDataSourceImpl,
+	SidechainRpcDataSourceImpl, StakeDistributionDataSourceImpl,
 };
 use partner_chains_demo_runtime::AccountId;
 use partner_chains_mock_data_sources::{
 	AuthoritySelectionDataSourceMock, BlockDataSourceMock, GovernedMapDataSourceMock,
-	McHashDataSourceMock, NativeTokenDataSourceMock, SidechainRpcDataSourceMock,
-	StakeDistributionDataSourceMock, TokenBridgeDataSourceMock,
+	McHashDataSourceMock, SidechainRpcDataSourceMock, StakeDistributionDataSourceMock,
+	TokenBridgeDataSourceMock,
 };
 use sc_service::error::Error as ServiceError;
 use sidechain_mc_hash::McHashDataSource;
 use sp_block_participation::inherent_data::BlockParticipationDataSource;
 use sp_governed_map::GovernedMapDataSource;
-use sp_native_token_management::NativeTokenManagementDataSource;
 use sp_partner_chains_bridge::TokenBridgeDataSource;
 use std::{error::Error, sync::Arc};
 
@@ -67,7 +65,6 @@ impl std::fmt::Display for DataSourceType {
 pub struct DataSources {
 	pub mc_hash: Arc<dyn McHashDataSource + Send + Sync>,
 	pub authority_selection: Arc<dyn AuthoritySelectionDataSource + Send + Sync>,
-	pub native_token: Arc<dyn NativeTokenManagementDataSource + Send + Sync>,
 	pub sidechain_rpc: Arc<dyn SidechainRpcDataSource + Send + Sync>,
 	pub block_participation: Arc<dyn BlockParticipationDataSource + Send + Sync>,
 	pub governed_map: Arc<dyn GovernedMapDataSource + Send + Sync>,
@@ -106,7 +103,6 @@ pub fn create_mock_data_sources()
 		sidechain_rpc: Arc::new(SidechainRpcDataSourceMock::new(block.clone())),
 		mc_hash: Arc::new(McHashDataSourceMock::new(block)),
 		authority_selection: Arc::new(AuthoritySelectionDataSourceMock::new_from_env()?),
-		native_token: Arc::new(NativeTokenDataSourceMock::new()),
 		block_participation: Arc::new(StakeDistributionDataSourceMock::new()),
 		governed_map: Arc::new(GovernedMapDataSourceMock::default()),
 		bridge: Arc::new(TokenBridgeDataSourceMock::new()),
@@ -134,10 +130,6 @@ pub async fn create_cached_db_sync_data_sources(
 			CandidatesDataSourceImpl::new(pool.clone(), metrics_opt.clone())
 				.await?
 				.cached(CANDIDATES_FOR_EPOCH_CACHE_SIZE)?,
-		),
-		native_token: Arc::new(
-			NativeTokenManagementDataSourceImpl::new_from_env(pool.clone(), metrics_opt.clone())
-				.await?,
 		),
 		block_participation: Arc::new(StakeDistributionDataSourceImpl::new(
 			pool.clone(),

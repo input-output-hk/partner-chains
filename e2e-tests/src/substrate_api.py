@@ -16,6 +16,7 @@ from .partner_chains_node.node import PartnerChainsNode
 from .partner_chain_rpc import PartnerChainRpc, PartnerChainRpcResponse, DParam
 import time
 from scalecodec.base import ScaleBytes
+from collections import Counter
 
 
 def _keypair_name_to_type(type_name):
@@ -959,13 +960,26 @@ class SubstrateApi(BlockchainApi):
             for idx, extrinsic in enumerate(block["extrinsics"]):
                 logger.debug(f"# {idx}: {extrinsic.value}")
                 if (
-                    extrinsic.value["call"]["call_module"] == "NativeTokenManagement"
-                    and extrinsic.value["call"]["call_function"] == "transfer_tokens"
+                    extrinsic.value["call"]["call_module"] == "Bridge"
+                    and extrinsic.value["call"]["call_function"] == "handle_transfers"
                 ):
-                    token_transfer_value = extrinsic.value["call"]["call_args"][0]["value"]
-                    break
-            if token_transfer_value:
-                return token_transfer_value
+                    call_args = extrinsic.value["call"]["call_args"]
+                    transfers = next((arg["value"] for arg in call_args if arg["name"] == "transfers"), [])
+                    transfer_values = Counter()
+                    for transfer in transfers:
+                        for transfer_type, fields in transfer.items():
+                            match transfer_type:
+                                case "ReserveTransfer":
+                                    transfer_values["reserve"] += fields["token_amount"]
+                                case "UserTransfer":
+                                    transfer_values[fields["recipient"]] += fields["token_amount"]
+                                case "InvalidTransfer":
+                                    transfer_values["invalid"] += fields["token_amount"]
+                                case _:
+                                    logger.error(f"Invalid transfer type in bridge inherent: {transfer_type}")
+
+                        if transfer_values:
+                            return transfer_values
             if mc_block > max_mc_reference_block:
                 logger.warning("Max main chain block reached. Stopping subscription.")
                 self.substrate.rpc_request("chain_unsubscribeNewHeads", [subscription_id])

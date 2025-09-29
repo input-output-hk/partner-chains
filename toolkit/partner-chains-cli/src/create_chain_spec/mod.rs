@@ -226,22 +226,6 @@ impl<Keys: MaybeFromCandidateKeys> CreateChainSpecConfig<Keys> {
 		}
 	}
 
-	/// Returns [pallet_native_token_management::GenesisConfig] derived from the config
-	pub fn native_token_management_config<T: pallet_native_token_management::Config>(
-		&self,
-	) -> pallet_native_token_management::GenesisConfig<T> {
-		pallet_native_token_management::GenesisConfig {
-			main_chain_scripts: Some(sp_native_token_management::MainChainScripts {
-				native_token_policy_id: self.bridge_token_policy.clone(),
-				native_token_asset_name: self.bridge_token_asset_name.clone(),
-				illiquid_supply_validator_address: self
-					.illiquid_circulation_supply_validator_address
-					.clone(),
-			}),
-			_marker: PhantomData,
-		}
-	}
-
 	/// Returns [pallet_governed_map::GenesisConfig] derived from the config
 	pub fn governed_map_config<T: pallet_governed_map::Config>(
 		&self,
@@ -291,14 +275,14 @@ fn load_config_field<C: IOContext, T: DeserializeOwned>(
 pub const INITIAL_PERMISSIONED_CANDIDATES_EXAMPLE: &str = r#"Example of 'initial_permissioned_candidates' field with 2 permissioned candidates:
 "initial_permissioned_candidates": [
 	{
-		"partner_chains_keys": "0x020a1091341fe5664bfa1782d5e0477968906ac916b04cb365ec3153755684d9a1"
+		"partner_chains_key": "0x020a1091341fe5664bfa1782d5e0477968906ac916b04cb365ec3153755684d9a1",
 		"keys": {
 			"aura": "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde49a5684e7a56da27d",
 			"gran": "0x88dc3417d5058ec4b4503e0c12ea1a0a89be200f498922423d4334014fa6b0ee"
 		}
 	},
 	{
-		"partner_chains_keys": "0x0390084fdbf27d2b79d26a4f13f0cdd982cb755a661969143c37cbc49ef5b91f27"
+		"partner_chains_key": "0x0390084fdbf27d2b79d26a4f13f0cdd982cb755a661969143c37cbc49ef5b91f27",
 		"keys": {
 			"aura": "0x8eaf04151687736326c9fea17e25fc5287613698c912909cb226aa4794f26a48",
 			"gran": "0xd17c2d7823ebf260fd138f2d7e27d114cb145d968b5ff5006125f2414fadae69"

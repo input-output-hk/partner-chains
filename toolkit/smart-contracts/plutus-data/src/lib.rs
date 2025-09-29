@@ -134,6 +134,38 @@ impl From<VersionedGenericDatum> for PlutusData {
 	}
 }
 
+/// Script hash of plutus scripts for encoding into PlutusData
+#[derive(Clone, Debug, PartialEq)]
+pub struct ScriptHash([u8; 28]);
+
+impl TryFrom<PlutusData> for ScriptHash {
+	type Error = DataDecodingError;
+	fn try_from(datum: PlutusData) -> DecodingResult<Self> {
+		datum
+			.as_bytes()
+			.and_then(|bytes| Some(ScriptHash(bytes.try_into().ok()?)))
+			.ok_or_else(|| decoding_error_and_log(&datum, "ScriptHash", "Expected [u8;32]"))
+	}
+}
+
+impl From<ScriptHash> for PlutusData {
+	fn from(datum: ScriptHash) -> Self {
+		PlutusData::new_bytes(datum.0.to_vec())
+	}
+}
+
+impl From<[u8; 28]> for ScriptHash {
+	fn from(value: [u8; 28]) -> Self {
+		ScriptHash(value)
+	}
+}
+
+impl From<cardano_serialization_lib::ScriptHash> for ScriptHash {
+	fn from(value: cardano_serialization_lib::ScriptHash) -> Self {
+		ScriptHash(value.to_bytes().as_slice().try_into().expect("infallible conversion"))
+	}
+}
+
 #[cfg(test)]
 pub(crate) mod test_helpers {
 	use cardano_serialization_lib::PlutusData;

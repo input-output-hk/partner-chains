@@ -68,7 +68,11 @@ pub mod pallet {
 		pub fn should_release_participation_data(
 			slot: sidechain_slots::Slot,
 		) -> Option<sidechain_slots::Slot> {
-			if *slot % ParticipationDataReleasePeriod::<T>::get() == 0 { Some(slot) } else { None }
+			if (*slot).is_multiple_of(ParticipationDataReleasePeriod::<T>::get()) {
+				Some(slot)
+			} else {
+				None
+			}
 		}
 	}
 
@@ -89,13 +93,6 @@ pub mod pallet {
 			log::info!(
 				"New address association: {partner_chain_address:?} -> {main_chain_key_hash:?}"
 			);
-		}
-	}
-
-	impl<T: Config> pallet_native_token_management::TokenTransferHandler for Pallet<T> {
-		fn handle_token_transfer(token_amount: NativeTokenAmount) -> DispatchResult {
-			log::info!("💸 Registered transfer of {} native tokens", token_amount.0);
-			Ok(())
 		}
 	}
 

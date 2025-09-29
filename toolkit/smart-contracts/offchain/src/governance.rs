@@ -146,7 +146,7 @@ impl GovernanceData {
 			let correct_datum = utxo
 				.get_plutus_data()
 				.and_then(|plutus_data| VersionOracleDatum::try_from(plutus_data).ok())
-				.map(|data| data.version_oracle == 32)
+				.map(|data| data.version_oracle == raw_scripts::ScriptId::GovernancePolicy.into())
 				.unwrap_or(false);
 
 			let contains_version_oracle_token =

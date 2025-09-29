@@ -21,12 +21,13 @@
 //!       including the ones released in this transaction*. Ie. if N tokens were already released
 //!       and M tokens are being released, the transaction should mint N+M V-Function tokens.
 //!       These tokens are worthless and don't serve any purpose after the transaction is done.
-use super::{
-	ReserveData, add_ics_utxo_input_with_validator_script_reference,
-	add_reserve_utxo_input_with_validator_script_reference,
-};
+use super::{ReserveData, add_reserve_utxo_input_with_validator_script_reference};
 use crate::{
-	await_tx::AwaitTx, cardano_keys::CardanoPaymentSigningKey, csl::*, plutus_script::PlutusScript,
+	await_tx::AwaitTx,
+	bridge::{ICSData, add_ics_utxo_input_with_validator_script_reference, select_utxo_to_spend},
+	cardano_keys::CardanoPaymentSigningKey,
+	csl::*,
+	plutus_script::PlutusScript,
 	reserve::ReserveUtxo,
 };
 use anyhow::anyhow;
@@ -60,19 +61,24 @@ pub async fn release_reserve_funds<
 	let Some(reference_utxo) = client.query_utxo_by_id(reference_utxo).await? else {
 		return Err(anyhow!("Reference utxo {reference_utxo:?} not found on chain"));
 	};
+	let ics_data = ICSData::get(genesis_utxo, &ctx, client).await?;
 
 	let reserve_utxo = reserve_data.get_reserve_utxo(&ctx, client).await?;
-	let ics_utxo = reserve_data.get_illiquid_circulation_supply_utxo(&ctx, client).await?;
+	let ics_utxos = ics_data.get_validator_utxos_with_auth_token(&ctx, client).await?;
+	let ics_utxo = select_utxo_to_spend(&ics_utxos, &ctx).ok_or(anyhow::anyhow!(
+		"Cannot find UTXOs with an 'auth token' at ICS Validator! Is the Bridge initialized?"
+	))?;
 
 	let tx = Costs::calculate_costs(
 		|costs| {
 			reserve_release_tx(
 				&ctx,
 				&reserve_data,
+				&ics_data,
 				&reserve_utxo,
 				&ics_utxo,
 				&reference_utxo,
-				amount.into(),
+				amount.get(),
 				tip.slot,
 				costs,
 			)
@@ -100,6 +106,7 @@ pub async fn release_reserve_funds<
 fn reserve_release_tx(
 	ctx: &TransactionContext,
 	reserve_data: &ReserveData,
+	ics_data: &ICSData,
 	previous_reserve: &ReserveUtxo,
 	ics_utxo: &OgmiosUtxo,
 	reference_utxo: &OgmiosUtxo,
@@ -128,16 +135,12 @@ fn reserve_release_tx(
 		reserve_data.scripts.auth_policy.bytes.len(),
 	);
 	tx_builder.add_script_reference_input(
-		&reserve_data
-			.illiquid_circulation_supply_validator_version_utxo
-			.to_csl_tx_input(),
-		reserve_data.scripts.illiquid_circulation_supply_validator.bytes.len(),
+		&ics_data.validator_version_utxo.to_csl_tx_input(),
+		ics_data.scripts.validator.bytes.len(),
 	);
 	tx_builder.add_script_reference_input(
-		&reserve_data
-			.illiquid_circulation_supply_authority_token_policy_version_utxo
-			.to_csl_tx_input(),
-		reserve_data.scripts.illiquid_circulation_supply_auth_token_policy.bytes.len(),
+		&ics_data.auth_policy_version_utxo.to_csl_tx_input(),
+		reserve_data.scripts.auth_policy.bytes.len(),
 	);
 
 	// Mint v-function tokens in the number equal to the *total* number of tokens transferred.
@@ -173,7 +176,7 @@ fn reserve_release_tx(
 	add_ics_utxo_input_with_validator_script_reference(
 		&mut tx_inputs,
 		ics_utxo,
-		reserve_data,
+		ics_data,
 		spend_costs.get(0).unwrap(),
 	)?;
 
@@ -197,9 +200,7 @@ fn reserve_release_tx(
 	// Transfer released tokens to the illiquid supply
 	tx_builder.add_output(&{
 		TransactionOutputBuilder::new()
-			.with_address(
-				&reserve_data.scripts.illiquid_circulation_supply_validator.address(ctx.network),
-			)
+			.with_address(&ics_data.scripts.validator.address(ctx.network))
 			.with_plutus_data(&TokenTransferDatumV1::ReserveTransfer.into())
 			.next()?
 			.with_minimum_ada_and_asset(&ics_tokens, ctx)?
@@ -238,12 +239,13 @@ fn v_function_from_utxo(utxo: &OgmiosUtxo) -> anyhow::Result<PlutusScript> {
 #[cfg(test)]
 mod tests {
 	use super::{AssetNameExt, Costs, TransactionContext, empty_asset_name, reserve_release_tx};
+	use crate::plutus_script;
 	use crate::{
+		bridge::ICSData,
 		cardano_keys::CardanoPaymentSigningKey,
-		plutus_script,
 		plutus_script::PlutusScript,
 		reserve::{ReserveData, ReserveUtxo, release::OgmiosUtxoExt},
-		scripts_data::ReserveScripts,
+		scripts_data::{ICSScripts, ReserveScripts},
 		test_values::{payment_addr, protocol_parameters},
 	};
 	use cardano_serialization_lib::{Int, NetworkIdKind, PolicyID, Transaction};
@@ -336,9 +338,6 @@ mod tests {
 			scripts: ReserveScripts {
 				validator: reserve_validator_script(),
 				auth_policy: auth_policy_script(),
-				illiquid_circulation_supply_validator: illiquid_supply_validator_script(),
-				illiquid_circulation_supply_auth_token_policy:
-					illiquid_supply_auth_token_policy_script(),
 			},
 			auth_policy_version_utxo: OgmiosUtxo {
 				transaction: OgmiosTx {
@@ -358,22 +357,31 @@ mod tests {
 				script: Some(reserve_validator_script().into()),
 				..Default::default()
 			},
-			illiquid_circulation_supply_validator_version_utxo: OgmiosUtxo {
-				transaction: OgmiosTx {
-					id: hex!("f5890475177fcc7cf40679974751f66331c7b25fcf2f1a148c53cf7e0e147114"),
-				},
-				index: 0,
-				address: version_oracle_address(),
-				script: Some(illiquid_supply_validator_script().into()),
-				..Default::default()
+		}
+	}
+
+	fn ics_data() -> ICSData {
+		ICSData {
+			scripts: ICSScripts {
+				validator: illiquid_supply_validator_script(),
+				auth_policy: illiquid_supply_auth_token_policy_script(),
 			},
-			illiquid_circulation_supply_authority_token_policy_version_utxo: OgmiosUtxo {
+			auth_policy_version_utxo: OgmiosUtxo {
 				transaction: OgmiosTx {
 					id: hex!("f5890475177fcc7cf40679974751f66331c7b25fcf2f1a148c53cf7e0e147114"),
 				},
 				index: 1,
 				address: version_oracle_address(),
 				script: Some(illiquid_supply_auth_token_policy_script().into()),
+				..Default::default()
+			},
+			validator_version_utxo: OgmiosUtxo {
+				transaction: OgmiosTx {
+					id: hex!("f5890475177fcc7cf40679974751f66331c7b25fcf2f1a148c53cf7e0e147114"),
+				},
+				index: 0,
+				address: version_oracle_address(),
+				script: Some(illiquid_supply_validator_script().into()),
 				..Default::default()
 			},
 		}
@@ -473,6 +481,7 @@ mod tests {
 		reserve_release_tx(
 			&tx_context(),
 			&reserve_data(),
+			&ics_data(),
 			&previous_reserve_utxo(),
 			&ics_utxo(),
 			&reference_utxo(),
@@ -496,20 +505,8 @@ mod tests {
 		assert!(ref_inputs.contains(&reference_utxo().to_csl_tx_input()));
 		assert!(ref_inputs.contains(&reserve_data().auth_policy_version_utxo.to_csl_tx_input()));
 		assert!(ref_inputs.contains(&reserve_data().validator_version_utxo.to_csl_tx_input()));
-		assert!(
-			ref_inputs.contains(
-				&reserve_data()
-					.illiquid_circulation_supply_authority_token_policy_version_utxo
-					.to_csl_tx_input()
-			)
-		);
-		assert!(
-			ref_inputs.contains(
-				&reserve_data()
-					.illiquid_circulation_supply_validator_version_utxo
-					.to_csl_tx_input()
-			)
-		);
+		assert!(ref_inputs.contains(&ics_data().auth_policy_version_utxo.to_csl_tx_input()));
+		assert!(ref_inputs.contains(&ics_data().validator_version_utxo.to_csl_tx_input()));
 		assert_eq!(ref_inputs.len(), 5)
 	}
 

@@ -12,10 +12,19 @@ INITIAL_RESERVE_DEPOSIT = 1000
 
 
 @fixture(scope="module", autouse=True)
-def init_reserve(api: BlockchainApi, genesis_utxo, payment_key):
-    response = api.partner_chains_node.smart_contracts.reserve.init(genesis_utxo, payment_key)
+def init_bridge(api: BlockchainApi, genesis_utxo, payment_key):
+    response = api.partner_chains_node.smart_contracts.bridge.init(genesis_utxo, payment_key)
     return response
 
+@fixture(scope="module", autouse=True)
+def create_bridge_utxos(api: BlockchainApi, genesis_utxo, payment_key, init_bridge):
+    response = api.partner_chains_node.smart_contracts.bridge.create_utxos(genesis_utxo, 1, payment_key)
+    return response
+
+@fixture(scope="module", autouse=True)
+def init_reserve(api: BlockchainApi, genesis_utxo, payment_key, create_bridge_utxos):
+    response = api.partner_chains_node.smart_contracts.reserve.init(genesis_utxo, payment_key)
+    return response
 
 @fixture(scope="module", autouse=True)
 def native_token_initial_balance(
@@ -137,8 +146,8 @@ class TestReleaseFunds:
         assert reserve_initial_balance - amount_to_release == reserve_balance
 
     def test_observe_released_funds(self, api: BlockchainApi, amount_to_release):
-        observed_transfer = api.subscribe_token_transfer()
-        assert observed_transfer == amount_to_release
+        observed_transfers = api.subscribe_token_transfer()
+        assert observed_transfers["reserve"] == amount_to_release
 
 
 class TestDepositFunds:
@@ -228,23 +237,23 @@ class TestUpdateVFunction:
 
 class TestBridge:
 
-    @mark.usefixtures("create_reserve")
+    @mark.usefixtures("create_bridge_utxos")
     def test_lock_without_spending_ics_utxo(self, api: BlockchainApi, genesis_utxo, payment_key, reserve_asset_id, node_1_aura_pub_key, wait_until, config: ApiConfig):
         amount = 1
         balance_before = api.get_pc_balance(node_1_aura_pub_key)
         assert balance_before > 0, "Test account is not over existential limit"
-        api.partner_chains_node.smart_contracts.bridge(genesis_utxo, amount, node_1_aura_pub_key, payment_key, spend_ics_utxo = False)
+        api.partner_chains_node.smart_contracts.bridge.deposit(genesis_utxo, reserve_asset_id, amount, node_1_aura_pub_key, payment_key, spend_ics_utxo = False)
         wait_until(
             lambda: api.get_pc_balance(node_1_aura_pub_key) == balance_before + amount,
             timeout=config.timeouts.main_chain_tx * config.main_chain.security_param * 2,
         )
 
-    @mark.usefixtures("create_reserve")
+    @mark.usefixtures("create_bridge_utxos")
     def test_lock_with_spending_ics_utxo(self, api: BlockchainApi, genesis_utxo, payment_key, reserve_asset_id, node_1_aura_pub_key, wait_until, config: ApiConfig):
         amount = 1
         balance_before = api.get_pc_balance(node_1_aura_pub_key)
         assert balance_before > 0, "Test account is not over existential limit"
-        api.partner_chains_node.smart_contracts.bridge(genesis_utxo, amount, node_1_aura_pub_key, payment_key, spend_ics_utxo = True)
+        api.partner_chains_node.smart_contracts.bridge.deposit(genesis_utxo, reserve_asset_id, amount, node_1_aura_pub_key, payment_key, spend_ics_utxo = True)
         wait_until(
             lambda: api.get_pc_balance(node_1_aura_pub_key) == balance_before + amount,
             timeout=config.timeouts.main_chain_tx * config.main_chain.security_param * 2,

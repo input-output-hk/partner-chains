@@ -1,5 +1,4 @@
-use crate::plutus_script;
-use crate::{csl::NetworkTypeExt, plutus_script::PlutusScript};
+use crate::{csl::NetworkTypeExt, plutus_script, plutus_script::PlutusScript};
 use cardano_serialization_lib::NetworkIdKind;
 use ogmios_client::query_network::QueryNetwork;
 use raw_scripts::ScriptId;
@@ -72,19 +71,15 @@ pub fn get_scripts_data(
 	let committee_candidate_validator =
 		plutus_script![COMMITTEE_CANDIDATE_VALIDATOR, genesis_utxo]?;
 	let d_parameter_data = d_parameter_scripts(genesis_utxo, network)?;
-	let illiquid_circulation_supply_validator = plutus_script![
-		ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR,
-		version_oracle_data.policy_id_as_plutus_data()
-	]?;
 	let permissioned_candidates_data = permissioned_candidates_scripts(genesis_utxo, network)?;
 	let reserve = reserve_scripts(genesis_utxo, network)?;
+	let ics = ics_scripts(genesis_utxo, network)?;
 	let governed_map_data = governed_map_scripts(genesis_utxo, network)?;
 	Ok(ScriptsData {
 		addresses: Addresses {
 			committee_candidate_validator: committee_candidate_validator.address_bech32(network)?,
 			d_parameter_validator: d_parameter_data.validator_address.clone(),
-			illiquid_circulation_supply_validator: illiquid_circulation_supply_validator
-				.address_bech32(network)?,
+			illiquid_circulation_supply_validator: ics.validator.address_bech32(network)?,
 			permissioned_candidates_validator: permissioned_candidates_data
 				.validator_address
 				.clone(),
@@ -98,9 +93,7 @@ pub fn get_scripts_data(
 			reserve_auth: reserve.auth_policy.policy_id(),
 			version_oracle: version_oracle_data.policy_id(),
 			governed_map: governed_map_data.policy_id(),
-			illiquid_circulation_supply_auth_token: reserve
-				.illiquid_circulation_supply_auth_token_policy
-				.policy_id(),
+			illiquid_circulation_supply_auth_token: ics.auth_policy.policy_id(),
 		},
 	})
 }
@@ -218,8 +211,14 @@ pub(crate) fn registered_candidates_scripts(
 pub(crate) struct ReserveScripts {
 	pub(crate) validator: PlutusScript,
 	pub(crate) auth_policy: PlutusScript,
-	pub(crate) illiquid_circulation_supply_validator: PlutusScript,
-	pub(crate) illiquid_circulation_supply_auth_token_policy: PlutusScript,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct ICSScripts {
+	/// Illiquid Circulation Supply validator that prevents unauthorized spending from the bridge
+	pub(crate) validator: PlutusScript,
+	/// Policy of tokens used to maintain some minimal number of UTXOs at the validator.
+	pub(crate) auth_policy: PlutusScript,
 }
 
 pub(crate) fn reserve_scripts(
@@ -231,21 +230,24 @@ pub(crate) fn reserve_scripts(
 		plutus_script![RESERVE_VALIDATOR, version_oracle_data.policy_id_as_plutus_data()]?;
 	let auth_policy =
 		plutus_script![RESERVE_AUTH_POLICY, version_oracle_data.policy_id_as_plutus_data()]?;
-	let illiquid_circulation_supply_validator = plutus_script![
+	Ok(ReserveScripts { validator, auth_policy })
+}
+
+pub(crate) fn ics_scripts(
+	genesis_utxo: UtxoId,
+	network: NetworkIdKind,
+) -> Result<ICSScripts, anyhow::Error> {
+	let version_oracle_data = version_oracle(genesis_utxo, network)?;
+	let validator = plutus_script![
 		ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR,
 		version_oracle_data.policy_id_as_plutus_data()
 	]?;
-	let illiquid_circulation_supply_auth_token_policy = plutus_script![
+	let auth_policy = plutus_script![
 		ILLIQUID_CIRCULATION_SUPPLY_AUTHORITY_TOKEN_POLICY,
 		ScriptId::IlliquidCirculationSupplyAuthorityTokenPolicy,
 		version_oracle_data.policy_id_as_plutus_data()
 	]?;
-	Ok(ReserveScripts {
-		validator,
-		auth_policy,
-		illiquid_circulation_supply_validator,
-		illiquid_circulation_supply_auth_token_policy,
-	})
+	Ok(ICSScripts { validator, auth_policy })
 }
 
 #[cfg(test)]
