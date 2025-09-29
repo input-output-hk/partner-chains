@@ -6,6 +6,16 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Changed
 
+## Removed
+
+## Fixed
+
+## Added
+
+# v1.8.0
+
+## Changed
+
 * **BREAKING**: Updated partner-chains-smart-contracts (raw-scripts) dependency to v8.0.0.
   Possibility to interact with smart-contracts used by earlier versions is lost.
   Governance authority will have to establish new partner chain on Cardano.
@@ -27,8 +37,6 @@ match this change.
 need to transform the data in their own runtime code
 * Updated Rust toolchain to v1.90, changed WASM target to 'wasm32v1-none'
 * Macro `observed_async_trait` in `partner-chains-db-sync-data-sources` crate has been made non-public.
-
-## Added
 
 ### Generic keys feature
 
