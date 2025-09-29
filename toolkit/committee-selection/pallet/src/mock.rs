@@ -1,7 +1,4 @@
-use crate::{
-	Call, pallet, pallet_session_support::PalletSessionSupport,
-	session_manager::ValidatorManagementSessionManager,
-};
+use crate::{Call, pallet, pallet_session_support::PalletSessionSupport};
 use frame_support::{
 	dispatch::PostDispatchInfo,
 	pallet_prelude::*,
