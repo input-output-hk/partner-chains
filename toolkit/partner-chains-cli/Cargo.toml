@@ -63,4 +63,7 @@ sp-runtime = { workspace = true }
 [features]
 default = ["std"]
 std = []
-runtime-benchmarks = []
+runtime-benchmarks = [
+    "pallet-partner-chains-bridge/runtime-benchmarks",
+    "pallet-governed-map/runtime-benchmarks",
+]

@@ -118,6 +118,7 @@ impl pallet_partner_chains_bridge::Config for MockRuntime {
 	type MaxTransfersPerBlock = ConstU32<3>;
 	type WeightInfo = ();
 	#[cfg(feature = "runtime-benchmarks")]
+
 	type BenchmarkHelper = ();
 }
 
