@@ -36,7 +36,7 @@ pub mod pallet {
 	use sp_runtime::traits::{MaybeSerializeDeserialize, One, Zero};
 	use sp_session_validator_management::*;
 	use sp_std::fmt::Display;
-	use sp_std::{ops::Add, vec, vec::Vec};
+	use sp_std::{ops::Add, vec::Vec};
 
 	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
