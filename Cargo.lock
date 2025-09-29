@@ -6843,7 +6843,6 @@ dependencies = [
 name = "pallet-session-validator-management"
 version = "1.7.0"
 dependencies = [
- "derive-new",
  "frame-support",
  "frame-system",
  "log",

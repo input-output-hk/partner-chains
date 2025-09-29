@@ -27,7 +27,6 @@ sp-core = { workspace = true }
 sp-session-validator-management = { workspace = true, features = ["serde"] }
 sp-io = { workspace = true }
 sidechain-domain = { workspace = true }
-derive-new = { workspace = true }
 pallet-session = { workspace = true }
 sp-staking = { workspace = true }
 
@@ -49,7 +48,6 @@ std = [
     "sp-session-validator-management/serde",
     "sidechain-domain/std",
     "sidechain-domain/serde",
-    "derive-new/std",
     "pallet-session/std",
     "sp-staking/std",
 ]

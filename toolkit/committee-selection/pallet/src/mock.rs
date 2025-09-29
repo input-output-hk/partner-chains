@@ -1,4 +1,4 @@
-use crate::{Call, pallet, pallet_session_support::PalletSessionSupport};
+use crate::{Call, pallet};
 use frame_support::{
 	dispatch::PostDispatchInfo,
 	pallet_prelude::*,
@@ -148,9 +148,9 @@ impl pallet_session::SessionHandler<AccountId> for TestSessionHandler {
 impl pallet_session::Config for Test {
 	type ValidatorId = AuthorityId;
 	type ValidatorIdOf = sp_runtime::traits::ConvertInto;
-	type ShouldEndSession = PalletSessionSupport<Test>;
+	type ShouldEndSession = crate::Pallet<Test>;
 	type NextSessionRotation = ();
-	type SessionManager = PalletSessionSupport<Test>;
+	type SessionManager = crate::Pallet<Test>;
 	type SessionHandler = TestSessionHandler;
 	type Keys = SessionKeys;
 	type DisablingStrategy = ();
