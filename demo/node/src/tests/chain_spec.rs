@@ -1,6 +1,7 @@
 use crate::chain_spec::pc_create_chain_spec;
 use partner_chains_cli::{CreateChainSpecConfig, ParsedPermissionedCandidatesKeys};
 use partner_chains_demo_runtime::opaque::SessionKeys;
+use pretty_assertions::assert_eq;
 use sidechain_domain::{AssetName, MainchainAddress, PolicyId, UtxoId};
 use sp_core::{ecdsa, ed25519, sr25519};
 use std::str::FromStr;
@@ -91,15 +92,17 @@ fn pc_create_chain_spec_test() {
 	assert_eq!(
 		config_obj.get("session").unwrap(),
 		&serde_json::json!({
-			"initialValidators": [
+			"keys": [
 				[
+					"5CUUBrDiVEKVa655Bsm8sYc5An5Jqi52PetteUpMY2JFbuRF",
 					"5CUUBrDiVEKVa655Bsm8sYc5An5Jqi52PetteUpMY2JFbuRF",
 					{
 						"aura": "5CLW1ZaVdZdj6bf7nmvJfba6GbvxueXzV6Dw5fnPaKTiSARx",
 						"grandpa": "5CMpMdu3LbHuj2TqX4RAUzXCHCqmNj8Fce43wAbcqSFZuNfp"
 					}
 				]
-			]
+			],
+			"nonAuthorityKeys": []
 		})
 	);
 }

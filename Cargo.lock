@@ -7342,6 +7342,7 @@ dependencies = [
  "partner-chains-demo-runtime",
  "partner-chains-mock-data-sources",
  "partner-chains-node-commands",
+ "pretty_assertions",
  "sc-basic-authorship",
  "sc-cli",
  "sc-client-api",

@@ -124,6 +124,7 @@ time-source = { workspace = true, features = ["mock"] }
 assert_cmd = { workspace = true }
 pallet-sidechain-rpc = { workspace = true }
 authority-selection-inherents = { workspace = true, features = ["mock"] }
+pretty_assertions = { workspace = true }
 
 [features]
 default = ["sidechain-domain/std"]
