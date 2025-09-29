@@ -26,7 +26,7 @@ pub use weights::WeightInfo;
 
 /// For session state machine
 #[derive(Encode, Decode, Default, MaxEncodedLen, TypeInfo, PartialEq, Eq)]
-pub enum InputsChangeHandlingStagePhases {
+pub enum InputsChangeHandlingStages {
 	/// Inputs has changed and special session should be created to accelerate usage of new inputs
 	InputsChanged,
 	/// Should end session returned true due selection inputs change
@@ -160,12 +160,15 @@ pub mod pallet {
 		OptionQuery,
 	>;
 
+	/// Stores hash of the most recent selection inputs that were used to select a committee
 	#[pallet::storage]
-	pub type LastAuthoritySelectionInputsHash<T: Config> = StorageValue<_, [u8; 32], ValueQuery>;
+	pub type LastInputsHash<T: Config> = StorageValue<_, [u8; 32], ValueQuery>;
 
+	/// Stores the stage of handling the inputs change. Use by session manager, to decide
+	/// if the session should be ended quickly, to speed up using the newly selected committee.
 	#[pallet::storage]
-	pub type SelectionInputsChangeHandlingStage<T: Config> =
-		StorageValue<_, InputsChangeHandlingStagePhases, ValueQuery>;
+	pub type InputsChangeHandlingStage<T: Config> =
+		StorageValue<_, InputsChangeHandlingStages, ValueQuery>;
 
 	#[pallet::storage]
 	pub type MainChainScriptsConfiguration<T: Config> =
@@ -333,12 +336,10 @@ pub mod pallet {
 				committee: validators,
 			});
 
-			let current_hash = LastAuthoritySelectionInputsHash::<T>::get();
+			let current_hash = LastInputsHash::<T>::get();
 			if current_hash != selection_inputs_hash.0 {
-				SelectionInputsChangeHandlingStage::<T>::put(
-					InputsChangeHandlingStagePhases::InputsChanged,
-				);
-				LastAuthoritySelectionInputsHash::<T>::put(selection_inputs_hash.0);
+				InputsChangeHandlingStage::<T>::put(InputsChangeHandlingStages::InputsChanged);
+				LastInputsHash::<T>::put(selection_inputs_hash.0);
 			}
 			Ok(())
 		}

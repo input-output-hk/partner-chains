@@ -1,7 +1,7 @@
 //! Implements Substrate's [pallet_session].
 //!
 //! This implementation has lag of one additional PC epoch when applying committees to sessions.
-use crate::{CommitteeMember, InputsChangeHandlingStagePhases};
+use crate::{CommitteeMember, InputsChangeHandlingStage, InputsChangeHandlingStages};
 use core::marker::PhantomData;
 use derive_new::new;
 use frame_support::traits::UnfilteredDispatchable;
@@ -42,19 +42,18 @@ where
 	// Instead of Some((*).expect) we could just use (*). However, we rather panic in presence of important programming errors.
 	fn new_session(new_index: SessionIndex) -> Option<Vec<T::AccountId>> {
 		info!("PalletSessionSupport: new_session {new_index}");
-		if crate::SelectionInputsChangeHandlingStage::<T>::get()
-			== InputsChangeHandlingStagePhases::ShouldEndSessionDone
+		if InputsChangeHandlingStage::<T>::get() == InputsChangeHandlingStages::ShouldEndSessionDone
 		{
-			crate::SelectionInputsChangeHandlingStage::<T>::put(
-				InputsChangeHandlingStagePhases::NewSessionDone,
-			);
-			let committee = crate::Pallet::<T>::current_committee_storage().committee;
+			InputsChangeHandlingStage::<T>::put(InputsChangeHandlingStages::NewSessionDone);
+			let committee = crate::Pallet::<T>::current_committee_storage()
+				.committee
+				.iter()
+				.map(|member| member.authority_id().into())
+				.collect();
 			info!(
 				"PalletSessionSupport: returning old committee without rotation to accelerate usage of the new selection inputs"
 			);
-			return Some(
-				committee.into_iter().map(|member| member.authority_id().into()).collect(),
-			);
+			return Some(committee);
 		}
 
 		let new_committee = crate::Pallet::<T>::rotate_committee_to_next_epoch().expect(
@@ -95,6 +94,8 @@ where
 }
 
 /// Tries to end each session in the first block of each partner chains epoch in which the committee for the epoch is defined.
+/// If the committee has been selected from the new inputs, then it ends session once more, to force [pallet_session] to
+/// start using candidates selected from the new inputs.
 impl<T, EpochNumber> pallet_session::ShouldEndSession<BlockNumberFor<T>> for PalletSessionSupport<T>
 where
 	T: crate::Config<ScEpochNumber = EpochNumber>,
@@ -115,18 +116,15 @@ where
 				false
 			}
 		} else {
-			let end_session_to_use_new_inputs: bool =
-				crate::SelectionInputsChangeHandlingStage::<T>::get()
-					== InputsChangeHandlingStagePhases::InputsChanged;
-			info!(
-				"PalletSessionSupport: should_end_session({n:?}) = {end_session_to_use_new_inputs} (from selection inputs change)"
-			);
-			if end_session_to_use_new_inputs {
-				crate::SelectionInputsChangeHandlingStage::<T>::put(
-					InputsChangeHandlingStagePhases::ShouldEndSessionDone,
+			if InputsChangeHandlingStage::<T>::get() == InputsChangeHandlingStages::InputsChanged {
+				info!("PalletSessionSupport: should_end_session({n:?}) = true, due inputs change");
+				InputsChangeHandlingStage::<T>::put(
+					InputsChangeHandlingStages::ShouldEndSessionDone,
 				);
+				true
+			} else {
+				false
 			}
-			end_session_to_use_new_inputs
 		}
 	}
 }
@@ -135,7 +133,8 @@ where
 mod tests {
 	use super::*;
 	use crate::{
-		CommitteeInfo, CurrentCommittee, NextCommittee, mock::mock_pallet::CurrentEpoch, mock::*,
+		CommitteeInfo, CurrentCommittee, NextCommittee,
+		mock::{mock_pallet::CurrentEpoch, *},
 	};
 	use pallet_session::ShouldEndSession;
 	pub const IRRELEVANT: u64 = 2;

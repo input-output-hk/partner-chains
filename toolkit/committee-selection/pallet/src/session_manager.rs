@@ -119,6 +119,7 @@ mod tests {
 	use crate::mock::mock_pallet::CurrentEpoch;
 	use crate::mock::*;
 	use crate::session_manager::*;
+	use crate::tests::increment_epoch;
 	use crate::*;
 	use pallet_partner_chains_session::ShouldEndSession;
 	use sp_runtime::testing::UintAuthorityId;
@@ -157,6 +158,7 @@ mod tests {
 			// By default, the session keys are not set for the account.
 			assert_eq!(Session::load_keys(&DAVE.authority_id), None);
 			assert_eq!(Session::load_keys(&EVE.authority_id), None);
+			increment_epoch();
 
 			start_session(1);
 
@@ -169,6 +171,23 @@ mod tests {
 				Session::load_keys(&EVE.authority_id),
 				Some(SessionKeys { foo: UintAuthorityId(EVE.authority_keys) })
 			);
+		});
+	}
+
+	#[test]
+	fn ends_two_sessions_and_rotates_once_when_selection_inputs_has_changed() {
+		new_test_ext().execute_with(|| {
+			System::inc_providers(&CHARLIE.authority_id);
+			System::inc_providers(&DAVE.authority_id);
+			increment_epoch();
+			set_validators_directly(&[CHARLIE, DAVE], 1).unwrap();
+			start_session(1);
+			// pallet_session needs additional session to apply CHARLIE and DAVE as validators
+			assert_eq!(Session::validators(), Vec::<u64>::new());
+			assert_eq!(SessionCommitteeManagement::current_committee_storage().epoch, 1);
+			start_session(2);
+			assert_eq!(Session::validators(), vec![CHARLIE.authority_id, DAVE.authority_id]);
+			assert_eq!(SessionCommitteeManagement::current_committee_storage().epoch, 1);
 		});
 	}
 }

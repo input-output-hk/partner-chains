@@ -401,7 +401,7 @@ fn get_authority_round_robin_works() {
 	});
 }
 
-fn increment_epoch() {
+pub(crate) fn increment_epoch() {
 	mock_pallet::CurrentEpoch::<Test>::put(current_epoch_number() + 1);
 }
 
@@ -411,7 +411,7 @@ fn set_epoch(epoch: u64) {
 
 // in real life first epoch will be something much bigger than 0, that's why it is here
 const ARBITRARY_FIRST_EPOCH: u64 = 189374234;
-fn initialize_first_committee() {
+pub(crate) fn initialize_first_committee() {
 	set_epoch(ARBITRARY_FIRST_EPOCH);
 	SessionCommitteeManagement::on_initialize(1);
 }
