@@ -401,7 +401,7 @@ fn get_authority_round_robin_works() {
 	});
 }
 
-fn increment_epoch() {
+pub(crate) fn increment_epoch() {
 	mock_pallet::CurrentEpoch::<Test>::put(current_epoch_number() + 1);
 }
 

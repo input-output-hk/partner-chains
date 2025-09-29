@@ -10,7 +10,6 @@ use frame_support::{
 };
 use frame_system::EnsureRoot;
 use hex_literal::hex;
-use pallet_session_validator_management::pallet_session_support::PalletSessionSupport;
 use plutus::ToDatum;
 use sidechain_domain::*;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -143,9 +142,9 @@ impl pallet_session::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
 	type ValidatorIdOf = ConvertInto;
-	type ShouldEndSession = PalletSessionSupport<Test>;
+	type ShouldEndSession = SessionCommitteeManagement;
 	type NextSessionRotation = ();
-	type SessionManager = PalletSessionSupport<Test>;
+	type SessionManager = SessionCommitteeManagement;
 	type SessionHandler = <TestSessionKeys as OpaqueKeys>::KeyTypeIdProviders;
 	type Keys = TestSessionKeys;
 	type DisablingStrategy = pallet_session::disabling::UpToLimitWithReEnablingDisablingStrategy;
