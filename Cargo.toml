@@ -14,7 +14,6 @@ members = [
 	"toolkit/smart-contracts/commands",
 	"substrate-extensions/aura/consensus",
 	"toolkit/block-production-log/pallet",
-	"substrate-extensions/partner-chains-session",
 	"toolkit/committee-selection/pallet",
 	"toolkit/committee-selection/pallet/benchmarking",
 	"toolkit/committee-selection/rpc",
@@ -302,7 +301,6 @@ authority-selection-inherents = { path = "toolkit/committee-selection/authority-
 # substrate extensions
 sc-partner-chains-consensus-aura = { path = "substrate-extensions/aura/consensus", default-features = false }
 sp-partner-chains-consensus-aura = { path = "substrate-extensions/aura/primitives", default-features = false }
-pallet-partner-chains-session = { path = "substrate-extensions/partner-chains-session", default-features = false }
 
 # block production and rewards
 pallet-block-production-log = { path = "toolkit/block-production-log/pallet", default-features = false }

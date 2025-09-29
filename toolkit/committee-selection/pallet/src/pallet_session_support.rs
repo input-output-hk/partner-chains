@@ -8,7 +8,7 @@ use frame_support::traits::UnfilteredDispatchable;
 use frame_system::RawOrigin;
 use frame_system::pallet_prelude::BlockNumberFor;
 use log::{debug, info, warn};
-use pallet_partner_chains_session::SessionIndex;
+use sp_staking::SessionIndex;
 use sp_std::collections::btree_set::BTreeSet;
 use sp_std::vec::Vec;
 

@@ -158,21 +158,25 @@ impl<Keys: MaybeFromCandidateKeys> CreateChainSpecConfig<Keys> {
 		}
 	}
 
-	/// Returns [pallet_partner_chains_session::GenesisConfig] derived from the config, using initial permissioned candidates
+	/// Returns [pallet_session::GenesisConfig] derived from the config, using initial permissioned candidates
 	/// as initial validators
-	pub fn pallet_partner_chains_session_config<T: pallet_partner_chains_session::Config>(
+	pub fn pallet_partner_chains_session_config<T: pallet_session::Config>(
 		&self,
-	) -> pallet_partner_chains_session::GenesisConfig<T>
+	) -> pallet_session::GenesisConfig<T>
 	where
 		T::ValidatorId: From<AccountId32>,
 		T::Keys: From<Keys>,
+		T::AccountId: From<AccountId32>,
 	{
-		pallet_partner_chains_session::GenesisConfig {
-			initial_validators: self
+		pallet_session::GenesisConfig {
+			keys: self
 				.initial_permissioned_candidates_parsed
 				.iter()
-				.map(|c| (c.account_id_32().into(), c.keys.clone().into()))
+				.map(|c| {
+					(c.account_id_32().into(), c.account_id_32().into(), c.keys.clone().into())
+				})
 				.collect::<Vec<_>>(),
+			..Default::default()
 		}
 	}
 

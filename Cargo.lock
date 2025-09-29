@@ -6819,24 +6819,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-partner-chains-session"
-version = "1.7.0"
-dependencies = [
- "frame-support",
- "frame-system",
- "impl-trait-for-tuples",
- "log",
- "pallet-session",
- "pallet-timestamp",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-runtime",
- "sp-staking",
- "sp-std",
-]
-
-[[package]]
 name = "pallet-session"
 version = "41.0.0"
 source = "git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-stable2506-2#2caeef482a437414c6bed2395a16abe08fccbfbb"
@@ -6865,7 +6847,6 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
- "pallet-partner-chains-session",
  "pallet-session",
  "parity-scale-codec",
  "scale-info",
@@ -6874,6 +6855,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-session-validator-management",
+ "sp-staking",
  "sp-std",
 ]
 
@@ -7251,7 +7233,7 @@ dependencies = [
  "ogmios-client",
  "pallet-governed-map",
  "pallet-partner-chains-bridge",
- "pallet-partner-chains-session",
+ "pallet-session",
  "pallet-session-validator-management",
  "pallet-sidechain",
  "parity-scale-codec",
@@ -7270,6 +7252,7 @@ dependencies = [
  "sp-partner-chains-bridge",
  "sp-runtime",
  "sp-session-validator-management",
+ "sp-staking",
  "tempfile",
  "thiserror 2.0.16",
  "tokio",
@@ -7350,7 +7333,6 @@ dependencies = [
  "log",
  "pallet-block-producer-fees-rpc",
  "pallet-block-producer-metadata-rpc",
- "pallet-partner-chains-session",
  "pallet-session-validator-management",
  "pallet-session-validator-management-rpc",
  "pallet-sidechain-rpc",
@@ -7440,7 +7422,6 @@ dependencies = [
  "pallet-governed-map",
  "pallet-grandpa",
  "pallet-partner-chains-bridge",
- "pallet-partner-chains-session",
  "pallet-session",
  "pallet-session-validator-management",
  "pallet-session-validator-management-benchmarking",
