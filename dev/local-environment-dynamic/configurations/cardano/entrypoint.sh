@@ -843,13 +843,7 @@ if [ "$NUM_REGISTERED_NODES_TO_PROCESS" -gt 0 ]; then
         echo "[LOG] $NODE_LOG_NAME Pool ID: $POOL_ID"
 
         # Pool parameters (minimal for local env)
-        # Special case: registered-5 will have unmet pledge to test PC behavior
-        if [ "$i" -eq 5 ]; then
-            PLEDGE=100000000000 # 100,000 ADA pledge for registered-5 (will not be met)
-            echo "[LOG] Setting high pledge of 100,000 ADA for $NODE_LOG_NAME to test unmet pledge scenario"
-        else
-            PLEDGE=0 # No pledge required for other nodes
-        fi
+        PLEDGE=0 # No pledge required for local environment
         POOL_COST=0 # Minimal cost
         POOL_MARGIN="0/1000" # 0% margin
 
