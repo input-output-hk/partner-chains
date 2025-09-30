@@ -841,9 +841,16 @@ if [ "$NUM_REGISTERED_NODES_TO_PROCESS" -gt 0 ]; then
         POOL_REG_CERT="/data/${NODE_LOG_NAME}_pool_reg.cert"
         POOL_ID=$(cardano-cli latest stake-pool id --cold-verification-key-file "$NODE_COLD_VKEY" --output-format hex)
         echo "[LOG] $NODE_LOG_NAME Pool ID: $POOL_ID"
+        echo "[LOG] $NODE_LOG_NAME Pledge: $PLEDGE lovelace"
 
         # Pool parameters (minimal for local env)
-        PLEDGE=0 # No pledge required for this setup
+        # Special case: registered-5 will have unmet pledge to test PC behavior
+        if [ "$i" -eq 5 ]; then
+            PLEDGE=100000000000 # 100,000 ADA pledge for registered-5 (will not be met)
+            echo "[LOG] Setting high pledge of 100,000 ADA for $NODE_LOG_NAME to test unmet pledge scenario"
+        else
+            PLEDGE=0 # No pledge required for other nodes
+        fi
         POOL_COST=0 # Minimal cost
         POOL_MARGIN="0/1000" # 0% margin
 
@@ -1204,7 +1211,13 @@ if [ "$NUM_REGISTERED_NODES_TO_PROCESS" -gt 0 ]; then
 
             TRANSFER_TX_FILE="/data/${NODE_LOG_NAME}_stake_fund.tx"
             TRANSFER_TX_SIGNED_FILE="/data/${NODE_LOG_NAME}_stake_fund.signed"
-            TRANSFER_AMOUNT=5000000 # 5 ADA
+            # Special case: registered-5 gets more stake but still insufficient to meet pledge
+            if [ "$i" -eq 5 ]; then
+                TRANSFER_AMOUNT=50000000000 # 50,000 ADA for registered-5 (still less than 100k pledge)
+                echo "[LOG] Funding $NODE_LOG_NAME with 50,000 ADA stake (insufficient to meet 100,000 ADA pledge)"
+            else
+                TRANSFER_AMOUNT=5000000 # 5 ADA for other nodes
+            fi
 
             echo "[LOG] Building stake funding transaction for $NODE_LOG_NAME..."
 
