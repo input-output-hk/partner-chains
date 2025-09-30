@@ -1157,6 +1157,7 @@ mod tests {
 		inherent::ProvideInherent,
 		traits::{UnfilteredDispatchable, WhitelistedStorageKeys},
 	};
+	use pretty_assertions::assert_eq;
 	use sp_core::{Pair, hexdisplay::HexDisplay};
 	use sp_inherents::InherentData;
 	use std::collections::HashSet;
