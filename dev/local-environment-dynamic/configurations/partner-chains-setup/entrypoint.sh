@@ -302,13 +302,16 @@ echo "Generating chain-spec.json file for Partnerchain Nodes..."
 
 echo "Configuring Initial Validators with SS58 Address ID..."
 echo "[" > initial_validators.json
+
+# Add permissioned nodes as validators
+validator_count=0
 for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
     node_name="permissioned-$i"
     validator_id=$(jq -r '.ss58Address' "/shared/node-keys/$node_name/keys/sidechain.json")
     aura_ss58=$(jq -r '.ss58Address' "/shared/node-keys/$node_name/keys/aura.json")
     grandpa_ss58=$(jq -r '.ss58Address' "/shared/node-keys/$node_name/keys/grandpa.json")
 
-    if [ $i -gt 1 ]; then
+    if [ $validator_count -gt 0 ]; then
         echo "," >> initial_validators.json
     fi
 
@@ -321,7 +324,28 @@ for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
         }
     ]
 EOF
+    validator_count=$((validator_count + 1))
 done
+
+# If no permissioned nodes, use registered-1 as initial validator
+if [ "$NUM_PERMISSIONED_NODES_TO_PROCESS" -eq 0 ] && [ "$NUM_REGISTERED_NODES_TO_PROCESS" -gt 0 ]; then
+    node_name="registered-1"
+    validator_id=$(jq -r '.ss58Address' "/shared/node-keys/$node_name/keys/sidechain.json")
+    aura_ss58=$(jq -r '.ss58Address' "/shared/node-keys/$node_name/keys/aura.json")
+    grandpa_ss58=$(jq -r '.ss58Address' "/shared/node-keys/$node_name/keys/grandpa.json")
+
+    cat <<EOF >> initial_validators.json
+    [
+        "$validator_id",
+        {
+            "aura": "$aura_ss58",
+            "grandpa": "$grandpa_ss58"
+        }
+    ]
+EOF
+    validator_count=$((validator_count + 1))
+fi
+
 echo "]" >> initial_validators.json
 
 # Update chain-spec.json with initial validators
@@ -330,13 +354,16 @@ mv chain-spec.json.tmp chain-spec.json
 
 echo "Configuring Initial Authorities with SS58 Public Key ID..."
 echo "[" > initial_authorities.json
+
+# Add permissioned nodes as authorities
+authority_count=0
 for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
     node_name="permissioned-$i"
     validator_id=$(jq -r '.ss58PublicKey' "/shared/node-keys/$node_name/keys/sidechain.json")
     aura_ss58=$(jq -r '.ss58Address' "/shared/node-keys/$node_name/keys/aura.json")
     grandpa_ss58=$(jq -r '.ss58Address' "/shared/node-keys/$node_name/keys/grandpa.json")
 
-    if [ $i -gt 1 ]; then
+    if [ $authority_count -gt 0 ]; then
         echo "," >> initial_authorities.json
     fi
 
@@ -351,7 +378,30 @@ for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
         }
     }
 EOF
+    authority_count=$((authority_count + 1))
 done
+
+# If no permissioned nodes, use registered-1 as initial authority
+if [ "$NUM_PERMISSIONED_NODES_TO_PROCESS" -eq 0 ] && [ "$NUM_REGISTERED_NODES_TO_PROCESS" -gt 0 ]; then
+    node_name="registered-1"
+    validator_id=$(jq -r '.ss58PublicKey' "/shared/node-keys/$node_name/keys/sidechain.json")
+    aura_ss58=$(jq -r '.ss58Address' "/shared/node-keys/$node_name/keys/aura.json")
+    grandpa_ss58=$(jq -r '.ss58Address' "/shared/node-keys/$node_name/keys/grandpa.json")
+
+    cat <<EOF >> initial_authorities.json
+    {
+        "Permissioned": {
+            "id": "$validator_id",
+            "keys": {
+                "aura": "$aura_ss58",
+                "grandpa": "$grandpa_ss58"
+            }
+        }
+    }
+EOF
+    authority_count=$((authority_count + 1))
+fi
+
 echo "]" >> initial_authorities.json
 
 jq --slurpfile authorities initial_authorities.json '.genesis.runtimeGenesis.config.sessionCommitteeManagement.initialAuthorities = $authorities[0]' chain-spec.json > chain-spec.json.tmp
