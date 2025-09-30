@@ -84,8 +84,8 @@ pub(crate) mod tests {
 		MockIO::Group(vec![
 			prompt_multi_option_with_default(
 				OGMIOS_PROTOCOL,
-				Some(&default_config.protocol.to_string()),
-				&config_to_set.protocol.to_string(),
+				&Some(default_config.protocol),
+				&config_to_set.protocol,
 			),
 			prompt_with_default(
 				OGMIOS_HOSTNAME,

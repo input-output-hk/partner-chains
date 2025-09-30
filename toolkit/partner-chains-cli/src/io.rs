@@ -2,10 +2,14 @@ use crate::cmd_traits::*;
 use crate::config::{ConfigFile, ServiceConfig};
 use crate::ogmios::{OgmiosRequest, OgmiosResponse, ogmios_request};
 use anyhow::{Context, anyhow};
+use core::fmt::Display;
 use inquire::InquireError;
 use inquire::error::InquireResult;
+use inquire::list_option::ListOption;
 use ogmios_client::jsonrpsee::{OgmiosClients, client_for_url};
 use sp_core::offchain::Timestamp;
+use std::fmt::Debug;
+use std::panic::{RefUnwindSafe, UnwindSafe};
 use std::{
 	fs,
 	io::{BufRead, BufReader, Read},
@@ -33,8 +37,11 @@ pub trait IOContext {
 	fn enewline(&self);
 	fn prompt(&self, prompt: &str, default: Option<&str>) -> String;
 	fn prompt_yes_no(&self, prompt: &str, default: bool) -> bool;
-	// TODO: 	fn prompt_multi_option<T: ToString>(&self, msg: &str, options: Vec<T>) -> T;
-	fn prompt_multi_option(&self, msg: &str, options: Vec<String>) -> String;
+	fn prompt_multi_option<T: Debug + Display + UnwindSafe + RefUnwindSafe>(
+		&self,
+		msg: &str,
+		options: Vec<T>,
+	) -> usize;
 	fn write_file(&self, path: &str, content: &str);
 
 	fn new_tmp_dir(&self) -> PathBuf;
@@ -136,8 +143,12 @@ impl IOContext for DefaultCmdRunContext {
 		handle_inquire_result(inquire::Confirm::new(prompt).with_default(default).prompt())
 	}
 
-	fn prompt_multi_option(&self, msg: &str, options: Vec<String>) -> String {
-		handle_inquire_result(inquire::Select::new(msg, options).prompt()).to_string()
+	fn prompt_multi_option<T: Debug + Display + UnwindSafe + RefUnwindSafe>(
+		&self,
+		msg: &str,
+		options: Vec<T>,
+	) -> usize {
+		handle_inquire_result_t(inquire::Select::new(msg, options).raw_prompt())
 	}
 
 	fn write_file(&self, path: &str, content: &str) {
@@ -222,6 +233,20 @@ impl IOContext for DefaultCmdRunContext {
 pub(crate) fn prompt_can_write<C: IOContext>(name: &str, path: &str, context: &C) -> bool {
 	!context.file_exists(path)
 		|| context.prompt_yes_no(&format!("{name} {path} exists - overwrite it?"), false)
+}
+
+fn handle_inquire_result_t<T>(result: InquireResult<ListOption<T>>) -> usize {
+	match result {
+		Ok(result) => result.index,
+		Err(InquireError::OperationInterrupted) => {
+			eprintln!("Ctrl-C pressed. Exiting Wizard.");
+			std::process::exit(0)
+		},
+		Err(err) => {
+			eprintln!("Error: {err}. Exiting Wizard.");
+			std::process::exit(0)
+		},
+	}
 }
 
 fn handle_inquire_result<T>(result: InquireResult<T>) -> T {

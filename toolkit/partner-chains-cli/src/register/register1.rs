@@ -49,7 +49,7 @@ impl CmdRun for Register1Cmd {
 		};
 
 		let registration_utxo: UtxoId =
-			select_from_utxos(context, "Select UTXO to use for registration", utxo_query_result)?;
+			select_from_utxos(context, "Select UTXO to use for registration", utxo_query_result);
 
 		context.print(
 			"Please do not spend this UTXO, it needs to be consumed by the registration transaction.",
@@ -520,7 +520,7 @@ mod tests {
 			MockIO::prompt_multi_option(
 				"Select UTXO to use for registration",
 				mock_7_valid_utxos_rows(),
-				"4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 (1100000 lovelace)",
+				&"4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 (1100000 lovelace)".to_owned(),
 			),
 			MockIO::print(
 				"Please do not spend this UTXO, it needs to be consumed by the registration transaction.",

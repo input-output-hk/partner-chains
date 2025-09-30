@@ -16,6 +16,7 @@ use partner_chains_cardano_offchain::csl::NetworkTypeExt;
 use partner_chains_cardano_offchain::governance::MultiSigParameters;
 use partner_chains_cardano_offchain::scripts_data::{ScriptsData, get_scripts_data};
 use sidechain_domain::{McTxHash, UtxoId};
+use std::fmt::Display;
 use std::net::Ipv4Addr;
 use std::str::FromStr;
 use std::vec;
@@ -126,13 +127,13 @@ fn read_bootnode_defaults(context: &impl IOContext) -> (Protocol, String, u16) {
 }
 
 fn choose_protocol(context: &impl IOContext, default_protocol: Protocol) -> Protocol {
-	let mut protocols: Vec<String> = vec![Protocol::Dns.into(), Protocol::Ipv4.into()];
+	let mut protocols = vec![Protocol::Dns, Protocol::Ipv4];
 	// default protocol should be the first in the list
-	protocols
-		.sort_by_key(|protocol| if *protocol != String::from(default_protocol) { 1 } else { 0 });
+	protocols.sort_by_key(|protocol| if *protocol != default_protocol { 1 } else { 0 });
 
-	Protocol::from_str(&context.prompt_multi_option(CHOOSE_PROTOCOL_PROMPT, protocols))
-		.expect("Invalid protocol cannot be chosen from valid options only")
+	let protocol_selection_ix =
+		context.prompt_multi_option(CHOOSE_PROTOCOL_PROMPT, protocols.clone());
+	protocols[protocol_selection_ix]
 }
 
 fn deconstruct_bootnode(bootnode_opt: Option<String>) -> Option<(Protocol, String, u16)> {
@@ -160,7 +161,7 @@ fn peer_id_from_config(context: &impl IOContext) -> anyhow::Result<Option<String
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-enum Protocol {
+pub enum Protocol {
 	Dns,
 	Ipv4,
 }
@@ -192,6 +193,12 @@ impl FromStr for Protocol {
 			"IP address" | "ip4" => Ok(Protocol::Ipv4),
 			_ => Err("Invalid protocol".to_string()),
 		}
+	}
+}
+
+impl Display for Protocol {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		write!(f, "{}", ToString::to_string(self))
 	}
 }
 
@@ -315,15 +322,11 @@ pub mod tests {
 		}
 
 		pub fn pick_ip_protocol_with_defaults() -> MockIO {
-			pick_ip_protocol(
-				vec![Dns.into(), Ipv4.into()],
-				DEFAULT_PORT,
-				Ipv4.default_address().to_string(),
-			)
+			pick_ip_protocol(vec![Dns, Ipv4], DEFAULT_PORT, Ipv4.default_address().to_string())
 		}
 
 		pub fn pick_ip_protocol(
-			options: Vec<String>,
+			options: Vec<Protocol>,
 			default_port: u16,
 			default_ip_address: String,
 		) -> MockIO {
@@ -331,13 +334,13 @@ pub mod tests {
 		}
 
 		pub fn pick_chosen_ip_protocol(
-			options: Vec<String>,
+			options: Vec<Protocol>,
 			default_port: u16,
 			default_ip_address: &str,
 			input: &str,
 		) -> MockIO {
 			MockIO::Group(vec![
-				MockIO::prompt_multi_option(CHOOSE_PROTOCOL_PROMPT, options, &String::from(Ipv4)),
+				MockIO::prompt_multi_option(CHOOSE_PROTOCOL_PROMPT, options, &Ipv4),
 				MockIO::prompt(
 					CHOOSE_PORT_PROMPT,
 					Some(&default_port.to_string()),
@@ -356,19 +359,19 @@ pub mod tests {
 
 		pub fn pick_dns_protocol_with_defaults() -> MockIO {
 			pick_dns_protocol(
-				vec![Dns.into(), Ipv4.into()],
+				vec![Dns, Ipv4],
 				DEFAULT_PORT,
 				Dns.default_address().to_string(),
 			)
 		}
 
 		pub fn pick_dns_protocol(
-			options: Vec<String>,
+			options: Vec<Protocol>,
 			default_port: u16,
 			default_hostname: String,
 		) -> MockIO {
 			MockIO::Group(vec![
-				MockIO::prompt_multi_option(CHOOSE_PROTOCOL_PROMPT, options, &String::from(Dns)),
+				MockIO::prompt_multi_option(CHOOSE_PROTOCOL_PROMPT, options, &Dns),
 				MockIO::prompt(
 					CHOOSE_PORT_PROMPT,
 					Some(&default_port.to_string()),
@@ -460,7 +463,7 @@ pub mod tests {
 				scenarios::read_config(),
 				scenarios::choose_to_configure_bootnode(true),
 				scenarios::pick_dns_protocol(
-					vec![Ipv4.into(), Dns.into()],
+					vec![Ipv4, Dns],
 					3034,
 					Dns.default_address().to_string(),
 				),
@@ -486,7 +489,7 @@ pub mod tests {
 				scenarios::read_config(),
 				scenarios::choose_to_configure_bootnode(true),
 				scenarios::pick_ip_protocol(
-					vec![Ipv4.into(), Dns.into()],
+					vec![Ipv4, Dns],
 					3034,
 					"ip_address".to_string(),
 				),
@@ -550,7 +553,7 @@ pub mod tests {
 			scenarios::read_config(),
 			scenarios::choose_to_configure_bootnode(true),
 			scenarios::pick_chosen_ip_protocol(
-				vec![Dns.into(), Ipv4.into()],
+				vec![Dns, Ipv4],
 				DEFAULT_PORT,
 				Ipv4.default_address(),
 				"100",
@@ -581,14 +584,16 @@ pub mod tests {
 		MockIO::prompt(&format!("Enter the {}", field_definition.name), default, value)
 	}
 
-	pub fn prompt_multi_option_with_default<T: SelectOptions>(
+	pub fn prompt_multi_option_with_default<
+		T: Clone + PartialEq + ToString + SelectOptions<Opt = T>,
+	>(
 		field_definition: ConfigFieldDefinition<'_, T>,
-		default: Option<&str>,
-		value: &str,
+		default: &Option<T>,
+		value: &T,
 	) -> MockIO {
 		MockIO::prompt_multi_option(
 			&format!("Select {}", field_definition.name),
-			T::select_options_with_default(default),
+			T::select_options_with_default(&default),
 			value,
 		)
 	}

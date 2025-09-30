@@ -6,7 +6,6 @@ use crate::{
 use anyhow::anyhow;
 use ogmios_client::types::OgmiosUtxo;
 use sidechain_domain::{McTxHash, UtxoId};
-use std::str::FromStr;
 
 fn utxo_id(utxo: &OgmiosUtxo) -> UtxoId {
 	UtxoId {
@@ -41,19 +40,11 @@ pub(crate) fn select_from_utxos<C: IOContext>(
 	context: &C,
 	prompt: &str,
 	utxos: Vec<OgmiosUtxo>,
-) -> Result<UtxoId, anyhow::Error> {
+) -> UtxoId {
 	let utxo_display_options: Vec<String> =
 		utxos.iter().map(|utxo| to_display_string(utxo)).collect();
-	let selected_utxo_display_string = context.prompt_multi_option(prompt, utxo_display_options);
-	let selected_utxo = utxos
-		.iter()
-		.find(|utxo| to_display_string(utxo) == selected_utxo_display_string)
-		.map(|utxo| utxo_id(utxo).to_string())
-		.ok_or_else(|| anyhow!("⚠️ Failed to find selected UTXO"))?;
-	UtxoId::from_str(&selected_utxo).map_err(|e| {
-		context.eprint(&format!("⚠️ Failed to parse selected UTXO: {e}"));
-		anyhow!(e)
-	})
+	let selected_utxo_ix = context.prompt_multi_option(prompt, utxo_display_options);
+	utxo_id(&utxos[selected_utxo_ix])
 }
 
 #[cfg(test)]
