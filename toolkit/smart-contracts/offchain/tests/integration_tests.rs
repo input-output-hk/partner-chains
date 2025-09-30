@@ -14,6 +14,7 @@ use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
 	query_network::QueryNetwork,
 	transactions::Transactions,
+	types::OgmiosUtxo,
 };
 use partner_chains_cardano_offchain::{
 	assemble_and_submit_tx,
@@ -26,11 +27,13 @@ use partner_chains_cardano_offchain::{
 	governed_map::{run_get, run_insert, run_insert_with_force, run_list, run_remove, run_update},
 	init_governance,
 	multisig::{MultiSigSmartContractResult, MultiSigTransactionData},
-	permissioned_candidates,
+	permissioned_candidates, plutus_script,
+	plutus_script::PlutusScript,
 	reserve::{self, release::release_reserve_funds},
-	scripts_data, sign_tx, update_governance,
+	scripts_data, sign_tx, update_governance, versioning_system,
 };
 use partner_chains_plutus_data::reserve::ReserveDatum;
+use raw_scripts::ScriptId;
 use sidechain_domain::{
 	AdaBasedStaking, AssetId, AssetName, AuraPublicKey, CandidateKeys, CandidateRegistration,
 	DParameter, GrandpaPublicKey, MainchainKeyHash, MainchainSignature, McTxHash,
@@ -430,6 +433,72 @@ async fn governance_action_can_be_initiated_by_non_governance() {
 		.await
 		.unwrap();
 	run_assemble_and_sign(tx_to_sign, &[GOVERNANCE_AUTHORITY_KEY], &client).await;
+}
+
+#[tokio::test]
+async fn upsert_versioned_script_tests() {
+	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
+	let container = image.start().await.unwrap();
+	let client = initialize(&container).await;
+	let genesis_utxo = run_init_governance(&client).await;
+	let script_id = ScriptId::AlwaysPassingPolicy as u32;
+	let plutus_script_1 = plutus_script![raw_scripts::ALWAYS_FAILING_POLICY, 0u64].unwrap();
+	let plutus_script_2 = plutus_script![raw_scripts::ALWAYS_FAILING_POLICY, 1u64].unwrap();
+	let tx_to_sign = run_upsert_versioned_script(
+		plutus_script_1.clone(),
+		script_id,
+		genesis_utxo,
+		&eve_payment_key(),
+		&client,
+	)
+	.await
+	.unwrap()
+	.unwrap();
+	run_assemble_and_sign(tx_to_sign, &[GOVERNANCE_AUTHORITY_KEY], &client).await;
+
+	let versioned_utxo = find_versioned_utxo(
+		genesis_utxo,
+		ScriptId::AlwaysPassingPolicy,
+		&eve_payment_key(),
+		&client,
+	)
+	.await
+	.unwrap_or_else(|| panic!("Couldn't get versioned utxo"));
+
+	assert_eq!(versioned_utxo.script.unwrap().cbor, plutus_script_1.clone().bytes);
+
+	let tx_to_sign_2 = run_upsert_versioned_script(
+		plutus_script_2.clone(),
+		script_id,
+		genesis_utxo,
+		&eve_payment_key(),
+		&client,
+	)
+	.await
+	.unwrap()
+	.unwrap();
+	run_assemble_and_sign(tx_to_sign_2, &[GOVERNANCE_AUTHORITY_KEY], &client).await;
+
+	let versioned_utxo_2 = find_versioned_utxo(
+		genesis_utxo,
+		ScriptId::AlwaysPassingPolicy,
+		&eve_payment_key(),
+		&client,
+	)
+	.await
+	.unwrap_or_else(|| panic!("Couldn't get versioned utxo"));
+
+	assert_eq!(versioned_utxo_2.script.unwrap().cbor, plutus_script_2.bytes);
+
+	let tx_to_sign_3 = run_upsert_versioned_script(
+		plutus_script_1,
+		999999u32,
+		genesis_utxo,
+		&eve_payment_key(),
+		&client,
+	)
+	.await;
+	assert!(tx_to_sign_3.is_err(), "Upserting a script with invalid script id should fail");
 }
 
 async fn initialize(container: &ContainerAsync<GenericImage>) -> OgmiosClients {
@@ -1061,4 +1130,39 @@ async fn run_governance_map_update<
 	.await;
 	result.iter().for_each(|x| x.iter().for_each(cleanup_temp_wallet_file));
 	result
+}
+
+async fn run_upsert_versioned_script<
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+>(
+	plutus_script: PlutusScript,
+	script_id: u32,
+	genesis_utxo: UtxoId,
+	payment_signing_key: &CardanoPaymentSigningKey,
+	client: &T,
+) -> Result<Option<MultiSigSmartContractResult>, anyhow::Error> {
+	let result = versioning_system::upsert_script(
+		plutus_script,
+		script_id,
+		genesis_utxo,
+		payment_signing_key,
+		client,
+		&FixedDelayRetries::new(Duration::from_millis(500), 100),
+	)
+	.await;
+	result.iter().for_each(|x| x.iter().for_each(cleanup_temp_wallet_file));
+	result
+}
+
+async fn find_versioned_utxo<T: QueryLedgerState + QueryNetwork>(
+	genesis_utxo: UtxoId,
+	script_id: ScriptId,
+	payment_signing_key: &CardanoPaymentSigningKey,
+	client: &T,
+) -> Option<OgmiosUtxo> {
+	let version_oracle =
+		scripts_data::version_oracle(genesis_utxo, NetworkIdKind::Testnet).unwrap();
+	versioning_system::get_script_utxo(script_id, &version_oracle, payment_signing_key, client)
+		.await
+		.unwrap()
 }

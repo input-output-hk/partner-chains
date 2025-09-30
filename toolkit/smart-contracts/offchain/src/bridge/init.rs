@@ -1,8 +1,9 @@
 use crate::{
 	await_tx::AwaitTx,
 	cardano_keys::CardanoPaymentSigningKey,
+	csl::TransactionContext,
 	multisig::MultiSigSmartContractResult,
-	plutus_script,
+	plutus_script, scripts_data,
 	versioning_system::{ScriptData, initialize_script},
 };
 use ogmios_client::{
@@ -29,16 +30,25 @@ pub async fn init_ics_scripts<
 	client: &T,
 	await_tx: &A,
 ) -> anyhow::Result<Vec<MultiSigSmartContractResult>> {
+	let payment_ctx = TransactionContext::for_payment_key(payment_key, client).await?;
+	let version_oracle = scripts_data::version_oracle(genesis_utxo, payment_ctx.network)?;
+
 	let ics_validator = ScriptData::new(
 		"Illiquid Circulation Supply Validator",
-		ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR.0.to_vec(),
+		plutus_script![
+			ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR,
+			version_oracle.policy_id_as_plutus_data()
+		]?
+		.bytes
+		.to_vec(),
 		ScriptId::IlliquidCirculationSupplyValidator,
 	);
 	let ics_auth_token_policy = ScriptData::new(
 		"Illiquid Circulation Supply Auth Token Policy",
 		plutus_script![
 			ILLIQUID_CIRCULATION_SUPPLY_AUTHORITY_TOKEN_POLICY,
-			ScriptId::IlliquidCirculationSupplyAuthorityTokenPolicy
+			ScriptId::IlliquidCirculationSupplyAuthorityTokenPolicy,
+			version_oracle.policy_id_as_plutus_data()
 		]?
 		.bytes
 		.to_vec(),
