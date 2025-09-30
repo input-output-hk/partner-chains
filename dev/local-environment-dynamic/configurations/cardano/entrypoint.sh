@@ -843,9 +843,11 @@ if [ "$NUM_REGISTERED_NODES_TO_PROCESS" -gt 0 ]; then
         echo "[LOG] $NODE_LOG_NAME Pool ID: $POOL_ID"
 
         # Pool parameters (minimal for local env)
-        PLEDGE=0 # No pledge required for this setup
+        PLEDGE=0 # No pledge required for local environment
         POOL_COST=0 # Minimal cost
         POOL_MARGIN="0/1000" # 0% margin
+
+        echo "[LOG] $NODE_LOG_NAME Pledge: $PLEDGE lovelace"
 
         echo "[DEBUG] Attempting to run stake-pool registration-certificate command..."
 
