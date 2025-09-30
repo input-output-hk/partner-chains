@@ -432,8 +432,9 @@ mkdir /data/keystore
 cp /shared/node-keys/$node_name/keystore/* /data/keystore/
 chmod -R 777 /data/keystore
 
-NODE_KEY=\$(openssl rand -hex 32)
-PEER_ID=\$(echo "\$NODE_KEY" | /usr/local/bin/partner-chains-node key inspect-node-key)
+# Use fixed node key for registered-1 when it's the bootnode
+NODE_KEY='b0c7b085c8df4d8f0add881a39d90a0f29edd265dba1b9c2db5564f8e1b1a02a'
+PEER_ID='12D3KooWD7ou3cgmVbMttbAXNvXPwna8LkRUko849YE8oWv5NGZP'
 
 export MC__FIRST_EPOCH_TIMESTAMP_MILLIS=\$(cat /shared/MC__FIRST_EPOCH_TIMESTAMP_MILLIS)
 
@@ -466,11 +467,8 @@ EOF
             if [ "$NUM_PERMISSIONED_NODES_TO_PROCESS" -gt 0 ]; then
                 bootnode_address="/dns/partner-chains-node-permissioned-1/tcp/30333/p2p/12D3KooWD7ou3cgmVbMttbAXNvXPwna8LkRUko849YE8oWv5NGZP"
             else
-                # This assumes registered-1 is the bootnode
-                # Note: This part of the script doesn't know the peer ID of registered-1 ahead of time.
-                # This is a limitation. For a dynamic setup, a more robust discovery mechanism would be needed.
-                # For now, we'll point to its service name and hope for the best.
-                bootnode_address="/dns/partner-chains-node-registered-1/tcp/30333"
+                # registered-1 is the bootnode with fixed peer ID
+                bootnode_address="/dns/partner-chains-node-registered-1/tcp/30333/p2p/12D3KooWD7ou3cgmVbMttbAXNvXPwna8LkRUko849YE8oWv5NGZP"
             fi
             cat > configurations/partner-chains-nodes/$node_name/entrypoint.sh <<EOF
 #!/bin/sh
