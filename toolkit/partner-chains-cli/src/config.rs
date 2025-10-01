@@ -73,7 +73,7 @@ impl<'a, T> ConfigFieldDefinition<'a, T> {
 		T: DeserializeOwned + std::fmt::Display + FromStr + serde::Serialize,
 	{
 		let loaded_value = self.load_from_file(context).map(|v| v.to_string());
-		let default_value = loaded_value.as_deref().or(self.default);
+		let default_value = loaded_value.as_deref().or_else(|| self.default);
 		let value = context.prompt(&format!("Enter the {}", self.name), default_value);
 		let parsed_value: T = value.parse()?;
 		self.save_to_file(&parsed_value, context);
@@ -86,15 +86,27 @@ impl<'a, T> ConfigFieldDefinition<'a, T> {
 		context: &C,
 	) -> Result<T, <T as FromStr>::Err>
 	where
-		T: DeserializeOwned + std::fmt::Display + FromStr + serde::Serialize + SelectOptions,
+		T: DeserializeOwned
+			+ std::fmt::Display
+			+ FromStr
+			+ serde::Serialize
+			+ SelectOptions<Opt = T>
+			+ Clone
+			+ std::fmt::Debug
+			+ std::panic::UnwindSafe
+			+ std::panic::RefUnwindSafe,
 	{
-		let loaded_value = self.load_from_file(context).map(|v| v.to_string());
-		let default_value_opt = loaded_value.as_deref().or(self.default);
-		let options = T::select_options_with_default(default_value_opt);
-		let value = context.prompt_multi_option(prompt, options);
-		let parsed_value: T = value.parse()?;
-		self.save_to_file(&parsed_value, context);
-		Ok(parsed_value)
+		let loaded_value = self.load_from_file(context);
+		let default_value_opt: Option<T> =
+			loaded_value.or_else(|| self.default.and_then(|s| s.parse().ok()));
+		let options: Vec<T> = default_value_opt.map_or_else(
+			|| T::select_options(),
+			|default_value| T::select_options_with_default(&default_value),
+		);
+		let value_ix = context.prompt_multi_option(prompt, options.clone());
+		let value = options[value_ix].clone();
+		self.save_to_file(&value, context);
+		Ok(value)
 	}
 
 	/// Loads and parses the config field value.
@@ -205,13 +217,11 @@ impl ServiceConfig {
 }
 
 pub(crate) trait SelectOptions {
-	fn select_options() -> Vec<String>;
-	fn select_options_with_default(default_value_opt: Option<&str>) -> Vec<String> {
+	type Opt: PartialEq;
+	fn select_options() -> Vec<Self::Opt>;
+	fn select_options_with_default(default_value: &Self::Opt) -> Vec<Self::Opt> {
 		let mut options = Self::select_options();
-
-		if let Some(default_value) = default_value_opt {
-			options.sort_by_key(|option| if *option != default_value { 1 } else { 0 });
-		}
+		options.sort_by_key(|option| if option != default_value { 1 } else { 0 });
 		options
 	}
 }
@@ -250,8 +260,9 @@ impl FromStr for NetworkProtocol {
 }
 
 impl SelectOptions for NetworkProtocol {
-	fn select_options() -> Vec<String> {
-		vec![NetworkProtocol::Http.to_string(), NetworkProtocol::Https.to_string()]
+	type Opt = NetworkProtocol;
+	fn select_options() -> Vec<NetworkProtocol> {
+		vec![NetworkProtocol::Http, NetworkProtocol::Https]
 	}
 }
 
@@ -335,7 +346,7 @@ pub(crate) struct NativeTokenConfig {
 	pub(crate) illiquid_circulation_supply_validator_address: String,
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
 pub(crate) struct GovernanceAuthoritiesKeyHashes(pub(crate) Vec<MainchainKeyHash>);
 
 impl FromStr for GovernanceAuthoritiesKeyHashes {

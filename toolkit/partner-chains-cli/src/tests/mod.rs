@@ -3,6 +3,7 @@ use crate::config::{ConfigFile, ServiceConfig};
 use crate::io::IOContext;
 use crate::ogmios::{OgmiosRequest, OgmiosResponse};
 use anyhow::anyhow;
+use core::fmt::Display;
 use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
 use partner_chains_cardano_offchain::cardano_keys::CardanoPaymentSigningKey;
 use partner_chains_cardano_offchain::governance::MultiSigParameters;
@@ -16,7 +17,8 @@ use sidechain_domain::{
 };
 use sp_core::offchain::Timestamp;
 use std::collections::HashMap;
-use std::panic::{UnwindSafe, catch_unwind, resume_unwind};
+use std::fmt::Debug;
+use std::panic::{RefUnwindSafe, UnwindSafe, catch_unwind, resume_unwind};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
@@ -31,7 +33,7 @@ pub enum MockIO {
 	EPrint(String),
 	Prompt { prompt: String, default: Option<String>, input: String },
 	PromptYN { prompt: String, default: bool, choice: bool },
-	PromptMultiOption { prompt: String, options: Vec<String>, choice: String },
+	PromptMultiOption { prompt: String, options: Vec<String>, choice: usize },
 	NewTmpDir,
 	ListDirectory { path: String, result: Option<Vec<String>> },
 	DeleteFile { path: String },
@@ -119,9 +121,18 @@ impl MockIO {
 		Self::ListDirectory { path, result }.with_location()
 	}
 	#[track_caller]
-	pub fn prompt_multi_option(prompt: &str, options: Vec<String>, choice: &str) -> Self {
-		Self::PromptMultiOption { prompt: prompt.into(), options, choice: choice.into() }
-			.with_location()
+	pub fn prompt_multi_option<T: ToString + PartialEq>(
+		prompt: &str,
+		options: Vec<T>,
+		choice: &T,
+	) -> Self {
+		let choice_ix = options.iter().position(|o| o == choice).expect("choice is valid");
+		Self::PromptMultiOption {
+			prompt: prompt.into(),
+			options: options.into_iter().map(|o| o.to_string()).collect(),
+			choice: choice_ix,
+		}
+		.with_location()
 	}
 
 	#[track_caller]
@@ -608,7 +619,11 @@ impl IOContext for MockIOContext {
 		})
 	}
 
-	fn prompt_multi_option(&self, prompt: &str, options: Vec<String>) -> String {
+	fn prompt_multi_option<T: Debug + Display + UnwindSafe + RefUnwindSafe>(
+		&self,
+		prompt: &str,
+		options: Vec<T>,
+	) -> usize {
 		let next = self.pop_next_action(&format!(
 			"prompt_multi_option(prompt = {prompt}, options = {options:?})",
 		));
@@ -619,7 +634,10 @@ impl IOContext for MockIOContext {
 				choice,
 			} => {
 				assert_eq!(prompt, expected_prompt);
-				assert_eq!(options, expected_options);
+				assert_eq!(
+					options.iter().map(|o| o.to_string()).collect::<Vec<String>>(),
+					expected_options
+				);
 				choice
 			},
 			other => panic!("Unexpected multi-option prompt, expected: {other:?}"),

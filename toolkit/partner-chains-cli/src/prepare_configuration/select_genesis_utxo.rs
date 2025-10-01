@@ -26,7 +26,7 @@ pub fn select_genesis_utxo<C: IOContext>(
 		return Err(anyhow::anyhow!("No UTXOs found"));
 	};
 	let genesis_utxo =
-		select_from_utxos(context, "Select an UTXO to use as the genesis UTXO", utxo_query_result)?;
+		select_from_utxos(context, "Select an UTXO to use as the genesis UTXO", utxo_query_result);
 
 	GENESIS_UTXO.save_to_file(&genesis_utxo, context);
 	Ok((genesis_utxo, private_key, ogmios_configuration))
@@ -91,7 +91,7 @@ mod tests {
 				MockIO::prompt_multi_option(
 					"Select an UTXO to use as the genesis UTXO",
 					mock_7_valid_utxos_rows(),
-					"4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 (1100000 lovelace)",
+					&"4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 (1100000 lovelace)".to_owned(),
 				),
 			]);
 
