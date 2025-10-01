@@ -45,7 +45,7 @@ impl CmdRun for PrepareConfigurationCmd {
 			context,
 		)? {
 			prepare_main_chain_config(context, &ogmios_config, genesis_utxo)?;
-			context.eprint("🚀 Chain configuration wizards completed successufully!");
+			context.eprint("🚀 Chain configuration wizards completed successfully!");
 			Ok(())
 		} else {
 			context
