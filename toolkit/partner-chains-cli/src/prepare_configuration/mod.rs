@@ -1,5 +1,6 @@
 use crate::CmdRun;
 use crate::cmd_traits::{GetScriptsData, InitGovernance};
+use crate::config::SelectOptions;
 use crate::config::config_fields::{BOOTNODES, SUBSTRATE_NODE_DATA_BASE_PATH};
 use crate::generate_keys::network_key_path;
 use crate::io::IOContext;
@@ -127,9 +128,7 @@ fn read_bootnode_defaults(context: &impl IOContext) -> (Protocol, String, u16) {
 }
 
 fn choose_protocol(context: &impl IOContext, default_protocol: Protocol) -> Protocol {
-	let mut protocols = vec![Protocol::Dns, Protocol::Ipv4];
-	// default protocol should be the first in the list
-	protocols.sort_by_key(|protocol| if *protocol != default_protocol { 1 } else { 0 });
+	let protocols = Protocol::select_options_with_default(&default_protocol);
 
 	let protocol_selection_ix =
 		context.prompt_multi_option(CHOOSE_PROTOCOL_PROMPT, protocols.clone());
@@ -193,6 +192,14 @@ impl FromStr for Protocol {
 			"IP address" | "ip4" => Ok(Protocol::Ipv4),
 			_ => Err("Invalid protocol".to_string()),
 		}
+	}
+}
+
+impl SelectOptions for Protocol {
+	type Opt = Protocol;
+
+	fn select_options() -> Vec<Self::Opt> {
+		vec![Protocol::Dns, Protocol::Ipv4]
 	}
 }
 
@@ -578,7 +585,7 @@ pub mod tests {
 		T: Clone + PartialEq + ToString + SelectOptions<Opt = T>,
 	>(
 		field_definition: ConfigFieldDefinition<'_, T>,
-		default: &Option<T>,
+		default: &T,
 		value: &T,
 	) -> MockIO {
 		MockIO::prompt_multi_option(

@@ -99,7 +99,10 @@ impl<'a, T> ConfigFieldDefinition<'a, T> {
 		let loaded_value = self.load_from_file(context);
 		let default_value_opt: Option<T> =
 			loaded_value.or_else(|| self.default.and_then(|s| s.parse().ok()));
-		let options: Vec<T> = T::select_options_with_default(&default_value_opt);
+		let options: Vec<T> = default_value_opt.map_or_else(
+			|| T::select_options(),
+			|default_value| T::select_options_with_default(&default_value),
+		);
 		let value_ix = context.prompt_multi_option(prompt, options.clone());
 		let value = options[value_ix].clone();
 		self.save_to_file(&value, context);
@@ -216,12 +219,9 @@ impl ServiceConfig {
 pub(crate) trait SelectOptions {
 	type Opt: PartialEq;
 	fn select_options() -> Vec<Self::Opt>;
-	fn select_options_with_default(default_value_opt: &Option<Self::Opt>) -> Vec<Self::Opt> {
+	fn select_options_with_default(default_value: &Self::Opt) -> Vec<Self::Opt> {
 		let mut options = Self::select_options();
-
-		if let Some(default_value) = default_value_opt {
-			options.sort_by_key(|option| if option != default_value { 1 } else { 0 });
-		}
+		options.sort_by_key(|option| if option != default_value { 1 } else { 0 });
 		options
 	}
 }
