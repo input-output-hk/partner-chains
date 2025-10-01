@@ -198,7 +198,10 @@ impl FromStr for Protocol {
 
 impl Display for Protocol {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		write!(f, "{}", ToString::to_string(self))
+		match self {
+			Protocol::Dns => write!(f, "dns"),
+			Protocol::Ipv4 => write!(f, "ip4"),
+		}
 	}
 }
 
