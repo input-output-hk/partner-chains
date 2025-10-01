@@ -161,7 +161,7 @@ fn peer_id_from_config(context: &impl IOContext) -> anyhow::Result<Option<String
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Protocol {
+pub(crate) enum Protocol {
 	Dns,
 	Ipv4,
 }
@@ -175,11 +175,11 @@ impl Protocol {
 	}
 }
 
-impl From<Protocol> for String {
-	fn from(value: Protocol) -> Self {
-		match value {
-			Protocol::Dns => "hostname".to_string(),
-			Protocol::Ipv4 => "IP address".to_string(),
+impl Display for Protocol {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		match self {
+			Protocol::Dns => write!(f, "hostname"),
+			Protocol::Ipv4 => write!(f, "IP address"),
 		}
 	}
 }
@@ -192,15 +192,6 @@ impl FromStr for Protocol {
 			"hostname" | "dns" => Ok(Protocol::Dns),
 			"IP address" | "ip4" => Ok(Protocol::Ipv4),
 			_ => Err("Invalid protocol".to_string()),
-		}
-	}
-}
-
-impl Display for Protocol {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		match self {
-			Protocol::Dns => write!(f, "dns"),
-			Protocol::Ipv4 => write!(f, "ip4"),
 		}
 	}
 }
