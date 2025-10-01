@@ -5,7 +5,6 @@ use anyhow::{Context, anyhow};
 use core::fmt::Display;
 use inquire::InquireError;
 use inquire::error::InquireResult;
-use inquire::list_option::ListOption;
 use ogmios_client::jsonrpsee::{OgmiosClients, client_for_url};
 use sp_core::offchain::Timestamp;
 use std::fmt::Debug;
@@ -148,7 +147,7 @@ impl IOContext for DefaultCmdRunContext {
 		msg: &str,
 		options: Vec<T>,
 	) -> usize {
-		handle_inquire_result_t(inquire::Select::new(msg, options).raw_prompt())
+		handle_inquire_result(inquire::Select::new(msg, options).raw_prompt()).index
 	}
 
 	fn write_file(&self, path: &str, content: &str) {
@@ -233,20 +232,6 @@ impl IOContext for DefaultCmdRunContext {
 pub(crate) fn prompt_can_write<C: IOContext>(name: &str, path: &str, context: &C) -> bool {
 	!context.file_exists(path)
 		|| context.prompt_yes_no(&format!("{name} {path} exists - overwrite it?"), false)
-}
-
-fn handle_inquire_result_t<T>(result: InquireResult<ListOption<T>>) -> usize {
-	match result {
-		Ok(result) => result.index,
-		Err(InquireError::OperationInterrupted) => {
-			eprintln!("Ctrl-C pressed. Exiting Wizard.");
-			std::process::exit(0)
-		},
-		Err(err) => {
-			eprintln!("Error: {err}. Exiting Wizard.");
-			std::process::exit(0)
-		},
-	}
 }
 
 fn handle_inquire_result<T>(result: InquireResult<T>) -> T {
