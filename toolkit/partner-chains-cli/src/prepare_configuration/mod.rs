@@ -361,11 +361,7 @@ pub mod tests {
 		}
 
 		pub fn pick_dns_protocol_with_defaults() -> MockIO {
-			pick_dns_protocol(
-				vec![Dns, Ipv4],
-				DEFAULT_PORT,
-				Dns.default_address().to_string(),
-			)
+			pick_dns_protocol(vec![Dns, Ipv4], DEFAULT_PORT, Dns.default_address().to_string())
 		}
 
 		pub fn pick_dns_protocol(
