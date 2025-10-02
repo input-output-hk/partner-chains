@@ -1,8 +1,8 @@
 use super::{Cache, GovernedMapDataSourceCachedImpl, GovernedMapDataSourceImpl};
 use crate::block::{BlockDataSourceImpl, DbSyncBlockDataSourceConfig};
 use crate::db_model::{DbSyncConfigurationProvider, TxInConfiguration};
-use crate::metrics::mock::test_metrics;
 use hex_literal::hex;
+use partner_chains_data_source_metrics::mock::test_metrics;
 use pretty_assertions::assert_eq;
 use sidechain_domain::byte_string::ByteString;
 use sidechain_domain::mainchain_epoch::{Duration, MainchainEpochConfig, Timestamp};

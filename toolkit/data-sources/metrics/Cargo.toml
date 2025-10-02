@@ -1,0 +1,18 @@
+[package]
+name = "partner-chains-data-source-metrics"
+version.workspace = true
+license = "Apache-2.0"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description = "Substrate Prometheus metrics client for Partner Chain data sources"
+
+[lints]
+workspace = true
+
+[dependencies]
+tokio = { workspace = true, features = ["full"] }
+async-trait = { workspace = true }
+log = { workspace = true }
+substrate-prometheus-endpoint = { workspace = true }

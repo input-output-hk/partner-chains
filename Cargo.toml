@@ -321,7 +321,9 @@ sp-block-producer-metadata = { path = "toolkit/block-producer-metadata/primitive
 
 # Data Sources
 partner-chains-db-sync-data-sources = { path = "toolkit/data-sources/db-sync" }
+partner-chains-dolos-data-sources = { path = "toolkit/data-sources/dolos" }
 partner-chains-mock-data-sources = { path = "toolkit/data-sources/mock", default-features = false }
+partner-chains-data-source-metrics = { path = "toolkit/data-sources/metrics" }
 
 # Governed Map
 sp-governed-map = { path = "toolkit/governed-map/primitives", default-features = false }

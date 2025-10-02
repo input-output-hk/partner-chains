@@ -1,8 +1,8 @@
 use crate::candidates::CandidatesDataSourceImpl;
 use crate::db_model::{DbSyncConfigurationProvider, TxInConfiguration, index_exists_unsafe};
-use crate::metrics::mock::test_metrics;
 use authority_selection_inherents::AuthoritySelectionDataSource;
 use hex_literal::hex;
+use partner_chains_data_source_metrics::mock::test_metrics;
 use sidechain_domain::*;
 use sqlx::PgPool;
 use std::cell::OnceCell;

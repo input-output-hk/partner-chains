@@ -14,6 +14,7 @@
 //! # Usage
 //!
 //! ```rust
+//! use partner_chains_data_source_metrics::*;
 //! use partner_chains_db_sync_data_sources::*;
 //! use sqlx::PgPool;
 //! use std::{ error::Error, sync::Arc };
@@ -42,9 +43,8 @@
 //! }
 //! ```
 
-use crate::McFollowerMetrics;
 use crate::db_model::*;
-use crate::metrics::observed_async_trait;
+use partner_chains_data_source_metrics::{McFollowerMetrics, observed_async_trait};
 use partner_chains_plutus_data::bridge::{TokenTransferDatum, TokenTransferDatumV1};
 use sidechain_domain::McBlockHash;
 use sp_partner_chains_bridge::*;
