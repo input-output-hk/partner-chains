@@ -1,16 +1,7 @@
 use authority_selection_inherents::AuthoritySelectionDataSource;
 use pallet_sidechain_rpc::SidechainRpcDataSource;
-use partner_chains_db_sync_data_sources::{
-	BlockDataSourceImpl, CachedTokenBridgeDataSourceImpl, CandidatesDataSourceImpl,
-	GovernedMapDataSourceCachedImpl, McFollowerMetrics, McHashDataSourceImpl,
-	SidechainRpcDataSourceImpl, StakeDistributionDataSourceImpl,
-};
+use partner_chains_data_source_metrics::McFollowerMetrics;
 use partner_chains_demo_runtime::AccountId;
-use partner_chains_mock_data_sources::{
-	AuthoritySelectionDataSourceMock, BlockDataSourceMock, GovernedMapDataSourceMock,
-	McHashDataSourceMock, SidechainRpcDataSourceMock, StakeDistributionDataSourceMock,
-	TokenBridgeDataSourceMock,
-};
 use sc_service::error::Error as ServiceError;
 use sidechain_mc_hash::McHashDataSource;
 use sp_block_participation::inherent_data::BlockParticipationDataSource;
@@ -98,6 +89,7 @@ pub(crate) async fn create_cached_data_sources(
 
 pub fn create_mock_data_sources()
 -> std::result::Result<DataSources, Box<dyn Error + Send + Sync + 'static>> {
+	use partner_chains_mock_data_sources::*;
 	let block = Arc::new(BlockDataSourceMock::new_from_env()?);
 	Ok(DataSources {
 		sidechain_rpc: Arc::new(SidechainRpcDataSourceMock::new(block.clone())),
@@ -130,6 +122,7 @@ pub const BRIDGE_TRANSFER_CACHE_LOOKAHEAD: u32 = 1000;
 pub async fn create_cached_db_sync_data_sources(
 	metrics_opt: Option<McFollowerMetrics>,
 ) -> Result<DataSources, Box<dyn Error + Send + Sync + 'static>> {
+	use partner_chains_db_sync_data_sources::*;
 	let pool = partner_chains_db_sync_data_sources::get_connection_from_env().await?;
 	// block data source is reused between mc_hash and sidechain_rpc to share cache
 	let block = Arc::new(BlockDataSourceImpl::new_from_env(pool.clone()).await?);

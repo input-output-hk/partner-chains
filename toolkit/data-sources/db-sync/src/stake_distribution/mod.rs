@@ -1,8 +1,8 @@
 //! Db-Sync data source serving information about Cardano stake delegation.
 //! Used by the Partner Chain Block Participation feature.
 use crate::db_model::{EpochNumber, StakePoolDelegationOutputRow};
-use crate::metrics::{McFollowerMetrics, observed_async_trait};
 use lru::LruCache;
+use partner_chains_data_source_metrics::{McFollowerMetrics, observed_async_trait};
 use sidechain_domain::*;
 use sp_block_participation::inherent_data::BlockParticipationDataSource;
 use sqlx::PgPool;

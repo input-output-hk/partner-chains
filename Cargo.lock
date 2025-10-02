@@ -7317,6 +7317,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "partner-chains-data-source-metrics"
+version = "1.8.0"
+dependencies = [
+ "async-trait",
+ "log",
+ "substrate-prometheus-endpoint",
+ "tokio",
+]
+
+[[package]]
 name = "partner-chains-data-sources-cli"
 version = "1.8.0"
 dependencies = [
@@ -7354,6 +7364,7 @@ dependencies = [
  "lru 0.16.0",
  "num-bigint",
  "pallet-sidechain-rpc",
+ "partner-chains-data-source-metrics",
  "partner-chains-plutus-data",
  "paste",
  "pretty_assertions",
@@ -7366,7 +7377,6 @@ dependencies = [
  "sp-partner-chains-bridge",
  "sp-timestamp",
  "sqlx",
- "substrate-prometheus-endpoint",
  "testcontainers-modules",
  "thiserror 2.0.16",
  "tokio",
@@ -7398,6 +7408,7 @@ dependencies = [
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc",
  "partner-chains-cli",
+ "partner-chains-data-source-metrics",
  "partner-chains-db-sync-data-sources",
  "partner-chains-demo-runtime",
  "partner-chains-dolos-data-sources",

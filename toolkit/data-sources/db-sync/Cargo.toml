@@ -30,29 +30,32 @@ log = { workspace = true }
 thiserror = { workspace = true }
 blake2b_simd = { workspace = true }
 figment = { workspace = true }
-substrate-prometheus-endpoint = { workspace = true }
 derive-new = { workspace = true }
 lru = { workspace = true }
 sp-timestamp = { workspace = true, features = ["std"] }
-sp-governed-map = { workspace = true, features = [
-    "std",
-], optional = true }
+sp-governed-map = { workspace = true, features = ["std"], optional = true }
 sidechain-mc-hash = { workspace = true, optional = true }
 pallet-sidechain-rpc = { workspace = true, optional = true }
 authority-selection-inherents = { workspace = true, features = [
     "std",
 ], optional = true }
 cardano-serialization-lib = { workspace = true }
+partner-chains-data-source-metrics = { workspace = true }
 partner-chains-plutus-data = { workspace = true }
 sp-block-participation = { workspace = true, features = [
     "std",
 ], optional = true }
-sp-partner-chains-bridge = { workspace = true, optional = true, features = ["std"] }
+sp-partner-chains-bridge = { workspace = true, optional = true, features = [
+    "std",
+] }
 
 [dev-dependencies]
 tokio-test = "0.4.3"
 ctor = "0.5.0"
-testcontainers-modules = { version = "0.13.0", features = ["blocking", "postgres"] }
+testcontainers-modules = { version = "0.13.0", features = [
+    "blocking",
+    "postgres",
+] }
 pretty_assertions = { workspace = true }
 paste = { workspace = true }
 
