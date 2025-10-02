@@ -712,7 +712,10 @@ construct_runtime!(
 		BlockProducerMetadata: pallet_block_producer_metadata,
 		BlockProductionLog: pallet_block_production_log,
 		BlockParticipation: pallet_block_participation,
-		// We exclude pallet's extrinsics to make them unavailable to users to submit
+		// We exclude pallet's extrinsics to make them unavailable to users to submit.
+		// This is to ensure that registrations on Cardano coming in throught the
+		// `SessionCommitteeManagement` pallet are the only source of truth about keys
+		// and accounts of block producers.
 		Session: pallet_session exclude_parts { Call },
 		GovernedMap: pallet_governed_map,
 		Bridge: pallet_partner_chains_bridge,
