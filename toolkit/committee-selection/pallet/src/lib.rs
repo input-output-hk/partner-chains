@@ -1,4 +1,19 @@
 //!  Pallet for setting the Partner Chain validators using inherent data
+//!
+//! *Important*: It is recommended that when `pallet_session` is wired into the runtime, its
+//! extrinsics are hidden, using `exclude_parts` like so:
+//! ```rust,ignore
+//! construct_runtime!(
+//! 	pub struct Runtime {
+//! 		System: frame_system,
+//! 		SessionCommitteeManagement: pallet_session_validator_management,
+//!         // ..other pallets
+//! 		Session: pallet_session exclude_parts { Call },
+//!     }
+//! };
+//! ```
+//! This ensures that chain users can't manually register their keys in the pallet and so the
+//! registrations done on Cardano remain the sole source of truth about key ownership.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
