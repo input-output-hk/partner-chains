@@ -99,6 +99,7 @@ impl<T: PartnerChainRuntime> CreateChainSpecCmd<T> {
 #[derive(Debug)]
 /// Configuration that contains all Partner Chain specific data required to create the chain spec
 pub struct CreateChainSpecConfig<Keys> {
+	pub bootnodes: Vec<String>,
 	pub genesis_utxo: UtxoId,
 	pub initial_permissioned_candidates_raw: Vec<PermissionedCandidateKeys>,
 	pub initial_permissioned_candidates_parsed: Vec<ParsedPermissionedCandidatesKeys<Keys>>,
@@ -122,6 +123,7 @@ impl<Keys: MaybeFromCandidateKeys> CreateChainSpecConfig<Keys> {
 				.map(TryFrom::try_from)
 				.collect::<Result<Vec<ParsedPermissionedCandidatesKeys<Keys>>, anyhow::Error>>()?;
 		Ok(Self {
+			bootnodes: load_config_field(c, &config_fields::BOOTNODES)?,
 			genesis_utxo: load_config_field(c, &config_fields::GENESIS_UTXO)?,
 			initial_permissioned_candidates_raw,
 			initial_permissioned_candidates_parsed,
@@ -247,6 +249,7 @@ impl<Keys: MaybeFromCandidateKeys> CreateChainSpecConfig<Keys> {
 impl<T> Default for CreateChainSpecConfig<T> {
 	fn default() -> Self {
 		Self {
+			bootnodes: Default::default(),
 			genesis_utxo: Default::default(),
 			initial_permissioned_candidates_raw: Default::default(),
 			initial_permissioned_candidates_parsed: Default::default(),

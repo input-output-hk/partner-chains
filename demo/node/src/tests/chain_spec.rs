@@ -8,6 +8,7 @@ use std::str::FromStr;
 #[test]
 fn pc_create_chain_spec_test() {
 	let config = CreateChainSpecConfig {
+		bootnodes: vec![],
 		genesis_utxo: UtxoId::new([1u8; 32], 7),
 		initial_permissioned_candidates_raw: vec![],
 		initial_permissioned_candidates_parsed: vec![ParsedPermissionedCandidatesKeys {
