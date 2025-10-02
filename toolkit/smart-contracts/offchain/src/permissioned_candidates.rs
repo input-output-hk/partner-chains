@@ -14,6 +14,7 @@ use crate::csl::{
 use crate::governance::GovernanceData;
 use crate::multisig::{MultiSigSmartContractResult, submit_or_create_tx_to_sign};
 use crate::plutus_script::PlutusScript;
+use crate::scripts_data::PlutusScriptData;
 use crate::{cardano_keys::CardanoPaymentSigningKey, scripts_data};
 use anyhow::anyhow;
 use cardano_serialization_lib::{
@@ -47,11 +48,11 @@ pub async fn upsert_permissioned_candidates<
 	let ctx = TransactionContext::for_payment_key(payment_signing_key, client).await?;
 	let scripts = scripts_data::permissioned_candidates_scripts(genesis_utxo, ctx.network)?;
 	let governance_data = GovernanceData::get(genesis_utxo, client).await?;
-	let validator_utxos = client.query_utxos(&[scripts.validator_address]).await?;
+	let validator_utxos = client.query_utxos(&[scripts.validator_address.clone()]).await?;
 	let mut candidates = candidates.to_owned();
 	candidates.sort();
 
-	let result_opt = match get_current_permissioned_candidates(validator_utxos)? {
+	let result_opt = match get_current_permissioned_candidates(validator_utxos, &scripts)? {
 		Some((_, current_permissioned_candidates))
 			if current_permissioned_candidates == *candidates =>
 		{
@@ -99,8 +100,18 @@ pub async fn upsert_permissioned_candidates<
 
 fn get_current_permissioned_candidates(
 	validator_utxos: Vec<OgmiosUtxo>,
+	scripts: &PlutusScriptData,
 ) -> Result<Option<(OgmiosUtxo, Vec<PermissionedCandidateData>)>, anyhow::Error> {
-	if let Some(utxo) = validator_utxos.first() {
+	let utxos_with_permissioned_candidates_token: Vec<OgmiosUtxo> = validator_utxos
+		.into_iter()
+		.filter(|utxo| utxo.value.native_tokens.get(&scripts.policy_id().0).is_some())
+		.collect();
+
+	if utxos_with_permissioned_candidates_token.len() > 1 {
+		return Err(anyhow!("Multiple UTXOs with permissioned candidates token found"));
+	}
+
+	if let Some(utxo) = utxos_with_permissioned_candidates_token.first() {
 		let datum = utxo.datum.clone().ok_or_else(|| {
 			anyhow!("Invalid state: an UTXO at the validator script address does not have a datum")
 		})?;
@@ -281,8 +292,9 @@ where
 	C: QueryNetwork + QueryLedgerState,
 {
 	let scripts = scripts_data::permissioned_candidates_scripts(genesis_utxo, network)?;
-	let validator_utxos = client.query_utxos(&[scripts.validator_address]).await?;
-	Ok(get_current_permissioned_candidates(validator_utxos)?.map(|(_, candidates)| candidates))
+	let validator_utxos = client.query_utxos(&[scripts.validator_address.clone()]).await?;
+	Ok(get_current_permissioned_candidates(validator_utxos, &scripts)?
+		.map(|(_, candidates)| candidates))
 }
 
 #[cfg(test)]
