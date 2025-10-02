@@ -11,9 +11,10 @@ runs:
         K8S_SERVER: ${{ env.K8S_SERVER }}
         K8S_SA_TOKEN: ${{ env.K8S_SA_TOKEN }}
     - name: Set up Python 3.12
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.12'
+        cache: 'pip'
     - name: Setup python dependencies
       run: |
         cd e2e-tests
