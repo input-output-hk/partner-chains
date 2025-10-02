@@ -64,6 +64,7 @@ pub fn pc_create_chain_spec(config: &CreateChainSpecConfig<SessionKeys>) -> serd
 		.with_id("partner_chains_demo")
 		.with_chain_type(ChainType::Live)
 		.with_genesis_config(genesis_json)
+		.with_boot_nodes(config.bootnodes.iter().map(|bn| bn.parse().unwrap()).collect())
 		.build();
 	let raw = false;
 	let chain_spec_str = chain_spec.as_json(raw).expect("Chain spec serialization can not fail");

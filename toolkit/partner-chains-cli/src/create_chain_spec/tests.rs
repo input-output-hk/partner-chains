@@ -13,6 +13,7 @@ impl PartnerChainRuntime for MockRuntime {
 		config: &super::CreateChainSpecConfig<TestSessionKeys>,
 	) -> serde_json::Value {
 		serde_json::json!({
+			"bootnodes": config.bootnodes,
 			"session":config.pallet_partner_chains_session_config::<MockRuntime>(),
 			"sessionCommitteeManagement": config.pallet_session_validator_management_config::<MockRuntime>(),
 			"sidechain": config.pallet_sidechain_config::<MockRuntime>(SlotsPerEpoch(13)),
@@ -95,6 +96,7 @@ If you are a validator, you can obtain the chain configuration file from the gov
 
 fn test_config_content() -> serde_json::Value {
 	serde_json::json!({
+		"bootnodes": ["test_bootnode"],
 		"chain_parameters": chain_parameters_json(),
 		"initial_permissioned_candidates": [
 			{
@@ -131,6 +133,7 @@ fn test_config_content_without_initial_permissioned_candidates() -> serde_json::
 
 fn test_config_content_with_empty_initial_permissioned_candidates() -> serde_json::Value {
 	serde_json::json!({
+		"bootnodes": [],
 		"chain_parameters": chain_parameters_json(),
 		"initial_permissioned_candidates": [],
 		"cardano_addresses": cardano_addresses_json(),
@@ -215,6 +218,7 @@ fn show_initial_permissioned_candidates() -> MockIO {
 fn generated_chain_spec() -> serde_json::Value {
 	serde_json::json!(
 		{
+			"bootnodes": ["test_bootnode"],
 			"session": {
 				"initialValidators": [
 					[
