@@ -24,6 +24,7 @@ pub use weights::WeightInfo;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use crate::pallet_session_support::provide_committee_accounts;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 	use log::{info, warn};
@@ -170,6 +171,7 @@ pub mod pallet {
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
 			let initial_authorities = BoundedVec::truncate_from(self.initial_authorities.clone());
+			provide_committee_accounts::<T>(&initial_authorities);
 			let committee_info =
 				CommitteeInfo { epoch: T::ScEpochNumber::zero(), committee: initial_authorities };
 			CurrentCommittee::<T>::put(committee_info);

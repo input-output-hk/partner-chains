@@ -97,25 +97,14 @@ fn register_committee_keys<T: crate::Config + pallet_session::Config>(
 }
 
 // Ensures that all accounts tied to new committee members exist by incrementing their
-// account provider counts. Cleans up accounts of old members by decrementing them back.
-fn provide_committee_accounts<T: crate::Config>(new_committee: &[T::CommitteeMember]) {
+// account provider counts.
+pub(crate) fn provide_committee_accounts<T: crate::Config>(new_committee: &[T::CommitteeMember]) {
 	let new_accs: BTreeSet<T::AccountId> =
 		new_committee.iter().map(|m| m.authority_id().into()).collect();
-	let old_accs: BTreeSet<T::AccountId> = crate::Pallet::<T>::current_committee_storage()
-		.committee
-		.iter()
-		.map(|m| m.authority_id().into())
-		.collect();
-
-	let to_inc = new_accs.difference(&old_accs);
-	let to_dec = old_accs.difference(&new_accs);
-	for account in to_inc {
-		frame_system::Pallet::<T>::inc_providers(account);
-	}
-	for account in to_dec {
-		frame_system::Pallet::<T>::dec_providers(account).expect(
-			"We always match dec_providers with corresponding inc_providers, thus it cannot fail",
-		);
+	for account in new_accs {
+		if !frame_system::Pallet::<T>::account_exists(&account) {
+			frame_system::Pallet::<T>::inc_providers(&account);
+		}
 	}
 }
 
