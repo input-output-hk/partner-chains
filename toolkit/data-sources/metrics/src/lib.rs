@@ -1,8 +1,10 @@
-//! Substrate Prometheus metrics client for Db-Sync-based Partner Chain data sources
+//! Substrate Prometheus metrics client for Partner Chain data sources
 use log::warn;
 use substrate_prometheus_endpoint::{
 	CounterVec, HistogramOpts, HistogramVec, Opts, PrometheusError, Registry, U64, register,
 };
+
+pub type MetricsRegistry = Registry;
 
 /// Substrate Prometheus metrics client used by Partner Chain data sources
 #[derive(Clone)]
@@ -12,13 +14,13 @@ pub struct McFollowerMetrics {
 }
 
 impl McFollowerMetrics {
-	pub(crate) fn time_elapsed(&self) -> &HistogramVec {
+	pub fn time_elapsed(&self) -> &HistogramVec {
 		&self.time_elapsed
 	}
-	pub(crate) fn call_count(&self) -> &CounterVec<U64> {
+	pub fn call_count(&self) -> &CounterVec<U64> {
 		&self.call_count
 	}
-	pub(crate) fn register(registry: &Registry) -> Result<Self, PrometheusError> {
+	pub fn register(registry: &Registry) -> Result<Self, PrometheusError> {
 		Ok(Self {
 			time_elapsed: register(
 				HistogramVec::new(
@@ -57,10 +59,13 @@ pub fn register_metrics_warn_errors(
 	})
 }
 
+pub use async_trait::async_trait;
+
 /// Logs each method invocation and each returned result.
 /// Has to be made at the level of trait, because otherwise #[async_trait] is expanded first.
 /// '&self' matching yields "__self" identifier not found error, so "&$self:tt" is required.
 /// Works only if return type is Result.
+#[macro_export]
 macro_rules! observed_async_trait {
 	(impl $(<$($type_param:tt),+>)? $trait_name:ident $(<$($type_arg:ident),+>)? for $target_type:ty
 		$(where $($where_type:ident : $where_bound:tt ,)+)?
@@ -69,7 +74,7 @@ macro_rules! observed_async_trait {
 		$(type $type_name:ident = $type:ty;)*
 		$(async fn $method:ident(&$self:tt $(,$param_name:ident: $param_type:ty)* $(,)?) -> $res:ty $body:block)*
 	})=> {
-		#[async_trait::async_trait]
+		#[$crate::async_trait]
 		impl $(<$($type_param),+>)? $trait_name $(<$($type_arg),+>)? for $target_type
 		$(where $($where_type : $where_bound ,)+)?
 
@@ -100,14 +105,11 @@ macro_rules! observed_async_trait {
 	};
 }
 
-pub(crate) use observed_async_trait;
-
-#[cfg(test)]
-pub(crate) mod mock {
-	use crate::metrics::McFollowerMetrics;
+pub mod mock {
+	use crate::McFollowerMetrics;
 	use substrate_prometheus_endpoint::{CounterVec, HistogramOpts, HistogramVec, Opts};
 
-	pub(crate) fn test_metrics() -> McFollowerMetrics {
+	pub fn test_metrics() -> McFollowerMetrics {
 		McFollowerMetrics {
 			time_elapsed: HistogramVec::new(HistogramOpts::new("test", "test"), &["method_name"])
 				.unwrap(),
@@ -118,7 +120,7 @@ pub(crate) mod mock {
 
 #[cfg(test)]
 mod tests {
-	use crate::metrics::{McFollowerMetrics, mock::test_metrics};
+	use crate::{McFollowerMetrics, mock::test_metrics};
 	use async_trait::async_trait;
 	use std::convert::Infallible;
 	use substrate_prometheus_endpoint::prometheus::core::Metric;

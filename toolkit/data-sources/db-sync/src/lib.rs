@@ -22,6 +22,7 @@
 //! ```rust
 //! # use std::error::Error;
 //! # use std::sync::Arc;
+//! use partner_chains_data_source_metrics::*;
 //! use partner_chains_db_sync_data_sources::*;
 //!
 //! pub const CANDIDATES_FOR_EPOCH_CACHE_SIZE: usize = 64;
@@ -29,7 +30,7 @@
 //! pub const GOVERNED_MAP_CACHE_SIZE: u16 = 100;
 //!
 //! async fn create_data_sources(
-//!     metrics_registry_opt: Option<&substrate_prometheus_endpoint::Registry>
+//!     metrics_registry_opt: Option<&MetricsRegistry>
 //! ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 //!     let metrics = register_metrics_warn_errors(metrics_registry_opt);
 //!     let pool = get_connection_from_env().await?;
@@ -60,7 +61,7 @@
 //! Partner Chains data sources require specific Db-Sync configuration to be set for them to
 //! operate correctly:
 //! - `insert_options.tx_out.value`: must be either `"enable"` (default) or `"consumed"`.
-//!   The data sources in this crate that need to query transaction intputs automatically detect
+//!   The data sources in this crate that need to query transaction inputs automatically detect
 //!   which option is used and adjust their queries accordingly. This requires the database to be
 //!   already initialized by db-sync. When run for an uninitialized database, the data sources
 //!   will default to the `"enable"` option.
@@ -95,10 +96,7 @@
 #![deny(missing_docs)]
 #![allow(rustdoc::private_intra_doc_links)]
 
-pub use crate::{
-	data_sources::{ConnectionConfig, PgPool, get_connection_from_env},
-	metrics::{McFollowerMetrics, register_metrics_warn_errors},
-};
+pub use crate::data_sources::{ConnectionConfig, PgPool, get_connection_from_env};
 
 #[cfg(feature = "block-source")]
 pub use crate::block::{BlockDataSourceImpl, DbSyncBlockDataSourceConfig};
@@ -118,7 +116,6 @@ pub use crate::stake_distribution::StakeDistributionDataSourceImpl;
 mod data_sources;
 mod db_datum;
 mod db_model;
-mod metrics;
 
 #[cfg(feature = "block-source")]
 mod block;
