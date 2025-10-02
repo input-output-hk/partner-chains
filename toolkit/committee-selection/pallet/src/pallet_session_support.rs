@@ -67,6 +67,9 @@ where
 	}
 }
 
+// Registers keys of new committee members in the session pallet. This is necessary, as the pallet
+// requires the keys to be registered prior to session start and we do not wish to force block
+// producers to do it manually.
 fn register_committee_keys<T: crate::Config + pallet_session::Config>(
 	new_committee: &[T::CommitteeMember],
 ) where
