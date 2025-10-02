@@ -27,7 +27,7 @@ pub fn chain_spec() -> Result<ChainSpec, envy::Error> {
 		},
 		transaction_payment: Default::default(),
 		session: SessionConfig {
-			// Initial validators are meant to be updated in the chain spec file, so it is empty here.
+			// Keys are meant to be updated in the chain spec file, so it is empty here.
 			keys: vec![],
 			non_authority_keys: Default::default(),
 		},
