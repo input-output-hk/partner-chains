@@ -44,6 +44,12 @@ def pytest_addoption(parser):
     parser.addoption("--node-port", action="store", help="Overrides node port")
     parser.addoption("--deployment-mc-epoch", action="store", type=int, help="Deployment main chain epoch.")
     parser.addoption("--init-timestamp", action="store", type=int, help="Initial timestamp of the main chain.")
+    
+    # Database override options
+    parser.addoption("--db-host", action="store", help="Overrides qa_staging_db host")
+    parser.addoption("--db-port", action="store", help="Overrides qa_staging_db port")
+    parser.addoption("--db-sync-host", action="store", help="Overrides db-sync host")
+    parser.addoption("--db-sync-port", action="store", help="Overrides db-sync port")
 
     # committee tests parametrization
     parser.addoption(
@@ -305,7 +311,7 @@ def config():
 
 
 @fixture(scope="session")
-def secrets(blockchain, nodes_env, decrypt, ci_run):
+def secrets(request, blockchain, nodes_env, decrypt, ci_run):
     path = f"{os.getcwd()}/secrets/{blockchain}/{nodes_env}/{nodes_env}.json"
     assert os.path.isfile(path), f"Secrets file not found {path}"
     if decrypt:
@@ -317,6 +323,31 @@ def secrets(blockchain, nodes_env, decrypt, ci_run):
     ci_path = f"{os.getcwd()}/secrets/{blockchain}/{nodes_env}/{nodes_env}-ci.json"
     if ci_run and os.path.isfile(ci_path):
         secrets = secrets_ci(secrets, decrypt, ci_path)
+
+    # Apply command line database overrides
+    db_host = request.config.getoption("--db-host")
+    if db_host:
+        secrets["db"]["host"] = db_host
+        # Rebuild URL with new host
+        secrets["db"]["url"] = f"{secrets['db']['type']}://{secrets['db']['username']}:{secrets['db']['password']}@{db_host}:{secrets['db']['port']}/{secrets['db']['name']}"
+    
+    db_port = request.config.getoption("--db-port") 
+    if db_port:
+        secrets["db"]["port"] = db_port
+        # Rebuild URL with new port
+        secrets["db"]["url"] = f"{secrets['db']['type']}://{secrets['db']['username']}:{secrets['db']['password']}@{secrets['db']['host']}:{db_port}/{secrets['db']['name']}"
+        
+    db_sync_host = request.config.getoption("--db-sync-host")
+    if db_sync_host:
+        secrets["dbSync"]["host"] = db_sync_host
+        # Rebuild URL with new host
+        secrets["dbSync"]["url"] = f"{secrets['dbSync']['type']}://{secrets['dbSync']['username']}:{secrets['dbSync']['password']}@{db_sync_host}:{secrets['dbSync']['port']}/{secrets['dbSync']['name']}"
+        
+    db_sync_port = request.config.getoption("--db-sync-port")
+    if db_sync_port:
+        secrets["dbSync"]["port"] = db_sync_port
+        # Rebuild URL with new port  
+        secrets["dbSync"]["url"] = f"{secrets['dbSync']['type']}://{secrets['dbSync']['username']}:{secrets['dbSync']['password']}@{secrets['dbSync']['host']}:{db_sync_port}/{secrets['dbSync']['name']}"
 
     return secrets
 

@@ -44,6 +44,18 @@ inputs:
     description: 'Number of threads to use'
     required: false
     default: '4'
+  db_host:
+    description: 'Override qa_staging_db host'
+    required: false
+  db_port:
+    description: 'Override qa_staging_db port'
+    required: false
+  db_sync_host:
+    description: 'Override db-sync host'
+    required: false
+  db_sync_port:
+    description: 'Override db-sync port'
+    required: false
 
 runs:
   using: composite
@@ -80,6 +92,27 @@ runs:
           decrypt_switch="--decrypt"
         fi
 
+        # Database override switches
+        db_host_switch=""
+        if [ -n "${{ inputs.db_host }}" ]; then
+          db_host_switch="--db-host '${{ inputs.db_host }}'"
+        fi
+
+        db_port_switch=""
+        if [ -n "${{ inputs.db_port }}" ]; then
+          db_port_switch="--db-port '${{ inputs.db_port }}'"
+        fi
+
+        db_sync_host_switch=""
+        if [ -n "${{ inputs.db_sync_host }}" ]; then
+          db_sync_host_switch="--db-sync-host '${{ inputs.db_sync_host }}'"
+        fi
+
+        db_sync_port_switch=""
+        if [ -n "${{ inputs.db_sync_port }}" ]; then
+          db_sync_port_switch="--db-sync-port '${{ inputs.db_sync_port }}'"
+        fi
+
         # Define pytest command
         pytest_cmd="pytest --blockchain '${{ inputs.blockchain }}' \
           --env '${{ inputs.env }}' \
@@ -93,6 +126,10 @@ runs:
           ${latest_mc_epoch_switch} \
           ${deployment_mc_epoch_switch} \
           ${decrypt_switch} \
+          ${db_host_switch} \
+          ${db_port_switch} \
+          ${db_sync_host_switch} \
+          ${db_sync_port_switch} \
           --json-report \
           --json-report-file=logs/.report.json \
           --json-report-summary \

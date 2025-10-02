@@ -222,6 +222,32 @@ jobs:
           kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
           K8S_SERVER: ${{ secrets.K8S_SERVER }}
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
+      - name: Install and configure kubectl
+        run: |
+          # Install kubectl
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x ./kubectl
+          sudo mv ./kubectl /usr/local/bin/kubectl
+          
+          # Configure kubectl
+          kubectl config set-cluster my-cluster --server=${{ secrets.K8S_SERVER }} --insecure-skip-tls-verify=true
+          kubectl config set-credentials github-actions --token=${{ secrets.K8S_SA_TOKEN }}
+          kubectl config set-context my-context --cluster=my-cluster --user=github-actions --namespace=default
+          kubectl config use-context my-context
+        shell: bash
+      - name: Setup database port-forwarding
+        run: |
+          # Start port-forwarding for databases in background
+          kubectl port-forward -n staging-preview service/staging-preview-validator-1-service 5432:5432 &
+          kubectl port-forward -n sc service/gh-actions-postgres-service 5433:5432 &
+          
+          # Wait for port-forwards to be ready
+          sleep 10
+          
+          # Verify port-forwards are working
+          nc -z localhost 5432 && echo "Port 5432 is ready" || echo "Port 5432 failed"
+          nc -z localhost 5433 && echo "Port 5433 is ready" || echo "Port 5433 failed"
+        shell: bash
       - name: Run smoke tests
         uses: ./.github/actions/tests/run-e2e-tests
         with:
@@ -230,6 +256,10 @@ jobs:
           decrypt: true
           markers: ${{ matrix.markers }}
           threads: 1
+          db_sync_host: localhost
+          db_sync_port: 5432
+          db_host: localhost
+          db_port: 5433
 
   run-all-tests:
     if: always() && inputs.no-tests == false && needs.run-smoke-tests.result == 'success'
@@ -250,6 +280,32 @@ jobs:
           kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
           K8S_SERVER: ${{ secrets.K8S_SERVER }}
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
+      - name: Install and configure kubectl
+        run: |
+          # Install kubectl
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x ./kubectl
+          sudo mv ./kubectl /usr/local/bin/kubectl
+          
+          # Configure kubectl
+          kubectl config set-cluster my-cluster --server=${{ secrets.K8S_SERVER }} --insecure-skip-tls-verify=true
+          kubectl config set-credentials github-actions --token=${{ secrets.K8S_SA_TOKEN }}
+          kubectl config set-context my-context --cluster=my-cluster --user=github-actions --namespace=default
+          kubectl config use-context my-context
+        shell: bash
+      - name: Setup database port-forwarding
+        run: |
+          # Start port-forwarding for databases in background
+          kubectl port-forward -n staging-preview service/staging-preview-validator-1-service 5432:5432 &
+          kubectl port-forward -n sc service/gh-actions-postgres-service 5433:5432 &
+          
+          # Wait for port-forwards to be ready
+          sleep 10
+          
+          # Verify port-forwards are working
+          nc -z localhost 5432 && echo "Port 5432 is ready" || echo "Port 5432 failed"
+          nc -z localhost 5433 && echo "Port 5433 is ready" || echo "Port 5433 failed"
+        shell: bash
       - name: Run all tests (some skipped due to new deployment)
         uses: ./.github/actions/tests/run-e2e-tests
         env:
@@ -260,6 +316,10 @@ jobs:
           decrypt: true
           deployment_mc_epoch: $DEPLOYMENT_MC_EPOCH
           threads: 1
+          db_sync_host: localhost
+          db_sync_port: 5432
+          db_host: localhost
+          db_port: 5433
 
   wait-for-n1-epoch:
     if: always() && inputs.no-tests == false && needs.partner-chain-ready.result == 'success'
@@ -314,6 +374,32 @@ jobs:
           kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
           K8S_SERVER: ${{ secrets.K8S_SERVER }}
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
+      - name: Install and configure kubectl
+        run: |
+          # Install kubectl
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x ./kubectl
+          sudo mv ./kubectl /usr/local/bin/kubectl
+          
+          # Configure kubectl
+          kubectl config set-cluster my-cluster --server=${{ secrets.K8S_SERVER }} --insecure-skip-tls-verify=true
+          kubectl config set-credentials github-actions --token=${{ secrets.K8S_SA_TOKEN }}
+          kubectl config set-context my-context --cluster=my-cluster --user=github-actions --namespace=default
+          kubectl config use-context my-context
+        shell: bash
+      - name: Setup database port-forwarding
+        run: |
+          # Start port-forwarding for databases in background
+          kubectl port-forward -n staging-preview service/staging-preview-validator-1-service 5432:5432 &
+          kubectl port-forward -n sc service/gh-actions-postgres-service 5433:5432 &
+          
+          # Wait for port-forwards to be ready
+          sleep 10
+          
+          # Verify port-forwards are working
+          nc -z localhost 5432 && echo "Port 5432 is ready" || echo "Port 5432 failed"
+          nc -z localhost 5433 && echo "Port 5433 is ready" || echo "Port 5433 failed"
+        shell: bash
       - name: Run all tests (some skipped due to new deployment)
         uses: ./.github/actions/tests/run-e2e-tests
         env:
@@ -325,6 +411,10 @@ jobs:
           latest_mc_epoch: true
           deployment_mc_epoch: $DEPLOYMENT_MC_EPOCH
           threads: 1
+          db_sync_host: localhost
+          db_sync_port: 5432
+          db_host: localhost
+          db_port: 5433
 
   wait-for-n2-epoch:
     if: |
@@ -385,6 +475,32 @@ jobs:
           kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
           K8S_SERVER: ${{ secrets.K8S_SERVER }}
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
+      - name: Install and configure kubectl
+        run: |
+          # Install kubectl
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x ./kubectl
+          sudo mv ./kubectl /usr/local/bin/kubectl
+          
+          # Configure kubectl
+          kubectl config set-cluster my-cluster --server=${{ secrets.K8S_SERVER }} --insecure-skip-tls-verify=true
+          kubectl config set-credentials github-actions --token=${{ secrets.K8S_SA_TOKEN }}
+          kubectl config set-context my-context --cluster=my-cluster --user=github-actions --namespace=default
+          kubectl config use-context my-context
+        shell: bash
+      - name: Setup database port-forwarding
+        run: |
+          # Start port-forwarding for databases in background
+          kubectl port-forward -n staging-preview service/staging-preview-validator-1-service 5432:5432 &
+          kubectl port-forward -n sc service/gh-actions-postgres-service 5433:5432 &
+          
+          # Wait for port-forwards to be ready
+          sleep 10
+          
+          # Verify port-forwards are working
+          nc -z localhost 5432 && echo "Port 5432 is ready" || echo "Port 5432 failed"
+          nc -z localhost 5433 && echo "Port 5433 is ready" || echo "Port 5433 failed"
+        shell: bash
       - name: Run all tests (no skipped tests)
         uses: ./.github/actions/tests/run-e2e-tests
         env:
@@ -396,6 +512,10 @@ jobs:
           latest_mc_epoch: true
           deployment_mc_epoch: $DEPLOYMENT_MC_EPOCH
           threads: 1
+          db_sync_host: localhost
+          db_sync_port: 5432
+          db_host: localhost
+          db_port: 5433
 
   publish-ghcr-after-tests:
     if: |
