@@ -101,6 +101,15 @@ partner-chains-db-sync-data-sources = { workspace = true, features = [
 	"block-participation",
 	"bridge",
 ] }
+partner-chains-dolos-data-sources = { workspace = true, features = [
+	"block-source",
+	"candidate-source",
+	"governed-map",
+	"mc-hash",
+	"sidechain-rpc",
+	"block-participation",
+	"bridge",
+] }
 partner-chains-mock-data-sources = { workspace = true, features = [
 	"block-source",
 	"candidate-source",

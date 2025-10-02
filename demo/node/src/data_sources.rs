@@ -90,9 +90,9 @@ pub(crate) async fn create_cached_data_sources(
 			ServiceError::Application(format!("Failed to create mock data sources: {err}").into())
 		}),
 
-		DataSourceType::Dolos => {
-			Err(ServiceError::Application("Dolos data source is not implemented yet.".into()))
-		},
+		DataSourceType::Dolos => create_dolos_data_sources().map_err(|err| {
+			ServiceError::Application(format!("Failed to create dolos data sources: {err}").into())
+		}),
 	}
 }
 
@@ -106,6 +106,19 @@ pub fn create_mock_data_sources()
 		block_participation: Arc::new(StakeDistributionDataSourceMock::new()),
 		governed_map: Arc::new(GovernedMapDataSourceMock::default()),
 		bridge: Arc::new(TokenBridgeDataSourceMock::new()),
+	})
+}
+
+pub fn create_dolos_data_sources()
+-> std::result::Result<DataSources, Box<dyn Error + Send + Sync + 'static>> {
+	use partner_chains_dolos_data_sources::*;
+	Ok(DataSources {
+		sidechain_rpc: Arc::new(SidechainRpcDataSourceImpl::new()),
+		mc_hash: Arc::new(McHashDataSourceImpl::new()),
+		authority_selection: Arc::new(AuthoritySelectionDataSourceImpl::new()),
+		block_participation: Arc::new(StakeDistributionDataSourceImpl::new()),
+		governed_map: Arc::new(GovernedMapDataSourceImpl::default()),
+		bridge: Arc::new(TokenBridgeDataSourceImpl::new()),
 	})
 }
 

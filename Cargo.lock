@@ -7400,6 +7400,7 @@ dependencies = [
  "partner-chains-cli",
  "partner-chains-db-sync-data-sources",
  "partner-chains-demo-runtime",
+ "partner-chains-dolos-data-sources",
  "partner-chains-mock-data-sources",
  "partner-chains-node-commands",
  "sc-basic-authorship",
@@ -7526,6 +7527,21 @@ dependencies = [
  "sp-version",
  "sp-weights",
  "substrate-wasm-builder",
+]
+
+[[package]]
+name = "partner-chains-dolos-data-sources"
+version = "1.8.0"
+dependencies = [
+ "async-trait",
+ "authority-selection-inherents",
+ "pallet-sidechain-rpc",
+ "sidechain-domain",
+ "sidechain-mc-hash",
+ "sp-block-participation",
+ "sp-governed-map",
+ "sp-partner-chains-bridge",
+ "sp-timestamp",
 ]
 
 [[package]]
