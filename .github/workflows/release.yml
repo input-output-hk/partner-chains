@@ -213,8 +213,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.sha }}
       - name: Setup tests
         uses: ./.github/actions/tests/setup-python
         env:
@@ -241,8 +239,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.sha }}
       - name: Setup tests
         uses: ./.github/actions/tests/setup-python
         env:
@@ -305,8 +301,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.sha }}
       - name: Setup tests
         uses: ./.github/actions/tests/setup-python
         env:
@@ -376,8 +370,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.sha }}
       - name: Setup tests
         uses: ./.github/actions/tests/setup-python
         env:
