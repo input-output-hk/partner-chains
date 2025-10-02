@@ -714,7 +714,6 @@ construct_runtime!(
 		BlockParticipation: pallet_block_participation,
 		// We exclude pallet's extrinsics to make them unavailable to users to submit
 		Session: pallet_session exclude_parts { Call },
-		// Historical: pallet_session::historical,
 		GovernedMap: pallet_governed_map,
 		Bridge: pallet_partner_chains_bridge,
 		TestHelperPallet: crate::test_helper_pallet,
