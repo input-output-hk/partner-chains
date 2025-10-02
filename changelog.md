@@ -10,6 +10,10 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Removed
 
+* `pallet-partner-chains-session` has been removed. Partner Chains should use only the stock Substrate session pallet
+* `PalletSessionSupport` type provided by `pallet-session-validator-management`. The `SessionManager` and `ShouldEndSession`
+  implementations were moved directly to the `Pallet` type instead.
+
 ## Fixed
 
 ## Added
