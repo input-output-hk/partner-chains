@@ -97,7 +97,13 @@ fn register_committee_keys<T: crate::Config + pallet_session::Config>(
 }
 
 // Ensures that all accounts tied to new committee members exist by incrementing their
-// account provider counts.
+// account provider counts. This is a necessary temporary solution, because we don't check
+// whether a block producer's account exists or not, when selecting them to a committee.
+// A proper solution would either be:
+// - increasing provider count for an account for as long as it is in the active committee
+//   and decreasing it afterwards, or
+// - considering account existence when selecting the committee
+// This will be addressed in later development.
 pub(crate) fn provide_committee_accounts<T: crate::Config>(new_committee: &[T::CommitteeMember]) {
 	let new_accs: BTreeSet<T::AccountId> =
 		new_committee.iter().map(|m| m.authority_id().into()).collect();
