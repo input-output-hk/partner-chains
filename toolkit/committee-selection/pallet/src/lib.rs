@@ -39,7 +39,6 @@ pub use weights::WeightInfo;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use crate::pallet_session_support::provide_committee_accounts;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 	use log::{info, warn};
@@ -48,6 +47,7 @@ pub mod pallet {
 	use sp_core::blake2_256;
 	use sp_runtime::traits::{MaybeSerializeDeserialize, One, Zero};
 	use sp_session_validator_management::*;
+	use sp_std::collections::btree_set::BTreeSet;
 	use sp_std::fmt::Display;
 	use sp_std::{ops::Add, vec::Vec};
 
@@ -148,6 +148,10 @@ pub mod pallet {
 	}
 
 	#[pallet::storage]
+	pub type ProvidedAccounts<T: Config> =
+		StorageValue<_, BoundedBTreeSet<T::AccountId, T::MaxValidators>, ValueQuery>;
+
+	#[pallet::storage]
 	pub type CurrentCommittee<T: Config> = StorageValue<
 		_,
 		CommitteeInfo<T::ScEpochNumber, T::CommitteeMember, T::MaxValidators>,
@@ -186,7 +190,14 @@ pub mod pallet {
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
 			let initial_authorities = BoundedVec::truncate_from(self.initial_authorities.clone());
-			provide_committee_accounts::<T>(&initial_authorities);
+
+			let provided_accounts: BTreeSet<T::AccountId> =
+				initial_authorities.iter().map(|m| m.authority_id().into()).collect();
+			for account in &provided_accounts {
+				frame_system::Pallet::<T>::inc_providers(&account);
+			}
+			ProvidedAccounts::<T>::set(provided_accounts.try_into().unwrap());
+
 			let committee_info =
 				CommitteeInfo { epoch: T::ScEpochNumber::zero(), committee: initial_authorities };
 			CurrentCommittee::<T>::put(committee_info);
