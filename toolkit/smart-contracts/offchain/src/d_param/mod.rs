@@ -16,6 +16,7 @@ use crate::multisig::{
 	MultiSigSmartContractResult, MultiSigSmartContractResult::TransactionSubmitted,
 };
 use crate::plutus_script::PlutusScript;
+use crate::scripts_data::PlutusScriptData;
 use anyhow::anyhow;
 use cardano_serialization_lib::{PlutusData, Transaction, TransactionBuilder, TxInputsBuilder};
 use ogmios_client::query_ledger_state::QueryUtxoByUtxoId;
@@ -49,7 +50,7 @@ pub async fn upsert_d_param<
 	let scripts = crate::scripts_data::d_parameter_scripts(genesis_utxo, ctx.network)?;
 	let validator_utxos = client.query_utxos(&[scripts.validator_address.clone()]).await?;
 
-	let tx_hash_opt = match get_current_d_parameter(validator_utxos)? {
+	let tx_hash_opt = match get_current_d_parameter(validator_utxos, &scripts)? {
 		Some((_, current_d_param)) if current_d_param == *d_parameter => {
 			log::info!("Current D-parameter value is equal to the one to be set.");
 			None
@@ -94,8 +95,18 @@ pub async fn upsert_d_param<
 
 fn get_current_d_parameter(
 	validator_utxos: Vec<OgmiosUtxo>,
+	scripts: &PlutusScriptData,
 ) -> Result<Option<(OgmiosUtxo, DParameter)>, anyhow::Error> {
-	if let Some(utxo) = validator_utxos.first() {
+	let utxos_with_d_param_token: Vec<OgmiosUtxo> = validator_utxos
+		.into_iter()
+		.filter(|utxo| utxo.value.native_tokens.get(&scripts.policy_id().0).is_some())
+		.collect();
+
+	if utxos_with_d_param_token.len() > 1 {
+		return Err(anyhow!("Multiple UTXOs with D-parameter token found"));
+	}
+
+	if let Some(utxo) = utxos_with_d_param_token.first() {
 		let datum = utxo.datum.clone().ok_or_else(|| {
 			anyhow!("Invalid state: an UTXO at the validator script address does not have a datum")
 		})?;
@@ -255,5 +266,5 @@ pub async fn get_d_param<C: QueryLedgerState + QueryNetwork>(
 	let network = client.shelley_genesis_configuration().await?.network.to_csl();
 	let scripts = crate::scripts_data::d_parameter_scripts(genesis_utxo, network)?;
 	let validator_utxos = client.query_utxos(&[scripts.validator_address.clone()]).await?;
-	Ok(get_current_d_parameter(validator_utxos)?.map(|(_, d_parameter)| d_parameter))
+	Ok(get_current_d_parameter(validator_utxos, &scripts)?.map(|(_, d_parameter)| d_parameter))
 }
