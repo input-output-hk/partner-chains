@@ -72,7 +72,7 @@ echo "Inserting D parameter..."
     --ogmios-url http://ogmios:$OGMIOS_PORT \
     --genesis-utxo $GENESIS_UTXO \
     --permissioned-candidates-count 3 \
-    --registered-candidates-count 2 \
+    --registered-candidates-count 1 \
     --payment-key-file /keys/funded_address.skey
 
 if [ $? -eq 0 ]; then

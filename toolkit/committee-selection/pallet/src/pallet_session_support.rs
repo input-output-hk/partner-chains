@@ -32,19 +32,35 @@ where
 	/// Updates the session index of [`pallet_session`].
 	// Instead of Some((*).expect) we could just use (*). However, we rather panic in presence of important programming errors.
 	fn new_session(new_index: SessionIndex) -> Option<Vec<T::AccountId>> {
-		info!("Session manager: new_session {new_index}");
+		info!("💼 Session manager: new_session {new_index}");
 		let new_committee = crate::Pallet::<T>::rotate_committee_to_next_epoch().expect(
 			"Session should never end without current epoch validators defined. \
 				Check ShouldEndSession implementation or if it is used before starting new session",
 		);
 
-		provide_committee_accounts::<T>(&new_committee);
-		register_committee_keys::<T>(&new_committee);
+		let old_committee_accounts = crate::ProvidedAccounts::<T>::take();
+		let mut new_committee_accounts: BTreeSet<T::AccountId> = BTreeSet::new();
 
-		let new_committee_accounts =
-			new_committee.into_iter().map(|member| member.authority_id().into()).collect();
+		for member in new_committee.iter() {
+			let account = member.authority_id().into();
 
-		Some(new_committee_accounts)
+			if !new_committee_accounts.contains(&account) {
+				new_committee_accounts.insert(account.clone());
+
+				// Members that were already in the old committee have their accounts and keys set up already
+				if !old_committee_accounts.contains(&account) {
+					setup_block_producer::<T>(account, member.authority_keys());
+				}
+			}
+		}
+
+		for account in old_committee_accounts.difference(&new_committee_accounts) {
+			teardown_block_producer::<T>(account)
+		}
+
+		crate::ProvidedAccounts::<T>::set(new_committee_accounts.clone().try_into().unwrap());
+
+		Some(new_committee.into_iter().map(|member| member.authority_id().into()).collect())
 	}
 
 	fn end_session(end_index: SessionIndex) {
@@ -58,51 +74,47 @@ where
 	}
 }
 
-// Registers keys of new committee members in the session pallet. This is necessary, as the pallet
-// requires the keys to be registered prior to session start and we do not wish to force block
-// producers to do it manually.
-fn register_committee_keys<T: crate::Config + pallet_session::Config>(
-	new_committee: &[T::CommitteeMember],
+/// Provides accounts and registers keys for new committee members
+fn setup_block_producer<T: crate::Config + pallet_session::Config>(
+	account: T::AccountId,
+	keys: T::AuthorityKeys,
 ) where
 	<T as pallet_session::Config>::Keys: From<T::AuthorityKeys>,
 {
-	let mut keys_added: BTreeSet<T::AccountId> = BTreeSet::new();
-	for member in new_committee.iter() {
-		let account_id = member.authority_id().into();
+	log::debug!(
+		"➕💼 Incrementing provider count and registering keys for block producer {account:?}"
+	);
 
-		if keys_added.contains(&account_id) {
-			continue;
-		}
+	frame_system::Pallet::<T>::inc_providers(&account);
 
-		keys_added.insert(account_id.clone());
-		let call = pallet_session::Call::<T>::set_keys {
-			keys: From::from(member.authority_keys()),
-			proof: vec![],
-		};
-		let call_result = call.dispatch_bypass_filter(RawOrigin::Signed(account_id.clone()).into());
-		match call_result {
-			Ok(_) => debug!("set_keys for {account_id:?}"),
-			Err(e) => info!("Could not set_keys for {account_id:?}, error: {:?}", e.error),
-		}
+	let set_keys_result = pallet_session::Call::<T>::set_keys { keys: keys.into(), proof: vec![] }
+		.dispatch_bypass_filter(RawOrigin::Signed(account.clone()).into());
+
+	match set_keys_result {
+		Ok(_) => debug!("set_keys for {account:?}"),
+		Err(e) => {
+			info!("Could not set_keys for {account:?}, error: {:?}", e.error)
+		},
 	}
 }
 
-// Ensures that all accounts tied to new committee members exist by incrementing their
-// account provider counts. This is a necessary temporary solution, because we don't check
-// whether a block producer's account exists or not, when selecting them to a committee.
-// A proper solution would either be:
-// - increasing provider count for an account for as long as it is in the active committee
-//   and decreasing it afterwards, or
-// - considering account existence when selecting the committee
-// This will be addressed in later development.
-pub(crate) fn provide_committee_accounts<T: crate::Config>(new_committee: &[T::CommitteeMember]) {
-	let new_accs: BTreeSet<T::AccountId> =
-		new_committee.iter().map(|m| m.authority_id().into()).collect();
-	for account in new_accs {
-		if !frame_system::Pallet::<T>::account_exists(&account) {
-			frame_system::Pallet::<T>::inc_providers(&account);
-		}
+/// Removes account provisions and purges keys for outgoing old committee members
+fn teardown_block_producer<T: crate::Config + pallet_session::Config>(account: &T::AccountId)
+where
+	<T as pallet_session::Config>::Keys: From<T::AuthorityKeys>,
+{
+	let purge_keys_result = pallet_session::Call::<T>::purge_keys {}
+		.dispatch_bypass_filter(RawOrigin::Signed(account.clone()).into());
+	match purge_keys_result {
+		Ok(_) => debug!("purge_keys for {account:?}"),
+		Err(e) => info!("Could not purge_keys for {account:?}, error: {:?}", e.error),
 	}
+	log::info!(
+		"➖💼 Decrementing provider count and deregisteringkeys for block producer {account:?}"
+	);
+	frame_system::Pallet::<T>::dec_providers(&account).expect(
+		"We always match dec_providers with corresponding inc_providers, thus it cannot fail",
+	);
 }
 
 /// Tries to end each session in the first block of each partner chains epoch in which the committee for the epoch is defined.
@@ -126,7 +138,7 @@ where
 				false
 			}
 		} else {
-			debug!("PalletSessionSupport: should_end_session({n:?}) = false");
+			debug!("Session manager: should_end_session({n:?}) = false");
 			false
 		}
 	}
