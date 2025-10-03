@@ -3,6 +3,7 @@
 PARTNER_CHAINS_NODE_IMAGE="ghcr.io/input-output-hk/partner-chains/partner-chains-node-unstable:latest"
 CARDANO_IMAGE="ghcr.io/intersectmbo/cardano-node:10.5.1"
 DBSYNC_IMAGE="ghcr.io/intersectmbo/cardano-db-sync:13.6.0.4"
+DOLOS_IMAGE="ghcr.io/txpipe/dolos:1.0.0-beta.4"
 OGMIOS_IMAGE="cardanosolutions/ogmios:v6.13.0"
 POSTGRES_IMAGE="postgres:17.2"
 TESTS_IMAGE="python:3.12-slim"
@@ -248,6 +249,8 @@ CPU_POSTGRES=0.000
 MEM_POSTGRES=1000G
 CPU_DBSYNC=0.000
 MEM_DBSYNC=1000G
+CPU_DOLOS=0.000
+MEM_DOLOS=1000G
 CPU_OGMIOS=0.000
 MEM_OGMIOS=1000G
 EOF
@@ -264,6 +267,8 @@ CPU_POSTGRES=$cpu_postgres
 MEM_POSTGRES=$mem_postgres
 CPU_DBSYNC=$cpu_dbsync
 MEM_DBSYNC=$mem_dbsync
+CPU_DOLOS=$cpu_dolos
+MEM_DOLOS=$mem_dolos
 CPU_OGMIOS=$cpu_ogmios
 MEM_OGMIOS=$mem_ogmios
 EOF
@@ -272,6 +277,7 @@ EOF
     cat <<EOF >>.env
 CARDANO_IMAGE=$CARDANO_IMAGE
 DBSYNC_IMAGE=$DBSYNC_IMAGE
+DOLOS_IMAGE=$DOLOS_IMAGE
 OGMIOS_IMAGE=$OGMIOS_IMAGE
 POSTGRES_IMAGE=$POSTGRES_IMAGE
 TESTS_IMAGE=$TESTS_IMAGE
@@ -293,7 +299,8 @@ choose_deployment_option() {
     echo "3) Include Cardano testnet, Ogmios, DB-Sync and Postgres"
     echo "4) Deploy a single Partner Chains node with network_mode: "host" for external connections (adjust partner-chains-external-node.txt before running this script)"
     echo "5) Deploy a 3 node Partner Chain network using wizard"
-    read -p "Enter your choice (1/2/3/4/5): " deployment_option
+    echo "6) Include Cardano testnet, Ogmios, and Dolos"
+    read -p "Enter your choice (1/2/3/4/5/6): " deployment_option
   else
     deployment_option=0
   fi
@@ -344,6 +351,12 @@ create_docker_compose() {
         cat ./modules/postgres.txt >> docker-compose.yml
         cat ./modules/partner-chains-wizard.txt >> docker-compose.yml
         ;;
+      6)
+        echo -e "Including Cardano testnet, Ogmios, and Dolos services.\n"
+        cat ./modules/cardano.txt >> docker-compose.yml
+        cat ./modules/ogmios.txt >> docker-compose.yml
+        cat ./modules/dolos.txt >> docker-compose.yml
+        ;;
       0)
         echo -e "Including all services.\n"
         cat ./modules/cardano.txt >> docker-compose.yml
@@ -379,11 +392,11 @@ parse_arguments() {
                 shift
                 ;;
             -d|--deployment-option)
-                if [[ -n "$2" && "$2" =~ ^[1-5]$ ]]; then
+                if [[ -n "$2" && "$2" =~ ^[1-6]$ ]]; then
                     deployment_option="$2"
                     shift 2
                 else
-                    echo "Error: Invalid deployment option '$2'. Valid options are 1, 2, 3, 4 or 5."
+                    echo "Error: Invalid deployment option '$2'. Valid options are 1, 2, 3, 4, 5 or 6."
                     exit 1
                 fi
                 ;;

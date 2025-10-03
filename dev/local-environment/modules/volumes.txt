@@ -3,6 +3,7 @@ volumes:
   cardano-node-1-data: {}
   shared-volume: {}
   db-sync-state-dir: {}
+  dolos-data: {}
   partner-chains-node-1-data: {}
   partner-chains-node-2-data: {}
   partner-chains-node-3-data: {}
