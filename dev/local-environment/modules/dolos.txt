@@ -1,0 +1,17 @@
+
+  dolos:
+    container_name: dolos
+    image: ${DOLOS_IMAGE}
+    platform: linux/amd64
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]
+    volumes:
+      - shared-volume:/shared
+      - dolos-data:/data
+      - ./configurations/dolos/entrypoint.sh:/entrypoint.sh
+      - ./configurations/dolos/dolos.toml:/dolos.toml
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: ${CPU_DOLOS:-}
+          memory: ${MEM_DOLOS:-}
