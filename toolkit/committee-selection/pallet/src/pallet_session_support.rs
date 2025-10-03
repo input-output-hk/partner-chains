@@ -1,28 +1,19 @@
-//! Implements Substrate's [pallet_session].
+//! Implements [pallet_session::SessionManager] and [pallet_session::ShouldEndSession] for [crate::Pallet].
 //!
 //! This implementation has lag of one additional PC epoch when applying committees to sessions.
+//!
+//! To use it, wire [crate::Pallet] in runtime configuration of [`pallet_session`].
 use crate::CommitteeMember;
-use core::marker::PhantomData;
-use derive_new::new;
 use frame_support::traits::UnfilteredDispatchable;
 use frame_system::RawOrigin;
 use frame_system::pallet_prelude::BlockNumberFor;
 use log::{debug, info, warn};
-use pallet_partner_chains_session::SessionIndex;
+use sp_staking::SessionIndex;
 use sp_std::collections::btree_set::BTreeSet;
 use sp_std::{vec, vec::Vec};
 
-/// Implements [pallet_session::SessionManager] and [pallet_session::ShouldEndSession] integrated with [crate::Pallet].
-///
-/// To use it, wire it in runtime configuration of [`pallet_session`].
-#[allow(dead_code)]
-#[derive(new)]
-pub struct PalletSessionSupport<T> {
-	_phantom: PhantomData<T>,
-}
-
 impl<T: crate::Config + pallet_session::Config> pallet_session::SessionManager<T::AccountId>
-	for PalletSessionSupport<T>
+	for crate::Pallet<T>
 where
 	<T as pallet_session::Config>::Keys: From<T::AuthorityKeys>,
 {
@@ -41,7 +32,7 @@ where
 	/// Updates the session index of [`pallet_session`].
 	// Instead of Some((*).expect) we could just use (*). However, we rather panic in presence of important programming errors.
 	fn new_session(new_index: SessionIndex) -> Option<Vec<T::AccountId>> {
-		info!("PalletSessionSupport: new_session {new_index}");
+		info!("Session manager: new_session {new_index}");
 		let new_committee = crate::Pallet::<T>::rotate_committee_to_next_epoch().expect(
 			"Session should never end without current epoch validators defined. \
 				Check ShouldEndSession implementation or if it is used before starting new session",
@@ -57,13 +48,13 @@ where
 	}
 
 	fn end_session(end_index: SessionIndex) {
-		debug!("PalletSessionSupport: End session {end_index}");
+		debug!("Session manager: End session {end_index}");
 	}
 
 	// Session is expected to be at least 1 block behind sidechain epoch.
 	fn start_session(start_index: SessionIndex) {
 		let epoch_number = T::current_epoch_number();
-		debug!("PalletSessionSupport: Start session {start_index}, epoch {epoch_number}");
+		debug!("Session manager: Start session {start_index}, epoch {epoch_number}");
 	}
 }
 
@@ -115,7 +106,7 @@ pub(crate) fn provide_committee_accounts<T: crate::Config>(new_committee: &[T::C
 }
 
 /// Tries to end each session in the first block of each partner chains epoch in which the committee for the epoch is defined.
-impl<T, EpochNumber> pallet_session::ShouldEndSession<BlockNumberFor<T>> for PalletSessionSupport<T>
+impl<T, EpochNumber> pallet_session::ShouldEndSession<BlockNumberFor<T>> for crate::Pallet<T>
 where
 	T: crate::Config<ScEpochNumber = EpochNumber>,
 	EpochNumber: Clone + PartialOrd,
@@ -126,11 +117,11 @@ where
 		let next_committee_is_defined = crate::Pallet::<T>::next_committee().is_some();
 		if current_epoch_number > current_committee_epoch {
 			if next_committee_is_defined {
-				debug!("PalletSessionSupport: should_end_session({n:?}) = true");
+				info!("Session manager: should_end_session({n:?}) = true");
 				true
 			} else {
 				warn!(
-					"PalletSessionSupport: should_end_session({n:?}) 'current epoch' > 'committee epoch' but the next committee is not defined"
+					"Session manager: should_end_session({n:?}) 'current epoch' > 'committee epoch' but the next committee is not defined"
 				);
 				false
 			}
@@ -143,14 +134,15 @@ where
 
 #[cfg(test)]
 mod tests {
-	use super::*;
 	use crate::{
 		CommitteeInfo, CurrentCommittee, NextCommittee, mock::mock_pallet::CurrentEpoch, mock::*,
+		tests::increment_epoch,
 	};
 	use pallet_session::ShouldEndSession;
 	pub const IRRELEVANT: u64 = 2;
+	use sp_runtime::testing::UintAuthorityId;
 
-	type Manager = PalletSessionSupport<Test>;
+	type Manager = crate::Pallet<Test>;
 
 	#[test]
 	fn should_end_session_if_last_one_ended_late_and_new_committee_is_defined() {
@@ -171,6 +163,29 @@ mod tests {
 				committee: next_committee,
 			});
 			assert!(Manager::should_end_session(IRRELEVANT));
+		});
+	}
+
+	#[test]
+	fn register_session_keys_for_provided_authorities() {
+		new_test_ext().execute_with(|| {
+			set_validators_directly(&[DAVE, EVE], 1).unwrap();
+			// By default, the session keys are not set for the account.
+			assert_eq!(Session::load_keys(&DAVE.authority_id), None);
+			assert_eq!(Session::load_keys(&EVE.authority_id), None);
+			increment_epoch();
+
+			start_session(1);
+
+			// After setting the keys, they should be stored in the session.
+			assert_eq!(
+				Session::load_keys(&DAVE.authority_id),
+				Some(SessionKeys { foo: UintAuthorityId(DAVE.authority_keys) })
+			);
+			assert_eq!(
+				Session::load_keys(&EVE.authority_id),
+				Some(SessionKeys { foo: UintAuthorityId(EVE.authority_keys) })
+			);
 		});
 	}
 }
