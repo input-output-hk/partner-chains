@@ -1,4 +1,19 @@
 //!  Pallet for setting the Partner Chain validators using inherent data
+//!
+//! *Important*: It is recommended that when `pallet_session` is wired into the runtime, its
+//! extrinsics are hidden, using `exclude_parts` like so:
+//! ```rust,ignore
+//! construct_runtime!(
+//! 	pub struct Runtime {
+//! 		System: frame_system,
+//! 		SessionCommitteeManagement: pallet_session_validator_management,
+//!         // ..other pallets
+//! 		Session: pallet_session exclude_parts { Call },
+//!     }
+//! };
+//! ```
+//! This ensures that chain users can't manually register their keys in the pallet and so the
+//! registrations done on Cardano remain the sole source of truth about key ownership.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
@@ -6,10 +21,7 @@
 
 pub mod migrations;
 /// [`pallet_session`] integration.
-#[cfg(feature = "pallet-session-compat")]
 pub mod pallet_session_support;
-#[cfg(feature = "pallet-session-compat")]
-pub mod session_manager;
 
 pub use pallet::*;
 
@@ -27,6 +39,7 @@ pub use weights::WeightInfo;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use crate::pallet_session_support::provide_committee_accounts;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 	use log::{info, warn};
@@ -173,6 +186,7 @@ pub mod pallet {
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
 			let initial_authorities = BoundedVec::truncate_from(self.initial_authorities.clone());
+			provide_committee_accounts::<T>(&initial_authorities);
 			let committee_info =
 				CommitteeInfo { epoch: T::ScEpochNumber::zero(), committee: initial_authorities };
 			CurrentCommittee::<T>::put(committee_info);

@@ -27,11 +27,11 @@ pub fn chain_spec() -> Result<ChainSpec, envy::Error> {
 		},
 		transaction_payment: Default::default(),
 		session: SessionConfig {
-			// Initial validators are meant to be updated in the chain spec file, so it is empty here.
-			initial_validators: vec![],
+			// Keys are meant to be updated in the chain spec file, so it is empty here.
+			keys: vec![],
+			non_authority_keys: Default::default(),
 		},
 		sidechain: SidechainConfig { genesis_utxo, ..Default::default() },
-		pallet_session: Default::default(),
 		session_committee_management: SessionCommitteeManagementConfig {
 			// Same as SessionConfig
 			initial_authorities: vec![],

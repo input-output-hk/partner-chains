@@ -1,4 +1,4 @@
-use crate::{Call, pallet};
+use crate::{Call, pallet, pallet_session_support::PalletSessionSupport};
 use frame_support::{
 	dispatch::PostDispatchInfo,
 	pallet_prelude::*,
@@ -9,7 +9,9 @@ use frame_system::EnsureRoot;
 use sidechain_domain::byte_string::SizedByteString;
 use sp_core::{H256, blake2_256};
 use sp_runtime::{
-	BuildStorage,
+	BuildStorage, KeyTypeId,
+	key_types::DUMMY,
+	testing::UintAuthorityId,
 	traits::{BlakeTwo256, IdentityLookup},
 };
 use sp_session_validator_management::MainChainScripts;
@@ -20,6 +22,18 @@ type AccountId = u64;
 type AuthorityId = u64;
 pub type ScEpochNumber = u64;
 pub type AuthorityKeys = u64;
+
+sp_runtime::impl_opaque_keys! {
+	pub struct SessionKeys {
+		pub foo: UintAuthorityId,
+	}
+}
+
+impl From<u64> for SessionKeys {
+	fn from(value: u64) -> Self {
+		SessionKeys { foo: UintAuthorityId::from(value) }
+	}
+}
 
 #[allow(dead_code)]
 #[frame_support::pallet]
@@ -41,6 +55,7 @@ frame_support::construct_runtime!(
 	pub enum Test {
 		System: frame_system,
 		SessionCommitteeManagement: pallet,
+		Session: pallet_session,
 		Mock: mock_pallet,
 	}
 );
@@ -107,6 +122,40 @@ impl pallet::Config for Test {
 	}
 
 	type WeightInfo = ();
+}
+
+parameter_types! {
+	pub const Period: u64 = 1;
+	pub const Offset: u64 = 0;
+}
+
+pub struct TestSessionHandler;
+impl pallet_session::SessionHandler<AccountId> for TestSessionHandler {
+	const KEY_TYPE_IDS: &'static [KeyTypeId] = &[DUMMY];
+
+	fn on_genesis_session<Ks: sp_runtime::traits::OpaqueKeys>(_validators: &[(AccountId, Ks)]) {}
+
+	fn on_new_session<Ks: sp_runtime::traits::OpaqueKeys>(
+		_: bool,
+		_: &[(AccountId, Ks)],
+		_: &[(AccountId, Ks)],
+	) {
+	}
+
+	fn on_disabled(_: u32) {}
+}
+
+impl pallet_session::Config for Test {
+	type ValidatorId = AuthorityId;
+	type ValidatorIdOf = sp_runtime::traits::ConvertInto;
+	type ShouldEndSession = PalletSessionSupport<Test>;
+	type NextSessionRotation = ();
+	type SessionManager = PalletSessionSupport<Test>;
+	type SessionHandler = TestSessionHandler;
+	type Keys = SessionKeys;
+	type DisablingStrategy = ();
+	type WeightInfo = ();
+	type RuntimeEvent = RuntimeEvent;
 }
 
 /// Build genesis storage according to the mock runtime.

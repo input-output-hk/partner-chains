@@ -220,8 +220,9 @@ fn generated_chain_spec() -> serde_json::Value {
 		{
 			"bootnodes": ["test_bootnode"],
 			"session": {
-				"initialValidators": [
+				"keys": [
 					[
+						"5C7C2Z5sWbytvHpuLTvzKunnnRwQxft1jiqrLD5rhucQ5S9X",
 						"5C7C2Z5sWbytvHpuLTvzKunnnRwQxft1jiqrLD5rhucQ5S9X",
 						{
 							"aura": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
@@ -230,12 +231,14 @@ fn generated_chain_spec() -> serde_json::Value {
 					],
 					[
 						"5DVskgSC9ncWQpxFMeUn45NU43RUq93ByEge6ApbnLk6BR9N",
+						"5DVskgSC9ncWQpxFMeUn45NU43RUq93ByEge6ApbnLk6BR9N",
 						{
 							"aura": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
 							"grandpa": "5GoNkf6WdbxCFnPdAnYYQyCjAKPJgLNxXwPjwTh6DGg6gN3E"
 						}
 					]
-				]
+				],
+				"nonAuthorityKeys": []
 			},
 			"sessionCommitteeManagement": {
 				"initialAuthorities": [
