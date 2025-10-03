@@ -135,43 +135,6 @@ impl<C, P, CIDP, N, ID> AuraVerifier<C, P, CIDP, N, ID> {
 	}
 }
 
-impl<C, P, CIDP, N, ID> AuraVerifier<C, P, CIDP, N, ID>
-where
-	CIDP: Send,
-{
-	async fn check_inherents<B: BlockT>(
-		&self,
-		block: B,
-		at_hash: B::Hash,
-		inherent_data_providers: CIDP::InherentDataProviders,
-	) -> Result<(), Error<B>>
-	where
-		C: ProvideRuntimeApi<B>,
-		C::Api: BlockBuilderApi<B>,
-		CIDP: CreateInherentDataProviders<B, (Slot, <ID as InherentDigest>::Value)>,
-		ID: InherentDigest,
-	{
-		let inherent_data = create_inherent_data::<B>(&inherent_data_providers).await?;
-
-		let inherent_res = self
-			.client
-			.runtime_api()
-			.check_inherents(at_hash, block, inherent_data)
-			.map_err(|e| Error::Client(e.into()))?;
-
-		if !inherent_res.ok() {
-			for (i, e) in inherent_res.into_errors() {
-				match inherent_data_providers.try_handle_error(&i, &e).await {
-					Some(res) => res.map_err(Error::Inherent)?,
-					None => return Err(Error::UnknownInherentError(i)),
-				}
-			}
-		}
-
-		Ok(())
-	}
-}
-
 #[async_trait::async_trait]
 impl<B: BlockT, C, P, CIDP, ID> Verifier<B> for AuraVerifier<C, P, CIDP, NumberFor<B>, ID>
 where
@@ -255,13 +218,17 @@ where
 						.has_api_with::<dyn BlockBuilderApi<B>, _>(parent_hash, |v| v >= 2)
 						.map_err(|e| e.to_string())?
 					{
-						self.check_inherents(
-							new_block.clone(),
+						let inherent_data =
+							create_inherent_data::<B>(&inherent_data_providers).await?;
+						sp_block_builder::check_inherents_with_data(
+							self.client.clone(),
 							parent_hash,
-							inherent_data_providers,
+							new_block.clone(),
+							&inherent_data_providers,
+							inherent_data,
 						)
 						.await
-						.map_err(|e| e.to_string())?;
+						.map_err(|e| format!("Error checking block inherents {:?}", e))?;
 					}
 
 					let (_, inner_body) = new_block.deconstruct();
