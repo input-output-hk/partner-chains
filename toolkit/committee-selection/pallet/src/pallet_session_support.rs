@@ -1,7 +1,7 @@
 //! Implements Substrate's [pallet_session].
 //!
 //! This implementation has lag of one additional PC epoch when applying committees to sessions.
-use crate::CommitteeMember;
+use crate::{CommitteeMember, CommitteeRotationStage, CommitteeRotationStages};
 use core::marker::PhantomData;
 use derive_new::new;
 use frame_support::traits::UnfilteredDispatchable;
@@ -41,7 +41,14 @@ where
 	/// Updates the session index of [`pallet_session`].
 	// Instead of Some((*).expect) we could just use (*). However, we rather panic in presence of important programming errors.
 	fn new_session(new_index: SessionIndex) -> Option<Vec<T::AccountId>> {
-		info!("PalletSessionSupport: new_session {new_index}");
+		if CommitteeRotationStage::<T>::get() == CommitteeRotationStages::AdditionalSession {
+			info!("PalletSessionSupport: new additional session {new_index}");
+			CommitteeRotationStage::<T>::put(CommitteeRotationStages::AwaitEpochChange);
+			let committee = crate::Pallet::<T>::current_committee_storage().committee;
+			return Some(committee.iter().map(|member| member.authority_id().into()).collect());
+		}
+
+		info!("PalletSessionSupport: new_session {new_index}, rotating the committee");
 		let new_committee = crate::Pallet::<T>::rotate_committee_to_next_epoch().expect(
 			"Session should never end without current epoch validators defined. \
 				Check ShouldEndSession implementation or if it is used before starting new session",
@@ -126,7 +133,10 @@ where
 		let next_committee_is_defined = crate::Pallet::<T>::next_committee().is_some();
 		if current_epoch_number > current_committee_epoch {
 			if next_committee_is_defined {
-				debug!("PalletSessionSupport: should_end_session({n:?}) = true");
+				debug!(
+					"PalletSessionSupport: should_end_session({n:?}) = true, end in the next block"
+				);
+				CommitteeRotationStage::<T>::put(CommitteeRotationStages::NewSessionDueEpochChange);
 				true
 			} else {
 				warn!(
@@ -135,8 +145,16 @@ where
 				false
 			}
 		} else {
-			debug!("PalletSessionSupport: should_end_session({n:?}) = false");
-			false
+			let stage = CommitteeRotationStage::<T>::get();
+			if stage == CommitteeRotationStages::NewSessionDueEpochChange {
+				CommitteeRotationStage::<T>::put(CommitteeRotationStages::AdditionalSession);
+				debug!(
+					"PalletSessionSupport: should_end_session({n:?}) to force the new committee"
+				);
+				true
+			} else {
+				false
+			}
 		}
 	}
 }
@@ -145,7 +163,9 @@ where
 mod tests {
 	use super::*;
 	use crate::{
-		CommitteeInfo, CurrentCommittee, NextCommittee, mock::mock_pallet::CurrentEpoch, mock::*,
+		CommitteeInfo, CurrentCommittee, NextCommittee,
+		mock::{mock_pallet::CurrentEpoch, *},
+		tests::increment_epoch,
 	};
 	use pallet_session::ShouldEndSession;
 	pub const IRRELEVANT: u64 = 2;
@@ -171,6 +191,34 @@ mod tests {
 				committee: next_committee,
 			});
 			assert!(Manager::should_end_session(IRRELEVANT));
+		});
+	}
+
+	#[test]
+	fn ends_two_sessions_and_rotates_once_when_committee_changes() {
+		new_test_ext().execute_with(|| {
+			assert_eq!(Session::current_index(), 0);
+			assert_eq!(SessionCommitteeManagement::current_committee_storage().epoch, 0);
+			increment_epoch();
+			set_validators_directly(&[CHARLIE, DAVE], 1).unwrap();
+
+			advance_one_block();
+			assert_eq!(Session::current_index(), 1);
+			// pallet_session needs additional session to apply CHARLIE and DAVE as validators
+			assert_eq!(Session::validators(), Vec::<u64>::new());
+			assert_eq!(SessionCommitteeManagement::current_committee_storage().epoch, 1);
+
+			advance_one_block();
+			assert_eq!(Session::current_index(), 2);
+			assert_eq!(Session::validators(), vec![CHARLIE.authority_id, DAVE.authority_id]);
+			assert_eq!(SessionCommitteeManagement::current_committee_storage().epoch, 1);
+
+			for _i in 0..10 {
+				advance_one_block();
+				assert_eq!(Session::current_index(), 2);
+				assert_eq!(Session::validators(), vec![CHARLIE.authority_id, DAVE.authority_id]);
+				assert_eq!(SessionCommitteeManagement::current_committee_storage().epoch, 1);
+			}
 		});
 	}
 }
