@@ -18,8 +18,10 @@ workspace = true
 [dependencies]
 async-trait = { workspace = true }
 parity-scale-codec = { workspace = true, default-features = true }
+fork-tree = { workspace = true, default-features = true }
 futures = { workspace = true }
 log = { workspace = true, default-features = true }
+parking_lot = { workspace = true, default-features = true }
 sc-client-api = { workspace = true, default-features = true }
 sc-consensus = { workspace = true, default-features = true }
 sc-consensus-aura = { workspace = true, default-features = true }

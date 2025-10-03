@@ -4,6 +4,7 @@ use frame_support::{
 	*,
 };
 use frame_system::EnsureRoot;
+use pallet_balances::AccountData;
 use pallet_session::{SessionHandler, ShouldEndSession};
 use parity_scale_codec::MaxEncodedLen;
 
@@ -60,6 +61,7 @@ impl MaybeFromCandidateKeys for TestSessionKeys {}
 construct_runtime! {
 	pub enum MockRuntime {
 		System: frame_system,
+		Balances: pallet_balances::pallet,
 		Bridge: pallet_partner_chains_bridge::pallet,
 		GovernedMap: pallet_governed_map::pallet,
 		SessionCommitteeManagement: pallet_session_validator_management::pallet,
@@ -86,7 +88,7 @@ impl frame_system::Config for MockRuntime {
 	type BlockHashCount = ConstU64<250>;
 	type Version = ();
 	type PalletInfo = PalletInfo;
-	type AccountData = ();
+	type AccountData = AccountData<u128>;
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type SystemWeightInfo = ();
@@ -174,6 +176,12 @@ impl pallet_session_validator_management::Config for MockRuntime {
 	type BenchmarkHelper = ();
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
+impl pallet_balances::Config for MockRuntime {
+	type Balance = u128;
+	type AccountStore = System;
+}
+
 impl pallet_session::Config for MockRuntime {
 	type RuntimeEvent = RuntimeEvent;
 	type ValidatorId = AccountId32;
@@ -185,6 +193,8 @@ impl pallet_session::Config for MockRuntime {
 	type Keys = TestSessionKeys;
 	type DisablingStrategy = pallet_session::disabling::UpToLimitWithReEnablingDisablingStrategy;
 	type WeightInfo = pallet_session::weights::SubstrateWeight<MockRuntime>;
+	type Currency = Balances;
+	type KeyDeposit = ();
 }
 
 impl ShouldEndSession<u64> for Mock {

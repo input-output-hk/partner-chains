@@ -98,7 +98,7 @@ impl pallet_balances::Config for Test {
 	type WeightInfo = pallet_balances::weights::SubstrateWeight<Test>;
 	type FreezeIdentifier = ();
 	type MaxFreezes = ();
-	type RuntimeHoldReason = ();
+	type RuntimeHoldReason = RuntimeHoldReason;
 	type RuntimeFreezeReason = RuntimeFreezeReason;
 	type DoneSlashHandler = ();
 }
@@ -149,6 +149,8 @@ impl pallet_session::Config for Test {
 	type Keys = TestSessionKeys;
 	type DisablingStrategy = pallet_session::disabling::UpToLimitWithReEnablingDisablingStrategy;
 	type WeightInfo = pallet_session::weights::SubstrateWeight<Test>;
+	type Currency = Balances;
+	type KeyDeposit = ();
 }
 
 impl pallet_sidechain::Config for Test {
