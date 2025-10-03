@@ -218,6 +218,15 @@ echo "Configuring Initial Authorities..."
 jq '.genesis.runtimeGenesis.config.sessionCommitteeManagement.initialAuthorities = [
   {
     "Permissioned": {
+      "id": "KW4wALva83fvah66ufXSxg6r84tTpJmDXna8A1PCYdbZdVL95",
+      "keys": {
+        "aura": "5Cyx94iyji8namhRxvs4mAbURtPsvwjWCb68ZihNzfRysGLZ",
+        "grandpa": "5Cc5eQhbPw4CjwZpWqZkWWumMiuZywfWRK2Rh9guXUJ3U89s"
+      }
+    }
+  },
+  {
+    "Permissioned": {
       "id": "KW92jBDRydnbyojCVF3USNFgEsrEvDGV3gvdgDvpfnbXvC13q",
       "keys": {
         "aura": "5E4op92Z2Di1GoVS9KqnoGVKQXG2R9x1vdh3RW892YLFsLrc",
