@@ -81,7 +81,10 @@ fn setup_block_producer<T: crate::Config + pallet_session::Config>(
 ) where
 	<T as pallet_session::Config>::Keys: From<T::AuthorityKeys>,
 {
-	log::debug!("➕💼 Incrementing provider count for block producer {account:?}");
+	log::debug!(
+		"➕💼 Incrementing provider count and registering keys for block producer {account:?}"
+	);
+
 	frame_system::Pallet::<T>::inc_providers(&account);
 
 	let set_keys_result = pallet_session::Call::<T>::set_keys { keys: keys.into(), proof: vec![] }
@@ -106,7 +109,9 @@ where
 		Ok(_) => debug!("purge_keys for {account:?}"),
 		Err(e) => info!("Could not purge_keys for {account:?}, error: {:?}", e.error),
 	}
-	log::debug!("➖💼 Decrementing provider count for block producer {account:?}");
+	log::info!(
+		"➖💼 Decrementing provider count and deregisteringkeys for block producer {account:?}"
+	);
 	frame_system::Pallet::<T>::dec_providers(&account).expect(
 		"We always match dec_providers with corresponding inc_providers, thus it cannot fail",
 	);
