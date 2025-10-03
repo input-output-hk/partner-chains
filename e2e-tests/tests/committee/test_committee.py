@@ -486,7 +486,7 @@ class TestCommitteeMembers:
 
         # There's a delay between selecting a committee and it being in power, which means the current
         # committee was selected based on inputs from the previous epoch
-        committee = api.get_epoch_committee(current_epoch - 1).result['committee']
+        committee = api.get_epoch_committee(current_epoch).result['committee']
         authorities = api.get_authorities()
 
         if api.get_pc_epoch() > current_epoch:
