@@ -1,0 +1,25 @@
+{
+    "stack_config": {
+        "ogmios_scheme": "http",
+        "ogmios_host": "localhost",
+        "ogmios_port": 1337,
+        "tools": {
+            "runner": {
+                "workdir": "/tmp"
+            },
+            "cardano_cli": {
+                "path": "cardano-cli",
+                "runner": {
+                    "workdir": "/tmp"
+                }
+            },
+            "node": {
+                "path": "substrate-node",
+                "runner": {
+                    "workdir": "/tmp",
+                    "copy_secrets": false
+                }
+            }
+        }
+    }
+}
