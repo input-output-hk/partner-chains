@@ -84,7 +84,8 @@ def initialize_permissioned_candidates(api: BlockchainApi, db: Session, current_
 
 
 @fixture
-def candidate(request, initialize_candidates, api: BlockchainApi, config: ApiConfig, db: Session) -> Candidates:
+@mark.usefixtures("initialize_candidates")
+def candidate(request, api: BlockchainApi, config: ApiConfig, db: Session) -> Candidates:
     """Parameterized fixture to get the first 'active' or 'inactive' candidate.
 
     Use @pytest.mark.candidate_status() to pass data ('active' or 'inactive' only).
@@ -153,8 +154,8 @@ def candidate(request, initialize_candidates, api: BlockchainApi, config: ApiCon
 
 
 @fixture
-def permissioned_candidates(
-    initialize_permissioned_candidates, api: BlockchainApi, config: ApiConfig
+@mark.usefixtures("initialize_permissioned_candidates")
+def permissioned_candidates(api: BlockchainApi, config: ApiConfig
 ) -> Tuple[dict[str, Node], str]:
     """
     Creates a tuple of new permissioned candidates to set and the name of the candidate to remove.

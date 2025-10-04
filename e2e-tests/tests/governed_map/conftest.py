@@ -36,7 +36,8 @@ def random_string(length=10):
 
 
 @fixture(scope="session")
-def payment_key(config: ApiConfig, governance_skey_with_cli):
+@mark.usefixtures("governance_skey_with_cli")
+def payment_key(config: ApiConfig):
     return config.nodes_config.governance_authority.mainchain_key
 
 
