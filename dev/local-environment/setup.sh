@@ -3,7 +3,7 @@
 PARTNER_CHAINS_NODE_IMAGE="ghcr.io/input-output-hk/partner-chains/partner-chains-node-unstable:latest"
 CARDANO_IMAGE="ghcr.io/intersectmbo/cardano-node:10.5.1"
 DBSYNC_IMAGE="ghcr.io/intersectmbo/cardano-db-sync:13.6.0.4"
-DOLOS_IMAGE="ghcr.io/txpipe/dolos:1.0.0-beta.4"
+DOLOS_IMAGE="ghcr.io/txpipe/dolos:1.0.0-beta.5"
 OGMIOS_IMAGE="cardanosolutions/ogmios:v6.13.0"
 POSTGRES_IMAGE="postgres:17.2"
 TESTS_IMAGE="python:3.12-slim"
@@ -123,6 +123,23 @@ function validate_memory_limit() {
   done
 }
 
+configure_dolos() {
+  echo "===== DOLOS CONFIGURATION ========"
+  read -p "Do you want to set a non-default gRPC port for Dolos? (Will default to 50051) (Y/N): " set_dolos_grpc_port
+  if [[ $set_dolos_grpc_port == [Yy]* ]]; then
+    dolos_grpc_port=$(validate_port "Enter gRPC port for Dolos: ")
+  else
+    dolos_grpc_port=50051
+  fi
+  read -p "Do you want to set a non-default miniBF port for Dolos? (Will default to 3000) (Y/N): " set_dolos_minibf_port
+  if [[ $set_dolos_minibf_port == [Yy]* ]]; then
+    dolos_minibf_port=$(validate_port "Enter gRPC port for Dolos: ")
+  else
+    dolos_minibf_port=3000
+  fi
+  echo
+}
+
 configure_ogmios() {
   echo "===== OGMIOS CONFIGURATION ========"
   read -p "Do you want to set a non-default port for Ogmios? (Will default to 1337) (Y/N): " set_ogmios_port
@@ -240,6 +257,8 @@ configure_env() {
         cat <<EOF >.env
 POSTGRES_PORT=5432
 POSTGRES_PASSWORD=$db_password
+DOLOS_MINIBF_PORT=3000
+DOLOS_GRPC_PORT=50051
 OGMIOS_PORT=1337
 CPU_PARTNER_CHAINS_NODE=0.000
 MEM_PARTNER_CHAINS_NODE=1000G
@@ -258,6 +277,8 @@ EOF
         cat <<EOF >.env
 POSTGRES_PORT=$db_port
 POSTGRES_PASSWORD=$db_password
+DOLOS_MINIBF_PORT=$dolos_minibf_port
+DOLOS_GRPC_PORT=$dolos_grpc_port
 OGMIOS_PORT=$ogmios_port
 CPU_PARTNER_CHAINS_NODE=$CPU_PARTNER_CHAINS_NODE
 MEM_PARTNER_CHAINS_NODE=$MEM_PARTNER_CHAINS_NODE
@@ -328,11 +349,12 @@ create_docker_compose() {
         cat ./modules/ogmios.txt >> docker-compose.yml
         ;;
       3)
-        echo -e "Including Cardano testnet, Ogmios, DB-Sync, and Postgres services.\n"
+        echo -e "Including Cardano testnet, Ogmios, Dolos, DB-Sync, and Postgres services.\n"
         cat ./modules/cardano.txt >> docker-compose.yml
         cat ./modules/ogmios.txt >> docker-compose.yml
         cat ./modules/db-sync.txt >> docker-compose.yml
         cat ./modules/postgres.txt >> docker-compose.yml
+        cat ./modules/dolos.txt >> docker-compose.yml
         ;;
       4)
         echo -e "Including all services with external partner chain node.\n"
@@ -340,6 +362,7 @@ create_docker_compose() {
         cat ./modules/ogmios.txt >> docker-compose.yml
         cat ./modules/db-sync.txt >> docker-compose.yml
         cat ./modules/postgres.txt >> docker-compose.yml
+        cat ./modules/dolos.txt >> docker-compose.yml
         cat ./modules/partner-chains-external-node.txt >> docker-compose.yml
         cat ./modules/partner-chains-setup.txt >> docker-compose.yml
         ;;
@@ -349,6 +372,7 @@ create_docker_compose() {
         cat ./modules/ogmios.txt >> docker-compose.yml
         cat ./modules/db-sync.txt >> docker-compose.yml
         cat ./modules/postgres.txt >> docker-compose.yml
+        cat ./modules/dolos.txt >> docker-compose.yml
         cat ./modules/partner-chains-wizard.txt >> docker-compose.yml
         ;;
       6)
@@ -363,6 +387,7 @@ create_docker_compose() {
         cat ./modules/ogmios.txt >> docker-compose.yml
         cat ./modules/db-sync.txt >> docker-compose.yml
         cat ./modules/postgres.txt >> docker-compose.yml
+        cat ./modules/dolos.txt >> docker-compose.yml
         cat ./modules/partner-chains-nodes.txt >> docker-compose.yml
         cat ./modules/partner-chains-setup.txt >> docker-compose.yml
         ;;
@@ -467,6 +492,7 @@ main() {
         detect_os "interactive"
         backup_files "interactive"
         configure_postgres "interactive"
+        configure_dolos
         configure_ogmios
         resource_limits_setup
 

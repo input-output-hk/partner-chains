@@ -1,5 +1,5 @@
 [upstream]
-peer_address = "0.0.0.0:32000"
+peer_address = "cardano-node-1:32000"
 network_magic = 42
 is_testnet = true
 
@@ -43,7 +43,9 @@ listen_address = "[::]:50051"
 listen_address = "[::]:3000"
 
 [logging]
-max_level = "INFO"
-include_tokio = false
-include_pallas = false
-include_grpc = false
+max_level = "DEBUG"
+include_tokio = true
+include_pallas = true
+include_grpc = true
+include_trp = true
+include_minibf = true

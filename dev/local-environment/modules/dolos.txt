@@ -4,11 +4,17 @@
     image: ${DOLOS_IMAGE}
     platform: linux/amd64
     entrypoint: ["/bin/bash", "/entrypoint.sh"]
+    environment:
+      - DOLOS_MINIBF_PORT=${DOLOS_MINIBF_PORT}
+      - DOLOS_GRPC_PORT=${DOLOS_GRPC_PORT}
     volumes:
       - shared-volume:/shared
       - dolos-data:/data
       - ./configurations/dolos/entrypoint.sh:/entrypoint.sh
       - ./configurations/dolos/dolos.toml:/dolos.toml
+    ports:
+      - "${DOLOS_MINIBF_PORT}:${DOLOS_MINIBF_PORT}"
+      - "${DOLOS_GRPC_PORT}:${DOLOS_GRPC_PORT}"
     restart: always
     deploy:
       resources:
