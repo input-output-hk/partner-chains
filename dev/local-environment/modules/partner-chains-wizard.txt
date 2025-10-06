@@ -2,6 +2,7 @@
   partner-chains-node-1:
     container_name: partner-chains-node-1
     image: ${PARTNER_CHAINS_NODE_IMAGE}
+    pull_policy: always
     platform: linux/amd64
     user: "0:0"
     volumes:
@@ -33,6 +34,7 @@
   partner-chains-node-2:
     container_name: partner-chains-node-2
     image: ${PARTNER_CHAINS_NODE_IMAGE}
+    pull_policy: always
     platform: linux/amd64
     user: "0:0"
     volumes:
@@ -47,6 +49,7 @@
   partner-chains-node-3:
     container_name: partner-chains-node-3
     image: ${PARTNER_CHAINS_NODE_IMAGE}
+    pull_policy: always
     platform: linux/amd64
     user: "0:0"
     volumes:

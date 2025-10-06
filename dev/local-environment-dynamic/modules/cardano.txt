@@ -2,6 +2,7 @@
   cardano-node-1:
     container_name: cardano-node-1
     image: ${CARDANO_IMAGE}
+    pull_policy: always
     platform: linux/amd64
     volumes:
       - cardano-node-1-data:/data

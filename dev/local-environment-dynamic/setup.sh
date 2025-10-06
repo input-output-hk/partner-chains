@@ -547,6 +547,7 @@ EOF
   partner-chains-node-$node_name:
     container_name: partner-chains-node-$node_name
     image: \${PARTNER_CHAINS_NODE_IMAGE}
+    pull_policy: always
     platform: linux/amd64
     volumes:
       - shared-volume:/shared
@@ -611,6 +612,7 @@ EOF
   partner-chains-node-$node_name:
     container_name: partner-chains-node-$node_name
     image: \${PARTNER_CHAINS_NODE_IMAGE}
+    pull_policy: always
     platform: linux/amd64
     volumes:
       - shared-volume:/shared
@@ -687,6 +689,7 @@ create_docker_compose() {
   postgres-${i}:
     container_name: postgres-${i}
     image: \${POSTGRES_IMAGE}
+    pull_policy: always
     platform: linux/amd64
     command: postgres -c max_connections=10000 -c maintenance_work_mem=256MB
     environment:
@@ -708,6 +711,7 @@ create_docker_compose() {
   db-sync-${i}:
     container_name: db-sync-${i}
     image: \${DBSYNC_IMAGE}
+    pull_policy: always
     platform: linux/amd64
     entrypoint: ["/bin/bash", "/entrypoint.sh"]
     depends_on:

@@ -2,6 +2,7 @@
   ogmios:
     container_name: ogmios
     image: ${OGMIOS_IMAGE} 
+    pull_policy: always
     platform: linux/amd64
     entrypoint: ["/bin/sh", "/entrypoint.sh"]
     environment:

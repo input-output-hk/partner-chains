@@ -1,6 +1,7 @@
   partner-chains-setup:
     container_name: partner-chains-setup
     image: ${PARTNER_CHAINS_NODE_IMAGE}
+    pull_policy: always
     platform: linux/amd64
     user: "0:0"
     volumes:

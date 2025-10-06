@@ -2,6 +2,7 @@
   db-sync:
     container_name: db-sync
     image: ${DBSYNC_IMAGE}
+    pull_policy: always
     platform: linux/amd64
     volumes:
       - shared-volume:/shared

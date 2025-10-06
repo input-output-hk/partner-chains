@@ -2,6 +2,7 @@
   partner-chains-node-1:
     container_name: partner-chains-node-1
     image: ${PARTNER_CHAINS_NODE_IMAGE}
+    pull_policy: always
     platform: linux/amd64
     volumes:
       - shared-volume:/shared
@@ -32,6 +33,7 @@
   partner-chains-node-2:
     container_name: partner-chains-node-2
     image: ${PARTNER_CHAINS_NODE_IMAGE}
+    pull_policy: always
     platform: linux/amd64
     volumes:
       - partner-chains-node-2-data:/data
@@ -62,6 +64,7 @@
   partner-chains-node-3:
     container_name: partner-chains-node-3
     image: ${PARTNER_CHAINS_NODE_IMAGE}
+    pull_policy: always
     platform: linux/amd64
     volumes:
       - partner-chains-node-3-data:/data
@@ -92,6 +95,7 @@
   partner-chains-node-4:
     container_name: partner-chains-node-4
     image: ${PARTNER_CHAINS_NODE_IMAGE}
+    pull_policy: always
     platform: linux/amd64
     volumes:
       - partner-chains-node-4-data:/data
@@ -123,6 +127,7 @@
   partner-chains-node-5:
     container_name: partner-chains-node-5
     image: ${PARTNER_CHAINS_NODE_IMAGE}
+    pull_policy: always
     platform: linux/amd64
     volumes:
       - partner-chains-node-5-data:/data
