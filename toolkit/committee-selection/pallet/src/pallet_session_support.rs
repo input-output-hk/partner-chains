@@ -3,7 +3,7 @@
 //! This implementation has lag of one additional PC epoch when applying committees to sessions.
 //!
 //! To use it, wire [crate::Pallet] in runtime configuration of [`pallet_session`].
-use crate::CommitteeMember;
+use crate::{CommitteeMember, CommitteeRotationStage, CommitteeRotationStages};
 use frame_support::traits::UnfilteredDispatchable;
 use frame_system::RawOrigin;
 use frame_system::pallet_prelude::BlockNumberFor;
@@ -32,7 +32,14 @@ where
 	/// Updates the session index of [`pallet_session`].
 	// Instead of Some((*).expect) we could just use (*). However, we rather panic in presence of important programming errors.
 	fn new_session(new_index: SessionIndex) -> Option<Vec<T::AccountId>> {
-		info!("💼 Session manager: new_session {new_index}");
+		if CommitteeRotationStage::<T>::get() == CommitteeRotationStages::AdditionalSession {
+			info!("💼 Session manager: new additional session {new_index}");
+			CommitteeRotationStage::<T>::put(CommitteeRotationStages::AwaitEpochChange);
+			let committee = crate::Pallet::<T>::current_committee_storage().committee;
+			return Some(committee.iter().map(|member| member.authority_id().into()).collect());
+		}
+
+		info!("💼 Session manager: new_session {new_index}, rotating the committee");
 		let new_committee = crate::Pallet::<T>::rotate_committee_to_next_epoch().expect(
 			"Session should never end without current epoch validators defined. \
 				Check ShouldEndSession implementation or if it is used before starting new session",
@@ -130,6 +137,7 @@ where
 		if current_epoch_number > current_committee_epoch {
 			if next_committee_is_defined {
 				info!("Session manager: should_end_session({n:?}) = true");
+				CommitteeRotationStage::<T>::put(CommitteeRotationStages::NewSessionDueEpochChange);
 				true
 			} else {
 				warn!(
@@ -138,8 +146,14 @@ where
 				false
 			}
 		} else {
-			debug!("Session manager: should_end_session({n:?}) = false");
-			false
+			let stage = CommitteeRotationStage::<T>::get();
+			if stage == CommitteeRotationStages::NewSessionDueEpochChange {
+				CommitteeRotationStage::<T>::put(CommitteeRotationStages::AdditionalSession);
+				info!("Session manager: should_end_session({n:?}) to force the new committee");
+				true
+			} else {
+				false
+			}
 		}
 	}
 }
@@ -147,7 +161,8 @@ where
 #[cfg(test)]
 mod tests {
 	use crate::{
-		CommitteeInfo, CurrentCommittee, NextCommittee, mock::mock_pallet::CurrentEpoch, mock::*,
+		CommitteeInfo, CurrentCommittee, NextCommittee,
+		mock::{mock_pallet::CurrentEpoch, *},
 		tests::increment_epoch,
 	};
 	use pallet_session::ShouldEndSession;
@@ -198,6 +213,34 @@ mod tests {
 				Session::load_keys(&EVE.authority_id),
 				Some(SessionKeys { foo: UintAuthorityId(EVE.authority_keys) })
 			);
+		});
+	}
+
+	#[test]
+	fn ends_two_sessions_and_rotates_once_when_committee_changes() {
+		new_test_ext().execute_with(|| {
+			assert_eq!(Session::current_index(), 0);
+			assert_eq!(SessionCommitteeManagement::current_committee_storage().epoch, 0);
+			increment_epoch();
+			set_validators_directly(&[CHARLIE, DAVE], 1).unwrap();
+
+			advance_one_block();
+			assert_eq!(Session::current_index(), 1);
+			// pallet_session needs additional session to apply CHARLIE and DAVE as validators
+			assert_eq!(Session::validators(), Vec::<u64>::new());
+			assert_eq!(SessionCommitteeManagement::current_committee_storage().epoch, 1);
+
+			advance_one_block();
+			assert_eq!(Session::current_index(), 2);
+			assert_eq!(Session::validators(), vec![CHARLIE.authority_id, DAVE.authority_id]);
+			assert_eq!(SessionCommitteeManagement::current_committee_storage().epoch, 1);
+
+			for _i in 0..10 {
+				advance_one_block();
+				assert_eq!(Session::current_index(), 2);
+				assert_eq!(Session::validators(), vec![CHARLIE.authority_id, DAVE.authority_id]);
+				assert_eq!(SessionCommitteeManagement::current_committee_storage().epoch, 1);
+			}
 		});
 	}
 }

@@ -1201,49 +1201,46 @@ mod tests {
 			// Needs to be run to initialize first slot and epoch numbers;
 			advance_block();
 
-			// Scheduled committee goes into effect after a 2-epoch delay
+			// Committee goes into effect 1-epoch and 1-block after selection
 			set_committee_through_inherent_data(&[alice()]);
 			until_epoch_after_finalizing(1, &|| {
-				assert_current_epoch!(0);
 				assert_grandpa_weights();
 				assert_grandpa_authorities!([alice(), bob()]);
 			});
-
+			for_next_n_blocks_after_finalizing(1, &|| {
+				assert_grandpa_weights();
+				assert_grandpa_authorities!([alice(), bob()]);
+			});
 			set_committee_through_inherent_data(&[bob()]);
 			for_next_n_blocks_after_finalizing(SLOTS_PER_EPOCH, &|| {
-				assert_current_epoch!(1);
-				assert_grandpa_weights();
-				assert_grandpa_authorities!([alice(), bob()]);
-			});
-			set_committee_through_inherent_data(&[alice()]);
-			for_next_n_blocks_after_finalizing(SLOTS_PER_EPOCH, &|| {
-				assert_current_epoch!(2);
 				assert_grandpa_weights();
 				assert_grandpa_authorities!([alice()]);
 			});
-			set_committee_through_inherent_data(&[alice(), bob()]);
+			set_committee_through_inherent_data(&[alice()]);
 			for_next_n_blocks_after_finalizing(SLOTS_PER_EPOCH, &|| {
-				assert_current_epoch!(3);
 				assert_grandpa_weights();
 				assert_grandpa_authorities!([bob()]);
 			});
-			set_committee_through_inherent_data(&[bob(), alice()]);
+			set_committee_through_inherent_data(&[alice(), bob()]);
 			for_next_n_blocks_after_finalizing(SLOTS_PER_EPOCH, &|| {
-				assert_current_epoch!(4);
 				assert_grandpa_weights();
 				assert_grandpa_authorities!([alice()]);
 			});
-			set_committee_through_inherent_data(&[alice()]);
+			set_committee_through_inherent_data(&[bob(), alice()]);
 			for_next_n_blocks_after_finalizing(SLOTS_PER_EPOCH, &|| {
-				assert_current_epoch!(5);
 				assert_grandpa_weights();
 				assert_grandpa_authorities!([alice(), bob()]);
+			});
+			set_committee_through_inherent_data(&[alice()]);
+			for_next_n_blocks_after_finalizing(SLOTS_PER_EPOCH, &|| {
+				assert_grandpa_weights();
+				assert_grandpa_authorities!([bob(), alice()]);
 			});
 
 			// When there's no new committees being scheduled, the last committee stays in power
 			for_next_n_blocks_after_finalizing(SLOTS_PER_EPOCH * 3, &|| {
 				assert_grandpa_weights();
-				assert_grandpa_authorities!([bob(), alice()]);
+				assert_grandpa_authorities!([alice()]);
 			});
 		});
 
@@ -1260,38 +1257,32 @@ mod tests {
 		new_test_ext().execute_with(|| {
 			// Needs to be run to initialize first slot and epoch numbers;
 			advance_block();
-
-			// Scheduled committee goes into effect after a 2-epoch delay
+			// Committee goes into effect 1-epoch and 1-block after selection
 			set_committee_through_inherent_data(&[alice()]);
 			until_epoch_after_finalizing(1, &|| {
-				assert_current_epoch!(0);
 				assert_aura_authorities!([alice(), bob()]);
 			});
-
+			for_next_n_blocks_after_finalizing(1, &|| {
+				assert_aura_authorities!([alice(), bob()]);
+			});
 			set_committee_through_inherent_data(&[bob()]);
 			for_next_n_blocks_after_finalizing(SLOTS_PER_EPOCH, &|| {
-				assert_current_epoch!(1);
-				assert_aura_authorities!([alice(), bob()]);
+				assert_aura_authorities!([alice()]);
 			});
 			set_committee_through_inherent_data(&[alice()]);
 			for_next_n_blocks_after_finalizing(SLOTS_PER_EPOCH, &|| {
-				assert_current_epoch!(2);
-				assert_aura_authorities!([alice()]);
+				assert_aura_authorities!([bob()]);
 			});
 			set_committee_through_inherent_data(&[alice(), bob()]);
 			for_next_n_blocks_after_finalizing(SLOTS_PER_EPOCH, &|| {
-				assert_current_epoch!(3);
-				assert_aura_authorities!([bob()]);
+				assert_aura_authorities!([alice()]);
 			});
 			set_committee_through_inherent_data(&[bob(), alice()]);
 			for_next_n_blocks_after_finalizing(SLOTS_PER_EPOCH, &|| {
-				assert_current_epoch!(4);
-				assert_aura_authorities!([alice()]);
-			});
-			set_committee_through_inherent_data(&[alice()]);
-			for_next_n_blocks_after_finalizing(SLOTS_PER_EPOCH, &|| {
-				assert_current_epoch!(5);
 				assert_aura_authorities!([alice(), bob()]);
+			});
+			for_next_n_blocks_after_finalizing(SLOTS_PER_EPOCH, &|| {
+				assert_aura_authorities!([bob(), alice()]);
 			});
 
 			// When there's no new committees being scheduled, the last committee stays in power
@@ -1326,9 +1317,7 @@ mod tests {
 		});
 	}
 
-	pub fn set_committee_through_inherent_data(
-		expected_authorities: &[TestKeys],
-	) -> PostDispatchInfo {
+	fn set_committee_through_inherent_data(expected_authorities: &[TestKeys]) -> PostDispatchInfo {
 		let epoch = Sidechain::current_epoch_number();
 		let slot = *pallet_aura::CurrentSlot::<Test>::get();
 		println!(

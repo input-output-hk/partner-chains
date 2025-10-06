@@ -280,3 +280,18 @@ pub(crate) fn start_session(session_index: u32) {
 
 	assert_eq!(Session::current_index(), session_index);
 }
+
+pub(crate) fn advance_one_block() {
+	let block_number = System::block_number();
+	System::on_finalize(block_number);
+	Session::on_finalize(block_number);
+	let parent_hash =
+		if block_number > 1 { System::finalize().hash() } else { System::parent_hash() };
+	System::reset_events();
+	let next_block_number = block_number as u64 + 1;
+	System::initialize(&next_block_number, &parent_hash, &Default::default());
+	System::set_block_number(next_block_number.into());
+
+	System::on_initialize(next_block_number);
+	Session::on_initialize(next_block_number);
+}
