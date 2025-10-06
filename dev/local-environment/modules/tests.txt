@@ -2,7 +2,6 @@
   tests:
     container_name: tests 
     image: ${TESTS_IMAGE} 
-    pull_policy: always
     platform: linux/amd64
     volumes:
       - shared-volume:/shared
