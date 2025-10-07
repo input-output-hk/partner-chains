@@ -456,6 +456,21 @@ jobs:
       - name: Run Documentation Tests
         uses: ./.github/actions/tests/doc-tests
 
+  deploy-rustdoc-pre-merge:
+    needs: build-nightly-pre-merge
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Deploy Rust Docs
+        uses: ./.github/actions/deploy/deploy-rustdoc
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   upload-chain-specs-pre-merge:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
     needs: build-linux-x86_64-pre-merge
@@ -482,7 +497,8 @@ jobs:
       build-nightly-pre-merge,
       local-env,
       upload-chain-specs-pre-merge,
-      documentation-tests
+      documentation-tests,
+      deploy-rustdoc-pre-merge
     ]
     runs-on: ubuntu-latest
     steps:
@@ -492,7 +508,8 @@ jobs:
                 "${{ needs.build-nightly-pre-merge.result }}" != "success" ||
                 "${{ needs.local-env.result }}" != "success" ||
                 "${{ needs.upload-chain-specs-pre-merge.result }}" != "success" ||
-                "${{ needs.documentation-tests.result }}" != "success" ]]; then
+                "${{ needs.documentation-tests.result }}" != "success" ||
+                "${{ needs.deploy-rustdoc-pre-merge.result }}" != "success" ]]; then
             echo "One or more needed jobs failed."
             exit 1
           else
@@ -793,21 +810,6 @@ jobs:
           K8S_SERVER: ${{ secrets.K8S_SERVER }}
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
-  deploy-rustdoc:
-    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
-    needs: build-linux-x86_64-post-merge
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: master
-      - name: Deploy Rust Docs
-        uses: ./.github/actions/deploy/deploy-rustdoc
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   deploy-ci-preview:
     needs:
       - build-linux-x86_64-post-merge
@@ -866,7 +868,6 @@ jobs:
     needs:
       [
         build-linux-x86_64-post-merge,
-        deploy-rustdoc,
         upload-chain-specs,
         ci-preview-tests-post-merge,
         deploy-ci-preview,
@@ -877,7 +878,6 @@ jobs:
       - name: Check if any needed job failed
         run: |
           if [[ "${{ needs.build-linux-x86_64-post-merge.result }}" != "success" ||
-                "${{ needs.deploy-rustdoc.result }}" != "success" ||
                 "${{ needs.upload-chain-specs.result }}" != "success" ||
                 "${{ needs.ci-preview-tests-post-merge.result }}" != "success" ||
                 "${{ needs.deploy-ci-preview.result }}" != "success" ||
