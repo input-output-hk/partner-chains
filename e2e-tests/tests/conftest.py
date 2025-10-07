@@ -42,6 +42,12 @@ def pytest_addoption(parser):
     # NOTE: do not add default values so config defaults are used
     parser.addoption("--node-host", action="store", help="Overrides node host")
     parser.addoption("--node-port", action="store", help="Overrides node port")
+    parser.addoption("--db-sync-host", action="store", help="Overrides db sync host")
+    parser.addoption("--db-sync-port", action="store", help="Overrides db sync port")
+    parser.addoption("--db-host", action="store", help="Overrides db host")
+    parser.addoption("--db-port", action="store", help="Overrides db port")
+    parser.addoption("--ogmios-host", action="store", help="Overrides ogmios host")
+    parser.addoption("--ogmios-port", action="store", help="Overrides ogmios port")
     parser.addoption("--deployment-mc-epoch", action="store", type=int, help="Deployment main chain epoch.")
     parser.addoption("--init-timestamp", action="store", type=int, help="Initial timestamp of the main chain.")
 
@@ -101,6 +107,8 @@ def pytest_configure(config: Config):
         config.getoption("--ci-run"),
         config.getoption("--node-host"),
         config.getoption("--node-port"),
+        config.getoption("--ogmios-host"),
+        config.getoption("--ogmios-port"),
         config.getoption("--deployment-mc-epoch"),
         config.getoption("--init-timestamp"),
     )
@@ -254,8 +262,24 @@ def decrypt(request):
 def multisig(request):
     return request.config.getoption("--multisig")
 
+@fixture(scope="session")
+def db_sync_host(request):
+    return request.config.getoption("--db-sync-host")
 
-def load_config(blockchain, nodes_env, ci_run, node_host, node_port, deployment_mc_epoch, init_timestamp):
+@fixture(scope="session")
+def db_sync_port(request):
+    return request.config.getoption("--db-sync-port")
+
+@fixture(scope="session")
+def db_host(request):
+    return request.config.getoption("--db-host")
+
+@fixture(scope="session")
+def db_port(request):
+    return request.config.getoption("--db-port")
+
+
+def load_config(blockchain, nodes_env, ci_run, node_host, node_port, ogmios_host, ogmios_port, deployment_mc_epoch, init_timestamp):
     default_config_path = f"{os.getcwd()}/config/config.json"
     assert os.path.isfile(default_config_path), f"Config file not found {default_config_path}"
     default_config = OmegaConf.load(default_config_path)
@@ -272,6 +296,10 @@ def load_config(blockchain, nodes_env, ci_run, node_host, node_port, deployment_
         config.nodes_config.node.host = node_host
     if node_port:
         config.nodes_config.node.port = node_port
+    if ogmios_host:
+        config.stack_config.ogmios_host = ogmios_host
+    if ogmios_port:
+        config.stack_config.ogmios_port = ogmios_port
     if deployment_mc_epoch:
         config.deployment_mc_epoch = deployment_mc_epoch
     if init_timestamp:
@@ -305,10 +333,6 @@ def secrets(blockchain, nodes_env, decrypt, ci_run):
     else:
         secrets = OmegaConf.load(path)
 
-    ci_path = f"{os.getcwd()}/secrets/{blockchain}/{nodes_env}/{nodes_env}-ci.json"
-    if ci_run and os.path.isfile(ci_path):
-        secrets = secrets_ci(secrets, decrypt, ci_path)
-
     return secrets
 
 
@@ -339,7 +363,7 @@ def decrypt_keys(tmp_path_factory, config, blockchain, nodes_env, decrypt, ci_ru
                 subprocess.check_output(
                     [
                         f"find {keys_path} -type f -not -path '*/preprodSPO/*' -not -name '*.decrypted' -exec "
-                        f"sh -c \"sops -d '{{}}' > '{{}}.decrypted'\" \;"  # noqa: W605
+                        f"sh -c \"sops -d '{{}}' > '{{}}.decrypted'\" \\;"  # noqa: W605
                     ],
                     shell=True,
                 )
@@ -347,7 +371,7 @@ def decrypt_keys(tmp_path_factory, config, blockchain, nodes_env, decrypt, ci_ru
                 fn.write_text("keys decrypted")
                 yield
                 subprocess.check_output(
-                    ["find secrets -type f -name '*.decrypted' -exec rm {} \;"],  # noqa: W605
+                    ["find secrets -type f -name '*.decrypted' -exec rm {} \\;"],  # noqa: W605
                     shell=True,
                 )
                 # clean up secrets lock
@@ -358,7 +382,11 @@ def decrypt_keys(tmp_path_factory, config, blockchain, nodes_env, decrypt, ci_ru
 
 
 @fixture(scope="session")
-def init_db(tmp_path_factory, worker_id, secrets):
+def init_db(tmp_path_factory, worker_id, secrets, db_host, db_port):
+    if db_host:
+        secrets["db"]["host"] = db_host
+    if db_port:
+        secrets["db"]["port"] = db_port
     """Creates db engine, and initializes db tables if they don't exist."""
     engine = create_engine(secrets["db"]["url"])
 
@@ -376,7 +404,12 @@ def init_db(tmp_path_factory, worker_id, secrets):
 
 
 @fixture(scope="session")
-def init_db_sync(secrets):
+def init_db_sync(secrets, db_sync_host, db_sync_port):
+    if db_sync_host:
+        secrets["dbSync"]["host"] = db_sync_host
+    if db_sync_port:
+        secrets["dbSync"]["port"] = db_sync_port
+    
     """Creates db engine to the mainchain database"""
     return create_engine(secrets["dbSync"]["url"])
 
