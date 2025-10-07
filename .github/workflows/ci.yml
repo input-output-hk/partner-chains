@@ -370,6 +370,15 @@ jobs:
       - name: Lint (Nightly)
         run: nix develop -c bash -c "RUSTUP_TOOLCHAIN=nightly RUSTFLAGS=-Dwarnings cargo clippy --locked --all-features"
 
+      - name: Generate Rustdocs (Nightly)
+        run: nix develop -c bash -c "RUSTUP_TOOLCHAIN=nightly RUSTDOCFLAGS='--enable-index-page -Zunstable-options' SKIP_WASM_BUILD=1 cargo doc --locked --no-deps"
+
+      - name: Upload Rustdocs
+        uses: actions/upload-artifact@v4
+        with:
+          name: rustdoc-artifacts
+          path: target/doc/
+
       - name: sccache stats
         if: always()
         run: nix develop -c sccache -s || true
@@ -466,10 +475,19 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - name: Deploy Rust Docs
-        uses: ./.github/actions/deploy/deploy-rustdoc
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Download Rustdocs
+        uses: actions/download-artifact@v4
+        with:
+          name: rustdoc-artifacts
+          path: ./target/doc
+      
+      - name: Deploy Rustdocs
+        uses: peaceiris/actions-gh-pages@v3.9.3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./target/doc
 
   upload-chain-specs-pre-merge:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
