@@ -362,16 +362,16 @@ jobs:
           fi
 
       - name: Build (Nightly)
-        run: nix shell nixpkgs#rust-bin.nightly.latest.default -c cargo build --locked
+        run: nix shell "github:nixos/nixpkgs/nixos-24.05?overlay=github:oxalica/rust-overlay" -c rust-bin.selectLatestNightly.default.cargo build --locked
       
       - name: Test (Nightly)
-        run: nix shell nixpkgs#rust-bin.nightly.latest.default -c cargo test --locked --all-features
+        run: nix shell "github:nixos/nixpkgs/nixos-24.05?overlay=github:oxalica/rust-overlay" -c rust-bin.selectLatestNightly.default.cargo test --locked --all-features
       
       - name: Lint (Nightly)
-        run: nix shell nixpkgs#rust-bin.nightly.latest.default -c bash -c "RUSTFLAGS=-Dwarnings cargo clippy --locked --all-features"
+        run: nix shell "github:nixos/nixpkgs/nixos-24.05?overlay=github:oxalica/rust-overlay" -c bash -c "RUSTFLAGS=-Dwarnings rust-bin.selectLatestNightly.default.cargo clippy --locked --all-features"
       
       - name: Generate Rustdocs (Nightly)
-        run: nix shell nixpkgs#rust-bin.nightly.latest.default -c bash -c "cargo doc --locked --no-deps -- -Zunstable-options --enable-index-page"
+        run: nix shell "github:nixos/nixpkgs/nixos-24.05?overlay=github:oxalica/rust-overlay" -c bash -c "rust-bin.selectLatestNightly.default.cargo doc --locked --no-deps -- -Zunstable-options --enable-index-page"
         
       - name: Upload Rustdocs
         uses: actions/upload-artifact@v4
