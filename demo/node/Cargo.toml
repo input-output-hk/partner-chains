@@ -64,7 +64,6 @@ pallet-session-validator-management = { workspace = true }
 sp-session-validator-management = { workspace = true }
 sp-session-validator-management-query = { workspace = true }
 pallet-session-validator-management-rpc = { workspace = true }
-pallet-partner-chains-session = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 substrate-prometheus-endpoint = { workspace = true }
@@ -104,6 +103,15 @@ partner-chains-db-sync-data-sources = { workspace = true, features = [
 	"block-participation",
 	"bridge",
 ] }
+partner-chains-dolos-data-sources = { workspace = true, features = [
+	"block-source",
+	"candidate-source",
+	"governed-map",
+	"mc-hash",
+	"sidechain-rpc",
+	"block-participation",
+	"bridge",
+] }
 partner-chains-mock-data-sources = { workspace = true, features = [
 	"block-source",
 	"candidate-source",
@@ -113,6 +121,7 @@ partner-chains-mock-data-sources = { workspace = true, features = [
 	"block-participation",
 	"bridge",
 ] }
+partner-chains-data-source-metrics = { workspace = true }
 tokio = { workspace = true }
 sp-block-participation = { workspace = true, features = ["std"] }
 sp-block-producer-metadata = { workspace = true, features = ["std"] }
@@ -128,6 +137,7 @@ time-source = { workspace = true, features = ["mock"] }
 assert_cmd = { workspace = true }
 pallet-sidechain-rpc = { workspace = true }
 authority-selection-inherents = { workspace = true, features = ["mock"] }
+pretty_assertions = { workspace = true }
 
 [features]
 default = ["sidechain-domain/std"]

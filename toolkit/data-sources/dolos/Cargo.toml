@@ -1,37 +1,19 @@
 [package]
-name = "partner-chains-db-sync-data-sources"
+name = "partner-chains-dolos-data-sources"
 version.workspace = true
 license = "Apache-2.0"
 authors.workspace = true
 edition.workspace = true
 homepage.workspace = true
 repository.workspace = true
-description = "Db-Sync-based implementations of all data sources used by Partner Chains components"
+description = "Dolos-based implementations of all data sources used by Partner Chains components"
 
 [lints]
 workspace = true
 
 [dependencies]
-sqlx = { workspace = true }
-db-sync-sqlx = { workspace = true }
-tokio = { workspace = true, features = ["full"] }
-futures = { workspace = true }
-chrono = "0.4.31"
-hex = { workspace = true }
-hex-literal = { workspace = true }
-itertools = { workspace = true }
 sidechain-domain = { workspace = true, features = ["std", "serde"] }
-serde = { workspace = true }
-serde_json = { workspace = true }
-bigdecimal = { workspace = true }
 async-trait = { workspace = true }
-num-bigint = { workspace = true }
-log = { workspace = true }
-thiserror = { workspace = true }
-blake2b_simd = { workspace = true }
-figment = { workspace = true }
-derive-new = { workspace = true }
-lru = { workspace = true }
 sp-timestamp = { workspace = true, features = ["std"] }
 sp-governed-map = { workspace = true, features = ["std"], optional = true }
 sidechain-mc-hash = { workspace = true, optional = true }
@@ -39,25 +21,12 @@ pallet-sidechain-rpc = { workspace = true, optional = true }
 authority-selection-inherents = { workspace = true, features = [
     "std",
 ], optional = true }
-cardano-serialization-lib = { workspace = true }
-partner-chains-data-source-metrics = { workspace = true }
-partner-chains-plutus-data = { workspace = true }
 sp-block-participation = { workspace = true, features = [
     "std",
 ], optional = true }
 sp-partner-chains-bridge = { workspace = true, optional = true, features = [
     "std",
 ] }
-
-[dev-dependencies]
-tokio-test = "0.4.3"
-ctor = "0.5.0"
-testcontainers-modules = { version = "0.13.0", features = [
-    "blocking",
-    "postgres",
-] }
-pretty_assertions = { workspace = true }
-paste = { workspace = true }
 
 [features]
 default = []

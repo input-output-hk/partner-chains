@@ -9,7 +9,9 @@ use frame_system::EnsureRoot;
 use sidechain_domain::byte_string::SizedByteString;
 use sp_core::{H256, blake2_256};
 use sp_runtime::{
-	BuildStorage,
+	BuildStorage, KeyTypeId,
+	key_types::DUMMY,
+	testing::UintAuthorityId,
 	traits::{BlakeTwo256, IdentityLookup},
 };
 use sp_session_validator_management::MainChainScripts;
@@ -20,6 +22,18 @@ type AccountId = u64;
 type AuthorityId = u64;
 pub type ScEpochNumber = u64;
 pub type AuthorityKeys = u64;
+
+sp_runtime::impl_opaque_keys! {
+	pub struct SessionKeys {
+		pub foo: UintAuthorityId,
+	}
+}
+
+impl From<u64> for SessionKeys {
+	fn from(value: u64) -> Self {
+		SessionKeys { foo: UintAuthorityId::from(value) }
+	}
+}
 
 #[allow(dead_code)]
 #[frame_support::pallet]
@@ -41,6 +55,7 @@ frame_support::construct_runtime!(
 	pub enum Test {
 		System: frame_system,
 		SessionCommitteeManagement: pallet,
+		Session: pallet_session,
 		Mock: mock_pallet,
 	}
 );
@@ -107,6 +122,40 @@ impl pallet::Config for Test {
 	}
 
 	type WeightInfo = ();
+}
+
+parameter_types! {
+	pub const Period: u64 = 1;
+	pub const Offset: u64 = 0;
+}
+
+pub struct TestSessionHandler;
+impl pallet_session::SessionHandler<AccountId> for TestSessionHandler {
+	const KEY_TYPE_IDS: &'static [KeyTypeId] = &[DUMMY];
+
+	fn on_genesis_session<Ks: sp_runtime::traits::OpaqueKeys>(_validators: &[(AccountId, Ks)]) {}
+
+	fn on_new_session<Ks: sp_runtime::traits::OpaqueKeys>(
+		_: bool,
+		_: &[(AccountId, Ks)],
+		_: &[(AccountId, Ks)],
+	) {
+	}
+
+	fn on_disabled(_: u32) {}
+}
+
+impl pallet_session::Config for Test {
+	type ValidatorId = AuthorityId;
+	type ValidatorIdOf = sp_runtime::traits::ConvertInto;
+	type ShouldEndSession = crate::Pallet<Test>;
+	type NextSessionRotation = ();
+	type SessionManager = crate::Pallet<Test>;
+	type SessionHandler = TestSessionHandler;
+	type Keys = SessionKeys;
+	type DisablingStrategy = ();
+	type WeightInfo = ();
+	type RuntimeEvent = RuntimeEvent;
 }
 
 /// Build genesis storage according to the mock runtime.
@@ -206,4 +255,43 @@ pub fn create_inherent_set_validators_call(
 
 pub(crate) fn current_epoch_number() -> u64 {
 	mock_pallet::CurrentEpoch::<Test>::get()
+}
+
+#[track_caller]
+pub(crate) fn start_session(session_index: u32) {
+	for i in Session::current_index()..session_index {
+		System::on_finalize(System::block_number());
+		Session::on_finalize(System::block_number());
+
+		let parent_hash = if System::block_number() > 1 {
+			let hdr = System::finalize();
+			hdr.hash()
+		} else {
+			System::parent_hash()
+		};
+
+		System::reset_events();
+		System::initialize(&(i as u64 + 1), &parent_hash, &Default::default());
+		System::set_block_number((i + 1).into());
+
+		System::on_initialize(System::block_number());
+		Session::on_initialize(System::block_number());
+	}
+
+	assert_eq!(Session::current_index(), session_index);
+}
+
+pub(crate) fn advance_one_block() {
+	let block_number = System::block_number();
+	System::on_finalize(block_number);
+	Session::on_finalize(block_number);
+	let parent_hash =
+		if block_number > 1 { System::finalize().hash() } else { System::parent_hash() };
+	System::reset_events();
+	let next_block_number = block_number as u64 + 1;
+	System::initialize(&next_block_number, &parent_hash, &Default::default());
+	System::set_block_number(next_block_number.into());
+
+	System::on_initialize(next_block_number);
+	Session::on_initialize(next_block_number);
 }

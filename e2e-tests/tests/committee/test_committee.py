@@ -483,6 +483,9 @@ class TestCommitteeMembers:
         * check that validators from a committee equal to the authorities
         """
         current_epoch = api.get_pc_epoch()
+
+        # There's a delay between selecting a committee and it being in power, which means the current
+        # committee was selected based on inputs from the previous epoch
         committee = api.get_epoch_committee(current_epoch).result['committee']
         authorities = api.get_authorities()
 

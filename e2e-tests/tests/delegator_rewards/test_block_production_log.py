@@ -16,11 +16,10 @@ def test_block_production_log_pallet(api: BlockchainApi, config: ApiConfig):
     )
     block_production_log.reverse()
     for slot, block_producer_id in block_production_log:
-        committee = api.get_validator_set(block).value
-        author_index = slot % len(committee)
-        expected_node = next(
-            x for x in config.nodes_config.nodes.values() if x.aura_public_key == committee[author_index][1]["aura"]
-        )
+        committee = api.get_validator_set(block)
+        author_aura_key = committee[slot % len(committee)]["keys"]["aura"]
+        expected_node = next(x for x in config.nodes_config.nodes.values() if x.aura_public_key == author_aura_key)
+
         if "Incentivized" in block_producer_id:
             cross_chain_public, stake_pool_public_key = block_producer_id["Incentivized"]
             assert (

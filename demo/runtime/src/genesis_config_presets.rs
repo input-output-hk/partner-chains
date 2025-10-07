@@ -47,7 +47,7 @@ fn testnet_genesis(
 			authorities: initial_authorities.iter().map(|x| x.0.clone()).collect::<Vec<_>>(),
 		},
 		beefy: pallet_beefy::GenesisConfig {
-			authorities: initial_authorities.iter().map(|x| (x.2.clone())).collect::<Vec<_>>(),
+			authorities: initial_authorities.iter().map(|x| x.2.clone()).collect::<Vec<_>>(),
 			genesis_block: None,
 		},
 		grandpa: pallet_grandpa::GenesisConfig {
@@ -64,7 +64,6 @@ fn testnet_genesis(
 		transaction_payment: Default::default(),
 		sidechain: Default::default(),
 		session_committee_management: Default::default(),
-		pallet_session: Default::default(),
 		session: Default::default(),
 		governed_map: GovernedMapConfig {
 			main_chain_scripts: Some(sp_governed_map::MainChainScriptsV1::default()),

@@ -1,6 +1,6 @@
 use partner_chains_cli::CreateChainSpecConfig;
 use partner_chains_demo_runtime::{
-	AccountId, CrossChainPublic, Signature, WASM_BINARY, opaque::SessionKeys,
+	AccountId, CrossChainPublic, SessionConfig, Signature, WASM_BINARY, opaque::SessionKeys,
 };
 use sc_service::ChainType;
 use sidechain_slots::SlotsPerEpoch;
@@ -47,9 +47,21 @@ pub fn pc_create_chain_spec(config: &CreateChainSpecConfig<SessionKeys>) -> serd
 		grandpa: partner_chains_demo_runtime::GrandpaConfig::default(),
 		sudo: partner_chains_demo_runtime::SudoConfig::default(),
 		transaction_payment: Default::default(),
-		session: config.pallet_partner_chains_session_config(),
+		session: SessionConfig {
+			keys: config
+				.initial_permissioned_candidates_parsed
+				.iter()
+				.map(|authority_keys| {
+					(
+						authority_keys.account_id_32().into(),
+						authority_keys.account_id_32().into(),
+						authority_keys.keys.clone(),
+					)
+				})
+				.collect(),
+			non_authority_keys: vec![],
+		},
 		sidechain: config.pallet_sidechain_config(SlotsPerEpoch::default()),
-		pallet_session: Default::default(),
 		session_committee_management: config.pallet_session_validator_management_config(),
 		governed_map: config.governed_map_config(),
 		test_helper_pallet: partner_chains_demo_runtime::TestHelperPalletConfig {
@@ -65,6 +77,7 @@ pub fn pc_create_chain_spec(config: &CreateChainSpecConfig<SessionKeys>) -> serd
 		.with_id("partner_chains_demo")
 		.with_chain_type(ChainType::Live)
 		.with_genesis_config(genesis_json)
+		.with_boot_nodes(config.bootnodes.iter().map(|bn| bn.parse().unwrap()).collect())
 		.build();
 	let raw = false;
 	let chain_spec_str = chain_spec.as_json(raw).expect("Chain spec serialization can not fail");

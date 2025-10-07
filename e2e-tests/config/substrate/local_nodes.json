@@ -12,7 +12,7 @@
   "nodes_config": {
     "nodes": {
       "alice": {
-        "host": "127.0.0.1",
+        "host": "partner-chains-node-1",
         "port": "9933",
         "aura_ss58_address": "5Cyx94iyji8namhRxvs4mAbURtPsvwjWCb68ZihNzfRysGLZ",
         "public_key": "0x0258dc1e341e42ba85b393804c1e8a531485ec3b73b2d5cd2b0bf56cbcaf102a7e",
@@ -21,7 +21,7 @@
         "permissioned_candidate": true
       },
       "bob": {
-        "host": "127.0.0.1",
+        "host": "partner-chains-node-2",
         "port": "9934",
         "aura_ss58_address": "5E4op92Z2Di1GoVS9KqnoGVKQXG2R9x1vdh3RW892YLFsLrc",
         "public_key": "0x030e0bcd9e16d770ade1fb5a5a50f2da012f1ea53713a9ba8aed5f009bc451404d",
@@ -30,7 +30,7 @@
         "permissioned_candidate": true
       },
       "charlie": {
-        "host": "127.0.0.1",
+        "host": "partner-chains-node-3",
         "port": "9935",
         "aura_ss58_address": "5CPCXHsSVaSRBMe8Ljs1HPrsuB8pJYuceoMT7TVKksM6uuj3",
         "public_key": "0x03425892d705436ccfd24e0613ca7410e18eb142461579e3c908f4c5e4d429a90d",
@@ -39,7 +39,7 @@
         "permissioned_candidate": true
       },
       "dave": {
-        "host": "127.0.0.1",
+        "host": "partner-chains-node-4",
         "port": "9936",
         "public_key": "0x039799ff93d184146deacaa455dade51b13ed16f23cdad11d1ad6af20103391180",
         "aura_public_key": "0xe85534c93315d60f808568d1dce5cb9e8ba6ed0b204209c5cc8f3bec56c10b73",
@@ -55,7 +55,7 @@
         }
       },
       "eve": {
-        "host": "127.0.0.1",
+        "host": "partner-chains-node-5",
         "port": "9937",
         "public_key": "0x0364b1f01f6e803be10abc6dd6fe08ced61cf3eaaef2dbdc72b4e774c4b6a564af",
         "aura_ss58_address": "5G4gFEZJaCDQfXjef24P8oR6hpD7FKi3GNaHwtRL7hmTBxPC",
@@ -101,5 +101,28 @@
   },
   "timeouts": {
     "main_chain_tx": 20
-  }
+  },
+    "stack_config": {
+        "ogmios_scheme": "ws",
+        "ogmios_host": "ogmios",
+        "ogmios_port": 1337,
+        "tools": {
+            "cardano_cli": {
+                "path": "cardano-cli",
+                "runner": {
+                    "docker": {
+                        "container": "cardano-node-1"
+                    }
+                }
+            },
+            "node": {
+                "path": "./partner-chains-node",
+                "runner": {
+                    "docker": {
+                        "container": "partner-chains-setup"
+                    }
+                }
+            }
+        }
+    }
 }

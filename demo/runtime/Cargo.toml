@@ -32,9 +32,6 @@ pallet-beefy-mmr = { workspace = true }
 pallet-mmr = { workspace = true }
 frame-support = { workspace = true }
 pallet-grandpa = { workspace = true }
-pallet-partner-chains-session = { workspace = true, features = [
-	"pallet-session-compat",
-] }
 pallet-session = { workspace = true }
 pallet-sudo = { workspace = true }
 frame-system = { workspace = true }
@@ -79,9 +76,7 @@ sp-block-production-log = { workspace = true }
 pallet-block-production-log = { workspace = true }
 sp-sidechain = { workspace = true }
 pallet-sidechain = { workspace = true }
-pallet-session-validator-management = { workspace = true, features = [
-	"pallet-session-compat",
-] }
+pallet-session-validator-management = { workspace = true }
 sp-session-validator-management = { workspace = true, features = ["serde"] }
 pallet-session-validator-management-benchmarking = { workspace = true, optional = true }
 sidechain-domain = { workspace = true, features = ["serde"] }
@@ -138,7 +133,6 @@ std = [
 	"pallet-block-production-log/std",
 	"pallet-grandpa/std",
 	"pallet-sudo/std",
-	"pallet-partner-chains-session/std",
 	"pallet-session-validator-management/std",
 	"pallet-session-validator-management-benchmarking?/std",
 	"pallet-timestamp/std",

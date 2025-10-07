@@ -334,14 +334,14 @@ class BlockchainApi(ABC):
         pass
 
     @abstractmethod
-    def get_validator_set(self, block) -> str:
+    def get_validator_set(self, block) -> list:
         """Gets validator set for a given block.
 
         Arguments:
             block -- block object
 
         Returns:
-            str -- block author public key
+            list -- committee member list with keys
         """
         pass
 

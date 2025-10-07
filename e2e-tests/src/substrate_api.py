@@ -589,7 +589,13 @@ class SubstrateApi(BlockchainApi):
         return self.substrate.get_block(block_number=block_no)
 
     def get_validator_set(self, block):
-        return self.substrate.query("Session", "ValidatorsAndKeys", block_hash=block["header"]["parentHash"])
+        committee = self.substrate.query("SessionCommitteeManagement", "CurrentCommittee", block_hash=block["header"]["parentHash"]).value["committee"]
+        result = []
+        for member in committee:
+            for memberType, memberParams in member.items():
+                memberParams["memberType"] = memberType
+                result.append(memberParams)
+        return result
 
     def get_block_author_and_slot(self, block, validator_set):
         """Custom implementation of substrate.get_block(include_author=True) to get block author, and block slot.
@@ -611,8 +617,7 @@ class SubstrateApi(BlockchainApi):
 
                 rank_validator = aura_predigest.value["slot_number"] % len(validator_set)
 
-                block_author = validator_set[rank_validator]
-                block["author"] = block_author.value[1]["aura"]
+                block["author"] = validator_set[rank_validator]["keys"]["aura"]
                 block["slot"] = aura_predigest.value["slot_number"]
                 break
 

@@ -1,4 +1,19 @@
 //!  Pallet for setting the Partner Chain validators using inherent data
+//!
+//! *Important*: It is recommended that when `pallet_session` is wired into the runtime, its
+//! extrinsics are hidden, using `exclude_parts` like so:
+//! ```rust,ignore
+//! construct_runtime!(
+//! 	pub struct Runtime {
+//! 		System: frame_system,
+//! 		SessionCommitteeManagement: pallet_session_validator_management,
+//!         // ..other pallets
+//! 		Session: pallet_session exclude_parts { Call },
+//!     }
+//! };
+//! ```
+//! This ensures that chain users can't manually register their keys in the pallet and so the
+//! registrations done on Cardano remain the sole source of truth about key ownership.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
@@ -6,10 +21,7 @@
 
 pub mod migrations;
 /// [`pallet_session`] integration.
-#[cfg(feature = "pallet-session-compat")]
 pub mod pallet_session_support;
-#[cfg(feature = "pallet-session-compat")]
-pub mod session_manager;
 
 pub use pallet::*;
 
@@ -21,6 +33,8 @@ mod tests;
 
 pub mod weights;
 
+use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
+use scale_info::TypeInfo;
 pub use sp_session_validator_management::CommitteeMember;
 pub use weights::WeightInfo;
 
@@ -35,6 +49,7 @@ pub mod pallet {
 	use sp_core::blake2_256;
 	use sp_runtime::traits::{MaybeSerializeDeserialize, One, Zero};
 	use sp_session_validator_management::*;
+	use sp_std::collections::btree_set::BTreeSet;
 	use sp_std::fmt::Display;
 	use sp_std::{ops::Add, vec::Vec};
 
@@ -135,6 +150,10 @@ pub mod pallet {
 	}
 
 	#[pallet::storage]
+	pub type ProvidedAccounts<T: Config> =
+		StorageValue<_, BoundedBTreeSet<T::AccountId, T::MaxValidators>, ValueQuery>;
+
+	#[pallet::storage]
 	pub type CurrentCommittee<T: Config> = StorageValue<
 		_,
 		CommitteeInfo<T::ScEpochNumber, T::CommitteeMember, T::MaxValidators>,
@@ -147,6 +166,12 @@ pub mod pallet {
 		CommitteeInfo<T::ScEpochNumber, T::CommitteeMember, T::MaxValidators>,
 		OptionQuery,
 	>;
+
+	/// Stores the stage of handling the inputs change. Used by session manager, to decide
+	/// if the session should be ended quickly, to speed up using the newly selected committee.
+	#[pallet::storage]
+	pub type CommitteeRotationStage<T: Config> =
+		StorageValue<_, CommitteeRotationStages, ValueQuery>;
 
 	#[pallet::storage]
 	pub type MainChainScriptsConfiguration<T: Config> =
@@ -173,6 +198,14 @@ pub mod pallet {
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
 			let initial_authorities = BoundedVec::truncate_from(self.initial_authorities.clone());
+
+			let provided_accounts: BTreeSet<T::AccountId> =
+				initial_authorities.iter().map(|m| m.authority_id().into()).collect();
+			for account in &provided_accounts {
+				frame_system::Pallet::<T>::inc_providers(&account);
+			}
+			ProvidedAccounts::<T>::set(provided_accounts.try_into().unwrap());
+
 			let committee_info =
 				CommitteeInfo { epoch: T::ScEpochNumber::zero(), committee: initial_authorities };
 			CurrentCommittee::<T>::put(committee_info);
@@ -422,4 +455,16 @@ pub mod pallet {
 			MainChainScriptsConfiguration::<T>::get()
 		}
 	}
+}
+
+/// For session state machine
+#[derive(Encode, Decode, Default, Debug, MaxEncodedLen, TypeInfo, PartialEq, Eq)]
+pub enum CommitteeRotationStages {
+	/// No action is required until the current committee becomes obsolete
+	#[default]
+	AwaitEpochChange,
+	/// Session ended because of epoch change
+	NewSessionDueEpochChange,
+	/// Session ended to accelerate use of validators queued in the previous block
+	AdditionalSession,
 }

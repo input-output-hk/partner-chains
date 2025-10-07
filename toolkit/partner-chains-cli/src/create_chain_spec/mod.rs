@@ -99,6 +99,7 @@ impl<T: PartnerChainRuntime> CreateChainSpecCmd<T> {
 #[derive(Debug)]
 /// Configuration that contains all Partner Chain specific data required to create the chain spec
 pub struct CreateChainSpecConfig<Keys> {
+	pub bootnodes: Vec<String>,
 	pub genesis_utxo: UtxoId,
 	pub initial_permissioned_candidates_raw: Vec<PermissionedCandidateKeys>,
 	pub initial_permissioned_candidates_parsed: Vec<ParsedPermissionedCandidatesKeys<Keys>>,
@@ -122,6 +123,7 @@ impl<Keys: MaybeFromCandidateKeys> CreateChainSpecConfig<Keys> {
 				.map(TryFrom::try_from)
 				.collect::<Result<Vec<ParsedPermissionedCandidatesKeys<Keys>>, anyhow::Error>>()?;
 		Ok(Self {
+			bootnodes: load_config_field(c, &config_fields::BOOTNODES)?,
 			genesis_utxo: load_config_field(c, &config_fields::GENESIS_UTXO)?,
 			initial_permissioned_candidates_raw,
 			initial_permissioned_candidates_parsed,
@@ -158,21 +160,25 @@ impl<Keys: MaybeFromCandidateKeys> CreateChainSpecConfig<Keys> {
 		}
 	}
 
-	/// Returns [pallet_partner_chains_session::GenesisConfig] derived from the config, using initial permissioned candidates
+	/// Returns [pallet_session::GenesisConfig] derived from the config, using initial permissioned candidates
 	/// as initial validators
-	pub fn pallet_partner_chains_session_config<T: pallet_partner_chains_session::Config>(
+	pub fn pallet_partner_chains_session_config<T: pallet_session::Config>(
 		&self,
-	) -> pallet_partner_chains_session::GenesisConfig<T>
+	) -> pallet_session::GenesisConfig<T>
 	where
 		T::ValidatorId: From<AccountId32>,
 		T::Keys: From<Keys>,
+		T::AccountId: From<AccountId32>,
 	{
-		pallet_partner_chains_session::GenesisConfig {
-			initial_validators: self
+		pallet_session::GenesisConfig {
+			keys: self
 				.initial_permissioned_candidates_parsed
 				.iter()
-				.map(|c| (c.account_id_32().into(), c.keys.clone().into()))
+				.map(|c| {
+					(c.account_id_32().into(), c.account_id_32().into(), c.keys.clone().into())
+				})
 				.collect::<Vec<_>>(),
+			..Default::default()
 		}
 	}
 
@@ -247,6 +253,7 @@ impl<Keys: MaybeFromCandidateKeys> CreateChainSpecConfig<Keys> {
 impl<T> Default for CreateChainSpecConfig<T> {
 	fn default() -> Self {
 		Self {
+			bootnodes: Default::default(),
 			genesis_utxo: Default::default(),
 			initial_permissioned_candidates_raw: Default::default(),
 			initial_permissioned_candidates_parsed: Default::default(),
