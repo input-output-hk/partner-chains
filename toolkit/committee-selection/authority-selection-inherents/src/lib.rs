@@ -1,4 +1,12 @@
-//! This crate provides inherents for authority selection.
+//! # Partner Chain Committee Selection
+//!
+//! Inherent data provider and selection logic for Partner Chain committee selection.
+//!
+//! ## Overview
+//!
+//! This crate provides an IDP and all types necessary for a Partner Chain to select
+//! block producer committees using data sourced from Cardano smart contracts.
+//!
 #![cfg_attr(not(feature = "std"), no_std)]
 #![deny(missing_docs)]
 
