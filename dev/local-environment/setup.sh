@@ -169,6 +169,8 @@ resource_limits_setup() {
       mem_postgres=500M
       cpu_dbsync=0.5
       mem_dbsync=200M
+      cpu_dolos=0.5
+      mem_dolos=500M
       cpu_ogmios=0.2
       mem_ogmios=500M
     else
@@ -182,6 +184,8 @@ resource_limits_setup() {
       mem_postgres=$(validate_memory_limit "Enter Memory limit for PostgreSQL database (e.g., 500M for 500 MB): ")
       cpu_dbsync=$(validate_cpu_limit "Enter CPU limit for db-sync (e.g., 0.5 for 0.5 CPU): ")
       mem_dbsync=$(validate_memory_limit "Enter Memory limit for db-sync (e.g., 200M for 200 MB): ")
+      cpu_dolos=$(validate_cpu_limit "Enter CPU limit for Dolos (e.g., 0.5 for 0.5 CPU): ")
+      mem_dolos=$(validate_memory_limit "Enter Memory limit for Dolos (e.g., 500M for 500 MB): ")
       cpu_ogmios=$(validate_cpu_limit "Enter CPU limit for Ogmios (e.g., 0.2 for 0.2 CPU): ")
       mem_ogmios=$(validate_memory_limit "Enter Memory limit for Ogmios (e.g., 500M for 500 MB): ")
     fi
@@ -196,6 +200,8 @@ resource_limits_setup() {
     mem_postgres=$DEFAULT_MEM_LIMIT
     cpu_dbsync=$DEFAULT_CPU_LIMIT
     mem_dbsync=$DEFAULT_MEM_LIMIT
+    cpu_dolos=$DEFAULT_CPU_LIMIT
+    mem_dolos=$DEFAULT_MEM_LIMIT
     cpu_ogmios=$DEFAULT_CPU_LIMIT
     mem_ogmios=$DEFAULT_MEM_LIMIT
   fi
