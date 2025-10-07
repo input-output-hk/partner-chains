@@ -371,7 +371,7 @@ jobs:
         run: nix develop -c bash -c "RUSTUP_TOOLCHAIN=nightly RUSTFLAGS=-Dwarnings cargo clippy --locked --all-features"
 
       - name: Generate Rustdocs (Nightly)
-        run: nix develop -c bash -c "RUSTUP_TOOLCHAIN=nightly RUSTFLAGS='' RUSTDOCFLAGS='--enable-index-page -Zunstable-options' SKIP_WASM_BUILD=1 cargo doc --locked --no-deps"
+        run: nix develop -c bash -c "RUSTFLAGS='' RUSTDOCFLAGS='--enable-index-page -Zunstable-options' SKIP_WASM_BUILD=1 cargo +nightly doc --locked --no-deps"
 
       - name: Upload Rustdocs
         uses: actions/upload-artifact@v4
