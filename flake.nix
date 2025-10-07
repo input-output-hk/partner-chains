@@ -95,6 +95,55 @@
             ${if isLinux then "export CFLAGS=-DJEMALLOC_STRERROR_R_RETURNS_CHAR_WITH_GNU_SOURCE" else ""}
           '';
         };
+
+        devShells.nightly = pkgs.mkShell {
+          packages = with pkgs; [
+            awscli2
+            bashInteractive
+            cargo-edit
+            cargo-license
+            coreutils
+            docker-compose
+            earthly
+            gawk
+            gnumake
+            kubectl
+            libiconv
+            nixfmt-rfc-style
+            openssl
+            patchelf
+            pkg-config
+            protobuf
+            python312
+            python312Packages.pip
+            python312Packages.virtualenv
+            fenix.packages.${system}.latest.rustc
+            fenix.packages.${system}.latest.cargo
+            fenix.packages.${system}.latest.clippy
+            fenix.packages.${system}.latest.rustfmt
+            sops
+            xxd
+          ]
+          ++ (if isDarwin then [ pkgs.darwin.apple_sdk.frameworks.SystemConfiguration ] else [ pkgs.clang ]);
+
+          shellHook = ''
+            export RUST_SRC_PATH="${fenix.packages.${system}.latest.rust-src}/lib/rustlib/src/rust/library"
+            export LIBCLANG_PATH="${pkgs.libclang.lib}/lib"
+            export LD_LIBRARY_PATH="${
+              pkgs.lib.makeLibraryPath [
+                pkgs.openssl
+                pkgs.stdenv.cc.cc
+              ]
+            }"
+            export OPENSSL_NO_VENDOR=1
+            export OPENSSL_DIR="${pkgs.openssl.dev}"
+            export OPENSSL_INCLUDE_DIR="${pkgs.openssl.dev}/include"
+            export OPENSSL_LIB_DIR="${pkgs.openssl.out}/lib"
+            export PYTHONNOUSERSITE=1
+            export CRATE_CC_NO_DEFAULTS=1
+            ${if isLinux then "export CFLAGS=-DJEMALLOC_STRERROR_R_RETURNS_CHAR_WITH_GNU_SOURCE" else ""}
+          '';
+        };
         formatter = pkgs.nixfmt-rfc-style;
       }
     );

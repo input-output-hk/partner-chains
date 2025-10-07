@@ -362,16 +362,16 @@ jobs:
           fi
 
       - name: Build (Nightly)
-        run: nix shell "github:oxalica/rust-overlay#rust-bin.selectLatestNightly.default" -c cargo build --locked
+        run: nix develop .#nightly -c cargo build --locked
       
       - name: Test (Nightly)
-        run: nix shell "github:oxalica/rust-overlay#rust-bin.selectLatestNightly.default" -c cargo test --locked --all-features
+        run: nix develop .#nightly -c cargo test --locked --all-features
       
       - name: Lint (Nightly)
-        run: nix shell "github:oxalica/rust-overlay#rust-bin.selectLatestNightly.default" -c bash -c "RUSTFLAGS=-Dwarnings cargo clippy --locked --all-features"
+        run: nix develop .#nightly -c bash -c "RUSTFLAGS=-Dwarnings cargo clippy --locked --all-features"
       
       - name: Generate Rustdocs (Nightly)
-        run: nix shell "github:oxalica/rust-overlay#rust-bin.selectLatestNightly.default" -c bash -c "cargo doc --locked --no-deps -- -Zunstable-options --enable-index-page"
+        run: nix develop .#nightly -c bash -c "cargo doc --locked --no-deps -- -Zunstable-options --enable-index-page"
         
       - name: Upload Rustdocs
         uses: actions/upload-artifact@v4
