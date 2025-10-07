@@ -449,11 +449,6 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		// Only reason for this hook is to set the genesis committee as the committee for first block's epoch.
-		// If it wouldn't be set, the should_end_session() function would return true at the 2nd block,
-		// thus denying handover phase to genesis committee, which would break the chain. With this hook,
-		// should_end_session() returns true at 1st block and changes committee to the same one, thus allowing
-		// handover phase to happen. After having proper chain initialization procedure this probably won't be needed anymore.
-		// Note: If chain is started during handover phase, it will wait until new epoch to produce the first block.
 		fn on_initialize(block_nr: BlockNumberFor<T>) -> Weight {
 			if block_nr.is_one() {
 				CurrentCommittee::<T>::mutate(|committee| {
@@ -496,7 +491,6 @@ pub mod pallet {
 			}
 		}
 
-		// TODO make this call run by every full node, so it can be relied upon for ensuring that the block is correct
 		fn check_inherent(call: &Self::Call, data: &InherentData) -> Result<(), Self::Error> {
 			let (validators_param, for_epoch_number_param, call_selection_inputs_hash) = match call
 			{
