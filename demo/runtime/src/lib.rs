@@ -777,6 +777,7 @@ mod benches {
 		[pallet_block_participation, BlockParticipation]
 		[pallet_governed_map, GovernedMap]
 		[pallet_partner_chains_bridge, Bridge]
+		[pallet_session_validator_management, SessionCommitteeManagement]
 	);
 }
 
