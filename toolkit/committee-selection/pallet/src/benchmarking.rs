@@ -12,22 +12,11 @@ const SEED: u32 = 0;
 
 /// Helper for creating mock data used by benchmarks.
 ///
-/// Only functions without default implementation need to be implemented by chain builders
-/// based on their runtime types. Runtimes with `CommitteeMember` types isomorphic to
-/// `(AuthorityId, AuthorityKeys)` can use the implementation provided for [()].
+/// Runtimes with `CommitteeMember` types isomorphic to `(AuthorityId, AuthorityKeys)`
+/// can use the implementation provided for [()].
 pub trait BenchmarkHelper<T: Config> {
 	/// Should return `number` of committee members
 	fn create_validators(number: u32) -> Vec<T::CommitteeMember>;
-
-	/// Should return an input hash of 32 bytes
-	fn create_inputs_hash() -> SizedByteString<32> {
-		Default::default()
-	}
-
-	/// Should return main chain scripts
-	fn create_main_chain_scripts() -> MainChainScripts {
-		MainChainScripts::default()
-	}
 }
 
 impl<T: Config> BenchmarkHelper<T> for ()
@@ -62,29 +51,16 @@ pub mod benchmarks {
 		let validators: BoundedVec<<T as crate::Config>::CommitteeMember, T::MaxValidators> =
 			BoundedVec::truncate_from(T::BenchmarkHelper::create_validators(v));
 
-		let inputs_hash = T::BenchmarkHelper::create_inputs_hash();
-
 		let for_epoch_number = T::current_epoch_number() + One::one();
 
 		#[extrinsic_call]
-		_(RawOrigin::None, validators, for_epoch_number, inputs_hash);
+		_(RawOrigin::None, validators, for_epoch_number, Default::default());
 	}
 
 	#[benchmark]
 	fn set_main_chain_scripts() {
-		let MainChainScripts {
-			committee_candidate_address,
-			d_parameter_policy_id,
-			permissioned_candidates_policy_id,
-		} = T::BenchmarkHelper::create_main_chain_scripts();
-
 		#[extrinsic_call]
-		_(
-			RawOrigin::Root,
-			committee_candidate_address,
-			d_parameter_policy_id,
-			permissioned_candidates_policy_id,
-		);
+		_(RawOrigin::Root, Default::default(), Default::default(), Default::default());
 	}
 
 	impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);
