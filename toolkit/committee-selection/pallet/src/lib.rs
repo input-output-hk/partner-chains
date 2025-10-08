@@ -360,7 +360,7 @@ pub mod pallet {
 		///
 		/// This extrinsic must be run either using `sudo` or some other chain governance mechanism.
 		#[pallet::call_index(1)]
-		#[pallet::weight(T::WeightInfo::set(1))]
+		#[pallet::weight(T::WeightInfo::set_main_chain_scripts())]
 		pub fn set_main_chain_scripts(
 			origin: OriginFor<T>,
 			committee_candidate_address: MainchainAddress,
