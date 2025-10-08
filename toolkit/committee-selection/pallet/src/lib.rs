@@ -113,6 +113,10 @@ pub mod pallet {
 
 		/// Weight functions needed for pallet_session_validator_management.
 		type WeightInfo: WeightInfo;
+
+		/// Helper for creating mock data used by benchmarks
+		#[cfg(feature = "runtime-benchmarks")]
+		type BenchmarkHelper: benchmarking::BenchmarkHelper<Self>;
 	}
 
 	#[pallet::event]

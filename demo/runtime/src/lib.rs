@@ -408,6 +408,9 @@ impl pallet_session_validator_management::Config for Runtime {
 	fn current_epoch_number() -> ScEpochNumber {
 		Sidechain::current_epoch_number()
 	}
+
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = ();
 }
 
 parameter_types! {
