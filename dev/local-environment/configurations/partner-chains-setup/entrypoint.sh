@@ -43,6 +43,8 @@ echo "Generating addresses.json file..."
     --genesis-utxo $GENESIS_UTXO \
 > addresses.json
 
+cp addresses.json /runtime-values/addresses.json
+
 export COMMITTEE_CANDIDATE_ADDRESS=$(jq -r '.addresses.CommitteeCandidateValidator' addresses.json)
 echo "Committee candidate address: $COMMITTEE_CANDIDATE_ADDRESS"
 
@@ -60,6 +62,10 @@ export NATIVE_TOKEN_POLICY_ID="1fab25f376bc49a181d03a869ee8eaa3157a3a3d242a619ca
 export NATIVE_TOKEN_ASSET_NAME="52657761726420746f6b656e"
 export BRIDGE_TOKEN_POLICY_ID=$(echo $NATIVE_TOKEN_POLICY_ID)
 export BRIDGE_TOKEN_ASSET_NAME=$(echo $NATIVE_TOKEN_ASSET_NAME)
+
+echo "$NATIVE_TOKEN_POLICY_ID" > /runtime-values/NATIVE_TOKEN_POLICY_ID
+echo "$NATIVE_TOKEN_ASSET_NAME" > /runtime-values/NATIVE_TOKEN_ASSET_NAME
+
 
 export GOVERNED_MAP_VALIDATOR_ADDRESS=$(jq -r '.addresses.GovernedMapValidator' addresses.json)
 echo "Governed Map Validator Address: $GOVERNED_MAP_VALIDATOR_ADDRESS"
