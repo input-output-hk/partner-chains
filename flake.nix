@@ -49,7 +49,7 @@
           packages =
             with pkgs;
             [
-              awscli2
+              (awscli2.overrideAttrs (_: { doCheck = false; }))
               bashInteractive
               cargo-edit
               cargo-license
@@ -98,7 +98,7 @@
 
         devShells.nightly = pkgs.mkShell {
           packages = with pkgs; [
-            awscli2
+            (awscli2.overrideAttrs (_: { doCheck = false; }))
             bashInteractive
             cargo-edit
             cargo-license
