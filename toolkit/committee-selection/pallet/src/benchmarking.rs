@@ -24,6 +24,7 @@ pub trait BenchmarkHelper<T: Config> {
 		Default::default()
 	}
 
+	/// Should return main chain scripts
 	fn create_main_chain_scripts() -> MainChainScripts {
 		MainChainScripts::default()
 	}
