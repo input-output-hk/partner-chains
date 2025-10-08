@@ -15,7 +15,6 @@ members = [
 	"substrate-extensions/aura/consensus",
 	"toolkit/block-production-log/pallet",
 	"toolkit/committee-selection/pallet",
-	"toolkit/committee-selection/pallet/benchmarking",
 	"toolkit/committee-selection/rpc",
 	"substrate-extensions/aura/primitives",
 	"toolkit/block-production-log/primitives",
@@ -293,7 +292,6 @@ selection = { path = "toolkit/committee-selection/selection", default-features =
 sp-session-validator-management = { default-features = false, path = "toolkit/committee-selection/primitives" }
 sp-session-validator-management-query = { default-features = false, path = "toolkit/committee-selection/query" }
 pallet-session-validator-management = { default-features = false, path = "toolkit/committee-selection/pallet" }
-pallet-session-validator-management-benchmarking = { default-features = false, path = "toolkit/committee-selection/pallet/benchmarking" }
 pallet-session-validator-management-rpc = { path = "toolkit/committee-selection/rpc" }
 authority-selection-inherents = { path = "toolkit/committee-selection/authority-selection-inherents", default-features = false }
 

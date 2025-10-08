@@ -6843,6 +6843,7 @@ dependencies = [
 name = "pallet-session-validator-management"
 version = "1.8.0"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
@@ -6855,31 +6856,6 @@ dependencies = [
  "sp-runtime",
  "sp-session-validator-management",
  "sp-staking",
- "sp-std",
-]
-
-[[package]]
-name = "pallet-session-validator-management-benchmarking"
-version = "1.8.0"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "pallet-aura",
- "pallet-session-validator-management",
- "pallet-sidechain",
- "pallet-timestamp",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sidechain-domain",
- "sidechain-slots",
- "sp-consensus-aura",
- "sp-consensus-slots",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-session-validator-management",
  "sp-std",
 ]
 
@@ -7436,7 +7412,6 @@ dependencies = [
  "pallet-partner-chains-bridge",
  "pallet-session",
  "pallet-session-validator-management",
- "pallet-session-validator-management-benchmarking",
  "pallet-sidechain",
  "pallet-sudo",
  "pallet-timestamp",
