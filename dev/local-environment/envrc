@@ -1,35 +1,51 @@
 SCRIPT_DIR=$(dirname "$_")
 SHARED_DIR="$SCRIPT_DIR/data/shared"
+
 DOT_ENV="$SCRIPT_DIR/.env"
-SHELLEY_GENESIS_FILE="$SCRIPT_DIR/configurations/genesis/shelley/genesis.json"
-TIMESTAMP_FILE="$SCRIPT_DIR/runtime-values/MC__FIRST_EPOCH_TIMESTAMP_MILLIS"
-PC_GENESIS_UTXO_FILE="$SCRIPT_DIR/runtime-values/genesis.utxo"
-
-if ! [ -f "$DOT_ENV" ]; then
-    echo "$DOT_ENV file missing!"
-elif ! [ -f "$TIMESTAMP_FILE" ]; then
-    echo "Timestamp file $TIMESTAMP_FILE missing!";
-elif ! [ -f "$SHELLEY_GENESIS_FILE" ]; then
-    echo "Shelley genesis file $SHELLEY_GENESIS_FILE missing!"
-else
+if [ -f "$DOT_ENV" ]; then
     source "$DOT_ENV"
-
     export DB_SYNC_POSTGRES_CONNECTION_STRING="postgres://postgres:$POSTGRES_PASSWORD@localhost:$POSTGRES_PORT/cexplorer"
-    export CARDANO_DATA_SOURCE="db-sync"
+else
+    echo "$DOT_ENV file missing!"
+fi
 
-    export BLOCK_STABILITY_MARGIN=0
-    export MC__FIRST_EPOCH_NUMBER=0
-    export MC__FIRST_SLOT_NUMBER=0
-    export MC__FIRST_EPOCH_TIMESTAMP_MILLIS=$(cat $TIMESTAMP_FILE)
+RUNTIME_VALUES="$SCRIPT_DIR/runtime-values"
+for VAR in NATIVE_TOKEN_POLICY_ID NATIVE_TOKEN_ASSET_NAME MC__FIRST_EPOCH_TIMESTAMP_MILLIS; do
+    if [ -f "$RUNTIME_VALUES/$VAR" ]; then
+        echo "$VAR"=$(cat "$RUNTIME_VALUES/$VAR" )
+        export "$VAR"=$(cat "$RUNTIME_VALUES/$VAR" )
+    else
+        echo "Couldn't load value for environment variable $VAR"
+    fi
+done
 
+SHELLEY_GENESIS_FILE="$SCRIPT_DIR/configurations/genesis/shelley/genesis.json"
+if [ -f "$SHELLEY_GENESIS_FILE" ]; then
     export MC__SLOT_DURATION_MILLIS=$(jq '.slotLength * 1000' $SHELLEY_GENESIS_FILE)
     export MC__EPOCH_DURATION_MILLIS=$(jq '.epochLength * 1000' $SHELLEY_GENESIS_FILE)
     export CARDANO_SECURITY_PARAMETER=$(jq '.securityParam' $SHELLEY_GENESIS_FILE)
     export CARDANO_ACTIVE_SLOTS_COEFF=$(jq '.activeSlotsCoeff' $SHELLEY_GENESIS_FILE)
+else
+    echo "Shelley genesis file $SHELLEY_GENESIS_FILE missing!"
+fi
 
-    if [ -f "$PC_GENESIS_UTXO_FILE" ]; then
-        export GENESIS_UTXO=$(cat $PC_GENESIS_UTXO_FILE)
-    else
-        echo "Partner Chain genesis file $PC_GENESIS_UTXO_FILE not present"
-    fi
+export CARDANO_DATA_SOURCE="db-sync"
+
+export BLOCK_STABILITY_MARGIN=0
+export MC__FIRST_EPOCH_NUMBER=0
+export MC__FIRST_SLOT_NUMBER=0
+
+
+PC_GENESIS_UTXO_FILE="$RUNTIME_VALUES/genesis.utxo"
+if [ -f "$PC_GENESIS_UTXO_FILE" ]; then
+    export GENESIS_UTXO=$(cat $PC_GENESIS_UTXO_FILE)
+else
+    echo "Partner Chain genesis file $PC_GENESIS_UTXO_FILE not present"
+fi
+
+ADDRESSES_FILE="$RUNTIME_VALUES/addresses.json"
+if [ -f "$ADDRESSES_FILE" ]; then
+    :
+else
+    echo "Addresses file not found: $ADDRESSES_FILE"
 fi
