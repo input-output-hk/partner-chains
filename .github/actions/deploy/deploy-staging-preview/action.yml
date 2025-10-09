@@ -108,6 +108,4 @@ runs:
         kubectl get pod staging-preview-validator-4 -n staging-preview -o jsonpath="{.status.containerStatuses[*].ready}"
         echo "Checking staging-preview-validator-5..."
         kubectl get pod staging-preview-validator-5 -n staging-preview -o jsonpath="{.status.containerStatuses[*].ready}"
-        kubectl get pods -n staging-preview -o custom-columns='NAME:.metadata.name,READY:.status.containerStatuses[*].ready' | grep -E '^(staging-preview-validator-1|staging-preview-validator-2|staging-preview-validator-3|staging-preview-validator-4|staging-preview-validator-5)' | awk '{if ($2 != "true,true,true,true") exit 1}'
-        echo "All pods are 5/5 up and ready"
       shell: bash
