@@ -10,13 +10,16 @@ runs:
       run: |
         set -euo pipefail
         
-        # Install base packages and add Helm repository
+        # Install base packages
         sudo apt-get update -y
-        sudo apt-get install -y ca-certificates curl python3-pip apt-transport-https
+        sudo apt-get install -y ca-certificates curl python3-pip
         sudo update-ca-certificates
-        echo "deb [arch=amd64 trusted=yes] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
         
-        # Update and install Helm
+        # Install Helm via APT 
+        sudo apt-get update -y
+        sudo apt-get install -y apt-transport-https ca-certificates curl gnupg
+        curl https://baltocdn.com/helm/signing.asc | sudo gpg --dearmor -o /usr/share/keyrings/helm.gpg
+        echo "deb [arch=amd64 signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
         sudo apt-get update -y
         sudo apt-get install -y helm
 
