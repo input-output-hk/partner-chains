@@ -47,9 +47,9 @@ runs:
         chmod +x kubectl
         sudo mv kubectl /usr/local/bin/kubectl
 
-        # Install Helm (official script handles SSL and mirrors)
-        VERSION=$(curl -fsSL https://api.github.com/repos/helm/helm/releases/latest | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')
-        curl -fsSL -o helm.tar.gz "https://github.com/helm/helm/releases/download/${VERSION}/helm-${VERSION}-linux-amd64.tar.gz"
+        # Install Helm
+        VERSION=$(curl -fsSL https://api.github.com/repos/helm/helm/releases/latest | grep '"tag_name"' | sed -E 's/.*"v?([^"]+)".*/\1/')
+        curl -fsSL -o helm.tar.gz "https://github.com/helm/helm/releases/download/v${VERSION}/helm-v${VERSION}-linux-amd64.tar.gz"
         tar -zxvf helm.tar.gz
         sudo mv linux-amd64/helm /usr/local/bin/helm
         rm -rf linux-amd64 helm.tar.gz
