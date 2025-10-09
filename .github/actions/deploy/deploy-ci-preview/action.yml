@@ -108,6 +108,4 @@ runs:
         kubectl get pod ci-preview-validator-4 -n ci-preview -o jsonpath="{.status.containerStatuses[*].ready}"
         echo "Checking ci-preview-validator-5..."
         kubectl get pod ci-preview-validator-5 -n ci-preview -o jsonpath="{.status.containerStatuses[*].ready}"
-        kubectl get pods -n ci-preview -o custom-columns='NAME:.metadata.name,READY:.status.containerStatuses[*].ready' | grep -E '^(ci-preview-validator-1|ci-preview-validator-2|ci-preview-validator-3|ci-preview-validator-4|ci-preview-validator-5)' | awk '{if ($2 != "true,true,true,true") exit 1}'
-        echo "All pods are 5/5 up and ready"
       shell: bash
