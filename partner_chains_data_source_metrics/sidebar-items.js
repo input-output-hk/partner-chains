@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"attr":["async_trait"],"fn":["register_metrics_warn_errors"],"macro":["observed_async_trait"],"mod":["mock"],"struct":["McFollowerMetrics"],"type":["MetricsRegistry"]};

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["PalletSessionSupport"]};
+window.SIDEBAR_ITEMS = {};

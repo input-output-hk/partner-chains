@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["get_script_utxo","upsert_script"]};
