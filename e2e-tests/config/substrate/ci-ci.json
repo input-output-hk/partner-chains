@@ -21,9 +21,9 @@
         "host": "ci-preview-validator-5-service.ci-preview.svc.cluster.local",
         "port": "${nodes_config[default_port]}"
       }
-    },
-    "stack_config": {
-        "ogmios_host": "staging-preview-services-service.staging-preview.svc.cluster.local"
     }
+  },
+  "stack_config": {
+        "ogmios_host": "staging-preview-services-service.staging-preview.svc.cluster.local"
   }
 }
