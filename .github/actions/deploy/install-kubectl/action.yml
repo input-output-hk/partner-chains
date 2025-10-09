@@ -6,26 +6,35 @@ outputs: {}
 runs:
   using: "composite"
   steps:
-    - name: Install kubectl, helm, and awscli
+    - name: Install kubectl, helm, and awscli (minimal, no checksums)
+      shell: bash
       run: |
         set -euo pipefail
-        
-        # Install base packages
+        export DEBIAN_FRONTEND=noninteractive
+
+        # Base packages
         sudo apt-get update -y
         sudo apt-get install -y ca-certificates curl python3-pip
         sudo update-ca-certificates
-        
-        # Install Helm via APT
-        sudo apt-get install -y apt-transport-https
-        echo "deb [arch=amd64 trusted=yes] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
-        sudo apt-get update -y
-        sudo apt-get install -y helm
 
-        # Install kubectl
-        curl -fsSL -o kubectl "https://dl.k8s.io/release/$(curl -fsSL https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        # --- Install Helm from GitHub releases ---
+        HELM_VERSION="${HELM_VERSION:-v3.15.3}"
+        TARBALL="helm-${HELM_VERSION}-linux-amd64.tar.gz"
+        BASE_URL="https://github.com/helm/helm/releases/download/${HELM_VERSION}"
+
+        curl -fsSL --retry 5 --retry-connrefused --retry-delay 2 -o "${TARBALL}" "${BASE_URL}/${TARBALL}"
+        tar -xzf "${TARBALL}"
+        sudo mv linux-amd64/helm /usr/local/bin/helm
+        rm -rf linux-amd64 "${TARBALL}"
+        helm version
+
+        # --- Install kubectl (stable) ---
+        KUBECTL_VER="$(curl -fsSL https://dl.k8s.io/release/stable.txt)"
+        curl -fsSL --retry 5 --retry-connrefused --retry-delay 2 -o kubectl "https://dl.k8s.io/release/${KUBECTL_VER}/bin/linux/amd64/kubectl"
         chmod +x kubectl
         sudo mv kubectl /usr/local/bin/kubectl
+        kubectl version --client=true
 
-        # Install AWS CLI
+        # --- Install AWS CLI ---
         pip3 install --upgrade awscli
-      shell: bash
+        aws --version
