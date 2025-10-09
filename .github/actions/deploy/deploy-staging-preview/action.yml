@@ -36,28 +36,7 @@ runs:
         registry: ${{ env.ECR_REGISTRY_SECRET }}
 
     - name: Install kubectl, helm, and awscli
-      run: |
-        set -euo pipefail
-        sudo apt-get update -y
-        sudo apt-get install -y ca-certificates curl python3-pip
-        sudo update-ca-certificates
-
-        # Install kubectl
-        curl -fsSL -o kubectl "https://dl.k8s.io/release/$(curl -fsSL https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-        chmod +x kubectl
-        sudo mv kubectl /usr/local/bin/kubectl
-
-        # Install Helm via APT (official repo)
-        sudo apt-get update -y
-        sudo apt-get install -y apt-transport-https ca-certificates curl gnupg
-        curl https://baltocdn.com/helm/signing.asc | sudo gpg --dearmor -o /usr/share/keyrings/helm.gpg
-        echo "deb [arch=amd64 signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
-        sudo apt-get update -y
-        sudo apt-get install -y helm
-
-        # Install AWS CLI
-        pip3 install --upgrade awscli
-      shell: bash
+      uses: ./.github/actions/deploy/install-kubectl
 
     - name: Configure kubectl
       run: |
