@@ -17,8 +17,10 @@ runs:
         sudo apt-get install -y ca-certificates curl python3-pip
         sudo update-ca-certificates
 
-        # Install Helm 
-        curl -fsSL -o helm.tar.gz https://github.com/helm/helm/releases/download/v3.12.3/helm-v3.12.3-linux-amd64.tar.gz
+        # Install Helm
+        HELM_VERSION=$(curl -s https://api.github.com/repos/helm/helm/releases/latest | grep '"tag_name"' | sed -E 's/.*"v([^"]+)".*/\1/')
+        echo "Installing Helm v${HELM_VERSION}"
+        curl -fsSL -o helm.tar.gz "https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz"
         tar -xzf helm.tar.gz
         sudo mv linux-amd64/helm /usr/local/bin/helm
         rm -rf linux-amd64 helm.tar.gz
