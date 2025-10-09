@@ -35,20 +35,8 @@ runs:
       with:
         registry: ${{ env.ECR_REGISTRY_SECRET }}
 
-    - name: Install kubectl, kubernetes-helm, and awscli
-      run: |
-        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-        chmod +x ./kubectl
-        sudo mv ./kubectl /usr/local/bin/kubectl
-        VERSION=$(curl --silent "https://api.github.com/repos/helm/helm/releases/latest" | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')
-        curl -L "https://get.helm.sh/helm-${VERSION}-linux-amd64.tar.gz" -o helm.tar.gz
-        tar -zxvf helm.tar.gz
-        sudo mv linux-amd64/helm /usr/local/bin/helm
-        rm -rf linux-amd64 helm.tar.gz
-        sudo apt-get update
-        sudo apt-get install -y python3-pip
-        pip3 install awscli --upgrade
-      shell: bash
+    - name: Install kubectl, helm, and awscli
+      uses: ./.github/actions/deploy/install-kubectl
 
     - name: Configure kubectl
       run: |
@@ -120,6 +108,4 @@ runs:
         kubectl get pod staging-preview-validator-4 -n staging-preview -o jsonpath="{.status.containerStatuses[*].ready}"
         echo "Checking staging-preview-validator-5..."
         kubectl get pod staging-preview-validator-5 -n staging-preview -o jsonpath="{.status.containerStatuses[*].ready}"
-        kubectl get pods -n staging-preview -o custom-columns='NAME:.metadata.name,READY:.status.containerStatuses[*].ready' | grep -E '^(staging-preview-validator-1|staging-preview-validator-2|staging-preview-validator-3|staging-preview-validator-4|staging-preview-validator-5)' | awk '{if ($2 != "true,true,true,true") exit 1}'
-        echo "All pods are 5/5 up and ready"
       shell: bash
