@@ -3,7 +3,7 @@ use crate::config::config_fields::{
 	CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS, CARDANO_FIRST_SLOT_NUMBER, CARDANO_SECURITY_PARAMETER,
 };
 use crate::io::IOContext;
-use clap::{Parser, arg};
+use clap::Parser;
 use config_fields::CARDANO_SLOT_DURATION_MILLIS;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use sidechain_domain::{MainchainKeyHash, UtxoId};
