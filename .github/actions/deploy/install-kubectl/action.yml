@@ -17,24 +17,20 @@ runs:
         sudo apt-get install -y ca-certificates curl python3-pip
         sudo update-ca-certificates
 
-        # --- Install Helm from GitHub releases ---
-        HELM_VERSION="${HELM_VERSION:-v3.15.3}"
-        TARBALL="helm-${HELM_VERSION}-linux-amd64.tar.gz"
-        BASE_URL="https://github.com/helm/helm/releases/download/${HELM_VERSION}"
-
-        curl -fsSL --retry 5 --retry-connrefused --retry-delay 2 -o "${TARBALL}" "${BASE_URL}/${TARBALL}"
-        tar -xzf "${TARBALL}"
+        # Install Helm 
+        curl -fsSL -o helm.tar.gz https://github.com/helm/helm/releases/download/v3.12.3/helm-v3.12.3-linux-amd64.tar.gz
+        tar -xzf helm.tar.gz
         sudo mv linux-amd64/helm /usr/local/bin/helm
-        rm -rf linux-amd64 "${TARBALL}"
+        rm -rf linux-amd64 helm.tar.gz
         helm version
 
-        # --- Install kubectl (stable) ---
+        # Install kubectl
         KUBECTL_VER="$(curl -fsSL https://dl.k8s.io/release/stable.txt)"
         curl -fsSL --retry 5 --retry-connrefused --retry-delay 2 -o kubectl "https://dl.k8s.io/release/${KUBECTL_VER}/bin/linux/amd64/kubectl"
         chmod +x kubectl
         sudo mv kubectl /usr/local/bin/kubectl
         kubectl version --client=true
 
-        # --- Install AWS CLI ---
+        # Install AWS CLI
         pip3 install --upgrade awscli
         aws --version
