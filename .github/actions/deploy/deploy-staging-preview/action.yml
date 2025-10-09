@@ -47,12 +47,13 @@ runs:
         chmod +x kubectl
         sudo mv kubectl /usr/local/bin/kubectl
 
-        # Install Helm
-        VERSION=$(curl -fsSL https://api.github.com/repos/helm/helm/releases/latest | grep '"tag_name"' | sed -E 's/.*"v?([^"]+)".*/\1/')
-        curl -fsSL -o helm.tar.gz "https://github.com/helm/helm/releases/download/v${VERSION}/helm-v${VERSION}-linux-amd64.tar.gz"
-        tar -zxvf helm.tar.gz
-        sudo mv linux-amd64/helm /usr/local/bin/helm
-        rm -rf linux-amd64 helm.tar.gz
+        # Install Helm via APT (official repo)
+        sudo apt-get update -y
+        sudo apt-get install -y apt-transport-https ca-certificates curl gnupg
+        curl https://baltocdn.com/helm/signing.asc | sudo gpg --dearmor -o /usr/share/keyrings/helm.gpg
+        echo "deb [arch=amd64 signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+        sudo apt-get update -y
+        sudo apt-get install -y helm
 
         # Install AWS CLI
         pip3 install --upgrade awscli
