@@ -24,7 +24,7 @@ partner_chain_epoch_calc: PartnerChainEpochCalculator = None
 
 
 def pytest_addoption(parser):
-    parser.addoption("--env", action="store", default="local", help="Target node environment")
+    parser.addoption("--env", action="store", default="local", help="Target environment. Supported: local, ci, devnet, staging")
     parser.addoption(
         "--blockchain",
         action="store",
@@ -260,12 +260,17 @@ def load_config(blockchain, nodes_env, ci_run, node_host, node_port, deployment_
     assert os.path.isfile(default_config_path), f"Config file not found {default_config_path}"
     default_config = OmegaConf.load(default_config_path)
 
-    blockchain_config_path = f"{os.getcwd()}/config/{blockchain}/{nodes_env}_nodes.json"
+    blockchain_config_path = f"{os.getcwd()}/config/{blockchain}/{nodes_env}.json"
     assert os.path.isfile(blockchain_config_path), f"Config file not found {blockchain_config_path}"
     blockchain_config = OmegaConf.load(blockchain_config_path)
 
     schema = OmegaConf.structured(ApiConfig)
     config: ApiConfig = OmegaConf.merge(schema, default_config, blockchain_config)
+    
+    ci_config_path = f"{os.getcwd()}/config/{blockchain}/{nodes_env}-ci.json"
+    if ci_run and os.path.isfile(ci_config_path):
+        ci_config = OmegaConf.load(ci_config_path)
+        config = OmegaConf.merge(config, ci_config)
 
     # command line arguments that override config values
     if node_host:

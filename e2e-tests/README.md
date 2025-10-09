@@ -29,7 +29,9 @@ Welcome to `Partner Chains Tests`, a powerful and flexible test automation frame
 
 ### Getting Started
 
-- Choose an environment to run tests. You have an option to run on [local](/e2e-tests/docs/run-tests-on-local-env.md) or [your own custom](/e2e-tests/docs/run-tests-on-new-env.md) environments
+- Choose an environment to run tests
+  - Supported environments: [`local`](/e2e-tests/docs/run-tests-on-local-env.md), `ci`, `devnet`, `staging` or [your custom environment](/e2e-tests/docs/run-tests-on-new-env.md)
+  - To run tests on remote environments, e.g. `ci`, `devnet` or `staging`, you need expose node (port 9933), ogmios (port 1337), db-sync (port 5432) and qa_db (port 5433) ports to your local machine with `kubectl port-forward` command
 - Run `pytest -h` to see all available options, or simply `pytest` to execute all tests.
 
 ### Execution Options
@@ -37,7 +39,7 @@ Welcome to `Partner Chains Tests`, a powerful and flexible test automation frame
 ```bash
 Custom options:
   --ctrf=CTRF           generate test report. Report file name is optional
-  --env=ENV             Target node environment
+  --env=ENV             Target environment. Supported: local, ci, devnet, staging
   --blockchain={substrate,midnight}
                         Blockchain network type
   --ci-run              Overrides config values specific for executing from ci runner
@@ -59,6 +61,12 @@ Custom options:
 
 ```bash
 pytest -rP -v --blockchain substrate --env local --log-cli-level debug -vv -s -m "not probability"
+```
+
+#### Run tests on the staging environment
+
+```bash
+pytest -rP -v --blockchain substrate --env staging --log-cli-level debug -vv -s -m "not probability"
 ```
 
 #### Run multisig governance tests
