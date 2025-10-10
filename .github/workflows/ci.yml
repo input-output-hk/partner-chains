@@ -14,7 +14,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Attic
-        run: nix profile install attic --impure
+        run: nix shell nixpkgs#attic-client
 
       - name: Set up Attic cache
         env:
