@@ -23,6 +23,7 @@ export MC__FIRST_EPOCH_TIMESTAMP_MILLIS=$(cat /shared/MC__FIRST_EPOCH_TIMESTAMP_
   --keystore-path=/keystore \
   --unsafe-rpc-external \
   --rpc-port=9937 \
+  -lbeefy=trace \
   --rpc-cors=all \
   --prometheus-port=9619 \
   --prometheus-external \

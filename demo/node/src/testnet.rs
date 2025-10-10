@@ -1,9 +1,9 @@
 use crate::chain_spec::*;
 use authority_selection_inherents::CommitteeMember;
 use partner_chains_demo_runtime::{
-	AccountId, AuraConfig, BalancesConfig, BridgeConfig, GovernedMapConfig, GrandpaConfig,
-	RuntimeGenesisConfig, SessionCommitteeManagementConfig, SessionConfig, SidechainConfig,
-	SudoConfig, SystemConfig, TestHelperPalletConfig,
+	AccountId, AuraConfig, BalancesConfig, BeefyConfig, BridgeConfig, GovernedMapConfig,
+	GrandpaConfig, RuntimeGenesisConfig, SessionCommitteeManagementConfig, SessionConfig,
+	SidechainConfig, SudoConfig, SystemConfig, TestHelperPalletConfig,
 };
 use sc_service::ChainType;
 use sidechain_domain::*;
@@ -175,6 +175,7 @@ pub fn testnet_genesis(
 			dev_accounts: None,
 		},
 		aura: AuraConfig { authorities: vec![] },
+		beefy: BeefyConfig { authorities: vec![], genesis_block: Some(10) },
 		grandpa: GrandpaConfig { authorities: vec![], ..Default::default() },
 		sudo: SudoConfig {
 			// Assign network admin rights.
