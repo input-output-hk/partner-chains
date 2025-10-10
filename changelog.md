@@ -6,6 +6,9 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Changed
 
+* Updated polkadot-sdk dependency to polkadot-stable2509.
+Partner Chains Aura modification follows changes regarding checking inherents that are also present in the new polkadot-sdk release.
+Pallet Session new parameters should be: `type KeyDeposit = ();` and `type Currency = Balances;`.
 * Updated partner-chains-smart-contracts (raw-scripts) dependency to v8.2.0. Not breaking.
 * `SessionManager` and `ShouldEndSession` implementations of `pallet-session-validator-management` rotate one additional
 session in order to make `pallet_session` use authorities with less delay.

@@ -35,7 +35,7 @@ use sc_consensus_slots::{CheckedHeader, check_equivocation};
 use sc_telemetry::{CONSENSUS_DEBUG, CONSENSUS_TRACE, TelemetryHandle, telemetry};
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
-use sp_blockchain::HeaderBackend;
+use sp_blockchain::{HeaderBackend, HeaderMetadata};
 use sp_consensus::Error as ConsensusError;
 use sp_consensus_aura::AuraApi;
 use sp_consensus_slots::Slot;
@@ -107,25 +107,25 @@ where
 }
 
 /// A verifier for Aura blocks, with added ID phantom type.
-pub struct AuraVerifier<C, P, CIDP, N, ID> {
+pub struct AuraVerifier<C, P: Pair, CIDP, B: BlockT, ID> {
 	client: Arc<C>,
 	create_inherent_data_providers: CIDP,
 	check_for_equivocation: CheckForEquivocation,
 	telemetry: Option<TelemetryHandle>,
-	compatibility_mode: CompatibilityMode<N>,
+	compatibility_mode: CompatibilityMode<NumberFor<B>>,
 	_phantom: PhantomData<(fn() -> P, ID)>,
 }
 
-impl<C, P, CIDP, N, ID> AuraVerifier<C, P, CIDP, N, ID> {
+impl<C, P: Pair, CIDP, B: BlockT, ID> AuraVerifier<C, P, CIDP, B, ID> {
 	pub(crate) fn new(
 		client: Arc<C>,
 		create_inherent_data_providers: CIDP,
 		check_for_equivocation: CheckForEquivocation,
 		telemetry: Option<TelemetryHandle>,
-		compatibility_mode: CompatibilityMode<N>,
+		compatibility_mode: CompatibilityMode<NumberFor<B>>,
 	) -> Self {
 		Self {
-			client,
+			client: client.clone(),
 			create_inherent_data_providers,
 			check_for_equivocation,
 			telemetry,
@@ -135,47 +135,16 @@ impl<C, P, CIDP, N, ID> AuraVerifier<C, P, CIDP, N, ID> {
 	}
 }
 
-impl<C, P, CIDP, N, ID> AuraVerifier<C, P, CIDP, N, ID>
-where
-	CIDP: Send,
-{
-	async fn check_inherents<B: BlockT>(
-		&self,
-		block: B,
-		at_hash: B::Hash,
-		inherent_data_providers: CIDP::InherentDataProviders,
-	) -> Result<(), Error<B>>
-	where
-		C: ProvideRuntimeApi<B>,
-		C::Api: BlockBuilderApi<B>,
-		CIDP: CreateInherentDataProviders<B, (Slot, <ID as InherentDigest>::Value)>,
-		ID: InherentDigest,
-	{
-		let inherent_data = create_inherent_data::<B>(&inherent_data_providers).await?;
-
-		let inherent_res = self
-			.client
-			.runtime_api()
-			.check_inherents(at_hash, block, inherent_data)
-			.map_err(|e| Error::Client(e.into()))?;
-
-		if !inherent_res.ok() {
-			for (i, e) in inherent_res.into_errors() {
-				match inherent_data_providers.try_handle_error(&i, &e).await {
-					Some(res) => res.map_err(Error::Inherent)?,
-					None => return Err(Error::UnknownInherentError(i)),
-				}
-			}
-		}
-
-		Ok(())
-	}
-}
-
 #[async_trait::async_trait]
-impl<B: BlockT, C, P, CIDP, ID> Verifier<B> for AuraVerifier<C, P, CIDP, NumberFor<B>, ID>
+impl<B, C, P, CIDP, ID> Verifier<B> for AuraVerifier<C, P, CIDP, B, ID>
 where
-	C: ProvideRuntimeApi<B> + Send + Sync + AuxStore,
+	B: BlockT,
+	C: HeaderBackend<B>
+		+ HeaderMetadata<B, Error = sp_blockchain::Error>
+		+ ProvideRuntimeApi<B>
+		+ Send
+		+ Sync
+		+ sc_client_api::backend::AuxStore,
 	C::Api: BlockBuilderApi<B> + AuraApi<B, AuthorityId<P>> + ApiExt<B>,
 	P: Pair,
 	P::Public: Codec + Debug,
@@ -255,13 +224,17 @@ where
 						.has_api_with::<dyn BlockBuilderApi<B>, _>(parent_hash, |v| v >= 2)
 						.map_err(|e| e.to_string())?
 					{
-						self.check_inherents(
-							new_block.clone(),
+						let inherent_data =
+							create_inherent_data::<B>(&inherent_data_providers).await?;
+						sp_block_builder::check_inherents_with_data(
+							self.client.clone(),
 							parent_hash,
-							inherent_data_providers,
+							new_block.clone(),
+							&inherent_data_providers,
+							inherent_data,
 						)
 						.await
-						.map_err(|e| e.to_string())?;
+						.map_err(|e| format!("Error checking block inherents {:?}", e))?;
 					}
 
 					let (_, inner_body) = new_block.deconstruct();
@@ -323,7 +296,8 @@ where
 		+ Sync
 		+ AuxStore
 		+ UsageProvider<Block>
-		+ HeaderBackend<Block>,
+		+ HeaderBackend<Block>
+		+ HeaderMetadata<Block, Error = sp_blockchain::Error>,
 	I: BlockImport<Block, Error = ConsensusError> + Send + Sync + 'static,
 	P: Pair + 'static,
 	P::Public: Codec + Debug,

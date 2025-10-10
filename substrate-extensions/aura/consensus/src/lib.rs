@@ -227,6 +227,7 @@ where
 	}
 
 	fn aux_data(&self, header: &B::Header, _slot: Slot) -> Result<Self::AuxData, ConsensusError> {
+		//fetch_authorities_from_runtime(
 		authorities(
 			self.client.as_ref(),
 			header.hash(),
@@ -449,7 +450,7 @@ mod tests {
 	}
 
 	type AuraVerifier =
-		import_queue::AuraVerifier<PeersFullClient, AuthorityPair, TestCIDP, u64, ()>;
+		import_queue::AuraVerifier<PeersFullClient, AuthorityPair, TestCIDP, TestBlock, ()>;
 	type AuraPeer = Peer<(), PeersClient>;
 
 	#[derive(Default)]
