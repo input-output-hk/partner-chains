@@ -47,7 +47,13 @@ fi
 
 ADDRESSES_FILE="$RUNTIME_VALUES/addresses.json"
 if [ -f "$ADDRESSES_FILE" ]; then
-    :
+    export COMMITTEE_CANDIDATE_ADDRESS=$(jq -r '.addresses.CommitteeCandidateValidator' "$ADDRESSES_FILE")
+    export D_PARAMETER_POLICY_ID=$(jq -r '.policyIds.DParameter' "$ADDRESSES_FILE")
+    export PERMISSIONED_CANDIDATES_POLICY_ID=$(jq -r '.policyIds.PermissionedCandidates' "$ADDRESSES_FILE")
+    export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS=$(jq -r '.addresses.IlliquidCirculationSupplyValidator' "$ADDRESSES_FILE")
+    export ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR_ADDRESS=$(echo $ILLIQUID_SUPPLY_VALIDATOR_ADDRESS)
+    export GOVERNED_MAP_VALIDATOR_ADDRESS=$(jq -r '.addresses.GovernedMapValidator' "$ADDRESSES_FILE")
+    export GOVERNED_MAP_POLICY_ID=$(jq -r '.policyIds.GovernedMap' "$ADDRESSES_FILE")
 else
     echo "Addresses file not found: $ADDRESSES_FILE"
 fi
