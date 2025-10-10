@@ -19,7 +19,7 @@ jobs:
           ATTIC_CACHE: ${{ secrets.ATTIC_CACHE }}
           ATTIC_TOKEN: ${{ secrets.ATTIC_TOKEN }}
         run: |
-          nix run nixpkgs#attic-client -- login --token "$ATTIC_TOKEN" "$ATTIC_ENDPOINT"
+          nix run nixpkgs#attic-client -- login --set-default admin "$ATTIC_ENDPOINT" "$ATTIC_TOKEN"
           nix run nixpkgs#attic-client -- use "$ATTIC_CACHE"
 
       - name: Build and check flake
