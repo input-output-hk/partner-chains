@@ -19,8 +19,8 @@ jobs:
           ATTIC_CACHE: ${{ secrets.ATTIC_CACHE }}
           ATTIC_TOKEN: ${{ secrets.ATTIC_TOKEN }}
         run: |
-          attic login --token "$ATTIC_TOKEN" "$ATTIC_ENDPOINT"
-          attic use "$ATTIC_CACHE"
+          nix run nixpkgs#attic-client -- login --token "$ATTIC_TOKEN" "$ATTIC_ENDPOINT"
+          nix run nixpkgs#attic-client -- use "$ATTIC_CACHE"
 
       - name: Build and check flake
         run: |
@@ -33,4 +33,4 @@ jobs:
         env:
           ATTIC_ENDPOINT: ${{ secrets.ATTIC_ENDPOINT }}
           ATTIC_CACHE: ${{ secrets.ATTIC_CACHE }}
-        run: attic push "$ATTIC_CACHE" ./result-ci
+        run: nix run nixpkgs#attic-client push "$ATTIC_CACHE" ./result-ci
