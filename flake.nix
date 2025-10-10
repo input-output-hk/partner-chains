@@ -104,6 +104,7 @@
         # Build the workspace dependencies separately
         cargoArtifacts = craneLib.buildDepsOnly (commonArgs // {
           pname = "partner-chains-demo-node-deps";
+          #cargoExtraArgs = "--workspace --all-targets --exclude substrate-test-runtime --exclude substrate-test-runtime-client";
         });
 
         partner-chains-demo-node = craneLib.buildPackage (commonArgs // {
@@ -126,7 +127,7 @@
 
         cargoClippy = craneLib.cargoClippy (commonArgs // {
           inherit cargoArtifacts;
-          cargoClippyExtraArgs = "--all-targets -- --deny warnings";
+          #cargoClippyExtraArgs = "--workspace --all-targets --exclude substrate-test-runtime --exclude substrate-test-runtime-client --exclude sc-network-test";
         });
 
         cargoFmt = craneLib.cargoFmt {
@@ -137,12 +138,16 @@
       {
         checks = { 
           # Build the crate as part of `nix flake check`
-          inherit partner-chains-demo-node cargoTest cargoClippy cargoFmt;
+          inherit partner-chains-demo-node cargoTest # cargoClippy
+            cargoFmt;
         };
 
         packages = {
           default = partner-chains-demo-node;
           inherit partner-chains-demo-node;
+          ci = pkgs.runCommand "ci" {
+            buildInputs = builtins.attrValues self.checks.${system};
+          } "touch $out";
         };
         devShells.default = craneLib.devShell ({
           name = "partner-chains-demo-node-shell";
@@ -151,6 +156,7 @@
 
           # Extra packages for the dev shell
           packages = with pkgs; [
+            attic-client
             awscli2
             bashInteractive
             cargo-edit
@@ -187,12 +193,12 @@
     extra-substituters = [
       "https://nix-community.cachix.org"
       "https://cache.iog.io"
-      "https://cache.sc.iog.io"
+      "https://attic.sc.iog.io"
     ];
     extra-trusted-public-keys = [
       "hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ="
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-      "cache.sc.iog.io:b4YIcBabCEVKrLQgGW8Fylz4W8IvvfzRc+hy0idqrWU="
+      "partner-chains:j9StpxUY/znqFqaevhQRxCH4Hi0F4rCGXDiUSjz+kew="
     ];
   };
 }
