@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 SCRIPT_DIR=$(dirname "$_")
 SHARED_DIR="$SCRIPT_DIR/data/shared"
 
