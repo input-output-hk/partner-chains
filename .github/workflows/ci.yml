@@ -13,9 +13,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Attic
-        run: nix shell nixpkgs#attic-client
-
       - name: Set up Attic cache
         env:
           ATTIC_ENDPOINT: ${{ secrets.ATTIC_ENDPOINT }}
