@@ -122,6 +122,9 @@ impl pallet::Config for Test {
 	}
 
 	type WeightInfo = ();
+
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = ();
 }
 
 parameter_types! {

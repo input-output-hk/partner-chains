@@ -18,6 +18,8 @@ session in order to make `pallet_session` use authorities with less delay.
 
 ## Fixed
 
+* Improper weights for `set_main_chain_scripts` in `pallet_session_validator_management`
+
 ## Added
 
 * Added `partner-chains-node smart-contracts upsert-script` command for inserting and updating versioned scripts.
