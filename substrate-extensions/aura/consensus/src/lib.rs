@@ -227,7 +227,6 @@ where
 	}
 
 	fn aux_data(&self, header: &B::Header, _slot: Slot) -> Result<Self::AuxData, ConsensusError> {
-		//fetch_authorities_from_runtime(
 		authorities(
 			self.client.as_ref(),
 			header.hash(),
