@@ -4,11 +4,12 @@ use frame_support::{
 	*,
 };
 use frame_system::EnsureRoot;
+use pallet_balances::AccountData;
 use pallet_partner_chains_session::{SessionHandler, ShouldEndSession};
 use parity_scale_codec::MaxEncodedLen;
 
 use sidechain_domain::{ScEpochNumber, ScSlotNumber};
-use sp_core::{ConstU16, ConstU32, ConstU64, H256, ecdsa};
+use sp_core::{ConstU16, ConstU32, ConstU64, ConstU128, H256, ecdsa};
 use sp_runtime::{AccountId32, BoundToRuntimeAppPublic, KeyTypeId, impl_opaque_keys};
 
 pub struct CrossChainPublicLikeModule;
@@ -58,6 +59,7 @@ impl MaybeFromCandidateKeys for TestSessionKeys {}
 construct_runtime! {
 	pub enum MockRuntime {
 		System: frame_system,
+		Balances: pallet_balances::pallet,
 		Bridge: pallet_partner_chains_bridge::pallet,
 		GovernedMap: pallet_governed_map::pallet,
 		SessionCommitteeManagement: pallet_session_validator_management::pallet,
@@ -84,7 +86,7 @@ impl frame_system::Config for MockRuntime {
 	type BlockHashCount = ConstU64<250>;
 	type Version = ();
 	type PalletInfo = PalletInfo;
-	type AccountData = ();
+	type AccountData = AccountData<u128>;
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type SystemWeightInfo = ();
@@ -179,6 +181,25 @@ impl pallet_partner_chains_session::Config for MockRuntime {
 	type SessionManager = ();
 	type SessionHandler = Mock;
 	type Keys = TestSessionKeys;
+	type Currency = Balances;
+	type KeyDeposit = ();
+}
+
+impl pallet_balances::Config for MockRuntime {
+	type MaxLocks = ConstU32<50>;
+	type MaxReserves = ();
+	type ReserveIdentifier = [u8; 8];
+	type Balance = u128;
+	type RuntimeEvent = RuntimeEvent;
+	type DustRemoval = ();
+	type ExistentialDeposit = ConstU128<1>;
+	type AccountStore = System;
+	type WeightInfo = pallet_balances::weights::SubstrateWeight<MockRuntime>;
+	type FreezeIdentifier = ();
+	type MaxFreezes = ();
+	type RuntimeHoldReason = RuntimeHoldReason;
+	type RuntimeFreezeReason = ();
+	type DoneSlashHandler = ();
 }
 
 impl ShouldEndSession<u64> for Mock {

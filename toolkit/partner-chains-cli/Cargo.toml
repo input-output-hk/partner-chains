@@ -53,6 +53,7 @@ authority-selection-inherents = { workspace = true, features = ["std"] }
 frame-system = { workspace = true }
 frame-support = { workspace = true }
 hex-literal = { workspace = true }
+pallet-balances = { workspace = true }
 parity-scale-codec = { workspace = true }
 pretty_assertions = { workspace = true }
 scale-info = { workspace = true }

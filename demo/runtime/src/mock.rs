@@ -100,7 +100,7 @@ impl pallet_balances::Config for Test {
 	type WeightInfo = pallet_balances::weights::SubstrateWeight<Test>;
 	type FreezeIdentifier = ();
 	type MaxFreezes = ();
-	type RuntimeHoldReason = ();
+	type RuntimeHoldReason = RuntimeHoldReason;
 	type RuntimeFreezeReason = RuntimeFreezeReason;
 	type DoneSlashHandler = ();
 }
@@ -149,6 +149,8 @@ impl pallet_partner_chains_session::Config for Test {
 	type SessionManager = ValidatorManagementSessionManager<Test>;
 	type SessionHandler = <TestSessionKeys as OpaqueKeys>::KeyTypeIdProviders;
 	type Keys = TestSessionKeys;
+	type Currency = Balances;
+	type KeyDeposit = ();
 }
 
 impl pallet_sidechain::Config for Test {

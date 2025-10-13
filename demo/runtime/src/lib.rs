@@ -375,6 +375,8 @@ impl pallet_partner_chains_session::Config for Runtime {
 	type SessionManager = ValidatorManagementSessionManager<Runtime>;
 	type SessionHandler = <opaque::SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
 	type Keys = opaque::SessionKeys;
+	type Currency = Balances;
+	type KeyDeposit = ();
 }
 
 parameter_types! {

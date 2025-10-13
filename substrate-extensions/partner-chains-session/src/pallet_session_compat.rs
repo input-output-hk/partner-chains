@@ -50,6 +50,8 @@ macro_rules! impl_pallet_session_config {
 			type Keys = <$type as pallet_partner_chains_session::Config>::Keys;
 			type DisablingStrategy = ();
 			type WeightInfo = ();
+			type Currency = <$type as pallet_partner_chains_session::Config>::Currency;
+			type KeyDeposit = <$type as pallet_partner_chains_session::Config>::KeyDeposit;
 		}
 	};
 }

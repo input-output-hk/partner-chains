@@ -449,7 +449,7 @@ mod tests {
 	}
 
 	type AuraVerifier =
-		import_queue::AuraVerifier<PeersFullClient, AuthorityPair, TestCIDP, u64, ()>;
+		import_queue::AuraVerifier<PeersFullClient, AuthorityPair, TestCIDP, TestBlock, ()>;
 	type AuraPeer = Peer<(), PeersClient>;
 
 	#[derive(Default)]

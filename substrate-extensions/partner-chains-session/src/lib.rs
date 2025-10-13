@@ -94,6 +94,7 @@ use frame_support::{
 	traits::{
 		EstimateNextNewSession, EstimateNextSessionRotation, FindAuthor, OneSessionHandler,
 		ValidatorRegistration,
+		fungible::{Inspect, Mutate},
 	},
 	weights::Weight,
 };
@@ -279,6 +280,15 @@ pub mod pallet {
 
 		/// The keys.
 		type Keys: OpaqueKeys + Member + Parameter + MaybeSerializeDeserialize;
+
+		/// The currency type for placing holds when setting keys.
+		type Currency: Mutate<Self::AccountId>;
+
+		/// The amount to be held when setting keys.
+		#[pallet::constant]
+		type KeyDeposit: Get<
+			<<Self as Config>::Currency as Inspect<<Self as frame_system::Config>::AccountId>>::Balance,
+		>;
 	}
 
 	pub type ValidatorList<T> = Vec<<T as Config>::ValidatorId>;
