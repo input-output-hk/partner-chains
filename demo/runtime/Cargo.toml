@@ -74,7 +74,6 @@ sp-sidechain = { workspace = true }
 pallet-sidechain = { workspace = true }
 pallet-session-validator-management = { workspace = true }
 sp-session-validator-management = { workspace = true, features = ["serde"] }
-pallet-session-validator-management-benchmarking = { workspace = true, optional = true }
 sidechain-domain = { workspace = true, features = ["serde"] }
 sidechain-slots = { workspace = true }
 pallet-address-associations = { workspace = true }
@@ -127,7 +126,6 @@ std = [
 	"pallet-grandpa/std",
 	"pallet-sudo/std",
 	"pallet-session-validator-management/std",
-	"pallet-session-validator-management-benchmarking?/std",
 	"pallet-timestamp/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-transaction-payment/std",
@@ -185,6 +183,7 @@ runtime-benchmarks = [
 	"pallet-block-participation/runtime-benchmarks",
 	"pallet-governed-map/runtime-benchmarks",
 	"pallet-partner-chains-bridge/runtime-benchmarks",
+	"pallet-session-validator-management/runtime-benchmarks",
 ]
 try-runtime = [
 	"frame-try-runtime/try-runtime",
