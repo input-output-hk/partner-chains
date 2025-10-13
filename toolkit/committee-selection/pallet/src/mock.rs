@@ -1,11 +1,13 @@
 use crate::{Call, pallet};
 use frame_support::{
+	derive_impl,
 	dispatch::PostDispatchInfo,
 	pallet_prelude::*,
 	parameter_types,
 	traits::{ConstU64, UnfilteredDispatchable},
 };
 use frame_system::EnsureRoot;
+use pallet_balances::AccountData;
 use sidechain_domain::byte_string::SizedByteString;
 use sp_core::{H256, blake2_256};
 use sp_runtime::{
@@ -54,6 +56,7 @@ pub mod mock_pallet {
 frame_support::construct_runtime!(
 	pub enum Test {
 		System: frame_system,
+		Balances: pallet_balances,
 		SessionCommitteeManagement: pallet,
 		Session: pallet_session,
 		Mock: mock_pallet,
@@ -81,7 +84,7 @@ impl frame_system::Config for Test {
 	type BlockHashCount = ConstU64<250>;
 	type Version = ();
 	type PalletInfo = PalletInfo;
-	type AccountData = ();
+	type AccountData = AccountData<u128>;
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type SystemWeightInfo = ();
@@ -97,6 +100,12 @@ impl frame_system::Config for Test {
 	type PreInherents = ();
 	type PostInherents = ();
 	type PostTransactions = ();
+}
+
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
+impl pallet_balances::Config for Test {
+	type Balance = u128;
+	type AccountStore = System;
 }
 
 impl pallet::Config for Test {
@@ -159,6 +168,8 @@ impl pallet_session::Config for Test {
 	type DisablingStrategy = ();
 	type WeightInfo = ();
 	type RuntimeEvent = RuntimeEvent;
+	type Currency = Balances;
+	type KeyDeposit = ();
 }
 
 /// Build genesis storage according to the mock runtime.
