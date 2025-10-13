@@ -16,6 +16,11 @@ on:
         required: false
         type: boolean
         default: false
+      run_post_merge_tests:
+        description: 'Run post-merge tests'
+        required: false
+        type: boolean
+        default: false
 
 env:
   AWS_REGION: "eu-central-1"
@@ -838,10 +843,15 @@ jobs:
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
   ci-preview-tests-post-merge:
-    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
+    if: (github.event_name == 'pull_request' && github.event.pull_request.merged == true) || (github.event_name == 'workflow_dispatch' && inputs.run_post_merge_tests == true)
     needs: deploy-ci-preview
     runs-on: eks
     steps:
+      - name: Acquire AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+          aws-region: ${{ env.AWS_REGION }}
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -860,6 +870,10 @@ jobs:
           env: ci
           decrypt: true
           blockchain: substrate
+        env:
+          AWS_SESSION_TOKEN: ${{ env.AWS_SESSION_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
 
   post-merge-actions-complete:
     if: ${{ always() && (github.event_name == 'pull_request' && github.event.pull_request.merged == true) }}
