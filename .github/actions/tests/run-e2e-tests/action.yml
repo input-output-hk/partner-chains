@@ -111,6 +111,10 @@ runs:
           source venv/bin/activate
           eval "$pytest_cmd"
         fi
+      env:
+          AWS_SESSION_TOKEN: ${{ env.AWS_SESSION_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
 
     - name: Copy test results
       if: ${{ inputs.local-environment == 'true' }}
