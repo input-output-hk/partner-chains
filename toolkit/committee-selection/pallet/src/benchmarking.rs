@@ -2,10 +2,8 @@ use crate::*;
 use frame_benchmarking::v2::*;
 use frame_support::BoundedVec;
 use frame_system::RawOrigin;
-use sidechain_domain::byte_string::SizedByteString;
 use sp_core::Get;
 use sp_runtime::traits::One;
-use sp_session_validator_management::MainChainScripts;
 use sp_std::vec::Vec;
 
 const SEED: u32 = 0;
