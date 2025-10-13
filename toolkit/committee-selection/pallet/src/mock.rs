@@ -107,6 +107,9 @@ impl pallet::Config for Test {
 	}
 
 	type WeightInfo = ();
+
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = ();
 }
 
 /// Build genesis storage according to the mock runtime.

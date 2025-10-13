@@ -167,6 +167,9 @@ impl pallet_session_validator_management::Config for MockRuntime {
 	fn current_epoch_number() -> Self::ScEpochNumber {
 		unimplemented!()
 	}
+
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = ();
 }
 
 impl pallet_partner_chains_session::Config for MockRuntime {

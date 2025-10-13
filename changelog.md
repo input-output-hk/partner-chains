@@ -10,6 +10,8 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Fixed
 
+* Improper weights for `set_main_chain_scripts` in `pallet_session_validator_management`
+
 ## Added
 
 # v1.8.0

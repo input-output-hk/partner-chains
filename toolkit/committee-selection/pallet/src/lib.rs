@@ -16,6 +16,9 @@ pub use pallet::*;
 #[cfg(test)]
 mod mock;
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+
 #[cfg(test)]
 mod tests;
 
@@ -95,6 +98,10 @@ pub mod pallet {
 
 		/// Weight functions needed for pallet_session_validator_management.
 		type WeightInfo: WeightInfo;
+
+		/// Helper for creating mock data used by benchmarks
+		#[cfg(feature = "runtime-benchmarks")]
+		type BenchmarkHelper: benchmarking::BenchmarkHelper<Self>;
 	}
 
 	#[pallet::event]
@@ -320,7 +327,7 @@ pub mod pallet {
 		///
 		/// This extrinsic must be run either using `sudo` or some other chain governance mechanism.
 		#[pallet::call_index(1)]
-		#[pallet::weight(T::WeightInfo::set(1))]
+		#[pallet::weight(T::WeightInfo::set_main_chain_scripts())]
 		pub fn set_main_chain_scripts(
 			origin: OriginFor<T>,
 			committee_candidate_address: MainchainAddress,

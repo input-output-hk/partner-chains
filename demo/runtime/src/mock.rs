@@ -187,6 +187,9 @@ impl pallet_session_validator_management::Config for Test {
 	}
 
 	type WeightInfo = ();
+
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = ();
 }
 
 impl pallet_timestamp::Config for Test {
