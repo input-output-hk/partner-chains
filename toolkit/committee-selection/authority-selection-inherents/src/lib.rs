@@ -1,4 +1,41 @@
-//! This crate provides inherents for authority selection.
+//! # Partner Chain Committee Selection
+//!
+//! Inherent data provider and selection logic for Partner Chain committee selection.
+//!
+//! ## Overview
+//!
+//! This crate provides an IDP and all types necessary for a Partner Chain to select
+//! block producer committees using data sourced from Cardano smart contracts.
+//!
+//! ## Usage
+//!
+//! ### Prerequisites
+//!
+//! This crate is intended to work with `pallet_session_validator_management`. See
+//! the pallet's documentation for instructions how to add it to you runtime. Your
+//! pallet should be configured with [CommitteeMember] as its `CommitteeMember`,
+//! using the `CrossChainPublic` and `SessionKeys` defined described in the pallet's
+//! documentation.
+//!
+//! Additionally [AriadneInherentDataProvider] needs access to a data source
+//! implementing [AuthoritySelectionDataSource]. A Db-Sync-based implementation is
+//! provided by the `partner_chains_db_sync_data_sources` crate.
+//!
+//! ### Adding to the node
+//!
+//! #### Implementing runtime API
+//!
+//! Implement the [SessionValidatorManagementApi] for your runtime. Each API method has
+//! a corresponding method in the pallet that should be used for that purpose. Refer to
+//! the demo runtime for an example.
+//!
+//! #### Add the inherent data provider
+//!
+//! Wire the [AriadneInherentDataProvider] into your inherent data provider stack. The same
+//! constructor [AriadneInherentDataProvider::new] should be used for both proposing and
+//! validating blocks. Refer to the demo node implementation for an example of how to wire
+//! it correctly into a node.
+//!
 #![cfg_attr(not(feature = "std"), no_std)]
 #![deny(missing_docs)]
 

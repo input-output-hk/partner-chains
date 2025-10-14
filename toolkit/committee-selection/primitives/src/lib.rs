@@ -1,4 +1,7 @@
-//! Primitives for `committee-selection`.
+//! # Primitives for Partner Chain committee selection.
+//!
+//! This crate implements shared types and traits used to implement Partner Chain committee rotation.
+
 #![cfg_attr(not(feature = "std"), no_std)]
 #![deny(missing_docs)]
 

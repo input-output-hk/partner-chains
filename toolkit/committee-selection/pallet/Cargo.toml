@@ -34,6 +34,7 @@ frame-benchmarking = { workspace = true, optional = true }
 [dev-dependencies]
 sp-io = { workspace = true }
 pallet-balances = { workspace = true }
+sp-runtime = { workspace = true, default-features = true }
 
 [features]
 default = ["std"]
