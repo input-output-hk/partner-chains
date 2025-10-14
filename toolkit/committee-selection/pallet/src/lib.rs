@@ -93,20 +93,6 @@
 //! }
 //! ```
 //!
-//! In addition to the session keys, the runtime needs to define an ECDSA key type to represent
-//! the `cross-chain key`:
-//! ```rust
-//! pub mod cross_chain_app {
-//!     use sp_runtime::KeyTypeId;
-//!     use sp_runtime::app_crypto::{ app_crypto, ecdsa };
-//!     pub const CROSS_CHAIN: KeyTypeId = KeyTypeId(*b"crch");
-//! 	app_crypto!(ecdsa, CROSS_CHAIN);
-//! }
-//! pub type CrossChainPublic = cross_chain_app::Public;
-//! ```
-//!
-//! This key serves as the identity of a Partner Chain user across all chains in the ecosystem.
-//!
 //! ### Adding the pallet
 //!
 //! The pallet should be added to the runtime _before_ `pallet_session`, but after the consensus
@@ -140,6 +126,8 @@
 //! defined by other crates and in previous steps:
 //!
 //! ```rust, ignore
+//! use sidechain_domain::cross_chain_app::Public as CrossChainPublic;
+//!
 //! impl pallet_session_validator_management::Config for Runtime {
 //! 	type MaxValidators = MaxValidators;
 //! 	type AuthorityId = CrossChainPublic;
