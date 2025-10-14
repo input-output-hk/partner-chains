@@ -506,16 +506,19 @@ jobs:
         if: ${{ steps.wait-pc-node.outcome == 'failure' }}
         run: exit 1
       - name: Wait for Epoch 2
-        run: |
-          epoch=$(docker exec cardano-node-1 cardano-cli latest query tip --testnet-magic 42 | jq -r .epoch)
-          while [ $epoch -lt 2 ]; do
-            echo "Epoch: $epoch"
-            sleep 10
-            epoch=$(docker exec cardano-node-1 cardano-cli latest query tip --testnet-magic 42 | jq -r .epoch)
-          done
-          echo "Epoch: $epoch"
+        uses: ./.github/actions/tests/wait-for-epoch
+        with:
+          epoch: 2
+          deployment: docker
+          node: cardano-node-1
+          environment:
       - name: Let PC warm up
         run: sleep 30
+      - name: Acquire AWS credentials for tests
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_ }}
+          aws-region: ${{ env.AWS_REGION }}
       - name: Run Epoch 2 Tests
         if: ${{ matrix.markers != 'full' && matrix.markers != 'ariadne' && matrix.markers != 'delegator_rewards' }}
         run: |
@@ -537,14 +540,12 @@ jobs:
           "
       - name: Wait for Epoch 3
         if: ${{ matrix.markers == 'full' || matrix.markers == 'ariadne' || matrix.markers == 'delegator_rewards' }}
-        run: |
-          epoch=$(docker exec cardano-node-1 cardano-cli latest query tip --testnet-magic 42 | jq -r .epoch)
-          while [ $epoch -lt 3 ]; do
-            echo "Epoch: $epoch"
-            sleep 10
-            epoch=$(docker exec cardano-node-1 cardano-cli latest query tip --testnet-magic 42 | jq -r .epoch)
-          done
-          echo "Epoch: $epoch"
+        uses: ./.github/actions/tests/wait-for-epoch
+        with:
+          epoch: 3
+          deployment: docker
+          node: cardano-node-1
+          environment:
       - name: Run Epoch 3 Tests
         if: ${{ matrix.markers == 'full' || matrix.markers == 'ariadne' || matrix.markers == 'delegator_rewards' }}
         run: |
@@ -566,14 +567,12 @@ jobs:
           "
       - name: Wait for Epoch 4
         if: ${{ matrix.markers == 'full' || matrix.markers == 'ariadne' }}
-        run: |
-          epoch=$(docker exec cardano-node-1 cardano-cli latest query tip --testnet-magic 42 | jq -r .epoch)
-          while [ $epoch -lt 4 ]; do
-            echo "Epoch: $epoch"
-            sleep 10
-            epoch=$(docker exec cardano-node-1 cardano-cli latest query tip --testnet-magic 42 | jq -r .epoch)
-          done
-          echo "Epoch: $epoch"
+        uses: ./.github/actions/tests/wait-for-epoch
+        with:
+          epoch: 4
+          deployment: docker
+          node: cardano-node-1
+          environment:
       - name: Run Epoch 4 Tests
         if: ${{ matrix.markers == 'full' || matrix.markers == 'ariadne' }}
         run: |
