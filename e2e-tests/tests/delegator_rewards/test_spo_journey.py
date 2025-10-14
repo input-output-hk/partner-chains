@@ -206,6 +206,7 @@ def test_no_unexpected_producers(block_participation):
 
 
 @mark.xdist_group("faucet_tx")
+@mark.ci
 class TestMarginFee:
     @fixture(scope="class")
     def random_margin_fee(self) -> int:

@@ -474,6 +474,7 @@ class TestCommitteeMembers:
             ), f"Committee member {pub_key} not an active candidate for pc epoch {pc_epoch}"
 
     @mark.test_key('ETCM-7029')
+    @mark.ci
     def test_authorities_matching_committee(self, api: BlockchainApi, config: ApiConfig):
         """Test that authorities match validators for a given partner chain epoch
 
