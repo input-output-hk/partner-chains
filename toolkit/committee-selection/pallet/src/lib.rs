@@ -4,7 +4,7 @@
 //!
 //! This pallet provides a mechanism to rotate Partner Chain's block producing committees
 //! based on candidate registrations and chain configuration sourced from Cardano. It works
-//! by integrating with stock Substrate `pallet_session` as a [SessionManager] to provide it
+//! by integrating with `pallet_session` as a [SessionManager] and [ShouldEndSession] to provide it
 //! with committee information and to rotate sessions. In addition to managing the sessions,
 //! the pallet automatically registers session keys of all active block producers, alleviating
 //! the need for manual key registration, and ensures that all necessary chain-local accounts
