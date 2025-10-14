@@ -870,6 +870,7 @@ jobs:
           env: ci
           decrypt: true
           blockchain: substrate
+          markers: smoke
         env:
           AWS_SESSION_TOKEN: ${{ env.AWS_SESSION_TOKEN }}
           AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
