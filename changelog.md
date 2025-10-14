@@ -26,6 +26,11 @@ session in order to make `pallet_session` use authorities with less delay.
 ## Added
 
 * Added `partner-chains-node smart-contracts upsert-script` command for inserting and updating versioned scripts.
+* `cross_chain_app` module in `sidechain_domain`, implementing the cross-chain key
+types using Substrate's `app_crypto` macro. This should be a drop-in replacement
+for the analogous cross-chain key types that previously had to be defined by each
+Partner Chain separately for use in `pallet_session_validator_management` and
+other pallets that use cross-chain keys.
 
 # v1.8.0
 

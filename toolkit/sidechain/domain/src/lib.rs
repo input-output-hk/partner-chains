@@ -6,6 +6,8 @@
 #![deny(missing_docs)]
 
 pub mod byte_string;
+#[cfg(feature = "app-crypto")]
+pub mod cross_chain_app;
 pub mod crypto;
 pub mod mainchain_epoch;
 

@@ -111,54 +111,6 @@ pub mod opaque {
 	/// Opaque block identifier type.
 	pub type BlockId = generic::BlockId<Block>;
 
-	pub const CROSS_CHAIN: KeyTypeId = KeyTypeId(*b"crch");
-	pub struct CrossChainRuntimeAppPublic;
-
-	pub mod cross_chain_app {
-		use super::CROSS_CHAIN;
-		use parity_scale_codec::MaxEncodedLen;
-		use sidechain_domain::SidechainPublicKey;
-		use sp_core::crypto::AccountId32;
-		use sp_runtime::MultiSigner;
-		use sp_runtime::app_crypto::{app_crypto, ecdsa};
-		use sp_runtime::traits::IdentifyAccount;
-		use sp_std::vec::Vec;
-
-		app_crypto!(ecdsa, CROSS_CHAIN);
-		impl MaxEncodedLen for Signature {
-			fn max_encoded_len() -> usize {
-				ecdsa::Signature::max_encoded_len()
-			}
-		}
-
-		impl From<Signature> for Vec<u8> {
-			fn from(value: Signature) -> Self {
-				value.into_inner().0.to_vec()
-			}
-		}
-
-		impl From<Public> for AccountId32 {
-			fn from(value: Public) -> Self {
-				MultiSigner::from(ecdsa::Public::from(value)).into_account()
-			}
-		}
-
-		impl From<Public> for Vec<u8> {
-			fn from(value: Public) -> Self {
-				value.into_inner().0.to_vec()
-			}
-		}
-
-		impl TryFrom<SidechainPublicKey> for Public {
-			type Error = SidechainPublicKey;
-			fn try_from(pubkey: SidechainPublicKey) -> Result<Self, Self::Error> {
-				let cross_chain_public_key =
-					Public::try_from(pubkey.0.as_slice()).map_err(|_| pubkey)?;
-				Ok(cross_chain_public_key)
-			}
-		}
-	}
-
 	impl_opaque_keys! {
 		#[derive(MaxEncodedLen, PartialOrd, Ord)]
 		pub struct SessionKeys {
@@ -181,7 +133,7 @@ pub mod opaque {
 	}
 }
 
-pub type CrossChainPublic = opaque::cross_chain_app::Public;
+pub type CrossChainPublic = sidechain_domain::cross_chain_app::Public;
 
 // To learn more about runtime versioning, see:
 // https://docs.substrate.io/main-docs/build/upgrade#runtime-versioning
@@ -400,7 +352,7 @@ impl pallet_session_validator_management::Config for Runtime {
 		input: AuthoritySelectionInputs,
 		sidechain_epoch: ScEpochNumber,
 	) -> Option<BoundedVec<Self::CommitteeMember, Self::MaxValidators>> {
-		select_authorities::<opaque::cross_chain_app::Public, SessionKeys, MaxValidators>(
+		select_authorities::<sidechain_domain::cross_chain_app::Public, SessionKeys, MaxValidators>(
 			Sidechain::genesis_utxo(),
 			input,
 			sidechain_epoch,

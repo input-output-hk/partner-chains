@@ -74,7 +74,7 @@ sp-sidechain = { workspace = true }
 pallet-sidechain = { workspace = true }
 pallet-session-validator-management = { workspace = true }
 sp-session-validator-management = { workspace = true, features = ["serde"] }
-sidechain-domain = { workspace = true, features = ["serde"] }
+sidechain-domain = { workspace = true, features = ["serde", "app-crypto"] }
 sidechain-slots = { workspace = true }
 pallet-address-associations = { workspace = true }
 pallet-block-producer-metadata = { workspace = true }
