@@ -850,7 +850,7 @@ jobs:
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_ }}
           aws-region: ${{ env.AWS_REGION }}
       - name: Checkout
         uses: actions/checkout@v4
