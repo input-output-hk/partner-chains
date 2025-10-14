@@ -10603,6 +10603,7 @@ dependencies = [
  "sp-core",
  "sp-crypto-hashing",
  "sp-io",
+ "sp-runtime",
  "sp-std",
  "thiserror 2.0.16",
 ]
