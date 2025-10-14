@@ -1,9 +1,9 @@
 (function() {
-    var implementors = Object.fromEntries([["partner_chains_demo_runtime",[["impl AppCrypto for <a class=\"struct\" href=\"partner_chains_demo_runtime/opaque/cross_chain_app/struct.Pair.html\" title=\"struct partner_chains_demo_runtime::opaque::cross_chain_app::Pair\">Pair</a>"],["impl AppCrypto for <a class=\"struct\" href=\"partner_chains_demo_runtime/opaque/cross_chain_app/struct.Public.html\" title=\"struct partner_chains_demo_runtime::opaque::cross_chain_app::Public\">Public</a>"],["impl AppCrypto for <a class=\"struct\" href=\"partner_chains_demo_runtime/opaque/cross_chain_app/struct.Signature.html\" title=\"struct partner_chains_demo_runtime::opaque::cross_chain_app::Signature\">Signature</a>"]]]]);
+    var implementors = Object.fromEntries([["sidechain_domain",[["impl AppCrypto for <a class=\"struct\" href=\"sidechain_domain/cross_chain_app/struct.Pair.html\" title=\"struct sidechain_domain::cross_chain_app::Pair\">Pair</a>"],["impl AppCrypto for <a class=\"struct\" href=\"sidechain_domain/cross_chain_app/struct.Public.html\" title=\"struct sidechain_domain::cross_chain_app::Public\">Public</a>"],["impl AppCrypto for <a class=\"struct\" href=\"sidechain_domain/cross_chain_app/struct.Signature.html\" title=\"struct sidechain_domain::cross_chain_app::Signature\">Signature</a>"]]]]);
     if (window.register_implementors) {
         window.register_implementors(implementors);
     } else {
         window.pending_implementors = implementors;
     }
 })()
-//{"start":57,"fragment_lengths":[669]}
+//{"start":57,"fragment_lengths":[547]}
