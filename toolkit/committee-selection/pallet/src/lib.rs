@@ -227,7 +227,7 @@
 //! ### Main chain scripts
 //!
 //! The main chain scripts can change over time as the Partner Chain migrates to new versions of the
-//! Patner Chain smart contracts, either due to bug fixes or new features being released. This is
+//! Partner Chain smart contracts, either due to bug fixes or new features being released. This is
 //! necessary, because the script addresses are derived by hashing their Plutus code and are affected
 //! by any change made to it.
 //!
