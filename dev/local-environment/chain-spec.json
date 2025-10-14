@@ -49,14 +49,6 @@
         "grandpa": {
           "authorities": []
         },
-        "nativeTokenManagement": {
-          "mainChainScripts": {
-            "illiquid_supply_validator_address": "addr_test1wzhn2zmwntjwp87va0zwv9hym93jwhjqgmtztwsc4yrgmhqf5y4ca",
-            "native_token_asset_name": "0x52657761726420746f6b656e",
-            "native_token_policy_id": "0x1fab25f376bc49a181d03a869ee8eaa3157a3a3d242a619ca7995b2b"
-          },
-          "marker": null
-        },
         "palletSession": {
           "keys": [],
           "nonAuthorityKeys": []

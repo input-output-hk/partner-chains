@@ -2,9 +2,8 @@ use crate::chain_spec::*;
 use authority_selection_inherents::CommitteeMember;
 use partner_chains_demo_runtime::{
 	AccountId, AuraConfig, BalancesConfig, BeefyConfig, BridgeConfig, GovernedMapConfig,
-	GrandpaConfig, NativeTokenManagementConfig, RuntimeGenesisConfig,
-	SessionCommitteeManagementConfig, SessionConfig, SidechainConfig, SudoConfig, SystemConfig,
-	TestHelperPalletConfig,
+	GrandpaConfig, RuntimeGenesisConfig, SessionCommitteeManagementConfig, SessionConfig,
+	SidechainConfig, SudoConfig, SystemConfig, TestHelperPalletConfig,
 };
 use sc_service::ChainType;
 use sidechain_domain::*;

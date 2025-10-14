@@ -1,8 +1,8 @@
 use crate::chain_spec::*;
 use partner_chains_demo_runtime::{
 	AuraConfig, BalancesConfig, BeefyConfig, BridgeConfig, GovernedMapConfig, GrandpaConfig,
-	NativeTokenManagementConfig, RuntimeGenesisConfig, SessionCommitteeManagementConfig,
-	SessionConfig, SidechainConfig, SudoConfig, SystemConfig, TestHelperPalletConfig,
+	RuntimeGenesisConfig, SessionCommitteeManagementConfig, SessionConfig, SidechainConfig,
+	SudoConfig, SystemConfig, TestHelperPalletConfig,
 };
 use sc_service::ChainType;
 
