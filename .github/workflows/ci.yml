@@ -433,13 +433,195 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - name: Deploy and test against local environment
-        uses: ./.github/actions/tests/local-environment-tests
+      - name: Acquire AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          tag: CI
-          image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ github.sha }}
-          sha: ${{ github.sha }}
-          markers: ${{ matrix.markers }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Login to ECR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.ECR_REGISTRY_SECRET }}
+      - name: Deploy local environment
+        run: |
+          mkdir -p dev/local-environment/configurations/tests/e2e-tests
+          cp -r e2e-tests/* dev/local-environment/configurations/tests/e2e-tests
+          cd dev/local-environment
+          if [ "${{ matrix.markers }}" = "wizards" ]; then
+            bash setup.sh --non-interactive --postgres-password azMpOp4mTqhlKDmgCVQr --node-image ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ github.sha }} --tests -d 5
+          else
+            bash setup.sh --non-interactive --postgres-password azMpOp4mTqhlKDmgCVQr --node-image ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ github.sha }} --tests
+          fi
+          docker compose up -d
+          cd ../../
+      - name: Wait for partner-chains-node-1 to start
+        id: wait-pc-node
+        continue-on-error: true
+        run: |
+          # Wait for the Cardano node to be ready
+          while ! docker exec cardano-node-1 [ -e /shared/cardano.ready ]; do sleep 1; done
+          echo "Cardano network is ready! Waiting for partner-chains-node-1 to start..."
+          INIT_TIMESTAMP=$(docker exec cardano-node-1 cat /shared/cardano.start)
+          echo "INIT_TIMESTAMP=$INIT_TIMESTAMP" >> $GITHUB_ENV
+
+          epoch=0
+          restart_count=0
+          max_restarts=10
+
+          # Wait for partner-chains-node-1 to be ready or until max restarts or epoch 2 is reached
+          while ! docker exec partner-chains-node-1 [ -e /shared/partner-chains-node-1.ready ]; do
+            epoch=$(docker exec cardano-node-1 cardano-cli latest query tip --testnet-magic 42 | jq -r .epoch)
+            echo "Epoch: $epoch"
+            container_status=$(docker inspect -f '{{.State.Status}}' partner-chains-node-1)
+            echo "Container status: $container_status"
+            if [ "$container_status" = "restarting" ]; then
+              restart_count=$((restart_count + 1))
+              echo "partner-chains-node-1 is restarting ($restart_count/$max_restarts)"
+              if [ "$restart_count" -ge "$max_restarts" ]; then
+                echo "partner-chains-node-1 has restarted $restart_count times. Failing early."
+                exit 1
+              fi
+            else
+              restart_count=0
+            fi
+            if [ "$epoch" -ge 2 ]; then
+              echo "Epoch has reached 2 and partner-chains-node-1 is still not ready."
+              exit 1
+            fi
+            sleep 10
+          done
+      - name: Collect Docker logs
+        run: |
+          mkdir -p local-environment-${{ matrix.markers }}-logs-initial
+          docker ps -a --format '{{.Names}}' | while read line; do
+            echo "Collecting logs for container $line"
+            docker logs "$line" > "local-environment-${{ matrix.markers }}-logs-initial/$line.log" 2>&1 || true
+          done
+      - name: Upload Docker logs artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: local-environment-${{ matrix.markers }}-logs-initial
+          path: local-environment-${{ matrix.markers }}-logs-initial/
+      - name: Fail the job
+        if: ${{ steps.wait-pc-node.outcome == 'failure' }}
+        run: exit 1
+      - name: Wait for Epoch 2
+        run: |
+          epoch=$(docker exec cardano-node-1 cardano-cli latest query tip --testnet-magic 42 | jq -r .epoch)
+          while [ $epoch -lt 2 ]; do
+            echo "Epoch: $epoch"
+            sleep 10
+            epoch=$(docker exec cardano-node-1 cardano-cli latest query tip --testnet-magic 42 | jq -r .epoch)
+          done
+          echo "Epoch: $epoch"
+      - name: Let PC warm up
+        run: sleep 30
+      - name: Run Epoch 2 Tests
+        if: ${{ matrix.markers != 'full' && matrix.markers != 'ariadne' && matrix.markers != 'delegator_rewards' }}
+        run: |
+          docker exec tests bash -c "
+            cd /e2e-tests &&
+            source venv/bin/activate &&
+            pytest --blockchain 'substrate' \
+              --env 'local' \
+              --log-cli-level 'info' \
+              -m '${{ matrix.markers }}' \
+              -n '4' \
+              --dist=loadgroup \
+              --ci-run \
+              --init-timestamp '${{ env.INIT_TIMESTAMP }}' \
+              --json-report \
+              --json-report-file=logs/.report.json \
+              --json-report-summary \
+              --junitxml=logs/junit_report.xml
+          "
+      - name: Wait for Epoch 3
+        if: ${{ matrix.markers == 'full' || matrix.markers == 'ariadne' || matrix.markers == 'delegator_rewards' }}
+        run: |
+          epoch=$(docker exec cardano-node-1 cardano-cli latest query tip --testnet-magic 42 | jq -r .epoch)
+          while [ $epoch -lt 3 ]; do
+            echo "Epoch: $epoch"
+            sleep 10
+            epoch=$(docker exec cardano-node-1 cardano-cli latest query tip --testnet-magic 42 | jq -r .epoch)
+          done
+          echo "Epoch: $epoch"
+      - name: Run Epoch 3 Tests
+        if: ${{ matrix.markers == 'full' || matrix.markers == 'ariadne' || matrix.markers == 'delegator_rewards' }}
+        run: |
+          docker exec tests bash -c "
+            cd /e2e-tests &&
+            source venv/bin/activate &&
+            pytest --blockchain 'substrate' \
+              --env 'local' \
+              --log-cli-level 'info' \
+              -m '${{ matrix.markers }}' \
+              -n '4' \
+              --dist=loadgroup \
+              --ci-run \
+              --init-timestamp '${{ env.INIT_TIMESTAMP }}' \
+              --json-report \
+              --json-report-file=logs/.report.json \
+              --json-report-summary \
+              --junitxml=logs/junit_report.xml
+          "
+      - name: Wait for Epoch 4
+        if: ${{ matrix.markers == 'full' || matrix.markers == 'ariadne' }}
+        run: |
+          epoch=$(docker exec cardano-node-1 cardano-cli latest query tip --testnet-magic 42 | jq -r .epoch)
+          while [ $epoch -lt 4 ]; do
+            echo "Epoch: $epoch"
+            sleep 10
+            epoch=$(docker exec cardano-node-1 cardano-cli latest query tip --testnet-magic 42 | jq -r .epoch)
+          done
+          echo "Epoch: $epoch"
+      - name: Run Epoch 4 Tests
+        if: ${{ matrix.markers == 'full' || matrix.markers == 'ariadne' }}
+        run: |
+          docker exec tests bash -c "
+            cd /e2e-tests &&
+            source venv/bin/activate &&
+            pytest --blockchain 'substrate' \
+              --env 'local' \
+              --log-cli-level 'info' \
+              -m '${{ matrix.markers }}' \
+              --mc-epoch '3' \
+              -n '4' \
+              --dist=loadgroup \
+              --ci-run \
+              --init-timestamp '${{ env.INIT_TIMESTAMP }}' \
+              --json-report \
+              --json-report-file=logs/.report.json \
+              --json-report-summary \
+              --junitxml=logs/junit_report.xml
+          "
+      - name: Check if no skipped tests
+        run: |
+          report_path="e2e-tests/${{ matrix.markers }}/logs/.report.json"
+          if [ -f "$report_path" ]; then
+            skipped=$(jq -r .summary.skipped "$report_path")
+            if [ "$skipped" != "null" ]; then
+              echo "Skipped tests found: $skipped. Check test logs for more information."
+              exit 1
+            fi
+          fi
+      - name: Collect container logs
+        if: always()
+        run: |
+          mkdir -p local-environment-${{ matrix.markers }}-logs-full
+          docker ps -a --format '{{.Names}}' | while read line; do
+            echo "Collecting logs for container $line"
+            docker logs "$line" > "local-environment-${{ matrix.markers }}-logs-full/$line.log" 2>&1 || true
+          done
+      - name: Upload container logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: local-environment-${{ matrix.markers }}-logs-full
+          path: local-environment-${{ matrix.markers }}-logs-full/
+      - name: Stop partner-chains-demo
+        run: |
+          cd dev/local-environment
+          docker compose down --volumes
         env:
           SUBSTRATE_REPO_SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
           AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
@@ -865,11 +1047,21 @@ jobs:
           K8S_SERVER: ${{ secrets.K8S_SERVER }}
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
       - name: Test against ci-preview
-        uses: ./.github/actions/tests/run-e2e-tests
-        with:
-          env: ci
-          decrypt: true
-          blockchain: substrate
+        run: |
+          cd e2e-tests
+          source venv/bin/activate
+          pytest --blockchain 'substrate' \
+            --env 'ci' \
+            --log-cli-level 'info' \
+            -n '4' \
+            --dist=loadgroup \
+            --ci-run \
+            --init-timestamp '0' \
+            --decrypt \
+            --json-report \
+            --json-report-file=logs/.report.json \
+            --json-report-summary \
+            --junitxml=logs/junit_report.xml
         env:
           AWS_SESSION_TOKEN: ${{ env.AWS_SESSION_TOKEN }}
           AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
