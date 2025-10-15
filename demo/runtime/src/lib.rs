@@ -106,7 +106,7 @@ pub mod opaque {
 	use super::*;
 	use authority_selection_inherents::MaybeFromCandidateKeys;
 	use parity_scale_codec::MaxEncodedLen;
-	use sp_core::{ed25519, sr25519};
+	use sp_core::{ecdsa, ed25519, sr25519};
 	pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
 
 	/// Opaque block header type.
@@ -121,11 +121,12 @@ pub mod opaque {
 		pub struct SessionKeys {
 			pub aura: Aura,
 			pub grandpa: Grandpa,
+			pub beefy: Beefy,
 		}
 	}
-	impl From<(sr25519::Public, ed25519::Public)> for SessionKeys {
-		fn from((aura, grandpa): (sr25519::Public, ed25519::Public)) -> Self {
-			Self { aura: aura.into(), grandpa: grandpa.into() }
+	impl From<(sr25519::Public, ed25519::Public, ecdsa::Public)> for SessionKeys {
+		fn from((aura, grandpa, beefy): (sr25519::Public, ed25519::Public, ecdsa::Public)) -> Self {
+			Self { aura: aura.into(), grandpa: grandpa.into(), beefy: beefy.into() }
 		}
 	}
 
