@@ -11,7 +11,7 @@ inputs:
     description: "PC Artifact Tag"
     required: true
   markers:
-    description: 'Run tests by markers (-m). Available markers: smoke, rpc, reserve, governed_map, delegator_rewards, ariadne, wizards or full'
+    description: 'Run tests by markers (-m). Available markers: ci, smoke, rpc, reserve, governed_map, delegator_rewards, ariadne, wizards or full'
     required: true
 
 outputs: {}

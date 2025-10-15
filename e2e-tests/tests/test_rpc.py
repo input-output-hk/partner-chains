@@ -6,6 +6,7 @@ import re
 
 
 @mark.rpc
+@mark.ci
 class TestRpc:
     @mark.test_key('ETCM-6994')
     def test_get_status(self, api: BlockchainApi):

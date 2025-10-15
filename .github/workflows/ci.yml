@@ -426,7 +426,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        markers: [smoke, rpc, reserve, governed_map, delegator_rewards, ariadne, wizards]
+        markers: [ci, smoke, rpc, reserve, governed_map, delegator_rewards, ariadne, wizards]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -870,7 +870,7 @@ jobs:
           env: ci
           decrypt: true
           blockchain: substrate
-          markers: smoke
+          markers: ci
         env:
           AWS_SESSION_TOKEN: ${{ env.AWS_SESSION_TOKEN }}
           AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}

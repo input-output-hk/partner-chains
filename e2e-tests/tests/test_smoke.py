@@ -6,6 +6,7 @@ import logging as logger
 
 
 @mark.smoke
+@mark.ci
 class TestSmoke:
     @mark.test_key('ETCM-6992')
     def test_block_producing(self, api: BlockchainApi, config: ApiConfig):

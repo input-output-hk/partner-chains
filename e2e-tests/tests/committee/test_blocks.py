@@ -7,6 +7,7 @@ COMMITTEE_REPETITIONS_IN_PC_EPOCH = 2
 
 
 @mark.xdist_group("faucet_tx")
+@mark.ci
 def test_block_producer_can_update_their_metadata(genesis_utxo, api: BlockchainApi, get_wallet: Wallet, write_file):
     logger.info("Signing block producer metadata...")
     skey, vkey_hex, vkey_hash = api.cardano_cli.generate_cross_chain_keys()
@@ -60,6 +61,7 @@ def test_block_producer_can_update_their_metadata(genesis_utxo, api: BlockchainA
 
 
 @mark.xdist_group("faucet_tx")
+@mark.ci
 def test_block_producer_can_delete_their_metadata(genesis_utxo, api: BlockchainApi, get_wallet: Wallet, write_file):
     logger.info("Signing block producer metadata...")
     skey, vkey_hex, vkey_hash = api.cardano_cli.generate_cross_chain_keys()
@@ -157,6 +159,7 @@ def test_block_authors_match_committee_seats(
 
 
 @mark.test_key('ETCM-7481')
+@mark.ci
 def test_block_headers_have_mc_hash(api: BlockchainApi, config: ApiConfig, pc_epoch, get_pc_epoch_blocks):
     """Test block headers have mainchain hash
     * Get blocks for current partner chain epoch
