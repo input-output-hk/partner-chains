@@ -29,5 +29,14 @@
     },
     "poll_intervals": {
         "transaction_finalization": 1
+    },
+    "jolteon_config": {
+        "round_progression_multiplier": 5,
+        "qc_advancement_multiplier": 7,
+        "safety_monitoring_multiplier": 10,
+        "liveness_monitoring_multiplier": 20,
+        "check_interval_multiplier": 2,
+        "commit_latency_threshold": 30,
+        "min_vote_count_threshold": 0
     }
 }
