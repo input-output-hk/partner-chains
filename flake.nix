@@ -61,11 +61,11 @@
           #C_INCLUDE_PATH = "${pkgs.clang.cc.lib}/lib/clang/19/include";
           
           # RocksDB configuration - use system library
-          ROCKSDB_LIB_DIR = "${pkgs.rocksdb}/lib/";
+          ROCKSDB_LIB_DIR = "${pkgs.pkgsStatic.rocksdb}/lib/";
           OPENSSL_NO_VENDOR = 1;
-          OPENSSL_DIR = "${pkgs.openssl.dev}";
-          OPENSSL_INCLUDE_DIR = "${pkgs.openssl.dev}/include";
-          OPENSSL_LIB_DIR = "${pkgs.openssl.out}/lib";
+          OPENSSL_DIR = "${pkgs.pkgsStatic.openssl.dev}";
+          OPENSSL_INCLUDE_DIR = "${pkgs.pkgsStatic.openssl.dev}/include";
+          OPENSSL_LIB_DIR = "${pkgs.pkgsStatic.openssl.out}/lib";
 
           RUSTFLAGS = pkgs.lib.optionalString pkgs.stdenv.hostPlatform.isDarwin
             "--cfg unwinding_backport --cfg unwinding_apple";
@@ -116,9 +116,9 @@
           # Git commit hash for partner-chains CLI --version flag
           SUBSTRATE_CLI_GIT_COMMIT_HASH = self.dirtyShortRev or self.shortRev;
           
-          postFixup = pkgs.lib.optionalString pkgs.stdenv.hostPlatform.isLinux ''
-            patchelf --set-rpath "${pkgs.rocksdb}/lib:${pkgs.stdenv.cc.cc.lib}/lib" $out/bin/partner-chains-demo-node
-          '';
+          # postFixup = pkgs.lib.optionalString pkgs.stdenv.hostPlatform.isLinux ''
+          #   patchelf --set-rpath "${pkgs.rocksdb}/lib:${pkgs.stdenv.cc.cc.lib}/lib" $out/bin/partner-chains-demo-node
+          # '';
         });
 
         cargoTest = craneLib.cargoTest (commonArgs // {
@@ -138,7 +138,7 @@
       {
         checks = { 
           # Build the crate as part of `nix flake check`
-          inherit partner-chains-demo-node cargoTest # cargoClippy
+          inherit partner-chains-demo-node cargoTest cargoClippy
             cargoFmt;
         };
 
@@ -149,11 +149,46 @@
             buildInputs = builtins.attrValues self.checks.${system};
           } "touch $out";
         };
-        devShells.default = craneLib.devShell ({
+        devShells.default = let
+          moldDevShell = craneLib.devShell.override {
+            # For example, use the mold linker
+            mkShell = pkgs.mkShell.override {
+              stdenv = pkgs.stdenvAdapters.useMoldLinker pkgs.stdenv;
+            };
+          };
+        in moldDevShell {
           name = "partner-chains-demo-node-shell";
           # Inherit inputs from checks, which pulls in the build environment from packages.default (and others)
           checks = self.checks.${system};
+          CC_ENABLE_DEBUG_OUTPUT = "1";
+          CRATE_CC_NO_DEFAULTS = 1;
+          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
+            rustToolchain
+            pkgs.stdenv.cc.cc
+            pkgs.libz
+            pkgs.clang
+          ];
 
+          BINDGEN_EXTRA_CLANG_ARGS = if pkgs.lib.hasSuffix "linux" system then "-I${pkgs.glibc.dev}/include -I${pkgs.clang.cc.lib}/lib/clang/19/include" else "";
+          LIBCLANG_PATH = "${pkgs.clang.cc.lib}/lib";
+
+          CFLAGS = if pkgs.lib.hasSuffix "linux" system then
+            "-DJEMALLOC_STRERROR_R_RETURNS_CHAR_WITH_GNU_SOURCE"
+          else
+            "";
+
+          PROTOC = "${pkgs.protobuf}/bin/protoc";
+          #C_INCLUDE_PATH = "${pkgs.clang.cc.lib}/lib/clang/19/include";
+
+          # RocksDB configuration - use system library
+          ROCKSDB_LIB_DIR = "${pkgs.pkgsStatic.rocksdb}/lib/";
+          OPENSSL_NO_VENDOR = 1;
+          OPENSSL_DIR = "${pkgs.pkgsStatic.openssl.dev}";
+          OPENSSL_INCLUDE_DIR = "${pkgs.pkgsStatic.openssl.dev}/include";
+          OPENSSL_LIB_DIR = "${pkgs.pkgsStatic.openssl.out}/lib";
+
+          RUSTFLAGS = pkgs.lib.optionalString pkgs.stdenv.hostPlatform.isDarwin
+            "--cfg unwinding_backport --cfg unwinding_apple";
           # Extra packages for the dev shell
           packages = with pkgs; [
             attic-client
@@ -181,8 +216,8 @@
           ] ++ (if pkgs.stdenv.hostPlatform.isDarwin then
             [ pkgs.darwin.apple_sdk.frameworks.SystemConfiguration ]
           else
-            [pkgs.clang]);
-        } // shellEnv);
+            [pkgs.clang pkgs.mold]);
+        };
 
         formatter = pkgs.nixfmt-rfc-style;
       });

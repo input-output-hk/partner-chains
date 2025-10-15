@@ -8,5 +8,5 @@ components = [
 	"rustc",
 	"rustfmt",
 ]
-targets = ["wasm32v1-none"]
+targets = ["wasm32v1-none", "x86_64-unknown-linux-musl"]
 profile = "minimal"
