@@ -1178,17 +1178,7 @@ impl DParameter {
 
 /// Opaque key bytes with a 4 bytes identifier
 #[derive(
-	Debug,
-	Clone,
-	PartialEq,
-	Eq,
-	Decode,
-	DecodeWithMemTracking,
-	Encode,
-	TypeInfo,
-	PartialOrd,
-	Ord,
-	Hash,
+	Clone, PartialEq, Eq, Decode, DecodeWithMemTracking, Encode, TypeInfo, PartialOrd, Ord, Hash,
 )]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct CandidateKey {
@@ -1196,6 +1186,14 @@ pub struct CandidateKey {
 	pub id: [u8; 4],
 	/// Bytes of the key
 	pub bytes: Vec<u8>,
+}
+
+impl alloc::fmt::Debug for CandidateKey {
+	fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+		let id = hex::encode(self.id);
+		let bytes = hex::encode(&self.bytes);
+		f.write_str(&alloc::format!("CandidateKey {{ id: {id}, bytes: {bytes} }}"))
+	}
 }
 
 impl FromStr for CandidateKey {
