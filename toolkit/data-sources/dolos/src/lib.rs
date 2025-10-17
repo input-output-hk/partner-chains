@@ -31,3 +31,24 @@ pub use bridge::TokenBridgeDataSourceImpl;
 pub mod client;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
+
+/// Error type returned by Dolos based data sources
+#[derive(Debug, PartialEq, thiserror::Error)]
+pub enum DataSourceError {
+	/// Indicates that Dolos rejected a request as invalid
+	#[error("Bad request: `{0}`.")]
+	BadRequest(String),
+	/// Indicates that an internal error occured when querying Dolos
+	#[error("Internal error of data source: `{0}`.")]
+	InternalDataSourceError(String),
+	/// Indicates that expected data was not found when querying Dolos
+	#[error(
+		"'{0}' not found. Possible causes: data source configuration error, Dolos not synced fully, or data not set on the main chain."
+	)]
+	ExpectedDataNotFound(String),
+	/// Indicates that data returned by Dolos is invalid
+	#[error(
+		"Invalid data. {0} Possible cause is an error in Plutus scripts or data source is outdated."
+	)]
+	InvalidData(String),
+}
