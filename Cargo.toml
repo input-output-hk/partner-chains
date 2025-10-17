@@ -118,7 +118,7 @@ ed25519-zebra = { version = "4.0.3" }
 ed25519 = { version = "2.2.2" }
 figment = { version = "0.10.19", features = ["env", "test"] }
 fraction = { version = "0.15.3", default-features = false }
-futures = { version = "0.3.30", features = ["thread-pool"] }
+futures = { version = "0.3.31", features = ["thread-pool"] }
 hex = { version = "0.4.3", features = ["alloc"], default-features = false }
 hex-literal = "1.0.0"
 itertools = "0.14.0"
@@ -185,6 +185,9 @@ derive-where = { version = "1.2.7", default-features = false }
 once_cell = { version = "1.21.3", default-features = false }
 paste = { version = "1.0.15" }
 fork-tree = { version = "13.0.1" }
+ureq = { version = "3.1.2", default-features = false }
+url = { version = "2.5.7", default-features = false }
+blockfrost-openapi = { version = "0.1.75", default-features = false }
 
 # substrate dependencies
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2509" }

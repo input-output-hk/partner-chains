@@ -931,6 +931,13 @@ impl TryFrom<Vec<u8>> for McTxHash {
 	}
 }
 
+impl Display for McTxHash {
+	fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+		let hash = sp_core::hexdisplay::HexDisplay::from(&self.0);
+		write!(f, "{}", hash)
+	}
+}
+
 #[derive(
 	Default,
 	Clone,
