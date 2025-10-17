@@ -28,4 +28,6 @@ mod bridge;
 #[cfg(feature = "bridge")]
 pub use bridge::TokenBridgeDataSourceImpl;
 
+pub mod client;
+
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
