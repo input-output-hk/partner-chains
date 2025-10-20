@@ -37,6 +37,11 @@ impl PlutusScript {
 		Ok(Self::from_cbor(&plutus_script_bytes, Language::new_plutus_v2()))
 	}
 
+	/// Constructs a V3 [PlutusScript].
+	pub fn v3_from_cbor(plutus_script_bytes: &[u8]) -> anyhow::Result<Self> {
+		Ok(Self::from_cbor(&plutus_script_bytes, Language::new_plutus_v3()))
+	}
+
 	/// Applies the [PlutusScript] to the [uplc::PlutusData], binding it to its first argument.
 	/// For example, if the [PlutusScript] has signature:
 	///   `script :: A -> B -> C`
@@ -196,6 +201,32 @@ macro_rules! plutus_script {
     ($ps:expr $(,$args:expr)*) => (
 		{
 			let script = $crate::plutus_script::PlutusScript::from($ps);
+			plutus_script!(@inner, script $(,$args)*)
+		}
+	);
+	(@inner, $ps:expr) => (Ok::<crate::plutus_script::PlutusScript, anyhow::Error>($ps));
+    (@inner, $ps:expr, $arg:expr $(,$args:expr)*) => (
+		$ps.apply_data_uplc($crate::plutus_script::PlutusDataWrapper::from($arg).0)
+	    	.and_then(|ps| plutus_script!(@inner, ps $(,$args)*))
+    )
+}
+
+/// Applies arguments to a Plutus script.
+/// The first argument is the script, the rest of the arguments are the datums that will be applied.
+/// * The script can be any type that implements [`Into<PlutusScript>`] for example [raw_scripts::RawScript].
+/// * The arguments can be any type that implements [`Into<PlutusDataWrapper>`]. Implementations are provided for
+///   [uplc::PlutusData] and [plutus::Datum].
+/// Returns [anyhow::Result<uplc::PlutusData>].
+///
+/// Example:
+/// ```rust,ignore
+/// plutus_script_v3![SOME_SCRIPT, genesis_utxo, plutus::Datum::ListDatum(Vec::new())]
+/// ```
+#[macro_export]
+macro_rules! plutus_script_v3 {
+    ($ps:expr $(,$args:expr)*) => (
+		{
+			let script = $crate::plutus_script::PlutusScript::v3_from_cbor($ps.0).unwrap();
 			plutus_script!(@inner, script $(,$args)*)
 		}
 	);

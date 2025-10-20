@@ -37,6 +37,12 @@ impl ScriptData {
 			PlutusScript::v2_from_cbor(&raw_bytes).expect("Plutus script should be valid");
 		Self { name: name.to_string(), plutus_script, id }
 	}
+
+	pub(crate) fn new_v3(name: &str, raw_bytes: Vec<u8>, id: ScriptId) -> Self {
+		let plutus_script =
+			PlutusScript::v3_from_cbor(&raw_bytes).expect("Plutus script should be valid");
+		Self { name: name.to_string(), plutus_script, id }
+	}
 }
 
 pub(crate) async fn initialize_script<

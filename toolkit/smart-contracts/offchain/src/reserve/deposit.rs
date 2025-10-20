@@ -99,6 +99,8 @@ fn deposit_to_reserve_tx(
 		&costs,
 	)?;
 
+	println!("D RESERVE AUTH UTXO: {:?}", reserve.auth_policy_version_utxo);
+
 	tx_builder.add_script_reference_input(
 		&reserve.auth_policy_version_utxo.to_csl_tx_input(),
 		reserve.scripts.auth_policy.bytes.len(),
