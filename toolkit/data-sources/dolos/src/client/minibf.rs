@@ -15,6 +15,7 @@ use ureq::Agent;
 
 use crate::client::api::{McBlockId, MiniBFApi};
 
+/// Client implementing Dolos MiniBF
 #[derive(Clone)]
 pub struct MiniBFClient {
 	agent: ureq::Agent,
@@ -27,7 +28,7 @@ impl MiniBFClient {
 		MiniBFClient { agent, addr: addr.to_string() }
 	}
 
-	pub async fn request<T: DeserializeOwned + std::fmt::Debug>(
+	async fn request<T: DeserializeOwned + std::fmt::Debug>(
 		&self,
 		method: &str,
 	) -> Result<T, String> {
@@ -43,7 +44,7 @@ impl MiniBFClient {
 		resp
 	}
 
-	pub async fn paginated_request<T: DeserializeOwned + std::fmt::Debug>(
+	async fn paginated_request<T: DeserializeOwned + std::fmt::Debug>(
 		&self,
 		method: &str,
 		pagination: Pagination,
@@ -72,7 +73,7 @@ impl MiniBFClient {
 		resp
 	}
 
-	pub async fn paginated_request_all<T: DeserializeOwned + std::fmt::Debug>(
+	async fn paginated_request_all<T: DeserializeOwned + std::fmt::Debug>(
 		&self,
 		method: &str,
 	) -> Result<Vec<T>, String> {
@@ -190,7 +191,8 @@ impl MiniBFApi for MiniBFClient {
 }
 
 #[derive(Clone)]
-pub enum Order {
+#[allow(dead_code)]
+enum Order {
 	Asc,
 	Desc,
 }
@@ -205,12 +207,12 @@ impl std::fmt::Display for Order {
 }
 
 #[derive(Clone)]
-pub struct Pagination {
-	pub count: i32,
-	pub page: i32,
-	pub order: Order,
-	pub from: Option<String>,
-	pub to: Option<String>,
+struct Pagination {
+	count: i32,
+	page: i32,
+	order: Order,
+	from: Option<String>,
+	to: Option<String>,
 }
 
 impl Default for Pagination {
