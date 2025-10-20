@@ -25,7 +25,7 @@ pub struct MiniBFClient {
 impl MiniBFClient {
 	pub fn new(addr: &str, timeout: Duration) -> Self {
 		let agent = Agent::config_builder().timeout_per_call(Some(timeout)).build().into();
-		MiniBFClient { agent, addr: addr.to_string() }
+		MiniBFClient { agent, addr: addr.strip_suffix("/").unwrap_or(addr).to_string() }
 	}
 
 	async fn request<T: DeserializeOwned + std::fmt::Debug>(
@@ -98,14 +98,14 @@ impl MiniBFApi for MiniBFClient {
 		&self,
 		address: MainchainAddress,
 	) -> Result<Vec<AddressUtxoContentInner>, String> {
-		self.paginated_request_all(&format!("/addresses/{address}/utxos")).await
+		self.paginated_request_all(&format!("addresses/{address}/utxos")).await
 	}
 
 	async fn addresses_transactions(
 		&self,
 		address: MainchainAddress,
 	) -> Result<Vec<AddressTransactionsContentInner>, String> {
-		self.paginated_request_all(&format!("/addresses/{address}/transactions")).await
+		self.paginated_request_all(&format!("addresses/{address}/transactions")).await
 	}
 
 	async fn assets_transactions(
@@ -113,7 +113,7 @@ impl MiniBFApi for MiniBFClient {
 		asset_id: AssetId,
 	) -> Result<Vec<AssetTransactionsInner>, String> {
 		let AssetId { policy_id, asset_name } = asset_id;
-		self.paginated_request_all(&format!("/assets/{policy_id}{asset_name}/transactions"))
+		self.paginated_request_all(&format!("assets/{policy_id}{asset_name}/transactions"))
 			.await
 	}
 
@@ -122,21 +122,21 @@ impl MiniBFApi for MiniBFClient {
 		asset_id: AssetId,
 	) -> Result<Vec<AssetAddressesInner>, String> {
 		let AssetId { policy_id, asset_name } = asset_id;
-		self.paginated_request_all(&format!("/assets/{policy_id}{asset_name}/addresses"))
+		self.paginated_request_all(&format!("assets/{policy_id}{asset_name}/addresses"))
 			.await
 	}
 
 	async fn blocks_latest(&self) -> Result<BlockContent, String> {
-		self.request("/blocks/latest").await
+		self.request("blocks/latest").await
 	}
 
 	async fn blocks_by_id(&self, id: impl Into<McBlockId> + Send) -> Result<BlockContent, String> {
 		let id: McBlockId = id.into();
-		self.request(&format!("/blocks/{id}")).await
+		self.request(&format!("blocks/{id}")).await
 	}
 
 	async fn blocks_slot(&self, slot_number: McSlotNumber) -> Result<BlockContent, String> {
-		self.request(&format!("/blocks/slot/{slot_number}")).await
+		self.request(&format!("blocks/slot/{slot_number}")).await
 	}
 
 	async fn blocks_next(
@@ -144,49 +144,49 @@ impl MiniBFApi for MiniBFClient {
 		id: impl Into<McBlockId> + Send,
 	) -> Result<Vec<BlockContent>, String> {
 		let id: McBlockId = id.into();
-		self.request(&format!("/blocks/{id}/next")).await
+		self.request(&format!("blocks/{id}/next")).await
 	}
 
 	async fn blocks_txs(&self, id: impl Into<McBlockId> + Send) -> Result<Vec<String>, String> {
 		let id: McBlockId = id.into();
-		self.request(&format!("/blocks/{id}/txs")).await
+		self.request(&format!("blocks/{id}/txs")).await
 	}
 
 	async fn epochs_blocks(&self, epoch_number: McEpochNumber) -> Result<Vec<String>, String> {
-		self.paginated_request_all(&format!("/epochs/{epoch_number}/blocks")).await
+		self.paginated_request_all(&format!("epochs/{epoch_number}/blocks")).await
 	}
 	async fn epochs_parameters(
 		&self,
 		epoch_number: McEpochNumber,
 	) -> Result<EpochParamContent, String> {
-		self.request(&format!("/epochs/{epoch_number}/parameters")).await
+		self.request(&format!("epochs/{epoch_number}/parameters")).await
 	}
 	async fn epochs_stakes_by_pool(
 		&self,
 		epoch_number: McEpochNumber,
 		pool_id: &str,
 	) -> Result<Vec<EpochStakePoolContentInner>, String> {
-		self.paginated_request_all(&format!("/epochs/{epoch_number}/stakes/{pool_id}"))
+		self.paginated_request_all(&format!("epochs/{epoch_number}/stakes/{pool_id}"))
 			.await
 	}
 
 	async fn pools_history(&self, pool_id: &str) -> Result<Vec<PoolHistoryInner>, String> {
-		self.paginated_request_all(&format!("/pools/{pool_id}/history")).await
+		self.paginated_request_all(&format!("pools/{pool_id}/history")).await
 	}
 	async fn pools_extended(&self) -> Result<Vec<PoolListExtendedInner>, String> {
 		self.paginated_request_all("/pools/extended").await
 	}
 
 	async fn scripts_datum_hash(&self, datum_hash: &str) -> Result<Vec<serde_json::Value>, String> {
-		self.request(&format!("/scripts/datum/{datum_hash}")).await
+		self.request(&format!("scripts/datum/{datum_hash}")).await
 	}
 
 	async fn transaction_by_hash(&self, tx_hash: McTxHash) -> Result<TxContent, String> {
-		self.request(&format!("/txs/{tx_hash}")).await
+		self.request(&format!("txs/{tx_hash}")).await
 	}
 
 	async fn transactions_utxos(&self, tx_hash: McTxHash) -> Result<TxContentUtxo, String> {
-		self.request(&format!("/txs/{tx_hash}/utxos")).await
+		self.request(&format!("txs/{tx_hash}/utxos")).await
 	}
 }
 
