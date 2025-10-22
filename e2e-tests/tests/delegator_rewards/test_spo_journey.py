@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql import text
 from pytest import fixture, mark, skip
 
+# TODO: move hardcoded values to config (like local_nodes.json, etc.)
 PARTICIPATION_DATA_SLOT_RANGE = 30
 
 
@@ -113,9 +114,9 @@ def count_blocks(pc_epoch_calculator: PartnerChainEpochCalculator, config: ApiCo
 @mark.dependency(name="participation_data")
 @mark.xdist_group("block_participation")
 def test_block_participation_data_is_not_empty(block_participation):
-    assert block_participation
-    assert block_participation["up_to_slot"]
-    assert block_participation["producer_participation"]
+    assert block_participation, "Block participation data is empty"
+    assert block_participation["up_to_slot"], "Up to slot is not set"
+    assert block_participation["producer_participation"], "Producer participation is not set"
 
 
 @mark.dependency(name="pro_bono_participation")
@@ -195,7 +196,7 @@ def test_spo_participation(
 
             logging.info(f"Expected SPO: {expected_spo}")
 
-            assert expected_spo in block_participation["producer_participation"]
+            assert expected_spo in block_participation["producer_participation"], f"Expected SPO not found in block participation data: {expected_spo}"
             block_participation["producer_participation"].remove(expected_spo)
 
 

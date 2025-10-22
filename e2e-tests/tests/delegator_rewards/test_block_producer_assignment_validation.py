@@ -3,12 +3,12 @@ from config.api_config import ApiConfig
 import logging
 
 
-def test_block_production_log_pallet(api: BlockchainApi, config: ApiConfig):
+def test_block_producer_assignment_validation(api: BlockchainApi, config: ApiConfig):
     block = api.get_block()
     block_no = block["header"]["number"]
     block_hash = block["header"]["hash"]
     block_production_log = api.get_block_production_log(block_hash=block_hash)
-    assert block_production_log
+    assert block_production_log, f"Block production log is empty for block {block_no} ({block_hash})"
     block_range = range(block_no - len(block_production_log), block_no)
     logging.info(
         f"Verifying block authors for slots {block_production_log[0][0]}..{block_production_log[-1][0]} "
