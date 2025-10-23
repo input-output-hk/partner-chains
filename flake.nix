@@ -118,6 +118,7 @@
                 postPatch = ''
                   rm -rf substrate/frame/contracts/fixtures/build || true
                   rm -rf substrate/frame/contracts/fixtures/contracts/common || true
+                  rm -rf substrate/primitives/state-machine/fuzz || true
                 '';
               }
             else
