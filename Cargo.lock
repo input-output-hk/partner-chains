@@ -6874,6 +6874,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-parameters"
+version = "0.14.0"
+source = "git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-stable2509#5ab401310d2fbd808b3ffbcfc8735ad8f1c8fe10"
+dependencies = [
+ "docify",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "paste",
+ "scale-info",
+ "sp-core",
+ "sp-runtime",
+]
+
+[[package]]
 name = "pallet-partner-chains-bridge"
 version = "1.8.0"
 dependencies = [
@@ -6888,6 +6903,36 @@ dependencies = [
  "sp-io",
  "sp-partner-chains-bridge",
  "sp-runtime",
+]
+
+[[package]]
+name = "pallet-preimage"
+version = "43.0.0"
+source = "git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-stable2509#5ab401310d2fbd808b3ffbcfc8735ad8f1c8fe10"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-io",
+ "sp-runtime",
+]
+
+[[package]]
+name = "pallet-scheduler"
+version = "44.0.0"
+source = "git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-stable2509#5ab401310d2fbd808b3ffbcfc8735ad8f1c8fe10"
+dependencies = [
+ "docify",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-io",
+ "sp-runtime",
+ "sp-weights",
 ]
 
 [[package]]
@@ -7484,7 +7529,10 @@ dependencies = [
  "pallet-block-production-log",
  "pallet-governed-map",
  "pallet-grandpa",
+ "pallet-parameters",
  "pallet-partner-chains-bridge",
+ "pallet-preimage",
+ "pallet-scheduler",
  "pallet-session",
  "pallet-session-validator-management",
  "pallet-sidechain",
