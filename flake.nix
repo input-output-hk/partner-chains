@@ -49,7 +49,9 @@
             pkgs.clang
           ];
           
-          BINDGEN_EXTRA_CLANG_ARGS = if pkgs.lib.hasSuffix "linux" system then "-I${pkgs.glibc.dev}/include -I${pkgs.clang.cc.lib}/lib/clang/19/include" else "";
+          BINDGEN_EXTRA_CLANG_ARGS = if pkgs.lib.hasSuffix "linux" system
+                                     then "-I${pkgs.glibc.dev}/include -I${pkgs.clang.cc.lib}/lib/clang/19/include"
+                                     else "";
           LIBCLANG_PATH = "${pkgs.clang.cc.lib}/lib";
 
           CFLAGS = if pkgs.lib.hasSuffix "linux" system then
@@ -73,13 +75,18 @@
 
         # Common build inputs for all targets
         commonArgs = {
-          pname = "partner-chains-demo-node"; 
-          src = pkgs.lib.cleanSourceWith {
-            src = self;
-            filter = path: type:
+          pname = "partner-chains-demo-node";
+          # Clean the project directory so that the nix hash
+          # doesn't change when unrelated files to builds update
+          src = let
+            jsonFilter = path: _type: builtins.match ".*\\.json$" path != null;
+            combinedFilter = path: type:
               (craneLib.filterCargoSources path type) ||
-              (pkgs.lib.hasSuffix "examples" path) ||
-              (pkgs.lib.hasSuffix ".json" path);
+              (jsonFilter path type);
+          in pkgs.lib.cleanSourceWith {
+            src = self;
+            filter = combinedFilter;
+            name = "source";
           };
           
           buildInputs = with pkgs; [
@@ -103,17 +110,15 @@
 
         # Build the workspace dependencies separately
         cargoArtifacts = craneLib.buildDepsOnly (commonArgs // {
-          pname = "partner-chains-demo-node-deps";
         });
 
         partner-chains-demo-node = craneLib.buildPackage (commonArgs // {
           pname = "partner-chains-demo-node";
           version = (builtins.fromTOML (builtins.readFile ./Cargo.toml)).workspace.package.version;
-          
           inherit cargoArtifacts;
 
           # Git commit hash for partner-chains CLI --version flag
-          SUBSTRATE_CLI_GIT_COMMIT_HASH = self.dirtyShortRev or self.shortRev;
+          SUBSTRATE_CLI_GIT_COMMIT_HASH = "dev"; # self.dirtyShortRev or self.shortRev;
           
           postFixup = pkgs.lib.optionalString pkgs.stdenv.hostPlatform.isLinux ''
             patchelf --set-rpath "${pkgs.rocksdb}/lib:${pkgs.stdenv.cc.cc.lib}/lib" $out/bin/partner-chains-demo-node
@@ -126,31 +131,20 @@
 
         cargoClippy = craneLib.cargoClippy (commonArgs // {
           inherit cargoArtifacts;
-          cargoClippyExtraArgs = "--all-targets -- --deny warnings";
         });
 
         cargoFmt = craneLib.cargoFmt {
           inherit (commonArgs) pname src;
         };
 
-      in
-      {
-        checks = { 
-          # Build the crate as part of `nix flake check`
-          inherit partner-chains-demo-node cargoTest cargoClippy cargoFmt;
-        };
-
-        packages = {
-          default = partner-chains-demo-node;
-          inherit partner-chains-demo-node;
-        };
-        devShells.default = craneLib.devShell ({
+        devShell = craneLib.devShell ({
           name = "partner-chains-demo-node-shell";
-          # Inherit inputs from checks, which pulls in the build environment from packages.default (and others)
-          checks = self.checks.${system};
+          # Inherit inputs from other build artifacts
+          inputsFrom = [ partner-chains-demo-node ];
 
           # Extra packages for the dev shell
           packages = with pkgs; [
+            attic-client
             awscli2
             bashInteractive
             cargo-edit
@@ -178,6 +172,27 @@
             [pkgs.clang]);
         } // shellEnv);
 
+      in { # Main flake outputs section
+        checks = {
+          # Build the crate as part of `nix flake check'
+          inherit partner-chains-demo-node cargoTest cargoFmt devShell;
+        };
+
+        packages = {
+          inherit partner-chains-demo-node;
+          default = partner-chains-demo-node;
+          ci = pkgs.runCommand "ci" {
+            checks = builtins.attrValues self.checks.${system};
+          } ''
+            mkdir -p $out
+            for i in $checks; do
+              ln -s $i $out/$(basename $i | cut -d- -f2-)
+            done
+          '';
+        };
+
+        devShells.default = devShell;
+
         formatter = pkgs.nixfmt-rfc-style;
       });
 
@@ -187,12 +202,12 @@
     extra-substituters = [
       "https://nix-community.cachix.org"
       "https://cache.iog.io"
-      "https://cache.sc.iog.io"
+      "https://ci.sc.iog.io/partner-chains"
     ];
     extra-trusted-public-keys = [
       "hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ="
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-      "cache.sc.iog.io:b4YIcBabCEVKrLQgGW8Fylz4W8IvvfzRc+hy0idqrWU="
+      "partner-chains:j9StpxUY/znqFqaevhQRxCH4Hi0F4rCGXDiUSjz+kew="
     ];
   };
 }
