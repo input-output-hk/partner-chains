@@ -165,7 +165,6 @@ impl pallet_session_validator_management::Config for Test {
 	type AuthorityId = CrossChainPublic;
 	type AuthorityKeys = TestSessionKeys;
 	type AuthoritySelectionInputs = AuthoritySelectionInputs;
-	type ScEpochNumber = ScEpochNumber;
 	type CommitteeMember = (Self::AuthorityId, Self::AuthorityKeys);
 	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
 

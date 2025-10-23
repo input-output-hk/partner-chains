@@ -125,10 +125,9 @@ where
 }
 
 /// Tries to end each session in the first block of each partner chains epoch in which the committee for the epoch is defined.
-impl<T, EpochNumber> pallet_session::ShouldEndSession<BlockNumberFor<T>> for crate::Pallet<T>
+impl<T> pallet_session::ShouldEndSession<BlockNumberFor<T>> for crate::Pallet<T>
 where
-	T: crate::Config<ScEpochNumber = EpochNumber>,
-	EpochNumber: Clone + PartialOrd,
+	T: crate::Config,
 {
 	fn should_end_session(n: BlockNumberFor<T>) -> bool {
 		let current_epoch_number = T::current_epoch_number();
@@ -167,26 +166,27 @@ mod tests {
 	};
 	use pallet_session::ShouldEndSession;
 	pub const IRRELEVANT: u64 = 2;
+	use sidechain_domain::ScEpochNumber;
 	use sp_runtime::testing::UintAuthorityId;
 
 	type Manager = crate::Pallet<Test>;
 
 	#[test]
 	fn should_end_session_if_last_one_ended_late_and_new_committee_is_defined() {
-		let current_committee_epoch = 100;
+		let current_committee_epoch = ScEpochNumber(100);
 		let current_committee = ids_and_keys_fn(&[ALICE]);
 		let next_committee_epoch = 102;
 		let next_committee = ids_and_keys_fn(&[BOB]);
 
 		new_test_ext().execute_with(|| {
 			CurrentCommittee::<Test>::put(CommitteeInfo {
-				epoch: current_committee_epoch,
+				epoch: current_committee_epoch.into(),
 				committee: current_committee,
 			});
-			CurrentEpoch::<Test>::set(current_committee_epoch + 2);
+			CurrentEpoch::<Test>::set(current_committee_epoch.next().next());
 			assert!(!Manager::should_end_session(IRRELEVANT));
 			NextCommittee::<Test>::put(CommitteeInfo {
-				epoch: next_committee_epoch,
+				epoch: next_committee_epoch.into(),
 				committee: next_committee,
 			});
 			assert!(Manager::should_end_session(IRRELEVANT));
@@ -220,7 +220,7 @@ mod tests {
 	fn ends_two_sessions_and_rotates_once_when_committee_changes() {
 		new_test_ext().execute_with(|| {
 			assert_eq!(Session::current_index(), 0);
-			assert_eq!(SessionCommitteeManagement::current_committee_storage().epoch, 0);
+			assert_eq!(SessionCommitteeManagement::current_committee_storage().epoch.0, 0);
 			increment_epoch();
 			set_validators_directly(&[CHARLIE, DAVE], 1).unwrap();
 
@@ -228,18 +228,18 @@ mod tests {
 			assert_eq!(Session::current_index(), 1);
 			// pallet_session needs additional session to apply CHARLIE and DAVE as validators
 			assert_eq!(Session::validators(), Vec::<u64>::new());
-			assert_eq!(SessionCommitteeManagement::current_committee_storage().epoch, 1);
+			assert_eq!(SessionCommitteeManagement::current_committee_storage().epoch.0, 1);
 
 			advance_one_block();
 			assert_eq!(Session::current_index(), 2);
 			assert_eq!(Session::validators(), vec![CHARLIE.authority_id, DAVE.authority_id]);
-			assert_eq!(SessionCommitteeManagement::current_committee_storage().epoch, 1);
+			assert_eq!(SessionCommitteeManagement::current_committee_storage().epoch.0, 1);
 
 			for _i in 0..10 {
 				advance_one_block();
 				assert_eq!(Session::current_index(), 2);
 				assert_eq!(Session::validators(), vec![CHARLIE.authority_id, DAVE.authority_id]);
-				assert_eq!(SessionCommitteeManagement::current_committee_storage().epoch, 1);
+				assert_eq!(SessionCommitteeManagement::current_committee_storage().epoch.0, 1);
 			}
 		});
 	}

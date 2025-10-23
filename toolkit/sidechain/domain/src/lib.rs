@@ -634,6 +634,10 @@ impl ScEpochNumber {
 	pub fn prev(&self) -> Option<Self> {
 		self.0.checked_sub(1).map(Self)
 	}
+	/// Subtracts `other` from the epoch number, saturating at lower bound
+	pub fn saturating_sub(&self, other: u64) -> Self {
+		Self(self.0.saturating_sub(other.into()))
+	}
 }
 
 #[derive(

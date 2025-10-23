@@ -156,19 +156,18 @@ impl pallet_session_validator_management::Config for MockRuntime {
 	type AuthorityId = CrossChainPublic;
 	type AuthorityKeys = TestSessionKeys;
 	type AuthoritySelectionInputs = ();
-	type ScEpochNumber = ScEpochNumber;
 	type CommitteeMember = CommitteeMember<Self::AuthorityId, TestSessionKeys>;
 	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
 	type WeightInfo = ();
 
 	fn select_authorities(
 		_input: Self::AuthoritySelectionInputs,
-		_sidechain_epoch: Self::ScEpochNumber,
+		_sidechain_epoch: ScEpochNumber,
 	) -> Option<BoundedVec<Self::CommitteeMember, Self::MaxValidators>> {
 		unimplemented!()
 	}
 
-	fn current_epoch_number() -> Self::ScEpochNumber {
+	fn current_epoch_number() -> ScEpochNumber {
 		unimplemented!()
 	}
 
