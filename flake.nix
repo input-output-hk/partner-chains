@@ -106,8 +106,26 @@
           doCheck = false;
         } // shellEnv;
 
+        cargoVendorDir = craneLib.vendorCargoDeps {
+          inherit (commonArgs) src;
+          # Remove fixture and example directories from Polkadot SDK, don't want them vendored/checked
+          # https://github.com/paritytech/polkadot-sdk/blob/polkadot-stable2412-1/.github/workflows/checks-quick.yml#L91-L97
+          overrideVendorGitCheckout = let
+            isPolkadotSdk = p: pkgs.lib.hasPrefix "git+https://github.com/paritytech/polkadot-sdk.git" p.source;
+          in ps: drv:
+            if pkgs.lib.any (p: isPolkadotSdk p) ps then
+              drv.overrideAttrs {
+                postPatch = ''
+                  rm -rf substrate/frame/contracts/fixtures/build || true
+                  rm -rf substrate/frame/contracts/fixtures/contracts/common || true
+                '';
+              }
+            else
+              drv;
+          };
         # Build the workspace dependencies separately
         cargoArtifacts = craneLib.buildDepsOnly (commonArgs // {
+          inherit cargoVendorDir;
         });
 
         partner-chains-demo-node = craneLib.buildPackage (commonArgs // {
