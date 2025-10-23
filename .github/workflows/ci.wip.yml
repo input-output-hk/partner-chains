@@ -1,0 +1,38 @@
+name: CI w/ attic caching
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    strategy:
+      matrix:
+        include:
+          - name: x86_64-linux
+            runner: [ self-hosted, legacy ]
+          - name: aarch64-darwin
+            runner: [ self-hosted, macos ]
+    name: Build (${{ matrix.name }})
+    runs-on: ${{ matrix.runner }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Attic cache
+        env:
+          ATTIC_ENDPOINT: ${{ secrets.ATTIC_ENDPOINT }}
+          ATTIC_CACHE: ${{ secrets.ATTIC_CACHE }}
+          ATTIC_TOKEN: ${{ secrets.ATTIC_TOKEN }}
+        run: |
+          attic login --set-default admin "$ATTIC_ENDPOINT" "$ATTIC_TOKEN"
+          attic use "$ATTIC_CACHE"
+
+      - name: Build and cache flake outputs
+        env:
+          ATTIC_ENDPOINT: ${{ secrets.ATTIC_ENDPOINT }}
+          ATTIC_CACHE: ${{ secrets.ATTIC_CACHE }}
+        run: |
+          nix build .#ci --print-build-logs --max-jobs auto --json | jq -r '.[].outputs.out' | nix path-info -r --stdin | attic push --stdin "$ATTIC_CACHE"
