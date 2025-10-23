@@ -61,9 +61,7 @@
 
           PROTOC = "${pkgs.protobuf}/bin/protoc";
           #C_INCLUDE_PATH = "${pkgs.clang.cc.lib}/lib/clang/19/include";
-          
-          # RocksDB configuration - use system library
-          ROCKSDB_LIB_DIR = "${pkgs.rocksdb}/lib/";
+
           OPENSSL_NO_VENDOR = 1;
           OPENSSL_DIR = "${pkgs.openssl.dev}";
           OPENSSL_INCLUDE_DIR = "${pkgs.openssl.dev}/include";
