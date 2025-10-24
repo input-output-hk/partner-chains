@@ -7,6 +7,7 @@ DOT_ENV="$SCRIPT_DIR/.env"
 if [ -f "$DOT_ENV" ]; then
     source "$DOT_ENV"
     export DB_SYNC_POSTGRES_CONNECTION_STRING="postgres://postgres:$POSTGRES_PASSWORD@localhost:$POSTGRES_PORT/cexplorer"
+    export DOLOS_MINIBF_URL="localhost:$DOLOS_MINIBF_PORT"
 else
     echo "$DOT_ENV file missing!"
 fi
