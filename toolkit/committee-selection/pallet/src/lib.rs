@@ -133,7 +133,6 @@
 //! 	type AuthorityId = CrossChainPublic;
 //! 	type AuthorityKeys = SessionKeys;
 //! 	type AuthoritySelectionInputs = authority_selection_inherents::AuthoritySelectionInputs;
-//! 	type ScEpochNumber = sidechain_domain::ScEpochNumber;
 //! 	type WeightInfo = pallet_session_validator_management::weights::SubstrateWeight<Runtime>;
 //! 	type CommitteeMember = authority_selection_inherents::CommitteeMember<CrossChainPublic, SessionKeys>;
 //! 	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
@@ -262,13 +261,12 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 	use log::{info, warn};
 	use sidechain_domain::byte_string::SizedByteString;
-	use sidechain_domain::{MainchainAddress, PolicyId};
+	use sidechain_domain::{MainchainAddress, PolicyId, ScEpochNumber};
 	use sp_core::blake2_256;
 	use sp_runtime::traits::{MaybeSerializeDeserialize, One, Zero};
 	use sp_session_validator_management::*;
 	use sp_std::collections::btree_set::BTreeSet;
-	use sp_std::fmt::Display;
-	use sp_std::{ops::Add, vec::Vec};
+	use sp_std::vec::Vec;
 
 	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
@@ -292,18 +290,6 @@ pub mod pallet {
 		type AuthorityKeys: Parameter + Member + MaybeSerializeDeserialize + Ord + MaxEncodedLen;
 		/// Type of input data used by `select_authorities` to select a committee.
 		type AuthoritySelectionInputs: Parameter;
-		/// Type of the epoch number used by the partner chain.
-		type ScEpochNumber: Parameter
-			+ MaxEncodedLen
-			+ Zero
-			+ Display
-			+ Add
-			+ One
-			+ Default
-			+ Ord
-			+ Copy
-			+ From<u64>
-			+ Into<u64>;
 
 		/// Type of committee members returned by `select_authorities`.
 		type CommitteeMember: Parameter
@@ -319,11 +305,11 @@ pub mod pallet {
 		/// Should return [None] if selection was impossible for the given input.
 		fn select_authorities(
 			input: Self::AuthoritySelectionInputs,
-			sidechain_epoch: Self::ScEpochNumber,
+			sidechain_epoch: ScEpochNumber,
 		) -> Option<BoundedVec<Self::CommitteeMember, Self::MaxValidators>>;
 
 		/// Should return the current partner chain epoch.
-		fn current_epoch_number() -> Self::ScEpochNumber;
+		fn current_epoch_number() -> ScEpochNumber;
 
 		/// Weight functions needed for pallet_session_validator_management.
 		type WeightInfo: WeightInfo;
@@ -343,27 +329,23 @@ pub mod pallet {
 	#[derive(CloneNoBound, Encode, Decode, TypeInfo, MaxEncodedLen)]
 	#[scale_info(skip_type_params(MaxValidators))]
 	/// Committee info type used on-chain.
-	pub struct CommitteeInfo<ScEpochNumber: Clone, CommitteeMember: Clone, MaxValidators> {
+	pub struct CommitteeInfo<CommitteeMember: Clone, MaxValidators> {
 		/// Epoch number the committee is selected for.
 		pub epoch: ScEpochNumber,
 		/// List of committee members.
 		pub committee: BoundedVec<CommitteeMember, MaxValidators>,
 	}
 
-	impl<ScEpochNumber: Clone, CommitteeMember: Clone, MaxValidators>
-		CommitteeInfo<ScEpochNumber, CommitteeMember, MaxValidators>
-	{
+	impl<CommitteeMember: Clone, MaxValidators> CommitteeInfo<CommitteeMember, MaxValidators> {
 		/// Returns committee info as a pair of epoch number and list of committee members
 		pub fn as_pair(self) -> (ScEpochNumber, Vec<CommitteeMember>) {
 			(self.epoch, self.committee.to_vec())
 		}
 	}
 
-	impl<ScEpochNumber, CommitteeMember, MaxValidators> Default
-		for CommitteeInfo<ScEpochNumber, CommitteeMember, MaxValidators>
+	impl<CommitteeMember, MaxValidators> Default for CommitteeInfo<CommitteeMember, MaxValidators>
 	where
 		CommitteeMember: Clone,
-		ScEpochNumber: Clone + Zero,
 	{
 		fn default() -> Self {
 			Self { epoch: ScEpochNumber::zero(), committee: BoundedVec::new() }
@@ -375,18 +357,12 @@ pub mod pallet {
 		StorageValue<_, BoundedBTreeSet<T::AccountId, T::MaxValidators>, ValueQuery>;
 
 	#[pallet::storage]
-	pub type CurrentCommittee<T: Config> = StorageValue<
-		_,
-		CommitteeInfo<T::ScEpochNumber, T::CommitteeMember, T::MaxValidators>,
-		ValueQuery,
-	>;
+	pub type CurrentCommittee<T: Config> =
+		StorageValue<_, CommitteeInfo<T::CommitteeMember, T::MaxValidators>, ValueQuery>;
 
 	#[pallet::storage]
-	pub type NextCommittee<T: Config> = StorageValue<
-		_,
-		CommitteeInfo<T::ScEpochNumber, T::CommitteeMember, T::MaxValidators>,
-		OptionQuery,
-	>;
+	pub type NextCommittee<T: Config> =
+		StorageValue<_, CommitteeInfo<T::CommitteeMember, T::MaxValidators>, OptionQuery>;
 
 	/// Stores the stage of handling the inputs change. Used by session manager, to decide
 	/// if the session should be ended quickly, to speed up using the newly selected committee.
@@ -428,7 +404,7 @@ pub mod pallet {
 			ProvidedAccounts::<T>::set(provided_accounts.try_into().unwrap());
 
 			let committee_info =
-				CommitteeInfo { epoch: T::ScEpochNumber::zero(), committee: initial_authorities };
+				CommitteeInfo { epoch: ScEpochNumber::zero(), committee: initial_authorities };
 			CurrentCommittee::<T>::put(committee_info);
 			MainChainScriptsConfiguration::<T>::put(self.main_chain_scripts.clone());
 		}
@@ -545,7 +521,7 @@ pub mod pallet {
 		pub fn set(
 			origin: OriginFor<T>,
 			validators: BoundedVec<T::CommitteeMember, T::MaxValidators>,
-			for_epoch_number: T::ScEpochNumber,
+			for_epoch_number: ScEpochNumber,
 			selection_inputs_hash: SizedByteString<32>,
 		) -> DispatchResult {
 			ensure_none(origin)?;
@@ -588,7 +564,7 @@ pub mod pallet {
 
 	impl<T: Config> Pallet<T> {
 		/// Returns epoch number for which next committee hasn't been set yet.
-		pub fn get_next_unset_epoch_number() -> T::ScEpochNumber {
+		pub fn get_next_unset_epoch_number() -> ScEpochNumber {
 			NextCommittee::<T>::get()
 				.map(|next_committee| next_committee.epoch + One::one())
 				.unwrap_or(CurrentCommittee::<T>::get().epoch + One::one())
@@ -605,14 +581,13 @@ pub mod pallet {
 		}
 
 		/// Returns current committee from storage.
-		pub fn current_committee_storage()
-		-> CommitteeInfo<T::ScEpochNumber, T::CommitteeMember, T::MaxValidators> {
+		pub fn current_committee_storage() -> CommitteeInfo<T::CommitteeMember, T::MaxValidators> {
 			CurrentCommittee::<T>::get()
 		}
 
 		/// Returns next committee from storage.
 		pub fn next_committee_storage()
-		-> Option<CommitteeInfo<T::ScEpochNumber, T::CommitteeMember, T::MaxValidators>> {
+		-> Option<CommitteeInfo<T::CommitteeMember, T::MaxValidators>> {
 			NextCommittee::<T>::get()
 		}
 
@@ -644,7 +619,7 @@ pub mod pallet {
 		/// Calculates committee using configured `select_authorities` function
 		pub fn calculate_committee(
 			authority_selection_inputs: T::AuthoritySelectionInputs,
-			sidechain_epoch: T::ScEpochNumber,
+			sidechain_epoch: ScEpochNumber,
 		) -> Option<Vec<T::CommitteeMember>> {
 			T::select_authorities(authority_selection_inputs, sidechain_epoch).map(|c| c.to_vec())
 		}

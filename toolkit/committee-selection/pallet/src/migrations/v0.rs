@@ -4,6 +4,7 @@ use frame_support::pallet_prelude::{OptionQuery, ValueQuery, Zero};
 use frame_support::{BoundedVec, CloneNoBound, storage_alias};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
+use sidechain_domain::ScEpochNumber;
 
 #[derive(CloneNoBound, Encode, Decode, TypeInfo, MaxEncodedLen)]
 #[scale_info(skip_type_params(MaxValidators))]
@@ -17,12 +18,11 @@ pub struct LegacyCommitteeInfo<
 	pub committee: BoundedVec<(AuthorityId, AuthorityKeys), MaxValidators>,
 }
 
-impl<ScEpochNumber, AuthorityId, AuthorityKeys, MaxValidators> Default
+impl<AuthorityId, AuthorityKeys, MaxValidators> Default
 	for LegacyCommitteeInfo<ScEpochNumber, AuthorityId, AuthorityKeys, MaxValidators>
 where
 	AuthorityId: Clone,
 	AuthorityKeys: Clone,
-	ScEpochNumber: Clone + Zero,
 {
 	fn default() -> Self {
 		Self { epoch: ScEpochNumber::zero(), committee: BoundedVec::new() }
@@ -33,7 +33,7 @@ where
 pub type CurrentCommittee<T: crate::pallet::Config> = StorageValue<
 	crate::Pallet<T>,
 	LegacyCommitteeInfo<
-		<T as crate::pallet::Config>::ScEpochNumber,
+		ScEpochNumber,
 		<T as crate::pallet::Config>::AuthorityId,
 		<T as crate::pallet::Config>::AuthorityKeys,
 		<T as crate::pallet::Config>::MaxValidators,
@@ -45,7 +45,7 @@ pub type CurrentCommittee<T: crate::pallet::Config> = StorageValue<
 pub type NextCommittee<T: crate::pallet::Config> = StorageValue<
 	crate::Pallet<T>,
 	LegacyCommitteeInfo<
-		<T as crate::pallet::Config>::ScEpochNumber,
+		ScEpochNumber,
 		<T as crate::pallet::Config>::AuthorityId,
 		<T as crate::pallet::Config>::AuthorityKeys,
 		<T as crate::pallet::Config>::MaxValidators,

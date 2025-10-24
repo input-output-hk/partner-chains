@@ -8,6 +8,7 @@ use frame_support::{
 };
 use frame_system::EnsureRoot;
 use pallet_balances::AccountData;
+use sidechain_domain::ScEpochNumber;
 use sidechain_domain::byte_string::SizedByteString;
 use sp_core::{H256, blake2_256};
 use sp_runtime::{
@@ -22,7 +23,6 @@ type Block = frame_system::mocking::MockBlock<Test>;
 
 type AccountId = u64;
 type AuthorityId = u64;
-pub type ScEpochNumber = u64;
 pub type AuthorityKeys = u64;
 
 sp_runtime::impl_opaque_keys! {
@@ -41,6 +41,7 @@ impl From<u64> for SessionKeys {
 #[frame_support::pallet]
 pub mod mock_pallet {
 	use frame_support::pallet_prelude::*;
+	use sidechain_domain::ScEpochNumber;
 
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
@@ -49,7 +50,7 @@ pub mod mock_pallet {
 	pub trait Config: frame_system::Config {}
 
 	#[pallet::storage]
-	pub type CurrentEpoch<T: Config> = StorageValue<_, u64, ValueQuery>;
+	pub type CurrentEpoch<T: Config> = StorageValue<_, ScEpochNumber, ValueQuery>;
 }
 
 // Configure a mock runtime to test the pallet.
@@ -114,19 +115,18 @@ impl pallet::Config for Test {
 	type AuthorityKeys = AuthorityKeys;
 	type AuthoritySelectionInputs =
 		BoundedVec<(Self::AuthorityId, Self::AuthorityKeys), Self::MaxValidators>;
-	type ScEpochNumber = ScEpochNumber;
 	type CommitteeMember = (Self::AuthorityId, Self::AuthorityKeys);
 	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
 
 	fn select_authorities(
 		input: Self::AuthoritySelectionInputs,
-		_sidechain_epoch: Self::ScEpochNumber,
+		_sidechain_epoch: ScEpochNumber,
 	) -> Option<BoundedVec<(Self::AuthorityId, Self::AuthorityKeys), Self::MaxValidators>> {
 		// This is a good approximation of the real selection algorithm, that returns None iff there are no valid candidates to select from.
 		if input.is_empty() { None } else { Some(input) }
 	}
 
-	fn current_epoch_number() -> Self::ScEpochNumber {
+	fn current_epoch_number() -> ScEpochNumber {
 		current_epoch_number()
 	}
 
@@ -243,7 +243,7 @@ pub fn set_validators_directly(
 	SessionCommitteeManagement::set(
 		RuntimeOrigin::none(),
 		BoundedVec::truncate_from(expected_validators),
-		for_epoch,
+		for_epoch.into(),
 		data_hash,
 	)
 }
@@ -267,7 +267,7 @@ pub fn create_inherent_set_validators_call(
 	<SessionCommitteeManagement as ProvideInherent>::create_inherent(&inherent_data.0)
 }
 
-pub(crate) fn current_epoch_number() -> u64 {
+pub(crate) fn current_epoch_number() -> ScEpochNumber {
 	mock_pallet::CurrentEpoch::<Test>::get()
 }
 

@@ -1,5 +1,6 @@
 use crate::mock::*;
 use frame_support::{assert_ok, inherent::ProvideInherent, traits::Hooks};
+use sidechain_domain::ScEpochNumber;
 
 mod inherent_tests {
 	use super::*;
@@ -81,17 +82,17 @@ mod inherent_tests {
 			// Make sure that the CurrentCommittee is different to the NextCommittee.
 			pallet::CurrentCommittee::<Test>::put(CommitteeInfo {
 				committee: ids_and_keys_fn(&[CHARLIE, DAVE]),
-				epoch: 42,
+				epoch: 42.into(),
 			});
 			pallet::NextCommittee::<Test>::put(CommitteeInfo {
 				committee: ids_and_keys_fn(&[ALICE, BOB]),
-				epoch: 43,
+				epoch: 43.into(),
 			});
 			let (inherent_data_from_which_committee_cannot_be_selected, selection_inputs_hash) =
 				create_inherent_data(&[]);
 			let set_call = pallet::Call::set {
 				validators: ids_and_keys_fn(&[ALICE, BOB]),
-				for_epoch_number: 43,
+				for_epoch_number: 43.into(),
 				selection_inputs_hash,
 			};
 			assert_ok!(<SessionCommitteeManagement as ProvideInherent>::check_inherent(
@@ -113,7 +114,7 @@ mod inherent_tests {
 				create_inherent_data(&[]);
 			let call = pallet::Call::set {
 				validators: ids_and_keys_fn(&genesis_validators),
-				for_epoch_number: 43,
+				for_epoch_number: 43.into(),
 				selection_inputs_hash,
 			};
 			// Should be Ok, because check_inherent should use CurrentCommittee value.
@@ -134,7 +135,7 @@ mod inherent_tests {
 			genesis_validators.reverse();
 			let call = pallet::Call::set {
 				validators: ids_and_keys_fn(&genesis_validators),
-				for_epoch_number: 43,
+				for_epoch_number: 43.into(),
 				selection_inputs_hash: selection_inputs_hash.clone(),
 			};
 
@@ -163,7 +164,7 @@ mod inherent_tests {
 			genesis_validators.reverse();
 			let call = pallet::Call::set {
 				validators: ids_and_keys_fn(&genesis_validators),
-				for_epoch_number: 43,
+				for_epoch_number: 43.into(),
 				selection_inputs_hash: incorrect_selection_inputs_hash.clone(),
 			};
 
@@ -297,26 +298,26 @@ mod committee_rotation_tests {
 			assert_eq!(SessionCommitteeManagement::next_committee(), Some(authority_ids(&[ALICE])));
 			assert_eq!(
 				SessionCommitteeManagement::next_committee_storage().unwrap().epoch,
-				current_epoch - 2
+				current_epoch.saturating_sub(2)
 			);
 
 			// the first block after 3 epochs rotates to the next committee (Alice)
 			assert_eq!(rotate_committee(), Some(vec![ALICE.authority_id]));
 			assert_eq!(
 				SessionCommitteeManagement::current_committee_storage().epoch,
-				current_epoch - 2
+				current_epoch.saturating_sub(2)
 			);
 
 			// in the second block the committee  rotates to Charlie
 			set_validators_through_inherents(&[CHARLIE]);
 			assert_eq!(
 				SessionCommitteeManagement::next_committee_storage().unwrap().epoch,
-				current_epoch - 1
+				current_epoch.saturating_sub(1)
 			);
 			assert_eq!(rotate_committee(), Some(vec![CHARLIE.authority_id]));
 			assert_eq!(
 				SessionCommitteeManagement::current_committee_storage().epoch,
-				current_epoch - 1
+				current_epoch.saturating_sub(1)
 			);
 
 			// in the third block the committee rotates to Dave
@@ -402,11 +403,11 @@ fn get_authority_round_robin_works() {
 }
 
 pub(crate) fn increment_epoch() {
-	mock_pallet::CurrentEpoch::<Test>::put(current_epoch_number() + 1);
+	mock_pallet::CurrentEpoch::<Test>::put(current_epoch_number().next());
 }
 
 fn set_epoch(epoch: u64) {
-	mock_pallet::CurrentEpoch::<Test>::put(epoch);
+	mock_pallet::CurrentEpoch::<Test>::put(ScEpochNumber(epoch));
 }
 
 // in real life first epoch will be something much bigger than 0, that's why it is here

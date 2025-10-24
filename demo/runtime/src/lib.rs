@@ -343,7 +343,6 @@ impl pallet_session_validator_management::Config for Runtime {
 	type AuthorityId = CrossChainPublic;
 	type AuthorityKeys = SessionKeys;
 	type AuthoritySelectionInputs = AuthoritySelectionInputs;
-	type ScEpochNumber = ScEpochNumber;
 	type WeightInfo = pallet_session_validator_management::weights::SubstrateWeight<Runtime>;
 	type CommitteeMember = CommitteeMember<CrossChainPublic, SessionKeys>;
 	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
