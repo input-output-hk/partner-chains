@@ -38,6 +38,8 @@ partner-chains-plutus-data = { workspace = true }
 futures = { workspace = true }
 cardano-serialization-lib = { workspace = true }
 itertools = { workspace = true }
+figment = { workspace = true }
+tokio = { workspace = true }
 
 [features]
 default = []

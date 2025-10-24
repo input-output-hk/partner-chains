@@ -7538,6 +7538,7 @@ dependencies = [
  "authority-selection-inherents",
  "blockfrost-openapi",
  "cardano-serialization-lib",
+ "figment",
  "futures",
  "itertools 0.14.0",
  "log",
@@ -7552,6 +7553,7 @@ dependencies = [
  "sp-partner-chains-bridge",
  "sp-timestamp",
  "thiserror 2.0.16",
+ "tokio",
  "ureq 3.1.2",
  "url",
 ]

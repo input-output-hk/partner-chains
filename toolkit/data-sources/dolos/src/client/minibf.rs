@@ -174,7 +174,7 @@ impl MiniBFApi for MiniBFClient {
 		self.paginated_request_all(&format!("pools/{pool_id}/history")).await
 	}
 	async fn pools_extended(&self) -> Result<Vec<PoolListExtendedInner>, String> {
-		self.paginated_request_all("/pools/extended").await
+		self.paginated_request_all("pools/extended").await
 	}
 
 	async fn scripts_datum_hash(&self, datum_hash: &str) -> Result<Vec<serde_json::Value>, String> {
