@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["AuthoritySelectionDataSourceImpl","GovernedMapDataSourceImpl","McHashDataSourceImpl","SidechainRpcDataSourceImpl","StakeDistributionDataSourceImpl","TokenBridgeDataSourceImpl"]};
+window.SIDEBAR_ITEMS = {"enum":["DataSourceError"],"fn":["get_connection_from_env"],"mod":["client"],"struct":["AuthoritySelectionDataSourceImpl","ConnectionConfig","GovernedMapDataSourceImpl","McHashDataSourceImpl","SidechainRpcDataSourceImpl","StakeDistributionDataSourceImpl","TokenBridgeDataSourceImpl"]};
