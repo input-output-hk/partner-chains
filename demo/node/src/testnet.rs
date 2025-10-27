@@ -5,7 +5,7 @@ use partner_chains_demo_runtime::{
 	RuntimeGenesisConfig, SessionCommitteeManagementConfig, SessionConfig, SidechainConfig,
 	SudoConfig, SystemConfig, TestHelperPalletConfig,
 };
-use sc_service::ChainType;
+use sc_service::{ChainType, Properties};
 use sidechain_domain::*;
 use sidechain_slots::SlotsPerEpoch;
 use sp_core::bytes::from_hex;
@@ -61,6 +61,13 @@ pub fn development_config() -> Result<ChainSpec, envy::Error> {
 			],
 			true,
 		)?)
+		.with_properties({
+			let mut properties = Properties::new();
+			properties.insert("tokenSymbol".into(), "UNIT".into());
+			properties.insert("tokenDecimals".into(), 12.into());
+			properties.insert("ss58Format".into(), 42.into());
+			properties
+		})
 		.build())
 }
 
@@ -156,6 +163,13 @@ pub fn local_testnet_config() -> Result<ChainSpec, envy::Error> {
 			testnet_endowed_accounts(),
 			true,
 		)?)
+		.with_properties({
+			let mut properties = Properties::new();
+			properties.insert("tokenSymbol".into(), "UNIT".into());
+			properties.insert("tokenDecimals".into(), 12.into());
+			properties.insert("ss58Format".into(), 42.into());
+			properties
+		})
 		.build())
 }
 

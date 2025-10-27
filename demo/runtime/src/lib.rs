@@ -298,10 +298,8 @@ impl pallet_timestamp::Config for Runtime {
 /// Existential deposit.
 pub const EXISTENTIAL_DEPOSIT: u128 = 500;
 pub const UNITS: Balance = 1_000_000_000_000;
-pub const CENTS: Balance = UNITS / 30_000;
-pub const MILLICENTS: Balance = CENTS / 1_000;
 pub const fn deposit(items: u32, bytes: u32) -> Balance {
-	items as Balance * 2_000 * CENTS + (bytes as Balance) * 100 * MILLICENTS
+	items as Balance * UNITS + (bytes as Balance) * UNITS / 10
 }
 
 impl pallet_balances::Config for Runtime {

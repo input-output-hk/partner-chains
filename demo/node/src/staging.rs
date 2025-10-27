@@ -6,7 +6,7 @@ use partner_chains_demo_runtime::{
 	RuntimeGenesisConfig, SessionCommitteeManagementConfig, SessionConfig, SidechainConfig,
 	SudoConfig, SystemConfig, TestHelperPalletConfig,
 };
-use sc_service::ChainType;
+use sc_service::{ChainType, Properties};
 use sidechain_domain::*;
 use sp_core::bytes::from_hex;
 use sp_core::{ed25519, sr25519};
@@ -105,6 +105,13 @@ pub fn staging_config() -> Result<ChainSpec, envy::Error> {
 			staging_endowed_accounts(),
 			true,
 		)?)
+		.with_properties({
+			let mut properties = Properties::new();
+			properties.insert("tokenSymbol".into(), "UNIT".into());
+			properties.insert("tokenDecimals".into(), 12.into());
+			properties.insert("ss58Format".into(), 42.into());
+			properties
+		})
 		.build())
 }
 
