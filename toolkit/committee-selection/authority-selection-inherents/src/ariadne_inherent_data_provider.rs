@@ -205,9 +205,9 @@ mod tests {
 			&client(next_unset_epoch_number),
 			sc_epoch_duration_millis(),
 			&epoch_config(),
+			H256::zero(),
 			// This is the timestamp that will be used to calculate current_epoch_number
 			TIMESTAMP,
-			H256::zero(),
 			&MockAuthoritySelectionDataSource::default(),
 			mc_reference_epoch,
 		)
@@ -228,9 +228,9 @@ mod tests {
 			&client(next_unset_epoch_number),
 			sc_epoch_duration_millis(),
 			&epoch_config(),
+			H256::zero(),
 			// This is the timestamp that will be used to calculate current_epoch_number
 			TIMESTAMP,
-			H256::zero(),
 			&MockAuthoritySelectionDataSource::default()
 				.with_permissioned_candidates(vec![None, None, None, None, None])
 				.with_num_permissioned_candidates(3),
@@ -253,9 +253,9 @@ mod tests {
 			&client(next_unset_epoch_number),
 			sc_epoch_duration_millis(),
 			&epoch_config(),
+			H256::zero(),
 			// This is the timestamp that will be used to calculate current_epoch_number
 			TIMESTAMP,
-			H256::zero(),
 			&MockAuthoritySelectionDataSource::default()
 				.with_permissioned_candidates(vec![None, None, None, None, None])
 				.with_num_permissioned_candidates(0),
