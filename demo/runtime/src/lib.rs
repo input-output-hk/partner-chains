@@ -15,8 +15,11 @@ use authority_selection_inherents::{
 	AuthoritySelectionInputs, CommitteeMember, PermissionedCandidateDataError,
 	RegistrationDataError, StakeError, select_authorities, validate_permissioned_candidate_data,
 };
+use frame_support::dynamic_params::{dynamic_pallet_params, dynamic_params};
 use frame_support::genesis_builder_helper::{build_state, get_preset};
 use frame_support::inherent::ProvideInherent;
+use frame_support::traits::LinearStoragePrice;
+use frame_support::traits::fungible::HoldConsideration;
 use frame_support::weights::constants::RocksDbWeight as RuntimeDbWeight;
 use frame_support::{
 	BoundedVec, construct_runtime, parameter_types,
@@ -294,6 +297,10 @@ impl pallet_timestamp::Config for Runtime {
 
 /// Existential deposit.
 pub const EXISTENTIAL_DEPOSIT: u128 = 500;
+pub const UNITS: Balance = 1_000_000_000_000;
+pub const fn deposit(items: u32, bytes: u32) -> Balance {
+	items as Balance * UNITS + (bytes as Balance) * UNITS / 10
+}
 
 impl pallet_balances::Config for Runtime {
 	type MaxLocks = ConstU32<50>;
@@ -648,6 +655,71 @@ impl pallet_partner_chains_bridge::Config for Runtime {
 	type BenchmarkHelper = ();
 }
 
+impl pallet_parameters::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeParameters = RuntimeParameters;
+	type AdminOrigin = EnsureRoot<AccountId>;
+	type WeightInfo = ();
+}
+
+parameter_types! {
+	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
+		BlockWeights::get().max_block;
+	pub const MaxScheduledPerBlock: u32 = 50;
+}
+
+impl pallet_scheduler::Config for Runtime {
+	type RuntimeOrigin = RuntimeOrigin;
+	type RuntimeEvent = RuntimeEvent;
+	type PalletsOrigin = OriginCaller;
+	type RuntimeCall = RuntimeCall;
+	type MaximumWeight = MaximumSchedulerWeight;
+	type ScheduleOrigin = EnsureRoot<AccountId>;
+	type MaxScheduledPerBlock = MaxScheduledPerBlock;
+	type WeightInfo = ();
+	type OriginPrivilegeCmp = frame_support::traits::EqualPrivilegeOnly;
+	type Preimages = Preimage;
+	type BlockNumberProvider = frame_system::Pallet<Runtime>;
+}
+
+parameter_types! {
+	pub const PreimageHoldReason: RuntimeHoldReason = RuntimeHoldReason::Preimage(pallet_preimage::HoldReason::Preimage);
+}
+
+impl pallet_preimage::Config for Runtime {
+	type WeightInfo = ();
+	type RuntimeEvent = RuntimeEvent;
+	type Currency = Balances;
+	type ManagerOrigin = EnsureRoot<AccountId>;
+	type Consideration = HoldConsideration<
+		AccountId,
+		Balances,
+		PreimageHoldReason,
+		LinearStoragePrice<
+			dynamic_params::preimage::BaseDeposit,
+			dynamic_params::preimage::ByteDeposit,
+			Balance,
+		>,
+	>;
+}
+
+#[dynamic_params(RuntimeParameters, pallet_parameters::Parameters::<Runtime>)]
+pub mod dynamic_params {
+	use super::*;
+
+	#[dynamic_pallet_params]
+	#[codec(index = 0)]
+	pub mod preimage {
+		use super::*;
+
+		#[codec(index = 0)]
+		pub static BaseDeposit: Balance = deposit(2, 64);
+
+		#[codec(index = 1)]
+		pub static ByteDeposit: Balance = deposit(0, 1);
+	}
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub struct Runtime {
@@ -674,6 +746,9 @@ construct_runtime!(
 		Session: pallet_session exclude_parts { Call },
 		GovernedMap: pallet_governed_map,
 		Bridge: pallet_partner_chains_bridge,
+		Parameters: pallet_parameters,
+		Preimage: pallet_preimage,
+		Scheduler: pallet_scheduler,
 		TestHelperPallet: crate::test_helper_pallet,
 	}
 );

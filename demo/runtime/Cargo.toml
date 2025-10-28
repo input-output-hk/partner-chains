@@ -57,6 +57,10 @@ sp-storage = { workspace = true }
 sp-weights = { workspace = true }
 authority-selection-inherents = { workspace = true }
 
+pallet-scheduler = { workspace = true }
+pallet-preimage = { workspace = true }
+pallet-parameters = { workspace = true }
+
 hex-literal = { workspace = true }
 
 # Used for the node template's RPCs
