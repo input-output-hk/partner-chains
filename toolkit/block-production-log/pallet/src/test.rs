@@ -6,7 +6,6 @@ use frame_support::{
 };
 use mock::*;
 use sp_block_production_log::{INHERENT_IDENTIFIER, InherentError};
-use sp_consensus_slots::Slot;
 
 fn make_id(i: u64) -> [u8; 32] {
 	let mut id = [0u8; 32];
@@ -17,38 +16,35 @@ fn make_id(i: u64) -> [u8; 32] {
 #[test]
 fn first_append_should_succeed() {
 	new_test_ext().execute_with(|| {
-		let call = Call::<Test>::append { block_producer_id: make_id(1) };
+		let call = Call::<Test>::append { moment: 1001000, block_producer_id: make_id(1) };
 		assert_ok!(call.dispatch_bypass_filter(RuntimeOrigin::none()));
 
-		assert_eq!(CurrentProducer::<Test>::get(), Some(make_id(1)));
+		assert_eq!(CurrentProducer::<Test>::get(), Some((1001000, make_id(1))));
 
 		// Log should not be appended to until block finalization
 		assert!(Log::<Test>::get().is_empty());
 
 		Pallet::<Test>::on_finalize(System::block_number());
 
-		assert_eq!(Log::<Test>::get().to_vec(), vec![(Slot::from(1001000), make_id(1))]);
+		assert_eq!(Log::<Test>::get().to_vec(), vec![(1001000, make_id(1))]);
 	})
 }
 
 #[test]
 fn append_to_end_of_log() {
 	new_test_ext().execute_with(|| {
-		Log::<Test>::put(vec![(Slot::from(100), make_id(1))]);
+		Log::<Test>::put(vec![(100, make_id(1))]);
 		System::set_block_number(1001);
 		LatestBlock::<Test>::put(1000);
 
-		let call = Call::<Test>::append { block_producer_id: make_id(2) };
+		let call = Call::<Test>::append { moment: 1001000, block_producer_id: make_id(2) };
 		assert_ok!(call.dispatch_bypass_filter(RuntimeOrigin::none()));
 		assert_eq!(LatestBlock::<Test>::get(), Some(1001));
-		assert_eq!(CurrentProducer::<Test>::get(), Some(make_id(2)));
+		assert_eq!(CurrentProducer::<Test>::get(), Some((1001000, make_id(2))));
 
 		Pallet::<Test>::on_finalize(System::block_number());
 
-		assert_eq!(
-			Log::<Test>::get().to_vec(),
-			vec![(Slot::from(100), make_id(1)), (Slot::from(1001000), make_id(2))]
-		);
+		assert_eq!(Log::<Test>::get().to_vec(), vec![(100, make_id(1)), (1001000, make_id(2))]);
 	})
 }
 
@@ -57,7 +53,7 @@ fn can_not_append_item_twice_in_the_same_block() {
 	new_test_ext().execute_with(|| {
 		System::set_block_number(1011);
 
-		let call = Call::<Test>::append { block_producer_id: make_id(2) };
+		let call = Call::<Test>::append { moment: 1000, block_producer_id: make_id(2) };
 		call.clone().dispatch_bypass_filter(RuntimeOrigin::none()).unwrap();
 		assert_err!(
 			call.dispatch_bypass_filter(RuntimeOrigin::none()),
@@ -70,9 +66,9 @@ fn can_not_append_item_twice_in_the_same_block() {
 fn can_not_append_twice_for_same_block_even_after_take_full_prefix() {
 	new_test_ext().execute_with(|| {
 		System::set_block_number(1001);
-		let call = Call::<Test>::append { block_producer_id: make_id(2) };
+		let call = Call::<Test>::append { moment: 1000, block_producer_id: make_id(2) };
 		call.clone().dispatch_bypass_filter(RuntimeOrigin::none()).unwrap();
-		BlockProductionLog::take_prefix(&Slot::from(100));
+		BlockProductionLog::take_prefix(&100);
 		assert_err!(
 			call.dispatch_bypass_filter(RuntimeOrigin::none()),
 			Error::<Test>::BlockNumberNotIncreased
@@ -116,57 +112,37 @@ fn inherent_is_required_if_data_is_not_present_but_pallet_is_initialized() {
 fn take_prefix() {
 	new_test_ext().execute_with(|| {
 		Log::<Test>::put(vec![
-			(Slot::from(100), make_id(1)),
-			(Slot::from(101), make_id(2)),
-			(Slot::from(102), make_id(1)),
-			(Slot::from(105), make_id(2)),
-			(Slot::from(107), make_id(1)),
+			(100, make_id(1)),
+			(101, make_id(2)),
+			(102, make_id(1)),
+			(105, make_id(2)),
+			(107, make_id(1)),
 		]);
 
-		let prefix = BlockProductionLog::take_prefix(&Slot::from(104));
+		let prefix = BlockProductionLog::take_prefix(&104);
 		let left_in_storage = Log::<Test>::get().to_vec();
 
-		assert_eq!(
-			prefix.to_vec(),
-			vec![
-				(Slot::from(100), make_id(1)),
-				(Slot::from(101), make_id(2)),
-				(Slot::from(102), make_id(1)),
-			]
-		);
-		assert_eq!(
-			left_in_storage.to_vec(),
-			vec![(Slot::from(105), make_id(2)), (Slot::from(107), make_id(1)),]
-		);
+		assert_eq!(prefix.to_vec(), vec![(100, make_id(1)), (101, make_id(2)), (102, make_id(1)),]);
+		assert_eq!(left_in_storage.to_vec(), vec![(105, make_id(2)), (107, make_id(1)),]);
 	})
 }
 
 #[test]
-fn take_prefix_when_there_are_two_entries_for_the_same_slot() {
+fn take_prefix_when_there_are_two_entries_for_the_same_moment() {
 	new_test_ext().execute_with(|| {
 		Log::<Test>::put(vec![
-			(Slot::from(100), make_id(1)),
-			(Slot::from(104), make_id(2)),
-			(Slot::from(104), make_id(1)),
-			(Slot::from(105), make_id(2)),
-			(Slot::from(107), make_id(1)),
+			(100, make_id(1)),
+			(104, make_id(2)),
+			(104, make_id(1)),
+			(105, make_id(2)),
+			(107, make_id(1)),
 		]);
 
-		let prefix = BlockProductionLog::take_prefix(&Slot::from(104));
+		let prefix = BlockProductionLog::take_prefix(&104);
 		let left_in_storage = Log::<Test>::get().to_vec();
 
-		assert_eq!(
-			prefix.to_vec(),
-			vec![
-				(Slot::from(100), make_id(1)),
-				(Slot::from(104), make_id(2)),
-				(Slot::from(104), make_id(1)),
-			]
-		);
-		assert_eq!(
-			left_in_storage.to_vec(),
-			vec![(Slot::from(105), make_id(2)), (Slot::from(107), make_id(1)),]
-		);
+		assert_eq!(prefix.to_vec(), vec![(100, make_id(1)), (104, make_id(2)), (104, make_id(1)),]);
+		assert_eq!(left_in_storage.to_vec(), vec![(105, make_id(2)), (107, make_id(1)),]);
 	})
 }
 
@@ -174,21 +150,18 @@ fn take_prefix_when_there_are_two_entries_for_the_same_slot() {
 fn drop_prefix() {
 	new_test_ext().execute_with(|| {
 		Log::<Test>::put(vec![
-			(Slot::from(100), make_id(0)),
-			(Slot::from(101), make_id(1)),
-			(Slot::from(102), make_id(2)),
-			(Slot::from(103), make_id(3)),
-			(Slot::from(104), make_id(4)),
+			(100, make_id(0)),
+			(101, make_id(1)),
+			(102, make_id(2)),
+			(103, make_id(3)),
+			(104, make_id(4)),
 		]);
 
-		BlockProductionLog::drop_prefix(&Slot::from(102));
+		BlockProductionLog::drop_prefix(&102);
 
 		let left_in_storage = Log::<Test>::get().to_vec();
 
-		assert_eq!(
-			left_in_storage.to_vec(),
-			vec![(Slot::from(103), make_id(3)), (Slot::from(104), make_id(4)),]
-		);
+		assert_eq!(left_in_storage.to_vec(), vec![(103, make_id(3)), (104, make_id(4)),]);
 	})
 }
 
@@ -196,22 +169,18 @@ fn drop_prefix() {
 fn peek_prefix() {
 	new_test_ext().execute_with(|| {
 		Log::<Test>::put(vec![
-			(Slot::from(100), make_id(0)),
-			(Slot::from(101), make_id(1)),
-			(Slot::from(102), make_id(2)),
-			(Slot::from(103), make_id(3)),
-			(Slot::from(104), make_id(4)),
+			(100, make_id(0)),
+			(101, make_id(1)),
+			(102, make_id(2)),
+			(103, make_id(3)),
+			(104, make_id(4)),
 		]);
 
-		let prefix = BlockProductionLog::peek_prefix(Slot::from(102));
+		let prefix = BlockProductionLog::peek_prefix(102);
 
 		assert_eq!(
 			prefix.collect::<Vec<_>>(),
-			vec![
-				(Slot::from(100), make_id(0)),
-				(Slot::from(101), make_id(1)),
-				(Slot::from(102), make_id(2)),
-			]
+			vec![(100, make_id(0)), (101, make_id(1)), (102, make_id(2)),]
 		);
 	})
 }

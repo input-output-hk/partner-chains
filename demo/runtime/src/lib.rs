@@ -514,10 +514,7 @@ impl pallet_block_production_log::Config for Runtime {
 	type BlockProducerId = BlockAuthor;
 	type WeightInfo = pallet_block_production_log::weights::SubstrateWeight<Runtime>;
 
-	fn current_slot() -> sp_consensus_slots::Slot {
-		let slot: u64 = pallet_aura::CurrentSlot::<Runtime>::get().into();
-		sp_consensus_slots::Slot::from(slot)
-	}
+	type Moment = Slot;
 
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = PalletBlockProductionLogBenchmarkHelper;
@@ -1135,9 +1132,10 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl sp_block_production_log::BlockProductionLogApi<Block, CommitteeMember<CrossChainPublic, SessionKeys>>  for Runtime {
-		fn get_author(slot: Slot) -> Option<CommitteeMember<CrossChainPublic, SessionKeys>> {
-			 SessionCommitteeManagement::get_current_authority_round_robin(*slot as usize)
+	impl sp_block_production_log::BlockProductionLogApi<Block, BlockAuthor, Slot>  for Runtime {
+		fn get_author(slot: &Slot) -> Option<BlockAuthor> {
+			SessionCommitteeManagement::get_current_authority_round_robin(u64::from(*slot) as usize)
+				.map(Into::into)
 		}
 	}
 
