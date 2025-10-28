@@ -1,7 +1,7 @@
 {
-    "deployment_mc_epoch": 958,
-    "initial_pc_epoch": 4859579,
-    "deployment_version": "v1.7.0-rc2",
+    "deployment_mc_epoch": 1096,
+    "initial_pc_epoch": 4892540,
+    "deployment_version": "v1.8.1-rc2",
     "test_environment": "staging",
     "nodes_config": {
         "nodes": {

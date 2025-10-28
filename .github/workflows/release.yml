@@ -256,6 +256,7 @@ jobs:
           decrypt: true
           deployment_mc_epoch: $DEPLOYMENT_MC_EPOCH
           threads: 1
+          markers: staging
 
   wait-for-n1-epoch:
     if: always() && inputs.no-tests == false && needs.partner-chain-ready.result == 'success'

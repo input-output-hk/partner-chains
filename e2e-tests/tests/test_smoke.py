@@ -5,8 +5,9 @@ from config.api_config import ApiConfig
 import logging as logger
 
 
-@mark.smoke
-@mark.ci
+pytestmark = [mark.smoke, mark.ci, mark.staging]
+
+
 class TestSmoke:
     @mark.test_key('ETCM-6992')
     def test_block_producing(self, api: BlockchainApi, config: ApiConfig):

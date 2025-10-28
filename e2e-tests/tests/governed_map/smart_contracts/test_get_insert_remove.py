@@ -2,9 +2,10 @@ from pytest import fixture, mark
 from src.blockchain_api import BlockchainApi
 from tests.governed_map.conftest import string_to_hex_bytes, hex_bytes_to_string
 
-pytestmark = [mark.xdist_group(name="governance_action")]
+pytestmark = [mark.xdist_group(name="governance_action"), mark.staging]
 
 
+@mark.staging
 class TestGet:
     def test_insert_returncode(self, insert_data):
         assert 0 == insert_data.returncode
@@ -34,6 +35,7 @@ class TestGet:
         assert expected_value == result.json[random_key], f"Value mismatch for key {random_key} in governed map list"
 
 
+@mark.staging
 class TestInsertTwice:
     @fixture(scope="class")
     def insert_twice_with_the_same_value(self, api: BlockchainApi, insert_data, genesis_utxo, random_key, random_value, payment_key):
@@ -75,6 +77,7 @@ class TestInsertTwice:
         assert random_value == value
 
 
+@mark.staging
 class TestRemove:
     @fixture(scope="class")
     def remove_data(self, api: BlockchainApi, insert_data, genesis_utxo, random_key, payment_key):

@@ -1,12 +1,11 @@
 from pytest import mark, skip
 from src.blockchain_api import BlockchainApi
-from config.api_config import ApiConfig
 import logging
 import re
 
+pytestmark = [mark.rpc, mark.ci, mark.staging]
 
-@mark.rpc
-@mark.ci
+
 class TestRpc:
     @mark.test_key('ETCM-6994')
     def test_get_status(self, api: BlockchainApi):

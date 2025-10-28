@@ -11,6 +11,7 @@ on:
         options:
         - devnet
         - ci
+        - staging
       keyword:
         description: 'Run tests by keyword (-k)'
         type: string

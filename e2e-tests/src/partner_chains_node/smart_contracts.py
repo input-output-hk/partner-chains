@@ -223,7 +223,7 @@ class SmartContracts:
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
             response = self.run_command.exec(cmd)
-            return response
+            return parse_json_response(response)
 
     class Reserve:
         def __init__(self, parent: "SmartContracts"):

@@ -1,18 +1,19 @@
 {
   "addresses": {
-    "CommitteeCandidateValidator": "addr_test1wrqapxw2jtkmprufunmnjn668rklltdc2jfnc8svqeu536srk4ym0",
-    "DParameterValidator": "addr_test1wpa4hesf3q4k4zmvvtgexfw5wph9902t3mje06vf9kaqc9s9u79rv",
-    "GovernedMapValidator": "addr_test1wqn8lm63fj4l8s9jjt85pquwwc0pwqku5zyhmddjn3zckpgd59m47",
-    "IlliquidCirculationSupplyValidator": "addr_test1wqv2h6s4mry2h5r6a2lkkg9c6wd8cmkvsdtzjtt3faay9pqsvqwm2",
-    "PermissionedCandidatesValidator": "addr_test1wrmqwh7gg90aqkpnkvllvs9kuyws4vu2qgcqq4wveenns7qm96rd0",
-    "ReserveValidator": "addr_test1wpfw25d7gv0hteukgjtew72gnm64ujrmvujx3xjfgs3k4uga0mlcx",
-    "VersionOracleValidator": "addr_test1wz2mrjcstanm9ewkqftkws8cw8fzpdcnxzk6aq5u49t36wgr9nxuz"
+    "CommitteeCandidateValidator": "addr_test1wzw0r8pnxphe7yez57jjkhx82380gm0dkste3jknxp9p59q76y5mw",
+    "DParameterValidator": "addr_test1wzx8ama7mwf735twf5g3y082djwhckcafe3fwkkrrqnwu0sld4ney",
+    "GovernedMapValidator": "addr_test1wq8cmxx9xhcrkl5ytkt33dc2x00dxq765cedmvsasq7pmzgqz947j",
+    "IlliquidCirculationSupplyValidator": "addr_test1wrs9wlqdx42eq2zhdujccc8dxkeh2kwvthdvfen4h6dlj4qrpf6n7",
+    "PermissionedCandidatesValidator": "addr_test1wzv74sh49u9al5js285u7rl9ff55dg6jcp683u3l8gv9z9svcd8l3",
+    "ReserveValidator": "addr_test1wz8vd5ah5j3vfp5y66xwqwszrn2uvk2sy6svt3xt43l54xq4m0anm",
+    "VersionOracleValidator": "addr_test1wpf8nudnhlthpl58endfv0j60vr7flnpaetkq3qfsyqm64g7mxjwc"
   },
   "policyIds": {
-    "DParameter": "0x01c846cac21d5a99df626c7303d4e4bd3c9fca8c8483f05d47b4f2ca",
-    "GovernedMap": "0xbc9649a6ae88c3af77cd40c194a9b86127a8baee6c0046c13809a0c3",
-    "PermissionedCandidates": "0xdad0a2d5a3dac2d293c17e95e8a43fa35fc1b2dcb2b6bb4e0b038583",
-    "ReserveAuth": "0xf23ed687c3324f4a4d888e8dcf6acd59bcf07e93a23c3fdf997afe1c",
-    "VersionOracle": "0x95bd5463b8acfe1a13d175ae35e89fa48e361102eca5ce24182d5446"
+    "DParameter": "0xb9765c10e7567b40a80724f9ac2e7552e1b1b1cfef070bbaa021de28",
+    "GovernedMap": "0xe8a7405a1e7f770b86f1666f8f4a7121b58d5d3adb59d9dcac21393b",
+    "IlliquidCirculationSupplyAuthToken": "0xd65829405833c5cd6da72a7e985bd1dd98ca41fd2cf6af50ba5122f1",
+    "PermissionedCandidates": "0x19f5de5576aade07820ecfcd8925f8dcb9122c03f8b8268aefcbcbe8",
+    "ReserveAuth": "0x7bd1fe49b5c7b103797a2442813ccaaacc88f3d7b20843025caa3748",
+    "VersionOracle": "0x615f502a824b732638a50081d32b3592fa0285e0b93b98f471072812"
   }
 }
