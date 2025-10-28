@@ -62,6 +62,11 @@ fn select_candidates<
 			validators.len(),
 			sidechain_epoch
 		);
+		info!(
+			"JAZDA {} {}",
+			input.d_parameter.num_permissioned_candidates,
+			input.d_parameter.num_registered_candidates
+		);
 		Some(validators.into_iter().map(|member| member.into()).collect())
 	} else {
 		warn!("🚫 Failed to select validators for epoch {}", sidechain_epoch);

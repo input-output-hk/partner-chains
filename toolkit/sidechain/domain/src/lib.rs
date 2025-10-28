@@ -1166,7 +1166,7 @@ impl From<GrandpaPublicKey> for CandidateKey {
 	Hash,
 )]
 #[cfg_attr(feature = "serde", derive(Serialize))]
-/// Parameter controlling the number and proportion of registered and permissioned candidates
+/// Parameter controlling the number and proportion of registered, permissioned, and native stake candidates
 /// selected into a Partner Chain committee, used by the Ariadne family of selection algorithms.
 ///
 /// The core idea behind the D-Param is to enable a Partner Chain to bootstrap its operation by
@@ -1178,12 +1178,18 @@ pub struct DParameter {
 	pub num_permissioned_candidates: u16,
 	/// Expected number of registered candidates selected for a committee
 	pub num_registered_candidates: u16,
+	/// Expected number of native stake candidates selected for a committee
+	pub num_native_stake_candidates: u16,
 }
 
 impl DParameter {
 	/// Creates a new [DParameter] from member values
-	pub fn new(num_permissioned_candidates: u16, num_registered_candidates: u16) -> Self {
-		Self { num_permissioned_candidates, num_registered_candidates }
+	pub fn new(
+		num_permissioned_candidates: u16,
+		num_registered_candidates: u16,
+		num_native_stake_candidates: u16,
+	) -> Self {
+		Self { num_permissioned_candidates, num_registered_candidates, num_native_stake_candidates }
 	}
 }
 
