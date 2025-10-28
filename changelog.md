@@ -12,6 +12,11 @@ Pallet Session new parameters should be: `type KeyDeposit = ();` and `type Curre
 * Updated partner-chains-smart-contracts (raw-scripts) dependency to v8.2.0. Not breaking.
 * `SessionManager` and `ShouldEndSession` implementations of `pallet-session-validator-management` rotate one additional
 session in order to make `pallet_session` use authorities with less delay.
+* Removed use of slots in `authority-selection-inherents`. `AriadneInherentDataProvider::new` now uses current timestamp
+and epoch duration to calculate current epoch.
+Since the block timestamp is not passed to the inherent data provider creation logic by Aura, the exact timestamp is not
+available during block verification, but it can be approximated based on the slot number. See the example impelementation
+in the demo node crate.
 
 ## Removed
 
