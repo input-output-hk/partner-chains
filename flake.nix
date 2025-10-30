@@ -13,18 +13,13 @@
 
     flake-utils.url = "github:numtide/flake-utils";
 
-    cardano-node = {
-      url = "github:IntersectMBO/cardano-node/10.1.4";
-      flake = false;
-    };
-
-    flake-compat = {
-      url = "github:input-output-hk/flake-compat/fixes";
-      flake = false;
+    n2c = {
+      url = "github:nlewo/nix2container";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
-  outputs = { self, nixpkgs, crane, fenix, flake-utils, ... }:
+  outputs = { self, nixpkgs, crane, fenix, flake-utils, n2c, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs {
@@ -90,6 +85,7 @@
           buildInputs = with pkgs; [
             openssl
             libclang.lib
+            stdenv.cc.cc.lib
           ] ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [
             pkgs.rust-jemalloc-sys-unprefixed
           ] ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
@@ -101,6 +97,7 @@
             pkg-config
             protobuf
             llvmPackages.lld
+            autoPatchelfHook
           ];
 
           doCheck = false;
@@ -136,10 +133,6 @@
 
           # Git commit hash for partner-chains CLI --version flag
           SUBSTRATE_CLI_GIT_COMMIT_HASH = "dev"; # self.dirtyShortRev or self.shortRev;
-          
-          postFixup = pkgs.lib.optionalString pkgs.stdenv.hostPlatform.isLinux ''
-            patchelf --set-rpath "${pkgs.rocksdb}/lib:${pkgs.stdenv.cc.cc.lib}/lib" $out/bin/partner-chains-demo-node
-          '';
         });
 
         cargoTest = craneLib.cargoTest (commonArgs // {
@@ -198,14 +191,19 @@
         packages = {
           inherit partner-chains-demo-node;
           default = partner-chains-demo-node;
-          ci = pkgs.runCommand "ci" {
-            checks = builtins.attrValues self.checks.${system};
-          } ''
-            mkdir -p $out
-            for i in $checks; do
-              ln -s $i $out/$(basename $i | cut -d- -f2-)
-            done
-          '';
+          oci-image = n2c.packages.${system}.nix2container.buildImage {
+            name = "partner-chains-demo-node";
+            config = {
+              Entrypoint = [ "${partner-chains-demo-node}/bin/partner-chains-demo-node" ];
+              Expose = [
+                "30333/tcp"
+                "9615/tcp"
+                "9933/tcp"
+                "9944/tcp"
+              ];
+              Volumes = { "/data" = {}; };
+            };
+          };
         };
 
         devShells.default = devShell;
