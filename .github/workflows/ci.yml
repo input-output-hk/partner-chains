@@ -123,10 +123,10 @@ jobs:
           fi
 
           echo "[2/2] cargo fetch --locked..."
-          if ! nix develop -c bash -lc "cargo fetch --locked -q" 2> >(grep -v -E 'untrusted substituter|trusted-public-keys' >&2); then
+          if ! nix develop -c bash -c "cargo fetch --locked -q" 2> >(grep -v -E 'untrusted substituter|trusted-public-keys' >&2); then
             echo "cargo fetch failed → clearing registry/src + git/checkouts, then re-fetching"
             rm -rf "$CARGO_HOME"/registry/src/* "$CARGO_HOME"/git/checkouts/* || true
-            nix develop -c cargo fetch --locked 2> >(grep -v -E 'untrusted substituter|trusted-public-keys' >&2)
+            nix develop -c bash -c "cargo fetch --locked" 2> >(grep -v -E 'untrusted substituter|trusted-public-keys' >&2)
             REASONS+=("re-fetched dependencies")
           fi
 
@@ -337,10 +337,10 @@ jobs:
           fi
 
           echo "[2/2] cargo fetch --locked..."
-          if ! nix develop -c bash -lc "cargo fetch --locked -q" 2> >(grep -v -E 'untrusted substituter|trusted-public-keys' >&2); then
+          if ! nix develop -c bash -c "cargo fetch --locked -q" 2> >(grep -v -E 'untrusted substituter|trusted-public-keys' >&2); then
             echo "cargo fetch failed → clearing registry/src + git/checkouts, then re-fetching"
             rm -rf "$CARGO_HOME"/registry/src/* "$CARGO_HOME"/git/checkouts/* || true
-            nix develop -c cargo fetch --locked 2> >(grep -v -E 'untrusted substituter|trusted-public-keys' >&2)
+            nix develop -c bash -c "cargo fetch --locked" 2> >(grep -v -E 'untrusted substituter|trusted-public-keys' >&2)
             REASONS+=("re-fetched dependencies")
           fi
 
@@ -597,10 +597,10 @@ jobs:
           fi
 
           echo "[2/2] cargo fetch --locked..."
-          if ! nix develop -c bash -lc "cargo fetch --locked -q" 2> >(grep -v -E 'untrusted substituter|trusted-public-keys' >&2); then
+          if ! nix develop -c bash -c "cargo fetch --locked -q" 2> >(grep -v -E 'untrusted substituter|trusted-public-keys' >&2); then
             echo "cargo fetch failed → clearing registry/src + git/checkouts, then re-fetching"
             rm -rf "$CARGO_HOME"/registry/src/* "$CARGO_HOME"/git/checkouts/* || true
-            nix develop -c cargo fetch --locked 2> >(grep -v -E 'untrusted substituter|trusted-public-keys' >&2)
+            nix develop -c bash -c "cargo fetch --locked" 2> >(grep -v -E 'untrusted substituter|trusted-public-keys' >&2)
             REASONS+=("re-fetched dependencies")
           fi
 

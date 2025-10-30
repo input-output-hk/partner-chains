@@ -2,7 +2,6 @@
 #[cfg(feature = "try-runtime")]
 extern crate alloc;
 use frame_support::traits::UncheckedOnRuntimeUpgrade;
-use sidechain_domain::ScEpochNumber;
 #[cfg(feature = "try-runtime")]
 use {
 	alloc::vec::Vec, parity_scale_codec::Encode, sp_session_validator_management::CommitteeMember,
