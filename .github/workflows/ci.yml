@@ -426,7 +426,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        markers: [ci, smoke, rpc, reserve, governed_map, delegator_rewards, ariadne, wizards]
+        markers: [ci, smoke, rpc, reserve, governed_map, delegator_rewards, ariadne, wizards, dolos]
     steps:
       - name: Checkout
         uses: actions/checkout@v4

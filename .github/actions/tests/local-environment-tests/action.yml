@@ -11,7 +11,7 @@ inputs:
     description: "PC Artifact Tag"
     required: true
   markers:
-    description: 'Run tests by markers (-m). Available markers: ci, smoke, rpc, reserve, governed_map, delegator_rewards, ariadne, wizards or full'
+    description: 'Run tests by markers (-m). Available markers: ci, smoke, rpc, reserve, governed_map, delegator_rewards, ariadne, wizards, dolos or full'
     required: true
 
 outputs: {}
@@ -42,6 +42,8 @@ runs:
         cd dev/local-environment
         if [ "${{ inputs.markers }}" = "wizards" ]; then
           bash setup.sh --non-interactive --postgres-password azMpOp4mTqhlKDmgCVQr --node-image ${{ inputs.image }} --tests -d 5
+        elif [ "${{ inputs.markers }}" = "dolos" ]; then
+          bash setup.sh --non-interactive --postgres-password azMpOp4mTqhlKDmgCVQr --node-image ${{ inputs.image }} --tests -d 6
         else
           bash setup.sh --non-interactive --postgres-password azMpOp4mTqhlKDmgCVQr --node-image ${{ inputs.image }} --tests
         fi

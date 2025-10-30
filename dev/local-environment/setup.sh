@@ -386,6 +386,8 @@ create_docker_compose() {
         cat ./modules/cardano.txt >> docker-compose.yml
         cat ./modules/ogmios.txt >> docker-compose.yml
         cat ./modules/dolos.txt >> docker-compose.yml
+        cat ./modules/partner-chains-nodes-dolos.txt >> docker-compose.yml
+        cat ./modules/partner-chains-setup.txt >> docker-compose.yml
         ;;
       0)
         echo -e "Including all services.\n"
