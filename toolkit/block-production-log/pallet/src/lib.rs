@@ -234,9 +234,9 @@ pub mod pallet {
 
 		/// Returns all entries up to `moment` (inclusive) from the log
 		pub fn peek_prefix(
-			moment: T::Moment,
+			moment: &T::Moment,
 		) -> impl Iterator<Item = (T::Moment, T::BlockProducerId)> {
-			Log::<T>::get().into_iter().take_while(move |(s, _)| s <= &moment)
+			Log::<T>::get().into_iter().take_while(move |(s, _)| s <= moment)
 		}
 
 		/// Removes all entries up to `moment` (inclusive) from the log
@@ -245,6 +245,25 @@ pub mod pallet {
 				let position = log.partition_point(|(s, _)| s <= moment);
 				log.drain(..position);
 			});
+		}
+	}
+}
+
+#[cfg(feature = "block-participation")]
+mod block_participation {
+	use pallet_block_participation::BlockParticipationProvider;
+
+	impl<T: crate::Config> BlockParticipationProvider<T::Moment, T::BlockProducerId>
+		for crate::Pallet<T>
+	{
+		fn blocks_to_process(
+			moment: &T::Moment,
+		) -> impl Iterator<Item = (T::Moment, T::BlockProducerId)> {
+			Self::peek_prefix(moment)
+		}
+
+		fn discard_processed_blocks(moment: &T::Moment) {
+			Self::drop_prefix(moment)
 		}
 	}
 }

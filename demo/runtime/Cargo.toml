@@ -73,7 +73,7 @@ frame-system-benchmarking = { workspace = true, optional = true }
 
 # Local Dependencies
 sp-block-production-log = { workspace = true }
-pallet-block-production-log = { workspace = true }
+pallet-block-production-log = { workspace = true, features = ["block-participation"] }
 sp-sidechain = { workspace = true }
 pallet-sidechain = { workspace = true }
 pallet-session-validator-management = { workspace = true }

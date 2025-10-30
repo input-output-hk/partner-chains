@@ -1,5 +1,7 @@
 use crate::inherent_data::{ProposalCIDP, VerifierCIDP};
-use crate::tests::mock::{test_client, test_create_inherent_data_config};
+use crate::tests::mock::{
+	block_participation_data, past_block_author, past_block_slot, test_create_inherent_data_config,
+};
 use crate::tests::runtime_api_mock;
 use crate::tests::runtime_api_mock::{TestApi, mock_header};
 use authority_selection_inherents::{
@@ -46,6 +48,7 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 		test_create_inherent_data_config(),
 		TestApi::new(ScEpochNumber(2))
 			.with_headers([(mock_header().hash(), mock_header())])
+			.with_pariticipation_data(vec![(past_block_slot(), past_block_author())])
 			.into(),
 		Arc::new(mc_hash_data_source),
 		Arc::new(MockAuthoritySelectionDataSource::default()),
@@ -114,7 +117,7 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 				&runtime_api_mock::TEST_TARGET_INHERENT_ID
 			)
 			.unwrap(),
-		Some(BlockProductionData::new(Slot::from(30), vec![]))
+		Some(block_participation_data())
 	);
 }
 
@@ -140,7 +143,9 @@ async fn block_verification_cidp_should_be_created_correctly() {
 
 	let verifier_cidp = VerifierCIDP::new(
 		create_inherent_data_config.clone(),
-		test_client(),
+		TestApi::new(ScEpochNumber(2))
+			.with_pariticipation_data(vec![(past_block_slot(), past_block_author())])
+			.into(),
 		Arc::new(mc_hash_data_source),
 		Arc::new(MockAuthoritySelectionDataSource::default()),
 		Arc::new(StakeDistributionDataSourceMock::new()),
@@ -195,6 +200,6 @@ async fn block_verification_cidp_should_be_created_correctly() {
 				&runtime_api_mock::TEST_TARGET_INHERENT_ID
 			)
 			.unwrap(),
-		Some(BlockProductionData::new(Slot::from(30), vec![]))
+		Some(block_participation_data())
 	);
 }

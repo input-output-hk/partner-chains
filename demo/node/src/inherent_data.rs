@@ -61,7 +61,7 @@ where
 			ScEpochNumber,
 		>,
 	T::Api: BlockProductionLogApi<Block, BlockAuthor, Slot>,
-	T::Api: BlockParticipationApi<Block, BlockAuthor>,
+	T::Api: BlockParticipationApi<Block, BlockAuthor, Slot>,
 	T::Api: GovernedMapIDPApi<Block>,
 	T::Api: TokenBridgeIDPRuntimeApi<Block>,
 {
@@ -71,7 +71,7 @@ where
 		McHashIDP,
 		AriadneIDP,
 		BlockAuthorInherentProvider<Slot, BlockAuthor>,
-		BlockParticipationInherentDataProvider<BlockAuthor, DelegatorKey>,
+		BlockParticipationInherentDataProvider<BlockAuthor, DelegatorKey, Slot>,
 		GovernedMapInherentDataProvider,
 		TokenBridgeInherentDataProvider<AccountId>,
 	);
@@ -122,7 +122,6 @@ where
 			parent_hash,
 			*slot,
 			mc_epoch_config,
-			config.sc_slot_config.slot_duration,
 		)
 		.await?;
 
@@ -184,7 +183,7 @@ where
 			ScEpochNumber,
 		>,
 	T::Api: BlockProductionLogApi<Block, BlockAuthor, Slot>,
-	T::Api: BlockParticipationApi<Block, BlockAuthor>,
+	T::Api: BlockParticipationApi<Block, BlockAuthor, Slot>,
 	T::Api: GovernedMapIDPApi<Block>,
 	T::Api: TokenBridgeIDPRuntimeApi<Block>,
 {
@@ -192,7 +191,7 @@ where
 		TimestampIDP,
 		AriadneIDP,
 		BlockAuthorInherentProvider<Slot, BlockAuthor>,
-		BlockParticipationInherentDataProvider<BlockAuthor, DelegatorKey>,
+		BlockParticipationInherentDataProvider<BlockAuthor, DelegatorKey, Slot>,
 		GovernedMapInherentDataProvider,
 		TokenBridgeInherentDataProvider<AccountId>,
 	);
@@ -248,7 +247,6 @@ where
 			parent_hash,
 			verified_block_slot,
 			mc_epoch_config,
-			config.sc_slot_config.slot_duration,
 		)
 		.await?;
 

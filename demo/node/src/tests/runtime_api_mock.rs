@@ -24,6 +24,7 @@ type Header = <Block as BlockT>::Header;
 pub struct TestApi {
 	pub next_unset_epoch_number: ScEpochNumber,
 	pub headers: HashMap<Hash, Header>,
+	pub participation_data: Vec<(Slot, BlockAuthor)>,
 }
 
 impl TestApi {
@@ -31,11 +32,15 @@ impl TestApi {
 		let header = mock_header();
 		let mut headers = HashMap::new();
 		headers.insert(header.hash(), header);
-		Self { next_unset_epoch_number, headers }
+		Self { next_unset_epoch_number, headers, participation_data: Default::default() }
 	}
 
 	pub fn with_headers<Hs: Into<HashMap<Hash, Header>>>(self, headers: Hs) -> Self {
 		Self { headers: headers.into(), ..self }
+	}
+
+	pub fn with_pariticipation_data(self, participation_data: Vec<(Slot, BlockAuthor)>) -> Self {
+		Self { participation_data, ..self }
 	}
 }
 
@@ -105,15 +110,15 @@ sp_api::mock_impl_runtime_apis! {
 		}
 	}
 
-	impl sp_block_participation::BlockParticipationApi<Block, BlockAuthor> for TestApi {
-		fn should_release_data(slot: Slot) -> Option<Slot> {
-			Some(slot)
-		}
-		fn blocks_produced_up_to_slot(_slot: Slot) -> Vec<(Slot, BlockAuthor)> {
-			vec![]
+	impl sp_block_participation::BlockParticipationApi<Block, BlockAuthor, Slot> for TestApi {
+		fn blocks_to_process(_slot: &Slot) -> Vec<(Slot, BlockAuthor)> {
+			self.participation_data.clone()
 		}
 		fn target_inherent_id() -> InherentIdentifier {
 			TEST_TARGET_INHERENT_ID
+		}
+		fn moment_to_timestamp_millis(slot: Slot) -> u64 {
+			1000 * (*slot)
 		}
 	}
 

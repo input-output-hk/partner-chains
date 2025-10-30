@@ -176,7 +176,7 @@ fn peek_prefix() {
 			(104, make_id(4)),
 		]);
 
-		let prefix = BlockProductionLog::peek_prefix(102);
+		let prefix = BlockProductionLog::peek_prefix(&102u64);
 
 		assert_eq!(
 			prefix.collect::<Vec<_>>(),
