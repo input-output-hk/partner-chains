@@ -14,6 +14,7 @@ byron_path = "/shared/byron/genesis.json"
 shelley_path = "/shared/shelley/genesis.json"
 alonzo_path = "/shared/shelley/genesis.alonzo.json"
 conway_path = "/shared/conway/genesis.conway.json"
+force_protocol = 9
 
 [chain]
 type = "cardano"

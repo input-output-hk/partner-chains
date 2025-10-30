@@ -1,12 +1,17 @@
-use crate::Result;
+use crate::{
+	Result,
+	client::{MiniBFClient, api::MiniBFApi, conversions::from_block_content},
+};
 use async_trait::async_trait;
 use sidechain_domain::*;
 
-pub struct McHashDataSourceImpl {}
+pub struct McHashDataSourceImpl {
+	client: MiniBFClient,
+}
 
 impl McHashDataSourceImpl {
-	pub fn new() -> Self {
-		Self {}
+	pub fn new(client: MiniBFClient) -> Self {
+		Self { client }
 	}
 }
 
@@ -16,18 +21,18 @@ impl sidechain_mc_hash::McHashDataSource for McHashDataSourceImpl {
 		&self,
 		_reference_timestamp: sp_timestamp::Timestamp,
 	) -> Result<Option<MainchainBlock>> {
-		Err("not implemented".into())
+		Ok(Some(from_block_content(self.client.blocks_latest().await?)?))
 	}
 
 	async fn get_stable_block_for(
 		&self,
-		_hash: McBlockHash,
+		hash: McBlockHash,
 		_reference_timestamp: sp_timestamp::Timestamp,
 	) -> Result<Option<MainchainBlock>> {
-		Err("not implemented".into())
+		Ok(Some(from_block_content(self.client.blocks_by_id(hash).await?)?))
 	}
 
-	async fn get_block_by_hash(&self, _hash: McBlockHash) -> Result<Option<MainchainBlock>> {
-		Err("not implemented".into())
+	async fn get_block_by_hash(&self, hash: McBlockHash) -> Result<Option<MainchainBlock>> {
+		Ok(Some(from_block_content(self.client.blocks_by_id(hash).await?)?))
 	}
 }

@@ -32,7 +32,8 @@ use crate::client::MiniBFClient;
 
 pub mod client;
 
-type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
+type ResultErr = Box<dyn std::error::Error + Send + Sync>;
+type Result<T> = std::result::Result<T, ResultErr>;
 
 /// Error type returned by Dolos based data sources
 #[derive(Debug, PartialEq, thiserror::Error)]
