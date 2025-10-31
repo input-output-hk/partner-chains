@@ -8,6 +8,7 @@ use {
 };
 
 use super::v0;
+use sidechain_domain::ScEpochNumber;
 
 /// [frame_support::migrations::VersionedMigration] parametrized for v0 to v1 migration.
 pub type LegacyToV1Migration<T> = frame_support::migrations::VersionedMigration<
