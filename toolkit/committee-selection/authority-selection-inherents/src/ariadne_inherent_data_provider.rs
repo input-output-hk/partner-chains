@@ -143,7 +143,11 @@ where
 		// The genesis committee epoch is initialized with 0, so in the very first block we need to provide
 		// the epoch number based on the current timestamp
 		if next_unset_epoch == ScEpochNumber(1) {
-			timestamp_millis
+			// We first convert the timestamp to PC epoch number and then use the starting time of this
+			// to ensure that all timestamps within a PC epoch produce the same candidates. This is
+			// necessary in case the boundaries of PC epochs and MC epochs do not align.
+			let current_pc_epoch = timestamp_millis / sc_epoch_duration_millis;
+			current_pc_epoch * sc_epoch_duration_millis
 		} else {
 			next_unset_epoch.0 * sc_epoch_duration_millis
 		}
