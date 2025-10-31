@@ -382,9 +382,11 @@ create_docker_compose() {
         cat ./modules/partner-chains-wizard.txt >> docker-compose.yml
         ;;
       6)
-        echo -e "Including Cardano testnet, Ogmios, and Dolos services.\n"
+        echo -e "Including all services with Dolos data source.\n"
         cat ./modules/cardano.txt >> docker-compose.yml
         cat ./modules/ogmios.txt >> docker-compose.yml
+        cat ./modules/db-sync.txt >> docker-compose.yml
+        cat ./modules/postgres.txt >> docker-compose.yml
         cat ./modules/dolos.txt >> docker-compose.yml
         cat ./modules/partner-chains-nodes-dolos.txt >> docker-compose.yml
         cat ./modules/partner-chains-setup.txt >> docker-compose.yml
