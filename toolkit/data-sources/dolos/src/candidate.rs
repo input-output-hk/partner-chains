@@ -119,11 +119,7 @@ impl AuthoritySelectionDataSource for AuthoritySelectionDataSourceImpl {
 
 		let futures = pools.into_iter().map(|item| async move { pred(item.clone()).await });
 		let stake_map: HashMap<MainchainKeyHash, StakeDelegation> =
-			futures::future::try_join_all(futures)
-				.await?
-				.into_iter()
-				.flatten()
-				.collect();
+			futures::future::try_join_all(futures).await?.into_iter().flatten().collect();
 
 		Ok(candidates
 			.into_iter()
