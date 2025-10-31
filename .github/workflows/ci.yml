@@ -87,7 +87,6 @@ jobs:
         run: |
           set -euo pipefail
           CARGO_HOME="${CARGO_HOME:-$HOME/.cargo}"
-
           echo "--- Cache preflight ---"
           # Compute cache key again (same as restore/save)
           RUSTC_FULL="$({ nix develop -c rustc -V; } 2>/dev/null || { rustc -V; } 2>/dev/null || true)"
@@ -97,7 +96,7 @@ jobs:
             RUSTC_VER="unknown"
           fi
           if [[ -f Cargo.lock ]]; then
-            LOCK_LINE="$(sha256sum Cargo.lock)"
+            LOCK_LINE="$(nix develop -c sha256sum Cargo.lock)"
             LOCK_SHA="${LOCK_LINE%% *}"
           else
             echo "Cargo.lock missing; skipping manifest check."
@@ -105,31 +104,27 @@ jobs:
           fi
           CACHE="/tmp/rust-cache-${RUSTC_VER}-${LOCK_SHA}"
           [[ -d "$CACHE" ]] || { echo "No shared cache present for key: $CACHE"; exit 0; }
-
           MAN="$CACHE/.manifest"; READY="$CACHE/.ready"
-          WANT="$(printf '%s\n%s\n' "$RUSTC_VER" "$LOCK_SHA")"
+          WANT="$(nix develop -c printf '%s\n%s\n' "$RUSTC_VER" "$LOCK_SHA")"
           REASONS=()
-
           echo "[1/2] Checking manifest/ready..."
           if [[ ! -f "$READY" || ! -f "$MAN" ]]; then
             echo "manifest/ready missing"
             REASONS+=("manifest/ready missing")
           else
-            HAVE="$(head -n 2 "$MAN" || true)"
+            HAVE="$(nix develop -c head -n 2 "$MAN" || true)"
             if [[ "$WANT" != "$HAVE" ]]; then
               echo "manifest mismatch"
               REASONS+=("manifest mismatch")
             fi
           fi
-
           echo "[2/2] cargo fetch --locked..."
-          if ! nix develop -c bash -lc "cargo fetch --locked -q" 2> >(grep -v -E 'untrusted substituter|trusted-public-keys' >&2); then
+          if ! nix develop -c bash -c "cargo fetch --locked -q" 2> >(nix develop -c grep -v -E 'untrusted substituter|trusted-public-keys' >&2); then
             echo "cargo fetch failed → clearing registry/src + git/checkouts, then re-fetching"
-            rm -rf "$CARGO_HOME"/registry/src/* "$CARGO_HOME"/git/checkouts/* || true
-            nix develop -c cargo fetch --locked 2> >(grep -v -E 'untrusted substituter|trusted-public-keys' >&2)
+            nix develop -c rm -rf "$CARGO_HOME"/registry/src/* "$CARGO_HOME"/git/checkouts/* || true
+            nix develop -c cargo fetch --locked 2> >(nix develop -c grep -v -E 'untrusted substituter|trusted-public-keys' >&2)
             REASONS+=("re-fetched dependencies")
           fi
-
           echo "--- Preflight summary: ${REASONS[*]:-OK} ---"
 
       - name: Release cache lock
@@ -150,18 +145,16 @@ jobs:
       - name: Enable sccache (RUSTC_WRAPPER)
         run: |
           set -e
-          if nix develop -c bash -lc 'command -v sccache' >/dev/null 2>&1; then
-            echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
-            echo "SCCACHE_DIR=/tmp/sccache" >> "$GITHUB_ENV"
-            echo "SCCACHE_CACHE_SIZE=30G" >> "$GITHUB_ENV"
-            echo "CARGO_INCREMENTAL=0" >> "$GITHUB_ENV"
-            mkdir -p /tmp/sccache
-            nix develop -c sccache --stop-server || true
-            nix develop -c sccache --start-server || true
-            nix develop -c sccache --version || true
-          else
-            echo "sccache not in devshell; skipping wrapper."
-          fi
+          export SCCACHE_DIR=/tmp/sccache-${{ runner.name }}
+          export SCCACHE_CACHE_SIZE=0
+          echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
+          echo "SCCACHE_DIR=$SCCACHE_DIR" >> "$GITHUB_ENV"
+          echo "SCCACHE_CACHE_SIZE=$SCCACHE_CACHE_SIZE" >> "$GITHUB_ENV"
+          echo "CARGO_INCREMENTAL=0" >> "$GITHUB_ENV"
+          mkdir -p "$SCCACHE_DIR"
+          nix develop -c sccache --stop-server || true
+          nix develop -c sccache --start-server || true
+          nix develop -c sccache --version || true
 
       - name: Formatting
         run: nix develop -c bash -c "cargo fmt --check"
@@ -561,9 +554,8 @@ jobs:
         run: |
           set -euo pipefail
           CARGO_HOME="${CARGO_HOME:-$HOME/.cargo}"
-
           echo "--- Cache preflight ---"
-          # Compute cache key again
+          # Compute cache key again (same as restore/save)
           RUSTC_FULL="$({ nix develop -c rustc -V; } 2>/dev/null || { rustc -V; } 2>/dev/null || true)"
           if [[ -n "${RUSTC_FULL:-}" ]]; then
             RUSTC_VER="${RUSTC_FULL#rustc }"; RUSTC_VER="${RUSTC_VER%% *}"
@@ -571,7 +563,7 @@ jobs:
             RUSTC_VER="unknown"
           fi
           if [[ -f Cargo.lock ]]; then
-            LOCK_LINE="$(sha256sum Cargo.lock)"
+            LOCK_LINE="$(nix develop -c sha256sum Cargo.lock)"
             LOCK_SHA="${LOCK_LINE%% *}"
           else
             echo "Cargo.lock missing; skipping manifest check."
@@ -579,31 +571,27 @@ jobs:
           fi
           CACHE="/tmp/rust-cache-${RUSTC_VER}-${LOCK_SHA}"
           [[ -d "$CACHE" ]] || { echo "No shared cache present for key: $CACHE"; exit 0; }
-
           MAN="$CACHE/.manifest"; READY="$CACHE/.ready"
-          WANT="$(printf '%s\n%s\n' "$RUSTC_VER" "$LOCK_SHA")"
+          WANT="$(nix develop -c printf '%s\n%s\n' "$RUSTC_VER" "$LOCK_SHA")"
           REASONS=()
-
           echo "[1/2] Checking manifest/ready..."
           if [[ ! -f "$READY" || ! -f "$MAN" ]]; then
             echo "manifest/ready missing"
             REASONS+=("manifest/ready missing")
           else
-            HAVE="$(head -n 2 "$MAN" || true)"
+            HAVE="$(nix develop -c head -n 2 "$MAN" || true)"
             if [[ "$WANT" != "$HAVE" ]]; then
               echo "manifest mismatch"
               REASONS+=("manifest mismatch")
             fi
           fi
-
           echo "[2/2] cargo fetch --locked..."
-          if ! nix develop -c bash -lc "cargo fetch --locked -q" 2> >(grep -v -E 'untrusted substituter|trusted-public-keys' >&2); then
+          if ! nix develop -c bash -c "cargo fetch --locked -q" 2> >(nix develop -c grep -v -E 'untrusted substituter|trusted-public-keys' >&2); then
             echo "cargo fetch failed → clearing registry/src + git/checkouts, then re-fetching"
-            rm -rf "$CARGO_HOME"/registry/src/* "$CARGO_HOME"/git/checkouts/* || true
-            nix develop -c cargo fetch --locked 2> >(grep -v -E 'untrusted substituter|trusted-public-keys' >&2)
+            nix develop -c rm -rf "$CARGO_HOME"/registry/src/* "$CARGO_HOME"/git/checkouts/* || true
+            nix develop -c cargo fetch --locked 2> >(nix develop -c grep -v -E 'untrusted substituter|trusted-public-keys' >&2)
             REASONS+=("re-fetched dependencies")
           fi
-
           echo "--- Preflight summary: ${REASONS[*]:-OK} ---"
 
       - name: Release cache lock
@@ -635,18 +623,16 @@ jobs:
       - name: Enable sccache (RUSTC_WRAPPER)
         run: |
           set -e
-          if nix develop -c bash -lc 'command -v sccache' >/dev/null 2>&1; then
-            echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
-            echo "SCCACHE_DIR=/tmp/sccache" >> "$GITHUB_ENV"
-            echo "SCCACHE_CACHE_SIZE=30G" >> "$GITHUB_ENV"
-            echo "CARGO_INCREMENTAL=0" >> "$GITHUB_ENV"
-            mkdir -p /tmp/sccache
-            nix develop -c sccache --stop-server || true
-            nix develop -c sccache --start-server || true
-            nix develop -c sccache --version || true
-          else
-            echo "sccache not in devshell; skipping wrapper."
-          fi
+          export SCCACHE_DIR=/tmp/sccache-${{ runner.name }}
+          export SCCACHE_CACHE_SIZE=0
+          echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
+          echo "SCCACHE_DIR=$SCCACHE_DIR" >> "$GITHUB_ENV"
+          echo "SCCACHE_CACHE_SIZE=$SCCACHE_CACHE_SIZE" >> "$GITHUB_ENV"
+          echo "CARGO_INCREMENTAL=0" >> "$GITHUB_ENV"
+          mkdir -p "$SCCACHE_DIR"
+          nix develop -c sccache --stop-server || true
+          nix develop -c sccache --start-server || true
+          nix develop -c sccache --version || true
 
       - name: Build
         run: nix develop -c bash -c "cargo build --locked --profile=release"
@@ -954,9 +940,8 @@ jobs:
         run: |
           set -euo pipefail
           CARGO_HOME="${CARGO_HOME:-$HOME/.cargo}"
-
           echo "--- Cache preflight ---"
-          # Compute cache key again
+          # Compute cache key again (same as restore/save)
           RUSTC_FULL="$({ nix develop -c rustc -V; } 2>/dev/null || { rustc -V; } 2>/dev/null || true)"
           if [[ -n "${RUSTC_FULL:-}" ]]; then
             RUSTC_VER="${RUSTC_FULL#rustc }"; RUSTC_VER="${RUSTC_VER%% *}"
@@ -964,7 +949,7 @@ jobs:
             RUSTC_VER="unknown"
           fi
           if [[ -f Cargo.lock ]]; then
-            LOCK_LINE="$(sha256sum Cargo.lock)"
+            LOCK_LINE="$(nix develop -c sha256sum Cargo.lock)"
             LOCK_SHA="${LOCK_LINE%% *}"
           else
             echo "Cargo.lock missing; skipping manifest check."
@@ -972,31 +957,27 @@ jobs:
           fi
           CACHE="/tmp/rust-cache-${RUSTC_VER}-${LOCK_SHA}"
           [[ -d "$CACHE" ]] || { echo "No shared cache present for key: $CACHE"; exit 0; }
-
           MAN="$CACHE/.manifest"; READY="$CACHE/.ready"
-          WANT="$(printf '%s\n%s\n' "$RUSTC_VER" "$LOCK_SHA")"
+          WANT="$(nix develop -c printf '%s\n%s\n' "$RUSTC_VER" "$LOCK_SHA")"
           REASONS=()
-
           echo "[1/2] Checking manifest/ready..."
           if [[ ! -f "$READY" || ! -f "$MAN" ]]; then
             echo "manifest/ready missing"
             REASONS+=("manifest/ready missing")
           else
-            HAVE="$(head -n 2 "$MAN" || true)"
+            HAVE="$(nix develop -c head -n 2 "$MAN" || true)"
             if [[ "$WANT" != "$HAVE" ]]; then
               echo "manifest mismatch"
               REASONS+=("manifest mismatch")
             fi
           fi
-
           echo "[2/2] cargo fetch --locked..."
-          if ! nix develop -c bash -lc "cargo fetch --locked -q" 2> >(grep -v -E 'untrusted substituter|trusted-public-keys' >&2); then
+          if ! nix develop -c bash -c "cargo fetch --locked -q" 2> >(nix develop -c grep -v -E 'untrusted substituter|trusted-public-keys' >&2); then
             echo "cargo fetch failed → clearing registry/src + git/checkouts, then re-fetching"
-            rm -rf "$CARGO_HOME"/registry/src/* "$CARGO_HOME"/git/checkouts/* || true
-            nix develop -c cargo fetch --locked 2> >(grep -v -E 'untrusted substituter|trusted-public-keys' >&2)
+            nix develop -c rm -rf "$CARGO_HOME"/registry/src/* "$CARGO_HOME"/git/checkouts/* || true
+            nix develop -c cargo fetch --locked 2> >(nix develop -c grep -v -E 'untrusted substituter|trusted-public-keys' >&2)
             REASONS+=("re-fetched dependencies")
           fi
-
           echo "--- Preflight summary: ${REASONS[*]:-OK} ---"
 
       - name: Release cache lock
@@ -1017,18 +998,16 @@ jobs:
       - name: Enable sccache (RUSTC_WRAPPER)
         run: |
           set -e
-          if nix develop -c bash -lc 'command -v sccache' >/dev/null 2>&1; then
-            echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
-            echo "SCCACHE_DIR=/tmp/sccache" >> "$GITHUB_ENV"
-            echo "SCCACHE_CACHE_SIZE=30G" >> "$GITHUB_ENV"
-            echo "CARGO_INCREMENTAL=0" >> "$GITHUB_ENV"
-            mkdir -p /tmp/sccache
-            nix develop -c sccache --stop-server || true
-            nix develop -c sccache --start-server || true
-            nix develop -c sccache --version || true
-          else
-            echo "sccache not in devshell; skipping wrapper."
-          fi
+          export SCCACHE_DIR=/tmp/sccache-${{ runner.name }}
+          export SCCACHE_CACHE_SIZE=0
+          echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
+          echo "SCCACHE_DIR=$SCCACHE_DIR" >> "$GITHUB_ENV"
+          echo "SCCACHE_CACHE_SIZE=$SCCACHE_CACHE_SIZE" >> "$GITHUB_ENV"
+          echo "CARGO_INCREMENTAL=0" >> "$GITHUB_ENV"
+          mkdir -p "$SCCACHE_DIR"
+          nix develop -c sccache --stop-server || true
+          nix develop -c sccache --start-server || true
+          nix develop -c sccache --version || true
 
       - name: Formatting
         run: nix develop -c bash -c "cargo fmt --check"
