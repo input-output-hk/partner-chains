@@ -48,7 +48,7 @@ async fn get_token_utxo_datum_for_epoch(
 	let tx_hash = futures::future::try_join_all(futures)
 		.await?
 		.into_iter()
-		.filter_map(|x| x)
+		.flatten()
 		.collect::<Vec<McTxHash>>()
 		.first()
 		.ok_or("No policy utxo found after epoch")?
@@ -122,7 +122,7 @@ impl AuthoritySelectionDataSource for AuthoritySelectionDataSourceImpl {
 			futures::future::try_join_all(futures)
 				.await?
 				.into_iter()
-				.filter_map(|x| x)
+				.flatten()
 				.collect();
 
 		Ok(candidates
@@ -384,7 +384,7 @@ impl AuthoritySelectionDataSourceImpl {
 				futures::future::try_join_all(futures)
 					.await?
 					.into_iter()
-					.filter_map(|x| x)
+					.flatten()
 					.collect::<Vec<_>>()
 			},
 			None => vec![],
