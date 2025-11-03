@@ -289,8 +289,8 @@ jobs:
       - name: Setup Rust cache
         uses: Swatinem/rust-cache@v2
         with:
-          prefix-key: v1
-          shared-key: global
+          prefix-key: v1-nightly
+          shared-key: global-nightly
           cache-all-crates: true
           cache-targets: true
           cache-bin: true
@@ -299,9 +299,13 @@ jobs:
             .
 
       - name: Build (Nightly)
+        env:
+          WASM_BUILD_WORKSPACE_HINT: ${{ github.workspace }}
         run: nix develop -c bash -c "RUSTUP_TOOLCHAIN=nightly cargo build --locked"
 
       - name: Test (Nightly)
+        env:
+          WASM_BUILD_WORKSPACE_HINT: ${{ github.workspace }}
         run: nix develop -c bash -c "RUSTUP_TOOLCHAIN=nightly cargo test --locked --all-features"
 
       - name: Lint (Nightly)
