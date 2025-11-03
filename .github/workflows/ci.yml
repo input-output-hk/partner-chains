@@ -177,6 +177,28 @@ jobs:
           restore-keys: |
             sccache-${{ runner.os }}-
 
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-registry-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            cargo-registry-${{ runner.os }}-
+
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          prefix-key: v1-nightly
+          shared-key: global-nightly
+          cache-all-crates: true
+          cache-targets: true
+          cache-bin: true
+          cache-on-failure: true
+          workspaces: |
+            .
+
       - name: Build (Nightly)
         env:
           WASM_BUILD_WORKSPACE_HINT: ${{ github.workspace }}

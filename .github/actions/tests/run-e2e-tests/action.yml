@@ -57,7 +57,7 @@ runs:
         if [ "${{ inputs.markers }}" = "wizards" ]; then
           markers_switch="-m smoke"
         elif [ "${{ inputs.markers }}" = "dolos" ]; then
-          markers_switch=""
+          markers_switch="-m smoke"
         elif [ -n "${{ inputs.markers }}" ]; then
           markers_switch="-m '${{ inputs.markers }}'"
         fi
