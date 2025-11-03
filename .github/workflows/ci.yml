@@ -11,11 +11,6 @@ on:
         description: 'Commit SHA to build'
         required: true
         type: string
-      wipe_cache:
-        description: 'Wipe /tmp/rust-cache* before build'
-        required: false
-        type: boolean
-        default: false
       run_post_merge_tests:
         description: 'Run post-merge tests'
         required: false
@@ -36,105 +31,110 @@ jobs:
 ### Pre merge workflow ###############################################################################################################
 
   build-linux-x86_64-pre-merge:
-    runs-on: nixos
+    runs-on: ubuntu-latest
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
     steps:
-      - name: Clean runner environment
-        run: rm -rf ./*
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          clean: true
 
-      - name: Acquire cache lock
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v11
+        with:
+          nix-conf: |
+            extra-experimental-features = nix-command flakes
+            extra-substituters = https://cache.nixos.org/
+            extra-trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+
+      - name: Compute APT cache key
+        id: aptmeta
         run: |
-          until mkdir /tmp/rust-cache.lock 2>/dev/null; do
-            sleep 5
-          done
+          echo "ubuntu=$(lsb_release -rs)" >> "$GITHUB_OUTPUT"
+          pkgs=$'protobuf-compiler\nlibzmq3-dev\npkg-config\ncmake\nbuild-essential'
+          printf "%s" "$pkgs" > apt-packages.tmp
+          echo "pkghash=$(sha256sum apt-packages.tmp | cut -c1-16)" >> "$GITHUB_OUTPUT"
 
-      - name: Restore Rust cache from host (keyed by toolchain+lock)
+      - name: Prepare APT dirs & perms
         run: |
-          set -e
-          echo "--- Restoring Rust cache from host ---"
-          # Compute cache key
-          RUSTC_FULL="$({ nix develop -c rustc -V; } 2>/dev/null || { rustc -V; } 2>/dev/null || true)"
-          if [[ -n "${RUSTC_FULL:-}" ]]; then
-            RUSTC_VER="${RUSTC_FULL#rustc }"; RUSTC_VER="${RUSTC_VER%% *}"
-          else
-            RUSTC_VER="unknown"
-          fi
-          if [[ -f Cargo.lock ]]; then
-            LOCK_LINE="$(sha256sum Cargo.lock)"
-            LOCK_SHA="${LOCK_LINE%% *}"
-          else
-            LOCK_SHA="nolock"
-          fi
-          CACHE="/tmp/rust-cache-${RUSTC_VER}-${LOCK_SHA}"
+          sudo mkdir -p /var/cache/apt/archives /var/lib/apt/lists
+          sudo chown -R "$USER:$(id -gn)" /var/cache/apt/archives /var/lib/apt/lists
 
-          if [ -d "$CACHE" ] && [ -f "$CACHE/.ready" ]; then
-            echo "Ready cache found: $CACHE"
-            mkdir -p ~/.cargo/git ~/.cargo/registry
-            nix shell nixpkgs#rsync -c bash -c "
-              rsync -a $CACHE/cargo-git/ ~/.cargo/git/
-              rsync -a $CACHE/cargo-registry/ ~/.cargo/registry/
-            "
-          else
-            echo "No matching cache ($CACHE); skipping restore."
-          fi
+      - name: Restore APT cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            /var/cache/apt/archives
+            /var/lib/apt/lists
+          key: apt-v2-${{ runner.os }}-${{ steps.aptmeta.outputs.ubuntu }}-${{ steps.aptmeta.outputs.pkghash }}
+          restore-keys: |
+            apt-v2-${{ runner.os }}-${{ steps.aptmeta.outputs.ubuntu }}-
+            apt-v2-${{ runner.os }}-
 
-      - name: Validate Rust cache
+      - name: Install system dependencies
+        env:
+          DEBIAN_FRONTEND: noninteractive
         run: |
-          set -euo pipefail
-          CARGO_HOME="${CARGO_HOME:-$HOME/.cargo}"
+          sudo apt-get update
+          sudo apt-get install -y \
+            protobuf-compiler \
+            libzmq3-dev \
+            pkg-config \
+            cmake \
+            build-essential
 
-          echo "--- Cache preflight ---"
-          # Compute cache key again (same as restore/save)
-          RUSTC_FULL="$({ nix develop -c rustc -V; } 2>/dev/null || { rustc -V; } 2>/dev/null || true)"
-          if [[ -n "${RUSTC_FULL:-}" ]]; then
-            RUSTC_VER="${RUSTC_FULL#rustc }"; RUSTC_VER="${RUSTC_VER%% *}"
-          else
-            RUSTC_VER="unknown"
-          fi
-          if [[ -f Cargo.lock ]]; then
-            LOCK_LINE="$(sha256sum Cargo.lock)"
-            LOCK_SHA="${LOCK_LINE%% *}"
-          else
-            echo "Cargo.lock missing; skipping manifest check."
-            LOCK_SHA="nolock"
-          fi
-          CACHE="/tmp/rust-cache-${RUSTC_VER}-${LOCK_SHA}"
-          [[ -d "$CACHE" ]] || { echo "No shared cache present for key: $CACHE"; exit 0; }
+      - name: Make APT cache readable for save
+        run: |
+          sudo chown -R "$USER:$(id -gn)" /var/cache/apt/archives /var/lib/apt/lists
+          find /var/cache/apt/archives -type f -print0 | xargs -0 --no-run-if-empty chmod a+r
+          find /var/lib/apt/lists -type f -print0 | xargs -0 --no-run-if-empty chmod a+r
 
-          MAN="$CACHE/.manifest"; READY="$CACHE/.ready"
-          WANT="$(printf '%s\n%s\n' "$RUSTC_VER" "$LOCK_SHA")"
-          REASONS=()
-
-          echo "[1/2] Checking manifest/ready..."
-          if [[ ! -f "$READY" || ! -f "$MAN" ]]; then
-            echo "manifest/ready missing"
-            REASONS+=("manifest/ready missing")
-          else
-            HAVE="$(head -n 2 "$MAN" || true)"
-            if [[ "$WANT" != "$HAVE" ]]; then
-              echo "manifest mismatch"
-              REASONS+=("manifest mismatch")
-            fi
-          fi
-
-          echo "[2/2] cargo fetch --locked..."
-          if ! nix develop -c bash -c "cargo fetch --locked -q" 2> >(grep -v -E 'untrusted substituter|trusted-public-keys' >&2); then
-            echo "cargo fetch failed → clearing registry/src + git/checkouts, then re-fetching"
-            rm -rf "$CARGO_HOME"/registry/src/* "$CARGO_HOME"/git/checkouts/* || true
-            nix develop -c bash -c "cargo fetch --locked" 2> >(grep -v -E 'untrusted substituter|trusted-public-keys' >&2)
-            REASONS+=("re-fetched dependencies")
-          fi
-
-          echo "--- Preflight summary: ${REASONS[*]:-OK} ---"
-
-      - name: Release cache lock
+      - name: Save APT cache
         if: always()
-        run: rmdir /tmp/rust-cache.lock || true
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            /var/cache/apt/archives
+            /var/lib/apt/lists
+          key: apt-v2-${{ runner.os }}-${{ steps.aptmeta.outputs.ubuntu }}-${{ steps.aptmeta.outputs.pkghash }}
+
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.9
+
+      - name: Enable sccache
+        run: |
+          echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
+          echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
+          echo "SCCACHE_CACHE_SIZE=5G" >> $GITHUB_ENV
+
+      - name: Cache sccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/sccache
+          key: sccache-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            sccache-${{ runner.os }}-
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-registry-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            cargo-registry-${{ runner.os }}-
+
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          prefix-key: v1
+          shared-key: global
+          cache-all-crates: true
+          cache-targets: true
+          cache-bin: true
+          cache-on-failure: true
+          workspaces: |
+            .
 
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -147,22 +147,6 @@ jobs:
         with:
           registry: ${{ secrets.ECR_REGISTRY_SECRET }}
 
-      - name: Enable sccache (RUSTC_WRAPPER)
-        run: |
-          set -e
-          if nix develop -c bash -lc 'command -v sccache' >/dev/null 2>&1; then
-            echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
-            echo "SCCACHE_DIR=/tmp/sccache" >> "$GITHUB_ENV"
-            echo "SCCACHE_CACHE_SIZE=30G" >> "$GITHUB_ENV"
-            echo "CARGO_INCREMENTAL=0" >> "$GITHUB_ENV"
-            mkdir -p /tmp/sccache
-            nix develop -c sccache --stop-server || true
-            nix develop -c sccache --start-server || true
-            nix develop -c sccache --version || true
-          else
-            echo "sccache not in devshell; skipping wrapper."
-          fi
-
       - name: Formatting
         run: nix develop -c bash -c "cargo fmt --check"
 
@@ -171,48 +155,7 @@ jobs:
 
       - name: sccache stats
         if: always()
-        run: nix develop -c sccache -s || true
-
-      - name: Acquire cache lock
-        run: |
-          until mkdir /tmp/rust-cache.lock 2>/dev/null; do
-            sleep 5
-          done
-
-      - name: Save Rust cache to host (keyed by toolchain+lock)
-        run: |
-          set -e
-          echo "--- Saving Rust cache to host cache ---"
-          # Compute cache key
-          RUSTC_FULL="$({ nix develop -c rustc -V; } 2>/dev/null || { rustc -V; } 2>/dev/null || true)"
-          if [[ -n "${RUSTC_FULL:-}" ]]; then
-            RUSTC_VER="${RUSTC_FULL#rustc }"; RUSTC_VER="${RUSTC_VER%% *}"
-          else
-            RUSTC_VER="unknown"
-          fi
-          if [[ -f Cargo.lock ]]; then
-            LOCK_LINE="$(sha256sum Cargo.lock)"
-            LOCK_SHA="${LOCK_LINE%% *}"
-          else
-            LOCK_SHA="nolock"
-          fi
-          CACHE="/tmp/rust-cache-${RUSTC_VER}-${LOCK_SHA}"
-
-          mkdir -p "$CACHE"
-          nix shell nixpkgs#rsync -c bash -c "
-            rsync -a --delete ~/.cargo/git/      $CACHE/cargo-git/
-            rsync -a --delete ~/.cargo/registry/ $CACHE/cargo-registry/
-          "
-          echo "--- Verifying cache contents ($CACHE) ---"
-          ls -la "$CACHE" || true
-          ls -la "$CACHE"/cargo-git "$CACHE"/cargo-registry || true
-
-          printf '%s\n%s\n' "$RUSTC_VER" "$LOCK_SHA" > "$CACHE/.manifest"
-          touch "$CACHE/.ready"
-
-      - name: Release cache lock
-        if: always()
-        run: rmdir /tmp/rust-cache.lock || true
+        run: sccache -s || true
 
       - name: Build chain specs
         run: |
@@ -250,121 +193,110 @@ jobs:
             ./staging_preview_chain_spec.json
 
   build-nightly-pre-merge:
-    runs-on: nixos
+    runs-on: ubuntu-latest
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
     steps:
-      - name: Clean runner environment
-        run: rm -rf ./*
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          clean: true
 
-      - name: Acquire cache lock
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v11
+        with:
+          nix-conf: |
+            extra-experimental-features = nix-command flakes
+            extra-substituters = https://cache.nixos.org/
+            extra-trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+
+      - name: Compute APT cache key
+        id: aptmeta
         run: |
-          until mkdir /tmp/rust-cache.lock 2>/dev/null; do
-            sleep 5
-          done
+          echo "ubuntu=$(lsb_release -rs)" >> "$GITHUB_OUTPUT"
+          pkgs=$'protobuf-compiler\nlibzmq3-dev\npkg-config\ncmake\nbuild-essential'
+          printf "%s" "$pkgs" > apt-packages.tmp
+          echo "pkghash=$(sha256sum apt-packages.tmp | cut -c1-16)" >> "$GITHUB_OUTPUT"
 
-      - name: Restore Rust cache from host (keyed by toolchain+lock)
+      - name: Prepare APT dirs & perms
         run: |
-          set -e
-          echo "--- Restoring Rust cache from host ---"
-          # Compute cache key
-          RUSTC_FULL="$({ nix develop -c rustc -V; } 2>/dev/null || { rustc -V; } 2>/dev/null || true)"
-          if [[ -n "${RUSTC_FULL:-}" ]]; then
-            RUSTC_VER="${RUSTC_FULL#rustc }"; RUSTC_VER="${RUSTC_VER%% *}"
-          else
-            RUSTC_VER="unknown"
-          fi
-          if [[ -f Cargo.lock ]]; then
-            LOCK_LINE="$(sha256sum Cargo.lock)"
-            LOCK_SHA="${LOCK_LINE%% *}"
-          else
-            LOCK_SHA="nolock"
-          fi
-          CACHE="/tmp/rust-cache-${RUSTC_VER}-${LOCK_SHA}"
+          sudo mkdir -p /var/cache/apt/archives /var/lib/apt/lists
+          sudo chown -R "$USER:$(id -gn)" /var/cache/apt/archives /var/lib/apt/lists
 
-          if [ -d "$CACHE" ] && [ -f "$CACHE/.ready" ]; then
-            echo "Ready cache found: $CACHE"
-            mkdir -p ~/.cargo/git ~/.cargo/registry
-            nix shell nixpkgs#rsync -c bash -c "
-              rsync -a $CACHE/cargo-git/ ~/.cargo/git/
-              rsync -a $CACHE/cargo-registry/ ~/.cargo/registry/
-            "
-          else
-            echo "No matching cache ($CACHE); skipping restore."
-          fi
+      - name: Restore APT cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            /var/cache/apt/archives
+            /var/lib/apt/lists
+          key: apt-v2-${{ runner.os }}-${{ steps.aptmeta.outputs.ubuntu }}-${{ steps.aptmeta.outputs.pkghash }}
+          restore-keys: |
+            apt-v2-${{ runner.os }}-${{ steps.aptmeta.outputs.ubuntu }}-
+            apt-v2-${{ runner.os }}-
 
-      - name: Validate Rust cache
+      - name: Install system dependencies
+        env:
+          DEBIAN_FRONTEND: noninteractive
         run: |
-          set -euo pipefail
-          CARGO_HOME="${CARGO_HOME:-$HOME/.cargo}"
+          sudo apt-get update
+          sudo apt-get install -y \
+            protobuf-compiler \
+            libzmq3-dev \
+            pkg-config \
+            cmake \
+            build-essential
 
-          echo "--- Cache preflight ---"
-          # Compute cache key again (same as restore/save)
-          RUSTC_FULL="$({ nix develop -c rustc -V; } 2>/dev/null || { rustc -V; } 2>/dev/null || true)"
-          if [[ -n "${RUSTC_FULL:-}" ]]; then
-            RUSTC_VER="${RUSTC_FULL#rustc }"; RUSTC_VER="${RUSTC_VER%% *}"
-          else
-            RUSTC_VER="unknown"
-          fi
-          if [[ -f Cargo.lock ]]; then
-            LOCK_LINE="$(sha256sum Cargo.lock)"
-            LOCK_SHA="${LOCK_LINE%% *}"
-          else
-            echo "Cargo.lock missing; skipping manifest check."
-            LOCK_SHA="nolock"
-          fi
-          CACHE="/tmp/rust-cache-${RUSTC_VER}-${LOCK_SHA}"
-          [[ -d "$CACHE" ]] || { echo "No shared cache present for key: $CACHE"; exit 0; }
+      - name: Make APT cache readable for save
+        run: |
+          sudo chown -R "$USER:$(id -gn)" /var/cache/apt/archives /var/lib/apt/lists
+          find /var/cache/apt/archives -type f -print0 | xargs -0 --no-run-if-empty chmod a+r
+          find /var/lib/apt/lists -type f -print0 | xargs -0 --no-run-if-empty chmod a+r
 
-          MAN="$CACHE/.manifest"; READY="$CACHE/.ready"
-          WANT="$(printf '%s\n%s\n' "$RUSTC_VER" "$LOCK_SHA")"
-          REASONS=()
-
-          echo "[1/2] Checking manifest/ready..."
-          if [[ ! -f "$READY" || ! -f "$MAN" ]]; then
-            echo "manifest/ready missing"
-            REASONS+=("manifest/ready missing")
-          else
-            HAVE="$(head -n 2 "$MAN" || true)"
-            if [[ "$WANT" != "$HAVE" ]]; then
-              echo "manifest mismatch"
-              REASONS+=("manifest mismatch")
-            fi
-          fi
-
-          echo "[2/2] cargo fetch --locked..."
-          if ! nix develop -c bash -c "cargo fetch --locked -q" 2> >(grep -v -E 'untrusted substituter|trusted-public-keys' >&2); then
-            echo "cargo fetch failed → clearing registry/src + git/checkouts, then re-fetching"
-            rm -rf "$CARGO_HOME"/registry/src/* "$CARGO_HOME"/git/checkouts/* || true
-            nix develop -c bash -c "cargo fetch --locked" 2> >(grep -v -E 'untrusted substituter|trusted-public-keys' >&2)
-            REASONS+=("re-fetched dependencies")
-          fi
-
-          echo "--- Preflight summary: ${REASONS[*]:-OK} ---"
-
-      - name: Release cache lock
+      - name: Save APT cache
         if: always()
-        run: rmdir /tmp/rust-cache.lock || true
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            /var/cache/apt/archives
+            /var/lib/apt/lists
+          key: apt-v2-${{ runner.os }}-${{ steps.aptmeta.outputs.ubuntu }}-${{ steps.aptmeta.outputs.pkghash }}
 
-      - name: Enable sccache (RUSTC_WRAPPER)
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.9
+
+      - name: Enable sccache
         run: |
-          set -e
-          if nix develop -c bash -lc 'command -v sccache' >/dev/null 2>&1; then
-            echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
-            echo "SCCACHE_DIR=/tmp/sccache" >> "$GITHUB_ENV"
-            echo "SCCACHE_CACHE_SIZE=30G" >> "$GITHUB_ENV"
-            echo "CARGO_INCREMENTAL=0" >> "$GITHUB_ENV"
-            mkdir -p /tmp/sccache
-            nix develop -c sccache --stop-server || true
-            nix develop -c sccache --start-server || true
-            nix develop -c sccache --version || true
-          else
-            echo "sccache not in devshell; skipping wrapper."
-          fi
+          echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
+          echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
+          echo "SCCACHE_CACHE_SIZE=5G" >> $GITHUB_ENV
+
+      - name: Cache sccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/sccache
+          key: sccache-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            sccache-${{ runner.os }}-
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-registry-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            cargo-registry-${{ runner.os }}-
+
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          prefix-key: v1
+          shared-key: global
+          cache-all-crates: true
+          cache-targets: true
+          cache-bin: true
+          cache-on-failure: true
+          workspaces: |
+            .
 
       - name: Build (Nightly)
         run: nix develop -c bash -c "RUSTUP_TOOLCHAIN=nightly cargo build --locked"
@@ -377,48 +309,7 @@ jobs:
 
       - name: sccache stats
         if: always()
-        run: nix develop -c sccache -s || true
-
-      - name: Acquire cache lock
-        run: |
-          until mkdir /tmp/rust-cache.lock 2>/dev/null; do
-            sleep 5
-          done
-
-      - name: Save Rust cache to host (keyed by toolchain+lock)
-        run: |
-          set -e
-          echo "--- Saving Rust cache to host cache ---"
-          # Compute cache key
-          RUSTC_FULL="$({ nix develop -c rustc -V; } 2>/dev/null || { rustc -V; } 2>/dev/null || true)"
-          if [[ -n "${RUSTC_FULL:-}" ]]; then
-            RUSTC_VER="${RUSTC_FULL#rustc }"; RUSTC_VER="${RUSTC_VER%% *}"
-          else
-            RUSTC_VER="unknown"
-          fi
-          if [[ -f Cargo.lock ]]; then
-            LOCK_LINE="$(sha256sum Cargo.lock)"
-            LOCK_SHA="${LOCK_LINE%% *}"
-          else
-            LOCK_SHA="nolock"
-          fi
-          CACHE="/tmp/rust-cache-${RUSTC_VER}-${LOCK_SHA}"
-
-          mkdir -p "$CACHE"
-          nix shell nixpkgs#rsync -c bash -c "
-            rsync -a --delete ~/.cargo/git/      $CACHE/cargo-git/
-            rsync -a --delete ~/.cargo/registry/ $CACHE/cargo-registry/
-          "
-          echo "--- Verifying cache contents ($CACHE) ---"
-          ls -la "$CACHE" || true
-          ls -la "$CACHE"/cargo-git "$CACHE"/cargo-registry || true
-
-          printf '%s\n%s\n' "$RUSTC_VER" "$LOCK_SHA" > "$CACHE/.manifest"
-          touch "$CACHE/.ready"
-
-      - name: Release cache lock
-        if: always()
-        run: rmdir /tmp/rust-cache.lock || true
+        run: sccache -s || true
 
   local-env:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
@@ -507,112 +398,117 @@ jobs:
 ### Post merge workflow ###############################################################################################################
 
   build-linux-x86_64-post-merge:
-    runs-on: nixos
+    runs-on: ubuntu-latest
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
     outputs:
       sha: ${{ steps.get_sha.outputs.sha }}
     steps:
-      - name: Clean runner environment
-        run: rm -rf ./*
-      - name: Checkout master branch code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: master
-          clean: true
-
-      - name: Acquire cache lock
-        run: |
-          until mkdir /tmp/rust-cache.lock 2>/dev/null; do
-            sleep 5
-          done
-
-      - name: Restore Rust cache from host (keyed by toolchain+lock)
-        run: |
-          set -e
-          echo "--- Restoring Rust cache from host ---"
-          # Compute cache key
-          RUSTC_FULL="$({ nix develop -c rustc -V; } 2>/dev/null || { rustc -V; } 2>/dev/null || true)"
-          if [[ -n "${RUSTC_FULL:-}" ]]; then
-            RUSTC_VER="${RUSTC_FULL#rustc }"; RUSTC_VER="${RUSTC_VER%% *}"
-          else
-            RUSTC_VER="unknown"
-          fi
-          if [[ -f Cargo.lock ]]; then
-            LOCK_LINE="$(sha256sum Cargo.lock)"
-            LOCK_SHA="${LOCK_LINE%% *}"
-          else
-            LOCK_SHA="nolock"
-          fi
-          CACHE="/tmp/rust-cache-${RUSTC_VER}-${LOCK_SHA}"
-
-          if [ -d "$CACHE" ] && [ -f "$CACHE/.ready" ]; then
-            echo "Ready cache found: $CACHE"
-            mkdir -p ~/.cargo/git ~/.cargo/registry
-            nix shell nixpkgs#rsync -c bash -c "
-              rsync -a $CACHE/cargo-git/ ~/.cargo/git/
-              rsync -a $CACHE/cargo-registry/ ~/.cargo/registry/
-            "
-          else
-            echo "No matching cache ($CACHE); skipping restore."
-          fi
-
-      - name: Validate Rust cache
-        run: |
-          set -euo pipefail
-          CARGO_HOME="${CARGO_HOME:-$HOME/.cargo}"
-
-          echo "--- Cache preflight ---"
-          # Compute cache key again
-          RUSTC_FULL="$({ nix develop -c rustc -V; } 2>/dev/null || { rustc -V; } 2>/dev/null || true)"
-          if [[ -n "${RUSTC_FULL:-}" ]]; then
-            RUSTC_VER="${RUSTC_FULL#rustc }"; RUSTC_VER="${RUSTC_VER%% *}"
-          else
-            RUSTC_VER="unknown"
-          fi
-          if [[ -f Cargo.lock ]]; then
-            LOCK_LINE="$(sha256sum Cargo.lock)"
-            LOCK_SHA="${LOCK_LINE%% *}"
-          else
-            echo "Cargo.lock missing; skipping manifest check."
-            LOCK_SHA="nolock"
-          fi
-          CACHE="/tmp/rust-cache-${RUSTC_VER}-${LOCK_SHA}"
-          [[ -d "$CACHE" ]] || { echo "No shared cache present for key: $CACHE"; exit 0; }
-
-          MAN="$CACHE/.manifest"; READY="$CACHE/.ready"
-          WANT="$(printf '%s\n%s\n' "$RUSTC_VER" "$LOCK_SHA")"
-          REASONS=()
-
-          echo "[1/2] Checking manifest/ready..."
-          if [[ ! -f "$READY" || ! -f "$MAN" ]]; then
-            echo "manifest/ready missing"
-            REASONS+=("manifest/ready missing")
-          else
-            HAVE="$(head -n 2 "$MAN" || true)"
-            if [[ "$WANT" != "$HAVE" ]]; then
-              echo "manifest mismatch"
-              REASONS+=("manifest mismatch")
-            fi
-          fi
-
-          echo "[2/2] cargo fetch --locked..."
-          if ! nix develop -c bash -c "cargo fetch --locked -q" 2> >(grep -v -E 'untrusted substituter|trusted-public-keys' >&2); then
-            echo "cargo fetch failed → clearing registry/src + git/checkouts, then re-fetching"
-            rm -rf "$CARGO_HOME"/registry/src/* "$CARGO_HOME"/git/checkouts/* || true
-            nix develop -c bash -c "cargo fetch --locked" 2> >(grep -v -E 'untrusted substituter|trusted-public-keys' >&2)
-            REASONS+=("re-fetched dependencies")
-          fi
-
-          echo "--- Preflight summary: ${REASONS[*]:-OK} ---"
-
-      - name: Release cache lock
-        if: always()
-        run: rmdir /tmp/rust-cache.lock || true
 
       - name: Get current commit SHA
         id: get_sha
         run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v11
+        with:
+          nix-conf: |
+            extra-experimental-features = nix-command flakes
+            extra-substituters = https://cache.nixos.org/
+            extra-trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+
+      - name: Compute APT cache key
+        id: aptmeta
+        run: |
+          echo "ubuntu=$(lsb_release -rs)" >> "$GITHUB_OUTPUT"
+          pkgs=$'protobuf-compiler\nlibzmq3-dev\npkg-config\ncmake\nbuild-essential'
+          printf "%s" "$pkgs" > apt-packages.tmp
+          echo "pkghash=$(sha256sum apt-packages.tmp | cut -c1-16)" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare APT dirs & perms
+        run: |
+          sudo mkdir -p /var/cache/apt/archives /var/lib/apt/lists
+          sudo chown -R "$USER:$(id -gn)" /var/cache/apt/archives /var/lib/apt/lists
+
+      - name: Restore APT cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            /var/cache/apt/archives
+            /var/lib/apt/lists
+          key: apt-v2-${{ runner.os }}-${{ steps.aptmeta.outputs.ubuntu }}-${{ steps.aptmeta.outputs.pkghash }}
+          restore-keys: |
+            apt-v2-${{ runner.os }}-${{ steps.aptmeta.outputs.ubuntu }}-
+            apt-v2-${{ runner.os }}-
+
+      - name: Install system dependencies
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            protobuf-compiler \
+            libzmq3-dev \
+            pkg-config \
+            cmake \
+            build-essential
+
+      - name: Make APT cache readable for save
+        run: |
+          sudo chown -R "$USER:$(id -gn)" /var/cache/apt/archives /var/lib/apt/lists
+          find /var/cache/apt/archives -type f -print0 | xargs -0 --no-run-if-empty chmod a+r
+          find /var/lib/apt/lists -type f -print0 | xargs -0 --no-run-if-empty chmod a+r
+
+      - name: Save APT cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            /var/cache/apt/archives
+            /var/lib/apt/lists
+          key: apt-v2-${{ runner.os }}-${{ steps.aptmeta.outputs.ubuntu }}-${{ steps.aptmeta.outputs.pkghash }}
+
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.9
+
+      - name: Enable sccache
+        run: |
+          echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
+          echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
+          echo "SCCACHE_CACHE_SIZE=5G" >> $GITHUB_ENV
+
+      - name: Cache sccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/sccache
+          key: sccache-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            sccache-${{ runner.os }}-
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-registry-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            cargo-registry-${{ runner.os }}-
+
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          prefix-key: v1
+          shared-key: global
+          cache-all-crates: true
+          cache-targets: true
+          cache-bin: true
+          cache-on-failure: true
+          workspaces: |
+            .
 
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -632,28 +528,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Enable sccache (RUSTC_WRAPPER)
-        run: |
-          set -e
-          if nix develop -c bash -lc 'command -v sccache' >/dev/null 2>&1; then
-            echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
-            echo "SCCACHE_DIR=/tmp/sccache" >> "$GITHUB_ENV"
-            echo "SCCACHE_CACHE_SIZE=30G" >> "$GITHUB_ENV"
-            echo "CARGO_INCREMENTAL=0" >> "$GITHUB_ENV"
-            mkdir -p /tmp/sccache
-            nix develop -c sccache --stop-server || true
-            nix develop -c sccache --start-server || true
-            nix develop -c sccache --version || true
-          else
-            echo "sccache not in devshell; skipping wrapper."
-          fi
-
       - name: Build
         run: nix develop -c bash -c "cargo build --locked --profile=release"
 
       - name: sccache stats
         if: always()
-        run: nix develop -c sccache -s || true
+        run: sccache -s || true
 
       - name: Build chain specs
         run: |
@@ -678,47 +558,6 @@ jobs:
           docker push ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ steps.get_sha.outputs.sha }}
           docker push ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:latest
           docker push ghcr.io/${{ github.repository }}/partner-chains-node-unstable:latest
-
-      - name: Acquire cache lock
-        run: |
-          until mkdir /tmp/rust-cache.lock 2>/dev/null; do
-            sleep 5
-          done
-
-      - name: Save Rust cache to host (keyed by toolchain+lock)
-        run: |
-          set -e
-          echo "--- Saving Rust cache to host cache ---"
-          # Compute cache key
-          RUSTC_FULL="$({ nix develop -c rustc -V; } 2>/dev/null || { rustc -V; } 2>/dev/null || true)"
-          if [[ -n "${RUSTC_FULL:-}" ]]; then
-            RUSTC_VER="${RUSTC_FULL#rustc }"; RUSTC_VER="${RUSTC_VER%% *}"
-          else
-            RUSTC_VER="unknown"
-          fi
-          if [[ -f Cargo.lock ]]; then
-            LOCK_LINE="$(sha256sum Cargo.lock)"
-            LOCK_SHA="${LOCK_LINE%% *}"
-          else
-            LOCK_SHA="nolock"
-          fi
-          CACHE="/tmp/rust-cache-${RUSTC_VER}-${LOCK_SHA}"
-
-          mkdir -p "$CACHE"
-          nix shell nixpkgs#rsync -c bash -c "
-            rsync -a --delete ~/.cargo/git/      $CACHE/cargo-git/
-            rsync -a --delete ~/.cargo/registry/ $CACHE/cargo-registry/
-          "
-          echo "--- Verifying cache contents ($CACHE) ---"
-          ls -la "$CACHE" || true
-          ls -la "$CACHE"/cargo-git "$CACHE"/cargo-registry || true
-
-          printf '%s\n%s\n' "$RUSTC_VER" "$LOCK_SHA" > "$CACHE/.manifest"
-          touch "$CACHE/.ready"
-
-      - name: Release cache lock
-        if: always()
-        run: rmdir /tmp/rust-cache.lock || true
 
       - name: Rename artifact
         run: |
@@ -895,113 +734,111 @@ jobs:
 ### Workflow dispatch flow ###############################################################################################################
 
   build-linux-x86_64-workflow-dispatch:
-    runs-on: nixos
+    runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch'
     steps:
-      - name: Clean runner environment
-        run: rm -rf ./*
-      - name: Checkout target code to build
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ inputs.sha }}
-          clean: true
 
-      - name: (Optional) Wipe shared Rust caches
-        if: github.event_name == 'workflow_dispatch' && inputs.wipe_cache == true
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v11
+        with:
+          nix-conf: |
+            extra-experimental-features = nix-command flakes
+            extra-substituters = https://cache.nixos.org/
+            extra-trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+
+      - name: Compute APT cache key
+        id: aptmeta
         run: |
-          until mkdir /tmp/rust-cache.lock 2>/dev/null; do sleep 2; done
-          rm -rf /tmp/rust-cache*  # wipe all keyed caches
-          rmdir /tmp/rust-cache.lock || true || true
+          echo "ubuntu=$(lsb_release -rs)" >> "$GITHUB_OUTPUT"
+          pkgs=$'protobuf-compiler\nlibzmq3-dev\npkg-config\ncmake\nbuild-essential'
+          printf "%s" "$pkgs" > apt-packages.tmp
+          echo "pkghash=$(sha256sum apt-packages.tmp | cut -c1-16)" >> "$GITHUB_OUTPUT"
 
-      - name: Acquire cache lock
+      - name: Prepare APT dirs & perms
         run: |
-          until mkdir /tmp/rust-cache.lock 2>/dev/null; do
-            sleep 5
-          done
+          sudo mkdir -p /var/cache/apt/archives /var/lib/apt/lists
+          sudo chown -R "$USER:$(id -gn)" /var/cache/apt/archives /var/lib/apt/lists
 
-      - name: Restore Rust cache from host (keyed by toolchain+lock)
+      - name: Restore APT cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            /var/cache/apt/archives
+            /var/lib/apt/lists
+          key: apt-v2-${{ runner.os }}-${{ steps.aptmeta.outputs.ubuntu }}-${{ steps.aptmeta.outputs.pkghash }}
+          restore-keys: |
+            apt-v2-${{ runner.os }}-${{ steps.aptmeta.outputs.ubuntu }}-
+            apt-v2-${{ runner.os }}-
+
+      - name: Install system dependencies
+        env:
+          DEBIAN_FRONTEND: noninteractive
         run: |
-          set -e
-          echo "--- Restoring Rust cache from host ---"
-          # Compute cache key
-          RUSTC_FULL="$({ nix develop -c rustc -V; } 2>/dev/null || { rustc -V; } 2>/dev/null || true)"
-          if [[ -n "${RUSTC_FULL:-}" ]]; then
-            RUSTC_VER="${RUSTC_FULL#rustc }"; RUSTC_VER="${RUSTC_VER%% *}"
-          else
-            RUSTC_VER="unknown"
-          fi
-          if [[ -f Cargo.lock ]]; then
-            LOCK_LINE="$(sha256sum Cargo.lock)"
-            LOCK_SHA="${LOCK_LINE%% *}"
-          else
-            LOCK_SHA="nolock"
-          fi
-          CACHE="/tmp/rust-cache-${RUSTC_VER}-${LOCK_SHA}"
+          sudo apt-get update
+          sudo apt-get install -y \
+            protobuf-compiler \
+            libzmq3-dev \
+            pkg-config \
+            cmake \
+            build-essential
 
-          if [ -d "$CACHE" ] && [ -f "$CACHE/.ready" ]; then
-            echo "Ready cache found: $CACHE"
-            mkdir -p ~/.cargo/git ~/.cargo/registry
-            nix shell nixpkgs#rsync -c bash -c "
-              rsync -a $CACHE/cargo-git/ ~/.cargo/git/
-              rsync -a $CACHE/cargo-registry/ ~/.cargo/registry/
-            "
-          else
-            echo "No matching cache ($CACHE); skipping restore."
-          fi
-
-      - name: Validate Rust cache
+      - name: Make APT cache readable for save
         run: |
-          set -euo pipefail
-          CARGO_HOME="${CARGO_HOME:-$HOME/.cargo}"
+          sudo chown -R "$USER:$(id -gn)" /var/cache/apt/archives /var/lib/apt/lists
+          find /var/cache/apt/archives -type f -print0 | xargs -0 --no-run-if-empty chmod a+r
+          find /var/lib/apt/lists -type f -print0 | xargs -0 --no-run-if-empty chmod a+r
 
-          echo "--- Cache preflight ---"
-          # Compute cache key again
-          RUSTC_FULL="$({ nix develop -c rustc -V; } 2>/dev/null || { rustc -V; } 2>/dev/null || true)"
-          if [[ -n "${RUSTC_FULL:-}" ]]; then
-            RUSTC_VER="${RUSTC_FULL#rustc }"; RUSTC_VER="${RUSTC_VER%% *}"
-          else
-            RUSTC_VER="unknown"
-          fi
-          if [[ -f Cargo.lock ]]; then
-            LOCK_LINE="$(sha256sum Cargo.lock)"
-            LOCK_SHA="${LOCK_LINE%% *}"
-          else
-            echo "Cargo.lock missing; skipping manifest check."
-            LOCK_SHA="nolock"
-          fi
-          CACHE="/tmp/rust-cache-${RUSTC_VER}-${LOCK_SHA}"
-          [[ -d "$CACHE" ]] || { echo "No shared cache present for key: $CACHE"; exit 0; }
-
-          MAN="$CACHE/.manifest"; READY="$CACHE/.ready"
-          WANT="$(printf '%s\n%s\n' "$RUSTC_VER" "$LOCK_SHA")"
-          REASONS=()
-
-          echo "[1/2] Checking manifest/ready..."
-          if [[ ! -f "$READY" || ! -f "$MAN" ]]; then
-            echo "manifest/ready missing"
-            REASONS+=("manifest/ready missing")
-          else
-            HAVE="$(head -n 2 "$MAN" || true)"
-            if [[ "$WANT" != "$HAVE" ]]; then
-              echo "manifest mismatch"
-              REASONS+=("manifest mismatch")
-            fi
-          fi
-
-          echo "[2/2] cargo fetch --locked..."
-          if ! nix develop -c bash -lc "cargo fetch --locked -q" 2> >(grep -v -E 'untrusted substituter|trusted-public-keys' >&2); then
-            echo "cargo fetch failed → clearing registry/src + git/checkouts, then re-fetching"
-            rm -rf "$CARGO_HOME"/registry/src/* "$CARGO_HOME"/git/checkouts/* || true
-            nix develop -c cargo fetch --locked 2> >(grep -v -E 'untrusted substituter|trusted-public-keys' >&2)
-            REASONS+=("re-fetched dependencies")
-          fi
-
-          echo "--- Preflight summary: ${REASONS[*]:-OK} ---"
-
-      - name: Release cache lock
+      - name: Save APT cache
         if: always()
-        run: rmdir /tmp/rust-cache.lock || true
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            /var/cache/apt/archives
+            /var/lib/apt/lists
+          key: apt-v2-${{ runner.os }}-${{ steps.aptmeta.outputs.ubuntu }}-${{ steps.aptmeta.outputs.pkghash }}
+
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.9
+
+      - name: Enable sccache
+        run: |
+          echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
+          echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
+          echo "SCCACHE_CACHE_SIZE=5G" >> $GITHUB_ENV
+
+      - name: Cache sccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/sccache
+          key: sccache-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            sccache-${{ runner.os }}-
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-registry-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            cargo-registry-${{ runner.os }}-
+
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          prefix-key: v1
+          shared-key: global
+          cache-all-crates: true
+          cache-targets: true
+          cache-bin: true
+          cache-on-failure: true
+          workspaces: |
+            .
 
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -1013,22 +850,6 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ${{ secrets.ECR_REGISTRY_SECRET }}
-
-      - name: Enable sccache (RUSTC_WRAPPER)
-        run: |
-          set -e
-          if nix develop -c bash -lc 'command -v sccache' >/dev/null 2>&1; then
-            echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
-            echo "SCCACHE_DIR=/tmp/sccache" >> "$GITHUB_ENV"
-            echo "SCCACHE_CACHE_SIZE=30G" >> "$GITHUB_ENV"
-            echo "CARGO_INCREMENTAL=0" >> "$GITHUB_ENV"
-            mkdir -p /tmp/sccache
-            nix develop -c sccache --stop-server || true
-            nix develop -c sccache --start-server || true
-            nix develop -c sccache --version || true
-          else
-            echo "sccache not in devshell; skipping wrapper."
-          fi
 
       - name: Formatting
         run: nix develop -c bash -c "cargo fmt --check"
@@ -1044,48 +865,7 @@ jobs:
 
       - name: sccache stats
         if: always()
-        run: nix develop -c sccache -s || true
-
-      - name: Acquire cache lock
-        run: |
-          until mkdir /tmp/rust-cache.lock 2>/dev/null; do
-            sleep 5
-          done
-
-      - name: Save Rust cache to host (keyed by toolchain+lock)
-        run: |
-          set -e
-          echo "--- Saving Rust cache to host cache ---"
-          # Compute cache key
-          RUSTC_FULL="$({ nix develop -c rustc -V; } 2>/dev/null || { rustc -V; } 2>/dev/null || true)"
-          if [[ -n "${RUSTC_FULL:-}" ]]; then
-            RUSTC_VER="${RUSTC_FULL#rustc }"; RUSTC_VER="${RUSTC_VER%% *}"
-          else
-            RUSTC_VER="unknown"
-          fi
-          if [[ -f Cargo.lock ]]; then
-            LOCK_LINE="$(sha256sum Cargo.lock)"
-            LOCK_SHA="${LOCK_LINE%% *}"
-          else
-            LOCK_SHA="nolock"
-          fi
-          CACHE="/tmp/rust-cache-${RUSTC_VER}-${LOCK_SHA}"
-
-          mkdir -p "$CACHE"
-          nix shell nixpkgs#rsync -c bash -c "
-            rsync -a --delete ~/.cargo/git/      $CACHE/cargo-git/
-            rsync -a --delete ~/.cargo/registry/ $CACHE/cargo-registry/
-          "
-          echo "--- Verifying cache contents ($CACHE) ---"
-          ls -la "$CACHE" || true
-          ls -la "$CACHE"/cargo-git "$CACHE"/cargo-registry || true
-
-          printf '%s\n%s\n' "$RUSTC_VER" "$LOCK_SHA" > "$CACHE/.manifest"
-          touch "$CACHE/.ready"
-
-      - name: Release cache lock
-        if: always()
-        run: rmdir /tmp/rust-cache.lock || true
+        run: sccache -s || true
 
       #- name: Run cargo-deny to check licenses
       #  uses: EmbarkStudios/cargo-deny-action@v1
