@@ -46,6 +46,14 @@ jobs:
             substituters = https://cache.nixos.org/
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
 
+      - name: Cache Nix store
+        uses: actions/cache@v4
+        with:
+          path: /nix/store
+          key: nix-store-${{ runner.os }}-${{ hashFiles('flake.lock', 'flake.nix', 'shell.nix') }}
+          restore-keys: |
+            nix-store-${{ runner.os }}-
+
       - name: Compute APT cache key
         id: aptmeta
         run: |
@@ -148,10 +156,10 @@ jobs:
           registry: ${{ secrets.ECR_REGISTRY_SECRET }}
 
       - name: Formatting
-        run: nix develop -c bash -c "cargo fmt --check"
+        run: nix develop --accept-flake-config -c bash -c "cargo fmt --check"
 
       - name: Build (Stable)
-        run: nix develop -c bash -c "cargo build --locked --release"
+        run: nix develop --accept-flake-config -c bash -c "cargo build --locked --release"
 
       - name: sccache stats
         if: always()
@@ -159,7 +167,7 @@ jobs:
 
       - name: Build chain specs
         run: |
-          nix develop -c bash -c '
+          nix develop --accept-flake-config -c bash -c '
             source ./dev/envs/devnet/.envrc
             target/release/partner-chains-demo-node build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json
 
@@ -173,7 +181,7 @@ jobs:
       - name: Build and push docker image
         run: |
           cp target/release/partner-chains-demo-node .
-          nix develop -c bash -c "patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 partner-chains-demo-node"
+          nix develop --accept-flake-config -c bash -c "patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 partner-chains-demo-node"
           docker build -f dev/ci/Dockerfile -t ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ github.sha }} .
           docker push ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ github.sha }}
 
@@ -207,6 +215,14 @@ jobs:
             experimental-features = nix-command flakes
             substituters = https://cache.nixos.org/
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+
+      - name: Cache Nix store
+        uses: actions/cache@v4
+        with:
+          path: /nix/store
+          key: nix-store-${{ runner.os }}-${{ hashFiles('flake.lock', 'flake.nix', 'shell.nix') }}
+          restore-keys: |
+            nix-store-${{ runner.os }}-
 
       - name: Compute APT cache key
         id: aptmeta
@@ -301,15 +317,15 @@ jobs:
       - name: Build (Nightly)
         env:
           WASM_BUILD_WORKSPACE_HINT: ${{ github.workspace }}
-        run: nix develop -c bash -c "RUSTUP_TOOLCHAIN=nightly cargo build --locked"
+        run: nix develop --accept-flake-config -c bash -c "RUSTUP_TOOLCHAIN=nightly cargo build --locked"
 
       - name: Test (Nightly)
         env:
           WASM_BUILD_WORKSPACE_HINT: ${{ github.workspace }}
-        run: nix develop -c bash -c "RUSTUP_TOOLCHAIN=nightly cargo test --locked --all-features"
+        run: nix develop --accept-flake-config -c bash -c "RUSTUP_TOOLCHAIN=nightly cargo test --locked --all-features"
 
       - name: Lint (Nightly)
-        run: nix develop -c bash -c "RUSTUP_TOOLCHAIN=nightly RUSTFLAGS=-Dwarnings cargo clippy --locked --all-features"
+        run: nix develop --accept-flake-config -c bash -c "RUSTUP_TOOLCHAIN=nightly RUSTFLAGS=-Dwarnings cargo clippy --locked --all-features"
 
       - name: sccache stats
         if: always()
@@ -424,6 +440,14 @@ jobs:
             substituters = https://cache.nixos.org/
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
 
+      - name: Cache Nix store
+        uses: actions/cache@v4
+        with:
+          path: /nix/store
+          key: nix-store-${{ runner.os }}-${{ hashFiles('flake.lock', 'flake.nix', 'shell.nix') }}
+          restore-keys: |
+            nix-store-${{ runner.os }}-
+
       - name: Compute APT cache key
         id: aptmeta
         run: |
@@ -533,7 +557,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build
-        run: nix develop -c bash -c "cargo build --locked --profile=release"
+        run: nix develop --accept-flake-config -c bash -c "cargo build --locked --profile=release"
 
       - name: sccache stats
         if: always()
@@ -541,7 +565,7 @@ jobs:
 
       - name: Build chain specs
         run: |
-          nix develop -c bash -c '
+          nix develop --accept-flake-config -c bash -c '
             source ./dev/envs/devnet/.envrc
             target/release/partner-chains-demo-node build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json
 
@@ -555,7 +579,7 @@ jobs:
       - name: Build and push docker image
         run: |
           cp target/release/partner-chains-demo-node .
-          nix develop -c bash -c "patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 partner-chains-demo-node"
+          nix develop --accept-flake-config -c bash -c "patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 partner-chains-demo-node"
           docker build -f dev/ci/Dockerfile -t ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ steps.get_sha.outputs.sha }} .
           docker tag ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ steps.get_sha.outputs.sha }} ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:latest
           docker tag ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ steps.get_sha.outputs.sha }} ghcr.io/${{ github.repository }}/partner-chains-node-unstable:latest
@@ -754,6 +778,14 @@ jobs:
             substituters = https://cache.nixos.org/
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
 
+      - name: Cache Nix store
+        uses: actions/cache@v4
+        with:
+          path: /nix/store
+          key: nix-store-${{ runner.os }}-${{ hashFiles('flake.lock', 'flake.nix', 'shell.nix') }}
+          restore-keys: |
+            nix-store-${{ runner.os }}-
+
       - name: Compute APT cache key
         id: aptmeta
         run: |
@@ -856,16 +888,16 @@ jobs:
           registry: ${{ secrets.ECR_REGISTRY_SECRET }}
 
       - name: Formatting
-        run: nix develop -c bash -c "cargo fmt --check"
+        run: nix develop --accept-flake-config -c bash -c "cargo fmt --check"
 
       - name: Build
-        run: nix develop -c bash -c "cargo build --locked --release"
+        run: nix develop --accept-flake-config -c bash -c "cargo build --locked --release"
 
       - name: Test
-        run: nix develop -c bash -c "cargo test --locked --release --all-features"
+        run: nix develop --accept-flake-config -c bash -c "cargo test --locked --release --all-features"
 
       - name: Lint
-        run: nix develop -c bash -c "RUSTFLAGS=-Dwarnings cargo clippy --locked --release --all-features"
+        run: nix develop --accept-flake-config -c bash -c "RUSTFLAGS=-Dwarnings cargo clippy --locked --release --all-features"
 
       - name: sccache stats
         if: always()
@@ -878,7 +910,7 @@ jobs:
 
       - name: Build chain specs
         run: |
-          nix develop -c bash -c '
+          nix develop --accept-flake-config -c bash -c '
             source ./dev/envs/devnet/.envrc
             target/release/partner-chains-demo-node build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json
 
@@ -892,7 +924,7 @@ jobs:
       - name: Build and push docker image
         run: |
           cp target/release/partner-chains-demo-node .
-          nix develop -c bash -c "patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 partner-chains-demo-node"
+          nix develop --accept-flake-config -c bash -c "patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 partner-chains-demo-node"
           docker build -f dev/ci/Dockerfile -t ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ inputs.sha }} .
           docker push ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ inputs.sha }}
 

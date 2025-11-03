@@ -8,7 +8,6 @@ use {
 };
 
 use super::v0;
-use sidechain_domain::ScEpochNumber;
 
 /// [frame_support::migrations::VersionedMigration] parametrized for v0 to v1 migration.
 pub type LegacyToV1Migration<T> = frame_support::migrations::VersionedMigration<
@@ -68,6 +67,7 @@ where
 	fn post_upgrade(state: Vec<u8>) -> Result<(), sp_runtime::TryRuntimeError> {
 		use frame_support::ensure;
 		use parity_scale_codec::Decode;
+		use sidechain_domain::ScEpochNumber;
 		use v0::LegacyCommitteeInfo;
 
 		let (current_committee_v0, next_committee_v0): (
