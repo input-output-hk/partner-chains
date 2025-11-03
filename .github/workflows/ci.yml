@@ -166,7 +166,8 @@ jobs:
         run: |
           echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
           echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
-          echo "SCCACHE_CACHE_SIZE=5G" >> $GITHUB_ENV
+          echo "SCCACHE_CACHE_SIZE=2G" >> $GITHUB_ENV
+          echo "CARGO_INCREMENTAL=0" >> $GITHUB_ENV
 
       - name: Cache sccache
         uses: actions/cache@v4
@@ -176,37 +177,15 @@ jobs:
           restore-keys: |
             sccache-${{ runner.os }}-
 
-      - name: Cache cargo registry
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: cargo-registry-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            cargo-registry-${{ runner.os }}-
-
-      - name: Setup Rust cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          prefix-key: v1-nightly
-          shared-key: global-nightly
-          cache-all-crates: true
-          cache-targets: true
-          cache-bin: true
-          cache-on-failure: true
-          workspaces: |
-            .
-
       - name: Build (Nightly)
         env:
           WASM_BUILD_WORKSPACE_HINT: ${{ github.workspace }}
-        run: nix develop --accept-flake-config -c bash -c "RUSTUP_TOOLCHAIN=nightly cargo build --locked"
+        run: nix develop --accept-flake-config -c bash -c "RUSTUP_TOOLCHAIN=nightly cargo build --locked --release"
 
       - name: Test (Nightly)
         env:
           WASM_BUILD_WORKSPACE_HINT: ${{ github.workspace }}
-        run: nix develop --accept-flake-config -c bash -c "RUSTUP_TOOLCHAIN=nightly cargo test --locked --all-features"
+        run: nix develop --accept-flake-config -c bash -c "RUSTUP_TOOLCHAIN=nightly cargo test --locked --release --all-features"
 
       - name: Lint (Nightly)
         run: nix develop --accept-flake-config -c bash -c "RUSTUP_TOOLCHAIN=nightly RUSTFLAGS=-Dwarnings cargo clippy --locked --all-features"
