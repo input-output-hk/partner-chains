@@ -241,6 +241,7 @@ pub mod pallet {
 		type TransferHandler: TransferHandler<Self::Recipient>;
 
 		/// Maximum number of transfers that can be handled in one block for each transfer type
+		#[pallet::constant]
 		type MaxTransfersPerBlock: Get<u32>;
 
 		/// Extrinsic weight information
