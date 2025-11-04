@@ -3,7 +3,7 @@
 PARTNER_CHAINS_NODE_IMAGE="ghcr.io/input-output-hk/partner-chains/partner-chains-node-unstable:latest"
 CARDANO_IMAGE="ghcr.io/intersectmbo/cardano-node:10.5.1"
 DBSYNC_IMAGE="ghcr.io/intersectmbo/cardano-db-sync:13.6.0.4"
-DOLOS_IMAGE="ghcr.io/txpipe/dolos:1.0.0-beta.7"
+DOLOS_IMAGE="ghcr.io/txpipe/dolos:1.0.0-beta.8"
 OGMIOS_IMAGE="cardanosolutions/ogmios:v6.13.0"
 POSTGRES_IMAGE="postgres:17.2"
 TESTS_IMAGE="python:3.12-slim"
@@ -382,10 +382,14 @@ create_docker_compose() {
         cat ./modules/partner-chains-wizard.txt >> docker-compose.yml
         ;;
       6)
-        echo -e "Including Cardano testnet, Ogmios, and Dolos services.\n"
+        echo -e "Including all services with Dolos data source.\n"
         cat ./modules/cardano.txt >> docker-compose.yml
         cat ./modules/ogmios.txt >> docker-compose.yml
+        cat ./modules/db-sync.txt >> docker-compose.yml
+        cat ./modules/postgres.txt >> docker-compose.yml
         cat ./modules/dolos.txt >> docker-compose.yml
+        cat ./modules/partner-chains-nodes-dolos.txt >> docker-compose.yml
+        cat ./modules/partner-chains-setup.txt >> docker-compose.yml
         ;;
       0)
         echo -e "Including all services.\n"

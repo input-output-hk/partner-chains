@@ -2,7 +2,6 @@
 #[cfg(feature = "try-runtime")]
 extern crate alloc;
 use frame_support::traits::UncheckedOnRuntimeUpgrade;
-use sidechain_domain::ScEpochNumber;
 #[cfg(feature = "try-runtime")]
 use {
 	alloc::vec::Vec, parity_scale_codec::Encode, sp_session_validator_management::CommitteeMember,
@@ -68,6 +67,7 @@ where
 	fn post_upgrade(state: Vec<u8>) -> Result<(), sp_runtime::TryRuntimeError> {
 		use frame_support::ensure;
 		use parity_scale_codec::Decode;
+		use sidechain_domain::ScEpochNumber;
 		use v0::LegacyCommitteeInfo;
 
 		let (current_committee_v0, next_committee_v0): (

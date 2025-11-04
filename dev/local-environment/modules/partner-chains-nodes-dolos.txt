@@ -1,4 +1,3 @@
-
   partner-chains-node-1:
     container_name: partner-chains-node-1
     image: ${PARTNER_CHAINS_NODE_IMAGE}
@@ -10,7 +9,8 @@
       - ./configurations/partner-chains-nodes/partner-chains-node-1/keystore:/keystore
     environment:
       DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/cexplorer"
-      CARDANO_DATA_SOURCE: "db-sync"
+      DOLOS_MINIBF_URL: "http://dolos:${DOLOS_MINIBF_PORT}"
+      CARDANO_DATA_SOURCE: "dolos"
       CARDANO_SECURITY_PARAMETER: "5"
       CARDANO_ACTIVE_SLOTS_COEFF: "0.4"
       MC__FIRST_EPOCH_NUMBER: "0"
@@ -40,7 +40,8 @@
       - ./configurations/partner-chains-nodes/partner-chains-node-2/keystore:/keystore
     environment:
       DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/cexplorer"
-      CARDANO_DATA_SOURCE: "db-sync"
+      DOLOS_MINIBF_URL: "http://dolos:${DOLOS_MINIBF_PORT}"
+      CARDANO_DATA_SOURCE: "dolos"
       CARDANO_SECURITY_PARAMETER: "5"
       CARDANO_ACTIVE_SLOTS_COEFF: "0.4"
       MC__FIRST_EPOCH_NUMBER: "0"
@@ -70,7 +71,8 @@
       - ./configurations/partner-chains-nodes/partner-chains-node-3/keystore:/keystore
     environment:
       DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/cexplorer"
-      CARDANO_DATA_SOURCE: "db-sync"
+      DOLOS_MINIBF_URL: "http://dolos:${DOLOS_MINIBF_PORT}"
+      CARDANO_DATA_SOURCE: "dolos"
       CARDANO_SECURITY_PARAMETER: "5"
       CARDANO_ACTIVE_SLOTS_COEFF: "0.4"
       MC__FIRST_EPOCH_NUMBER: "0"
@@ -101,7 +103,8 @@
       - ./configurations/partner-chains-nodes/partner-chains-node-4/network:/network
     environment:
       DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/cexplorer"
-      CARDANO_DATA_SOURCE: "db-sync"
+      DOLOS_MINIBF_URL: "http://dolos:${DOLOS_MINIBF_PORT}"
+      CARDANO_DATA_SOURCE: "dolos"
       CARDANO_SECURITY_PARAMETER: "5"
       CARDANO_ACTIVE_SLOTS_COEFF: "0.4"
       MC__FIRST_EPOCH_NUMBER: "0"
@@ -132,7 +135,8 @@
       - ./configurations/partner-chains-nodes/partner-chains-node-5/network:/network
     environment:
       DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/cexplorer"
-      CARDANO_DATA_SOURCE: "db-sync"
+      DOLOS_MINIBF_URL: "http://dolos:${DOLOS_MINIBF_PORT}"
+      CARDANO_DATA_SOURCE: "dolos"
       CARDANO_SECURITY_PARAMETER: "5"
       CARDANO_ACTIVE_SLOTS_COEFF: "0.4"
       MC__FIRST_EPOCH_NUMBER: "0"

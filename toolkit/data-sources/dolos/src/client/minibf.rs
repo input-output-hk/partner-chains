@@ -49,23 +49,25 @@ impl MiniBFClient {
 		method: &str,
 		pagination: Pagination,
 	) -> Result<Vec<T>, String> {
-		let mut req = url::form_urlencoded::Serializer::new(format!("{}/{}", self.addr, method));
-		req.extend_pairs([
+		let mut query_pairs = url::form_urlencoded::Serializer::new(String::new());
+		query_pairs.extend_pairs([
 			("count", &pagination.count.to_string()),
 			("page", &pagination.page.to_string()),
 			("order", &pagination.order.to_string()),
 		]);
 		if let Some(from) = pagination.from {
-			req.append_pair("from", &from);
+			query_pairs.append_pair("from", &from);
 		}
 		if let Some(to) = pagination.to {
-			req.append_pair("to", &to);
+			query_pairs.append_pair("to", &to);
 		}
-		let req_url = req.finish();
+		let mut req_url =
+			url::Url::parse(&format!("{}/{}", self.addr, method)).map_err(|e| e.to_string())?;
+		req_url.set_query(Some(&query_pairs.finish()));
 		log::trace!("Dolos request: {req_url:?}");
 		let resp = self
 			.agent
-			.get(req_url)
+			.get(req_url.as_str())
 			.call()
 			.map_err(|e| e.to_string())
 			.and_then(|mut r| r.body_mut().read_json().map_err(|e| e.to_string()));
@@ -82,7 +84,7 @@ impl MiniBFClient {
 		let mut res = Vec::new();
 		while !have_all_pages {
 			let mut resp: Vec<T> = self.paginated_request(method, pagination.clone()).await?;
-			if resp.len() < 100 {
+			if (resp.len() as i32) < pagination.count {
 				have_all_pages = true
 			}
 			res.append(&mut resp);
@@ -112,18 +114,16 @@ impl MiniBFApi for MiniBFClient {
 		&self,
 		asset_id: AssetId,
 	) -> Result<Vec<AssetTransactionsInner>, String> {
-		let AssetId { policy_id, asset_name } = asset_id;
-		self.paginated_request_all(&format!("assets/{policy_id}{asset_name}/transactions"))
-			.await
+		let asset_id_str = format_asset_id(&asset_id);
+		self.paginated_request_all(&format!("assets/{asset_id_str}/transactions")).await
 	}
 
 	async fn assets_addresses(
 		&self,
 		asset_id: AssetId,
 	) -> Result<Vec<AssetAddressesInner>, String> {
-		let AssetId { policy_id, asset_name } = asset_id;
-		self.paginated_request_all(&format!("assets/{policy_id}{asset_name}/addresses"))
-			.await
+		let asset_id_str = format_asset_id(&asset_id);
+		self.paginated_request_all(&format!("assets/{asset_id_str}/addresses")).await
 	}
 
 	async fn blocks_latest(&self) -> Result<BlockContent, String> {
@@ -188,6 +188,11 @@ impl MiniBFApi for MiniBFClient {
 	async fn transactions_utxos(&self, tx_hash: McTxHash) -> Result<TxContentUtxo, String> {
 		self.request(&format!("txs/{tx_hash}/utxos")).await
 	}
+}
+
+fn format_asset_id(asset_id: &AssetId) -> String {
+	let AssetId { policy_id, asset_name } = asset_id;
+	format!("{}{}", &policy_id.to_hex_string()[2..], &asset_name.to_hex_string()[2..])
 }
 
 #[derive(Clone)]

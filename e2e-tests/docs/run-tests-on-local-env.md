@@ -26,7 +26,7 @@
 7. Run partner-chains tests on partner-chains local environment
 
 ```bash
-pytest -rP -v --blockchain substrate --env local --init-timestamp=$(docker exec cardano-node-1 cat /shared/cardano.start) --log-cli-level debug -vv -s -m "not probability"
+pytest -rP -v --blockchain substrate --env local --init-timestamp=$(docker exec cardano-node-1 cat /shared/cardano.start) --log-cli-level debug -vv -s -m "not probability" --node-host=127.0.0.1
 ```
 
 ## Substrate Portal
