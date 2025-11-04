@@ -105,10 +105,10 @@ where
 
 		let ariadne_data_provider = AriadneIDP::new(
 			client.as_ref(),
-			sc_slot_config,
+			sc_slot_config.epoch_duration().as_millis() as u64,
 			mc_epoch_config,
 			parent_hash,
-			*slot,
+			(*timestamp).as_millis(),
 			authority_selection_data_source.as_ref(),
 			mc_hash.mc_epoch(),
 		)
@@ -211,9 +211,11 @@ where
 			governed_map_data_source,
 			bridge_data_source,
 		} = self;
-		let CreateInherentDataConfig { mc_epoch_config, sc_slot_config, time_source, .. } = config;
+		let CreateInherentDataConfig { mc_epoch_config, sc_slot_config, .. } = config;
 
-		let timestamp = TimestampIDP::new(Timestamp::new(time_source.get_current_time_millis()));
+		let timestamp = TimestampIDP::new(Timestamp::new(
+			sc_slot_config.slot_start_time(verified_block_slot).unix_millis(),
+		));
 		let parent_header = client.expect_header(parent_hash)?;
 		let parent_slot = slot_from_predigest(&parent_header)?;
 		let mc_state_reference = McHashIDP::new_verification(
@@ -228,10 +230,10 @@ where
 
 		let ariadne_data_provider = AriadneIDP::new(
 			client.as_ref(),
-			sc_slot_config,
+			sc_slot_config.epoch_duration().as_millis() as u64,
 			mc_epoch_config,
 			parent_hash,
-			verified_block_slot,
+			(*timestamp).as_millis(),
 			authority_selection_data_source.as_ref(),
 			mc_state_reference.epoch,
 		)

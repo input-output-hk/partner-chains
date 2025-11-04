@@ -9,7 +9,6 @@ use {
 	sidechain_domain::mainchain_epoch::MainchainEpochDerivation,
 	sidechain_domain::*,
 	sp_api::ProvideRuntimeApi,
-	sp_consensus_slots::Slot,
 	sp_inherents::{InherentData, InherentIdentifier},
 	sp_runtime::traits::Block as BlockT,
 	sp_session_validator_management::CommitteeMember as CommitteeMemberT,
@@ -19,7 +18,7 @@ use {
 };
 
 #[cfg(feature = "std")]
-pub use {sidechain_domain::mainchain_epoch::MainchainEpochConfig, sidechain_slots::ScSlotConfig};
+pub use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 
 #[derive(Clone, Debug, Encode, Decode)]
 /// Inherent data provider providing inputs for authority selection.
@@ -34,18 +33,18 @@ impl AriadneInherentDataProvider {
 	///
 	/// Parameters:
 	/// - `client`: runtime client capable of providing [SessionValidatorManagementApi] runtime API
-	/// - `sc_slot_config`: partner chain slot configuration
+	/// - `sc_epoch_duration_millis`: duration of the Partner Chain epoch in milliseconds
 	/// - `mc_epoch_config`: main chain epoch configuration
 	/// - `parent_hash`: parent hash of the current block
-	/// - `slot`: slot of the current block
+	/// - `timestamp_millis`: timestamp of current block in milliseconds
 	/// - `data_source`: data source implementing [AuthoritySelectionDataSource]
 	/// - `mc_reference_epoch`: latest stable mainchain epoch
 	pub async fn new<Block, CommitteeMember, T>(
 		client: &T,
-		sc_slot_config: &ScSlotConfig,
+		sc_epoch_duration_millis: u64,
 		mc_epoch_config: &MainchainEpochConfig,
 		parent_hash: <Block as BlockT>::Hash,
-		slot: Slot,
+		timestamp_millis: u64,
 		data_source: &(dyn AuthoritySelectionDataSource + Send + Sync),
 		mc_reference_epoch: McEpochNumber,
 	) -> Result<Self, InherentProviderCreationError>
@@ -64,10 +63,10 @@ impl AriadneInherentDataProvider {
 	{
 		let for_mc_epoch = mc_epoch_for_next_ariadne_cidp(
 			client,
-			sc_slot_config,
+			sc_epoch_duration_millis,
 			mc_epoch_config,
 			parent_hash,
-			slot,
+			timestamp_millis,
 		)?;
 
 		let data_epoch = data_source.data_epoch(for_mc_epoch).await?;
@@ -100,9 +99,6 @@ impl AriadneInherentDataProvider {
 #[derive(Debug, thiserror::Error)]
 /// Error type returned when creation of [AriadneInherentDataProvider] fails.
 pub enum InherentProviderCreationError {
-	/// Slot represents a timestamp bigger than of [u64::MAX].
-	#[error("Slot represents a timestamp bigger than of u64::MAX")]
-	SlotTooBig,
 	/// Couldn't convert timestamp to main chain epoch.
 	#[error("Couldn't convert timestamp to main chain epoch: {0}")]
 	McEpochDerivationError(#[from] sidechain_domain::mainchain_epoch::EpochDerivationError),
@@ -120,10 +116,10 @@ pub enum InherentProviderCreationError {
 #[cfg(feature = "std")]
 fn mc_epoch_for_next_ariadne_cidp<Block, CommitteeMember, T>(
 	client: &T,
-	sc_slot_config: &ScSlotConfig,
+	sc_epoch_duration_millis: u64,
 	epoch_config: &MainchainEpochConfig,
 	parent_hash: <Block as BlockT>::Hash,
-	slot: Slot,
+	timestamp_millis: u64,
 ) -> Result<McEpochNumber, InherentProviderCreationError>
 where
 	Block: BlockT,
@@ -138,34 +134,27 @@ where
 			ScEpochNumber,
 		>,
 {
+	use sp_core::offchain::Timestamp;
+
 	let next_unset_epoch = client.runtime_api().get_next_unset_epoch_number(parent_hash)?;
 
-	let for_sc_epoch_number = {
+	let for_timestamp = {
 		// A special case for the genesis committee (current epoch 0, next unset epoch 1).
 		// The genesis committee epoch is initialized with 0, so in the very first block we need to provide
-		// the epoch number based on the current slot number
+		// the epoch number based on the current timestamp
 		if next_unset_epoch == ScEpochNumber(1) {
-			sc_slot_config.epoch_number(slot)
+			// We first convert the timestamp to PC epoch number and then use the starting time of this
+			// to ensure that all timestamps within a PC epoch produce the same candidates. This is
+			// necessary in case the boundaries of PC epochs and MC epochs do not align.
+			let current_pc_epoch = timestamp_millis / sc_epoch_duration_millis;
+			current_pc_epoch * sc_epoch_duration_millis
 		} else {
-			next_unset_epoch
+			next_unset_epoch.0 * sc_epoch_duration_millis
 		}
 	};
 
-	sc_epoch_to_mc_epoch(for_sc_epoch_number, sc_slot_config, epoch_config)
-}
-
-#[cfg(feature = "std")]
-fn sc_epoch_to_mc_epoch(
-	sc_epoch: ScEpochNumber,
-	sc_slot_config: &ScSlotConfig,
-	epoch_config: &MainchainEpochConfig,
-) -> Result<McEpochNumber, InherentProviderCreationError> {
-	let timestamp = sc_slot_config
-		.epoch_start_time(sc_epoch)
-		.ok_or(InherentProviderCreationError::SlotTooBig)?;
-
 	epoch_config
-		.timestamp_to_mainchain_epoch(timestamp)
+		.timestamp_to_mainchain_epoch(Timestamp::from_unix_millis(for_timestamp))
 		.map_err(InherentProviderCreationError::McEpochDerivationError)
 }
 
@@ -205,11 +194,11 @@ mod tests {
 	use crate::ariadne_inherent_data_provider::AriadneInherentDataProvider;
 	use crate::mock::MockAuthoritySelectionDataSource;
 	use crate::runtime_api_mock::*;
-	use SlotDuration;
 	use sidechain_domain::mainchain_epoch::*;
-	use sidechain_slots::*;
 	use sp_core::H256;
 	use sp_core::offchain::Timestamp;
+
+	const TIMESTAMP: u64 = 400_000;
 
 	#[tokio::test]
 	async fn return_empty_ariadne_cidp_if_runtime_requests_too_new_epoch() {
@@ -218,11 +207,11 @@ mod tests {
 		let mc_reference_epoch = McEpochNumber(1);
 		let empty_ariadne_idp = AriadneInherentDataProvider::new(
 			&client(next_unset_epoch_number),
-			&sc_slot_config(),
+			sc_epoch_duration_millis(),
 			&epoch_config(),
 			H256::zero(),
-			// This is the slot that will be used to calculate current_epoch_number
-			Slot::from(400u64),
+			// This is the timestamp that will be used to calculate current_epoch_number
+			TIMESTAMP,
 			&MockAuthoritySelectionDataSource::default(),
 			mc_reference_epoch,
 		)
@@ -241,11 +230,11 @@ mod tests {
 		let mc_reference_epoch = McEpochNumber(5);
 		let ariadne_idp = AriadneInherentDataProvider::new(
 			&client(next_unset_epoch_number),
-			&sc_slot_config(),
+			sc_epoch_duration_millis(),
 			&epoch_config(),
 			H256::zero(),
-			// This is the slot that will be used to calculate current_epoch_number
-			Slot::from(400u64),
+			// This is the timestamp that will be used to calculate current_epoch_number
+			TIMESTAMP,
 			&MockAuthoritySelectionDataSource::default()
 				.with_permissioned_candidates(vec![None, None, None, None, None])
 				.with_num_permissioned_candidates(3),
@@ -266,11 +255,11 @@ mod tests {
 		let mc_reference_epoch = McEpochNumber(5);
 		let ariadne_idp = AriadneInherentDataProvider::new(
 			&client(next_unset_epoch_number),
-			&sc_slot_config(),
+			sc_epoch_duration_millis(),
 			&epoch_config(),
 			H256::zero(),
-			// This is the slot that will be used to calculate current_epoch_number
-			Slot::from(400u64),
+			// This is the timestamp that will be used to calculate current_epoch_number
+			TIMESTAMP,
 			&MockAuthoritySelectionDataSource::default()
 				.with_permissioned_candidates(vec![None, None, None, None, None])
 				.with_num_permissioned_candidates(0),
@@ -282,11 +271,8 @@ mod tests {
 		assert!(ariadne_idp.unwrap().data.is_some());
 	}
 
-	fn sc_slot_config() -> ScSlotConfig {
-		ScSlotConfig {
-			slots_per_epoch: SlotsPerEpoch(10),
-			slot_duration: SlotDuration::from_millis(1000),
-		}
+	fn sc_epoch_duration_millis() -> u64 {
+		60 * 60 * 1000
 	}
 
 	fn client(next_unset_epoch_number: ScEpochNumber) -> TestApi {
@@ -297,11 +283,7 @@ mod tests {
 		MainchainEpochConfig {
 			first_epoch_timestamp_millis: Timestamp::from_unix_millis(0),
 			first_epoch_number: 0,
-			epoch_duration_millis: Duration::from_millis(
-				u64::from(sc_slot_config().slots_per_epoch.0)
-					* sc_slot_config().slot_duration.as_millis()
-					* 10,
-			),
+			epoch_duration_millis: Duration::from_millis(10 * sc_epoch_duration_millis()),
 			first_slot_number: 0,
 			slot_duration_millis: Duration::from_millis(1000),
 		}
