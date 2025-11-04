@@ -10733,7 +10733,6 @@ dependencies = [
  "sidechain-domain",
  "sp-blockchain",
  "sp-consensus",
- "sp-consensus-slots",
  "sp-inherents",
  "sp-partner-chains-consensus-aura",
  "sp-runtime",
