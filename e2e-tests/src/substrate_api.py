@@ -597,6 +597,12 @@ class SubstrateApi(BlockchainApi):
                 result.append(memberParams)
         return result
 
+    def get_block_slot(self, block):
+        return self.substrate.query("Aura", "CurrentSlot", block_hash=block["header"]["hash"]).value
+
+    def get_block_timestamp(self, block):
+        return self.substrate.query("Timestamp", "Now", block_hash=block["header"]["hash"]).value
+
     def get_block_author_and_slot(self, block, validator_set):
         """Custom implementation of substrate.get_block(include_author=True) to get block author, and block slot.
         py-substrate-interface does not work because it calls "Validators" function from "Session" pallet,

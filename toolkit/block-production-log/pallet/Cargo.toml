@@ -1,7 +1,7 @@
 [package]
 name = "pallet-block-production-log"
 version.workspace = true
-description = "Keeps log of slot to block producer id"
+description = "Keeps log of timestamp to block producer id"
 license = "Apache-2.0"
 readme = "README.md"
 authors.workspace = true
@@ -21,7 +21,6 @@ parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 sidechain-domain = { workspace = true }
 sp-block-production-log = { workspace = true }
-sp-consensus-slots = { workspace = true, features = ["serde"] }
 sp-runtime = { workspace = true }
 sp-std = { workspace = true }
 

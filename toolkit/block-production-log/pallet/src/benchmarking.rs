@@ -7,7 +7,6 @@ use crate::Pallet as BlockProductionLog;
 use frame_benchmarking::v2::*;
 use frame_support::traits::Hooks;
 use frame_system::RawOrigin;
-use sp_consensus_slots::Slot;
 use sp_std::vec::Vec;
 
 /// Trait for injecting chain-specific test values for benchmarking.
@@ -16,15 +15,18 @@ pub trait BenchmarkHelper<BlockProducerId> {
 	fn producer_id() -> BlockProducerId;
 }
 
-#[benchmarks]
+#[benchmarks(where <T as Config>::Moment: From<u64>)]
 mod benchmarks {
 
 	use super::*;
 
-	fn setup_storage<T: Config>(num_items: u64) {
+	fn setup_storage<T: Config>(num_items: u64)
+	where
+		T::Moment: From<u64>,
+	{
 		let vec = (0..num_items)
 			.into_iter()
-			.map(|i| (Slot::from(i), T::BenchmarkHelper::producer_id()))
+			.map(|i| (T::Moment::from(i), T::BenchmarkHelper::producer_id()))
 			.collect::<Vec<_>>();
 		Log::<T>::put(vec);
 	}
@@ -32,10 +34,11 @@ mod benchmarks {
 	#[benchmark]
 	fn append() -> Result<(), BenchmarkError> {
 		setup_storage::<T>(59);
+		let moment = 1.into();
 		let id = T::BenchmarkHelper::producer_id();
 		#[block]
 		{
-			BlockProductionLog::<T>::append(RawOrigin::None.into(), id)?;
+			BlockProductionLog::<T>::append(RawOrigin::None.into(), moment, id)?;
 		}
 		Ok(())
 	}
@@ -43,8 +46,9 @@ mod benchmarks {
 	#[benchmark]
 	fn on_finalize() -> Result<(), BenchmarkError> {
 		setup_storage::<T>(59);
+		let moment = 1.into();
 		let id = T::BenchmarkHelper::producer_id();
-		BlockProductionLog::<T>::append(RawOrigin::None.into(), id)?;
+		BlockProductionLog::<T>::append(RawOrigin::None.into(), moment, id)?;
 
 		#[block]
 		{

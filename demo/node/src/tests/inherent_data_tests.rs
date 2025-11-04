@@ -15,6 +15,7 @@ use sidechain_domain::{
 };
 use sidechain_mc_hash::mock::MockMcHashDataSource;
 use sp_block_participation::BlockProductionData;
+use sp_block_production_log::BlockProductionInherentDataV1;
 use sp_consensus_aura::Slot;
 use sp_core::ecdsa;
 use sp_inherents::CreateInherentDataProviders;
@@ -87,14 +88,19 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 	);
 	assert_eq!(
 		inherent_data
-			.get_data::<BlockAuthor>(&sp_block_production_log::INHERENT_IDENTIFIER)
+			.get_data::<BlockProductionInherentDataV1<u64, BlockAuthor>>(
+				&sp_block_production_log::INHERENT_IDENTIFIER
+			)
 			.unwrap(),
-		Some(BlockAuthor::ProBono(
-			ecdsa::Public::from_raw(hex!(
-				"000000000000000000000000000000000000000000000000000000000000000001"
-			))
-			.into()
-		))
+		Some(BlockProductionInherentDataV1 {
+			moment: 30,
+			block_producer_id: BlockAuthor::ProBono(
+				ecdsa::Public::from_raw(hex!(
+					"000000000000000000000000000000000000000000000000000000000000000001"
+				))
+				.into()
+			)
+		})
 	);
 	assert_eq!(
 		inherent_data
@@ -163,14 +169,19 @@ async fn block_verification_cidp_should_be_created_correctly() {
 	);
 	assert_eq!(
 		inherent_data
-			.get_data::<BlockAuthor>(&sp_block_production_log::INHERENT_IDENTIFIER)
+			.get_data::<BlockProductionInherentDataV1<u64, BlockAuthor>>(
+				&sp_block_production_log::INHERENT_IDENTIFIER
+			)
 			.unwrap(),
-		Some(BlockAuthor::ProBono(
-			ecdsa::Public::from_raw(hex!(
-				"000000000000000000000000000000000000000000000000000000000000000001"
-			))
-			.into()
-		))
+		Some(BlockProductionInherentDataV1 {
+			moment: 30,
+			block_producer_id: BlockAuthor::ProBono(
+				ecdsa::Public::from_raw(hex!(
+					"000000000000000000000000000000000000000000000000000000000000000001"
+				))
+				.into()
+			)
+		})
 	);
 	assert_eq!(
 		inherent_data

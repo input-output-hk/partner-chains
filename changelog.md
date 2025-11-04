@@ -17,6 +17,9 @@ and epoch duration to calculate current epoch.
 Since the block timestamp is not passed to the inherent data provider creation logic by Aura, the exact timestamp is not
 available during block verification, but it can be approximated based on the slot number. See the example impelementation
 in the demo node crate.
+* `pallet-block-production-log` no longer uses slots and is instead parametrized by a `Moment` type.
+To match this change, `BlockProductionLogApi::get_author` now accepts a `Moment` value and `BlockAuthorInherentProvider`
+also takes `Moment` as type and constructor parameter.
 
 ## Removed
 
