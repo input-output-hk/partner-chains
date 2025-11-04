@@ -1,5 +1,5 @@
+use crate::BlockProductionInherentDataV1;
 use crate::{BlockAuthorInherentProvider, BlockProductionLogApi};
-use sidechain_slots::Slot;
 use sp_api::ApiRef;
 use sp_api::ProvideRuntimeApi;
 use sp_runtime::traits::Block as BlockT;
@@ -9,12 +9,11 @@ pub type Block = sp_runtime::generic::Block<
 	sp_runtime::OpaqueExtrinsic,
 >;
 
-type Member = u32;
 type Author = u64;
 
 #[derive(Clone, Default)]
 struct TestApi {
-	author: Option<Member>,
+	author: Option<Author>,
 }
 
 impl ProvideRuntimeApi<Block> for TestApi {
@@ -25,8 +24,8 @@ impl ProvideRuntimeApi<Block> for TestApi {
 }
 
 sp_api::mock_impl_runtime_apis! {
-	impl BlockProductionLogApi<Block, Member> for TestApi {
-		fn get_author(_slot: Slot) -> Option<Member> {
+	impl BlockProductionLogApi<Block, Author, u64> for TestApi {
+		fn get_author(_moment: &u64) -> Option<Author> {
 			self.author
 		}
 	}
@@ -36,26 +35,29 @@ sp_api::mock_impl_runtime_apis! {
 fn provides_author_when_runtime_api_returns_one() {
 	let mock_api = TestApi { author: Some(102) };
 
-	let provider = BlockAuthorInherentProvider::<Author>::new(
+	let provider = BlockAuthorInherentProvider::<u64, Author>::new(
 		&mock_api,
 		<Block as BlockT>::Hash::default(),
-		Slot::from(42),
+		1000,
 	)
 	.expect("Should not fail");
 
-	assert_eq!(provider.author, mock_api.author.map(Author::from));
+	assert_eq!(
+		provider.data,
+		Some(BlockProductionInherentDataV1 { moment: 1000, block_producer_id: 102 })
+	);
 }
 
 #[test]
 fn skips_providing_author_when_runtime_api_returns_none() {
 	let mock_api = TestApi { author: None };
 
-	let provider = BlockAuthorInherentProvider::<Author>::new(
+	let provider = BlockAuthorInherentProvider::<u64, Author>::new(
 		&mock_api,
 		<Block as BlockT>::Hash::default(),
-		Slot::from(42),
+		1000,
 	)
 	.expect("Should not fail");
 
-	assert_eq!(provider.author, None);
+	assert_eq!(provider.data, None);
 }

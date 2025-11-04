@@ -2,7 +2,7 @@
 //!
 //! ## Purpose of this pallet
 //!
-//! This pallet keeps a log containing block producer IDs along with slot numbers of blocks produced by them.
+//! This pallet keeps a log containing block producer IDs along with times of blocks produced by them.
 //! This log is updated every block and is meant to consumed by other features.
 //! The intended use of this pallet within the Partner Chains SDK is to expose block production data for consumption
 //! by the Block Participation feature implemented by the `sp_block_participation` and `pallet_block_participation`
@@ -24,10 +24,7 @@
 //!     type BlockProducerId = BlockAuthor;
 //!     type WeightInfo = pallet_block_production_log::weights::SubstrateWeight<Runtime>;
 //!
-//!     fn current_slot() -> sp_consensus_slots::Slot {
-//!         let slot: u64 = pallet_aura::CurrentSlot::<Runtime>::get().into();
-//!         sp_consensus_slots::Slot::from(slot)
-//!     }
+//!     type Moment = u64;
 //!
 //!     #[cfg(feature = "runtime-benchmarks")]
 //!     type BenchmarkHelper = PalletBlockProductionLogBenchmarkHelper;
@@ -67,7 +64,7 @@
 //!                unless they are coordinated to read and clear the same log prefix.
 //!
 //! The pallet exposes three functions that allow other pallets to consume its data: `take_prefix`, `peek_prefix`
-//! and `drop_prefix`. Any feature using the log should be able to identify the slot number up to which it should
+//! and `drop_prefix`. Any feature using the log should be able to identify the time up to which it should
 //! process the log data and either:
 //! - call `take_prefix` from some pallet's logic and process the returned data within the same block
 //! - call `peek_prefix` inside an inherent data provider and use `drop_prefix` from the corresponding pallet
@@ -101,7 +98,7 @@ pub mod pallet {
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 	use sp_block_production_log::*;
-	use sp_consensus_slots::Slot;
+	use sp_runtime::traits::Member;
 	use sp_std::vec::Vec;
 
 	#[pallet::pallet]
@@ -116,8 +113,8 @@ pub mod pallet {
 		/// Weight information on extrinsic in the pallet. For convenience weights in [weights] module can be used.
 		type WeightInfo: WeightInfo;
 
-		/// The slot number of current block.
-		fn current_slot() -> Slot;
+		/// Type used to identify the moment in time when the block was produced, eg. a timestamp or slot number.
+		type Moment: Member + Parameter + MaxEncodedLen + PartialOrd + Ord + PartialEq + Eq;
 
 		#[cfg(feature = "runtime-benchmarks")]
 		/// Benchmark helper type used for running benchmarks
@@ -126,11 +123,12 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::unbounded]
-	pub type Log<T: Config> = StorageValue<_, Vec<(Slot, T::BlockProducerId)>, ValueQuery>;
+	pub type Log<T: Config> = StorageValue<_, Vec<(T::Moment, T::BlockProducerId)>, ValueQuery>;
 
 	/// Temporary storage of the current block's producer, to be appended to the log on block finalization.
 	#[pallet::storage]
-	pub type CurrentProducer<T: Config> = StorageValue<_, T::BlockProducerId, OptionQuery>;
+	pub type CurrentProducer<T: Config> =
+		StorageValue<_, (T::Moment, T::BlockProducerId), OptionQuery>;
 
 	/// This storage is used to prevent calling `append` multiple times for the same block or for past blocks.
 	#[pallet::storage]
@@ -143,9 +141,10 @@ pub mod pallet {
 		const INHERENT_IDENTIFIER: InherentIdentifier = INHERENT_IDENTIFIER;
 
 		fn create_inherent(data: &InherentData) -> Option<Self::Call> {
-			Self::decode_inherent_data(data)
-				.unwrap()
-				.map(|block_producer_id| Call::append { block_producer_id })
+			Self::decode_inherent_data(data).unwrap().map(|data| Call::append {
+				moment: data.moment,
+				block_producer_id: data.block_producer_id,
+			})
 		}
 
 		fn is_inherent(call: &Self::Call) -> bool {
@@ -170,11 +169,12 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Schedules an entry to be appended to the log. Log has to be ordered by slots and writing the same slot twice is forbidden.
+		/// Schedules an entry to be appended to the log. Log has to be ordered by a moment and writing the same moment twice is forbidden.
 		#[pallet::call_index(0)]
 		#[pallet::weight((T::WeightInfo::append(), DispatchClass::Mandatory))]
 		pub fn append(
 			origin: OriginFor<T>,
+			moment: T::Moment,
 			block_producer_id: T::BlockProducerId,
 		) -> DispatchResult {
 			ensure_none(origin)?;
@@ -186,7 +186,7 @@ pub mod pallet {
 			}?;
 			LatestBlock::<T>::put(current_block);
 
-			Ok(CurrentProducer::<T>::put(block_producer_id))
+			Ok(CurrentProducer::<T>::put((moment, block_producer_id)))
 		}
 	}
 
@@ -199,9 +199,9 @@ pub mod pallet {
 		}
 
 		fn on_finalize(block: BlockNumberFor<T>) {
-			if let Some(block_producer_id) = CurrentProducer::<T>::take() {
+			if let Some((moment, block_producer_id)) = CurrentProducer::<T>::take() {
 				log::info!("👷 Block {block:?} producer is {block_producer_id:?}");
-				Log::<T>::append((T::current_slot(), block_producer_id));
+				Log::<T>::append((moment, block_producer_id));
 			} else {
 				log::warn!(
 					"👷 Block {block:?} producer not set. This should occur only at the beginning of the production log pallet's lifetime."
@@ -213,29 +213,36 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		fn decode_inherent_data(
 			data: &InherentData,
-		) -> Result<Option<T::BlockProducerId>, InherentError> {
-			data.get_data::<T::BlockProducerId>(&Self::INHERENT_IDENTIFIER)
-				.map_err(|_| InherentError::InvalidInherentData)
+		) -> Result<
+			Option<BlockProductionInherentDataV1<T::Moment, T::BlockProducerId>>,
+			InherentError,
+		> {
+			data.get_data::<BlockProductionInherentDataV1<T::Moment, T::BlockProducerId>>(
+				&Self::INHERENT_IDENTIFIER,
+			)
+			.map_err(|_| InherentError::InvalidInherentData)
 		}
 
-		/// Returns all entries up to `slot` (inclusive) and removes them from the log
-		pub fn take_prefix(slot: &Slot) -> Vec<(Slot, T::BlockProducerId)> {
+		/// Returns all entries up to `moment` (inclusive) and removes them from the log
+		pub fn take_prefix(moment: &T::Moment) -> Vec<(T::Moment, T::BlockProducerId)> {
 			let removed_prefix = Log::<T>::mutate(|log| {
-				let pos = log.partition_point(|(s, _)| s <= slot);
+				let pos = log.partition_point(|(s, _)| s <= moment);
 				log.drain(..pos).collect()
 			});
 			removed_prefix
 		}
 
-		/// Returns all entries up to `slot` (inclusive) from the log
-		pub fn peek_prefix(slot: Slot) -> impl Iterator<Item = (Slot, T::BlockProducerId)> {
-			Log::<T>::get().into_iter().take_while(move |(s, _)| s <= &slot)
+		/// Returns all entries up to `moment` (inclusive) from the log
+		pub fn peek_prefix(
+			moment: T::Moment,
+		) -> impl Iterator<Item = (T::Moment, T::BlockProducerId)> {
+			Log::<T>::get().into_iter().take_while(move |(s, _)| s <= &moment)
 		}
 
-		/// Removes all entries up to `slot` (inclusive) from the log
-		pub fn drop_prefix(slot: &Slot) {
+		/// Removes all entries up to `moment` (inclusive) from the log
+		pub fn drop_prefix(moment: &T::Moment) {
 			Log::<T>::mutate(|log| {
-				let position = log.partition_point(|(s, _)| s <= slot);
+				let position = log.partition_point(|(s, _)| s <= moment);
 				log.drain(..position);
 			});
 		}

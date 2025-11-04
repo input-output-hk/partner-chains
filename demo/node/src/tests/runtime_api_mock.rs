@@ -8,7 +8,7 @@ use sidechain_mc_hash::McHashInherentDigest;
 use sidechain_slots::Slot;
 use sp_api::{ApiRef, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
-use sp_core::{ecdsa, ed25519, sr25519};
+use sp_core::ecdsa;
 use sp_governed_map::MainChainScriptsV1;
 use sp_inherents::InherentIdentifier;
 use sp_runtime::Digest;
@@ -97,14 +97,10 @@ sp_api::mock_impl_runtime_apis! {
 		}
 	}
 
-	impl sp_block_production_log::BlockProductionLogApi<Block, CommitteeMember<CrossChainPublic, SessionKeys>> for TestApi {
-		fn get_author(_slot: Slot) -> Option<CommitteeMember<CrossChainPublic, SessionKeys>> {
-			Some(CommitteeMember::permissioned(
-				ecdsa::Public::from_raw(hex!("000000000000000000000000000000000000000000000000000000000000000001")).into(),
-				SessionKeys {
-					aura: sr25519::Public::default().into(),
-					grandpa: ed25519::Public::default().into()
-				}
+	impl sp_block_production_log::BlockProductionLogApi<Block, BlockAuthor, Slot> for TestApi {
+		fn get_author(_slot: &Slot) -> Option<BlockAuthor> {
+			Some(BlockAuthor::ProBono(
+				ecdsa::Public::from_raw(hex!("000000000000000000000000000000000000000000000000000000000000000001")).into()
 			))
 		}
 	}

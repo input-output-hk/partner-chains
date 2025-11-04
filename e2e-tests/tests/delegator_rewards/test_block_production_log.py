@@ -17,6 +17,7 @@ def test_block_production_log_pallet(api: BlockchainApi, config: ApiConfig):
     block_production_log.reverse()
     for slot, block_producer_id in block_production_log:
         committee = api.get_validator_set(block)
+
         author_aura_key = committee[slot % len(committee)]["keys"]["aura"]
         expected_node = next(x for x in config.nodes_config.nodes.values() if x.aura_public_key == author_aura_key)
 

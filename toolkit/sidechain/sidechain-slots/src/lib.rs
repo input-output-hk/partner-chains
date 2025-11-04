@@ -7,7 +7,7 @@
 #[cfg(feature = "std")]
 pub mod runtime_api_client;
 
-use core::ops::Rem;
+use core::{ops::Rem, time::Duration};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 #[cfg(feature = "serde")]
@@ -86,6 +86,12 @@ pub struct ScSlotConfig {
 }
 
 impl ScSlotConfig {
+	#[cfg(feature = "std")]
+	/// Returns epoch duration
+	pub fn epoch_duration(&self) -> Duration {
+		self.slot_duration.as_duration() * self.slots_per_epoch.0
+	}
+
 	/// Returns the epoch number of `slot`
 	pub fn epoch_number(&self, slot: Slot) -> ScEpochNumber {
 		self.slots_per_epoch.epoch_number(slot)
@@ -99,6 +105,11 @@ impl ScSlotConfig {
 	/// Returns the slot number that contains `timestamp`
 	pub fn slot_from_timestamp(&self, timestamp: u64) -> Slot {
 		Slot::from_timestamp(timestamp.into(), self.slot_duration)
+	}
+
+	/// Returns the start timestamp of `slot`
+	pub fn slot_start_time(&self, slot: Slot) -> Timestamp {
+		Timestamp::from_unix_millis(self.slot_duration.as_millis() * u64::from(slot))
 	}
 
 	/// Returns the start timestamp of `epoch`

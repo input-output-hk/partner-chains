@@ -5,7 +5,6 @@ use frame_support::sp_runtime::{
 };
 use frame_support::traits::{ConstU16, ConstU32, ConstU64};
 use frame_support::*;
-use sp_consensus_slots::Slot;
 
 type AccountId = u32;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -73,10 +72,7 @@ impl crate::benchmarking::BenchmarkHelper<[u8; 32]> for PalletBlockProductionLog
 impl crate::pallet::Config for Test {
 	type BlockProducerId = [u8; 32];
 	type WeightInfo = ();
-
-	fn current_slot() -> Slot {
-		Slot::from(1001000)
-	}
+	type Moment = u64;
 
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = PalletBlockProductionLogBenchmarkHelper;
