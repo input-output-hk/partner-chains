@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `demo/node/src/staging.rs`."><title>staging.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-ca0dd0c4.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="partner_chains_demo_node" data-themes="" data-resource-suffix="" data-rustdoc-version="1.92.0-nightly (6501e64fc 2025-10-23)" data-channel="nightly" data-search-js="search-d69d8955.js" data-stringdex-js="stringdex-c3e638e9.js" data-settings-js="settings-c38705f0.js" ><script src="../../static.files/storage-e2aeef58.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-ce535bd0.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">partner_chains_demo_node/</div>staging.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span><span class="kw">crate</span>::chain_spec::get_account_id_from_seed;
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `demo/node/src/staging.rs`."><title>staging.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-ca0dd0c4.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="partner_chains_demo_node" data-themes="" data-resource-suffix="" data-rustdoc-version="1.93.0-nightly (20383c9f1 2025-11-03)" data-channel="nightly" data-search-js="search-5c29b3b5.js" data-stringdex-js="stringdex-c3e638e9.js" data-settings-js="settings-c38705f0.js" ><script src="../../static.files/storage-e2aeef58.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-ce535bd0.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">partner_chains_demo_node/</div>staging.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span><span class="kw">crate</span>::chain_spec::get_account_id_from_seed;
 <a href=#2 id=2 data-nosnippet>2</a><span class="kw">use </span><span class="kw">crate</span>::chain_spec::<span class="kw-2">*</span>;
 <a href=#3 id=3 data-nosnippet>3</a><span class="kw">use </span>authority_selection_inherents::CommitteeMember;
 <a href=#4 id=4 data-nosnippet>4</a><span class="kw">use </span>partner_chains_demo_runtime::{
@@ -6,7 +6,7 @@
 <a href=#6 id=6 data-nosnippet>6</a>	RuntimeGenesisConfig, SessionCommitteeManagementConfig, SessionConfig, SidechainConfig,
 <a href=#7 id=7 data-nosnippet>7</a>	SudoConfig, SystemConfig, TestHelperPalletConfig,
 <a href=#8 id=8 data-nosnippet>8</a>};
-<a href=#9 id=9 data-nosnippet>9</a><span class="kw">use </span>sc_service::ChainType;
+<a href=#9 id=9 data-nosnippet>9</a><span class="kw">use </span>sc_service::{ChainType, Properties};
 <a href=#10 id=10 data-nosnippet>10</a><span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
 <a href=#11 id=11 data-nosnippet>11</a><span class="kw">use </span>sp_core::bytes::from_hex;
 <a href=#12 id=12 data-nosnippet>12</a><span class="kw">use </span>sp_core::{ed25519, sr25519};
@@ -105,66 +105,74 @@
 <a href=#105 id=105 data-nosnippet>105</a>			</span>staging_endowed_accounts(),
 <a href=#106 id=106 data-nosnippet>106</a>			<span class="bool-val">true</span>,
 <a href=#107 id=107 data-nosnippet>107</a>		)<span class="question-mark">?</span>)
-<a href=#108 id=108 data-nosnippet>108</a>		.build())
-<a href=#109 id=109 data-nosnippet>109</a>}
-<a href=#110 id=110 data-nosnippet>110</a>
-<a href=#111 id=111 data-nosnippet>111</a><span class="doccomment">/// Configure initial storage state for FRAME modules.
-<a href=#112 id=112 data-nosnippet>112</a></span><span class="kw">pub fn </span>staging_genesis(
-<a href=#113 id=113 data-nosnippet>113</a>	initial_authorities: Vec&lt;AuthorityKeys&gt;,
-<a href=#114 id=114 data-nosnippet>114</a>	root_key: <span class="prelude-ty">Option</span>&lt;AccountId&gt;,
-<a href=#115 id=115 data-nosnippet>115</a>	endowed_accounts: Vec&lt;AccountId&gt;,
-<a href=#116 id=116 data-nosnippet>116</a>	_enable_println: bool,
-<a href=#117 id=117 data-nosnippet>117</a>) -&gt; <span class="prelude-ty">Result</span>&lt;serde_json::Value, envy::Error&gt; {
-<a href=#118 id=118 data-nosnippet>118</a>	<span class="kw">let </span>genesis_utxo = sp_sidechain::read_genesis_utxo_from_env_with_defaults()<span class="question-mark">?</span>;
-<a href=#119 id=119 data-nosnippet>119</a>	<span class="kw">let </span>config = RuntimeGenesisConfig {
-<a href=#120 id=120 data-nosnippet>120</a>		system: SystemConfig { ..Default::default() },
-<a href=#121 id=121 data-nosnippet>121</a>		balances: BalancesConfig {
-<a href=#122 id=122 data-nosnippet>122</a>			<span class="comment">// Configure endowed accounts with initial balance of 1 &lt;&lt; 60.
-<a href=#123 id=123 data-nosnippet>123</a>			</span>balances: endowed_accounts.iter().cloned().map(|k| (k, <span class="number">1 </span>&lt;&lt; <span class="number">60</span>)).collect(),
-<a href=#124 id=124 data-nosnippet>124</a>			dev_accounts: <span class="prelude-val">None</span>,
-<a href=#125 id=125 data-nosnippet>125</a>		},
-<a href=#126 id=126 data-nosnippet>126</a>		aura: AuraConfig { authorities: <span class="macro">vec!</span>[] },
-<a href=#127 id=127 data-nosnippet>127</a>		grandpa: GrandpaConfig { authorities: <span class="macro">vec!</span>[], ..Default::default() },
-<a href=#128 id=128 data-nosnippet>128</a>		sudo: SudoConfig {
-<a href=#129 id=129 data-nosnippet>129</a>			<span class="comment">// Assign network admin rights.
-<a href=#130 id=130 data-nosnippet>130</a>			</span>key: root_key,
-<a href=#131 id=131 data-nosnippet>131</a>		},
-<a href=#132 id=132 data-nosnippet>132</a>		transaction_payment: Default::default(),
-<a href=#133 id=133 data-nosnippet>133</a>		session: SessionConfig {
-<a href=#134 id=134 data-nosnippet>134</a>			keys: initial_authorities
-<a href=#135 id=135 data-nosnippet>135</a>				.iter()
-<a href=#136 id=136 data-nosnippet>136</a>				.map(|authority_keys| {
-<a href=#137 id=137 data-nosnippet>137</a>					(
-<a href=#138 id=138 data-nosnippet>138</a>						authority_keys.cross_chain.clone().into(),
-<a href=#139 id=139 data-nosnippet>139</a>						authority_keys.cross_chain.clone().into(),
-<a href=#140 id=140 data-nosnippet>140</a>						authority_keys.session.clone(),
-<a href=#141 id=141 data-nosnippet>141</a>					)
-<a href=#142 id=142 data-nosnippet>142</a>				})
-<a href=#143 id=143 data-nosnippet>143</a>				.collect(),
-<a href=#144 id=144 data-nosnippet>144</a>			non_authority_keys: Default::default(),
-<a href=#145 id=145 data-nosnippet>145</a>		},
-<a href=#146 id=146 data-nosnippet>146</a>		sidechain: SidechainConfig { genesis_utxo, ..Default::default() },
-<a href=#147 id=147 data-nosnippet>147</a>		session_committee_management: SessionCommitteeManagementConfig {
-<a href=#148 id=148 data-nosnippet>148</a>			initial_authorities: initial_authorities
-<a href=#149 id=149 data-nosnippet>149</a>				.into_iter()
-<a href=#150 id=150 data-nosnippet>150</a>				.map(|keys| CommitteeMember::permissioned(keys.cross_chain, keys.session))
-<a href=#151 id=151 data-nosnippet>151</a>				.collect(),
-<a href=#152 id=152 data-nosnippet>152</a>			main_chain_scripts: sp_session_validator_management::MainChainScripts::read_from_env()<span class="question-mark">?</span>,
-<a href=#153 id=153 data-nosnippet>153</a>		},
-<a href=#154 id=154 data-nosnippet>154</a>		governed_map: GovernedMapConfig {
-<a href=#155 id=155 data-nosnippet>155</a>			main_chain_scripts: <span class="prelude-val">Some</span>(sp_governed_map::MainChainScriptsV1::read_from_env()<span class="question-mark">?</span>),
-<a href=#156 id=156 data-nosnippet>156</a>			..Default::default()
-<a href=#157 id=157 data-nosnippet>157</a>		},
-<a href=#158 id=158 data-nosnippet>158</a>		test_helper_pallet: TestHelperPalletConfig {
-<a href=#159 id=159 data-nosnippet>159</a>			participation_data_release_period: <span class="number">30</span>,
-<a href=#160 id=160 data-nosnippet>160</a>			..Default::default()
-<a href=#161 id=161 data-nosnippet>161</a>		},
-<a href=#162 id=162 data-nosnippet>162</a>		bridge: BridgeConfig {
-<a href=#163 id=163 data-nosnippet>163</a>			main_chain_scripts: <span class="prelude-val">Some</span>(sp_partner_chains_bridge::MainChainScripts::read_from_env()<span class="question-mark">?</span>),
-<a href=#164 id=164 data-nosnippet>164</a>			initial_checkpoint: <span class="prelude-val">Some</span>(genesis_utxo),
-<a href=#165 id=165 data-nosnippet>165</a>			..Default::default()
-<a href=#166 id=166 data-nosnippet>166</a>		},
-<a href=#167 id=167 data-nosnippet>167</a>	};
-<a href=#168 id=168 data-nosnippet>168</a>
-<a href=#169 id=169 data-nosnippet>169</a>	<span class="prelude-val">Ok</span>(serde_json::to_value(config).expect(<span class="string">"Genesis config must be serialized correctly"</span>))
-<a href=#170 id=170 data-nosnippet>170</a>}</code></pre></div></section></main></body></html>
+<a href=#108 id=108 data-nosnippet>108</a>		.with_properties({
+<a href=#109 id=109 data-nosnippet>109</a>			<span class="kw">let </span><span class="kw-2">mut </span>properties = Properties::new();
+<a href=#110 id=110 data-nosnippet>110</a>			properties.insert(<span class="string">"tokenSymbol"</span>.into(), <span class="string">"UNIT"</span>.into());
+<a href=#111 id=111 data-nosnippet>111</a>			properties.insert(<span class="string">"tokenDecimals"</span>.into(), <span class="number">12</span>.into());
+<a href=#112 id=112 data-nosnippet>112</a>			properties.insert(<span class="string">"ss58Format"</span>.into(), <span class="number">42</span>.into());
+<a href=#113 id=113 data-nosnippet>113</a>			properties
+<a href=#114 id=114 data-nosnippet>114</a>		})
+<a href=#115 id=115 data-nosnippet>115</a>		.build())
+<a href=#116 id=116 data-nosnippet>116</a>}
+<a href=#117 id=117 data-nosnippet>117</a>
+<a href=#118 id=118 data-nosnippet>118</a><span class="doccomment">/// Configure initial storage state for FRAME modules.
+<a href=#119 id=119 data-nosnippet>119</a></span><span class="kw">pub fn </span>staging_genesis(
+<a href=#120 id=120 data-nosnippet>120</a>	initial_authorities: Vec&lt;AuthorityKeys&gt;,
+<a href=#121 id=121 data-nosnippet>121</a>	root_key: <span class="prelude-ty">Option</span>&lt;AccountId&gt;,
+<a href=#122 id=122 data-nosnippet>122</a>	endowed_accounts: Vec&lt;AccountId&gt;,
+<a href=#123 id=123 data-nosnippet>123</a>	_enable_println: bool,
+<a href=#124 id=124 data-nosnippet>124</a>) -&gt; <span class="prelude-ty">Result</span>&lt;serde_json::Value, envy::Error&gt; {
+<a href=#125 id=125 data-nosnippet>125</a>	<span class="kw">let </span>genesis_utxo = sp_sidechain::read_genesis_utxo_from_env_with_defaults()<span class="question-mark">?</span>;
+<a href=#126 id=126 data-nosnippet>126</a>	<span class="kw">let </span>config = RuntimeGenesisConfig {
+<a href=#127 id=127 data-nosnippet>127</a>		system: SystemConfig { ..Default::default() },
+<a href=#128 id=128 data-nosnippet>128</a>		balances: BalancesConfig {
+<a href=#129 id=129 data-nosnippet>129</a>			<span class="comment">// Configure endowed accounts with initial balance of 1 &lt;&lt; 60.
+<a href=#130 id=130 data-nosnippet>130</a>			</span>balances: endowed_accounts.iter().cloned().map(|k| (k, <span class="number">1 </span>&lt;&lt; <span class="number">60</span>)).collect(),
+<a href=#131 id=131 data-nosnippet>131</a>			dev_accounts: <span class="prelude-val">None</span>,
+<a href=#132 id=132 data-nosnippet>132</a>		},
+<a href=#133 id=133 data-nosnippet>133</a>		aura: AuraConfig { authorities: <span class="macro">vec!</span>[] },
+<a href=#134 id=134 data-nosnippet>134</a>		grandpa: GrandpaConfig { authorities: <span class="macro">vec!</span>[], ..Default::default() },
+<a href=#135 id=135 data-nosnippet>135</a>		sudo: SudoConfig {
+<a href=#136 id=136 data-nosnippet>136</a>			<span class="comment">// Assign network admin rights.
+<a href=#137 id=137 data-nosnippet>137</a>			</span>key: root_key,
+<a href=#138 id=138 data-nosnippet>138</a>		},
+<a href=#139 id=139 data-nosnippet>139</a>		transaction_payment: Default::default(),
+<a href=#140 id=140 data-nosnippet>140</a>		session: SessionConfig {
+<a href=#141 id=141 data-nosnippet>141</a>			keys: initial_authorities
+<a href=#142 id=142 data-nosnippet>142</a>				.iter()
+<a href=#143 id=143 data-nosnippet>143</a>				.map(|authority_keys| {
+<a href=#144 id=144 data-nosnippet>144</a>					(
+<a href=#145 id=145 data-nosnippet>145</a>						authority_keys.cross_chain.clone().into(),
+<a href=#146 id=146 data-nosnippet>146</a>						authority_keys.cross_chain.clone().into(),
+<a href=#147 id=147 data-nosnippet>147</a>						authority_keys.session.clone(),
+<a href=#148 id=148 data-nosnippet>148</a>					)
+<a href=#149 id=149 data-nosnippet>149</a>				})
+<a href=#150 id=150 data-nosnippet>150</a>				.collect(),
+<a href=#151 id=151 data-nosnippet>151</a>			non_authority_keys: Default::default(),
+<a href=#152 id=152 data-nosnippet>152</a>		},
+<a href=#153 id=153 data-nosnippet>153</a>		sidechain: SidechainConfig { genesis_utxo, ..Default::default() },
+<a href=#154 id=154 data-nosnippet>154</a>		session_committee_management: SessionCommitteeManagementConfig {
+<a href=#155 id=155 data-nosnippet>155</a>			initial_authorities: initial_authorities
+<a href=#156 id=156 data-nosnippet>156</a>				.into_iter()
+<a href=#157 id=157 data-nosnippet>157</a>				.map(|keys| CommitteeMember::permissioned(keys.cross_chain, keys.session))
+<a href=#158 id=158 data-nosnippet>158</a>				.collect(),
+<a href=#159 id=159 data-nosnippet>159</a>			main_chain_scripts: sp_session_validator_management::MainChainScripts::read_from_env()<span class="question-mark">?</span>,
+<a href=#160 id=160 data-nosnippet>160</a>		},
+<a href=#161 id=161 data-nosnippet>161</a>		governed_map: GovernedMapConfig {
+<a href=#162 id=162 data-nosnippet>162</a>			main_chain_scripts: <span class="prelude-val">Some</span>(sp_governed_map::MainChainScriptsV1::read_from_env()<span class="question-mark">?</span>),
+<a href=#163 id=163 data-nosnippet>163</a>			..Default::default()
+<a href=#164 id=164 data-nosnippet>164</a>		},
+<a href=#165 id=165 data-nosnippet>165</a>		test_helper_pallet: TestHelperPalletConfig {
+<a href=#166 id=166 data-nosnippet>166</a>			participation_data_release_period: <span class="number">30</span>,
+<a href=#167 id=167 data-nosnippet>167</a>			..Default::default()
+<a href=#168 id=168 data-nosnippet>168</a>		},
+<a href=#169 id=169 data-nosnippet>169</a>		bridge: BridgeConfig {
+<a href=#170 id=170 data-nosnippet>170</a>			main_chain_scripts: <span class="prelude-val">Some</span>(sp_partner_chains_bridge::MainChainScripts::read_from_env()<span class="question-mark">?</span>),
+<a href=#171 id=171 data-nosnippet>171</a>			initial_checkpoint: <span class="prelude-val">Some</span>(genesis_utxo),
+<a href=#172 id=172 data-nosnippet>172</a>			..Default::default()
+<a href=#173 id=173 data-nosnippet>173</a>		},
+<a href=#174 id=174 data-nosnippet>174</a>	};
+<a href=#175 id=175 data-nosnippet>175</a>
+<a href=#176 id=176 data-nosnippet>176</a>	<span class="prelude-val">Ok</span>(serde_json::to_value(config).expect(<span class="string">"Genesis config must be serialized correctly"</span>))
+<a href=#177 id=177 data-nosnippet>177</a>}
+</code></pre></div></section></main></body></html>
