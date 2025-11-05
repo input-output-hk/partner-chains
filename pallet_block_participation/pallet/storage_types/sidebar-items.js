@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["ProcessedUpToSlot"]};
+window.SIDEBAR_ITEMS = {"struct":["ProcessedUpTo"]};
