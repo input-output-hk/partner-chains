@@ -20,6 +20,9 @@ in the demo node crate.
 * `pallet-block-production-log` no longer uses slots and is instead parametrized by a `Moment` type.
 To match this change, `BlockProductionLogApi::get_author` now accepts a `Moment` value and `BlockAuthorInherentProvider`
 also takes `Moment` as type and constructor parameter.
+* `pallet-block-participation` no longer uses slots and is instead parametrized by a `Moment` type.
+Similarly, `BlockParticipationInherentDataProvider` and its constructors take this type as parameter and accept a
+current `moment: Moment` as input instead of slot.
 
 ## Removed
 
