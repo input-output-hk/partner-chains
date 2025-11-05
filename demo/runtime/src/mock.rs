@@ -10,6 +10,7 @@ use frame_support::{
 };
 use frame_system::EnsureRoot;
 use hex_literal::hex;
+use pallet_session_validator_management::CommitteeMemberOf;
 use plutus::ToDatum;
 use sidechain_domain::*;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -165,20 +166,19 @@ impl pallet_session_validator_management::Config for Test {
 	type AuthorityId = CrossChainPublic;
 	type AuthorityKeys = TestSessionKeys;
 	type AuthoritySelectionInputs = AuthoritySelectionInputs;
-	type CommitteeMember = (Self::AuthorityId, Self::AuthorityKeys);
 	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
 
 	/// Mock simply selects all valid registered candidates as validators.
 	fn select_authorities(
 		input: AuthoritySelectionInputs,
 		_sidechain_epoch: ScEpochNumber,
-	) -> Option<BoundedVec<(Self::AuthorityId, Self::AuthorityKeys), Self::MaxValidators>> {
+	) -> Option<BoundedVec<CommitteeMemberOf<Self>, Self::MaxValidators>> {
 		let candidates: Vec<_> = filter_trustless_candidates_registrations::<
 			Self::AuthorityId,
 			Self::AuthorityKeys,
 		>(input.registered_candidates, Sidechain::genesis_utxo())
 		.into_iter()
-		.map(|(c, _)| (c.account_id().clone(), c.account_keys().clone()))
+		.map(|(c, _)| c.into())
 		.collect();
 		if candidates.is_empty() { None } else { Some(BoundedVec::truncate_from(candidates)) }
 	}
@@ -225,10 +225,7 @@ impl pallet_grandpa::Config for Test {
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
 
-	let initial_authorities: Vec<_> = vec![
-		(alice().cross_chain.public(), alice().session()),
-		(bob().cross_chain.public(), bob().session()),
-	];
+	let initial_authorities: Vec<_> = vec![alice().as_permissioned(), bob().as_permissioned()];
 
 	let session_keys: Vec<_> =
 		vec![(alice().account(), alice().session()), (bob().account(), bob().session())];
@@ -423,6 +420,9 @@ impl TestKeys {
 				.collect(),
 		)
 	}
+	pub fn as_permissioned(&self) -> CommitteeMemberOf<Test> {
+		CommitteeMember::permissioned(self.cross_chain.public(), self.session())
+	}
 }
 
 pub fn pair_from_seed<P: Pair>(seed: &str) -> P {
@@ -482,6 +482,6 @@ macro_rules! assert_aura_authorities {
 }
 pub(crate) use assert_aura_authorities;
 use sidechain_slots::SlotsPerEpoch;
-use sp_session_validator_management::MainChainScripts;
+use sp_session_validator_management::{CommitteeMember, MainChainScripts};
 
 use crate::CrossChainPublic;

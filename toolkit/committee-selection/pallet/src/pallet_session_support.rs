@@ -3,7 +3,7 @@
 //! This implementation has lag of one additional PC epoch when applying committees to sessions.
 //!
 //! To use it, wire [crate::Pallet] in runtime configuration of [`pallet_session`].
-use crate::{CommitteeMember, CommitteeRotationStage, CommitteeRotationStages};
+use crate::{CommitteeRotationStage, CommitteeRotationStages};
 use frame_support::traits::UnfilteredDispatchable;
 use frame_system::RawOrigin;
 use frame_system::pallet_prelude::BlockNumberFor;
@@ -174,9 +174,9 @@ mod tests {
 	#[test]
 	fn should_end_session_if_last_one_ended_late_and_new_committee_is_defined() {
 		let current_committee_epoch = ScEpochNumber(100);
-		let current_committee = ids_and_keys_fn(&[ALICE]);
+		let current_committee = as_permissioned_members(&[ALICE]);
 		let next_committee_epoch = 102;
-		let next_committee = ids_and_keys_fn(&[BOB]);
+		let next_committee = as_permissioned_members(&[BOB]);
 
 		new_test_ext().execute_with(|| {
 			CurrentCommittee::<Test>::put(CommitteeInfo {

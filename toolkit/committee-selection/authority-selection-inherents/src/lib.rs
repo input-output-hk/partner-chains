@@ -38,10 +38,8 @@
 
 extern crate alloc;
 
-use scale_info::TypeInfo;
-use serde::{Deserialize, Serialize};
-use sidechain_domain::{CandidateKeys, StakePoolPublicKey};
-use sp_core::{ConstU32, Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
+use sidechain_domain::CandidateKeys;
+use sp_core::{ConstU32, Decode};
 use sp_runtime::traits::OpaqueKeys;
 
 mod ariadne_inherent_data_provider;

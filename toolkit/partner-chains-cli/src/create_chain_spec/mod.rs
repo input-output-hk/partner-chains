@@ -8,6 +8,7 @@ use authority_selection_inherents::MaybeFromCandidateKeys;
 use sidechain_domain::{AssetName, MainchainAddress, PolicyId, UtxoId};
 use sp_core::ecdsa;
 use sp_runtime::{AccountId32, DeserializeOwned};
+use sp_session_validator_management::CommitteeMember;
 use std::marker::PhantomData;
 
 #[cfg(test)]
@@ -192,20 +193,12 @@ impl<Keys: MaybeFromCandidateKeys> CreateChainSpecConfig<Keys> {
 	where
 		T::AuthorityId: From<ecdsa::Public>,
 		T::AuthorityKeys: From<Keys>,
-		T::CommitteeMember:
-			From<authority_selection_inherents::CommitteeMember<T::AuthorityId, T::AuthorityKeys>>,
 	{
 		pallet_session_validator_management::GenesisConfig {
 			initial_authorities: self
 				.initial_permissioned_candidates_parsed
 				.iter()
-				.map(|c| {
-					authority_selection_inherents::CommitteeMember::permissioned(
-						c.sidechain.into(),
-						c.keys.clone().into(),
-					)
-					.into()
-				})
+				.map(|c| CommitteeMember::permissioned(c.sidechain.into(), c.keys.clone().into()))
 				.collect::<Vec<_>>(),
 			main_chain_scripts: sp_session_validator_management::MainChainScripts {
 				committee_candidate_address: self.committee_candidate_address.clone(),

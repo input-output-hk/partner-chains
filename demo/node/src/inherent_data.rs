@@ -1,6 +1,6 @@
 use authority_selection_inherents::{
 	AriadneInherentDataProvider as AriadneIDP, AuthoritySelectionDataSource,
-	AuthoritySelectionInputs, CommitteeMember,
+	AuthoritySelectionInputs,
 };
 use derive_new::new;
 use jsonrpsee::core::async_trait;
@@ -56,7 +56,8 @@ where
 	T: HeaderBackend<Block>,
 	T::Api: SessionValidatorManagementApi<
 			Block,
-			CommitteeMember<CrossChainPublic, SessionKeys>,
+			CrossChainPublic,
+			SessionKeys,
 			AuthoritySelectionInputs,
 			ScEpochNumber,
 		>,
@@ -182,7 +183,8 @@ where
 	T: ProvideRuntimeApi<Block> + Send + Sync + HeaderBackend<Block>,
 	T::Api: SessionValidatorManagementApi<
 			Block,
-			CommitteeMember<CrossChainPublic, SessionKeys>,
+			CrossChainPublic,
+			SessionKeys,
 			AuthoritySelectionInputs,
 			ScEpochNumber,
 		>,

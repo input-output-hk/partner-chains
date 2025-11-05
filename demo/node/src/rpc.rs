@@ -6,9 +6,7 @@
 #![warn(missing_docs)]
 
 use crate::data_sources::DataSources;
-use authority_selection_inherents::{
-	AuthoritySelectionInputs, CandidateValidationApi, CommitteeMember,
-};
+use authority_selection_inherents::{AuthoritySelectionInputs, CandidateValidationApi};
 use jsonrpsee::RpcModule;
 use pallet_block_producer_fees_rpc::*;
 use pallet_block_producer_metadata_rpc::*;
@@ -81,7 +79,8 @@ where
 	C::Api: sp_block_producer_metadata::BlockProducerMetadataApi<Block, BlockProducerMetadataType>,
 	C::Api: sp_session_validator_management::SessionValidatorManagementApi<
 			Block,
-			CommitteeMember<CrossChainPublic, SessionKeys>,
+			CrossChainPublic,
+			SessionKeys,
 			AuthoritySelectionInputs,
 			ScEpochNumber,
 		>,

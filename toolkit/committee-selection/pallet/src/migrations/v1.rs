@@ -1,11 +1,10 @@
 //! Implements storage migration of the `session-validator-management` pallet from v0 to v1.
 #[cfg(feature = "try-runtime")]
 extern crate alloc;
+use crate::CommitteeMemberOf;
 use frame_support::traits::UncheckedOnRuntimeUpgrade;
 #[cfg(feature = "try-runtime")]
-use {
-	alloc::vec::Vec, parity_scale_codec::Encode, sp_session_validator_management::CommitteeMember,
-};
+use {alloc::vec::Vec, parity_scale_codec::Encode};
 
 use super::v0;
 
@@ -21,17 +20,14 @@ pub type LegacyToV1Migration<T> = frame_support::migrations::VersionedMigration<
 /// Helper type used internally for migration. Use [LegacyToV1Migration] in your runtime instead.
 pub struct InnerMigrateV0ToV1<T: crate::Config>(core::marker::PhantomData<T>);
 
-impl<T: crate::pallet::Config> UncheckedOnRuntimeUpgrade for InnerMigrateV0ToV1<T>
-where
-	T::CommitteeMember: From<(T::AuthorityId, T::AuthorityKeys)>,
-{
+impl<T: crate::pallet::Config> UncheckedOnRuntimeUpgrade for InnerMigrateV0ToV1<T> {
 	fn on_runtime_upgrade() -> sp_runtime::Weight {
 		use sp_core::Get;
 		use sp_runtime::BoundedVec;
 
 		let current_committee_v0 = v0::CurrentCommittee::<T>::get();
 		let current_committee_v1 =
-			crate::pallet::CommitteeInfo::<T::CommitteeMember, T::MaxValidators> {
+			crate::pallet::CommitteeInfo::<CommitteeMemberOf<T>, T::MaxValidators> {
 				epoch: current_committee_v0.epoch,
 				committee: BoundedVec::truncate_from(
 					current_committee_v0.committee.into_iter().map(From::from).collect(),
@@ -44,7 +40,7 @@ where
 			return T::DbWeight::get().reads_writes(2, 1);
 		};
 		let next_committee_v1 =
-			crate::pallet::CommitteeInfo::<T::CommitteeMember, T::MaxValidators> {
+			crate::pallet::CommitteeInfo::<CommitteeMemberOf<T>, T::MaxValidators> {
 				epoch: next_committee_v0.epoch,
 				committee: BoundedVec::truncate_from(
 					next_committee_v0.committee.into_iter().map(From::from).collect(),

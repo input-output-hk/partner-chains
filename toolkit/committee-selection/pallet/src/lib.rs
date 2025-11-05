@@ -134,13 +134,12 @@
 //! 	type AuthorityKeys = SessionKeys;
 //! 	type AuthoritySelectionInputs = authority_selection_inherents::AuthoritySelectionInputs;
 //! 	type WeightInfo = pallet_session_validator_management::weights::SubstrateWeight<Runtime>;
-//! 	type CommitteeMember = authority_selection_inherents::CommitteeMember<CrossChainPublic, SessionKeys>;
 //! 	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
 //!
 //! 	fn select_authorities(
 //! 		input: AuthoritySelectionInputs,
 //! 		sidechain_epoch: ScEpochNumber,
-//! 	) -> Option<BoundedVec<Self::CommitteeMember, Self::MaxValidators>> {
+//! 	) -> Option<BoundedVec<CommitteeMemberOf<Self>, Self::MaxValidators>> {
 //! 		authority_selection_inherents::select_authorities::<CrossChainPublic, SessionKeys, MaxValidators>(
 //! 			Sidechain::genesis_utxo(),
 //! 			input,
@@ -164,13 +163,17 @@
 //!
 //! Genesis config can be created programmatically:
 //!
-//! ```rust,ignore
+//! ```rust
+//! # use sp_session_validator_management::{ MainChainScripts, CommitteeMember };
+//! # use pallet_session_validator_management::{ Config, GenesisConfig };
+//! # fn create_genesis_config<T: Config>(cross_chain_pubkey_1: T::AuthorityId, session_keys_1: T::AuthorityKeys) -> GenesisConfig<T> {
 //! GenesisConfig {
 //! 	initial_authorities: vec![
 //!        CommitteeMember::permissioned(cross_chain_pubkey_1, session_keys_1),
 //!     ],
-//! 	main_chain_scripts: MainChainScripts::read_from_env()?,
+//! 	main_chain_scripts: MainChainScripts::read_from_env().unwrap(),
 //! }
+//! # }
 //! ```
 //!
 //! However, it is more typical for production chains to define their specs using Json. In that case
@@ -291,13 +294,6 @@ pub mod pallet {
 		/// Type of input data used by `select_authorities` to select a committee.
 		type AuthoritySelectionInputs: Parameter;
 
-		/// Type of committee members returned by `select_authorities`.
-		type CommitteeMember: Parameter
-			+ Member
-			+ MaybeSerializeDeserialize
-			+ MaxEncodedLen
-			+ CommitteeMember<AuthorityId = Self::AuthorityId, AuthorityKeys = Self::AuthorityKeys>;
-
 		/// Origin for governance calls
 		type MainChainScriptsOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
@@ -306,7 +302,7 @@ pub mod pallet {
 		fn select_authorities(
 			input: Self::AuthoritySelectionInputs,
 			sidechain_epoch: ScEpochNumber,
-		) -> Option<BoundedVec<Self::CommitteeMember, Self::MaxValidators>>;
+		) -> Option<BoundedVec<CommitteeMemberOf<Self>, Self::MaxValidators>>;
 
 		/// Should return the current partner chain epoch.
 		fn current_epoch_number() -> ScEpochNumber;
@@ -325,6 +321,10 @@ pub mod pallet {
 	use frame_support::{BoundedVec, CloneNoBound};
 	use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 	use scale_info::TypeInfo;
+
+	/// Committee member type used by the pallet
+	pub type CommitteeMemberOf<T> =
+		CommitteeMember<<T as Config>::AuthorityId, <T as Config>::AuthorityKeys>;
 
 	#[derive(CloneNoBound, Encode, Decode, TypeInfo, MaxEncodedLen)]
 	#[scale_info(skip_type_params(MaxValidators))]
@@ -358,11 +358,11 @@ pub mod pallet {
 
 	#[pallet::storage]
 	pub type CurrentCommittee<T: Config> =
-		StorageValue<_, CommitteeInfo<T::CommitteeMember, T::MaxValidators>, ValueQuery>;
+		StorageValue<_, CommitteeInfo<CommitteeMemberOf<T>, T::MaxValidators>, ValueQuery>;
 
 	#[pallet::storage]
 	pub type NextCommittee<T: Config> =
-		StorageValue<_, CommitteeInfo<T::CommitteeMember, T::MaxValidators>, OptionQuery>;
+		StorageValue<_, CommitteeInfo<CommitteeMemberOf<T>, T::MaxValidators>, OptionQuery>;
 
 	/// Stores the stage of handling the inputs change. Used by session manager, to decide
 	/// if the session should be ended quickly, to speed up using the newly selected committee.
@@ -386,7 +386,7 @@ pub mod pallet {
 	#[derive(frame_support::DefaultNoBound)]
 	pub struct GenesisConfig<T: Config> {
 		/// Initial committee members of the partner chain.
-		pub initial_authorities: Vec<T::CommitteeMember>,
+		pub initial_authorities: Vec<CommitteeMemberOf<T>>,
 		/// Initial [MainChainScripts] of the partner chain.
 		pub main_chain_scripts: MainChainScripts,
 	}
@@ -520,7 +520,7 @@ pub mod pallet {
 		))]
 		pub fn set(
 			origin: OriginFor<T>,
-			validators: BoundedVec<T::CommitteeMember, T::MaxValidators>,
+			validators: BoundedVec<CommitteeMemberOf<T>, T::MaxValidators>,
 			for_epoch_number: ScEpochNumber,
 			selection_inputs_hash: SizedByteString<32>,
 		) -> DispatchResult {
@@ -571,7 +571,7 @@ pub mod pallet {
 		}
 
 		/// Returns current committee member for an index, repeating them in a round-robin fashion if needed.
-		pub fn get_current_authority_round_robin(index: usize) -> Option<T::CommitteeMember> {
+		pub fn get_current_authority_round_robin(index: usize) -> Option<CommitteeMemberOf<T>> {
 			let committee = CurrentCommittee::<T>::get().committee;
 			if committee.is_empty() {
 				return None;
@@ -581,13 +581,14 @@ pub mod pallet {
 		}
 
 		/// Returns current committee from storage.
-		pub fn current_committee_storage() -> CommitteeInfo<T::CommitteeMember, T::MaxValidators> {
+		pub fn current_committee_storage() -> CommitteeInfo<CommitteeMemberOf<T>, T::MaxValidators>
+		{
 			CurrentCommittee::<T>::get()
 		}
 
 		/// Returns next committee from storage.
 		pub fn next_committee_storage()
-		-> Option<CommitteeInfo<T::CommitteeMember, T::MaxValidators>> {
+		-> Option<CommitteeInfo<CommitteeMemberOf<T>, T::MaxValidators>> {
 			NextCommittee::<T>::get()
 		}
 
@@ -620,13 +621,13 @@ pub mod pallet {
 		pub fn calculate_committee(
 			authority_selection_inputs: T::AuthoritySelectionInputs,
 			sidechain_epoch: ScEpochNumber,
-		) -> Option<Vec<T::CommitteeMember>> {
+		) -> Option<Vec<CommitteeMemberOf<T>>> {
 			T::select_authorities(authority_selection_inputs, sidechain_epoch).map(|c| c.to_vec())
 		}
 
 		/// If [NextCommittee] is defined, it moves its value to [CurrentCommittee] storage.
 		/// Returns the value taken from [NextCommittee].
-		pub fn rotate_committee_to_next_epoch() -> Option<Vec<T::CommitteeMember>> {
+		pub fn rotate_committee_to_next_epoch() -> Option<Vec<CommitteeMemberOf<T>>> {
 			let next_committee = NextCommittee::<T>::take()?;
 
 			CurrentCommittee::<T>::put(next_committee.clone());

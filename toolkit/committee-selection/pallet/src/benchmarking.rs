@@ -9,20 +9,16 @@ use sp_std::vec::Vec;
 const SEED: u32 = 0;
 
 /// Helper for creating mock data used by benchmarks.
-///
-/// Runtimes with `CommitteeMember` types isomorphic to `(AuthorityId, AuthorityKeys)`
-/// can use the implementation provided for [()].
 pub trait BenchmarkHelper<T: Config> {
 	/// Should return `number` of committee members
-	fn create_validators(number: u32) -> Vec<T::CommitteeMember>;
+	fn create_validators(number: u32) -> Vec<CommitteeMemberOf<T>>;
 }
 
 impl<T: Config> BenchmarkHelper<T> for ()
 where
-	<T as Config>::CommitteeMember:
-		From<(<T as Config>::AuthorityId, <T as Config>::AuthorityKeys)>,
+	CommitteeMemberOf<T>: From<(<T as Config>::AuthorityId, <T as Config>::AuthorityKeys)>,
 {
-	fn create_validators(number: u32) -> Vec<T::CommitteeMember> {
+	fn create_validators(number: u32) -> Vec<CommitteeMemberOf<T>> {
 		(0..number)
 			.map(|i| {
 				let authority = account::<<T as crate::Config>::AuthorityId>("member", i, SEED);
@@ -46,7 +42,7 @@ pub mod benchmarks {
 	where
 		<T as crate::Config>::ScEpochNumber: From<ScEpochNumber>,
 	{
-		let validators: BoundedVec<<T as crate::Config>::CommitteeMember, T::MaxValidators> =
+		let validators: BoundedVec<CommitteeMemberOf<T>, T::MaxValidators> =
 			BoundedVec::truncate_from(T::BenchmarkHelper::create_validators(v));
 
 		let for_epoch_number = T::current_epoch_number() + One::one();

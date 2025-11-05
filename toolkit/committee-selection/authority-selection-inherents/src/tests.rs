@@ -12,7 +12,6 @@ use sidechain_domain::{CandidateKey, CandidateKeys};
 use sp_core::{ConstU32, Pair, ecdsa, ed25519};
 use sp_runtime::traits::Zero;
 use sp_runtime::{BoundToRuntimeAppPublic, RuntimeAppPublic, impl_opaque_keys};
-use sp_session_validator_management::CommitteeMember;
 
 #[test]
 fn registration_message_encoding() {

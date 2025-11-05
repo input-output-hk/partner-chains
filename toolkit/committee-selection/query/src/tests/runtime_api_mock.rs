@@ -8,7 +8,7 @@ use mock::*;
 use sidechain_domain::*;
 use sp_core::{Decode, Encode};
 use sp_runtime::{BoundToRuntimeAppPublic, impl_opaque_keys};
-use sp_session_validator_management::MainChainScripts;
+use sp_session_validator_management::{CommitteeMember, MainChainScripts};
 #[allow(deprecated)]
 use sp_sidechain::GetSidechainStatus;
 use std::str::FromStr;
@@ -60,16 +60,16 @@ sp_api::mock_impl_runtime_apis! {
 			})
 		}
 	}
-	impl SessionValidatorManagementApi<Block, (CrossChainPublic, SessionKeys), AuthoritySelectionInputs, ScEpochNumber> for TestRuntimeApi {
+	impl SessionValidatorManagementApi<Block, CrossChainPublic, SessionKeys, AuthoritySelectionInputs, ScEpochNumber> for TestRuntimeApi {
 		#[advanced]
-		fn get_current_committee(at: <Block as BlockT>::Hash) -> Result<(ScEpochNumber, sp_std::vec::Vec<(CrossChainPublic, SessionKeys)>), sp_api::ApiError> {
+		fn get_current_committee(at: <Block as BlockT>::Hash) -> Result<(ScEpochNumber, sp_std::vec::Vec<CommitteeMember<CrossChainPublic, SessionKeys>>), sp_api::ApiError> {
 			self.check_using_same_instance_for_same_block(at.encode())?;
 			let block_number = conversion::block_hash_to_block_number(at.into());
 			let block_epoch = conversion::get_epoch(block_number);
 			Ok((ScEpochNumber(block_epoch as u64), committee_for_epoch(block_epoch as u64)))
 		}
 		#[advanced]
-		fn get_next_committee(at: <Block as BlockT>::Hash) -> Result<Option<(ScEpochNumber, sp_std::vec::Vec<(CrossChainPublic, SessionKeys)>)>, sp_api::ApiError> {
+		fn get_next_committee(at: <Block as BlockT>::Hash) -> Result<Option<(ScEpochNumber, sp_std::vec::Vec<CommitteeMember<CrossChainPublic, SessionKeys>>)>, sp_api::ApiError> {
 			self.check_using_same_instance_for_same_block(at.encode())?;
 			let block_number = conversion::block_hash_to_block_number(at.into()) ;
 			let block_epoch = conversion::get_epoch(block_number) + 1;
@@ -107,25 +107,27 @@ sp_api::mock_impl_runtime_apis! {
 	}
 }
 
-pub(crate) fn committee_for_epoch(epoch: u64) -> Vec<(CrossChainPublic, SessionKeys)> {
+pub(crate) fn committee_for_epoch(
+	epoch: u64,
+) -> Vec<CommitteeMember<CrossChainPublic, SessionKeys>> {
 	if epoch == conversion::GENESIS_EPOCH || epoch == conversion::EPOCH_OF_BLOCK_1 {
 		vec![
-			(
+			CommitteeMember::permissioned(
 				CrossChainPublic([0u8; 33]),
 				SessionKeys { key: sp_core::sr25519::Public::from([0u8; 32]).into() },
 			),
-			(
+			CommitteeMember::permissioned(
 				CrossChainPublic([1u8; 33]),
 				SessionKeys { key: sp_core::sr25519::Public::from([1u8; 32]).into() },
 			),
 		]
 	} else {
 		vec![
-			(
+			CommitteeMember::permissioned(
 				CrossChainPublic([epoch as u8; 33]),
 				SessionKeys { key: sp_core::sr25519::Public::from([2u8; 32]).into() },
 			),
-			(
+			CommitteeMember::permissioned(
 				CrossChainPublic([epoch as u8 + 1; 33]),
 				SessionKeys { key: sp_core::sr25519::Public::from([3u8; 32]).into() },
 			),
