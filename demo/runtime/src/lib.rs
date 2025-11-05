@@ -593,20 +593,12 @@ impl pallet_block_producer_metadata::Config for Runtime {
 
 impl pallet_block_participation::Config for Runtime {
 	type WeightInfo = pallet_block_participation::weights::SubstrateWeight<Runtime>;
-	type BlockAuthor = BlockAuthor;
 	type DelegatorId = DelegatorKey;
+	type BlockAuthor = BlockAuthor;
 
-	fn should_release_data(slot: sidechain_slots::Slot) -> Option<sidechain_slots::Slot> {
-		TestHelperPallet::should_release_participation_data(slot)
-	}
+	type Moment = Slot;
 
-	fn blocks_produced_up_to_slot(slot: Slot) -> impl Iterator<Item = (Slot, BlockAuthor)> {
-		BlockProductionLog::peek_prefix(slot)
-	}
-
-	fn discard_blocks_produced_up_to_slot(slot: Slot) {
-		BlockProductionLog::drop_prefix(&slot)
-	}
+	type BlockParticipationProvider = BlockProductionLog;
 
 	const TARGET_INHERENT_ID: InherentIdentifier = TestHelperPallet::INHERENT_IDENTIFIER;
 }
@@ -1139,15 +1131,16 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl sp_block_participation::BlockParticipationApi<Block, BlockAuthor> for Runtime {
-		fn should_release_data(slot: Slot) -> Option<Slot> {
-			BlockParticipation::should_release_data(slot)
-		}
-		fn blocks_produced_up_to_slot(slot: Slot) -> Vec<(Slot, BlockAuthor)> {
-			<Runtime as pallet_block_participation::Config>::blocks_produced_up_to_slot(slot).collect()
+	impl sp_block_participation::BlockParticipationApi<Block, BlockAuthor, Slot> for Runtime {
+		fn blocks_to_process(slot: &Slot) -> Vec<(Slot, BlockAuthor)> {
+			BlockParticipation::blocks_to_process(slot)
 		}
 		fn target_inherent_id() -> InherentIdentifier {
-			<Runtime as pallet_block_participation::Config>::TARGET_INHERENT_ID
+			BlockParticipation::target_inherent_id()
+		}
+		fn moment_to_timestamp_millis(moment: Slot) -> u64 {
+			let slot_duration_millis = <Self as sp_consensus_aura::runtime_decl_for_aura_api::AuraApi<Block, AuraId>>::slot_duration().as_millis();
+			*moment * slot_duration_millis
 		}
 	}
 

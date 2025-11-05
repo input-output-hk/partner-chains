@@ -64,18 +64,6 @@ pub mod pallet {
 		}
 	}
 
-	impl<T: Config> Pallet<T> {
-		pub fn should_release_participation_data(
-			slot: sidechain_slots::Slot,
-		) -> Option<sidechain_slots::Slot> {
-			if (*slot).is_multiple_of(ParticipationDataReleasePeriod::<T>::get()) {
-				Some(slot)
-			} else {
-				None
-			}
-		}
-	}
-
 	impl<T: Config> sp_sidechain::OnNewEpoch for Pallet<T> {
 		fn on_new_epoch(
 			_old_epoch: ScEpochNumber,

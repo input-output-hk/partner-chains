@@ -5,7 +5,7 @@ use crate::Pallet as BlockParticipation;
 use frame_benchmarking::v2::*;
 use frame_system::RawOrigin;
 
-#[benchmarks]
+#[benchmarks(where <T as crate::Config>::Moment: From<u64>)]
 mod benchmarks {
 	use super::*;
 
@@ -13,7 +13,7 @@ mod benchmarks {
 	fn note_processing() -> Result<(), BenchmarkError> {
 		#[block]
 		{
-			BlockParticipation::<T>::note_processing(RawOrigin::None.into(), Slot::from(42))?;
+			BlockParticipation::<T>::note_processing(RawOrigin::None.into(), 42u64.into())?;
 		}
 		Ok(())
 	}

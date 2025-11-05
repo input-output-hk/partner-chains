@@ -32,14 +32,13 @@ impl BlockParticipationDataSource for MockBlockParticipationDataSource {
 			.stake_distributions
 			.get(&epoch)
 			.cloned()
-			.expect("Mock called with unexpected epoch"))
+			.expect(&format!("Mock called with unexpected epoch {epoch:?}")))
 	}
 }
 
 #[derive(Debug, Clone)]
 struct TestApi {
-	payout_slot: Option<Slot>,
-	blocks_produced_up_to_slot: Vec<(Slot, BlockProducer)>,
+	blocks_produced_up_to_moment: Vec<(u64, BlockProducer)>,
 }
 
 impl ProvideRuntimeApi<Block> for TestApi {
@@ -56,16 +55,15 @@ type Beneficiary = DelegatorKey;
 const TEST_INHERENT_ID: InherentIdentifier = [42; 8];
 
 sp_api::mock_impl_runtime_apis! {
-	impl BlockParticipationApi<Block, BlockProducer> for TestApi {
-
-		fn should_release_data(_slot: Slot) -> Option<Slot> {
-			self.payout_slot
-		}
-		fn blocks_produced_up_to_slot(_slot: Slot) -> Vec<(Slot, BlockProducer)> {
-			self.blocks_produced_up_to_slot.clone()
+	impl BlockParticipationApi<Block, BlockProducer, u64> for TestApi {
+		fn blocks_to_process(_moment: &u64) -> Vec<(u64, BlockProducer)> {
+			self.blocks_produced_up_to_moment.clone()
 		}
 		fn target_inherent_id() -> InherentIdentifier {
 			TEST_INHERENT_ID
+		}
+		fn moment_to_timestamp_millis(moment: u64) -> u64 {
+			moment * 1000
 		}
 	}
 }
@@ -84,9 +82,8 @@ const delegator5: DelegatorKey = DelegatorKey::StakeKeyHash([15; 28]);
 
 #[tokio::test]
 async fn provides_data_when_api_returns_a_slot() {
-	let payout_slot = Slot::from(1000);
+	let payout_moment = 1000;
 	let parent_hash = Hash::from([2; 32]);
-	let current_slot = Slot::from(10);
 	let mc_epoch_config = MainchainEpochConfig {
 		first_epoch_timestamp_millis: Timestamp::from_unix_millis(0),
 		first_epoch_number: 0,
@@ -94,26 +91,24 @@ async fn provides_data_when_api_returns_a_slot() {
 		first_slot_number: 0,
 		slot_duration_millis: Duration::from_millis(100),
 	};
-	let slot_duration = SlotDuration::from_millis(1000);
 	let client = TestApi {
-		payout_slot: Some(payout_slot),
-		blocks_produced_up_to_slot: vec![
+		blocks_produced_up_to_moment: vec![
 			// epoch 47
-			(Slot::from(490), Some(producer1)),
-			(Slot::from(491), Some(producer2)),
-			(Slot::from(492), Some(producer1)),
-			(Slot::from(493), None),
-			(Slot::from(494), Some(producer3)),
-			(Slot::from(495), Some(producer4)),
-			(Slot::from(496), None),
-			(Slot::from(497), Some(producer5)),
+			(490, Some(producer1)),
+			(491, Some(producer2)),
+			(492, Some(producer1)),
+			(493, None),
+			(494, Some(producer3)),
+			(495, Some(producer4)),
+			(496, None),
+			(497, Some(producer5)),
 			// epoch 97
-			(Slot::from(990), Some(producer1)),
-			(Slot::from(991), Some(producer2)),
-			(Slot::from(992), Some(producer1)),
-			(Slot::from(993), Some(producer2)),
-			(Slot::from(994), Some(producer3)),
-			(Slot::from(995), Some(producer4)),
+			(990, Some(producer1)),
+			(991, Some(producer2)),
+			(992, Some(producer1)),
+			(993, Some(producer2)),
+			(994, Some(producer3)),
+			(995, Some(producer4)),
 		],
 	};
 	#[rustfmt::skip]
@@ -171,18 +166,18 @@ async fn provides_data_when_api_returns_a_slot() {
 		.into(),
 	};
 
-	let provider = BlockParticipationInherentDataProvider::<BlockProducer, Beneficiary>::new(
+	let provider = BlockParticipationInherentDataProvider::<BlockProducer, Beneficiary, u64>::new(
 		&client,
 		&data_source,
 		parent_hash,
-		current_slot,
+		payout_moment,
 		&mc_epoch_config,
-		slot_duration,
 	)
 	.await
 	.expect("Should succeed");
 
 	let BlockParticipationInherentDataProvider::Active {
+		moment,
 		target_inherent_id,
 		block_production_data,
 	} = provider
@@ -191,7 +186,7 @@ async fn provides_data_when_api_returns_a_slot() {
 	};
 
 	assert_eq!(target_inherent_id, TEST_INHERENT_ID);
-	assert_eq!(block_production_data.up_to_slot, payout_slot);
+	assert_eq!(moment, payout_moment);
 
 	#[rustfmt::skip]
 	assert_eq!(
@@ -285,10 +280,10 @@ async fn provides_data_when_api_returns_a_slot() {
 
 #[tokio::test]
 async fn skips_providing_data_if_api_returns_none() {
-	let client = TestApi { payout_slot: None, blocks_produced_up_to_slot: vec![] };
+	let client = TestApi { blocks_produced_up_to_moment: vec![] };
 	let data_source = MockBlockParticipationDataSource::default();
 	let parent_hash = Hash::from([2; 32]);
-	let current_slot = Slot::from(10);
+	let current_moment = 10;
 	let mc_epoch_config = MainchainEpochConfig {
 		first_epoch_timestamp_millis: Timestamp::from_unix_millis(0),
 		first_epoch_number: 0,
@@ -296,15 +291,13 @@ async fn skips_providing_data_if_api_returns_none() {
 		first_slot_number: 0,
 		slot_duration_millis: Duration::from_millis(1000),
 	};
-	let slot_duration = SlotDuration::from_millis(1000);
 
-	let provider = BlockParticipationInherentDataProvider::<BlockProducer, Beneficiary>::new(
+	let provider = BlockParticipationInherentDataProvider::<BlockProducer, Beneficiary, u64>::new(
 		&client,
 		&data_source,
 		parent_hash,
-		current_slot,
+		current_moment,
 		&mc_epoch_config,
-		slot_duration,
 	)
 	.await
 	.expect("Should succeed");
@@ -315,17 +308,13 @@ async fn skips_providing_data_if_api_returns_none() {
 #[tokio::test]
 async fn returns_error_if_producer_missing_in_stake_distribution() {
 	let client = TestApi {
-		payout_slot: Some(Slot::from(900)),
-		blocks_produced_up_to_slot: vec![
-			(Slot::from(490), Some(producer1)),
-			(Slot::from(491), Some(producer1)),
-		],
+		blocks_produced_up_to_moment: vec![(490, Some(producer1)), (491, Some(producer1))],
 	};
 	let data_source = MockBlockParticipationDataSource {
 		stake_distributions: [(McEpochNumber(47), StakeDistribution([].into()))].into(),
 	};
 	let parent_hash = Hash::from([2; 32]);
-	let current_slot = Slot::from(10);
+	let current_moment = 10;
 	let mc_epoch_config = MainchainEpochConfig {
 		first_epoch_timestamp_millis: Timestamp::from_unix_millis(0),
 		first_epoch_number: 0,
@@ -333,15 +322,13 @@ async fn returns_error_if_producer_missing_in_stake_distribution() {
 		first_slot_number: 0,
 		slot_duration_millis: Duration::from_millis(1000),
 	};
-	let slot_duration = SlotDuration::from_millis(1000);
 
-	let err = BlockParticipationInherentDataProvider::<BlockProducer, Beneficiary>::new(
+	let err = BlockParticipationInherentDataProvider::<BlockProducer, Beneficiary, u64>::new(
 		&client,
 		&data_source,
 		parent_hash,
-		current_slot,
+		current_moment,
 		&mc_epoch_config,
-		slot_duration,
 	)
 	.await
 	.expect_err("Should return error");
@@ -358,8 +345,9 @@ async fn returns_error_if_producer_missing_in_stake_distribution() {
 #[tokio::test]
 async fn idp_provides_two_inherent_data_sets() {
 	let production_data: BlockProductionData<BlockProducer, Beneficiary> =
-		BlockProductionData::new(Slot::from(11), vec![]);
+		BlockProductionData::new(vec![]);
 	let provider = BlockParticipationInherentDataProvider::Active {
+		moment: 11u64,
 		target_inherent_id: TEST_INHERENT_ID,
 		block_production_data: production_data.clone(),
 	};
@@ -367,7 +355,7 @@ async fn idp_provides_two_inherent_data_sets() {
 	let mut inherent_data = InherentData::new();
 	provider.provide_inherent_data(&mut inherent_data).await.unwrap();
 
-	assert_eq!(inherent_data.get_data::<Slot>(&INHERENT_IDENTIFIER).unwrap(), Some(Slot::from(11)));
+	assert_eq!(inherent_data.get_data::<u64>(&INHERENT_IDENTIFIER).unwrap(), Some(11));
 	assert_eq!(
 		inherent_data
 			.get_data::<BlockProductionData<BlockProducer, Beneficiary>>(&TEST_INHERENT_ID)

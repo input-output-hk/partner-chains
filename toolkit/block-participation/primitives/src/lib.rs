@@ -13,8 +13,8 @@
 //! ## Outline of operation
 //!
 //! 1. The inherent data provider calls runtime API to check whether it should release block participation inherent
-//!    data (all points below assume this check is positive) and gets the upper slot limit.
-//! 2. The inherent data provider retrieves data on block production up to the slot limit using runtime API and Cardano
+//!    data (all points below assume this check is positive) and gets the time limit up to which the blocks should be processed.
+//! 2. The inherent data provider retrieves data on block production up to the time limit using runtime API and Cardano
 //!    delegation data using observability data source. The IDP joins and aggregates this data together producing
 //!    block participation data.
 //! 3. The IDP puts the block participation data into the inherent data of the current block, under the inherent
@@ -26,7 +26,7 @@
 //!    inherent that performs block rewards payouts or otherwise handles the data according to this particular
 //!    Partner Chain's rules.
 //! 6. The block participation pallet consumes the operational inherent data and cleans up block production data
-//!    up to the slot limit.
+//!    up to the time limit.
 //!
 //! ## Usage
 //!
@@ -40,15 +40,16 @@
 //!
 //! Configuring the pallet and implementing the runtime API requires there to be a source of block production data
 //! present in the runtime that can be used by the feature. The intended source is `pallet_block_production_log` but
-//! in principle anu pallet offering a similar interfaces can be used. An example of runtime API implementation using
+//! in principle any pallet offering a similar interfaces can be used. An example of runtime API implementation using
 //! the block participation log pallet looks like the following:
 //! ```rust,ignore
-//!	impl sp_block_participation::BlockParticipationApi<Block, BlockAuthor> for Runtime {
-//!		fn should_release_data(slot: Slot) -> Option<Slot> {
-//!			BlockParticipationPallet::should_release_data(slot)
+//!	impl sp_block_participation::BlockParticipationApi<Block, BlockAuthor, Slot> for Runtime {
+//!		fn blocks_to_process(slot: &Slot) -> Vec<(Slot, BlockAuthor)> {
+//!			BlockParticipation::blocks_to_process(slot)
 //!		}
-//!		fn blocks_produced_up_to_slot(slot: Slot) -> Vec<(Slot, BlockAuthor)> {
-//!			<Runtime as pallet_block_participation::Config>::blocks_produced_up_to_slot(slot).collect()
+//!		fn moment_to_timestamp_millis(moment: Slot) -> u64 {
+//!			let slot_duration_millis = <Self as sp_consensus_aura::runtime_decl_for_aura_api::AuraApi<Block, AuraId>>::slot_duration().as_millis();
+//!			*moment * slot_duration_millis
 //!		}
 //!		fn target_inherent_id() -> InherentIdentifier {
 //!			<Runtime as pallet_block_participation::Config>::TARGET_INHERENT_ID
@@ -56,6 +57,9 @@
 //!	}
 //! ```
 //!
+//! Note that the API uses a type parameter `Moment`, which in this case is `Slot`. This type must identify a moment
+//! in time in which a block can be produced, typically a timestamp or slot number. This type should be convertible
+//! into a timestamp in some way, eg. starting time in case of time ranges such as slots.
 //!
 #![cfg_attr(not(feature = "std"), no_std)]
 #![deny(missing_docs)]
@@ -66,7 +70,6 @@ use alloc::vec::Vec;
 use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode};
 use scale_info::TypeInfo;
 use sidechain_domain::{DelegatorKey, MainchainKeyHash, McEpochNumber};
-pub use sp_consensus_slots::{Slot, SlotDuration};
 use sp_inherents::{InherentIdentifier, IsFatalError};
 
 #[cfg(test)]
@@ -110,11 +113,9 @@ pub struct BlockProducerParticipationData<BlockProducerId, DelegatorId> {
 
 /// Aggregated data on block production, grouped by the block producer and aggregation period (main chain epoch).
 ///
-/// When provided by the inherent data provider it should aggregate data since the previous `up_to_slot` to the current `up_to_slot`.
+/// When provided by the inherent data provider it should aggregate data since the previous processing
 #[derive(Clone, Debug, PartialEq, Eq, Decode, DecodeWithMemTracking, Encode, TypeInfo)]
 pub struct BlockProductionData<BlockProducerId, DelegatorId> {
-	/// Data upper slot boundary.
-	up_to_slot: Slot,
 	/// Aggregated data on block producers and their delegators.
 	///
 	/// There may be more than one entry for the same block producer in this collection if the aggregated
@@ -125,7 +126,6 @@ pub struct BlockProductionData<BlockProducerId, DelegatorId> {
 impl<BlockProducerId, DelegatorId> BlockProductionData<BlockProducerId, DelegatorId> {
 	/// Construct a new instance of [BlockProductionData], ensuring stable ordering of data.
 	pub fn new(
-		up_to_slot: Slot,
 		mut producer_participation: Vec<
 			BlockProducerParticipationData<BlockProducerId, DelegatorId>,
 		>,
@@ -138,12 +138,7 @@ impl<BlockProducerId, DelegatorId> BlockProductionData<BlockProducerId, Delegato
 			breakdown.delegators.sort()
 		}
 		producer_participation.sort();
-		Self { up_to_slot, producer_participation }
-	}
-
-	/// Returns the upper slot boundary of the aggregation range of `self`
-	pub fn up_to_slot(&self) -> Slot {
-		self.up_to_slot
+		Self { producer_participation }
 	}
 
 	/// Returns aggregated participation data per block producer
@@ -168,9 +163,6 @@ pub enum InherentError {
 	/// Indicates that inherent was produced when not expected
 	#[cfg_attr(feature = "std", error("Block participation inherent produced when not expected"))]
 	UnexpectedInherent,
-	/// Indicates that the inherent was produced with incorrect slot boundary
-	#[cfg_attr(feature = "std", error("Block participation up_to_slot incorrect"))]
-	IncorrectSlotBoundary,
 	/// Indicates that the inherent was produced with incorrect participation data
 	#[cfg_attr(feature = "std", error("Inherent data provided by the node is invalid"))]
 	InvalidInherentData,
@@ -186,13 +178,13 @@ sp_api::decl_runtime_apis! {
 	/// Runtime api exposing configuration and runtime bindings necessary for [inherent_data::BlockParticipationInherentDataProvider].
 	///
 	/// This API should typically be implemented by simply exposing relevant functions and data from the feature's pallet.
-	pub trait BlockParticipationApi<BlockProducerId: Decode> {
-		/// Returns slot up to which block production data should be released or [None].
-		fn should_release_data(slot: Slot) -> Option<Slot>;
-		/// Returns block authors since last processing up to `slot`.
-		fn blocks_produced_up_to_slot(slot: Slot) -> Vec<(Slot, BlockProducerId)>;
+	pub trait BlockParticipationApi<BlockProducerId: Decode, Moment: Decode + Encode> {
+		/// Returns block participation data that should be processed in the current block.
+		fn blocks_to_process(moment: &Moment) -> Vec<(Moment, BlockProducerId)>;
 		/// Returns the inherent ID under which block participation data should be provided.
 		fn target_inherent_id() -> InherentIdentifier;
+		/// Converts moment into a timestamp in UNIX milliseconds
+		fn moment_to_timestamp_millis(moment: Moment) -> u64;
 	}
 }
 
@@ -224,6 +216,7 @@ pub mod inherent_data {
 	use super::*;
 	use alloc::fmt::Debug;
 	use core::error::Error;
+	use core::ops::Deref;
 	use sidechain_domain::mainchain_epoch::*;
 	use sidechain_domain::*;
 	use sp_api::{ApiError, ApiExt, ProvideRuntimeApi};
@@ -270,14 +263,15 @@ pub mod inherent_data {
 	/// This IDP provides two sets of inherent data:
 	/// - One is the block production data saved under the inherent ID indicated by the function
 	///   [BlockParticipationApi::target_inherent_id], which is intended for consumption by a chain-specific handler pallet.
-	/// - The other is the slot limit returned by [BlockParticipationApi::should_release_data]. This inherent data
-	///   is needed for internal operation of the feature and triggers clearing of already handled data
-	///   from the block production log pallet.
+	/// - The other is the inherent data needed for internal operation of the feature which triggers clearing
+	///   of already handled data from the block production log pallet.
 	#[derive(Debug, Clone, PartialEq)]
-	pub enum BlockParticipationInherentDataProvider<BlockProducerId, DelegatorId> {
+	pub enum BlockParticipationInherentDataProvider<BlockProducerId, DelegatorId, Moment> {
 		/// Active variant of the IDP that will provide inherent data stored in `block_production_data` at the
 		/// inherent ID stored in `target_inherent_id`.
 		Active {
+			/// Moment in time at which the block is being produced
+			moment: Moment,
 			/// Inherent ID under which inherent data will be provided
 			target_inherent_id: InherentIdentifier,
 			/// Inherent data containing aggregated block participation data
@@ -287,10 +281,12 @@ pub mod inherent_data {
 		Inert,
 	}
 
-	impl<BlockProducer, Delegator> BlockParticipationInherentDataProvider<BlockProducer, Delegator>
+	impl<BlockProducer, Delegator, Moment>
+		BlockParticipationInherentDataProvider<BlockProducer, Delegator, Moment>
 	where
 		BlockProducer: AsCardanoSPO + Decode + Clone + Hash + Eq + Ord + Debug,
 		Delegator: CardanoDelegator + Ord + Debug,
+		Moment: Encode + Decode + Send + Sync,
 	{
 		/// Creates a new inherent data provider of block participation data.
 		///
@@ -300,32 +296,36 @@ pub mod inherent_data {
 			client: &T,
 			data_source: &(dyn BlockParticipationDataSource + Send + Sync),
 			parent_hash: <Block as BlockT>::Hash,
-			current_slot: Slot,
+			moment: Moment,
 			mc_epoch_config: &MainchainEpochConfig,
-			slot_duration: SlotDuration,
 		) -> Result<Self, InherentDataCreationError<BlockProducer>>
 		where
+			Moment: Decode + Encode,
 			T: ProvideRuntimeApi<Block> + Send + Sync,
-			T::Api: BlockParticipationApi<Block, BlockProducer>,
+			T::Api: BlockParticipationApi<Block, BlockProducer, Moment>,
 		{
 			let api = client.runtime_api();
 
-			if !api.has_api::<dyn BlockParticipationApi<Block, BlockProducer>>(parent_hash)? {
+			if !api
+				.has_api::<dyn BlockParticipationApi<Block, BlockProducer, Moment>>(parent_hash)?
+			{
 				return Ok(Self::Inert);
 			}
 
-			let Some(up_to_slot) = api.should_release_data(parent_hash, current_slot)? else {
+			let blocks_to_process = api.blocks_to_process(parent_hash, &moment)?;
+
+			if blocks_to_process.is_empty() {
 				log::debug!("💤︎ Skipping computing block participation data this block...");
 				return Ok(Self::Inert);
 			};
-			let blocks_produced_up_to_slot =
-				api.blocks_produced_up_to_slot(parent_hash, up_to_slot)?;
+
 			let target_inherent_id = api.target_inherent_id(parent_hash)?;
 
 			let block_counts_by_epoch_and_producer = Self::count_blocks_by_epoch_and_producer(
-				blocks_produced_up_to_slot,
+				blocks_to_process,
 				mc_epoch_config,
-				slot_duration,
+				parent_hash,
+				api.deref(),
 			)?;
 
 			let mut production_summaries = vec![];
@@ -346,8 +346,9 @@ pub mod inherent_data {
 			}
 
 			Ok(Self::Active {
+				moment,
 				target_inherent_id,
-				block_production_data: BlockProductionData::new(up_to_slot, production_summaries),
+				block_production_data: BlockProductionData::new(production_summaries),
 			})
 		}
 
@@ -398,37 +399,38 @@ pub mod inherent_data {
 				.map_err(InherentDataCreationError::DataSourceError)
 		}
 
-		fn data_mc_epoch_for_slot(
-			slot: Slot,
-			slot_duration: SlotDuration,
+		fn data_mc_epoch_for_timestamp(
+			timestamp: Timestamp,
 			mc_epoch_config: &MainchainEpochConfig,
 		) -> Result<McEpochNumber, InherentDataCreationError<BlockProducer>> {
-			let timestamp = Timestamp::from_unix_millis(
-				slot.timestamp(slot_duration)
-					.expect("Timestamp for past slots can not overflow")
-					.as_millis(),
-			);
 			let mc_epoch = mc_epoch_config
 				.timestamp_to_mainchain_epoch(timestamp)
-				.expect("Mainchain epoch for past slots exists");
+				.expect("Mainchain epoch for past timestamps exists");
 
 			offset_data_epoch(&mc_epoch)
 				.map_err(|offset| InherentDataCreationError::McEpochBelowOffset(mc_epoch, offset))
 		}
 
-		fn count_blocks_by_epoch_and_producer(
-			slot_producers: Vec<(Slot, BlockProducer)>,
+		fn count_blocks_by_epoch_and_producer<Block: BlockT, Api>(
+			blocks: Vec<(Moment, BlockProducer)>,
 			mc_epoch_config: &MainchainEpochConfig,
-			slot_duration: SlotDuration,
+			parent_hash: Block::Hash,
+			api: &Api,
 		) -> Result<
 			HashMap<McEpochNumber, HashMap<BlockProducer, u32>>,
 			InherentDataCreationError<BlockProducer>,
-		> {
+		>
+		where
+			Api: BlockParticipationApi<Block, BlockProducer, Moment>,
+		{
 			let mut epoch_producers: HashMap<McEpochNumber, HashMap<BlockProducer, u32>> =
 				HashMap::new();
 
-			for (slot, producer) in slot_producers {
-				let mc_epoch = Self::data_mc_epoch_for_slot(slot, slot_duration, mc_epoch_config)?;
+			for (moment, producer) in blocks {
+				let timestamp = Timestamp::from_unix_millis(
+					api.moment_to_timestamp_millis(parent_hash, moment)?,
+				);
+				let mc_epoch = Self::data_mc_epoch_for_timestamp(timestamp, mc_epoch_config)?;
 				let producer_block_count =
 					epoch_producers.entry(mc_epoch).or_default().entry(producer).or_default();
 
@@ -440,19 +442,20 @@ pub mod inherent_data {
 	}
 
 	#[async_trait::async_trait]
-	impl<BlockProducerId, DelegatorId> InherentDataProvider
-		for BlockParticipationInherentDataProvider<BlockProducerId, DelegatorId>
+	impl<BlockProducerId, DelegatorId, Moment> InherentDataProvider
+		for BlockParticipationInherentDataProvider<BlockProducerId, DelegatorId, Moment>
 	where
 		DelegatorId: Encode + Send + Sync,
 		BlockProducerId: Encode + Send + Sync,
+		Moment: Encode + Send + Sync,
 	{
 		async fn provide_inherent_data(
 			&self,
 			inherent_data: &mut InherentData,
 		) -> Result<(), sp_inherents::Error> {
-			if let Self::Active { target_inherent_id, block_production_data } = &self {
+			if let Self::Active { target_inherent_id, block_production_data, moment } = &self {
 				inherent_data.put_data(*target_inherent_id, block_production_data)?;
-				inherent_data.put_data(INHERENT_IDENTIFIER, &block_production_data.up_to_slot)?;
+				inherent_data.put_data(INHERENT_IDENTIFIER, &moment)?;
 			}
 			Ok(())
 		}

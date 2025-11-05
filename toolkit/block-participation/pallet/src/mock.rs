@@ -4,12 +4,13 @@ use frame_support::{
 	construct_runtime,
 	traits::{ConstU16, ConstU64},
 };
-use sp_block_participation::Slot;
 use sp_core::H256;
 use sp_runtime::{
 	AccountId32, BuildStorage,
 	traits::{BlakeTwo256, IdentityLookup},
 };
+
+use crate::BlockParticipationProvider;
 
 pub type Block = frame_system::mocking::MockBlock<Test>;
 pub type AccountId = AccountId32;
@@ -25,11 +26,11 @@ pub mod mock_pallet {
 	pub trait Config: frame_system::Config {}
 
 	#[pallet::storage]
-	pub type SlotToPay<T: Config> = StorageMap<_, Twox64Concat, Slot, Slot, OptionQuery>;
+	pub type ProcessingTime<T: Config> = StorageMap<_, Twox64Concat, u64, u64, OptionQuery>;
 
 	#[pallet::storage]
 	pub type BlockProductionLog<T: Config> =
-		StorageValue<_, BoundedVec<(Slot, BlockProducerId), ConstU32<100>>>;
+		StorageValue<_, BoundedVec<(u64, BlockProducerId), ConstU32<100>>>;
 }
 
 construct_runtime! {
@@ -37,6 +38,24 @@ construct_runtime! {
 		System: frame_system,
 		Payouts: crate::pallet,
 		Mock: crate::mock::mock_pallet
+	}
+}
+
+impl BlockParticipationProvider<u64, BlockProducerId> for Mock {
+	fn blocks_to_process(up_to_moment: &u64) -> impl Iterator<Item = (u64, BlockProducerId)> {
+		mock_pallet::BlockProductionLog::<Test>::get()
+			.unwrap()
+			.clone()
+			.into_iter()
+			.filter(move |(moment, _)| moment < up_to_moment)
+	}
+
+	fn discard_processed_blocks(up_to_moment: &u64) {
+		let log = mock_pallet::BlockProductionLog::<Test>::get();
+		if let Some(log) = log {
+			let log = log.iter().filter(|(moment, _)| moment > up_to_moment).cloned().collect();
+			mock_pallet::BlockProductionLog::<Test>::put(BoundedVec::truncate_from(log));
+		}
 	}
 }
 
@@ -83,32 +102,13 @@ const TEST_INHERENT_ID: InherentIdentifier = [42; 8];
 impl crate::pallet::Config for Test {
 	type WeightInfo = ();
 
-	type DelegatorId = DelegatorId;
 	type BlockAuthor = BlockProducerId;
+	type DelegatorId = DelegatorId;
+	type Moment = u64;
 
-	fn should_release_data(slot: Slot) -> Option<Slot> {
-		mock_pallet::SlotToPay::<Test>::get(slot)
-	}
+	type BlockParticipationProvider = Mock;
 
 	const TARGET_INHERENT_ID: InherentIdentifier = TEST_INHERENT_ID;
-
-	fn discard_blocks_produced_up_to_slot(up_to_slot: Slot) {
-		let log = mock_pallet::BlockProductionLog::<Test>::get();
-		if let Some(log) = log {
-			let log = log.iter().filter(|(slot, _)| *slot > up_to_slot).cloned().collect();
-			mock_pallet::BlockProductionLog::<Test>::put(BoundedVec::truncate_from(log));
-		}
-	}
-
-	fn blocks_produced_up_to_slot(
-		up_to_slot: Slot,
-	) -> impl Iterator<Item = (Slot, Self::BlockAuthor)> {
-		mock_pallet::BlockProductionLog::<Test>::get()
-			.unwrap()
-			.clone()
-			.into_iter()
-			.filter(move |(slot, _)| *slot < up_to_slot)
-	}
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

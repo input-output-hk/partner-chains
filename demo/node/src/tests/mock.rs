@@ -1,13 +1,17 @@
 #![allow(clippy::type_complexity)]
 
 use crate::inherent_data::CreateInherentDataConfig;
-use crate::tests::runtime_api_mock::TestApi;
 use hex_literal::hex;
+use partner_chains_demo_runtime::{BlockAuthor, CrossChainPublic};
 use sc_consensus_aura::SlotDuration;
 use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 use sidechain_domain::*;
-use sidechain_slots::{ScSlotConfig, SlotsPerEpoch};
-use sp_core::offchain::{Duration, Timestamp};
+use sidechain_slots::{ScSlotConfig, Slot, SlotsPerEpoch};
+use sp_block_participation::{BlockProducerParticipationData, BlockProductionData};
+use sp_core::{
+	ecdsa,
+	offchain::{Duration, Timestamp},
+};
 use std::sync::Arc;
 
 pub fn mock_genesis_utxo() -> UtxoId {
@@ -39,8 +43,20 @@ pub fn test_epoch_config() -> MainchainEpochConfig {
 	}
 }
 
-pub fn test_client() -> Arc<TestApi> {
-	Arc::new(TestApi::new(ScEpochNumber(2)))
+pub fn past_block_author() -> BlockAuthor {
+	BlockAuthor::ProBono(CrossChainPublic::from(ecdsa::Public::default()))
+}
+pub fn past_block_slot() -> Slot {
+	Slot::from(420)
+}
+
+pub fn block_participation_data() -> BlockProductionData<BlockAuthor, DelegatorKey> {
+	BlockProductionData::new(vec![BlockProducerParticipationData {
+		block_producer: past_block_author(),
+		block_count: 1,
+		delegator_total_shares: 0,
+		delegators: vec![],
+	}])
 }
 
 pub fn test_create_inherent_data_config() -> CreateInherentDataConfig {

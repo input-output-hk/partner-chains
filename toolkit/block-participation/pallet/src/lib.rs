@@ -18,12 +18,6 @@
 //!
 //! ### Adding into the runtime
 //!
-//! The pallet's configuration can be divided into three groups by purpose:
-//! - `BlockAuthor` and `DelegatorId` types representing block authors and their dependant block beneficiaries
-//! - `should_release_data` function that controls when the inherent data provider is active
-//! - `blocks_produced_up_to_slot` and `blocks_produced_upd_to_slot` functions that provide bindings for consuming
-//!   (reading and clearing) block production data. Most easily these should come from `pallet_block_production_log`.
-//!
 //! Consult documentation of [pallet::Config] for details on each configuration field.
 //!
 //! Assuming that the runtime also contains the `pallet_block_production_log`, an example configuration of
@@ -36,22 +30,7 @@
 //!     type BlockAuthor = BlockAuthor;
 //!     type DelegatorId = DelegatorKey;
 //!
-//!     // release data every `RELEASE_PERIOD` blocks, up to current slot
-//!     fn should_release_data(slot: sidechain_slots::Slot) -> Option<sidechain_slots::Slot> {
-//!         if System::block_number() % RELEASE_PERIOD == 0 {
-//!             Some(slot)
-//!         } else {
-//!             None
-//!         }
-//!     }
-//!
-//!     fn blocks_produced_up_to_slot(slot: Slot) -> impl Iterator<Item = (Slot, BlockAuthor)> {
-//!         BlockProductionLog::peek_prefix(slot)
-//!     }
-//!
-//!     fn discard_blocks_produced_up_to_slot(slot: Slot) {
-//!         BlockProductionLog::drop_prefix(&slot)
-//!     }
+//!     type BlockParticipationProvider = BlockProductionLog;
 //!
 //!     const TARGET_INHERENT_ID: InherentIdentifier = *b"_example";
 //! }
@@ -71,10 +50,20 @@ use frame_support::pallet_prelude::*;
 pub use pallet::*;
 use sp_block_participation::*;
 
+/// Source of block participation data
+pub trait BlockParticipationProvider<Moment, BlockProducer> {
+	/// Returns the block data for processing
+	fn blocks_to_process(moment: &Moment) -> impl Iterator<Item = (Moment, BlockProducer)>;
+
+	/// Discards processed data
+	fn discard_processed_blocks(moment: &Moment);
+}
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
 	use frame_system::pallet_prelude::*;
+	use sp_std::vec::Vec;
 
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
@@ -84,6 +73,18 @@ pub mod pallet {
 		/// Weight info for this pallet's extrinsics
 		type WeightInfo: crate::weights::WeightInfo;
 
+		/// Moment in time at which the participation data should be processed
+		///
+		/// This type should be convertible to a timestamp value. If it represents a time range,
+		/// a representative timestamp, such as the start of the range should be computable from it.
+		type Moment: Parameter + Default + MaxEncodedLen + PartialOrd;
+
+		/// Source of block participation data
+		///
+		/// The default implementation provided by the Partner Chains toolit is the block production
+		/// log pallet implemented by the `pallet_block_production_log` crate.
+		type BlockParticipationProvider: BlockParticipationProvider<Self::Moment, Self::BlockAuthor>;
+
 		/// Type identifying the producer of a block on the Partner Chain
 		type BlockAuthor: Member + Parameter + MaxEncodedLen;
 
@@ -91,33 +92,20 @@ pub mod pallet {
 		/// This can be native stakers on Partner Chain, stakers on the main chain or other.
 		type DelegatorId: Member + Parameter + MaxEncodedLen;
 
-		/// Should return slot up to which block production data should be released or None.
-		fn should_release_data(slot: Slot) -> Option<Slot>;
-
-		/// Returns block authors since last processing up to `slot`
-		fn blocks_produced_up_to_slot(
-			slot: Slot,
-		) -> impl Iterator<Item = (Slot, Self::BlockAuthor)>;
-
-		/// Discards block production data at the source up to slot
-		/// This should remove exactly the same data as returned by `blocks_produced_up_to_slot`
-		fn discard_blocks_produced_up_to_slot(slot: Slot);
-
 		/// Inherent ID under which block participation data should be provided.
 		/// It should be set to the ID used by the pallet that will process participation data for
 		/// paying out block rewards or other purposes.
 		const TARGET_INHERENT_ID: InherentIdentifier;
 	}
 
+	#[pallet::storage]
+	pub type ProcessedUpTo<T: Config> = StorageValue<_, T::Moment, ValueQuery>;
+
 	#[pallet::error]
 	pub enum Error<T> {
-		/// Indicates an attempt to process block participation data for already processed slot
-		UpToSlotNotIncreased,
+		///sss
+		MomentNotIncreasing,
 	}
-
-	/// Stores the slot number up to which block participation has already been processed
-	#[pallet::storage]
-	pub type ProcessedUpToSlot<T: Config> = StorageValue<_, Slot, ValueQuery>;
 
 	#[pallet::inherent]
 	impl<T: Config> ProvideInherent for Pallet<T> {
@@ -126,22 +114,20 @@ pub mod pallet {
 		const INHERENT_IDENTIFIER: InherentIdentifier = sp_block_participation::INHERENT_IDENTIFIER;
 
 		fn create_inherent(data: &InherentData) -> Option<Self::Call> {
-			// we unwrap here because we can't continue proposing a block if inherent data is invalid for some reason
-			let up_to_slot = Self::decode_inherent_data(data).unwrap()?;
-
-			Some(Call::note_processing { up_to_slot })
+			let up_to_moment = Self::decode_inherent_data(data).unwrap()?;
+			Some(Call::note_processing { up_to_moment })
 		}
 
 		fn check_inherent(call: &Self::Call, data: &InherentData) -> Result<(), Self::Error> {
-			let Some(expected_inherent_data) = Self::decode_inherent_data(data)? else {
+			let Some(expected_moment) = Self::decode_inherent_data(data)? else {
 				return Err(Self::Error::UnexpectedInherent);
 			};
 
-			let Self::Call::note_processing { up_to_slot } = call else {
+			let Self::Call::note_processing { up_to_moment } = call else {
 				unreachable!("There should be no other extrinsic in the pallet")
 			};
 
-			ensure!(*up_to_slot == expected_inherent_data, Self::Error::IncorrectSlotBoundary);
+			ensure!(expected_moment == *up_to_moment, Self::Error::InvalidInherentData);
 
 			Ok(())
 		}
@@ -160,7 +146,7 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
-		fn decode_inherent_data(data: &InherentData) -> Result<Option<Slot>, InherentError> {
+		fn decode_inherent_data(data: &InherentData) -> Result<Option<T::Moment>, InherentError> {
 			data.get_data(&Self::INHERENT_IDENTIFIER)
 				.map_err(|_| InherentError::InvalidInherentData)
 		}
@@ -173,29 +159,32 @@ pub mod pallet {
 		///
 		/// This inherent does not by itself process any data and only serves an operational function
 		/// by cleaning up data that has been already processed by other components.
-		///
-		/// # Arguments
-		/// - `up_to_slot`: inclusive upper bound for processed data to be cleaned. This inherent saves
-		///                 the value of `up_to_slot` in the pallet's storage and expects it to increase
-		///                 on each invocation.
 		#[pallet::call_index(0)]
 		#[pallet::weight((0, DispatchClass::Mandatory))]
-		pub fn note_processing(origin: OriginFor<T>, up_to_slot: Slot) -> DispatchResult {
+		pub fn note_processing(origin: OriginFor<T>, up_to_moment: T::Moment) -> DispatchResult {
 			ensure_none(origin)?;
-			if up_to_slot <= ProcessedUpToSlot::<T>::get() {
-				return Err(Error::<T>::UpToSlotNotIncreased.into());
-			}
-			log::info!("🧾 Processing block participation data up to slot {}.", *up_to_slot);
-			T::discard_blocks_produced_up_to_slot(up_to_slot);
-			ProcessedUpToSlot::<T>::put(up_to_slot);
+			ensure!(ProcessedUpTo::<T>::get() < up_to_moment, Error::<T>::MomentNotIncreasing);
+			log::info!("🧾 Processing block participation data");
+			T::BlockParticipationProvider::discard_processed_blocks(&up_to_moment);
+			ProcessedUpTo::<T>::set(up_to_moment);
 			Ok(())
 		}
 	}
 
 	impl<T: Config> Pallet<T> {
-		/// Returns slot up to which block production data should be released or [None].
-		pub fn should_release_data(slot: Slot) -> Option<Slot> {
-			<T as Config>::should_release_data(slot)
+		/// Fetches all blocks to be processed
+		pub fn blocks_to_process(moment: &T::Moment) -> Vec<(T::Moment, T::BlockAuthor)> {
+			<T as Config>::BlockParticipationProvider::blocks_to_process(moment).collect()
+		}
+
+		/// Discards processed data
+		pub fn discard_processed_blocks(moment: &T::Moment) {
+			T::BlockParticipationProvider::discard_processed_blocks(moment);
+		}
+
+		/// Returns the inherent ID at which the participation feature should provide participation data
+		pub fn target_inherent_id() -> InherentIdentifier {
+			<T as Config>::TARGET_INHERENT_ID
 		}
 	}
 }

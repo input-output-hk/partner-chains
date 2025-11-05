@@ -49,10 +49,10 @@ def block_production_log(block_to_query_storage, api: BlockchainApi):
 
 @fixture(scope="module")
 def pc_epochs(block_participation, config: ApiConfig, initial_pc_epoch):
-    up_to_slot = block_participation["up_to_slot"]
-    logging.info(f"Participation data up to slot: {up_to_slot}")
-    start_pc_epoch = (up_to_slot - PARTICIPATION_DATA_SLOT_RANGE) // config.nodes_config.slots_in_epoch
-    stop_pc_epoch = up_to_slot // config.nodes_config.slots_in_epoch
+    up_to_moment = block_participation["up_to_moment"]
+    logging.info(f"Participation data up to slot: {up_to_moment}")
+    start_pc_epoch = (up_to_moment - PARTICIPATION_DATA_SLOT_RANGE) // config.nodes_config.slots_in_epoch
+    stop_pc_epoch = up_to_moment // config.nodes_config.slots_in_epoch
     epochs = range(start_pc_epoch, stop_pc_epoch)
     logging.info(f"Participation data spans PC epochs: {epochs}")
     if initial_pc_epoch in epochs:
@@ -114,7 +114,7 @@ def count_blocks(pc_epoch_calculator: PartnerChainEpochCalculator, config: ApiCo
 @mark.xdist_group("block_participation")
 def test_block_participation_data_is_not_empty(block_participation):
     assert block_participation
-    assert block_participation["up_to_slot"]
+    assert block_participation["up_to_moment"]
     assert block_participation["producer_participation"]
 
 
