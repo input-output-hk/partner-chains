@@ -8,8 +8,11 @@
 #[cfg(feature = "std")]
 use core::str::FromStr;
 
+use parity_scale_codec::DecodeWithMemTracking;
 use scale_info::TypeInfo;
-use sidechain_domain::{MainchainAddress, PolicyId, byte_string::SizedByteString};
+use sidechain_domain::{
+	MainchainAddress, PolicyId, StakePoolPublicKey, byte_string::SizedByteString,
+};
 use sp_core::{Decode, Encode, MaxEncodedLen};
 use sp_inherents::{InherentIdentifier, IsFatalError};
 
@@ -58,25 +61,74 @@ impl IsFatalError for InherentError {
 	}
 }
 
-/// Signifies that a type represents a committee member
-pub trait CommitteeMember {
-	/// Type representing authority id
-	type AuthorityId;
-	/// Type representing authority keys
-	type AuthorityKeys;
-	/// Returns authority id
-	fn authority_id(&self) -> Self::AuthorityId;
-	/// Returns authority keys
-	fn authority_keys(&self) -> Self::AuthorityKeys;
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(
+	Clone,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	TypeInfo,
+	MaxEncodedLen,
+	Debug,
+	PartialEq,
+	Eq,
+	PartialOrd,
+	Ord,
+)]
+/// Type representing committee members, either permissioned or registered
+pub enum CommitteeMember<AuthorityId, AuthorityKeys> {
+	/// A permissioned candidate
+	Permissioned {
+		/// Authority id of the candidate
+		id: AuthorityId,
+		/// Authority keys of the candidate
+		keys: AuthorityKeys,
+	},
+	/// A registered candidate
+	Registered {
+		/// Authority id of the candidate
+		id: AuthorityId,
+		/// Authority keys of the candidate
+		keys: AuthorityKeys,
+		/// Stake pool pub key of the candidate
+		stake_pool_pub_key: StakePoolPublicKey,
+	},
 }
-impl<AuthorityId: Clone, AuthorityKeys: Clone> CommitteeMember for (AuthorityId, AuthorityKeys) {
-	type AuthorityId = AuthorityId;
-	type AuthorityKeys = AuthorityKeys;
-	fn authority_id(&self) -> AuthorityId {
-		self.0.clone()
+
+impl<AuthorityId, AuthorityKeys> From<(AuthorityId, AuthorityKeys)>
+	for CommitteeMember<AuthorityId, AuthorityKeys>
+{
+	fn from((id, keys): (AuthorityId, AuthorityKeys)) -> Self {
+		Self::Permissioned { id, keys }
 	}
-	fn authority_keys(&self) -> AuthorityKeys {
-		self.1.clone()
+}
+
+impl<AuthorityId, AuthorityKeys> CommitteeMember<AuthorityId, AuthorityKeys> {
+	/// Constructs new permissioned candidate
+	pub fn permissioned(id: AuthorityId, keys: AuthorityKeys) -> Self {
+		Self::Permissioned { id, keys }
+	}
+
+	/// Returns the authority ID of the committee member
+	pub fn authority_id(&self) -> AuthorityId
+	where
+		AuthorityId: Clone,
+	{
+		match self {
+			Self::Permissioned { id, .. } => id.clone(),
+			Self::Registered { id, .. } => id.clone(),
+		}
+	}
+
+	/// Returns the authority keys of the committee member
+	pub fn authority_keys(&self) -> AuthorityKeys
+	where
+		AuthorityKeys: Clone,
+	{
+		match self {
+			Self::Permissioned { keys, .. } => keys.clone(),
+			Self::Registered { keys, .. } => keys.clone(),
+		}
 	}
 }
 
@@ -131,15 +183,16 @@ impl MainChainScripts {
 }
 
 sp_api::decl_runtime_apis! {
-	#[api_version(2)]
+	#[api_version(3)]
 	/// Runtime API declaration for Session Validator Management
 	pub trait SessionValidatorManagementApi<
-		CommitteeMember: parity_scale_codec::Decode + parity_scale_codec::Encode + crate::CommitteeMember,
+		AuthorityId,
+		AuthorityKeys,
 		AuthoritySelectionInputs: parity_scale_codec::Encode,
 		ScEpochNumber: parity_scale_codec::Encode + parity_scale_codec::Decode
 	> where
-	CommitteeMember::AuthorityId: Encode + Decode,
-	CommitteeMember::AuthorityKeys: Encode + Decode,
+		AuthorityId: Encode + Decode,
+		AuthorityKeys: Encode + Decode,
 	{
 		/// Returns main chain scripts
 		fn get_main_chain_scripts() -> MainChainScripts;
@@ -148,27 +201,27 @@ sp_api::decl_runtime_apis! {
 
 		#[changed_in(2)]
 		/// Returns current committee
-		fn get_current_committee() -> (ScEpochNumber, sp_std::vec::Vec<CommitteeMember::AuthorityId>);
+		fn get_current_committee() -> (ScEpochNumber, sp_std::vec::Vec<CommitteeMember<AuthorityId, AuthorityKeys>>);
 		/// Returns current committee
-		fn get_current_committee() -> (ScEpochNumber, sp_std::vec::Vec<CommitteeMember>);
+		fn get_current_committee() -> (ScEpochNumber, sp_std::vec::Vec<CommitteeMember<AuthorityId, AuthorityKeys>>);
 
 		#[changed_in(2)]
 		/// Returns next committee
-		fn get_next_committee() -> Option<(ScEpochNumber, sp_std::vec::Vec<CommitteeMember::AuthorityId>)>;
+		fn get_next_committee() -> Option<(ScEpochNumber, sp_std::vec::Vec<CommitteeMember<AuthorityId, AuthorityKeys>>)>;
 		/// Returns next committee
-		fn get_next_committee() -> Option<(ScEpochNumber, sp_std::vec::Vec<CommitteeMember>)>;
+		fn get_next_committee() -> Option<(ScEpochNumber, sp_std::vec::Vec<CommitteeMember<AuthorityId, AuthorityKeys>>)>;
 
 		#[changed_in(2)]
 		/// Calculates committee
 		fn calculate_committee(
 			authority_selection_inputs: AuthoritySelectionInputs,
 			sidechain_epoch: ScEpochNumber
-		) -> Option<sp_std::vec::Vec<(CommitteeMember::AuthorityId, CommitteeMember::AuthorityKeys)>>;
+		) -> Option<sp_std::vec::Vec<(AuthorityId, AuthorityKeys)>>;
 
 		/// Calculates committee
 		fn calculate_committee(
 			authority_selection_inputs: AuthoritySelectionInputs,
 			sidechain_epoch: ScEpochNumber
-		) -> Option<sp_std::vec::Vec<CommitteeMember>>;
+		) -> Option<sp_std::vec::Vec<CommitteeMember<AuthorityId, AuthorityKeys>>>;
 	}
 }
