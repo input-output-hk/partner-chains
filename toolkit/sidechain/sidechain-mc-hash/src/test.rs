@@ -32,8 +32,6 @@ mod validation_tests {
 	use crate::McHashInherentError::*;
 	use crate::mock::MockMcHashDataSource;
 	use crate::*;
-	use sp_consensus_slots::Slot;
-	use sp_consensus_slots::SlotDuration;
 	use sp_runtime::testing::Digest;
 	use sp_runtime::testing::Header;
 	use sp_runtime::traits::Header as HeaderT;
@@ -42,7 +40,6 @@ mod validation_tests {
 	async fn mc_state_reference_block_numbers_should_not_decrease() {
 		let mc_block_hash = McBlockHash([2; 32]);
 		let parent_stable_block_hash = McBlockHash([1; 32]);
-		let slot_duration = SlotDuration::from_millis(1000);
 
 		let parent_stable_block = MainchainBlock {
 			number: McBlockNumber(1),
@@ -64,10 +61,9 @@ mod validation_tests {
 
 		let err = McHashInherentDataProvider::new_verification(
 			mock_header(parent_stable_block_hash),
-			Some(Slot::from(1)),
+			Some(Timestamp::from(1000)),
 			30.into(),
 			mc_block_hash.clone(),
-			slot_duration,
 			&mc_hash_data_source,
 		)
 		.await;
@@ -83,7 +79,6 @@ mod validation_tests {
 	async fn proposed_mc_state_reference_block_numbers_should_not_decrease() {
 		let mc_block_hash = McBlockHash([2; 32]);
 		let parent_stable_block_hash = McBlockHash([3; 32]);
-		let slot_duration = SlotDuration::from_millis(1000);
 
 		let parent_stable_block = MainchainBlock {
 			number: McBlockNumber(3),
@@ -108,8 +103,7 @@ mod validation_tests {
 		let provider = McHashInherentDataProvider::new_proposal(
 			mock_header(parent_stable_block_hash),
 			&mc_hash_data_source,
-			Slot::from(1),
-			slot_duration,
+			Timestamp::from(1000),
 		)
 		.await
 		.unwrap();
@@ -120,7 +114,6 @@ mod validation_tests {
 	async fn propose_fails_if_parent_mc_state_cannot_be_found() {
 		let mc_block_hash = McBlockHash([2; 32]);
 		let parent_stable_block_hash = McBlockHash([3; 32]);
-		let slot_duration = SlotDuration::from_millis(1000);
 
 		let current_latest_stable_block_from_db_sync = MainchainBlock {
 			number: McBlockNumber(2),
@@ -135,8 +128,7 @@ mod validation_tests {
 		let err = McHashInherentDataProvider::new_proposal(
 			mock_header(parent_stable_block_hash),
 			&mc_hash_data_source,
-			Slot::from(1),
-			slot_duration,
+			Timestamp::from(1000),
 		)
 		.await
 		.unwrap_err();

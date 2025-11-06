@@ -23,6 +23,10 @@ also takes `Moment` as type and constructor parameter.
 * `pallet-block-participation` no longer uses slots and is instead parametrized by a `Moment` type.
 Similarly, `BlockParticipationInherentDataProvider` and its constructors take this type as parameter and accept a
 current `moment: Moment` as input instead of slot.
+* `McHashInherentDataProvider` constructors now accept block and parent timestamps instead of slots.
+*Important:* for backward compatibiliyt, chains that used the slot-based version should pass the
+*starting timestamp of the slot* to the new IDP instead of the actual timestamp. See the implementation
+of the demo node for reference.
 
 ## Removed
 

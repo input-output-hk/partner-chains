@@ -43,15 +43,12 @@
 //! ```rust
 //! # use std::sync::Arc;
 //! # use sidechain_mc_hash::*;
-//! use sp_consensus_slots::{Slot, SlotDuration};
+//! # use sp_timestamp::Timestamp;
 //! use sp_runtime::traits::Block as BlockT;
 //!
 //! struct ProposalCIDP {
 //!     // the data source should be created as part of your node's setup
 //!     mc_hash_data_source: Arc<dyn McHashDataSource + Send + Sync>,
-//!     // slot duration should either be a part of your node's configuration or be
-//!     // retrieved using `parent_hash` and your consensus mechanism's runtime API
-//!     slot_duration: SlotDuration,
 //! }
 //!
 //! #[async_trait::async_trait]
@@ -67,13 +64,12 @@
 //!         _extra_args: (),
 //!     ) -> Result<Self::InherentDataProviders, Box<dyn std::error::Error + Send + Sync>> {
 //!         let parent_header: <Block as BlockT>::Header = unimplemented!("Retrieved from block store");
-//!         let slot: Slot = unimplemented!("Provided by the consensus IDP");
+//!         let timestamp: Timestamp = todo!("Calculate based on current slot or retrieve from block header");
 //!
 //!         let mc_hash = McHashInherentDataProvider::new_proposal(
 //!             parent_header,
 //!             self.mc_hash_data_source.as_ref(),
-//!             slot,
-//!             self.slot_duration,
+//!             timestamp,
 //!         ).await?;
 //!
 //!         // Other providers can now use mc_hash.mc_hash() and mc_hash.previous_mc_hash()
@@ -87,16 +83,14 @@
 //! ```rust
 //! # use std::sync::Arc;
 //! # use sidechain_mc_hash::*;
-//! # use sp_consensus_slots::{Slot, SlotDuration};
 //! # use sp_runtime::traits::Block as BlockT;
+//! # use sp_timestamp::Timestamp;
+//! # struct Slot;
 //! use sidechain_domain::McBlockHash;
 //!
 //! struct VerificationIDP {
 //!     // the data source should be created as part of your node's setup
 //!     mc_hash_data_source: Arc<dyn McHashDataSource + Send + Sync>,
-//!     // slot duration should either be a part of your node's configuration or be
-//!     // retrieved using `parent_hash` and your consensus mechanism's runtime API
-//!     slot_duration: SlotDuration,
 //! }
 //!
 //! #[async_trait::async_trait]
@@ -112,15 +106,14 @@
 //!	        (block_slot_from_header, mc_hash_from_header): (Slot, McBlockHash),
 //!     ) -> Result<Self::InherentDataProviders, Box<dyn std::error::Error + Send + Sync>> {
 //!         let parent_header: <Block as BlockT>::Header = unimplemented!("Retrieved from block store");
-//!         let slot: Slot = unimplemented!("Provided by the consensus IDP");
-//!         let parent_slot: Option<Slot> = unimplemented!("Read from previous block using runtime API");
+//!         let timestamp: Timestamp = todo!("Calculate based on current slot or retrieve from block header");
+//!         let parent_timestamp: Option<Timestamp> = unimplemented!("Read from previous block using runtime API");
 //!
 //!         let mc_hash = McHashInherentDataProvider::new_verification(
 //!             parent_header,
-//!             parent_slot,
-//!             block_slot_from_header,
+//!             parent_timestamp,
+//!             timestamp,
 //!             mc_hash_from_header,
-//!             self.slot_duration,
 //!             self.mc_hash_data_source.as_ref(),
 //!         )
 //!         .await?;
@@ -132,7 +125,7 @@
 //! }
 //! ```
 //!
-//! Note that for verification the implementation now accepts additional arguments of types [Slot] and [McBlockHash]
+//! Note that for verification the implementation now accepts additional arguments of types `Slot` and [McBlockHash]
 //! which are provided by the import queue based on the header. In this case, the [McBlockHash] value comes from the
 //! [InherentDigest] defined in next section.
 //!
@@ -173,7 +166,6 @@ use crate::McHashInherentError::StableBlockNotFound;
 use async_trait::async_trait;
 use sidechain_domain::{byte_string::ByteString, *};
 use sp_blockchain::HeaderBackend;
-use sp_consensus_slots::{Slot, SlotDuration};
 use sp_inherents::{InherentData, InherentDataProvider, InherentIdentifier};
 use sp_partner_chains_consensus_aura::inherent_digest::InherentDigest;
 use sp_runtime::{
@@ -235,16 +227,14 @@ pub enum McHashInherentError {
 	#[error("Slot represents a timestamp bigger than of u64::MAX")]
 	SlotTooBig,
 	/// Signals that a Cardano block referenced by a main chain reference hash could not be found
-	#[error(
-		"Main chain state {0} referenced in imported block at slot {1} with timestamp {2} not found"
-	)]
-	McStateReferenceInvalid(McBlockHash, Slot, Timestamp),
+	#[error("Main chain state {0} referenced in imported block at timestamp {1} not found")]
+	McStateReferenceInvalid(McBlockHash, Timestamp),
 	/// Signals that a main chain reference hash points to a Cardano block earlier than the one referenced
 	/// by the previous Partner Chain block
 	#[error(
-		"Main chain state {0} referenced in imported block at slot {1} corresponds to main chain block number which is lower than its parent's {2}<{3}"
+		"Main chain state {0} referenced in imported block at timestamp {1} corresponds to main chain block number which is lower than its parent's {2}<{3}"
 	)]
-	McStateReferenceRegressed(McBlockHash, Slot, McBlockNumber, McBlockNumber),
+	McStateReferenceRegressed(McBlockHash, Timestamp, McBlockNumber, McBlockNumber),
 	/// Signals that a main chain reference hash is either missing from the block diget or can not be decoded
 	#[error("Failed to retrieve MC hash from digest: {0}")]
 	DigestError(String),
@@ -317,27 +307,23 @@ impl McHashInherentDataProvider {
 	/// # Arguments
 	/// - `parent_header`: header of the parent of the block being produced
 	/// - `data_source`: data source implementing [McHashDataSource]
-	/// - `slot`: current Partner Chain slot
-	/// - `slot_duration`: duration of the Partner Chain slot
+	/// - `timestamp`: current block timestamp
 	///
 	/// The referenced Cardano block is guaranteed to be later or equal to the one referenced by the parent block
-	/// and within a bounded time distance from `slot`.
+	/// and within a bounded time distance from `timestamp`.
 	pub async fn new_proposal<Header>(
 		parent_header: Header,
 		data_source: &(dyn McHashDataSource + Send + Sync),
-		slot: Slot,
-		slot_duration: SlotDuration,
+		timestamp: Timestamp,
 	) -> Result<Self, McHashInherentError>
 	where
 		Header: HeaderT,
 	{
-		let slot_start_timestamp =
-			slot.timestamp(slot_duration).ok_or(McHashInherentError::SlotTooBig)?;
 		let mc_block = data_source
-			.get_latest_stable_block_for(slot_start_timestamp)
+			.get_latest_stable_block_for(timestamp)
 			.await
 			.map_err(McHashInherentError::DataSourceError)?
-			.ok_or(StableBlockNotFound(slot_start_timestamp))?;
+			.ok_or(StableBlockNotFound(timestamp))?;
 
 		match McHashInherentDigest::value_from_digest(&parent_header.digest().logs).ok() {
 			// If parent block references some MC state, it is illegal to propose older state
@@ -365,10 +351,9 @@ impl McHashInherentDataProvider {
 	///
 	/// # Arguments
 	/// - `parent_header`: header of the parent of the block being produced or validated
-	/// - `parent_slot`: slot of the parent block. [None] for genesis
-	/// - `verified_block_slot`: Partner Chain slot of the block being verified
+	/// - `parent_timestamp`: timestamp of the parent block. [None] for genesis
+	/// - `timestamp`: timestamp of the block being verified
 	/// - `mc_state_reference_hash`: Cardano block hash referenced by the block being verified
-	/// - `slot_duration`: duration of the Partner Chain slot
 	/// - `block_source`: data source implementing [McHashDataSource]
 	///
 	/// # Returns
@@ -378,24 +363,19 @@ impl McHashInherentDataProvider {
 	/// Otherwise, the returned [McHashInherentDataProvider] instance will contain block data for `mc_state_reference_hash`.
 	pub async fn new_verification<Header>(
 		parent_header: Header,
-		parent_slot: Option<Slot>,
-		verified_block_slot: Slot,
+		parent_timestamp: Option<Timestamp>,
+		timestamp: Timestamp,
 		mc_state_reference_hash: McBlockHash,
-		slot_duration: SlotDuration,
 		block_source: &(dyn McHashDataSource + Send + Sync),
 	) -> Result<Self, McHashInherentError>
 	where
 		Header: HeaderT,
 	{
-		let mc_state_reference_block = get_mc_state_reference(
-			verified_block_slot,
-			mc_state_reference_hash.clone(),
-			slot_duration,
-			block_source,
-		)
-		.await?;
+		let mc_state_reference_block =
+			get_mc_state_reference(timestamp, mc_state_reference_hash.clone(), block_source)
+				.await?;
 
-		let Some(parent_slot) = parent_slot else {
+		let Some(parent_timestamp) = parent_timestamp else {
 			// genesis block doesn't contain MC reference
 			return Ok(Self::from(mc_state_reference_block));
 		};
@@ -403,13 +383,12 @@ impl McHashInherentDataProvider {
 		let parent_mc_hash = McHashInherentDigest::value_from_digest(&parent_header.digest().logs)
 			.map_err(|err| McHashInherentError::DigestError(err.to_string()))?;
 		let parent_mc_state_reference_block =
-			get_mc_state_reference(parent_slot, parent_mc_hash, slot_duration, block_source)
-				.await?;
+			get_mc_state_reference(parent_timestamp, parent_mc_hash, block_source).await?;
 
 		if mc_state_reference_block.number < parent_mc_state_reference_block.number {
 			Err(McHashInherentError::McStateReferenceRegressed(
 				mc_state_reference_hash,
-				verified_block_slot,
+				timestamp,
 				mc_state_reference_block.number,
 				parent_mc_state_reference_block.number,
 			))
@@ -443,23 +422,15 @@ impl McHashInherentDataProvider {
 }
 
 async fn get_mc_state_reference(
-	verified_block_slot: Slot,
+	timestamp: Timestamp,
 	verified_block_mc_hash: McBlockHash,
-	slot_duration: SlotDuration,
 	data_source: &(dyn McHashDataSource + Send + Sync),
 ) -> Result<MainchainBlock, McHashInherentError> {
-	let timestamp = verified_block_slot
-		.timestamp(slot_duration)
-		.ok_or(McHashInherentError::SlotTooBig)?;
 	data_source
 		.get_stable_block_for(verified_block_mc_hash.clone(), timestamp)
 		.await
 		.map_err(McHashInherentError::DataSourceError)?
-		.ok_or(McHashInherentError::McStateReferenceInvalid(
-			verified_block_mc_hash,
-			verified_block_slot,
-			timestamp,
-		))
+		.ok_or(McHashInherentError::McStateReferenceInvalid(verified_block_mc_hash, timestamp))
 }
 
 #[async_trait::async_trait]
