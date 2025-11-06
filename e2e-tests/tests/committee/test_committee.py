@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 import numpy as np
 
 
+@mark.staging
 class TestCommitteeDistribution:
     @fixture(scope="class")
     def p_candidates_available(self, api: BlockchainApi):
@@ -307,6 +308,7 @@ class TestCommitteeDistribution:
             assert candidate.actual_attendance >= expected_guaranteed_seats
 
 
+@mark.staging
 class TestCommitteeRotation:
     @mark.test_key('ETCM-6991')
     def test_committee_members_rotate_over_pc_epochs(
@@ -422,6 +424,7 @@ class TestCommitteeRotation:
             )
 
 
+@mark.staging
 class TestCommitteeMembers:
     @mark.test_key('ETCM-7033')
     def test_there_is_at_least_one_trustless_candidate(self, api: BlockchainApi, current_mc_epoch):

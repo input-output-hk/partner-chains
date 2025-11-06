@@ -1,8 +1,10 @@
-from pytest import fixture, mark
+from pytest import fixture, mark, skip
 from config.api_config import ApiConfig
 from src.blockchain_api import BlockchainApi
 from src.cardano_cli import cbor_to_bech32, hex_to_bech32
 from src.partner_chains_node.models import Reserve, VFunction
+from src.db.models import BridgeDeposit
+from sqlalchemy.orm import Session
 import json
 import logging
 
@@ -29,9 +31,11 @@ def governance_address(config: ApiConfig) -> str:
 def payment_key(config: ApiConfig, governance_skey_with_cli):
     return config.nodes_config.governance_authority.mainchain_key
 
+
 @fixture(scope="session")
 def node_1_aura_pub_key(config: ApiConfig):
     return list(config.nodes_config.nodes.values())[0].aura_public_key
+
 
 @fixture(scope="session")
 def cardano_payment_key(config: ApiConfig, api: BlockchainApi, write_file):
@@ -216,3 +220,37 @@ def reference_utxo(api: BlockchainApi):
         return reference_utxo
 
     return _reference_utxo
+
+
+def _get_bridge_deposit_by_ics_utxo(
+    api: BlockchainApi,
+    db: Session,
+    spend_ics_utxo: bool
+) -> BridgeDeposit:
+    EPOCH_OFFSET = 1
+    mc_epoch = api.get_mc_epoch() - EPOCH_OFFSET
+
+    if db.query(BridgeDeposit).filter(BridgeDeposit.spend_ics_utxo.is_(spend_ics_utxo)).count() == 0:
+        logging.info(f"Deposits table is empty for spending status {spend_ics_utxo}")
+        return None
+
+    bridge_deposit = db.query(BridgeDeposit).filter(
+        BridgeDeposit.register_mc_epoch == mc_epoch,
+        BridgeDeposit.spend_ics_utxo.is_(spend_ics_utxo)
+    ).order_by(BridgeDeposit.id.desc()).first()
+
+    if not bridge_deposit:
+        logging.info(f"No deposits ICS UTXO with spending status {spend_ics_utxo} found for MC epoch {mc_epoch}")
+        return None
+
+    return bridge_deposit
+
+
+@fixture
+def deposit_ics_utxo(api: BlockchainApi, db: Session) -> BridgeDeposit:
+    return _get_bridge_deposit_by_ics_utxo(api, db, spend_ics_utxo=True)
+
+
+@fixture
+def deposit_no_ics_utxo(api: BlockchainApi, db: Session) -> BridgeDeposit:
+    return _get_bridge_deposit_by_ics_utxo(api, db, spend_ics_utxo=False)

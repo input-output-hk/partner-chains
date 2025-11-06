@@ -10,6 +10,7 @@ from typing import Tuple
 @mark.test_key('ETCM-7015')
 @mark.xdist_group(name="governance_action")
 @mark.usefixtures("governance_skey_with_cli")
+@mark.staging
 def test_upsert_permissioned_candidates(
     permissioned_candidates: Tuple[dict[str, Node], str], genesis_utxo, api: BlockchainApi, db: Session, write_file
 ):

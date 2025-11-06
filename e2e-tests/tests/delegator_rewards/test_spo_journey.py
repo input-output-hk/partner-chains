@@ -112,6 +112,7 @@ def count_blocks(pc_epoch_calculator: PartnerChainEpochCalculator, config: ApiCo
 
 @mark.dependency(name="participation_data")
 @mark.xdist_group("block_participation")
+@mark.staging
 def test_block_participation_data_is_not_empty(block_participation):
     assert block_participation
     assert block_participation["up_to_moment"]
@@ -120,6 +121,7 @@ def test_block_participation_data_is_not_empty(block_participation):
 
 @mark.dependency(name="pro_bono_participation")
 @mark.xdist_group("block_participation")
+@mark.staging
 def test_pro_bono_participation(
     mc_epochs: range, api: BlockchainApi, initial_pc_epoch_included, count_blocks: int, block_participation
 ):
@@ -153,6 +155,7 @@ def test_pro_bono_participation(
 
 @mark.dependency(name="spo_participation")
 @mark.xdist_group("block_participation")
+@mark.staging
 def test_spo_participation(
     mc_epochs: range, api: BlockchainApi, count_blocks: int, block_participation, db_sync: Session
 ):
@@ -201,12 +204,14 @@ def test_spo_participation(
 
 @mark.dependency(depends=["pro_bono_participation", "spo_participation"])
 @mark.xdist_group("block_participation")
+@mark.staging
 def test_no_unexpected_producers(block_participation):
     assert not block_participation["producer_participation"], "Unexpected producer participation data"
 
 
 @mark.xdist_group("faucet_tx")
 @mark.ci
+@mark.staging
 class TestMarginFee:
     @fixture(scope="class")
     def random_margin_fee(self) -> int:
