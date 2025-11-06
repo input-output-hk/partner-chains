@@ -15,9 +15,9 @@ def test_mint_tokens_for_reserve(
     api: BlockchainApi, governance_address: str, reserve_asset_id, mint_token, wait_until, config: ApiConfig
 ):
     initial_balance = api.get_mc_balance(governance_address, reserve_asset_id)
-    tokens_to_mint = 1000
+    tokens_to_mint = 2000
     result = mint_token(tokens_to_mint)
-    assert "Transaction successfully submitted" in result
+    assert "Transaction successfully submitted" in result.stderr
     assert wait_until(
         lambda: api.get_mc_balance(governance_address, reserve_asset_id) == initial_balance + tokens_to_mint,
         timeout=config.timeouts.main_chain_tx,
