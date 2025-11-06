@@ -68,6 +68,7 @@ pub enum DataSourceError {
 /// # Environment variables read:
 /// - `DOLOS_MINIBF_URL`: Dolos MiniBF client, eg. `localhost:3000`
 pub fn get_connection_from_env() -> Result<MiniBFClient> {
+	log::warn!("Dolos data sources are still WIP and should not be used in production");
 	let config = ConnectionConfig::from_env()?;
 	Ok(MiniBFClient::new(config.dolos_minibf_url.as_str(), std::time::Duration::from_secs(30)))
 }
@@ -80,12 +81,12 @@ pub struct ConnectionConfig {
 }
 
 impl ConnectionConfig {
-	/// Reads Postgres connection config from the environment
+	/// Reads Dolos connection config from the environment
 	pub fn from_env() -> Result<Self> {
 		let config: Self = figment::Figment::new()
 			.merge(figment::providers::Env::raw())
 			.extract()
-			.map_err(|e| format!("Failed to read postgres data source connection: {e}"))?;
+			.map_err(|e| format!("Failed to read Dolos data source connection: {e}"))?;
 		Ok(config)
 	}
 }
