@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Crate implementing a mechanism for Partner Chain blocks to reference a stable Cardano main chain block."><title>sidechain_mc_hash - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-ca0dd0c4.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="sidechain_mc_hash" data-themes="" data-resource-suffix="" data-rustdoc-version="1.93.0-nightly (b01cc1cf0 2025-11-05)" data-channel="nightly" data-search-js="search-5c29b3b5.js" data-stringdex-js="stringdex-c3e638e9.js" data-settings-js="settings-c38705f0.js" ><script src="../static.files/storage-e2aeef58.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-ce535bd0.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Crate sidechain_mc_hash</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../sidechain_mc_hash/index.html">sidechain_<wbr>mc_<wbr>hash</a><span class="version">1.8.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#purpose-of-this-crate" title="Purpose of this crate">Purpose of this crate</a></li><li><a href="#prerequisites" title="Prerequisites">Prerequisites</a></li><li><a href="#adding-to-the-node" title="Adding to the node">Adding to the node</a><ul><li><a href="#data-source" title="Data source">Data source</a></li><li><a href="#adding-the-inherent-data-provider" title="Adding the inherent data provider">Adding the inherent data provider</a></li><li><a href="#import-queue-configuration" title="Import queue configuration">Import queue configuration</a></li></ul></li></ul><h3><a href="#modules">Crate Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li><li><a href="#constants" title="Constants">Constants</a></li><li><a href="#traits" title="Traits">Traits</a></li><li><a href="#functions" title="Functions">Functions</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>sidechain_<wbr>mc_<wbr>hash</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/sidechain_mc_hash/lib.rs.html#1-635">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Crate implementing a mechanism for Partner Chain blocks to reference a stable Cardano main chain block.</p>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Crate implementing a mechanism for Partner Chain blocks to reference a stable Cardano main chain block."><title>sidechain_mc_hash - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-ca0dd0c4.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="sidechain_mc_hash" data-themes="" data-resource-suffix="" data-rustdoc-version="1.93.0-nightly (b01cc1cf0 2025-11-05)" data-channel="nightly" data-search-js="search-5c29b3b5.js" data-stringdex-js="stringdex-c3e638e9.js" data-settings-js="settings-c38705f0.js" ><script src="../static.files/storage-e2aeef58.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-ce535bd0.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Crate sidechain_mc_hash</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../sidechain_mc_hash/index.html">sidechain_<wbr>mc_<wbr>hash</a><span class="version">1.8.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#purpose-of-this-crate" title="Purpose of this crate">Purpose of this crate</a></li><li><a href="#prerequisites" title="Prerequisites">Prerequisites</a></li><li><a href="#adding-to-the-node" title="Adding to the node">Adding to the node</a><ul><li><a href="#data-source" title="Data source">Data source</a></li><li><a href="#adding-the-inherent-data-provider" title="Adding the inherent data provider">Adding the inherent data provider</a></li><li><a href="#import-queue-configuration" title="Import queue configuration">Import queue configuration</a></li></ul></li></ul><h3><a href="#modules">Crate Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li><li><a href="#constants" title="Constants">Constants</a></li><li><a href="#traits" title="Traits">Traits</a></li><li><a href="#functions" title="Functions">Functions</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>sidechain_<wbr>mc_<wbr>hash</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/sidechain_mc_hash/lib.rs.html#1-606">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Crate implementing a mechanism for Partner Chain blocks to reference a stable Cardano main chain block.</p>
 <h2 id="purpose-of-this-crate"><a class="doc-anchor" href="#purpose-of-this-crate">§</a>Purpose of this crate</h2>
 <p>This crate provides a base for all other Partner Chain Toolkit’s features that require Cardano observability.
 Whenever some part of Cardano state is observed and included in a Partner Chain’s own state, all Partner Chain
@@ -28,15 +28,11 @@ your node’s IDP stack, so that <a href="struct.McHashInherentDataProvider.html
 can be used to pass the reference hashes to other IDPs.</p>
 <p>As an example, creation for proposal would look like the following:</p>
 
-<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>sp_consensus_slots::{Slot, SlotDuration};
-<span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
 
 <span class="kw">struct </span>ProposalCIDP {
     <span class="comment">// the data source should be created as part of your node's setup
     </span>mc_hash_data_source: Arc&lt;<span class="kw">dyn </span>McHashDataSource + Send + Sync&gt;,
-    <span class="comment">// slot duration should either be a part of your node's configuration or be
-    // retrieved using `parent_hash` and your consensus mechanism's runtime API
-    </span>slot_duration: SlotDuration,
 }
 
 <span class="attr">#[async_trait::async_trait]
@@ -52,13 +48,12 @@ can be used to pass the reference hashes to other IDPs.</p>
         _extra_args: (),
     ) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>::InherentDataProviders, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
         <span class="kw">let </span>parent_header: &lt;Block <span class="kw">as </span>BlockT&gt;::Header = <span class="macro">unimplemented!</span>(<span class="string">"Retrieved from block store"</span>);
-        <span class="kw">let </span>slot: Slot = <span class="macro">unimplemented!</span>(<span class="string">"Provided by the consensus IDP"</span>);
+        <span class="kw">let </span>timestamp: Timestamp = <span class="macro">todo!</span>(<span class="string">"Calculate based on current slot or retrieve from block header"</span>);
 
         <span class="kw">let </span>mc_hash = McHashInherentDataProvider::new_proposal(
             parent_header,
             <span class="self">self</span>.mc_hash_data_source.as_ref(),
-            slot,
-            <span class="self">self</span>.slot_duration,
+            timestamp,
         ).<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="comment">// Other providers can now use mc_hash.mc_hash() and mc_hash.previous_mc_hash()
@@ -73,9 +68,6 @@ can be used to pass the reference hashes to other IDPs.</p>
 <span class="kw">struct </span>VerificationIDP {
     <span class="comment">// the data source should be created as part of your node's setup
     </span>mc_hash_data_source: Arc&lt;<span class="kw">dyn </span>McHashDataSource + Send + Sync&gt;,
-    <span class="comment">// slot duration should either be a part of your node's configuration or be
-    // retrieved using `parent_hash` and your consensus mechanism's runtime API
-    </span>slot_duration: SlotDuration,
 }
 
 <span class="attr">#[async_trait::async_trait]
@@ -91,15 +83,14 @@ can be used to pass the reference hashes to other IDPs.</p>
         (block_slot_from_header, mc_hash_from_header): (Slot, McBlockHash),
     ) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>::InherentDataProviders, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
         <span class="kw">let </span>parent_header: &lt;Block <span class="kw">as </span>BlockT&gt;::Header = <span class="macro">unimplemented!</span>(<span class="string">"Retrieved from block store"</span>);
-        <span class="kw">let </span>slot: Slot = <span class="macro">unimplemented!</span>(<span class="string">"Provided by the consensus IDP"</span>);
-        <span class="kw">let </span>parent_slot: <span class="prelude-ty">Option</span>&lt;Slot&gt; = <span class="macro">unimplemented!</span>(<span class="string">"Read from previous block using runtime API"</span>);
+        <span class="kw">let </span>timestamp: Timestamp = <span class="macro">todo!</span>(<span class="string">"Calculate based on current slot or retrieve from block header"</span>);
+        <span class="kw">let </span>parent_timestamp: <span class="prelude-ty">Option</span>&lt;Timestamp&gt; = <span class="macro">unimplemented!</span>(<span class="string">"Read from previous block using runtime API"</span>);
 
         <span class="kw">let </span>mc_hash = McHashInherentDataProvider::new_verification(
             parent_header,
-            parent_slot,
-            block_slot_from_header,
+            parent_timestamp,
+            timestamp,
             mc_hash_from_header,
-            <span class="self">self</span>.slot_duration,
             <span class="self">self</span>.mc_hash_data_source.as_ref(),
         )
         .<span class="kw">await</span><span class="question-mark">?</span>;
@@ -109,7 +100,7 @@ can be used to pass the reference hashes to other IDPs.</p>
         </span><span class="prelude-val">Ok</span>((mc_hash <span class="comment">/* other inherent data providers */</span>))
     }
 }</code></pre></div>
-<p>Note that for verification the implementation now accepts additional arguments of types [Slot] and [McBlockHash]
+<p>Note that for verification the implementation now accepts additional arguments of types <code>Slot</code> and [McBlockHash]
 which are provided by the import queue based on the header. In this case, the [McBlockHash] value comes from the
 [InherentDigest] defined in next section.</p>
 <h3 id="import-queue-configuration"><a class="doc-anchor" href="#import-queue-configuration">§</a>Import queue configuration</h3>
