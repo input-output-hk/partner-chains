@@ -1130,6 +1130,34 @@ jobs:
             ci_preview_chain_spec.json
             staging_preview_chain_spec.json
 
+  local-env-workflow-dispatch:
+    if: github.event_name == 'workflow_dispatch'
+    needs: build-linux-x86_64-workflow-dispatch
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        markers: [smoke, rpc, reserve, governed_map, delegator_rewards, ariadne, wizards]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.sha }}
+      - name: Deploy and test against local environment
+        uses: ./.github/actions/tests/local-environment-tests
+        with:
+          tag: CI
+          image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ inputs.sha }}
+          sha: ${{ inputs.sha }}
+          markers: ${{ matrix.markers }}
+        env:
+          SUBSTRATE_REPO_SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
+          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+          AWS_REGION: ${{ env.AWS_REGION }}
+          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
+          TEST_ENVIRONMENT: local
+
   upload-to-s3-workflow-dispatch:
     if: github.event_name == 'workflow_dispatch'
     needs:
@@ -1174,12 +1202,13 @@ jobs:
 
   workflow-dispatch-flow-complete:
     if: ${{ always() && github.event_name == 'workflow_dispatch' }}
-    needs: [build-linux-x86_64-workflow-dispatch, upload-to-s3-workflow-dispatch, upload-chain-specs-workflow-dispatch]
+    needs: [build-linux-x86_64-workflow-dispatch, local-env-workflow-dispatch, upload-to-s3-workflow-dispatch, upload-chain-specs-workflow-dispatch]
     runs-on: ubuntu-latest
     steps:
       - name: Check if any needed job failed
         run: |
           if [[ "${{ needs.build-linux-x86_64-workflow-dispatch.result }}" != "success" ||
++               "${{ needs.local-env-workflow-dispatch.result }}" != "success" ||
                 "${{ needs.upload-to-s3-workflow-dispatch.result }}" != "success" ||
                 "${{ needs.upload-chain-specs-workflow-dispatch.result }}" != "success" ]]; then
             echo "One or more needed jobs failed."
