@@ -13,7 +13,6 @@ workspace = true
 
 [dependencies]
 async-trait = { workspace = true }
-sp-consensus-slots = { workspace = true }
 sp-partner-chains-consensus-aura = { workspace = true, features = ["std"] }
 sidechain-domain = { workspace = true, features = ["std"] }
 sp-consensus = { workspace = true }

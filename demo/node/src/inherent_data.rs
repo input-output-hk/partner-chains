@@ -95,11 +95,15 @@ where
 		let (slot, timestamp) =
 			timestamp_and_slot_cidp(sc_slot_config.slot_duration, time_source.clone());
 		let parent_header = client.expect_header(parent_hash)?;
+
+		// note: We pass slot start time to `McHashIDP` instead of timestamp for backward compatibility
+		// with the old `McHashIDP` version that was slot-based.
+		let slot_start_timestamp =
+			Timestamp::new(sc_slot_config.slot_start_time(*slot).unix_millis());
 		let mc_hash = McHashIDP::new_proposal(
 			parent_header,
 			mc_hash_data_source.as_ref(),
-			*slot,
-			sc_slot_config.slot_duration,
+			slot_start_timestamp,
 		)
 		.await?;
 
@@ -212,17 +216,23 @@ where
 		} = self;
 		let CreateInherentDataConfig { mc_epoch_config, sc_slot_config, .. } = config;
 
+		// note: Because it's not exposed during block verification, we are approximating the block
+		// timestamp by the starting timestamp of the slots. This is also needed for backward compatibility
+		// of [McHashIDP] for chains that used the old slot-based version of it.
 		let timestamp = TimestampIDP::new(Timestamp::new(
 			sc_slot_config.slot_start_time(verified_block_slot).unix_millis(),
 		));
+
 		let parent_header = client.expect_header(parent_hash)?;
 		let parent_slot = slot_from_predigest(&parent_header)?;
+		let parent_slot_timestamp = parent_slot
+			.map(|slot| Timestamp::new(sc_slot_config.slot_start_time(slot).unix_millis()));
+
 		let mc_state_reference = McHashIDP::new_verification(
 			parent_header,
-			parent_slot,
-			verified_block_slot,
+			parent_slot_timestamp,
+			*timestamp,
 			mc_hash.clone(),
-			config.slot_duration(),
 			mc_hash_data_source.as_ref(),
 		)
 		.await?;
