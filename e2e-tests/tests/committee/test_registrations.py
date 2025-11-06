@@ -9,6 +9,7 @@ from config.api_config import ApiConfig
 @mark.candidate_status("inactive")
 @mark.test_key('ETCM-7017')
 @mark.usefixtures("candidate_skey_with_cli")
+@mark.staging
 def test_register_candidate(genesis_utxo: str, candidate: Candidates, api: BlockchainApi, db: Session, config: ApiConfig):
     """Test registration of the trustless (SPO) candidate
 
@@ -58,6 +59,7 @@ def test_register_candidate(genesis_utxo: str, candidate: Candidates, api: Block
 @mark.candidate_status("active")
 @mark.test_key('ETCM-7018')
 @mark.usefixtures("candidate_skey_with_cli")
+@mark.staging
 def test_deregister_candidate(genesis_utxo: str, candidate: Candidates, api: BlockchainApi, db: Session, config: ApiConfig):
     """Test deregistration of the trustless (SPO) candidate
 

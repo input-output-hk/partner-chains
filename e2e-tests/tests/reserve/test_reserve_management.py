@@ -4,6 +4,8 @@ from config.api_config import ApiConfig
 from src.blockchain_api import BlockchainApi
 from src.partner_chains_node.models import VFunction
 from pytest import fixture, mark, skip
+from sqlalchemy.orm import Session
+from src.db.models import BridgeDeposit
 
 
 pytestmark = [mark.xdist_group(name="governance_action")]
@@ -16,15 +18,18 @@ def init_bridge(api: BlockchainApi, genesis_utxo, payment_key):
     response = api.partner_chains_node.smart_contracts.bridge.init(genesis_utxo, payment_key)
     return response
 
+
 @fixture(scope="module", autouse=True)
 def create_bridge_utxos(api: BlockchainApi, genesis_utxo, payment_key, init_bridge):
     response = api.partner_chains_node.smart_contracts.bridge.create_utxos(genesis_utxo, 1, payment_key)
     return response
 
+
 @fixture(scope="module", autouse=True)
 def init_reserve(api: BlockchainApi, genesis_utxo, payment_key, create_bridge_utxos):
     response = api.partner_chains_node.smart_contracts.reserve.init(genesis_utxo, payment_key)
     return response
+
 
 @fixture(scope="module", autouse=True)
 def native_token_initial_balance(
@@ -235,28 +240,142 @@ class TestUpdateVFunction:
         assert "Error" in response.stderr
 
 
+@mark.staging
 class TestBridge:
+    DEPOSIT_AMOUNT = 1
+
+    def _validate_previous_deposit(
+        self,
+        previous_deposit: BridgeDeposit | None,
+        expected_spending_status: bool,
+        current_balance: int,
+        node_1_aura_pub_key: str,
+        reserve_asset_id: str,
+    ) -> None:
+        if not previous_deposit:
+            return
+
+        status_type = "with" if expected_spending_status else "without"
+        logging.info(f"Found deposit {status_type} ICS UTXO: {previous_deposit}")
+
+        assert (
+            previous_deposit.spend_ics_utxo is expected_spending_status
+        ), f"Wrong spending status for deposit {status_type} ICS UTXO"
+
+        assert (
+            previous_deposit.aura_pub_key == node_1_aura_pub_key
+        ), f"Unexpected aura pub key for deposit {status_type} ICS UTXO"
+
+        assert (
+            previous_deposit.asset_id == reserve_asset_id
+        ), f"Unexpected asset id for deposit {status_type} ICS UTXO"
+
+        expected_min_balance = previous_deposit.initial_balance + previous_deposit.amount
+        assert (
+            expected_min_balance <= current_balance
+        ), f"Unexpected balance for deposit {status_type} ICS UTXO"
+
+    def _execute_bridge_deposit(
+        self,
+        api: BlockchainApi,
+        genesis_utxo: str,
+        payment_key: str,
+        reserve_asset_id: str,
+        node_1_aura_pub_key: str,
+        db: Session,
+        spend_ics_utxo: bool,
+        amount: int = DEPOSIT_AMOUNT,
+    ) -> None:
+        current_balance = api.get_pc_balance(node_1_aura_pub_key)
+        assert current_balance > 0, "Test account is not over existential limit"
+
+        response = api.partner_chains_node.smart_contracts.bridge.deposit(
+            genesis_utxo,
+            reserve_asset_id,
+            amount,
+            node_1_aura_pub_key,
+            payment_key,
+            spend_ics_utxo=spend_ics_utxo
+        )
+        assert response.returncode == 0, f"Failed to deposit funds: {response.stderr}"
+        assert response.json["transaction_submitted"], "Transaction not submitted"
+
+        current_mc_epoch = api.get_mc_epoch()
+        bridge_deposit = BridgeDeposit(
+            initial_balance=current_balance,
+            amount=amount,
+            spend_ics_utxo=spend_ics_utxo,
+            aura_pub_key=node_1_aura_pub_key,
+            asset_id=reserve_asset_id,
+            register_mc_epoch=current_mc_epoch,
+        )
+        db.add(bridge_deposit)
+        db.commit()
 
     @mark.usefixtures("create_bridge_utxos")
-    def test_lock_without_spending_ics_utxo(self, api: BlockchainApi, genesis_utxo, payment_key, reserve_asset_id, node_1_aura_pub_key, wait_until, config: ApiConfig):
-        amount = 1
-        balance_before = api.get_pc_balance(node_1_aura_pub_key)
-        assert balance_before > 0, "Test account is not over existential limit"
-        api.partner_chains_node.smart_contracts.bridge.deposit(genesis_utxo, reserve_asset_id, amount, node_1_aura_pub_key, payment_key, spend_ics_utxo = False)
-        wait_until(
-            lambda: api.get_pc_balance(node_1_aura_pub_key) == balance_before + amount,
-            timeout=config.timeouts.main_chain_tx * config.main_chain.security_param * 2,
+    @mark.bridge
+    def test_lock_without_spending_ics_utxo(
+        self,
+        api: BlockchainApi,
+        genesis_utxo,
+        payment_key,
+        reserve_asset_id,
+        node_1_aura_pub_key,
+        db: Session,
+        deposit_no_ics_utxo: BridgeDeposit
+    ):
+        """Test bridge deposit without spending ICS UTXO."""
+        current_balance = api.get_pc_balance(node_1_aura_pub_key)
+
+        self._validate_previous_deposit(
+            deposit_no_ics_utxo,
+            expected_spending_status=False,
+            current_balance=current_balance,
+            node_1_aura_pub_key=node_1_aura_pub_key,
+            reserve_asset_id=reserve_asset_id,
+        )
+
+        self._execute_bridge_deposit(
+            api=api,
+            genesis_utxo=genesis_utxo,
+            payment_key=payment_key,
+            reserve_asset_id=reserve_asset_id,
+            node_1_aura_pub_key=node_1_aura_pub_key,
+            db=db,
+            spend_ics_utxo=False,
         )
 
     @mark.usefixtures("create_bridge_utxos")
-    def test_lock_with_spending_ics_utxo(self, api: BlockchainApi, genesis_utxo, payment_key, reserve_asset_id, node_1_aura_pub_key, wait_until, config: ApiConfig):
-        amount = 1
-        balance_before = api.get_pc_balance(node_1_aura_pub_key)
-        assert balance_before > 0, "Test account is not over existential limit"
-        api.partner_chains_node.smart_contracts.bridge.deposit(genesis_utxo, reserve_asset_id, amount, node_1_aura_pub_key, payment_key, spend_ics_utxo = True)
-        wait_until(
-            lambda: api.get_pc_balance(node_1_aura_pub_key) == balance_before + amount,
-            timeout=config.timeouts.main_chain_tx * config.main_chain.security_param * 2,
+    @mark.bridge
+    def test_lock_with_spending_ics_utxo(
+        self,
+        api: BlockchainApi,
+        genesis_utxo,
+        payment_key,
+        reserve_asset_id,
+        node_1_aura_pub_key,
+        db: Session,
+        deposit_ics_utxo: BridgeDeposit
+    ):
+        """Test bridge deposit with spending ICS UTXO."""
+        current_balance = api.get_pc_balance(node_1_aura_pub_key)
+
+        self._validate_previous_deposit(
+            deposit_ics_utxo,
+            expected_spending_status=True,
+            current_balance=current_balance,
+            node_1_aura_pub_key=node_1_aura_pub_key,
+            reserve_asset_id=reserve_asset_id,
+        )
+
+        self._execute_bridge_deposit(
+            api=api,
+            genesis_utxo=genesis_utxo,
+            payment_key=payment_key,
+            reserve_asset_id=reserve_asset_id,
+            node_1_aura_pub_key=node_1_aura_pub_key,
+            db=db,
+            spend_ics_utxo=True,
         )
 
 

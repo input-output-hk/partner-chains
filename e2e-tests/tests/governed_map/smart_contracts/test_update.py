@@ -5,6 +5,7 @@ from tests.governed_map.conftest import string_to_hex_bytes
 pytestmark = [mark.xdist_group(name="governance_action")]
 
 
+@mark.staging
 class TestUpdate:
     @fixture(scope="class", autouse=True)
     def update_data(self, api: BlockchainApi, insert_data, genesis_utxo, random_key, new_value_hex_bytes, payment_key):
@@ -24,6 +25,7 @@ class TestUpdate:
         assert new_value_hex_bytes == get_result.json, "Data mismatch after update in governed map retrieval"
 
 
+@mark.staging
 class TestUpdateWithTheSameValue:
     @fixture(scope="class", autouse=True)
     def update_data(self, api: BlockchainApi, insert_data, genesis_utxo, random_key, random_value, payment_key):
@@ -44,6 +46,7 @@ class TestUpdateWithTheSameValue:
         assert string_to_hex_bytes(random_value) == get_result.json
 
 
+@mark.staging
 class TestUpdateWithExpectedCurrentValue:
     @fixture(scope="class", autouse=True)
     def update_data(self, api: BlockchainApi, insert_data, genesis_utxo, random_key, random_value, new_value_hex_bytes, payment_key):
@@ -64,6 +67,7 @@ class TestUpdateWithExpectedCurrentValue:
         assert new_value_hex_bytes == get_result.json, "Data mismatch after update in governed map retrieval"
 
 
+@mark.staging
 class TestUpdateWithExpectedCurrentValueAndTheSameValue:
     @fixture(scope="class", autouse=True)
     def update_data(self, api: BlockchainApi, insert_data, genesis_utxo, random_key, random_value, payment_key):
@@ -85,6 +89,7 @@ class TestUpdateWithExpectedCurrentValueAndTheSameValue:
         assert string_to_hex_bytes(random_value) == get_result.json
 
 
+@mark.staging
 class TestUpdateWithNonMatchingCurrentValue:
     @fixture(scope="class", autouse=True)
     def update_data(self, api: BlockchainApi, insert_data, genesis_utxo, random_key, new_value_hex_bytes, payment_key):
@@ -108,6 +113,7 @@ class TestUpdateWithNonMatchingCurrentValue:
         ), "Data should not be updated in governed map retrieval"
 
 
+@mark.staging
 class TestUpdateWithNonExistentKey:
     @fixture(scope="class", autouse=True)
     def update_data(self, api: BlockchainApi, genesis_utxo, random_key, new_value_hex_bytes, payment_key):

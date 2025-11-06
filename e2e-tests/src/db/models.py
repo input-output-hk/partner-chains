@@ -53,3 +53,22 @@ class StakeDistributionCommittee(Base):
             f"StakeDistributionCommittee(id={self.id!r}, mc_epoch={self.mc_epoch!r}, "
             f"mc_vkey={self.mc_vkey!r}, pc_pub_key={self.pc_pub_key!r}, attendance={self.actual_attendance!r})"
         )
+
+
+class BridgeDeposit(Base):
+    __tablename__ = "bridge_deposit"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    initial_balance: Mapped[Optional[int]] = mapped_column(BigInteger())
+    amount: Mapped[int]
+    spend_ics_utxo: Mapped[bool]
+    aura_pub_key: Mapped[str] = mapped_column(String(128))
+    asset_id: Mapped[str] = mapped_column(String(128))
+    register_mc_epoch: Mapped[int]
+
+    def __repr__(self) -> str:
+        return (
+            f"BridgeDeposit(id={self.id!r}, initial_balance={self.initial_balance!r}, "
+            f"amount={self.amount!r}, spend_ics_utxo={self.spend_ics_utxo!r}, "
+            f"aura_pub_key={self.aura_pub_key!r}, asset_id={self.asset_id!r}, "
+            f"register_mc_epoch={self.register_mc_epoch!r})"
+        )
