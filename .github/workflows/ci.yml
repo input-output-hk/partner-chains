@@ -1208,7 +1208,7 @@ jobs:
       - name: Check if any needed job failed
         run: |
           if [[ "${{ needs.build-linux-x86_64-workflow-dispatch.result }}" != "success" ||
-+               "${{ needs.local-env-workflow-dispatch.result }}" != "success" ||
+                "${{ needs.local-env-workflow-dispatch.result }}" != "success" ||
                 "${{ needs.upload-to-s3-workflow-dispatch.result }}" != "success" ||
                 "${{ needs.upload-chain-specs-workflow-dispatch.result }}" != "success" ]]; then
             echo "One or more needed jobs failed."
