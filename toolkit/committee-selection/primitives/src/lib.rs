@@ -5,13 +5,16 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![deny(missing_docs)]
 
+extern crate alloc;
+
+use alloc::vec::Vec;
 #[cfg(feature = "std")]
 use core::str::FromStr;
-
 use parity_scale_codec::DecodeWithMemTracking;
 use scale_info::TypeInfo;
 use sidechain_domain::{
-	MainchainAddress, PolicyId, StakePoolPublicKey, byte_string::SizedByteString,
+	CandidateRegistrations, DParameter, EpochNonce, MainchainAddress, PermissionedCandidateData,
+	PolicyId, StakePoolPublicKey, byte_string::SizedByteString,
 };
 use sp_core::{Decode, Encode, MaxEncodedLen};
 use sp_inherents::{InherentIdentifier, IsFatalError};
@@ -182,13 +185,26 @@ impl MainChainScripts {
 	}
 }
 
+/// The part of data for selection of authorities that comes from the main chain.
+/// It is unfiltered, so the selection algorithm should filter out invalid candidates.
+#[derive(Clone, Debug, Encode, Decode, DecodeWithMemTracking, TypeInfo, PartialEq, Eq)]
+pub struct AuthoritySelectionInputs {
+	/// D-parameter for Ariadne committee selection. See [DParameter] for details.
+	pub d_parameter: DParameter,
+	/// List of permissioned candidates for committee selection.
+	pub permissioned_candidates: Vec<PermissionedCandidateData>,
+	/// List of registered candidates for committee selection
+	pub registered_candidates: Vec<CandidateRegistrations>,
+	/// Nonce for queried epoch.
+	pub epoch_nonce: EpochNonce,
+}
+
 sp_api::decl_runtime_apis! {
 	#[api_version(3)]
 	/// Runtime API declaration for Session Validator Management
 	pub trait SessionValidatorManagementApi<
 		AuthorityId,
 		AuthorityKeys,
-		AuthoritySelectionInputs: parity_scale_codec::Encode,
 		ScEpochNumber: parity_scale_codec::Encode + parity_scale_codec::Decode
 	> where
 		AuthorityId: Encode + Decode,

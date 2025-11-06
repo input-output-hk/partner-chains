@@ -16,9 +16,9 @@ mod inherent_tests {
 		new_test_ext().execute_with(|| {
 			assert_eq!(
 				SessionCommitteeManagement::current_committee_storage().committee,
-				as_permissioned_members(&[ALICE, BOB])
+				as_permissioned_members(&[alice(), bob()])
 			);
-			test_validators_change_through_inherents(&[ALICE]);
+			test_validators_change_through_inherents(&[alice()]);
 		});
 	}
 
@@ -26,11 +26,11 @@ mod inherent_tests {
 	fn prevent_overwriting_committee() {
 		new_test_ext().execute_with(|| {
 			assert_err!(
-				set_validators_directly(&[ALICE, BOB], 0),
+				set_validators_directly(&[alice(), bob()], 0),
 				DispatchError::from(Error::<Test>::InvalidEpoch)
 			);
 			assert_err!(
-				set_validators_directly(&[ALICE], 0),
+				set_validators_directly(&[alice()], 0),
 				DispatchError::from(Error::<Test>::InvalidEpoch)
 			);
 		});
@@ -39,8 +39,8 @@ mod inherent_tests {
 	#[test]
 	fn only_one_inherent_can_run_per_block() {
 		new_test_ext().execute_with(|| {
-			set_validators_directly(&[ALICE, BOB], 1).expect("Frist call should succeed");
-			set_validators_directly(&[ALICE, BOB], 1).expect_err("Second call should fail");
+			set_validators_directly(&[alice(), bob()], 1).expect("Frist call should succeed");
+			set_validators_directly(&[alice(), bob()], 1).expect_err("Second call should fail");
 		});
 	}
 
@@ -62,7 +62,7 @@ mod inherent_tests {
 	fn check_inherent_works() {
 		new_test_ext().execute_with(|| {
 			initialize_first_committee();
-			let validators = vec![ALICE];
+			let validators = vec![alice()];
 			let call = create_inherent_set_validators_call(&validators).expect(
 				"create inherent should create a validator set call if given new validators list",
 			);
@@ -82,17 +82,17 @@ mod inherent_tests {
 		new_test_ext().execute_with(|| {
 			// Make sure that the CurrentCommittee is different to the NextCommittee.
 			pallet::CurrentCommittee::<Test>::put(CommitteeInfo {
-				committee: as_permissioned_members(&[CHARLIE, DAVE]),
+				committee: as_permissioned_members(&[charlie(), dave()]),
 				epoch: 42.into(),
 			});
 			pallet::NextCommittee::<Test>::put(CommitteeInfo {
-				committee: as_permissioned_members(&[ALICE, BOB]),
+				committee: as_permissioned_members(&[alice(), bob()]),
 				epoch: 43.into(),
 			});
 			let (inherent_data_from_which_committee_cannot_be_selected, selection_inputs_hash) =
 				create_inherent_data(&[]);
 			let set_call = pallet::Call::set {
-				validators: as_permissioned_members(&[ALICE, BOB]),
+				validators: as_permissioned_members(&[alice(), bob()]),
 				for_epoch_number: 43.into(),
 				selection_inputs_hash,
 			};
@@ -108,7 +108,7 @@ mod inherent_tests {
 	 {
 		// This case if for `check_inherent` verifying block number 1 when committee cannot be calculated from the inherent data.
 		// It is the only situation when NextCommittee is not set.
-		let genesis_validators = [ALICE, BOB];
+		let genesis_validators = [alice(), bob()];
 		new_test_ext_with_genesis_initial_authorities(&genesis_validators).execute_with(|| {
 			assert!(pallet::NextCommittee::<Test>::get().is_none());
 			let (inherent_data_from_which_committee_cannot_be_selected, selection_inputs_hash) =
@@ -128,7 +128,7 @@ mod inherent_tests {
 
 	#[test]
 	fn check_inherent_error_includes_hash_if_correct() {
-		let mut genesis_validators = [ALICE, BOB];
+		let mut genesis_validators = [alice(), bob()];
 		new_test_ext_with_genesis_initial_authorities(&genesis_validators).execute_with(|| {
 			assert!(pallet::NextCommittee::<Test>::get().is_none());
 			let (inherent_data_from_which_committee_cannot_be_selected, selection_inputs_hash) =
@@ -154,7 +154,7 @@ mod inherent_tests {
 
 	#[test]
 	fn check_inherent_error_includes_both_hashes_if_different() {
-		let mut genesis_validators = [ALICE, BOB];
+		let mut genesis_validators = [alice(), bob()];
 		new_test_ext_with_genesis_initial_authorities(&genesis_validators).execute_with(|| {
 			assert!(pallet::NextCommittee::<Test>::get().is_none());
 			let (
@@ -190,7 +190,7 @@ mod committee_rotation_tests {
 	fn test_current_committee_epoch() {
 		new_test_ext().execute_with(|| {
 			initialize_first_committee();
-			set_validators_through_inherents(&[ALICE]);
+			set_validators_through_inherents(&[alice()]);
 			let current_committee_epoch =
 				SessionCommitteeManagement::current_committee_storage().epoch;
 			assert_eq!(current_committee_epoch, current_epoch_number());
@@ -205,10 +205,10 @@ mod committee_rotation_tests {
 			let next_committee = SessionCommitteeManagement::next_committee();
 			assert_eq!(next_committee, None);
 
-			set_validators_through_inherents(&[ALICE]);
+			set_validators_through_inherents(&[alice()]);
 
 			let next_committee = SessionCommitteeManagement::next_committee();
-			assert_eq!(next_committee, Some(authority_ids(&[ALICE])));
+			assert_eq!(next_committee, Some(authority_ids(&[alice()])));
 		});
 	}
 
@@ -220,7 +220,7 @@ mod committee_rotation_tests {
 			// first committee is Alice and Bob (from the mock)
 			assert_eq!(
 				SessionCommitteeManagement::current_committee_storage().committee.clone(),
-				as_permissioned_members(&[ALICE, BOB])
+				as_permissioned_members(&[alice(), bob()])
 			);
 
 			// first committee epoch is the one set in the `initialize_first_committee`
@@ -233,21 +233,24 @@ mod committee_rotation_tests {
 			assert_eq!(SessionCommitteeManagement::next_committee(), None);
 
 			// set the new committee
-			set_validators_through_inherents(&[ALICE]);
+			set_validators_through_inherents(&[alice()]);
 
 			// verify that the next committee is set
-			assert_eq!(SessionCommitteeManagement::next_committee(), Some(authority_ids(&[ALICE])));
+			assert_eq!(
+				SessionCommitteeManagement::next_committee(),
+				Some(authority_ids(&[alice()]))
+			);
 
 			// increment the epoch (this only changes to mock value for T::current_epoch_number)
 			increment_epoch();
 
 			// rotate the committee
-			assert_eq!(rotate_committee(), Some(vec![ALICE.authority_id]));
+			assert_eq!(rotate_committee(), Some(vec![alice().authority_id]));
 
 			// verify that the committee storage is set
 			assert_eq!(
 				SessionCommitteeManagement::current_committee_storage().committee.clone(),
-				as_permissioned_members(&[ALICE])
+				as_permissioned_members(&[alice()])
 			);
 
 			// verify that the committee epoch is advanced
@@ -274,14 +277,14 @@ mod committee_rotation_tests {
 			// first committee is Alice and Bob (from the mock)
 			assert_eq!(
 				SessionCommitteeManagement::current_committee_storage().committee.clone(),
-				as_permissioned_members(&[ALICE, BOB])
+				as_permissioned_members(&[alice(), bob()])
 			);
 
 			// verify that the next committee is not set yet
 			assert_eq!(SessionCommitteeManagement::next_committee(), None);
 
 			// set the new committee
-			set_validators_through_inherents(&[ALICE]);
+			set_validators_through_inherents(&[alice()]);
 
 			// 3 epochs pass without any blocks
 			increment_epoch();
@@ -292,53 +295,56 @@ mod committee_rotation_tests {
 			// Alice and Bob, which were the initial committee, are still the committee (stale)
 			assert_eq!(
 				SessionCommitteeManagement::current_committee_storage().committee.clone(),
-				as_permissioned_members(&[ALICE, BOB])
+				as_permissioned_members(&[alice(), bob()])
 			);
 
 			// Alice, which was the next committee, is still the next committee
-			assert_eq!(SessionCommitteeManagement::next_committee(), Some(authority_ids(&[ALICE])));
+			assert_eq!(
+				SessionCommitteeManagement::next_committee(),
+				Some(authority_ids(&[alice()]))
+			);
 			assert_eq!(
 				SessionCommitteeManagement::next_committee_storage().unwrap().epoch,
 				current_epoch.saturating_sub(2)
 			);
 
 			// the first block after 3 epochs rotates to the next committee (Alice)
-			assert_eq!(rotate_committee(), Some(vec![ALICE.authority_id]));
+			assert_eq!(rotate_committee(), Some(vec![alice().authority_id]));
 			assert_eq!(
 				SessionCommitteeManagement::current_committee_storage().epoch,
 				current_epoch.saturating_sub(2)
 			);
 
 			// in the second block the committee  rotates to Charlie
-			set_validators_through_inherents(&[CHARLIE]);
+			set_validators_through_inherents(&[charlie()]);
 			assert_eq!(
 				SessionCommitteeManagement::next_committee_storage().unwrap().epoch,
 				current_epoch.saturating_sub(1)
 			);
-			assert_eq!(rotate_committee(), Some(vec![CHARLIE.authority_id]));
+			assert_eq!(rotate_committee(), Some(vec![charlie().authority_id]));
 			assert_eq!(
 				SessionCommitteeManagement::current_committee_storage().epoch,
 				current_epoch.saturating_sub(1)
 			);
 
 			// in the third block the committee rotates to Dave
-			set_validators_through_inherents(&[DAVE]);
+			set_validators_through_inherents(&[dave()]);
 			assert_eq!(
 				SessionCommitteeManagement::next_committee_storage().unwrap().epoch,
 				current_epoch
 			);
-			assert_eq!(rotate_committee(), Some(vec![DAVE.authority_id]));
+			assert_eq!(rotate_committee(), Some(vec![dave().authority_id]));
 			assert_eq!(
 				SessionCommitteeManagement::current_committee_storage().epoch,
 				current_epoch
 			);
 
 			// in the fourth block the committee sets the next committee to Eve,
-			set_validators_through_inherents(&[EVE]);
+			set_validators_through_inherents(&[eve()]);
 			// but because we are already caught up the rotation will happen at the end of the epoch
 
 			// verify that the next committee epoch is correct
-			assert_eq!(SessionCommitteeManagement::next_committee(), Some(authority_ids(&[EVE])));
+			assert_eq!(SessionCommitteeManagement::next_committee(), Some(authority_ids(&[eve()])));
 		});
 	}
 
@@ -346,10 +352,10 @@ mod committee_rotation_tests {
 	fn store_committee_only_up_to_next_epoch() {
 		new_test_ext().execute_with(|| {
 			initialize_first_committee();
-			set_validators_through_inherents(&[BOB, ALICE]);
+			set_validators_through_inherents(&[bob(), alice()]);
 
 			// setting it again should not change the committee
-			assert_eq!(create_inherent_set_validators_call(&[ALICE]), None);
+			assert_eq!(create_inherent_set_validators_call(&[alice()]), None);
 		});
 	}
 
@@ -367,7 +373,7 @@ mod committee_rotation_tests {
 			// verify that the committee has not changed
 			assert_eq!(
 				SessionCommitteeManagement::current_committee_storage().committee.clone(),
-				as_permissioned_members(&[ALICE, BOB])
+				as_permissioned_members(&[alice(), bob()])
 			);
 		});
 	}
@@ -377,28 +383,28 @@ mod committee_rotation_tests {
 fn get_authority_round_robin_works() {
 	new_test_ext().execute_with(|| {
 		initialize_first_committee();
-		set_validators_through_inherents(&[BOB]);
+		set_validators_through_inherents(&[bob()]);
 		increment_epoch();
 		assert_eq!(
 			SessionCommitteeManagement::get_current_authority_round_robin(0),
-			Some(ALICE.permissioned())
+			Some(alice().permissioned())
 		);
 		assert_eq!(
 			SessionCommitteeManagement::get_current_authority_round_robin(1),
-			Some(BOB.permissioned())
+			Some(bob().permissioned())
 		);
 		assert_eq!(
 			SessionCommitteeManagement::get_current_authority_round_robin(2),
-			Some(ALICE.permissioned())
+			Some(alice().permissioned())
 		);
 		assert!(rotate_committee().is_some());
 		assert_eq!(
 			SessionCommitteeManagement::get_current_authority_round_robin(0),
-			Some(BOB.permissioned())
+			Some(bob().permissioned())
 		);
 		assert_eq!(
 			SessionCommitteeManagement::get_current_authority_round_robin(1),
-			Some(BOB.permissioned())
+			Some(bob().permissioned())
 		);
 	});
 }
@@ -418,7 +424,7 @@ fn initialize_first_committee() {
 	SessionCommitteeManagement::on_initialize(1);
 }
 
-fn rotate_committee() -> Option<Vec<u64>> {
+fn rotate_committee() -> Option<Vec<AuthorityId>> {
 	let committee = SessionCommitteeManagement::rotate_committee_to_next_epoch()?;
 	Some(committee.iter().map(CommitteeMember::authority_id).collect())
 }

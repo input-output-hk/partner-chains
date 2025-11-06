@@ -8,26 +8,47 @@ use frame_support::{
 };
 use frame_system::EnsureRoot;
 use pallet_balances::AccountData;
-use sidechain_domain::ScEpochNumber;
-use sidechain_domain::byte_string::SizedByteString;
-use sp_core::{H256, blake2_256};
+use sidechain_domain::{
+	CandidateKey, DParameter, EpochNonce, PermissionedCandidateData, SidechainPublicKey,
+	byte_string::SizedByteString,
+};
+use sidechain_domain::{CandidateKeys, ScEpochNumber};
+use sp_core::{H256, blake2_256, ecdsa};
 use sp_runtime::{
-	BuildStorage, KeyTypeId,
+	AccountId32, BuildStorage, KeyTypeId,
 	key_types::DUMMY,
 	testing::UintAuthorityId,
 	traits::{BlakeTwo256, IdentityLookup},
 };
-use sp_session_validator_management::{CommitteeMember, MainChainScripts};
+use sp_session_validator_management::{
+	AuthoritySelectionInputs, CommitteeMember, MainChainScripts,
+};
+
+type CrossChainPublic = sidechain_domain::cross_chain_app::Public;
 
 type Block = frame_system::mocking::MockBlock<Test>;
 
-type AccountId = u64;
-type AuthorityId = u64;
-pub type AuthorityKeys = u64;
+pub(crate) type AccountId = AccountId32;
+pub(crate) type AuthorityId = CrossChainPublic;
 
 sp_runtime::impl_opaque_keys! {
+	#[derive(MaxEncodedLen, PartialOrd, Ord)]
 	pub struct SessionKeys {
 		pub foo: UintAuthorityId,
+	}
+}
+
+impl From<CandidateKeys> for SessionKeys {
+	fn from(value: CandidateKeys) -> Self {
+		let CandidateKey { bytes, .. } = &value.0[0];
+
+		Self { foo: UintAuthorityId(bytes[0].into()) }
+	}
+}
+
+impl From<SessionKeys> for CandidateKeys {
+	fn from(value: SessionKeys) -> Self {
+		Self(vec![CandidateKey { id: [0; 4], bytes: value.foo.0.to_le_bytes().to_vec() }])
 	}
 }
 
@@ -112,16 +133,27 @@ impl pallet_balances::Config for Test {
 impl pallet::Config for Test {
 	type MaxValidators = ConstU32<32>;
 	type AuthorityId = AuthorityId;
-	type AuthorityKeys = AuthorityKeys;
-	type AuthoritySelectionInputs = BoundedVec<CommitteeMemberOf<Test>, Self::MaxValidators>;
+	type AuthorityKeys = SessionKeys;
 	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
 
 	fn select_authorities(
-		input: Self::AuthoritySelectionInputs,
+		input: AuthoritySelectionInputs,
 		_sidechain_epoch: ScEpochNumber,
 	) -> Option<BoundedVec<CommitteeMemberOf<Test>, Self::MaxValidators>> {
 		// This is a good approximation of the real selection algorithm, that returns None iff there are no valid candidates to select from.
-		if input.is_empty() { None } else { Some(input) }
+		if input.permissioned_candidates.is_empty() {
+			None
+		} else {
+			let data: Vec<_> = (input.permissioned_candidates.iter().cloned())
+				.map(|c| CommitteeMember::Permissioned {
+					id: AuthorityId::from(ecdsa::Public::from(
+						<[u8; 33]>::try_from(c.sidechain_public_key.0).unwrap(),
+					)),
+					keys: c.keys.into(),
+				})
+				.collect();
+			Some(BoundedVec::truncate_from(data))
+		}
 	}
 
 	fn current_epoch_number() -> ScEpochNumber {
@@ -156,7 +188,7 @@ impl pallet_session::SessionHandler<AccountId> for TestSessionHandler {
 }
 
 impl pallet_session::Config for Test {
-	type ValidatorId = AuthorityId;
+	type ValidatorId = AccountId;
 	type ValidatorIdOf = sp_runtime::traits::ConvertInto;
 	type ShouldEndSession = crate::Pallet<Test>;
 	type NextSessionRotation = ();
@@ -172,7 +204,7 @@ impl pallet_session::Config for Test {
 
 /// Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	new_test_ext_with_genesis_initial_authorities(&[ALICE, BOB])
+	new_test_ext_with_genesis_initial_authorities(&[alice(), bob()])
 }
 
 /// Build genesis storage according to the mock runtime.
@@ -190,25 +222,59 @@ pub fn new_test_ext_with_genesis_initial_authorities(
 	t.into()
 }
 
-pub const ALICE: MockValidator =
-	MockValidator { name: "Alice", authority_keys: 11, authority_id: 21 };
-pub const BOB: MockValidator = MockValidator { name: "Bob", authority_keys: 12, authority_id: 22 };
-pub const CHARLIE: MockValidator =
-	MockValidator { name: "Charlie", authority_keys: 13, authority_id: 23 };
-pub const DAVE: MockValidator =
-	MockValidator { name: "Dave", authority_keys: 14, authority_id: 24 };
-pub const EVE: MockValidator = MockValidator { name: "Eve", authority_keys: 15, authority_id: 25 };
+pub fn alice() -> MockValidator {
+	MockValidator {
+		name: "Alice",
+		authority_keys: SessionKeys { foo: UintAuthorityId(0) },
+		authority_id: CrossChainPublic::from(ecdsa::Public::from([0; 33])),
+	}
+}
+pub fn bob() -> MockValidator {
+	MockValidator {
+		name: "Bob",
+		authority_keys: SessionKeys { foo: UintAuthorityId(1) },
+		authority_id: CrossChainPublic::from(ecdsa::Public::from([1; 33])),
+	}
+}
+pub fn charlie() -> MockValidator {
+	MockValidator {
+		name: "Charlie",
+		authority_keys: SessionKeys { foo: UintAuthorityId(2) },
+		authority_id: CrossChainPublic::from(ecdsa::Public::from([2; 33])),
+	}
+}
+pub fn dave() -> MockValidator {
+	MockValidator {
+		name: "Dave",
+		authority_keys: SessionKeys { foo: UintAuthorityId(3) },
+		authority_id: CrossChainPublic::from(ecdsa::Public::from([3; 33])),
+	}
+}
+pub fn eve() -> MockValidator {
+	MockValidator {
+		name: "Eve",
+		authority_keys: SessionKeys { foo: UintAuthorityId(4) },
+		authority_id: CrossChainPublic::from(ecdsa::Public::from([4; 33])),
+	}
+}
 
 #[derive(Clone, PartialEq, Eq, Debug, TypeInfo)]
 pub struct MockValidator {
 	pub name: &'static str,
-	pub authority_keys: AuthorityKeys,
+	pub authority_keys: SessionKeys,
 	pub authority_id: AuthorityId,
 }
 
 impl MockValidator {
 	pub fn permissioned(&self) -> CommitteeMemberOf<Test> {
-		CommitteeMember::Permissioned { id: self.authority_id, keys: self.authority_keys }
+		CommitteeMember::Permissioned {
+			id: self.authority_id.clone(),
+			keys: self.authority_keys.clone(),
+		}
+	}
+
+	pub fn account_id(&self) -> AccountId32 {
+		self.authority_id.clone().into()
 	}
 }
 
@@ -220,7 +286,7 @@ pub fn as_permissioned_members(
 	)
 }
 pub fn authority_ids(validators: &[MockValidator]) -> BoundedVec<AuthorityId, ConstU32<32>> {
-	BoundedVec::truncate_from(validators.iter().map(|v| v.authority_id).collect())
+	BoundedVec::truncate_from(validators.iter().map(|v| v.authority_id.clone()).collect())
 }
 
 pub fn set_validators_through_inherents(
@@ -248,8 +314,20 @@ pub fn set_validators_directly(
 
 pub fn create_inherent_data(validators: &[MockValidator]) -> (InherentData, SizedByteString<32>) {
 	let mut inherent_data = InherentData::new();
-	let data: BoundedVec<_, ConstU32<32>> =
-		BoundedVec::truncate_from(validators.iter().map(MockValidator::permissioned).collect());
+	let data = AuthoritySelectionInputs {
+		d_parameter: DParameter { num_permissioned_candidates: 10, num_registered_candidates: 10 },
+		permissioned_candidates: validators
+			.iter()
+			.cloned()
+			.map(|v| PermissionedCandidateData {
+				sidechain_public_key: SidechainPublicKey(v.authority_id.into()),
+				keys: v.authority_keys.into(),
+			})
+			.collect(),
+		registered_candidates: vec![],
+		epoch_nonce: EpochNonce::default(),
+	};
+
 	inherent_data
 		.put_data(SessionCommitteeManagement::INHERENT_IDENTIFIER, &data)
 		.unwrap();

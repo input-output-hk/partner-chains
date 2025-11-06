@@ -165,7 +165,6 @@ impl pallet_session_validator_management::Config for Test {
 	type MaxValidators = ConstU32<32>;
 	type AuthorityId = CrossChainPublic;
 	type AuthorityKeys = TestSessionKeys;
-	type AuthoritySelectionInputs = AuthoritySelectionInputs;
 	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
 
 	/// Mock simply selects all valid registered candidates as validators.

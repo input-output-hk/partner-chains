@@ -132,7 +132,6 @@
 //! 	type MaxValidators = MaxValidators;
 //! 	type AuthorityId = CrossChainPublic;
 //! 	type AuthorityKeys = SessionKeys;
-//! 	type AuthoritySelectionInputs = authority_selection_inherents::AuthoritySelectionInputs;
 //! 	type WeightInfo = pallet_session_validator_management::weights::SubstrateWeight<Runtime>;
 //! 	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
 //!
@@ -291,8 +290,6 @@ pub mod pallet {
 			+ Into<Self::AccountId>;
 		/// Type of authority keys.
 		type AuthorityKeys: Parameter + Member + MaybeSerializeDeserialize + Ord + MaxEncodedLen;
-		/// Type of input data used by `select_authorities` to select a committee.
-		type AuthoritySelectionInputs: Parameter;
 
 		/// Origin for governance calls
 		type MainChainScriptsOrigin: EnsureOrigin<Self::RuntimeOrigin>;
@@ -300,7 +297,7 @@ pub mod pallet {
 		/// Should select a committee for `sidechain_epoch` based on selection inputs `input`.
 		/// Should return [None] if selection was impossible for the given input.
 		fn select_authorities(
-			input: Self::AuthoritySelectionInputs,
+			input: AuthoritySelectionInputs,
 			sidechain_epoch: ScEpochNumber,
 		) -> Option<BoundedVec<CommitteeMemberOf<Self>, Self::MaxValidators>>;
 
@@ -607,9 +604,9 @@ pub mod pallet {
 
 		fn inherent_data_to_authority_selection_inputs(
 			data: &InherentData,
-		) -> (T::AuthoritySelectionInputs, SizedByteString<32>) {
+		) -> (AuthoritySelectionInputs, SizedByteString<32>) {
 			let decoded_data = data
-				.get_data::<T::AuthoritySelectionInputs>(&INHERENT_IDENTIFIER)
+				.get_data::<AuthoritySelectionInputs>(&INHERENT_IDENTIFIER)
 				.expect("Validator inherent data not correctly encoded")
 				.expect("Validator inherent data must be provided");
 			let data_hash = SizedByteString(blake2_256(&decoded_data.encode()));
@@ -619,7 +616,7 @@ pub mod pallet {
 
 		/// Calculates committee using configured `select_authorities` function
 		pub fn calculate_committee(
-			authority_selection_inputs: T::AuthoritySelectionInputs,
+			authority_selection_inputs: AuthoritySelectionInputs,
 			sidechain_epoch: ScEpochNumber,
 		) -> Option<Vec<CommitteeMemberOf<T>>> {
 			T::select_authorities(authority_selection_inputs, sidechain_epoch).map(|c| c.to_vec())

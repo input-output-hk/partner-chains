@@ -167,16 +167,15 @@ mod tests {
 	use pallet_session::ShouldEndSession;
 	pub const IRRELEVANT: u64 = 2;
 	use sidechain_domain::ScEpochNumber;
-	use sp_runtime::testing::UintAuthorityId;
 
 	type Manager = crate::Pallet<Test>;
 
 	#[test]
 	fn should_end_session_if_last_one_ended_late_and_new_committee_is_defined() {
 		let current_committee_epoch = ScEpochNumber(100);
-		let current_committee = as_permissioned_members(&[ALICE]);
+		let current_committee = as_permissioned_members(&[alice()]);
 		let next_committee_epoch = 102;
-		let next_committee = as_permissioned_members(&[BOB]);
+		let next_committee = as_permissioned_members(&[bob()]);
 
 		new_test_ext().execute_with(|| {
 			CurrentCommittee::<Test>::put(CommitteeInfo {
@@ -196,23 +195,17 @@ mod tests {
 	#[test]
 	fn register_session_keys_for_provided_authorities() {
 		new_test_ext().execute_with(|| {
-			set_validators_directly(&[DAVE, EVE], 1).unwrap();
+			set_validators_directly(&[dave(), eve()], 1).unwrap();
 			// By default, the session keys are not set for the account.
-			assert_eq!(Session::load_keys(&DAVE.authority_id), None);
-			assert_eq!(Session::load_keys(&EVE.authority_id), None);
+			assert_eq!(Session::load_keys(&dave().account_id()), None);
+			assert_eq!(Session::load_keys(&eve().account_id()), None);
 			increment_epoch();
 
 			start_session(1);
 
 			// After setting the keys, they should be stored in the session.
-			assert_eq!(
-				Session::load_keys(&DAVE.authority_id),
-				Some(SessionKeys { foo: UintAuthorityId(DAVE.authority_keys) })
-			);
-			assert_eq!(
-				Session::load_keys(&EVE.authority_id),
-				Some(SessionKeys { foo: UintAuthorityId(EVE.authority_keys) })
-			);
+			assert_eq!(Session::load_keys(&dave().account_id()), Some(dave().authority_keys));
+			assert_eq!(Session::load_keys(&eve().account_id()), Some(eve().authority_keys));
 		});
 	}
 
@@ -222,23 +215,26 @@ mod tests {
 			assert_eq!(Session::current_index(), 0);
 			assert_eq!(SessionCommitteeManagement::current_committee_storage().epoch.0, 0);
 			increment_epoch();
-			set_validators_directly(&[CHARLIE, DAVE], 1).unwrap();
+			set_validators_directly(&[charlie(), dave()], 1).unwrap();
 
 			advance_one_block();
 			assert_eq!(Session::current_index(), 1);
-			// pallet_session needs additional session to apply CHARLIE and DAVE as validators
-			assert_eq!(Session::validators(), Vec::<u64>::new());
+			// pallet_session needs additional session to apply charlie() and dave() as validators
+			assert_eq!(Session::validators(), vec![]);
 			assert_eq!(SessionCommitteeManagement::current_committee_storage().epoch.0, 1);
 
 			advance_one_block();
 			assert_eq!(Session::current_index(), 2);
-			assert_eq!(Session::validators(), vec![CHARLIE.authority_id, DAVE.authority_id]);
+			assert_eq!(Session::validators(), vec![charlie().account_id(), dave().account_id()]);
 			assert_eq!(SessionCommitteeManagement::current_committee_storage().epoch.0, 1);
 
 			for _i in 0..10 {
 				advance_one_block();
 				assert_eq!(Session::current_index(), 2);
-				assert_eq!(Session::validators(), vec![CHARLIE.authority_id, DAVE.authority_id]);
+				assert_eq!(
+					Session::validators(),
+					vec![charlie().account_id(), dave().account_id()]
+				);
 				assert_eq!(SessionCommitteeManagement::current_committee_storage().epoch.0, 1);
 			}
 		});

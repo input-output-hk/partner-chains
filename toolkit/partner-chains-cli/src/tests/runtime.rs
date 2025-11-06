@@ -1,4 +1,4 @@
-use authority_selection_inherents::MaybeFromCandidateKeys;
+use authority_selection_inherents::{AuthoritySelectionInputs, MaybeFromCandidateKeys};
 use frame_support::{
 	sp_runtime::traits::{BlakeTwo256, IdentityLookup},
 	*,
@@ -156,12 +156,11 @@ impl pallet_session_validator_management::Config for MockRuntime {
 	type MaxValidators = MaxValidators;
 	type AuthorityId = CrossChainPublic;
 	type AuthorityKeys = TestSessionKeys;
-	type AuthoritySelectionInputs = ();
 	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
 	type WeightInfo = ();
 
 	fn select_authorities(
-		_input: Self::AuthoritySelectionInputs,
+		_input: AuthoritySelectionInputs,
 		_sidechain_epoch: ScEpochNumber,
 	) -> Option<BoundedVec<CommitteeMemberOf<Self>, Self::MaxValidators>> {
 		unimplemented!()
