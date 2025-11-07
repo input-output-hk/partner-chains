@@ -1299,7 +1299,7 @@ mechanism.
 #### Native Token Reserve Management
 
 Please refer to
-[native-token-reserve-management.md](./developer-guides/native-token-reserve-management.md) for
+[native-token-reserve-management.md](./developer-guides/bridge-and-reserve.md) for
 details on how to setting up and maintaining a native token reserve on Cardano to  be used with a
 partner chain.
 
