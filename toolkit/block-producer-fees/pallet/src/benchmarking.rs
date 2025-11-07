@@ -11,20 +11,25 @@ pub trait BenchmarkHelper<T> {
 	fn account_id(i: u8) -> T;
 }
 
-#[benchmarks]
+#[benchmarks(where <T as crate::Config>::Moment: From<u64>)]
 mod benchmarks {
 	use super::*;
 	use frame_support::traits::Get;
 	use frame_system::RawOrigin;
 	use frame_system::pallet_prelude::OriginFor;
-	use sp_consensus_slots::Slot;
 	use sp_std::collections::vec_deque::VecDeque;
 
 	// Pessimistic storage for the ID
-	fn setup_storage<T: Config>() {
+	fn setup_storage<T: Config>()
+	where
+		<T as crate::Config>::Moment: From<u64>,
+	{
 		let size = T::HistoricalChangesPerProducer::get();
 		// Pessimistic storage content for is full, because it requires additional removal from the vecdeque.
-		let data = (0..size).into_iter().map(|_| (Slot::from(0), 0u16)).collect::<VecDeque<_>>();
+		let data = (0..size)
+			.into_iter()
+			.map(|_| (T::Moment::from(0u64), 0u16))
+			.collect::<VecDeque<_>>();
 		for i in 0u8..100u8 {
 			let id = T::BenchmarkHelper::account_id(i);
 			FeesChanges::<T>::insert(id, data.clone());

@@ -17,7 +17,6 @@ frame-system = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 sp-block-producer-fees = { workspace = true }
-sp-consensus-slots = { workspace = true }
 sp-std = { workspace = true }
 
 [dev-dependencies]
