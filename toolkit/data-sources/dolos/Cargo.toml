@@ -40,6 +40,8 @@ cardano-serialization-lib = { workspace = true }
 itertools = { workspace = true }
 figment = { workspace = true }
 tokio = { workspace = true }
+derive-new = { workspace = true }
+chrono = { workspace = true }
 
 [features]
 default = []

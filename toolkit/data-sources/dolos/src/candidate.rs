@@ -108,9 +108,9 @@ impl AuthoritySelectionDataSource for AuthoritySelectionDataSourceImpl {
 		let pools = self.client.pools_extended().await?;
 		let pred = |pool: PoolListExtendedInner| async move {
 			let history = self.client.pools_history(&pool.pool_id).await?;
-			Result::Ok(match history.into_iter().find(|h| h.epoch == epoch.0 as i32) {
+			Result::Ok(match history.into_iter().find(|h| h.epoch <= epoch.0 as i32) {
 				Some(e) => Some((
-					MainchainKeyHash(pool.pool_id.as_bytes().try_into()?), // TODO is pool_id a pool hash?
+					MainchainKeyHash::decode_hex(&pool.pool_id)?, // TODO is pool_id a pool hash?
 					StakeDelegation(e.active_stake.parse::<u64>()?),
 				)),
 				None => None,
@@ -139,7 +139,7 @@ impl AuthoritySelectionDataSource for AuthoritySelectionDataSourceImpl {
 	async fn get_epoch_nonce(&self, epoch_number: McEpochNumber) -> Result<Option<EpochNonce>> {
 		let epoch = self.get_epoch_of_data_storage(epoch_number)?;
 		let nonce: String = self.client.epochs_parameters(epoch).await?.nonce;
-		Ok(Some(EpochNonce(nonce.into())))
+		Ok(Some(EpochNonce::decode_hex(&nonce)?))
 	}
 
 	async fn data_epoch(&self, for_epoch: McEpochNumber) -> Result<McEpochNumber> {

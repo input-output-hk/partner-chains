@@ -20,6 +20,7 @@ pub type ArcMut<T> = Arc<Mutex<T>>;
 
 type AriadneParametersCacheKey = (McEpochNumber, PolicyId, PolicyId);
 type CandidatesCacheKey = (McEpochNumber, String);
+/// Cached candidate data source
 pub struct CandidateDataSourceCached {
 	inner: CandidatesDataSourceImpl,
 	get_ariadne_parameters_for_epoch_cache:
@@ -96,6 +97,7 @@ impl CandidateDataSourceCacheConfig {
 }
 
 impl CandidateDataSourceCached {
+	/// TODO
 	pub fn new(
 		inner: CandidatesDataSourceImpl,
 		candidates_for_epoch_cache_size: usize,
@@ -114,6 +116,7 @@ impl CandidateDataSourceCached {
 		}
 	}
 
+	/// TODO
 	pub fn new_from_env(
 		inner: CandidatesDataSourceImpl,
 		candidates_for_epoch_cache_size: usize,
