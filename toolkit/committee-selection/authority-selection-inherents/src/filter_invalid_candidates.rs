@@ -1,6 +1,6 @@
 //! Functionality related to filtering invalid candidates from the candidates
 
-use crate::{CommitteeMember, MaybeFromCandidateKeys};
+use crate::MaybeFromCandidateKeys;
 use frame_support::pallet_prelude::TypeInfo;
 use parity_scale_codec::{Decode, Encode};
 use plutus::*;
@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use sidechain_domain::*;
 use sp_core::{ecdsa, ed25519};
 use sp_runtime::traits::Verify;
+use sp_session_validator_management::CommitteeMember;
 
 /// Signed Message of the Authority Candidate to register
 /// It's ToDatum implementation has to produce datum that has to match main chain structure,

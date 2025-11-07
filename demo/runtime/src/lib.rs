@@ -12,8 +12,8 @@ extern crate alloc;
 use alloc::collections::BTreeMap;
 use alloc::string::String;
 use authority_selection_inherents::{
-	AuthoritySelectionInputs, CommitteeMember, PermissionedCandidateDataError,
-	RegistrationDataError, StakeError, select_authorities, validate_permissioned_candidate_data,
+	AuthoritySelectionInputs, PermissionedCandidateDataError, RegistrationDataError, StakeError,
+	select_authorities, validate_permissioned_candidate_data,
 };
 use frame_support::dynamic_params::{dynamic_pallet_params, dynamic_params};
 use frame_support::genesis_builder_helper::{build_state, get_preset};
@@ -30,6 +30,7 @@ use frame_system::EnsureRoot;
 use opaque::SessionKeys;
 use pallet_block_producer_metadata;
 use pallet_grandpa::AuthorityId as GrandpaId;
+use pallet_session_validator_management::CommitteeMemberOf;
 use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier};
 use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
@@ -58,6 +59,7 @@ use sp_runtime::{
 	},
 	transaction_validity::{TransactionSource, TransactionValidity},
 };
+use sp_session_validator_management::CommitteeMember;
 use sp_sidechain::SidechainStatus;
 use sp_std::prelude::*;
 use sp_version::RuntimeVersion;
@@ -351,13 +353,12 @@ impl pallet_session_validator_management::Config for Runtime {
 	type AuthorityKeys = SessionKeys;
 	type AuthoritySelectionInputs = AuthoritySelectionInputs;
 	type WeightInfo = pallet_session_validator_management::weights::SubstrateWeight<Runtime>;
-	type CommitteeMember = CommitteeMember<CrossChainPublic, SessionKeys>;
 	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
 
 	fn select_authorities(
 		input: AuthoritySelectionInputs,
 		sidechain_epoch: ScEpochNumber,
-	) -> Option<BoundedVec<Self::CommitteeMember, Self::MaxValidators>> {
+	) -> Option<BoundedVec<CommitteeMemberOf<Self>, Self::MaxValidators>> {
 		select_authorities::<sidechain_domain::cross_chain_app::Public, SessionKeys, MaxValidators>(
 			Sidechain::genesis_utxo(),
 			input,
@@ -1088,10 +1089,11 @@ impl_runtime_apis! {
 		}
 	}
 
-	#[api_version(2)]
+	#[api_version(3)]
 	impl sp_session_validator_management::SessionValidatorManagementApi<
 		Block,
-		CommitteeMember<CrossChainPublic, SessionKeys>,
+		CrossChainPublic,
+		SessionKeys,
 		AuthoritySelectionInputs,
 		sidechain_domain::ScEpochNumber
 	> for Runtime {

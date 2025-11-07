@@ -23,7 +23,6 @@ use sp_runtime::AccountId32;
 use sp_runtime::DeserializeOwned;
 use sp_runtime::Serialize;
 use sp_runtime::traits::Block as BlockT;
-use sp_session_validator_management::CommitteeMember as CommitteeMemberT;
 use sp_session_validator_management::SessionValidatorManagementApi;
 use sp_session_validator_management_query::SessionValidatorManagementQuery;
 use sp_session_validator_management_query::commands::*;
@@ -148,7 +147,8 @@ pub enum PartnerChainsSubcommand<
 pub fn run<
 	Cli,
 	Block,
-	CommitteeMember,
+	AuthorityId,
+	AuthorityKeys,
 	Client,
 	BlockProducerMetadata,
 	RuntimeBindings: PartnerChainRuntime + Send + Sync,
@@ -170,15 +170,15 @@ where
 		+ GetSidechainStatus<Block>
 		+ SessionValidatorManagementApi<
 			Block,
-			CommitteeMember,
+			AuthorityId,
+			AuthorityKeys,
 			AuthoritySelectionInputs,
 			ScEpochNumber,
 		> + CandidateValidationApi<Block>,
 	Block: BlockT,
 	NumberFor<Block>: From<u32> + Into<u32>,
-	CommitteeMember: CommitteeMemberT + Encode + Decode + Send + Sync + 'static,
-	CommitteeMember::AuthorityId: Decode + Encode + AsRef<[u8]> + Send + Sync + 'static,
-	CommitteeMember::AuthorityKeys: Decode + Encode,
+	AuthorityId: Decode + Encode + AsRef<[u8]> + Send + Sync + Clone + 'static,
+	AuthorityKeys: Decode + Encode + Send + Sync + Clone + 'static,
 	BlockProducerMetadata: DeserializeOwned + Encode + Send + Sync,
 	PartnerchainAddress: Serialize + Clone + Sync + Send + FromStrStdErr + Encode + 'static,
 {

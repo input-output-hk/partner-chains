@@ -1,5 +1,4 @@
 use crate::chain_spec::*;
-use authority_selection_inherents::CommitteeMember;
 use partner_chains_demo_runtime::{
 	AccountId, AuraConfig, BalancesConfig, BridgeConfig, GovernedMapConfig, GrandpaConfig,
 	RuntimeGenesisConfig, SessionCommitteeManagementConfig, SessionConfig, SidechainConfig,
@@ -10,6 +9,7 @@ use sidechain_domain::*;
 use sidechain_slots::SlotsPerEpoch;
 use sp_core::bytes::from_hex;
 use sp_core::{ed25519, sr25519};
+use sp_session_validator_management::CommitteeMember;
 use std::str::FromStr;
 
 pub fn authority_keys(

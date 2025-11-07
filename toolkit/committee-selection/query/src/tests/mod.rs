@@ -4,7 +4,7 @@ mod query_mock;
 mod runtime_api_mock;
 
 use super::SessionValidatorManagementQuery;
-use super::types::{CommitteeMember, GetCommitteeResponse};
+use super::types::{GetCommitteeResponse, ResponseCommitteeMember};
 use super::*;
 use crate::tests::query_mock::TestApi;
 use authority_selection_inherents::mock::MockAuthoritySelectionDataSource;
@@ -35,7 +35,7 @@ async fn get_epoch_committee() {
 			sidechain_epoch: 777,
 			committee: expected_initial_committee
 				.into_iter()
-				.map(|key| CommitteeMember::new(key.authority_id().as_ref()))
+				.map(|key| ResponseCommitteeMember::new(key.authority_id().as_ref()))
 				.collect()
 		}
 	)
@@ -68,9 +68,9 @@ async fn get_epoch_committee_should_return_initial_committee_for_genesis_and_fir
 
 	let expected_initial_committee: Vec<_> =
 		runtime_api_mock::committee_for_epoch(conversion::GENESIS_EPOCH);
-	let expected_initial_committee: Vec<CommitteeMember> = expected_initial_committee
+	let expected_initial_committee: Vec<ResponseCommitteeMember> = expected_initial_committee
 		.into_iter()
-		.map(|key| CommitteeMember::new(key.authority_id().as_ref()))
+		.map(|key| ResponseCommitteeMember::new(key.authority_id().as_ref()))
 		.collect();
 
 	let GetCommitteeResponse {
@@ -96,7 +96,7 @@ async fn get_epoch_committee_should_work_correctly_for_next_epoch() {
 
 	let expected_committee: Vec<_> = runtime_api_mock::committee_for_epoch(epoch)
 		.into_iter()
-		.map(|key| CommitteeMember::new(key.authority_id().as_ref()))
+		.map(|key| ResponseCommitteeMember::new(key.authority_id().as_ref()))
 		.collect();
 
 	assert_eq!(

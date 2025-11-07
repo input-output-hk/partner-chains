@@ -1,5 +1,5 @@
 use super::mock::mock_genesis_utxo;
-use authority_selection_inherents::{AuthoritySelectionInputs, CommitteeMember};
+use authority_selection_inherents::AuthoritySelectionInputs;
 use hex_literal::hex;
 use partner_chains_demo_runtime::opaque::SessionKeys;
 use partner_chains_demo_runtime::{BlockAuthor, CrossChainPublic};
@@ -14,6 +14,7 @@ use sp_inherents::InherentIdentifier;
 use sp_runtime::Digest;
 use sp_runtime::key_types::{AURA, GRANDPA};
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT, NumberFor, Zero};
+use sp_session_validator_management::CommitteeMember;
 use sp_sidechain::GetGenesisUtxo;
 use std::collections::HashMap;
 
@@ -70,7 +71,7 @@ sp_api::mock_impl_runtime_apis! {
 		fn genesis_utxo() -> UtxoId { mock_genesis_utxo() }
 	}
 
-	impl sp_session_validator_management::SessionValidatorManagementApi<Block, CommitteeMember<CrossChainPublic, SessionKeys>, AuthoritySelectionInputs, ScEpochNumber> for TestApi {
+	impl sp_session_validator_management::SessionValidatorManagementApi<Block, CrossChainPublic, SessionKeys, AuthoritySelectionInputs, ScEpochNumber> for TestApi {
 		fn get_current_committee() -> (ScEpochNumber, Vec<CommitteeMember<CrossChainPublic, SessionKeys>>) {
 			unimplemented!()
 		}

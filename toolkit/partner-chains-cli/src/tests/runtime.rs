@@ -1,4 +1,4 @@
-use authority_selection_inherents::{CommitteeMember, MaybeFromCandidateKeys};
+use authority_selection_inherents::MaybeFromCandidateKeys;
 use frame_support::{
 	sp_runtime::traits::{BlakeTwo256, IdentityLookup},
 	*,
@@ -6,6 +6,7 @@ use frame_support::{
 use frame_system::EnsureRoot;
 use pallet_balances::AccountData;
 use pallet_session::{SessionHandler, ShouldEndSession};
+use pallet_session_validator_management::CommitteeMemberOf;
 use parity_scale_codec::MaxEncodedLen;
 
 use sidechain_domain::{ScEpochNumber, ScSlotNumber};
@@ -156,14 +157,13 @@ impl pallet_session_validator_management::Config for MockRuntime {
 	type AuthorityId = CrossChainPublic;
 	type AuthorityKeys = TestSessionKeys;
 	type AuthoritySelectionInputs = ();
-	type CommitteeMember = CommitteeMember<Self::AuthorityId, TestSessionKeys>;
 	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
 	type WeightInfo = ();
 
 	fn select_authorities(
 		_input: Self::AuthoritySelectionInputs,
 		_sidechain_epoch: ScEpochNumber,
-	) -> Option<BoundedVec<Self::CommitteeMember, Self::MaxValidators>> {
+	) -> Option<BoundedVec<CommitteeMemberOf<Self>, Self::MaxValidators>> {
 		unimplemented!()
 	}
 

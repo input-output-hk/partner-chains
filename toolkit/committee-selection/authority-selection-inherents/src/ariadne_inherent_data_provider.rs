@@ -11,7 +11,6 @@ use {
 	sp_api::ProvideRuntimeApi,
 	sp_inherents::{InherentData, InherentIdentifier},
 	sp_runtime::traits::Block as BlockT,
-	sp_session_validator_management::CommitteeMember as CommitteeMemberT,
 	sp_session_validator_management::{
 		INHERENT_IDENTIFIER, InherentError, MainChainScripts, SessionValidatorManagementApi,
 	},
@@ -39,7 +38,7 @@ impl AriadneInherentDataProvider {
 	/// - `timestamp_millis`: timestamp of current block in milliseconds
 	/// - `data_source`: data source implementing [AuthoritySelectionDataSource]
 	/// - `mc_reference_epoch`: latest stable mainchain epoch
-	pub async fn new<Block, CommitteeMember, T>(
+	pub async fn new<Block, AuthorityId, AuthorityKeys, T>(
 		client: &T,
 		sc_epoch_duration_millis: u64,
 		mc_epoch_config: &MainchainEpochConfig,
@@ -49,14 +48,14 @@ impl AriadneInherentDataProvider {
 		mc_reference_epoch: McEpochNumber,
 	) -> Result<Self, InherentProviderCreationError>
 	where
-		CommitteeMember: CommitteeMemberT + Decode + Encode,
-		CommitteeMember::AuthorityKeys: Decode + Encode,
-		CommitteeMember::AuthorityId: Decode + Encode,
+		AuthorityKeys: Decode + Encode,
+		AuthorityId: Decode + Encode,
 		Block: BlockT,
 		T: ProvideRuntimeApi<Block> + Send + Sync,
 		T::Api: SessionValidatorManagementApi<
 				Block,
-				CommitteeMember,
+				AuthorityId,
+				AuthorityKeys,
 				AuthoritySelectionInputs,
 				ScEpochNumber,
 			>,
@@ -114,7 +113,7 @@ pub enum InherentProviderCreationError {
 }
 
 #[cfg(feature = "std")]
-fn mc_epoch_for_next_ariadne_cidp<Block, CommitteeMember, T>(
+fn mc_epoch_for_next_ariadne_cidp<Block, AuthorityId, AuthorityKeys, T>(
 	client: &T,
 	sc_epoch_duration_millis: u64,
 	epoch_config: &MainchainEpochConfig,
@@ -123,13 +122,13 @@ fn mc_epoch_for_next_ariadne_cidp<Block, CommitteeMember, T>(
 ) -> Result<McEpochNumber, InherentProviderCreationError>
 where
 	Block: BlockT,
-	CommitteeMember: Decode + Encode + CommitteeMemberT,
-	CommitteeMember::AuthorityKeys: Decode + Encode,
-	CommitteeMember::AuthorityId: Decode + Encode,
+	AuthorityKeys: Decode + Encode,
+	AuthorityId: Decode + Encode,
 	T: ProvideRuntimeApi<Block> + Send + Sync,
 	T::Api: SessionValidatorManagementApi<
 			Block,
-			CommitteeMember,
+			AuthorityId,
+			AuthorityKeys,
 			AuthoritySelectionInputs,
 			ScEpochNumber,
 		>,

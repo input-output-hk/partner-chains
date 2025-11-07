@@ -1,15 +1,16 @@
 //! Functionality related to selecting the validators from the valid candidates
 
+use crate::MaybeFromCandidateKeys;
 use crate::authority_selection_inputs::AuthoritySelectionInputs;
 use crate::filter_invalid_candidates::{
 	filter_invalid_permissioned_candidates, filter_trustless_candidates_registrations,
 };
-use crate::{CommitteeMember, MaybeFromCandidateKeys};
 use log::{info, warn};
 use plutus::*;
 use sidechain_domain::{EpochNonce, ScEpochNumber, UtxoId};
 use sp_core::{Get, U256, ecdsa};
 use sp_runtime::BoundedVec;
+use sp_session_validator_management::CommitteeMember;
 
 /// Selects authorities using the Ariadne selection algorithm and data sourced from Partner Chains smart contracts on Cardano.
 /// Seed is constructed from the MC epoch nonce and the sidechain epoch.

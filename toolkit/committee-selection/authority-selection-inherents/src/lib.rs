@@ -12,10 +12,7 @@
 //! ### Prerequisites
 //!
 //! This crate is intended to work with `pallet_session_validator_management`. See
-//! the pallet's documentation for instructions how to add it to you runtime. Your
-//! pallet should be configured with [CommitteeMember] as its `CommitteeMember`,
-//! using the `CrossChainPublic` and `SessionKeys` defined described in the pallet's
-//! documentation.
+//! the pallet's documentation for instructions how to add it to you runtime.
 //!
 //! Additionally [AriadneInherentDataProvider] needs access to a data source
 //! implementing [AuthoritySelectionDataSource]. A Db-Sync-based implementation is
@@ -41,12 +38,9 @@
 
 extern crate alloc;
 
-use scale_info::TypeInfo;
-use serde::{Deserialize, Serialize};
-use sidechain_domain::{CandidateKeys, StakePoolPublicKey};
-use sp_core::{ConstU32, Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
+use sidechain_domain::CandidateKeys;
+use sp_core::{ConstU32, Decode};
 use sp_runtime::traits::OpaqueKeys;
-use sp_session_validator_management::CommitteeMember as CommitteeMemberT;
 
 mod ariadne_inherent_data_provider;
 mod authority_selection_inputs;
@@ -77,75 +71,6 @@ mod tests;
 
 #[cfg(any(test, feature = "mock"))]
 pub mod mock;
-
-#[derive(
-	Serialize,
-	Deserialize,
-	Clone,
-	Encode,
-	Decode,
-	DecodeWithMemTracking,
-	TypeInfo,
-	MaxEncodedLen,
-	Debug,
-	PartialEq,
-	Eq,
-)]
-/// Type representing committee members, either permissioned or registered
-pub enum CommitteeMember<AuthorityId, AuthorityKeys> {
-	/// A permissioned candidate
-	Permissioned {
-		/// Authority id of the candidate
-		id: AuthorityId,
-		/// Authority keys of the candidate
-		keys: AuthorityKeys,
-	},
-	/// A registered candidate
-	Registered {
-		/// Authority id of the candidate
-		id: AuthorityId,
-		/// Authority keys of the candidate
-		keys: AuthorityKeys,
-		/// Stake pool pub key of the candidate
-		stake_pool_pub_key: StakePoolPublicKey,
-	},
-}
-
-impl<AuthorityId, AuthorityKeys> From<(AuthorityId, AuthorityKeys)>
-	for CommitteeMember<AuthorityId, AuthorityKeys>
-{
-	fn from((id, keys): (AuthorityId, AuthorityKeys)) -> Self {
-		Self::Permissioned { id, keys }
-	}
-}
-
-impl<AuthorityId, AuthorityKeys> CommitteeMember<AuthorityId, AuthorityKeys> {
-	/// Constructs new permissioned candidate
-	pub fn permissioned(id: AuthorityId, keys: AuthorityKeys) -> Self {
-		Self::Permissioned { id, keys }
-	}
-}
-
-impl<AuthorityId: Clone, AuthorityKeys: Clone> CommitteeMemberT
-	for CommitteeMember<AuthorityId, AuthorityKeys>
-{
-	type AuthorityId = AuthorityId;
-	type AuthorityKeys = AuthorityKeys;
-
-	fn authority_id(&self) -> AuthorityId {
-		match self {
-			Self::Permissioned { id, .. } => id.clone(),
-			Self::Registered { id, .. } => id.clone(),
-		}
-	}
-
-	fn authority_keys(&self) -> AuthorityKeys {
-		match self {
-			Self::Permissioned { keys, .. } => keys.clone(),
-			Self::Registered { keys, .. } => keys.clone(),
-		}
-	}
-}
 
 /// Trait to try extract implementing type from [CandidateKeys].
 pub trait MaybeFromCandidateKeys: OpaqueKeys + Decode + Sized {

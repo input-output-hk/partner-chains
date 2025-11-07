@@ -27,6 +27,9 @@ current `moment: Moment` as input instead of slot.
 *Important:* for backward compatibiliyt, chains that used the slot-based version should pass the
 *starting timestamp of the slot* to the new IDP instead of the actual timestamp. See the implementation
 of the demo node for reference.
+* `pallet-session-validator-management` is no longer configured with a `CommitteeMember` type and instead
+uses `sp_session_validator_management::CommitteeMember` type directly. As this type was the only type
+supported by the toolkit, this change is backwards compatible for existing chains.
 
 ## Removed
 

@@ -1,4 +1,4 @@
-use crate::{Call, pallet};
+use crate::{Call, CommitteeMemberOf, pallet};
 use frame_support::{
 	derive_impl,
 	dispatch::PostDispatchInfo,
@@ -17,7 +17,7 @@ use sp_runtime::{
 	testing::UintAuthorityId,
 	traits::{BlakeTwo256, IdentityLookup},
 };
-use sp_session_validator_management::MainChainScripts;
+use sp_session_validator_management::{CommitteeMember, MainChainScripts};
 
 type Block = frame_system::mocking::MockBlock<Test>;
 
@@ -113,15 +113,13 @@ impl pallet::Config for Test {
 	type MaxValidators = ConstU32<32>;
 	type AuthorityId = AuthorityId;
 	type AuthorityKeys = AuthorityKeys;
-	type AuthoritySelectionInputs =
-		BoundedVec<(Self::AuthorityId, Self::AuthorityKeys), Self::MaxValidators>;
-	type CommitteeMember = (Self::AuthorityId, Self::AuthorityKeys);
+	type AuthoritySelectionInputs = BoundedVec<CommitteeMemberOf<Test>, Self::MaxValidators>;
 	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
 
 	fn select_authorities(
 		input: Self::AuthoritySelectionInputs,
 		_sidechain_epoch: ScEpochNumber,
-	) -> Option<BoundedVec<(Self::AuthorityId, Self::AuthorityKeys), Self::MaxValidators>> {
+	) -> Option<BoundedVec<CommitteeMemberOf<Test>, Self::MaxValidators>> {
 		// This is a good approximation of the real selection algorithm, that returns None iff there are no valid candidates to select from.
 		if input.is_empty() { None } else { Some(input) }
 	}
@@ -181,8 +179,8 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 pub fn new_test_ext_with_genesis_initial_authorities(
 	validators: &[MockValidator],
 ) -> sp_io::TestExternalities {
-	let initial_authorities: Vec<(AuthorityId, AuthorityKeys)> =
-		validators.iter().map(MockValidator::ids_and_keys).collect();
+	let initial_authorities: Vec<CommitteeMemberOf<Test>> =
+		validators.iter().map(MockValidator::permissioned).collect();
 	let main_chain_scripts = MainChainScripts::default();
 	let session_committee_management =
 		SessionCommitteeManagementConfig { initial_authorities, main_chain_scripts };
@@ -209,16 +207,16 @@ pub struct MockValidator {
 }
 
 impl MockValidator {
-	pub fn ids_and_keys(&self) -> (AuthorityId, AuthorityKeys) {
-		(self.authority_id, self.authority_keys)
+	pub fn permissioned(&self) -> CommitteeMemberOf<Test> {
+		CommitteeMember::Permissioned { id: self.authority_id, keys: self.authority_keys }
 	}
 }
 
-pub fn ids_and_keys_fn(
+pub fn as_permissioned_members(
 	validators: &[MockValidator],
-) -> BoundedVec<(AuthorityId, AuthorityKeys), ConstU32<32>> {
+) -> BoundedVec<CommitteeMemberOf<Test>, ConstU32<32>> {
 	BoundedVec::truncate_from(
-		validators.iter().map(MockValidator::ids_and_keys).collect::<Vec<_>>(),
+		validators.iter().map(MockValidator::permissioned).collect::<Vec<_>>(),
 	)
 }
 pub fn authority_ids(validators: &[MockValidator]) -> BoundedVec<AuthorityId, ConstU32<32>> {
@@ -238,7 +236,7 @@ pub fn set_validators_directly(
 	for_epoch: u64,
 ) -> DispatchResult {
 	let expected_validators: Vec<_> =
-		expected_validators.iter().map(MockValidator::ids_and_keys).collect();
+		expected_validators.iter().map(MockValidator::permissioned).collect();
 	let data_hash = SizedByteString(blake2_256(&expected_validators.encode()));
 	SessionCommitteeManagement::set(
 		RuntimeOrigin::none(),
@@ -251,7 +249,7 @@ pub fn set_validators_directly(
 pub fn create_inherent_data(validators: &[MockValidator]) -> (InherentData, SizedByteString<32>) {
 	let mut inherent_data = InherentData::new();
 	let data: BoundedVec<_, ConstU32<32>> =
-		BoundedVec::truncate_from(validators.iter().map(MockValidator::ids_and_keys).collect());
+		BoundedVec::truncate_from(validators.iter().map(MockValidator::permissioned).collect());
 	inherent_data
 		.put_data(SessionCommitteeManagement::INHERENT_IDENTIFIER, &data)
 		.unwrap();

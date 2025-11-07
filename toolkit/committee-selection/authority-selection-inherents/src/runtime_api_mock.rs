@@ -1,6 +1,8 @@
 use crate::{authority_selection_inputs::AuthoritySelectionInputs, tests::AccountKeys};
 use sidechain_domain::*;
-use sp_session_validator_management::{MainChainScripts, SessionValidatorManagementApi};
+use sp_session_validator_management::{
+	CommitteeMember, MainChainScripts, SessionValidatorManagementApi,
+};
 
 pub type Block = sp_runtime::generic::Block<
 	sp_runtime::generic::Header<u32, sp_runtime::traits::BlakeTwo256>,
@@ -21,10 +23,10 @@ impl sp_api::ProvideRuntimeApi<Block> for TestApi {
 }
 
 sp_api::mock_impl_runtime_apis! {
-	impl SessionValidatorManagementApi<Block, (CrossChainPublicKey, AccountKeys), AuthoritySelectionInputs, ScEpochNumber>
+	impl SessionValidatorManagementApi<Block, CrossChainPublicKey, AccountKeys, AuthoritySelectionInputs, ScEpochNumber>
 		for TestApi
 	{
-		fn get_current_committee() -> (ScEpochNumber, Vec<(CrossChainPublicKey, AccountKeys)>) {
+		fn get_current_committee() -> (ScEpochNumber, Vec<CommitteeMember<CrossChainPublicKey, AccountKeys>>) {
 			unimplemented!()
 		}
 		fn get_next_unset_epoch_number() -> sidechain_domain::ScEpochNumber {
@@ -33,7 +35,7 @@ sp_api::mock_impl_runtime_apis! {
 		fn calculate_committee(
 			_authority_selection_inputs: AuthoritySelectionInputs,
 			_sidechain_epoch: sidechain_domain::ScEpochNumber,
-		) -> Option<Vec<(CrossChainPublicKey, AccountKeys)>> {
+		) -> Option<Vec<CommitteeMember<CrossChainPublicKey, AccountKeys>>> {
 			unimplemented!()
 		}
 		fn get_main_chain_scripts() -> MainChainScripts {

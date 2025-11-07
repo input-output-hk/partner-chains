@@ -71,6 +71,7 @@ pub fn run() -> sc_cli::Result<()> {
 				_,
 				_,
 				_,
+				_,
 				BlockProducerMetadataType,
 				WizardBindings,
 				AccountId32,

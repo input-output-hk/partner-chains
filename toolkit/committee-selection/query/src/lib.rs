@@ -17,9 +17,7 @@ use sp_blockchain::{HeaderBackend, Info};
 use sp_core::bytes::to_hex;
 use sp_runtime::traits::NumberFor;
 use sp_runtime::traits::{Block as BlockT, Zero};
-use sp_session_validator_management::{
-	CommitteeMember as CommitteeMemberT, SessionValidatorManagementApi,
-};
+use sp_session_validator_management::SessionValidatorManagementApi;
 #[allow(deprecated)]
 use sp_sidechain::{GetGenesisUtxo, GetSidechainStatus};
 use std::sync::Arc;
@@ -56,24 +54,25 @@ pub trait SessionValidatorManagementQueryApi {
 
 #[derive(new)]
 /// Session Validator Management Query type wrapping client, and data source
-pub struct SessionValidatorManagementQuery<C, Block, CommitteeMember: Decode> {
+pub struct SessionValidatorManagementQuery<C, Block, AuthorityId: Decode, AuthorityKeys: Decode> {
 	client: Arc<C>,
 	candidate_data_source: Arc<dyn AuthoritySelectionDataSource + Send + Sync>,
-	_marker: std::marker::PhantomData<(Block, CommitteeMember)>,
+	_marker: std::marker::PhantomData<(Block, AuthorityId, AuthorityKeys)>,
 }
 
-impl<C, Block, CommitteeMember> SessionValidatorManagementQuery<C, Block, CommitteeMember>
+impl<C, Block, AuthorityId, AuthorityKeys>
+	SessionValidatorManagementQuery<C, Block, AuthorityId, AuthorityKeys>
 where
 	Block: BlockT,
 	C: ProvideRuntimeApi<Block>,
 	C::Api: sp_api::Core<Block> + ApiExt<Block>,
-	CommitteeMember: CommitteeMemberT + Encode + Decode,
-	CommitteeMember::AuthorityId: Encode + Decode + AsRef<[u8]>,
-	CommitteeMember::AuthorityKeys: Encode + Decode,
+	AuthorityId: Encode + Decode + AsRef<[u8]> + Clone,
+	AuthorityKeys: Encode + Decode,
 	AuthoritySelectionInputs: Encode + Decode,
 	C::Api: SessionValidatorManagementApi<
 			Block,
-			CommitteeMember,
+			AuthorityId,
+			AuthorityKeys,
 			AuthoritySelectionInputs,
 			ScEpochNumber,
 		>,
@@ -82,7 +81,8 @@ where
 		let version = (self.client.runtime_api())
 			.api_version::<dyn SessionValidatorManagementApi<
 					Block,
-					CommitteeMember,
+					AuthorityId,
+					AuthorityKeys,
 					AuthoritySelectionInputs,
 					ScEpochNumber,
 				>>(block)
@@ -99,8 +99,9 @@ where
 
 		if self.validator_management_api_version(block)? < 2 {
 			#[allow(deprecated)]
-			let (epoch, authority_ids) =
+			let (epoch, authorities) =
 				api.get_current_committee_before_version_2(block).map_err(err_debug)?;
+			let authority_ids = authorities.into_iter().map(|a| a.authority_id()).collect();
 			Ok(GetCommitteeResponse::new_legacy(epoch, authority_ids))
 		} else {
 			let (epoch, authority_data) = api.get_current_committee(block).map_err(err_debug)?;
@@ -117,7 +118,10 @@ where
 		if self.validator_management_api_version(block)? < 2 {
 			#[allow(deprecated)]
 			Ok(api.get_next_committee_before_version_2(block).map_err(err_debug)?.map(
-				|(epoch, authority_ids)| GetCommitteeResponse::new_legacy(epoch, authority_ids),
+				|(epoch, authorities)| {
+					let authority_ids = authorities.iter().map(|a| a.authority_id()).collect();
+					GetCommitteeResponse::new_legacy(epoch, authority_ids)
+				},
 			))
 		} else {
 			Ok(api
@@ -130,14 +134,13 @@ where
 
 #[async_trait]
 #[allow(deprecated)]
-impl<C, Block, CommitteeMember> SessionValidatorManagementQueryApi
-	for SessionValidatorManagementQuery<C, Block, CommitteeMember>
+impl<C, Block, AuthorityId, AuthorityKeys> SessionValidatorManagementQueryApi
+	for SessionValidatorManagementQuery<C, Block, AuthorityId, AuthorityKeys>
 where
 	Block: BlockT,
 	NumberFor<Block>: From<u32> + Into<u32>,
-	CommitteeMember: CommitteeMemberT + Decode + Encode + Send + Sync + 'static,
-	CommitteeMember::AuthorityKeys: Decode + Encode,
-	CommitteeMember::AuthorityId: AsRef<[u8]> + Decode + Encode + Send + Sync + 'static,
+	AuthorityKeys: Decode + Encode + Send + Sync + 'static,
+	AuthorityId: AsRef<[u8]> + Decode + Encode + Send + Sync + 'static + Clone,
 	C: Send + Sync + 'static,
 	C: ProvideRuntimeApi<Block>,
 	C: HeaderBackend<Block>,
@@ -145,7 +148,8 @@ where
 	C::Api: GetSidechainStatus<Block>,
 	C::Api: SessionValidatorManagementApi<
 			Block,
-			CommitteeMember,
+			AuthorityId,
+			AuthorityKeys,
 			AuthoritySelectionInputs,
 			ScEpochNumber,
 		>,

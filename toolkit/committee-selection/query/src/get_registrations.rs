@@ -7,8 +7,12 @@ use sidechain_domain::{
 use sp_core::bytes::to_hex;
 use sp_sidechain::GetGenesisUtxo;
 
-impl<C, Block, SessionKeys: parity_scale_codec::Decode + Send + Sync + 'static>
-	SessionValidatorManagementQuery<C, Block, SessionKeys>
+impl<
+	C,
+	Block,
+	AuthorityId: parity_scale_codec::Decode + Send + Sync + 'static,
+	SessionKeys: parity_scale_codec::Decode + Send + Sync + 'static,
+> SessionValidatorManagementQuery<C, Block, AuthorityId, SessionKeys>
 where
 	Block: BlockT,
 	C: HeaderBackend<Block>,
