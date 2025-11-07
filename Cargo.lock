@@ -7584,6 +7584,8 @@ dependencies = [
  "authority-selection-inherents",
  "blockfrost-openapi",
  "cardano-serialization-lib",
+ "chrono",
+ "derive-new",
  "figment",
  "futures",
  "itertools 0.14.0",

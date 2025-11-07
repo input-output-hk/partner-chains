@@ -28,6 +28,10 @@ mod bridge;
 #[cfg(feature = "bridge")]
 pub use bridge::TokenBridgeDataSourceImpl;
 
+mod block;
+pub use block::BlockDataSourceImpl;
+use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
+
 use crate::client::MiniBFClient;
 
 pub mod client;
@@ -81,4 +85,13 @@ impl ConnectionConfig {
 			.map_err(|e| format!("Failed to read postgres data source connection: {e}"))?;
 		Ok(config)
 	}
+}
+
+/// Reads Cardano main chain epoch configuration from the environment.
+///
+/// See documentation of [MainchainEpochConfig::read_from_env] for the list of environment variables read.
+#[cfg(feature = "block-source")]
+pub fn read_mc_epoch_config() -> Result<MainchainEpochConfig> {
+	Ok(MainchainEpochConfig::read_from_env()
+		.map_err(|e| format!("Failed to read main chain config: {}", e))?)
 }
