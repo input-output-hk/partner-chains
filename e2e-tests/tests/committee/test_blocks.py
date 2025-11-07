@@ -9,6 +9,7 @@ COMMITTEE_REPETITIONS_IN_PC_EPOCH = 2
 @mark.xdist_group("faucet_tx")
 @mark.ci
 @mark.staging
+@mark.test_key('ETCM-12429')
 def test_block_producer_can_update_their_metadata(genesis_utxo, api: BlockchainApi, get_wallet: Wallet, write_file):
     logger.info("Signing block producer metadata...")
     skey, vkey_hex, vkey_hash = api.cardano_cli.generate_cross_chain_keys()
@@ -64,10 +65,10 @@ def test_block_producer_can_update_their_metadata(genesis_utxo, api: BlockchainA
 @mark.xdist_group("faucet_tx")
 @mark.ci
 @mark.staging
+@mark.test_key('ETCM-12430')
 def test_block_producer_can_delete_their_metadata(genesis_utxo, api: BlockchainApi, get_wallet: Wallet, write_file):
     logger.info("Signing block producer metadata...")
     skey, vkey_hex, vkey_hash = api.cardano_cli.generate_cross_chain_keys()
-
 
     logger.info("Starting upsert")
     metadata = {
@@ -106,10 +107,10 @@ def test_block_producer_can_delete_their_metadata(genesis_utxo, api: BlockchainA
 
     logger.info(f"Public key: {vkey_hex}")
     storage_metadata = api.get_block_producer_metadata(vkey_hash)
-    assert storage_metadata == None, "Block producer metadata not deleted from storage"
+    assert storage_metadata is None, "Block producer metadata not deleted from storage"
 
     rpc_metadata = api.partner_chain_rpc.partner_chain_get_block_producer_metadata(vkey_hex).result
-    assert rpc_metadata == None, "RPC returned block producer metadata after deletion"
+    assert rpc_metadata is None, "RPC returned block producer metadata after deletion"
 
 
 @mark.skip_on_new_chain

@@ -1,8 +1,10 @@
 from src.blockchain_api import BlockchainApi
 from config.api_config import ApiConfig
 import logging
+from pytest import mark
 
 
+@mark.test_key('ETCM-8358')
 def test_block_production_log_pallet(api: BlockchainApi, config: ApiConfig):
     block = api.get_block()
     block_no = block["header"]["number"]

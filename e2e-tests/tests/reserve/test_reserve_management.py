@@ -75,6 +75,7 @@ def circulation_supply_initial_balance(create_reserve, api: BlockchainApi, reser
 
 
 class TestInitReserve:
+    @mark.test_key("ETCM-12442")
     def test_init_reserve(self, init_reserve):
         response = init_reserve
         assert response.returncode == 0
@@ -83,15 +84,18 @@ class TestInitReserve:
 
 
 class TestCreateReserve:
+    @mark.test_key("ETCM-12443")
     def test_enough_tokens_to_create_reserve(self, native_token_initial_balance):
         assert native_token_initial_balance >= INITIAL_RESERVE_DEPOSIT
 
+    @mark.test_key("ETCM-12444")
     def test_create_reserve(self, create_reserve):
         response = create_reserve
         assert response.returncode == 0
         assert response.json
 
     @mark.usefixtures("create_reserve")
+    @mark.test_key("ETCM-12445")
     def test_native_token_balance_is_smaller_by_initial_deposit(
         self, native_token_initial_balance, api: BlockchainApi, reserve_asset_id, governance_address
     ):
@@ -99,6 +103,7 @@ class TestCreateReserve:
         assert native_token_initial_balance - INITIAL_RESERVE_DEPOSIT == native_token_current_balance
 
     @mark.usefixtures("create_reserve")
+    @mark.test_key("ETCM-12446")
     def test_reserve_balance_is_equal_to_initial_deposit(self, api: BlockchainApi, reserve_asset_id, addresses):
         reserve_balance = api.get_mc_balance(addresses["ReserveValidator"], reserve_asset_id)
         assert INITIAL_RESERVE_DEPOSIT == reserve_balance
@@ -128,11 +133,13 @@ class TestReleaseFunds:
         )
         return response
 
+    @mark.test_key("ETCM-12447")
     def test_release_funds(self, release_funds):
         response = release_funds
         assert response.returncode == 0
         assert response.json
 
+    @mark.test_key("ETCM-12448")
     def test_circulation_supply_balance_after_release(
         self,
         circulation_supply_initial_balance,
@@ -144,12 +151,14 @@ class TestReleaseFunds:
         circulation = api.get_mc_balance(addresses["IlliquidCirculationSupplyValidator"], reserve_asset_id)
         assert circulation_supply_initial_balance + amount_to_release == circulation
 
+    @mark.test_key("ETCM-12449")
     def test_reserve_balance_after_release(
         self, reserve_initial_balance, amount_to_release, api: BlockchainApi, reserve_asset_id, addresses
     ):
         reserve_balance = api.get_mc_balance(addresses["ReserveValidator"], reserve_asset_id)
         assert reserve_initial_balance - amount_to_release == reserve_balance
 
+    @mark.test_key("ETCM-12450")
     def test_observe_released_funds(self, api: BlockchainApi, amount_to_release):
         observed_transfers = api.subscribe_token_transfer()
         assert observed_transfers["reserve"] == amount_to_release
@@ -175,17 +184,20 @@ class TestDepositFunds:
         )
         return response
 
+    @mark.test_key("ETCM-9525")
     def test_deposit_funds(self, deposit_funds):
         response = deposit_funds
         assert response.returncode == 0
         assert response.json
 
+    @mark.test_key("ETCM-10404")
     def test_reserve_balance_after_deposit(
         self, reserve_initial_balance, amount_to_deposit, api: BlockchainApi, reserve_asset_id, addresses
     ):
         reserve_balance = api.get_mc_balance(addresses["ReserveValidator"], reserve_asset_id)
         assert reserve_initial_balance + amount_to_deposit == reserve_balance
 
+    @mark.test_key("ETCM-10405")
     def test_native_token_balance_after_deposit(
         self,
         native_token_balance,
@@ -214,11 +226,13 @@ class TestUpdateVFunction:
         )
         return response
 
+    @mark.test_key("ETCM-10406")
     def test_update_v_function(self, update_v_function):
         response = update_v_function
         assert response.returncode == 0
         assert response.json
 
+    @mark.test_key("ETCM-10407")
     def test_release_funds_with_updated_v_function(self, api: BlockchainApi, new_v_function: VFunction, genesis_utxo, payment_key):
         response = api.partner_chains_node.smart_contracts.reserve.release(
             genesis_utxo,
@@ -229,6 +243,7 @@ class TestUpdateVFunction:
         assert response.returncode == 0
         assert response.json
 
+    @mark.test_key("ETCM-12451")
     def test_release_funds_with_old_v_function(self, api: BlockchainApi, v_function: VFunction, genesis_utxo, payment_key):
         response = api.partner_chains_node.smart_contracts.reserve.release(
             genesis_utxo,
@@ -314,6 +329,7 @@ class TestBridge:
 
     @mark.usefixtures("create_bridge_utxos")
     @mark.bridge
+    @mark.test_key("ETCM-12452")
     def test_lock_without_spending_ics_utxo(
         self,
         api: BlockchainApi,
@@ -347,6 +363,7 @@ class TestBridge:
 
     @mark.usefixtures("create_bridge_utxos")
     @mark.bridge
+    @mark.test_key("ETCM-12453")
     def test_lock_with_spending_ics_utxo(
         self,
         api: BlockchainApi,
@@ -385,11 +402,13 @@ class TestHandoverReserve:
         response = api.partner_chains_node.smart_contracts.reserve.handover(genesis_utxo, payment_key)
         return response
 
+    @mark.test_key("ETCM-10410")
     def test_handover_reserve(self, handover_reserve):
         response = handover_reserve
         assert response.returncode == 0
         assert response.json
 
+    @mark.test_key("ETCM-10411")
     def test_reserve_balance_after_handover(self, api: BlockchainApi, reserve_asset_id, addresses):
         reserve_balance = api.get_mc_balance(addresses["ReserveValidator"], reserve_asset_id)
         assert reserve_balance == 0

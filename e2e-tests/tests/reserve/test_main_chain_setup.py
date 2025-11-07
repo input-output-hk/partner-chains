@@ -7,10 +7,11 @@ from src.partner_chains_node.models import VFunction
 pytestmark = [mark.xdist_group(name="governance_action")]
 
 
+@mark.test_key("ETCM-12438")
 def test_enough_funds_for_minting(transaction_input):
     assert transaction_input(), "Not enough funds to mint token"
 
-
+@mark.test_key("ETCM-12439")
 def test_mint_tokens_for_reserve(
     api: BlockchainApi, governance_address: str, reserve_asset_id, mint_token, wait_until, config: ApiConfig
 ):
@@ -24,9 +25,11 @@ def test_mint_tokens_for_reserve(
     )
 
 
+@mark.test_key("ETCM-12440")
 def test_enough_funds_for_tx_with_reference_script(transaction_input):
     assert transaction_input(), "Not enough funds to pay for transaction with reference script"
 
 
+@mark.test_key("ETCM-12441")
 def test_attach_v_function_as_reference_script(v_function: VFunction):
     assert v_function.reference_utxo, "V-function reference UTXO is not set"

@@ -80,6 +80,7 @@ class TestCommitteeDistribution:
 
     @mark.xdist_group("governance_action")
     @mark.usefixtures("governance_skey_with_cli")
+    @mark.test_key('ETCM-9013')
     def test_update_d_param(
         self,
         genesis_utxo,
