@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["CommitteeRotationStages"],"mod":["migrations","pallet","pallet_session_support","weights"],"trait":["CommitteeMember"]};
+window.SIDEBAR_ITEMS = {"enum":["CommitteeMember","CommitteeRotationStages"],"mod":["migrations","pallet","pallet_session_support","weights"]};
