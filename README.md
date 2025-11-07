@@ -70,6 +70,7 @@ to have a working docker setup to execute the tests_.
 ### :books: Documentation
 Please refer to our [Introduction](./docs/intro.md) to learn in more detail about what the Partner
 Chain Toolkit offers and how to use it for different use-cases.
+We also provide [Wizards](./docs/intro.md#wizards), an interactive step by step CLI interface.
 
 Rust Docs for all crates provided by the toolkit are available to browse online [here](https://input-output-hk.github.io/partner-chains/)
 
