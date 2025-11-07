@@ -39,6 +39,8 @@ runtime APIs `sp_sidechain::GetEpochDurationApi` instead of deprecated `sp_sidec
 implement the new API in their runtime. Backward compatibility option can be switched on by enabling `legacy-slotapi-compat`
 feature in the crate, which will cause legacy chain nodes to still use `SlotApi` where present and include the
 `sidechain.slot` as an optional field.
+* `pallet-block-producer-fees` no longer uses slots and is instead configured with a `Moment` type used for identifying
+when an SPO's fee configuration has changed
 
 ## Removed
 
