@@ -4,6 +4,7 @@ from pytest import mark
 
 
 @mark.xdist_group("faucet_tx")
+@mark.test_key('ETCM-8359')
 def test_delegator_can_associate_pc_address(genesis_utxo, api: BlockchainApi, new_wallet: Wallet, get_wallet: Wallet):
     logging.info("Signing address association...")
     stake_skey, stake_vkey = api.cardano_cli.generate_stake_keys()

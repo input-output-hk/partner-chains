@@ -33,14 +33,17 @@ def observe_governed_map_initialization(api: BlockchainApi, set_governed_map_scr
 
 
 class TestInitializeMap:
+    @mark.test_key("ETCM-10381")
     def test_set_main_chain_scripts(self, set_governed_map_scripts):
         tx = set_governed_map_scripts
         assert tx._receipt.is_success, f"Failed to set new governed map address: {tx._receipt.error_message}"
 
+    @mark.test_key("ETCM-10382")
     def test_governed_map_initialization(self, observe_governed_map_initialization):
         logging.info(f"Governed Map initialized: {observe_governed_map_initialization}")
         assert observe_governed_map_initialization
 
+    @mark.test_key("ETCM-10383")
     def test_map_is_equal_to_main_chain_data(self, api: BlockchainApi, genesis_utxo, wait_until, config: ApiConfig):
         smart_contracts_list = api.partner_chains_node.smart_contracts.governed_map.list(genesis_utxo)
         current_mc_block = api.get_mc_block()
@@ -56,12 +59,14 @@ class TestInitializeMap:
 
 
 class TestObserveMapChanges:
+    @mark.test_key("ETCM-10384")
     def test_new_data_is_observed(self, insert_data, api: BlockchainApi, random_key, random_value):
         registered_change = api.subscribe_governed_map_change(key_value=(random_key, random_value))
         logging.info(f"Registered change: {registered_change}")
         actual_value = api.get_governed_map_key(random_key)
         assert random_value == actual_value
 
+    @mark.test_key("ETCM-10385")
     def test_updated_data_is_observed(
         self, insert_data, api: BlockchainApi, genesis_utxo, random_key, new_value_hex_bytes, payment_key, new_value
     ):
@@ -71,6 +76,7 @@ class TestObserveMapChanges:
         actual_value = api.get_governed_map_key(random_key)
         assert new_value == actual_value
 
+    @mark.test_key("ETCM-10386")
     def test_removed_data_is_observed(self, insert_data, api: BlockchainApi, genesis_utxo, random_key, payment_key):
         api.partner_chains_node.smart_contracts.governed_map.remove(genesis_utxo, random_key, payment_key)
         registered_change = api.subscribe_governed_map_change(key_value=(random_key, None))
@@ -107,18 +113,22 @@ class TestReinitializeMap:
         result = api.subscribe_governed_map_initialization()
         return result
 
+    @mark.test_key("ETCM-10387")
     def test_set_new_governed_map_address(self, set_new_governed_map_scripts):
         tx = set_new_governed_map_scripts
         assert tx._receipt.is_success, f"Failed to set new governed map address: {tx._receipt.error_message}"
 
+    @mark.test_key("ETCM-10388")
     def test_governed_map_was_reinitialized(self, observe_governed_map_reinitialization):
         logging.info(f"Governed Map reinitialized: {observe_governed_map_reinitialization}")
         assert observe_governed_map_reinitialization
 
+    @mark.test_key("ETCM-10389")
     def test_observed_map_is_empty_after_changing_address(self, api: BlockchainApi):
         observed_map = api.get_governed_map()
         assert {} == observed_map, "Observed map is not empty after changing address"
 
+    @mark.test_key("ETCM-10390")
     def test_revert_map_to_previous_address(
         self, api: BlockchainApi, addresses, policy_ids, insert_data_and_wait_until_observed, sudo
     ):

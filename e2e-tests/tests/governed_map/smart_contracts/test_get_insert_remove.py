@@ -7,26 +7,31 @@ pytestmark = [mark.xdist_group(name="governance_action"), mark.staging]
 
 @mark.staging
 class TestGet:
+    @mark.test_key("ETCM-10357")
     def test_insert_returncode(self, insert_data):
         assert 0 == insert_data.returncode
 
     @mark.usefixtures("insert_data")
+    @mark.test_key("ETCM-10358")
     def test_get_returncode(self, api: BlockchainApi, genesis_utxo, random_key):
         result = api.partner_chains_node.smart_contracts.governed_map.get(genesis_utxo, random_key)
         assert 0 == result.returncode
 
     @mark.usefixtures("insert_data")
+    @mark.test_key("ETCM-10359")
     def test_get_value(self, api: BlockchainApi, genesis_utxo, random_key, random_value):
         result = api.partner_chains_node.smart_contracts.governed_map.get(genesis_utxo, random_key)
         value = hex_bytes_to_string(result.json)
         assert random_value == value, "Data mismatch in governed map retrieval"
 
+    @mark.test_key("ETCM-10360")
     def test_get_non_existent_key(self, api: BlockchainApi, genesis_utxo):
         result = api.partner_chains_node.smart_contracts.governed_map.get(genesis_utxo, "non_existent_key")
         assert {} == result.json
         assert 0 == result.returncode
 
     @mark.usefixtures("insert_data")
+    @mark.test_key("ETCM-10361")
     def test_list_whole_map(self, api: BlockchainApi, genesis_utxo, random_key, random_value):
         result = api.partner_chains_node.smart_contracts.governed_map.list(genesis_utxo)
         expected_value = string_to_hex_bytes(random_value)
@@ -51,11 +56,13 @@ class TestInsertTwice:
         result = api.partner_chains_node.smart_contracts.governed_map.insert(genesis_utxo, random_key, hex_data, payment_key)
         return result
 
+    @mark.test_key("ETCM-10362")
     def test_insert_with_the_same_value(self, insert_twice_with_the_same_value):
         result = insert_twice_with_the_same_value
         assert 0 == result.returncode
         assert {} == result.json
 
+    @mark.test_key("ETCM-10363")
     def test_value_remains_the_same(
         self, api: BlockchainApi, insert_twice_with_the_same_value, genesis_utxo, random_key, random_value
     ):
@@ -63,11 +70,13 @@ class TestInsertTwice:
         value = hex_bytes_to_string(get_result.json)
         assert random_value == value
 
+    @mark.test_key("ETCM-10364")
     def test_insert_with_different_value(self, insert_twice_with_different_value):
         result = insert_twice_with_different_value
         assert 1 == result.returncode
         assert "There is already a value stored for key" in result.stderr
 
+    @mark.test_key("ETCM-10365")
     def test_value_was_not_updated(
         self, api: BlockchainApi, insert_twice_with_different_value, genesis_utxo, random_key, random_value
     ):
@@ -84,14 +93,17 @@ class TestRemove:
         result = api.partner_chains_node.smart_contracts.governed_map.remove(genesis_utxo, random_key, payment_key)
         return result
 
+    @mark.test_key("ETCM-10366")
     def test_remove_returncode(self, remove_data):
         assert 0 == remove_data.returncode
 
+    @mark.test_key("ETCM-10367")
     def test_get_after_remove(self, api: BlockchainApi, remove_data, genesis_utxo, random_key):
         result = api.partner_chains_node.smart_contracts.governed_map.get(genesis_utxo, random_key)
         assert {} == result.json
         assert 0 == result.returncode
 
+    @mark.test_key("ETCM-10368")
     def test_remove_non_existent_key(self, api: BlockchainApi, genesis_utxo, payment_key):
         result = api.partner_chains_node.smart_contracts.governed_map.remove(genesis_utxo, "non_existent_key", payment_key)
         assert 0 == result.returncode

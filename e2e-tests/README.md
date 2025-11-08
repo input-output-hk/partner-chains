@@ -66,7 +66,7 @@ pytest -rP -v --blockchain substrate --env local --log-cli-level debug -vv -s -m
 #### Run tests on the staging environment
 
 ```bash
-pytest -rP -v --blockchain substrate --env staging --log-cli-level debug -vv -s -m "not probability"
+pytest -rP -v --blockchain substrate --env staging --decrypt --log-cli-level debug -vv -s -m "not probability"
 ```
 
 #### Run multisig governance tests
@@ -173,20 +173,20 @@ All test layers upload full logs, metrics, and test reports to GitHub Artifacts 
 
 #### **Delegator Rewards Tests**
 
-| Test Name | Function | Purpose | Expected Result | Why This Test Matters | How Test is Run / RPC Example |
-|:---------|:---------|:--------|:----------------|:----------------------|:------------------------------|
-| Delegator Address Association | `test_delegator_can_associate_pc_address` | Bind stake address to sidechain | Association confirmed with valid signature | Enables rewards routing | `curl -d '{"jsonrpc":"2.0","method":"sidechain_getAddressAssociation","params":[stake_key_hash],"id":1}' http://localhost:9933` with signature validation |
-| Block Production Log Pallet | `test_block_production_log_pallet` | Verify block production log is populated | Log entries match expected authors with correct SPO mapping | Ensures accurate block authorship tracking | `curl -d '{"jsonrpc":"2.0","method":"sidechain_getBlockProductionLog","params":[block_hash],"id":1}' http://localhost:9933` with SPO validation |
+| Test Name | Function | Purpose | Expected Result | Why This Test Matters | 
+|:---------|:---------|:--------|:----------------|:----------------------|
+| Delegator Address Association | `test_delegator_can_associate_pc_address` | Bind stake address to sidechain | Association confirmed with valid signature | Enables rewards routing |
+| Block Production Log Pallet | `test_block_production_log_pallet` | Verify block production log is populated | Log entries match expected authors with correct SPO mapping | Ensures accurate block authorship tracking |
 
 #### **Smart Contract Tests**
 
-| Test Name | Function | Purpose | Expected Result | Why This Test Matters | How Test is Run / RPC Example |
-|:---------|:---------|:--------|:----------------|:----------------------|:------------------------------|
-| Init Reserve | `test_init_reserve` | Deploy reserve contracts | Contracts deployed with validator and policy scripts | Bootstraps economic layer | `curl -d '{"jsonrpc":"2.0","method":"sidechain_initReserve","params":[payment_key],"id":1}' http://localhost:9933` with script validation |
-| Create Reserve | `test_create_reserve` | Initialize reserve with funds | Reserve funded with correct initial deposit | Starts token issuance | `curl -d '{"jsonrpc":"2.0","method":"sidechain_createReserve","params":[v_function_hash,initial_deposit,token,payment_key],"id":1}' http://localhost:9933` with balance validation |
-| Release Funds | `test_release_funds` | Move tokens to circulation | Tokens released with correct reference UTXO | Enables token spending | `curl -d '{"jsonrpc":"2.0","method":"sidechain_releaseFunds","params":[reference_utxo,amount,payment_key],"id":1}' http://localhost:9933` with UTXO validation |
-| Deposit Funds | `test_deposit_funds` | Return tokens to reserve | Tokens deposited with correct amount | Supports token locking | `curl -d '{"jsonrpc":"2.0","method":"sidechain_depositFunds","params":[amount,payment_key],"id":1}' http://localhost:9933` with balance validation |
-| Handover Reserve | `test_handover_reserve` | Transfer entire reserve | Reserve transferred with zero balance | Handles lifecycle events | `curl -d '{"jsonrpc":"2.0","method":"sidechain_handoverReserve","params":[payment_key],"id":1}' http://localhost:9933` with balance validation |
+| Test Name | Function | Purpose | Expected Result | Why This Test Matters |
+|:---------|:---------|:--------|:----------------|:----------------------|
+| Init Reserve | `test_init_reserve` | Deploy reserve contracts | Contracts deployed with validator and policy scripts | Bootstraps economic layer |
+| Create Reserve | `test_create_reserve` | Initialize reserve with funds | Reserve funded with correct initial deposit | Starts token issuance |
+| Release Funds | `test_release_funds` | Move tokens to circulation | Tokens released with correct reference UTXO | Enables token spending |
+| Deposit Funds | `test_deposit_funds` | Return tokens to reserve | Tokens deposited with correct amount | Supports token locking |
+| Handover Reserve | `test_handover_reserve` | Transfer entire reserve | Reserve transferred with zero balance | Handles lifecycle events |
 
 
 For more details on how to implement Native Token Reserve Management in a partner chain, refer to the [Native Token Migration Guide](docs/developer-guides/native-token-migration-guide.md)

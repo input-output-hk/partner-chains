@@ -113,6 +113,7 @@ def count_blocks(pc_epoch_calculator: PartnerChainEpochCalculator, config: ApiCo
 @mark.dependency(name="participation_data")
 @mark.xdist_group("block_participation")
 @mark.staging
+@mark.test_key("ETCM-12432")
 def test_block_participation_data_is_not_empty(block_participation):
     assert block_participation
     assert block_participation["up_to_moment"]
@@ -122,6 +123,7 @@ def test_block_participation_data_is_not_empty(block_participation):
 @mark.dependency(name="pro_bono_participation")
 @mark.xdist_group("block_participation")
 @mark.staging
+@mark.test_key("ETCM-12433")
 def test_pro_bono_participation(
     mc_epochs: range, api: BlockchainApi, initial_pc_epoch_included, count_blocks: int, block_participation
 ):
@@ -156,6 +158,7 @@ def test_pro_bono_participation(
 @mark.dependency(name="spo_participation")
 @mark.xdist_group("block_participation")
 @mark.staging
+@mark.test_key("ETCM-12434")
 def test_spo_participation(
     mc_epochs: range, api: BlockchainApi, count_blocks: int, block_participation, db_sync: Session
 ):
@@ -205,6 +208,7 @@ def test_spo_participation(
 @mark.dependency(depends=["pro_bono_participation", "spo_participation"])
 @mark.xdist_group("block_participation")
 @mark.staging
+@mark.test_key("ETCM-12435")
 def test_no_unexpected_producers(block_participation):
     assert not block_participation["producer_participation"], "Unexpected producer participation data"
 
@@ -222,10 +226,12 @@ class TestMarginFee:
         result = api.set_block_producer_margin_fee(random_margin_fee, wallet=get_wallet)
         return result
 
+    @mark.test_key("ETCM-12436")
     def test_set_margin_fee(self, set_margin_fee: Transaction):
         logging.info(f"Margin fee set: {set_margin_fee}")
         assert set_margin_fee._receipt.is_success
 
+    @mark.test_key("ETCM-12437")
     def test_get_margin_fee(self, api: BlockchainApi, get_wallet: Wallet, random_margin_fee):
         response = api.partner_chain_rpc.partner_chain_get_block_producer_fees()
         account_id = get_wallet.address
