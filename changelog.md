@@ -30,6 +30,8 @@ of the demo node for reference.
 * `pallet-session-validator-management` is no longer configured with a `CommitteeMember` type and instead
 uses `sp_session_validator_management::CommitteeMember` type directly. As this type was the only type
 supported by the toolkit, this change is backwards compatible for existing chains.
+* `local-environment` now runs the cardano-node with OS platform instead of fixing to AMD by using
+multiarch image.
 
 ## Removed
 
