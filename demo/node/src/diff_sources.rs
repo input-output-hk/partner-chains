@@ -120,12 +120,14 @@ impl AuthoritySelectionDataSource for AuthoritySelectionDataSourceImplDiff {
 		epoch_number: McEpochNumber,
 		committee_candidate_address: MainchainAddress,
 	) -> Result<Vec<CandidateRegistrations>, Box<dyn std::error::Error + Send + Sync>> {
-		let reference = self
+		let mut reference = self
 			.dbsync
 			.get_candidates(epoch_number, committee_candidate_address.clone())
 			.await?;
-		let dolos_output =
+		let mut dolos_output =
 			self.dolos.get_candidates(epoch_number, committee_candidate_address).await?;
+		reference.sort_by_key(|a| a.mainchain_pub_key().clone());
+		dolos_output.sort_by_key(|a| a.mainchain_pub_key().clone());
 		if reference != dolos_output {
 			println!(
 				">>>>>>>>>>>>>>>>>>>>>>>>>>>> McHashDataSource::get_candidates mismatch: dbs: {reference:?} dolos: {dolos_output:?}"
