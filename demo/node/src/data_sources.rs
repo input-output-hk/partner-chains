@@ -9,8 +9,6 @@ use sp_governed_map::GovernedMapDataSource;
 use sp_partner_chains_bridge::TokenBridgeDataSource;
 use std::{error::Error, sync::Arc};
 
-use crate::diff_sources;
-
 pub const DATA_SOURCE_VAR: &str = "CARDANO_DATA_SOURCE";
 
 #[derive(Clone, Debug, PartialEq)]
@@ -18,7 +16,6 @@ pub enum DataSourceType {
 	DbSync,
 	Mock,
 	Dolos,
-	Diff,
 }
 
 impl DataSourceType {
@@ -37,7 +34,7 @@ impl std::str::FromStr for DataSourceType {
 		match s.to_lowercase().as_str() {
 			"db-sync" => Ok(DataSourceType::DbSync),
 			"mock" => Ok(DataSourceType::Mock),
-			"dolos" => Ok(DataSourceType::Diff), // TODO restore this to dolos
+			"dolos" => Ok(DataSourceType::Dolos),
 			_ => {
 				Err(format!("Invalid data source type: {}. Valid options: db-sync, mock, dolos", s))
 			},
@@ -51,7 +48,6 @@ impl std::fmt::Display for DataSourceType {
 			DataSourceType::DbSync => write!(f, "db-sync"),
 			DataSourceType::Mock => write!(f, "mock"),
 			DataSourceType::Dolos => write!(f, "dolos"),
-			DataSourceType::Diff => write!(f, "diff"),
 		}
 	}
 }
@@ -88,14 +84,6 @@ pub(crate) async fn create_cached_data_sources(
 		DataSourceType::Dolos => create_dolos_data_sources(metrics_opt).await.map_err(|err| {
 			ServiceError::Application(format!("Failed to create dolos data sources: {err}").into())
 		}),
-
-		DataSourceType::Diff => {
-			diff_sources::create_diff_data_sources(metrics_opt).await.map_err(|err| {
-				ServiceError::Application(
-					format!("Failed to create dolos data sources: {err}").into(),
-				)
-			})
-		},
 	}
 }
 

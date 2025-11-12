@@ -3,7 +3,6 @@
 
 pub mod chain_spec;
 mod data_sources;
-mod diff_sources;
 mod inherent_data;
 pub mod rpc;
 pub mod service;
