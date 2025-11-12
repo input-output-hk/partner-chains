@@ -97,7 +97,7 @@ impl CandidateDataSourceCacheConfig {
 }
 
 impl CandidateDataSourceCached {
-	/// TODO
+	/// Creates new instance of the data source
 	pub fn new(
 		inner: CandidatesDataSourceImpl,
 		candidates_for_epoch_cache_size: usize,
@@ -116,7 +116,7 @@ impl CandidateDataSourceCached {
 		}
 	}
 
-	/// TODO
+	/// Creates a new instance of the data source, reading configuration from the environment.
 	pub fn new_from_env(
 		inner: CandidatesDataSourceImpl,
 		candidates_for_epoch_cache_size: usize,
