@@ -144,8 +144,8 @@ CLIs distinguish two situations:
 
 ## Links
 
-[Rewards reserve mechanism management](./../../developer-guides/native-token-reserve-management.md)
+[Native token bridge and reserve management](/docs/developer-guides/bridge-and-reserve.md)
 
-[Chain builder (initial chain governance)](./../chain-builder.md)
+[Chain builder (initial chain governance)](/docs/user-guides/chain-builder.md)
 
-[Governed Map](../../../toolkit/governed-map/README.md)
+[Governed Map](/toolkit/governed-map/README.md)

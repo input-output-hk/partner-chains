@@ -75,7 +75,7 @@
     * [Features Overview](#feature-overview)
     * [Block Participation Rewards](#block-participation-rewards)
     * [Partner Chains Governance](#partner-chains-governance)
-    * [Native Token Reserve Management](#native-token-reserve-management)
+    * [Native Token Bridge and Reserve Management](#native-token-bridge-and-reserve-management)
   * [Rust Docs](#rust-docs)
   * [Upgrade &amp; Migration Guides](#upgrade--migration-guides)
     * [1\.3\.0 to 1\.3\.1](#130-to-131)
@@ -1296,11 +1296,11 @@ Please refer to [governance.md](./user-guides/governance/governance.md) for insi
 the governance system to control the D-Parameter, the permissioned candidate list and the rewards
 mechanism.
 
-#### Native Token Reserve Management
+#### Native Token Bridge and Reserve Management
 
 Please refer to
-[native-token-reserve-management.md](./developer-guides/native-token-reserve-management.md) for
-details on how to setting up and maintaining a native token reserve on Cardano to  be used with a
+[bridge-and-reserve.md](/docs/developer-guides/bridge-and-reserve.md) for
+details on how to setting up and maintaining a native token reserve on Cardano to be used with a
 partner chain.
 
 ### Rust Docs
