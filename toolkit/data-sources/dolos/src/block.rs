@@ -1,13 +1,8 @@
 use crate::{
 	DataSourceError, Result,
-	client::{
-		self, MiniBFClient,
-		api::MiniBFApi,
-		conversions::{self, from_block_content},
-	},
+	client::{MiniBFClient, api::MiniBFApi, conversions::from_block_content},
 	read_mc_epoch_config,
 };
-use blockfrost_openapi::models::block_content::BlockContent;
 use chrono::{DateTime, NaiveDateTime, TimeDelta};
 use derive_new::new;
 use figment::{Figment, providers::Env};
@@ -51,14 +46,9 @@ pub struct BlockDataSourceImpl {
 impl BlockDataSourceImpl {
 	/// Returns the latest _unstable_ Cardano block from the Db-Sync database
 	pub async fn get_latest_block_info(&self) -> Result<MainchainBlock> {
-		self.client
-			.blocks_latest()
-			.await
-			.and_then(conversions::from_block_content)
-			.map_err(|e| {
-				DataSourceError::ExpectedDataNotFound(format!("No latest block on chain. {e}",))
-					.into()
-			})
+		self.client.blocks_latest().await.and_then(from_block_content).map_err(|e| {
+			DataSourceError::ExpectedDataNotFound(format!("No latest block on chain. {e}",)).into()
+		})
 	}
 
 	/// Returns the latest _stable_ Cardano block from the Db-Sync database that is within
@@ -96,7 +86,7 @@ impl BlockDataSourceImpl {
 		};
 		let block_opt = match from_cache {
 			Some(block) => Some(block),
-			None => Some(conversions::from_block_content(self.client.blocks_by_id(hash).await?)?),
+			None => Some(from_block_content(self.client.blocks_by_id(hash).await?)?),
 		};
 		Ok(block_opt)
 	}
@@ -185,7 +175,7 @@ impl BlockDataSourceImpl {
 
 		loop {
 			let block = match self.client.blocks_by_id(current_block_number).await {
-				Ok(b) => conversions::from_block_content(b)?,
+				Ok(b) => from_block_content(b)?,
 				Err(_) => return Ok(None),
 			};
 
@@ -263,9 +253,8 @@ impl BlockDataSourceImpl {
 		hash: McBlockHash,
 		reference_timestamp: NaiveDateTime,
 	) -> Result<Option<MainchainBlock>> {
-		let block = Some(conversions::from_block_content(self.client.blocks_by_id(hash).await?)?);
-		let latest_block =
-			Some(conversions::from_block_content(self.client.blocks_latest().await?)?);
+		let block = Some(from_block_content(self.client.blocks_by_id(hash).await?)?);
+		let latest_block = Some(from_block_content(self.client.blocks_latest().await?)?);
 		Ok(block
 			.zip(latest_block)
 			.filter(|(block, latest_block)| {
@@ -276,28 +265,29 @@ impl BlockDataSourceImpl {
 	}
 
 	/// Caches stable blocks for lookup by hash.
-	async fn fill_cache(&self, _from_block: &MainchainBlock) -> Result<()> {
-		// let from_block_no = from_block.block_no;
-		// let size = u32::from(self.cache_size);
-		// let latest_block =
-		// 	db_model::get_latest_block_info(&self.pool)
-		// 		.await?
-		// 		.ok_or(InternalDataSourceError(
-		// 			"No latest block when filling the caches.".to_string(),
-		// 		))?;
-		// let stable_block_num = latest_block.block_no.saturating_sub(self.security_parameter);
+	async fn fill_cache(&self, from_block: &MainchainBlock) -> Result<()> {
+		let from_block_no = from_block.number;
+		let size = u32::from(self.cache_size);
+		let latest_block = from_block_content(self.client.blocks_latest().await?)?;
+		let stable_block_num = latest_block.number.saturating_sub(self.security_parameter);
 
-		// let to_block_no = from_block_no.saturating_add(size).min(stable_block_num);
-		// let blocks = if to_block_no > from_block_no {
-		// 	db_model::get_blocks_by_numbers(&self.pool, from_block_no, to_block_no).await?
-		// } else {
-		// 	vec![from_block.clone()]
-		// };
+		let to_block_no = from_block_no.saturating_add(size).min(stable_block_num);
+		let blocks = if from_block_no < to_block_no {
+			let futures = (from_block_no.0..=to_block_no.0).map(|block_no| async move {
+				self.client
+					.blocks_by_id(McBlockNumber(block_no))
+					.await
+					.and_then(from_block_content)
+			});
+			futures::future::try_join_all(futures).await?.into_iter().collect()
+		} else {
+			vec![from_block.clone()]
+		};
 
-		// if let Ok(mut cache) = self.stable_blocks_cache.lock() {
-		// 	cache.update(blocks);
-		// 	debug!("Cached blocks {} to {} for by hash lookups.", from_block_no.0, to_block_no.0);
-		// }
+		if let Ok(mut cache) = self.stable_blocks_cache.lock() {
+			cache.update(blocks);
+			debug!("Cached blocks {} to {} for by hash lookups.", from_block_no.0, to_block_no.0);
+		}
 		Ok(())
 	}
 
