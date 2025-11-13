@@ -8,11 +8,16 @@ on:
   workflow_dispatch:
     inputs:
       sha:
-        description: 'Commit SHA to build'
-        required: true
+        description: 'Commit SHA to build (required if build_and_publish or run_post_merge_tests is enabled)'
+        required: false
         type: string
+      build_and_publish:
+        description: 'Build and publish artifacts'
+        required: false
+        type: boolean
+        default: true
       run_post_merge_tests:
-        description: 'Run post-merge tests'
+        description: 'Run ci-preview e2e tests'
         required: false
         type: boolean
         default: false
@@ -525,7 +530,7 @@ jobs:
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
   ci-preview-tests-post-merge:
-    if: (github.event_name == 'pull_request' && github.event.pull_request.merged == true) || (github.event_name == 'workflow_dispatch' && inputs.run_post_merge_tests == true)
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
     needs: deploy-ci-preview
     runs-on: eks
     steps:
@@ -590,7 +595,7 @@ jobs:
 
   build-linux-x86_64-workflow-dispatch:
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && (inputs.build_and_publish == true || inputs.run_post_merge_tests == true) && inputs.sha != ''
     steps:
       - uses: actions/checkout@v4
         with:
@@ -720,7 +725,7 @@ jobs:
             staging_preview_chain_spec.json
 
   upload-to-s3-workflow-dispatch:
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && inputs.build_and_publish == true
     needs:
       - build-linux-x86_64-workflow-dispatch
     runs-on: ubuntu-latest
@@ -732,7 +737,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.sha }}
+          ref: ${{ inputs.sha }}
       - name: Upload Artifacts to S3
         uses: ./.github/actions/artifacts/upload-to-s3
         with:
@@ -743,7 +748,7 @@ jobs:
           AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_S3_ROLE_ARN_SECRET }}
 
   upload-chain-specs-workflow-dispatch:
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && inputs.build_and_publish == true
     needs: build-linux-x86_64-workflow-dispatch
     runs-on: ubuntu-latest
     steps:
@@ -751,7 +756,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.sha }}
+          ref: ${{ inputs.sha }}
       - name: Upload chain spec artifacts to Kubernetes
         uses: ./.github/actions/deploy/upload-chain-specs
         with:
@@ -761,16 +766,115 @@ jobs:
           K8S_SERVER: ${{ secrets.K8S_SERVER }}
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
+  deploy-ci-preview-workflow-dispatch:
+    if: github.event_name == 'workflow_dispatch' && inputs.run_post_merge_tests == true
+    needs: build-linux-x86_64-workflow-dispatch
+    permissions:
+      id-token: write
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.sha }}
+      - name: Deploy ci-preview
+        uses: ./.github/actions/deploy/deploy-ci-preview
+        with:
+          image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ inputs.sha }}
+          sha: ${{ inputs.sha }}
+          no-wipe: true
+        env:
+          AWS_REGION: "eu-central-1"
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
+          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+          K8S_SERVER: ${{ secrets.K8S_SERVER }}
+          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
+
+  ci-preview-tests-workflow-dispatch:
+    if: github.event_name == 'workflow_dispatch' && inputs.run_post_merge_tests == true
+    needs: deploy-ci-preview-workflow-dispatch
+    runs-on: eks
+    steps:
+      - name: Acquire AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_ }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.sha }}
+      - name: Setup tests
+        uses: ./.github/actions/tests/setup-python
+        env:
+          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+          K8S_SERVER: ${{ secrets.K8S_SERVER }}
+          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
+      - name: Test against ci-preview
+        uses: ./.github/actions/tests/run-e2e-tests
+        with:
+          env: ci
+          decrypt: true
+          blockchain: substrate
+        env:
+          AWS_SESSION_TOKEN: ${{ env.AWS_SESSION_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ env.AWS_REGION }}
+
   workflow-dispatch-flow-complete:
     if: ${{ always() && github.event_name == 'workflow_dispatch' }}
-    needs: [build-linux-x86_64-workflow-dispatch, upload-to-s3-workflow-dispatch, upload-chain-specs-workflow-dispatch]
+    needs: [
+      build-linux-x86_64-workflow-dispatch,
+      upload-to-s3-workflow-dispatch,
+      upload-chain-specs-workflow-dispatch,
+      deploy-ci-preview-workflow-dispatch,
+      ci-preview-tests-workflow-dispatch
+    ]
     runs-on: ubuntu-latest
     steps:
       - name: Check if any needed job failed
         run: |
-          if [[ "${{ needs.build-linux-x86_64-workflow-dispatch.result }}" != "success" ||
-                "${{ needs.upload-to-s3-workflow-dispatch.result }}" != "success" ||
-                "${{ needs.upload-chain-specs-workflow-dispatch.result }}" != "success" ]]; then
+          failed=false
+          
+          # Check build job (always runs if either option is enabled)
+          if [[ "${{ needs.build-linux-x86_64-workflow-dispatch.result }}" == "failure" ]]; then
+            echo "build-linux-x86_64-workflow-dispatch failed"
+            failed=true
+          fi
+          
+          # Check publish jobs (only if build_and_publish is enabled)
+          if [[ "${{ inputs.build_and_publish }}" == "true" ]]; then
+            if [[ "${{ needs.upload-to-s3-workflow-dispatch.result }}" == "failure" ]]; then
+              echo "upload-to-s3-workflow-dispatch failed"
+              failed=true
+            fi
+            if [[ "${{ needs.upload-chain-specs-workflow-dispatch.result }}" == "failure" ]]; then
+              echo "upload-chain-specs-workflow-dispatch failed"
+              failed=true
+            fi
+          fi
+          
+          # Check test jobs (only if run_post_merge_tests is enabled)
+          if [[ "${{ inputs.run_post_merge_tests }}" == "true" ]]; then
+            if [[ "${{ needs.deploy-ci-preview-workflow-dispatch.result }}" == "failure" ]]; then
+              echo "deploy-ci-preview-workflow-dispatch failed"
+              failed=true
+            fi
+            if [[ "${{ needs.ci-preview-tests-workflow-dispatch.result }}" == "failure" ]]; then
+              echo "ci-preview-tests-workflow-dispatch failed"
+              failed=true
+            fi
+          fi
+          
+          if [[ "$failed" == "true" ]]; then
             echo "One or more needed jobs failed."
             exit 1
           else
