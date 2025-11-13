@@ -45,9 +45,12 @@ pub enum DataSourceError {
 	/// Indicates that Dolos rejected a request as invalid
 	#[error("Bad request: `{0}`.")]
 	BadRequest(String),
-	/// Indicates that an internal error occurred when querying Dolos
-	#[error("Internal error of data source: `{0}`.")]
-	InternalDataSourceError(String),
+	/// Indicates that Dolos client produced an error while calling endpoint
+	#[error("Dolos client call error: `{0}`.")]
+	DolosCallError(String),
+	/// Indicates that Dolos client produced an error while parsing response
+	#[error("Dolos client response parse error: `{0}`.")]
+	DolosResponseParseError(String),
 	/// Indicates that expected data was not found when querying Dolos
 	#[error(
 		"'{0}' not found. Possible causes: data source configuration error, Dolos not synced fully, or data not set on the main chain."
