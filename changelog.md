@@ -44,6 +44,7 @@ As these types were the only ones supported by the toolkit, this change is backw
 ## Fixed
 
 * Improper weights for `set_main_chain_scripts` in `pallet_session_validator_management`
+* Overflow error when running with mock data source and debug build.
 
 ## Added
 
