@@ -530,7 +530,7 @@ jobs:
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
   ci-preview-tests-post-merge:
-    if: (github.event_name == 'pull_request' && github.event.pull_request.merged == true) || (github.event_name == 'workflow_dispatch' && inputs.run_post_merge_tests == true)
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
     needs: deploy-ci-preview
     runs-on: eks
     steps:
@@ -823,7 +823,6 @@ jobs:
           env: ci
           decrypt: true
           blockchain: substrate
-          markers: ci
         env:
           AWS_SESSION_TOKEN: ${{ env.AWS_SESSION_TOKEN }}
           AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
