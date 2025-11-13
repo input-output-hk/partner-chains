@@ -6,6 +6,7 @@ use crate::{
 use chrono::{DateTime, NaiveDateTime, TimeDelta};
 use derive_new::new;
 use figment::{Figment, providers::Env};
+use futures::TryFutureExt;
 use log::{debug, info};
 use serde::Deserialize;
 use sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
@@ -34,8 +35,7 @@ pub struct BlockDataSourceImpl {
 	mainchain_epoch_config: MainchainEpochConfig,
 	/// Additional offset applied when selecting the latest stable Cardano block
 	///
-	/// This parameter should be 0 by default and should only be increased to 1 in networks
-	/// struggling with frequent block rejections due to Db-Sync or Cardano node lag.
+	/// This parameter should be 1 by default.
 	block_stability_margin: u32,
 	/// Number of contiguous Cardano blocks to be cached by this data source
 	cache_size: u16,
@@ -44,14 +44,14 @@ pub struct BlockDataSourceImpl {
 }
 
 impl BlockDataSourceImpl {
-	/// Returns the latest _unstable_ Cardano block from the Db-Sync database
+	/// Returns the latest _unstable_ Cardano block from Dolos
 	pub async fn get_latest_block_info(&self) -> Result<MainchainBlock> {
-		self.client.blocks_latest().await.and_then(from_block_content).map_err(|e| {
+		self.client.blocks_latest().await.map_err(|e| {
 			DataSourceError::ExpectedDataNotFound(format!("No latest block on chain. {e}",)).into()
-		})
+		}).and_then(from_block_content)
 	}
 
-	/// Returns the latest _stable_ Cardano block from the Db-Sync database that is within
+	/// Returns the latest _stable_ Cardano block from Dolos that is within
 	/// acceptable bounds from `reference_timestamp`, accounting for the additional stability
 	/// offset configured by [block_stability_margin][Self::block_stability_margin].
 	pub async fn get_latest_stable_block_for(
@@ -94,22 +94,14 @@ impl BlockDataSourceImpl {
 
 /// Configuration for [BlockDataSourceImpl]
 #[derive(Debug, Clone, Deserialize)]
-pub struct DbSyncBlockDataSourceConfig {
-	/// Cardano security parameter, ie. the number of confirmations needed to stabilize a block
-	pub cardano_security_parameter: u32,
-	/// Expected fraction of Cardano slots that will have a block produced
-	///
-	/// This value can be found in `shelley-genesis.json` file used by the Cardano node,
-	/// example: `"activeSlotsCoeff": 0.05`.
-	pub cardano_active_slots_coeff: f64,
+pub struct DolosBlockDataSourceConfig {
 	/// Additional offset applied when selecting the latest stable Cardano block
 	///
-	/// This parameter should be 0 by default and should only be increased to 1 in networks
-	/// struggling with frequent block rejections due to Db-Sync or Cardano node lag.
+	/// This parameter should be 1 by default.
 	pub block_stability_margin: u32,
 }
 
-impl DbSyncBlockDataSourceConfig {
+impl DolosBlockDataSourceConfig {
 	/// Reads the config from environment
 	pub fn from_env() -> std::result::Result<Self, Box<dyn Error + Send + Sync + 'static>> {
 		let config: Self = Figment::new()
@@ -126,38 +118,39 @@ impl BlockDataSourceImpl {
 	pub async fn new_from_env(
 		client: MiniBFClient,
 	) -> std::result::Result<Self, Box<dyn Error + Send + Sync + 'static>> {
-		Ok(Self::from_config(
+		Self::from_config(
 			client,
-			DbSyncBlockDataSourceConfig::from_env()?,
+			DolosBlockDataSourceConfig::from_env()?,
 			&read_mc_epoch_config()?,
-		))
+		).await
 	}
 
 	/// Creates a new instance of [BlockDataSourceImpl], using passed configuration.
-	pub fn from_config(
+	pub async fn from_config(
 		client: MiniBFClient,
-		DbSyncBlockDataSourceConfig {
-			cardano_security_parameter,
-			cardano_active_slots_coeff,
+		DolosBlockDataSourceConfig {
 			block_stability_margin,
-		}: DbSyncBlockDataSourceConfig,
+		}: DolosBlockDataSourceConfig,
 		mc_epoch_config: &MainchainEpochConfig,
-	) -> BlockDataSourceImpl {
-		let k: f64 = cardano_security_parameter.into();
+	) -> Result<BlockDataSourceImpl> {
+		let genesis = client.genesis().await?;
+		let active_slots_coeff = genesis.active_slots_coefficient;
+		let security_parameter = genesis.security_param as u32;
+		let k: f64 = security_parameter.into();
 		let slot_duration: f64 = mc_epoch_config.slot_duration_millis.millis() as f64;
-		let min_slot_boundary = (slot_duration * k / cardano_active_slots_coeff).round() as i64;
+		let min_slot_boundary = (slot_duration * k / active_slots_coeff).round() as i64;
 		let max_slot_boundary = 3 * min_slot_boundary;
 		let cache_size = 100;
-		BlockDataSourceImpl::new(
-			client,
-			cardano_security_parameter,
-			TimeDelta::milliseconds(min_slot_boundary),
-			TimeDelta::milliseconds(max_slot_boundary),
-			mc_epoch_config.clone(),
-			block_stability_margin,
-			cache_size,
-			BlocksCache::new_arc_mutex(),
-		)
+		Ok(BlockDataSourceImpl::new(
+					client,
+					security_parameter,
+					TimeDelta::milliseconds(min_slot_boundary),
+					TimeDelta::milliseconds(max_slot_boundary),
+					mc_epoch_config.clone(),
+					block_stability_margin,
+					cache_size,
+					BlocksCache::new_arc_mutex(),
+				))
 	}
 	async fn get_latest_block(
 		&self,
@@ -221,7 +214,7 @@ impl BlockDataSourceImpl {
 			debug!("Block by hash: {hash} found in cache.");
 			Ok(Some(From::from(block)))
 		} else {
-			debug!("Block by hash: {hash}, not found in cache, serving from database.");
+			debug!("Block by hash: {hash}, not found in cache, serving from Dolos.");
 			if let Some(block_by_hash) =
 				self.get_stable_block_by_hash_from_db(hash, reference_timestamp).await?
 			{
@@ -276,6 +269,7 @@ impl BlockDataSourceImpl {
 			let futures = (from_block_no.0..=to_block_no.0).map(|block_no| async move {
 				self.client
 					.blocks_by_id(McBlockNumber(block_no))
+					.map_err(|e| e.into())
 					.await
 					.and_then(from_block_content)
 			});
