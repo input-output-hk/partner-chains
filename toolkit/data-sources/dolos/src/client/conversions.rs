@@ -1,6 +1,6 @@
+use crate::{DataSourceError, Result};
 use blockfrost_openapi::models::block_content::BlockContent;
 use sidechain_domain::*;
-use crate::{Result, DataSourceError};
 
 pub fn from_block_content(value: BlockContent) -> Result<MainchainBlock> {
 	Ok(MainchainBlock {
