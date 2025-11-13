@@ -52,13 +52,7 @@ impl AriadneInherentDataProvider {
 		AuthorityId: Decode + Encode,
 		Block: BlockT,
 		T: ProvideRuntimeApi<Block> + Send + Sync,
-		T::Api: SessionValidatorManagementApi<
-				Block,
-				AuthorityId,
-				AuthorityKeys,
-				AuthoritySelectionInputs,
-				ScEpochNumber,
-			>,
+		T::Api: SessionValidatorManagementApi<Block, AuthorityId, AuthorityKeys, ScEpochNumber>,
 	{
 		let for_mc_epoch = mc_epoch_for_next_ariadne_cidp(
 			client,
@@ -85,9 +79,11 @@ impl AriadneInherentDataProvider {
 		for_epoch: McEpochNumber,
 		scripts: MainChainScripts,
 	) -> Result<Self, InherentProviderCreationError> {
+		use crate::authority_selection_inputs::authority_selection_inputs_from_mc_data;
+
 		Ok(Self {
 			data: Some(
-				AuthoritySelectionInputs::from_mc_data(candidate_data_source, for_epoch, scripts)
+				authority_selection_inputs_from_mc_data(candidate_data_source, for_epoch, scripts)
 					.await?,
 			),
 		})
@@ -125,13 +121,7 @@ where
 	AuthorityKeys: Decode + Encode,
 	AuthorityId: Decode + Encode,
 	T: ProvideRuntimeApi<Block> + Send + Sync,
-	T::Api: SessionValidatorManagementApi<
-			Block,
-			AuthorityId,
-			AuthorityKeys,
-			AuthoritySelectionInputs,
-			ScEpochNumber,
-		>,
+	T::Api: SessionValidatorManagementApi<Block, AuthorityId, AuthorityKeys, ScEpochNumber>,
 {
 	use sp_core::offchain::Timestamp;
 

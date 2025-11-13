@@ -5,9 +5,7 @@ pub mod get_registrations;
 pub mod types;
 
 use async_trait::async_trait;
-use authority_selection_inherents::{
-	AuthoritySelectionDataSource, AuthoritySelectionInputs, CandidateValidationApi,
-};
+use authority_selection_inherents::{AuthoritySelectionDataSource, CandidateValidationApi};
 use derive_new::new;
 use parity_scale_codec::{Decode, Encode};
 use sidechain_block_search::{FindSidechainBlock, SidechainInfo, predicates::AnyBlockInEpoch};
@@ -68,14 +66,7 @@ where
 	C::Api: sp_api::Core<Block> + ApiExt<Block>,
 	AuthorityId: Encode + Decode + AsRef<[u8]> + Clone,
 	AuthorityKeys: Encode + Decode,
-	AuthoritySelectionInputs: Encode + Decode,
-	C::Api: SessionValidatorManagementApi<
-			Block,
-			AuthorityId,
-			AuthorityKeys,
-			AuthoritySelectionInputs,
-			ScEpochNumber,
-		>,
+	C::Api: SessionValidatorManagementApi<Block, AuthorityId, AuthorityKeys, ScEpochNumber>,
 {
 	fn validator_management_api_version(&self, block: Block::Hash) -> QueryResult<u32> {
 		let version = (self.client.runtime_api())
@@ -83,7 +74,6 @@ where
 					Block,
 					AuthorityId,
 					AuthorityKeys,
-					AuthoritySelectionInputs,
 					ScEpochNumber,
 				>>(block)
 			.map_err(err_debug)?
@@ -146,13 +136,7 @@ where
 	C: HeaderBackend<Block>,
 	C::Api: sp_api::Core<Block>,
 	C::Api: GetSidechainStatus<Block>,
-	C::Api: SessionValidatorManagementApi<
-			Block,
-			AuthorityId,
-			AuthorityKeys,
-			AuthoritySelectionInputs,
-			ScEpochNumber,
-		>,
+	C::Api: SessionValidatorManagementApi<Block, AuthorityId, AuthorityKeys, ScEpochNumber>,
 	C::Api: GetGenesisUtxo<Block>,
 	C::Api: CandidateValidationApi<Block>,
 {

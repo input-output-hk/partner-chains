@@ -12,8 +12,8 @@ extern crate alloc;
 use alloc::collections::BTreeMap;
 use alloc::string::String;
 use authority_selection_inherents::{
-	AuthoritySelectionInputs, PermissionedCandidateDataError, RegistrationDataError, StakeError,
-	select_authorities, validate_permissioned_candidate_data,
+	PermissionedCandidateDataError, RegistrationDataError, StakeError, select_authorities,
+	validate_permissioned_candidate_data,
 };
 use frame_support::dynamic_params::{dynamic_pallet_params, dynamic_params};
 use frame_support::genesis_builder_helper::{build_state, get_preset};
@@ -59,7 +59,7 @@ use sp_runtime::{
 	},
 	transaction_validity::{TransactionSource, TransactionValidity},
 };
-use sp_session_validator_management::CommitteeMember;
+use sp_session_validator_management::{AuthoritySelectionInputs, CommitteeMember};
 use sp_sidechain::SidechainStatus;
 use sp_std::prelude::*;
 use sp_version::RuntimeVersion;
@@ -351,7 +351,6 @@ impl pallet_session_validator_management::Config for Runtime {
 	type MaxValidators = MaxValidators;
 	type AuthorityId = CrossChainPublic;
 	type AuthorityKeys = SessionKeys;
-	type AuthoritySelectionInputs = AuthoritySelectionInputs;
 	type WeightInfo = pallet_session_validator_management::weights::SubstrateWeight<Runtime>;
 	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
 
@@ -1094,7 +1093,6 @@ impl_runtime_apis! {
 		Block,
 		CrossChainPublic,
 		SessionKeys,
-		AuthoritySelectionInputs,
 		sidechain_domain::ScEpochNumber
 	> for Runtime {
 		fn get_current_committee() -> (ScEpochNumber, Vec<CommitteeMember<CrossChainPublic, SessionKeys>>) {

@@ -2,9 +2,7 @@
 //! and a [run] function for running these commands.
 //! [PartnerChainsSubcommand] is meant to be used by a command line argument parser library.
 #![deny(missing_docs)]
-use authority_selection_inherents::{
-	AuthoritySelectionDataSource, AuthoritySelectionInputs, CandidateValidationApi,
-};
+use authority_selection_inherents::{AuthoritySelectionDataSource, CandidateValidationApi};
 use clap::Parser;
 use cli_commands::address_association_signatures::AddressAssociationSignaturesCmd;
 use cli_commands::block_producer_metadata_signatures::BlockProducerMetadataSignatureCmd;
@@ -168,13 +166,8 @@ where
 	Client: ProvideRuntimeApi<Block> + HeaderBackend<Block> + 'static,
 	Client::Api: GetGenesisUtxo<Block>
 		+ GetSidechainStatus<Block>
-		+ SessionValidatorManagementApi<
-			Block,
-			AuthorityId,
-			AuthorityKeys,
-			AuthoritySelectionInputs,
-			ScEpochNumber,
-		> + CandidateValidationApi<Block>,
+		+ SessionValidatorManagementApi<Block, AuthorityId, AuthorityKeys, ScEpochNumber>
+		+ CandidateValidationApi<Block>,
 	Block: BlockT,
 	NumberFor<Block>: From<u32> + Into<u32>,
 	AuthorityId: Decode + Encode + AsRef<[u8]> + Send + Sync + Clone + 'static,

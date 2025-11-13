@@ -30,6 +30,10 @@ of the demo node for reference.
 * `pallet-session-validator-management` is no longer configured with a `CommitteeMember` type and instead
 uses `sp_session_validator_management::CommitteeMember` type directly. As this type was the only type
 supported by the toolkit, this change is backwards compatible for existing chains.
+* `pallet-session-validator-management` is no longer configured with `CommitteeMember` and `AuthoritySelectionInputs` types
+and instead uses `CommitteeMember` and `AuthoritySelectionInputs` types directly, which were moved from
+`authority_selection_inherents` crate to `sp_session_validator_management`.
+As these types were the only ones supported by the toolkit, this change is backwards compatible for existing chains.
 
 ## Removed
 

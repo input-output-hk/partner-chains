@@ -1,6 +1,5 @@
 use authority_selection_inherents::{
 	AriadneInherentDataProvider as AriadneIDP, AuthoritySelectionDataSource,
-	AuthoritySelectionInputs,
 };
 use derive_new::new;
 use jsonrpsee::core::async_trait;
@@ -54,13 +53,7 @@ impl<T> CreateInherentDataProviders<Block, ()> for ProposalCIDP<T>
 where
 	T: ProvideRuntimeApi<Block> + Send + Sync + 'static,
 	T: HeaderBackend<Block>,
-	T::Api: SessionValidatorManagementApi<
-			Block,
-			CrossChainPublic,
-			SessionKeys,
-			AuthoritySelectionInputs,
-			ScEpochNumber,
-		>,
+	T::Api: SessionValidatorManagementApi<Block, CrossChainPublic, SessionKeys, ScEpochNumber>,
 	T::Api: BlockProductionLogApi<Block, BlockAuthor, Slot>,
 	T::Api: BlockParticipationApi<Block, BlockAuthor, Slot>,
 	T::Api: GovernedMapIDPApi<Block>,
@@ -181,13 +174,7 @@ impl<T: Send + Sync> CurrentSlotProvider for VerifierCIDP<T> {
 impl<T> CreateInherentDataProviders<Block, (Slot, McBlockHash)> for VerifierCIDP<T>
 where
 	T: ProvideRuntimeApi<Block> + Send + Sync + HeaderBackend<Block>,
-	T::Api: SessionValidatorManagementApi<
-			Block,
-			CrossChainPublic,
-			SessionKeys,
-			AuthoritySelectionInputs,
-			ScEpochNumber,
-		>,
+	T::Api: SessionValidatorManagementApi<Block, CrossChainPublic, SessionKeys, ScEpochNumber>,
 	T::Api: BlockProductionLogApi<Block, BlockAuthor, Slot>,
 	T::Api: BlockParticipationApi<Block, BlockAuthor, Slot>,
 	T::Api: GovernedMapIDPApi<Block>,

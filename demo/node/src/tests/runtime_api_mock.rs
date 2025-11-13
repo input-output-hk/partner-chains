@@ -71,7 +71,7 @@ sp_api::mock_impl_runtime_apis! {
 		fn genesis_utxo() -> UtxoId { mock_genesis_utxo() }
 	}
 
-	impl sp_session_validator_management::SessionValidatorManagementApi<Block, CrossChainPublic, SessionKeys, AuthoritySelectionInputs, ScEpochNumber> for TestApi {
+	impl sp_session_validator_management::SessionValidatorManagementApi<Block, CrossChainPublic, SessionKeys, ScEpochNumber> for TestApi {
 		fn get_current_committee() -> (ScEpochNumber, Vec<CommitteeMember<CrossChainPublic, SessionKeys>>) {
 			unimplemented!()
 		}

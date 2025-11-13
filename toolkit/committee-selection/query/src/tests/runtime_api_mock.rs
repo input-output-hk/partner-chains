@@ -60,7 +60,7 @@ sp_api::mock_impl_runtime_apis! {
 			})
 		}
 	}
-	impl SessionValidatorManagementApi<Block, CrossChainPublic, SessionKeys, AuthoritySelectionInputs, ScEpochNumber> for TestRuntimeApi {
+	impl SessionValidatorManagementApi<Block, CrossChainPublic, SessionKeys, ScEpochNumber> for TestRuntimeApi {
 		#[advanced]
 		fn get_current_committee(at: <Block as BlockT>::Hash) -> Result<(ScEpochNumber, sp_std::vec::Vec<CommitteeMember<CrossChainPublic, SessionKeys>>), sp_api::ApiError> {
 			self.check_using_same_instance_for_same_block(at.encode())?;

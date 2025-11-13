@@ -1,23 +1,9 @@
 //! Types for authority selection
-use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode};
 use plutus::*;
-use scale_info::TypeInfo;
 use sidechain_domain::*;
 
 /// Inherent data type provided by [crate::AriadneInherentDataProvider].
-/// The part of data for selection of authorities that comes from the main chain.
-/// It is unfiltered, so the selection algorithm should filter out invalid candidates.
-#[derive(Clone, Debug, Encode, Decode, DecodeWithMemTracking, TypeInfo, PartialEq, Eq)]
-pub struct AuthoritySelectionInputs {
-	/// D-parameter for Ariadne committee selection. See [DParameter] for details.
-	pub d_parameter: DParameter,
-	/// List of permissioned candidates for committee selection.
-	pub permissioned_candidates: Vec<PermissionedCandidateData>,
-	/// List of registered candidates for committee selection
-	pub registered_candidates: Vec<CandidateRegistrations>,
-	/// Nonce for queried epoch.
-	pub epoch_nonce: EpochNonce,
-}
+pub use sp_session_validator_management::AuthoritySelectionInputs;
 
 #[cfg(feature = "std")]
 #[derive(Debug, thiserror::Error)]
@@ -101,60 +87,63 @@ pub trait AuthoritySelectionDataSource {
 	) -> Result<McEpochNumber, Box<dyn std::error::Error + Send + Sync>>;
 }
 
-impl AuthoritySelectionInputs {
-	#[cfg(feature = "std")]
-	pub(crate) async fn from_mc_data(
-		candidate_data_source: &(dyn AuthoritySelectionDataSource + Send + Sync),
-		for_epoch: McEpochNumber,
-		scripts: sp_session_validator_management::MainChainScripts,
-	) -> Result<Self, AuthoritySelectionInputsCreationError> {
-		let ariadne_parameters_response = candidate_data_source
-			.get_ariadne_parameters(
+#[cfg(feature = "std")]
+pub(crate) async fn authority_selection_inputs_from_mc_data(
+	candidate_data_source: &(dyn AuthoritySelectionDataSource + Send + Sync),
+	for_epoch: McEpochNumber,
+	scripts: sp_session_validator_management::MainChainScripts,
+) -> Result<AuthoritySelectionInputs, AuthoritySelectionInputsCreationError> {
+	let ariadne_parameters_response = candidate_data_source
+		.get_ariadne_parameters(
+			for_epoch,
+			scripts.d_parameter_policy_id.clone(),
+			scripts.permissioned_candidates_policy_id.clone(),
+		)
+		.await
+		.map_err(|err| {
+			AuthoritySelectionInputsCreationError::AriadneParametersQuery(
 				for_epoch,
 				scripts.d_parameter_policy_id.clone(),
 				scripts.permissioned_candidates_policy_id.clone(),
+				err,
 			)
-			.await
-			.map_err(|err| {
-				AuthoritySelectionInputsCreationError::AriadneParametersQuery(
-					for_epoch,
-					scripts.d_parameter_policy_id.clone(),
-					scripts.permissioned_candidates_policy_id.clone(),
-					err,
-				)
-			})?;
+		})?;
 
-		let d_parameter = ariadne_parameters_response.d_parameter;
-		let no_permissioned_candidates_expected = d_parameter.num_permissioned_candidates == 0;
-		let permissioned_candidates = match ariadne_parameters_response.permissioned_candidates {
-			None if no_permissioned_candidates_expected => Vec::new(),
-			None => {
-				return Err(AuthoritySelectionInputsCreationError::AriadneParametersQuery(
-					for_epoch,
-					scripts.d_parameter_policy_id,
-					scripts.permissioned_candidates_policy_id,
-					("Expected Data Not Found: Permissioned Candidates List".to_string()).into(),
-				));
-			},
-			Some(permissioned_candidates) => permissioned_candidates,
-		};
+	let d_parameter = ariadne_parameters_response.d_parameter;
+	let no_permissioned_candidates_expected = d_parameter.num_permissioned_candidates == 0;
+	let permissioned_candidates = match ariadne_parameters_response.permissioned_candidates {
+		None if no_permissioned_candidates_expected => Vec::new(),
+		None => {
+			return Err(AuthoritySelectionInputsCreationError::AriadneParametersQuery(
+				for_epoch,
+				scripts.d_parameter_policy_id,
+				scripts.permissioned_candidates_policy_id,
+				("Expected Data Not Found: Permissioned Candidates List".to_string()).into(),
+			));
+		},
+		Some(permissioned_candidates) => permissioned_candidates,
+	};
 
-		let registered_candidates: Vec<CandidateRegistrations> = candidate_data_source
-			.get_candidates(for_epoch, scripts.committee_candidate_address.clone())
-			.await
-			.map_err(|err| {
-				AuthoritySelectionInputsCreationError::GetCandidatesQuery(
-					for_epoch,
-					scripts.committee_candidate_address.to_string(),
-					err,
-				)
-			})?;
-		let epoch_nonce_response =
-			candidate_data_source.get_epoch_nonce(for_epoch).await.map_err(|err| {
-				AuthoritySelectionInputsCreationError::GetEpochNonceQuery(for_epoch, err)
-			})?;
-		let epoch_nonce = epoch_nonce_response.unwrap_or(EpochNonce(vec![]));
+	let registered_candidates: Vec<CandidateRegistrations> = candidate_data_source
+		.get_candidates(for_epoch, scripts.committee_candidate_address.clone())
+		.await
+		.map_err(|err| {
+			AuthoritySelectionInputsCreationError::GetCandidatesQuery(
+				for_epoch,
+				scripts.committee_candidate_address.to_string(),
+				err,
+			)
+		})?;
+	let epoch_nonce_response = candidate_data_source
+		.get_epoch_nonce(for_epoch)
+		.await
+		.map_err(|err| AuthoritySelectionInputsCreationError::GetEpochNonceQuery(for_epoch, err))?;
+	let epoch_nonce = epoch_nonce_response.unwrap_or(EpochNonce(vec![]));
 
-		Ok(Self { d_parameter, permissioned_candidates, registered_candidates, epoch_nonce })
-	}
+	Ok(AuthoritySelectionInputs {
+		d_parameter,
+		permissioned_candidates,
+		registered_candidates,
+		epoch_nonce,
+	})
 }

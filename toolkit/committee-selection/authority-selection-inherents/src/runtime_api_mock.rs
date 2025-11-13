@@ -23,7 +23,7 @@ impl sp_api::ProvideRuntimeApi<Block> for TestApi {
 }
 
 sp_api::mock_impl_runtime_apis! {
-	impl SessionValidatorManagementApi<Block, CrossChainPublicKey, AccountKeys, AuthoritySelectionInputs, ScEpochNumber>
+	impl SessionValidatorManagementApi<Block, CrossChainPublicKey, AccountKeys, ScEpochNumber>
 		for TestApi
 	{
 		fn get_current_committee() -> (ScEpochNumber, Vec<CommitteeMember<CrossChainPublicKey, AccountKeys>>) {
