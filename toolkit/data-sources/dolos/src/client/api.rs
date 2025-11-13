@@ -1,12 +1,6 @@
 use async_trait::async_trait;
 use blockfrost_openapi::models::{
-	address_transactions_content_inner::AddressTransactionsContentInner,
-	address_utxo_content_inner::AddressUtxoContentInner,
-	asset_addresses_inner::AssetAddressesInner, asset_transactions_inner::AssetTransactionsInner,
-	block_content::BlockContent, epoch_param_content::EpochParamContent,
-	epoch_stake_pool_content_inner::EpochStakePoolContentInner,
-	pool_history_inner::PoolHistoryInner, pool_list_extended_inner::PoolListExtendedInner,
-	tx_content::TxContent, tx_content_utxo::TxContentUtxo,
+	address_transactions_content_inner::AddressTransactionsContentInner, address_utxo_content_inner::AddressUtxoContentInner, asset_addresses_inner::AssetAddressesInner, asset_transactions_inner::AssetTransactionsInner, block_content::BlockContent, epoch_param_content::EpochParamContent, epoch_stake_pool_content_inner::EpochStakePoolContentInner, genesis_content::GenesisContent, pool_history_inner::PoolHistoryInner, pool_list_extended_inner::PoolListExtendedInner, tx_content::TxContent, tx_content_utxo::TxContentUtxo
 };
 use sidechain_domain::*;
 
@@ -111,4 +105,7 @@ pub trait MiniBFApi {
 	async fn transaction_by_hash(&self, tx_hash: McTxHash) -> Result<TxContent, String>;
 	/// Return the inputs and UTXOs of the specific transaction.
 	async fn transactions_utxos(&self, tx_hash: McTxHash) -> Result<TxContentUtxo, String>;
+
+	/// Return the information about blockchain genesis.
+	async fn genesis(&self) -> Result<GenesisContent, String>;
 }

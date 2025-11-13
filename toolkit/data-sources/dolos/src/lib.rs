@@ -45,7 +45,7 @@ pub enum DataSourceError {
 	/// Indicates that Dolos rejected a request as invalid
 	#[error("Bad request: `{0}`.")]
 	BadRequest(String),
-	/// Indicates that an internal error occured when querying Dolos
+	/// Indicates that an internal error occurred when querying Dolos
 	#[error("Internal error of data source: `{0}`.")]
 	InternalDataSourceError(String),
 	/// Indicates that expected data was not found when querying Dolos

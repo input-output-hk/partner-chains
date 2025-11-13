@@ -1,12 +1,6 @@
 use async_trait::async_trait;
 use blockfrost_openapi::models::{
-	address_transactions_content_inner::AddressTransactionsContentInner,
-	address_utxo_content_inner::AddressUtxoContentInner,
-	asset_addresses_inner::AssetAddressesInner, asset_transactions_inner::AssetTransactionsInner,
-	block_content::BlockContent, epoch_param_content::EpochParamContent,
-	epoch_stake_pool_content_inner::EpochStakePoolContentInner,
-	pool_history_inner::PoolHistoryInner, pool_list_extended_inner::PoolListExtendedInner,
-	tx_content::TxContent, tx_content_utxo::TxContentUtxo,
+	address_transactions_content_inner::AddressTransactionsContentInner, address_utxo_content_inner::AddressUtxoContentInner, asset_addresses_inner::AssetAddressesInner, asset_transactions_inner::AssetTransactionsInner, block_content::BlockContent, epoch_param_content::EpochParamContent, epoch_stake_pool_content_inner::EpochStakePoolContentInner, genesis_content::GenesisContent, pool_history_inner::PoolHistoryInner, pool_list_extended_inner::PoolListExtendedInner, tx_content::TxContent, tx_content_utxo::TxContentUtxo
 };
 use serde::de::DeserializeOwned;
 use sidechain_domain::*;
@@ -187,6 +181,10 @@ impl MiniBFApi for MiniBFClient {
 
 	async fn transactions_utxos(&self, tx_hash: McTxHash) -> Result<TxContentUtxo, String> {
 		self.request(&format!("txs/{tx_hash}/utxos")).await
+	}
+
+	async fn genesis(&self) -> Result<GenesisContent, String> {
+		self.request(&format!("genesis")).await
 	}
 }
 
