@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"constant":["INHERENT_IDENTIFIER"],"enum":["CommitteeMember","InherentError"],"struct":["MainChainScripts"],"trait":["SessionValidatorManagementApi"]};
+window.SIDEBAR_ITEMS = {"constant":["INHERENT_IDENTIFIER"],"enum":["CommitteeMember","InherentError"],"struct":["AuthoritySelectionInputs","MainChainScripts"],"trait":["SessionValidatorManagementApi"]};

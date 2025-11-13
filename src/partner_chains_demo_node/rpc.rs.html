@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `demo/node/src/rpc.rs`."><title>rpc.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-ca0dd0c4.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="partner_chains_demo_node" data-themes="" data-resource-suffix="" data-rustdoc-version="1.93.0-nightly (25d319a0f 2025-11-11)" data-channel="nightly" data-search-js="search-8e3fad08.js" data-stringdex-js="stringdex-c3e638e9.js" data-settings-js="settings-c38705f0.js" ><script src="../../static.files/storage-e2aeef58.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-ce535bd0.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">partner_chains_demo_node/</div>rpc.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! A collection of node-specific RPC methods.
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `demo/node/src/rpc.rs`."><title>rpc.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-ca0dd0c4.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="partner_chains_demo_node" data-themes="" data-resource-suffix="" data-rustdoc-version="1.93.0-nightly (01867557c 2025-11-12)" data-channel="nightly" data-search-js="search-8e3fad08.js" data-stringdex-js="stringdex-c3e638e9.js" data-settings-js="settings-c38705f0.js" ><script src="../../static.files/storage-e2aeef58.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-a410ff4d.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">partner_chains_demo_node/</div>rpc.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! A collection of node-specific RPC methods.
 <a href=#2 id=2 data-nosnippet>2</a>//! Substrate provides the `sc-rpc` crate, which defines the core RPC layer
 <a href=#3 id=3 data-nosnippet>3</a>//! used by Substrate nodes. This file extends those RPC definitions with
 <a href=#4 id=4 data-nosnippet>4</a>//! capabilities that are specific to this project's runtime configuration.
@@ -6,7 +6,7 @@
 <a href=#6 id=6 data-nosnippet>6</a></span><span class="attr">#![warn(missing_docs)]
 <a href=#7 id=7 data-nosnippet>7</a>
 <a href=#8 id=8 data-nosnippet>8</a></span><span class="kw">use </span><span class="kw">crate</span>::data_sources::DataSources;
-<a href=#9 id=9 data-nosnippet>9</a><span class="kw">use </span>authority_selection_inherents::{AuthoritySelectionInputs, CandidateValidationApi};
+<a href=#9 id=9 data-nosnippet>9</a><span class="kw">use </span>authority_selection_inherents::CandidateValidationApi;
 <a href=#10 id=10 data-nosnippet>10</a><span class="kw">use </span>jsonrpsee::RpcModule;
 <a href=#11 id=11 data-nosnippet>11</a><span class="kw">use </span>pallet_block_producer_fees_rpc::<span class="kw-2">*</span>;
 <a href=#12 id=12 data-nosnippet>12</a><span class="kw">use </span>pallet_block_producer_metadata_rpc::<span class="kw-2">*</span>;
@@ -81,65 +81,64 @@
 <a href=#81 id=81 data-nosnippet>81</a>			Block,
 <a href=#82 id=82 data-nosnippet>82</a>			CrossChainPublic,
 <a href=#83 id=83 data-nosnippet>83</a>			SessionKeys,
-<a href=#84 id=84 data-nosnippet>84</a>			AuthoritySelectionInputs,
-<a href=#85 id=85 data-nosnippet>85</a>			ScEpochNumber,
-<a href=#86 id=86 data-nosnippet>86</a>		&gt;,
-<a href=#87 id=87 data-nosnippet>87</a>	C::Api: CandidateValidationApi&lt;Block&gt;,
-<a href=#88 id=88 data-nosnippet>88</a>	P: TransactionPool + <span class="lifetime">'static</span>,
-<a href=#89 id=89 data-nosnippet>89</a>	B: sc_client_api::Backend&lt;Block&gt; + Send + Sync + <span class="lifetime">'static</span>,
-<a href=#90 id=90 data-nosnippet>90</a>	B::State: sc_client_api::backend::StateBackend&lt;sp_runtime::traits::HashingFor&lt;Block&gt;&gt;,
-<a href=#91 id=91 data-nosnippet>91</a>	T: TimeSource + Send + Sync + <span class="lifetime">'static</span>,
-<a href=#92 id=92 data-nosnippet>92</a>{
-<a href=#93 id=93 data-nosnippet>93</a>	<span class="kw">use </span>pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
-<a href=#94 id=94 data-nosnippet>94</a>	<span class="kw">use </span>substrate_frame_rpc_system::{System, SystemApiServer};
-<a href=#95 id=95 data-nosnippet>95</a>
-<a href=#96 id=96 data-nosnippet>96</a>	<span class="kw">let </span><span class="kw-2">mut </span>module = RpcModule::new(());
-<a href=#97 id=97 data-nosnippet>97</a>	<span class="kw">let </span>FullDeps { client, pool, grandpa, data_sources, time_source } = deps;
-<a href=#98 id=98 data-nosnippet>98</a>
-<a href=#99 id=99 data-nosnippet>99</a>	module.merge(System::new(client.clone(), pool.clone()).into_rpc())<span class="question-mark">?</span>;
-<a href=#100 id=100 data-nosnippet>100</a>	module.merge(TransactionPayment::new(client.clone()).into_rpc())<span class="question-mark">?</span>;
-<a href=#101 id=101 data-nosnippet>101</a>	module.merge(
-<a href=#102 id=102 data-nosnippet>102</a>		SidechainRpc::new(
-<a href=#103 id=103 data-nosnippet>103</a>			client.clone(),
-<a href=#104 id=104 data-nosnippet>104</a>			MainchainEpochConfig::read_from_env().unwrap(),
-<a href=#105 id=105 data-nosnippet>105</a>			data_sources.sidechain_rpc.clone(),
-<a href=#106 id=106 data-nosnippet>106</a>			time_source.clone(),
-<a href=#107 id=107 data-nosnippet>107</a>		)
-<a href=#108 id=108 data-nosnippet>108</a>		.into_rpc(),
-<a href=#109 id=109 data-nosnippet>109</a>	)<span class="question-mark">?</span>;
-<a href=#110 id=110 data-nosnippet>110</a>	module.merge(BlockProducerFeesRpc::new(client.clone()).into_rpc())<span class="question-mark">?</span>;
-<a href=#111 id=111 data-nosnippet>111</a>	module.merge(BlockProducerMetadataRpc::new(client.clone()).into_rpc())<span class="question-mark">?</span>;
-<a href=#112 id=112 data-nosnippet>112</a>
-<a href=#113 id=113 data-nosnippet>113</a>	<span class="kw">let </span>GrandpaDeps {
-<a href=#114 id=114 data-nosnippet>114</a>		shared_voter_state,
-<a href=#115 id=115 data-nosnippet>115</a>		shared_authority_set,
-<a href=#116 id=116 data-nosnippet>116</a>		justification_stream,
-<a href=#117 id=117 data-nosnippet>117</a>		subscription_executor,
-<a href=#118 id=118 data-nosnippet>118</a>		finality_provider,
-<a href=#119 id=119 data-nosnippet>119</a>	} = grandpa;
-<a href=#120 id=120 data-nosnippet>120</a>	module.merge(
-<a href=#121 id=121 data-nosnippet>121</a>		Grandpa::new(
-<a href=#122 id=122 data-nosnippet>122</a>			subscription_executor,
-<a href=#123 id=123 data-nosnippet>123</a>			shared_authority_set.clone(),
-<a href=#124 id=124 data-nosnippet>124</a>			shared_voter_state,
-<a href=#125 id=125 data-nosnippet>125</a>			justification_stream,
-<a href=#126 id=126 data-nosnippet>126</a>			finality_provider,
-<a href=#127 id=127 data-nosnippet>127</a>		)
-<a href=#128 id=128 data-nosnippet>128</a>		.into_rpc(),
-<a href=#129 id=129 data-nosnippet>129</a>	)<span class="question-mark">?</span>;
-<a href=#130 id=130 data-nosnippet>130</a>	module.merge(
-<a href=#131 id=131 data-nosnippet>131</a>		SessionValidatorManagementRpc::new(Arc::new(SessionValidatorManagementQuery::new(
-<a href=#132 id=132 data-nosnippet>132</a>			client.clone(),
-<a href=#133 id=133 data-nosnippet>133</a>			data_sources.authority_selection.clone(),
-<a href=#134 id=134 data-nosnippet>134</a>		)))
-<a href=#135 id=135 data-nosnippet>135</a>		.into_rpc(),
-<a href=#136 id=136 data-nosnippet>136</a>	)<span class="question-mark">?</span>;
-<a href=#137 id=137 data-nosnippet>137</a>
-<a href=#138 id=138 data-nosnippet>138</a>	<span class="comment">// Extend this RPC with a custom API by using the following syntax.
-<a href=#139 id=139 data-nosnippet>139</a>	// `YourRpcStruct` should have a reference to a client, which is needed
-<a href=#140 id=140 data-nosnippet>140</a>	// to call into the runtime.
-<a href=#141 id=141 data-nosnippet>141</a>	// `module.merge(YourRpcTrait::into_rpc(YourRpcStruct::new(ReferenceToClient, ...)))?;`
-<a href=#142 id=142 data-nosnippet>142</a>
-<a href=#143 id=143 data-nosnippet>143</a>	</span><span class="prelude-val">Ok</span>(module)
-<a href=#144 id=144 data-nosnippet>144</a>}
+<a href=#84 id=84 data-nosnippet>84</a>			ScEpochNumber,
+<a href=#85 id=85 data-nosnippet>85</a>		&gt;,
+<a href=#86 id=86 data-nosnippet>86</a>	C::Api: CandidateValidationApi&lt;Block&gt;,
+<a href=#87 id=87 data-nosnippet>87</a>	P: TransactionPool + <span class="lifetime">'static</span>,
+<a href=#88 id=88 data-nosnippet>88</a>	B: sc_client_api::Backend&lt;Block&gt; + Send + Sync + <span class="lifetime">'static</span>,
+<a href=#89 id=89 data-nosnippet>89</a>	B::State: sc_client_api::backend::StateBackend&lt;sp_runtime::traits::HashingFor&lt;Block&gt;&gt;,
+<a href=#90 id=90 data-nosnippet>90</a>	T: TimeSource + Send + Sync + <span class="lifetime">'static</span>,
+<a href=#91 id=91 data-nosnippet>91</a>{
+<a href=#92 id=92 data-nosnippet>92</a>	<span class="kw">use </span>pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
+<a href=#93 id=93 data-nosnippet>93</a>	<span class="kw">use </span>substrate_frame_rpc_system::{System, SystemApiServer};
+<a href=#94 id=94 data-nosnippet>94</a>
+<a href=#95 id=95 data-nosnippet>95</a>	<span class="kw">let </span><span class="kw-2">mut </span>module = RpcModule::new(());
+<a href=#96 id=96 data-nosnippet>96</a>	<span class="kw">let </span>FullDeps { client, pool, grandpa, data_sources, time_source } = deps;
+<a href=#97 id=97 data-nosnippet>97</a>
+<a href=#98 id=98 data-nosnippet>98</a>	module.merge(System::new(client.clone(), pool.clone()).into_rpc())<span class="question-mark">?</span>;
+<a href=#99 id=99 data-nosnippet>99</a>	module.merge(TransactionPayment::new(client.clone()).into_rpc())<span class="question-mark">?</span>;
+<a href=#100 id=100 data-nosnippet>100</a>	module.merge(
+<a href=#101 id=101 data-nosnippet>101</a>		SidechainRpc::new(
+<a href=#102 id=102 data-nosnippet>102</a>			client.clone(),
+<a href=#103 id=103 data-nosnippet>103</a>			MainchainEpochConfig::read_from_env().unwrap(),
+<a href=#104 id=104 data-nosnippet>104</a>			data_sources.sidechain_rpc.clone(),
+<a href=#105 id=105 data-nosnippet>105</a>			time_source.clone(),
+<a href=#106 id=106 data-nosnippet>106</a>		)
+<a href=#107 id=107 data-nosnippet>107</a>		.into_rpc(),
+<a href=#108 id=108 data-nosnippet>108</a>	)<span class="question-mark">?</span>;
+<a href=#109 id=109 data-nosnippet>109</a>	module.merge(BlockProducerFeesRpc::new(client.clone()).into_rpc())<span class="question-mark">?</span>;
+<a href=#110 id=110 data-nosnippet>110</a>	module.merge(BlockProducerMetadataRpc::new(client.clone()).into_rpc())<span class="question-mark">?</span>;
+<a href=#111 id=111 data-nosnippet>111</a>
+<a href=#112 id=112 data-nosnippet>112</a>	<span class="kw">let </span>GrandpaDeps {
+<a href=#113 id=113 data-nosnippet>113</a>		shared_voter_state,
+<a href=#114 id=114 data-nosnippet>114</a>		shared_authority_set,
+<a href=#115 id=115 data-nosnippet>115</a>		justification_stream,
+<a href=#116 id=116 data-nosnippet>116</a>		subscription_executor,
+<a href=#117 id=117 data-nosnippet>117</a>		finality_provider,
+<a href=#118 id=118 data-nosnippet>118</a>	} = grandpa;
+<a href=#119 id=119 data-nosnippet>119</a>	module.merge(
+<a href=#120 id=120 data-nosnippet>120</a>		Grandpa::new(
+<a href=#121 id=121 data-nosnippet>121</a>			subscription_executor,
+<a href=#122 id=122 data-nosnippet>122</a>			shared_authority_set.clone(),
+<a href=#123 id=123 data-nosnippet>123</a>			shared_voter_state,
+<a href=#124 id=124 data-nosnippet>124</a>			justification_stream,
+<a href=#125 id=125 data-nosnippet>125</a>			finality_provider,
+<a href=#126 id=126 data-nosnippet>126</a>		)
+<a href=#127 id=127 data-nosnippet>127</a>		.into_rpc(),
+<a href=#128 id=128 data-nosnippet>128</a>	)<span class="question-mark">?</span>;
+<a href=#129 id=129 data-nosnippet>129</a>	module.merge(
+<a href=#130 id=130 data-nosnippet>130</a>		SessionValidatorManagementRpc::new(Arc::new(SessionValidatorManagementQuery::new(
+<a href=#131 id=131 data-nosnippet>131</a>			client.clone(),
+<a href=#132 id=132 data-nosnippet>132</a>			data_sources.authority_selection.clone(),
+<a href=#133 id=133 data-nosnippet>133</a>		)))
+<a href=#134 id=134 data-nosnippet>134</a>		.into_rpc(),
+<a href=#135 id=135 data-nosnippet>135</a>	)<span class="question-mark">?</span>;
+<a href=#136 id=136 data-nosnippet>136</a>
+<a href=#137 id=137 data-nosnippet>137</a>	<span class="comment">// Extend this RPC with a custom API by using the following syntax.
+<a href=#138 id=138 data-nosnippet>138</a>	// `YourRpcStruct` should have a reference to a client, which is needed
+<a href=#139 id=139 data-nosnippet>139</a>	// to call into the runtime.
+<a href=#140 id=140 data-nosnippet>140</a>	// `module.merge(YourRpcTrait::into_rpc(YourRpcStruct::new(ReferenceToClient, ...)))?;`
+<a href=#141 id=141 data-nosnippet>141</a>
+<a href=#142 id=142 data-nosnippet>142</a>	</span><span class="prelude-val">Ok</span>(module)
+<a href=#143 id=143 data-nosnippet>143</a>}
 </code></pre></div></section></main></body></html>
