@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       sha:
-        description: 'Commit SHA to build (required if build_and_publish or run_post_merge_tests is enabled)'
+        description: 'Commit SHA to build (required for build_and_publish)'
         required: false
         type: string
       build_and_publish:
