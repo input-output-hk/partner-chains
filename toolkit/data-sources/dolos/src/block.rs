@@ -6,7 +6,6 @@ use crate::{
 use chrono::{DateTime, NaiveDateTime, TimeDelta};
 use derive_new::new;
 use figment::{Figment, providers::Env};
-use futures::TryFutureExt;
 use log::{debug, info};
 use serde::Deserialize;
 use sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
@@ -46,9 +45,14 @@ pub struct BlockDataSourceImpl {
 impl BlockDataSourceImpl {
 	/// Returns the latest _unstable_ Cardano block from Dolos
 	pub async fn get_latest_block_info(&self) -> Result<MainchainBlock> {
-		self.client.blocks_latest().await.map_err(|e| {
-			DataSourceError::ExpectedDataNotFound(format!("No latest block on chain. {e}",)).into()
-		}).and_then(from_block_content)
+		self.client
+			.blocks_latest()
+			.await
+			.map_err(|e| {
+				DataSourceError::ExpectedDataNotFound(format!("No latest block on chain. {e}",))
+					.into()
+			})
+			.and_then(from_block_content)
 	}
 
 	/// Returns the latest _stable_ Cardano block from Dolos that is within
@@ -118,19 +122,14 @@ impl BlockDataSourceImpl {
 	pub async fn new_from_env(
 		client: MiniBFClient,
 	) -> std::result::Result<Self, Box<dyn Error + Send + Sync + 'static>> {
-		Self::from_config(
-			client,
-			DolosBlockDataSourceConfig::from_env()?,
-			&read_mc_epoch_config()?,
-		).await
+		Self::from_config(client, DolosBlockDataSourceConfig::from_env()?, &read_mc_epoch_config()?)
+			.await
 	}
 
 	/// Creates a new instance of [BlockDataSourceImpl], using passed configuration.
 	pub async fn from_config(
 		client: MiniBFClient,
-		DolosBlockDataSourceConfig {
-			block_stability_margin,
-		}: DolosBlockDataSourceConfig,
+		DolosBlockDataSourceConfig { block_stability_margin }: DolosBlockDataSourceConfig,
 		mc_epoch_config: &MainchainEpochConfig,
 	) -> Result<BlockDataSourceImpl> {
 		let genesis = client.genesis().await?;
@@ -142,15 +141,15 @@ impl BlockDataSourceImpl {
 		let max_slot_boundary = 3 * min_slot_boundary;
 		let cache_size = 100;
 		Ok(BlockDataSourceImpl::new(
-					client,
-					security_parameter,
-					TimeDelta::milliseconds(min_slot_boundary),
-					TimeDelta::milliseconds(max_slot_boundary),
-					mc_epoch_config.clone(),
-					block_stability_margin,
-					cache_size,
-					BlocksCache::new_arc_mutex(),
-				))
+			client,
+			security_parameter,
+			TimeDelta::milliseconds(min_slot_boundary),
+			TimeDelta::milliseconds(max_slot_boundary),
+			mc_epoch_config.clone(),
+			block_stability_margin,
+			cache_size,
+			BlocksCache::new_arc_mutex(),
+		))
 	}
 	async fn get_latest_block(
 		&self,
@@ -269,8 +268,8 @@ impl BlockDataSourceImpl {
 			let futures = (from_block_no.0..=to_block_no.0).map(|block_no| async move {
 				self.client
 					.blocks_by_id(McBlockNumber(block_no))
-					.map_err(|e| e.into())
 					.await
+					.map_err(|e| e.into())
 					.and_then(from_block_content)
 			});
 			futures::future::try_join_all(futures).await?.into_iter().collect()
