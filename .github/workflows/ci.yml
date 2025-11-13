@@ -797,7 +797,6 @@ jobs:
 
   ci-preview-tests-workflow-dispatch:
     if: github.event_name == 'workflow_dispatch' && inputs.run_post_merge_tests == true
-    needs: deploy-ci-preview-workflow-dispatch
     runs-on: eks
     steps:
       - name: Acquire AWS credentials
