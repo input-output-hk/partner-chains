@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 PARTNER_CHAINS_NODE_IMAGE="ghcr.io/input-output-hk/partner-chains/partner-chains-node-unstable:latest"
-CARDANO_IMAGE="ghcr.io/intersectmbo/cardano-node:10.5.1"
+CARDANO_IMAGE="ghcr.io/blinklabs-io/cardano-node:10.5.1"
 DBSYNC_IMAGE="ghcr.io/intersectmbo/cardano-db-sync:13.6.0.5"
 DOLOS_IMAGE="ghcr.io/txpipe/dolos:1.0.0-beta.8"
 OGMIOS_IMAGE="cardanosolutions/ogmios:v6.13.0"

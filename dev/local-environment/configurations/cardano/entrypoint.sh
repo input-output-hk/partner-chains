@@ -29,10 +29,10 @@ cp /shared/conway/genesis.conway.json.base /shared/conway/genesis.conway.json
 cp /shared/shelley/genesis.alonzo.json.base /shared/shelley/genesis.alonzo.json
 echo "Created /shared/conway/genesis.conway.json and /shared/shelley/genesis.alonzo.json"
 
-byron_hash=$(/bin/cardano-cli byron genesis print-genesis-hash --genesis-json /shared/byron/genesis.json)
-shelley_hash=$(/bin/cardano-cli latest genesis hash --genesis /shared/shelley/genesis.json)
-alonzo_hash=$(/bin/cardano-cli latest genesis hash --genesis /shared/shelley/genesis.alonzo.json)
-conway_hash=$(/bin/cardano-cli latest genesis hash --genesis /shared/conway/genesis.conway.json)
+byron_hash=$(cardano-cli byron genesis print-genesis-hash --genesis-json /shared/byron/genesis.json)
+shelley_hash=$(cardano-cli latest genesis hash --genesis /shared/shelley/genesis.json)
+alonzo_hash=$(cardano-cli latest genesis hash --genesis /shared/shelley/genesis.alonzo.json)
+conway_hash=$(cardano-cli latest genesis hash --genesis /shared/conway/genesis.conway.json)
 
 /busybox sed "s/\"ByronGenesisHash\": \"[^\"]*\"/\"ByronGenesisHash\": \"$byron_hash\"/" /shared/node-1-config.json.base > /shared/node-1-config.json.base.byron
 /busybox sed "s/\"ByronGenesisHash\": \"[^\"]*\"/\"ByronGenesisHash\": \"$byron_hash\"/" /shared/db-sync-config.json.base > /shared/db-sync-config.json.base.byron
