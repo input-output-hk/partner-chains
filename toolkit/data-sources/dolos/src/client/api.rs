@@ -13,40 +13,53 @@ use sidechain_domain::*;
 use crate::DataSourceError;
 
 /// Mainchain block id, either a block hash or a block number
-pub enum McBlockId {
-	/// Domain type Mainchain block hash
-	McBlockHash(McBlockHash),
-	/// Domain type Mainchain block number
-	McBlockNumber(McBlockNumber),
-	/// Mainchain block hash returned as string by Blockfrost API
-	Raw(String),
-}
+pub struct McBlockId(String);
 
 impl From<McBlockHash> for McBlockId {
 	fn from(value: McBlockHash) -> Self {
-		McBlockId::McBlockHash(value)
+		McBlockId(value.to_string())
 	}
 }
 
 impl From<McBlockNumber> for McBlockId {
 	fn from(value: McBlockNumber) -> Self {
-		McBlockId::McBlockNumber(value)
+		McBlockId(value.to_string())
 	}
 }
 
 impl From<String> for McBlockId {
 	fn from(value: String) -> Self {
-		McBlockId::Raw(value)
+		McBlockId(value)
 	}
 }
 
 impl std::fmt::Display for McBlockId {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		match self {
-			McBlockId::McBlockHash(mc_block_hash) => mc_block_hash.fmt(f),
-			McBlockId::McBlockNumber(mc_block_number) => mc_block_number.fmt(f),
-			McBlockId::Raw(str) => str.fmt(f),
-		}
+		self.0.fmt(f)
+	}
+}
+
+/// Mainchain pool id as a bech32 string
+pub struct McPoolId(String);
+
+impl From<MainchainKeyHash> for McPoolId {
+	fn from(value: MainchainKeyHash) -> Self {
+		let pool_id =
+			bech32::encode::<bech32::Bech32>(bech32::Hrp::parse_unchecked("pool"), &value.0)
+				.expect("MainchainKeyHash is valid");
+		McPoolId(pool_id)
+	}
+}
+
+impl From<String> for McPoolId {
+	fn from(value: String) -> Self {
+		McPoolId(value)
+	}
+}
+
+impl std::fmt::Display for McPoolId {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		self.0.fmt(f)
 	}
 }
 
@@ -64,12 +77,12 @@ pub trait MiniBFApi {
 		address: MainchainAddress,
 	) -> Result<Vec<AddressTransactionsContentInner>, DataSourceError>;
 
-	/// List of a specific asset transactions.
+	/// List of specific asset transactions.
 	async fn assets_transactions(
 		&self,
 		asset_id: AssetId,
 	) -> Result<Vec<AssetTransactionsInner>, DataSourceError>;
-	/// List of a addresses containing a specific asset.
+	/// List of addresses containing a specific asset.
 	async fn assets_addresses(
 		&self,
 		asset_id: AssetId,
@@ -110,11 +123,14 @@ pub trait MiniBFApi {
 	async fn epochs_stakes_by_pool(
 		&self,
 		epoch_number: McEpochNumber,
-		pool_id: &str,
+		pool_id: impl Into<McPoolId> + Send,
 	) -> Result<Vec<EpochStakePoolContentInner>, DataSourceError>;
 
 	/// History of stake pool parameters over epochs.
-	async fn pools_history(&self, pool_id: &str) -> Result<Vec<PoolHistoryInner>, DataSourceError>;
+	async fn pools_history(
+		&self,
+		pool_id: impl Into<McPoolId> + Send,
+	) -> Result<Vec<PoolHistoryInner>, DataSourceError>;
 	/// List of registered stake pools with additional information.
 	async fn pools_extended(&self) -> Result<Vec<PoolListExtendedInner>, DataSourceError>;
 

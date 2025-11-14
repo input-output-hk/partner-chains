@@ -15,7 +15,7 @@ use ureq::Agent;
 
 use crate::{
 	DataSourceError,
-	client::api::{McBlockId, MiniBFApi},
+	client::api::{McBlockId, McPoolId, MiniBFApi},
 };
 
 /// Client implementing Dolos MiniBF
@@ -187,13 +187,18 @@ impl MiniBFApi for MiniBFClient {
 	async fn epochs_stakes_by_pool(
 		&self,
 		epoch_number: McEpochNumber,
-		pool_id: &str,
+		pool_id: impl Into<McPoolId> + Send,
 	) -> Result<Vec<EpochStakePoolContentInner>, DataSourceError> {
+		let pool_id: McPoolId = pool_id.into();
 		self.paginated_request_all(&format!("epochs/{epoch_number}/stakes/{pool_id}"))
 			.await
 	}
 
-	async fn pools_history(&self, pool_id: &str) -> Result<Vec<PoolHistoryInner>, DataSourceError> {
+	async fn pools_history(
+		&self,
+		pool_id: impl Into<McPoolId> + Send,
+	) -> Result<Vec<PoolHistoryInner>, DataSourceError> {
+		let pool_id: McPoolId = pool_id.into();
 		self.paginated_request_all(&format!("pools/{pool_id}/history")).await
 	}
 	async fn pools_extended(&self) -> Result<Vec<PoolListExtendedInner>, DataSourceError> {
@@ -223,7 +228,7 @@ impl MiniBFApi for MiniBFClient {
 	}
 }
 
-fn format_asset_id(asset_id: &AssetId) -> String {
+pub fn format_asset_id(asset_id: &AssetId) -> String {
 	let AssetId { policy_id, asset_name } = asset_id;
 	format!("{}{}", &policy_id.to_hex_string()[2..], &asset_name.to_hex_string()[2..])
 }

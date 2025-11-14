@@ -107,12 +107,10 @@ impl AuthoritySelectionDataSource for AuthoritySelectionDataSourceImpl {
 		let candidates = self.get_registered_candidates(epoch, committee_candidate_address).await?;
 		let pools = self.client.pools_extended().await?;
 		let pred = |pool: PoolListExtendedInner| async move {
-			let history = self.client.pools_history(&pool.pool_id).await?;
+			let pool_id = mckeyhash_from_bech32(&pool.pool_id)?;
+			let history = self.client.pools_history(pool_id).await?;
 			Result::Ok(match history.into_iter().find(|h| h.epoch == epoch.0 as i32) {
-				Some(e) => Some((
-					MainchainKeyHash::decode_hex(&pool.pool_id)?,
-					StakeDelegation(e.active_stake.parse::<u64>()?),
-				)),
+				Some(e) => Some((pool_id, StakeDelegation(e.active_stake.parse::<u64>()?))),
 				None => None,
 			})
 		};
@@ -145,6 +143,11 @@ impl AuthoritySelectionDataSource for AuthoritySelectionDataSourceImpl {
 	async fn data_epoch(&self, for_epoch: McEpochNumber) -> Result<McEpochNumber> {
 		self.get_epoch_of_data_storage(for_epoch)
 	}
+}
+
+fn mckeyhash_from_bech32(bech32_str: &str) -> Result<MainchainKeyHash> {
+	let (_hrp, val) = bech32::decode(bech32_str).map_err(|e| e.to_string())?;
+	Ok(MainchainKeyHash(val.try_into().map_err(|_| "failed to convert vec to array")?))
 }
 
 #[derive(Debug)]
