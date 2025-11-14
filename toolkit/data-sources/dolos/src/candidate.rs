@@ -108,7 +108,7 @@ impl AuthoritySelectionDataSource for AuthoritySelectionDataSourceImpl {
 		let pools = self.client.pools_extended().await?;
 		let pred = |pool: PoolListExtendedInner| async move {
 			let history = self.client.pools_history(&pool.pool_id).await?;
-			Result::Ok(match history.into_iter().find(|h| h.epoch <= epoch.0 as i32) {
+			Result::Ok(match history.into_iter().find(|h| h.epoch == epoch.0 as i32) {
 				Some(e) => Some((
 					MainchainKeyHash::decode_hex(&pool.pool_id)?,
 					StakeDelegation(e.active_stake.parse::<u64>()?),
