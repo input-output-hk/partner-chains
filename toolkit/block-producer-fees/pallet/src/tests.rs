@@ -2,7 +2,6 @@ use super::*;
 use frame_support::{assert_err, assert_ok};
 use frame_system::pallet_prelude::OriginFor;
 use mock::*;
-use sp_consensus_slots::Slot;
 use sp_runtime::{AccountId32, DispatchError};
 use sp_std::collections::vec_deque::VecDeque;
 
@@ -13,21 +12,21 @@ fn stores_the_configured_number_of_fee_changes() {
 		let bob = AccountId32::new([2u8; 32]);
 		let charlie = AccountId32::new([3u8; 32]);
 
-		mock_pallet::CurrentSlot::<Test>::set(Slot::from(1));
+		mock_pallet::CurrentMoment::<Test>::set(1);
 		assert_ok!(Pallet::<Test>::set_fee(OriginFor::<Test>::signed(alice.clone()), 101));
 		assert_ok!(Pallet::<Test>::set_fee(OriginFor::<Test>::signed(bob.clone()), 201));
 
-		mock_pallet::CurrentSlot::<Test>::set(Slot::from(2));
+		mock_pallet::CurrentMoment::<Test>::set(2);
 		assert_ok!(Pallet::<Test>::set_fee(OriginFor::<Test>::signed(alice.clone()), 102));
 
-		mock_pallet::CurrentSlot::<Test>::set(Slot::from(3));
+		mock_pallet::CurrentMoment::<Test>::set(3);
 		// Setting third fee causes drop of the first one
 		assert_ok!(Pallet::<Test>::set_fee(OriginFor::<Test>::signed(alice.clone()), 103));
 
-		let alice_entry_2 = (Slot::from(2), 102);
-		let alice_entry_3 = (Slot::from(3), 103);
+		let alice_entry_2 = (2, 102);
+		let alice_entry_3 = (3, 103);
 		let alice_entries = VecDeque::from(vec![alice_entry_3, alice_entry_2]);
-		let bob_entry_1 = (Slot::from(1), 201);
+		let bob_entry_1 = (1, 201);
 		let bob_entries = VecDeque::from(vec![bob_entry_1]);
 
 		assert_eq!(Pallet::<Test>::get(alice.clone()), alice_entries);

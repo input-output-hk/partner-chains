@@ -6751,7 +6751,6 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "sp-block-producer-fees",
- "sp-consensus-slots",
  "sp-core",
  "sp-io",
  "sp-runtime",
