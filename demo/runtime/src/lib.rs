@@ -1063,6 +1063,12 @@ impl_runtime_apis! {
 		}
 	}
 
+	impl sp_sidechain::GetEpochDurationApi<Block> for Runtime {
+		fn get_epoch_duration_millis() -> u64 {
+			u64::from(Sidechain::slots_per_epoch().0) * MILLISECS_PER_BLOCK
+		}
+	}
+
 	impl sidechain_slots::SlotApi<Block> for Runtime {
 		fn slot_config() -> sidechain_slots::ScSlotConfig {
 			sidechain_slots::ScSlotConfig {
