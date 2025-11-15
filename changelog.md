@@ -50,6 +50,7 @@ feature in the crate, which will cause legacy chain nodes to still use `SlotApi`
 ## Fixed
 
 * Improper weights for `set_main_chain_scripts` in `pallet_session_validator_management`
+* Overflow error when running with mock data source and debug build.
 
 ## Added
 
