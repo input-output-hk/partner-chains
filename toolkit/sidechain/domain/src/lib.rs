@@ -774,7 +774,7 @@ const EPOCH_NONCE_LEN: usize = 32;
 /// Because it is subject to Cardano's consensus mechanism and has strong cryptographic guarantees,
 /// this value can be used as a tamper-proof shared randomness seed by Partner Chain Toolkit components.
 #[derive(Default, Clone, Encode, Decode, DecodeWithMemTracking, PartialEq, Eq, TypeInfo)]
-#[byte_string(debug, hex_serialize)]
+#[byte_string(debug, hex_serialize, decode_hex)]
 pub struct EpochNonce(pub Vec<u8>);
 
 impl EpochNonce {
