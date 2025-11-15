@@ -17,7 +17,7 @@ use sqlx::PgPool;
 use std::collections::HashMap;
 use std::error::Error;
 
-mod cached;
+pub mod cached;
 
 #[cfg(test)]
 mod tests;
