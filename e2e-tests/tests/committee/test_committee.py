@@ -1,4 +1,5 @@
 import logging
+import time
 from src.blockchain_api import BlockchainApi
 from src.pc_epoch_calculator import PartnerChainEpochCalculator
 from src.partner_chain_rpc import DParam
@@ -491,7 +492,6 @@ class TestCommitteeMembers:
         # There's a delay between selecting a committee and it being in power, which means the current
         # committee was selected based on inputs from the previous epoch
         committee = api.get_epoch_committee(current_epoch).result['committee']
-        authorities = api.get_authorities()
 
         if api.get_pc_epoch() > current_epoch:
             skip("Epoch has changed while getting committee from partner chain rpc and blockchain api")
@@ -503,6 +503,13 @@ class TestCommitteeMembers:
                 if value.public_key == validator["sidechainPubKey"]:
                     validators_names.append(key)
                     break
+
+        # Wait for authorities to sync with the committee
+        time.sleep(30)
+        authorities = api.get_authorities()
+
+        if api.get_pc_epoch() > current_epoch:
+            skip("Epoch has changed while getting committee from partner chain rpc and blockchain api")
 
         authorities_names = []
         for authority in authorities:
