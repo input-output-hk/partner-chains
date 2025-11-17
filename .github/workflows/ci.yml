@@ -188,15 +188,6 @@ jobs:
           restore-keys: |
             sccache-${{ runner.os }}-
 
-      - name: Cache cargo registry
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: cargo-registry-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            cargo-registry-${{ runner.os }}-
 
       - name: Setup Rust cache
         uses: Swatinem/rust-cache@v2
@@ -204,8 +195,8 @@ jobs:
           prefix-key: v1-nightly
           shared-key: global-nightly
           cache-all-crates: true
-          cache-targets: true
-          cache-bin: true
+          cache-targets: false 
+          cache-bin: false 
           cache-on-failure: true
           workspaces: |
             .
@@ -221,7 +212,7 @@ jobs:
         run: nix develop --accept-flake-config -c bash -c "RUSTUP_TOOLCHAIN=nightly cargo test --locked --release --all-features"
 
       - name: Lint (Nightly)
-        run: nix develop --accept-flake-config -c bash -c "RUSTUP_TOOLCHAIN=nightly RUSTFLAGS=-Dwarnings cargo clippy --locked --all-features"
+        run: nix develop --accept-flake-config -c bash -c "RUSTUP_TOOLCHAIN=nightly RUSTFLAGS=-Dwarnings cargo clippy --locked --all-features --release"
 
       - name: sccache stats
         if: always()
