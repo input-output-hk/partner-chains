@@ -51,34 +51,6 @@ jobs:
             substituters = https://cache.nixos.org/
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
 
-
-      - name: Setup sccache
-        uses: mozilla-actions/sccache-action@v0.0.9
-
-      - name: Enable sccache
-        run: |
-          echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
-          echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
-          echo "SCCACHE_CACHE_SIZE=5G" >> $GITHUB_ENV
-
-      - name: Cache sccache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/sccache
-          key: sccache-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
-          restore-keys: |
-            sccache-${{ runner.os }}-
-
-      - name: Cache cargo registry
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: cargo-registry-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            cargo-registry-${{ runner.os }}-
-
       - name: Setup Rust cache
         uses: Swatinem/rust-cache@v2
         with:
@@ -105,7 +77,7 @@ jobs:
       - name: Formatting
         run: nix develop --accept-flake-config -c bash -c "cargo fmt --check"
 
-      - name: Build (Stable)
+      - name: Build
         run: nix develop --accept-flake-config -c bash -c "cargo build --locked --release"
 
       - name: Test
@@ -113,12 +85,8 @@ jobs:
           WASM_BUILD_WORKSPACE_HINT: ${{ github.workspace }}
         run: nix develop --accept-flake-config -c bash -c "cargo test --locked --release --all-features"
 
-      - name: Lint
-        run: nix develop --accept-flake-config -c bash -c "RUSTFLAGS=-Dwarnings cargo clippy --locked --all-features --release"
-
-      - name: sccache stats
-        if: always()
-        run: sccache -s || true
+      - name: Clippy
+        run: nix develop --accept-flake-config -c bash -c "RUSTFLAGS=-Dwarnings cargo clippy --locked --all-features"
 
       - name: Build chain specs
         run: |
