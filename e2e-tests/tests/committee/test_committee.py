@@ -358,6 +358,8 @@ class TestCommitteeRotation:
         * get a list of trustless candidates for a given mainchain epoch
         * verify that each active candidate included in committees within an mainchain epoch
         """
+        # Wait for committee data to be available
+        time.sleep(30)
         for candidate in trustless_rotation_candidates:
             logging.info(
                 f"Verifying if {candidate.name} is found in committee for MC epoch {candidate.next_status_epoch}"
