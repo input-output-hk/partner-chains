@@ -39,14 +39,17 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
     steps:
-      - name: Free up disk space
-        run: |
-          df -h
-          sudo rm -rf /opt/hostedtoolcache || true
-          sudo rm -rf /usr/share/dotnet || true
-          sudo rm -rf /usr/local/lib/android || true
-          docker system prune -af || true
-          df -h
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@v1
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+    
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
