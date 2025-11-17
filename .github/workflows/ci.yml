@@ -108,6 +108,14 @@ jobs:
       - name: Build (Stable)
         run: nix develop --accept-flake-config -c bash -c "cargo build --locked --release"
 
+      - name: Test
+        env:
+          WASM_BUILD_WORKSPACE_HINT: ${{ github.workspace }}
+        run: nix develop --accept-flake-config -c bash -c "cargo test --locked --release --all-features"
+
+      - name: Lint
+        run: nix develop --accept-flake-config -c bash -c "RUSTFLAGS=-Dwarnings cargo clippy --locked --all-features --release"
+
       - name: sccache stats
         if: always()
         run: sccache -s || true
@@ -146,77 +154,6 @@ jobs:
             ./devnet_chain_spec.json
             ./ci_preview_chain_spec.json
             ./staging_preview_chain_spec.json
-
-  build-nightly-pre-merge:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Use dedicated nightly target dir
-        run: |
-          echo "CARGO_TARGET_DIR=$HOME/nightly-target" >> $GITHUB_ENV
-  
-      - name: Clean nightly target dir
-        run: rm -rf $HOME/nightly-target || true
-  
-      - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v11
-        with:
-          extra-conf: |
-            experimental-features = nix-command flakes
-            substituters = https://cache.nixos.org/
-            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
-
-      - name: Setup sccache
-        uses: mozilla-actions/sccache-action@v0.0.9
-
-      - name: Enable sccache
-        run: |
-          echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
-          echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
-          echo "SCCACHE_CACHE_SIZE=1G" >> $GITHUB_ENV
-          echo "CARGO_INCREMENTAL=0" >> $GITHUB_ENV
-
-      - name: Cache sccache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/sccache
-          key: sccache-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
-          restore-keys: |
-            sccache-${{ runner.os }}-
-
-
-      - name: Setup Rust cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          prefix-key: v1-nightly
-          shared-key: global-nightly
-          cache-all-crates: true
-          cache-targets: false 
-          cache-bin: false 
-          cache-on-failure: true
-          workspaces: |
-            .
-
-      - name: Build (Nightly)
-        env:
-          WASM_BUILD_WORKSPACE_HINT: ${{ github.workspace }}
-        run: nix develop --accept-flake-config -c bash -c "RUSTUP_TOOLCHAIN=nightly cargo build --locked --release"
-
-      - name: Test (Nightly)
-        env:
-          WASM_BUILD_WORKSPACE_HINT: ${{ github.workspace }}
-        run: nix develop --accept-flake-config -c bash -c "RUSTUP_TOOLCHAIN=nightly cargo test --locked --release --all-features"
-
-      - name: Lint (Nightly)
-        run: nix develop --accept-flake-config -c bash -c "RUSTUP_TOOLCHAIN=nightly RUSTFLAGS=-Dwarnings cargo clippy --locked --all-features --release"
-
-      - name: sccache stats
-        if: always()
-        run: sccache -s || true
 
   local-env:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
@@ -282,7 +219,6 @@ jobs:
     if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.merged == false }}
     needs: [
       build-linux-x86_64-pre-merge,
-      build-nightly-pre-merge,
       local-env,
       upload-chain-specs-pre-merge,
       documentation-tests
@@ -292,7 +228,6 @@ jobs:
       - name: Check if any needed job failed
         run: |
           if [[ "${{ needs.build-linux-x86_64-pre-merge.result }}" != "success" ||
-                "${{ needs.build-nightly-pre-merge.result }}" != "success" ||
                 "${{ needs.local-env.result }}" != "success" ||
                 "${{ needs.upload-chain-specs-pre-merge.result }}" != "success" ||
                 "${{ needs.documentation-tests.result }}" != "success" ]]; then
