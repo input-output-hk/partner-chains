@@ -155,6 +155,13 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Use dedicated nightly target dir
+        run: |
+          echo "CARGO_TARGET_DIR=$HOME/nightly-target" >> $GITHUB_ENV
+  
+      - name: Clean nightly target dir
+        run: rm -rf $HOME/nightly-target || true
+  
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@v11
         with:
@@ -163,7 +170,6 @@ jobs:
             substituters = https://cache.nixos.org/
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
 
-
       - name: Setup sccache
         uses: mozilla-actions/sccache-action@v0.0.9
 
@@ -171,7 +177,7 @@ jobs:
         run: |
           echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
           echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
-          echo "SCCACHE_CACHE_SIZE=2G" >> $GITHUB_ENV
+          echo "SCCACHE_CACHE_SIZE=1G" >> $GITHUB_ENV
           echo "CARGO_INCREMENTAL=0" >> $GITHUB_ENV
 
       - name: Cache sccache
