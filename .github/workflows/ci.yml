@@ -39,6 +39,14 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
     steps:
+      - name: Free up disk space
+        run: |
+          df -h
+          sudo rm -rf /opt/hostedtoolcache || true
+          sudo rm -rf /usr/share/dotnet || true
+          sudo rm -rf /usr/local/lib/android || true
+          docker system prune -af || true
+          df -h
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -74,19 +82,20 @@ jobs:
         with:
           registry: ${{ secrets.ECR_REGISTRY_SECRET }}
 
-      - name: Formatting
+      - name: Cargo fmt
         run: nix develop --accept-flake-config -c bash -c "cargo fmt --check"
 
-      - name: Build
-        run: nix develop --accept-flake-config -c bash -c "cargo build --locked --release"
+      - name: Cargo clippy
+        run: nix develop --accept-flake-config -c bash -c "RUSTFLAGS=-Dwarnings cargo clippy --locked --all-features --release"
 
-      - name: Test
+      - name: Cargo test
         env:
           WASM_BUILD_WORKSPACE_HINT: ${{ github.workspace }}
         run: nix develop --accept-flake-config -c bash -c "cargo test --locked --release --all-features"
 
-      - name: Clippy
-        run: nix develop --accept-flake-config -c bash -c "RUSTFLAGS=-Dwarnings cargo clippy --locked --all-features"
+      - name: Cargo build
+        run: nix develop --accept-flake-config -c bash -c "cargo build --locked --release -p partner-chains-demo-node"
+  
 
       - name: Build chain specs
         run: |
