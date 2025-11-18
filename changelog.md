@@ -62,6 +62,7 @@ for the analogous cross-chain key types that previously had to be defined by eac
 Partner Chain separately for use in `pallet_session_validator_management` and
 other pallets that use cross-chain keys.
 * `sp_sidechain::GetEpochDurationApi` runtime API
+* Reusable migration `AuthorityKeysMigration` in `pallet_session_validator_management`
 
 # v1.8.0
 
