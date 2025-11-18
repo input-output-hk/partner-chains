@@ -32,7 +32,10 @@
           sha256 = "SJwZ8g0zF2WrKDVmHrVG3pD2RGoQeo24MEXnNx5FyuI=";
         };
 
+        rustToolchainNightly = fenix.packages.${system}.complete.toolchain;
+
         craneLib = (crane.mkLib pkgs).overrideToolchain rustToolchain;
+        craneLibNightly = (crane.mkLib pkgs).overrideToolchain rustToolchainNightly;
 
         shellEnv = {
           CC_ENABLE_DEBUG_OUTPUT = "1";
@@ -147,6 +150,43 @@
           inherit (commonArgs) pname src;
         };
 
+        # Nightly builds
+        cargoVendorDirNightly = craneLibNightly.vendorCargoDeps {
+          inherit (commonArgs) src;
+          overrideVendorGitCheckout = let
+            isPolkadotSdk = p: pkgs.lib.hasPrefix "git+https://github.com/paritytech/polkadot-sdk.git" p.source;
+          in ps: drv:
+            if pkgs.lib.any (p: isPolkadotSdk p) ps then
+              drv.overrideAttrs {
+                postPatch = ''
+                  rm -rf substrate/frame/contracts/fixtures/build || true
+                  rm -rf substrate/frame/contracts/fixtures/contracts/common || true
+                  rm -rf substrate/primitives/state-machine/fuzz || true
+                '';
+              }
+            else
+              drv;
+        };
+
+        cargoArtifactsNightly = craneLibNightly.buildDepsOnly (commonArgs // {
+          cargoVendorDir = cargoVendorDirNightly;
+        });
+
+        partner-chains-demo-node-nightly = craneLibNightly.buildPackage (commonArgs // {
+          pname = "partner-chains-demo-node-nightly";
+          version = (builtins.fromTOML (builtins.readFile ./Cargo.toml)).workspace.package.version;
+          cargoArtifacts = cargoArtifactsNightly;
+          SUBSTRATE_CLI_GIT_COMMIT_HASH = "dev";
+        });
+
+        cargoTestNightly = craneLibNightly.cargoTest (commonArgs // {
+          cargoArtifacts = cargoArtifactsNightly;
+        });
+
+        cargoClippyNightly = craneLibNightly.cargoClippy (commonArgs // {
+          cargoArtifacts = cargoArtifactsNightly;
+        });
+
         devShell = craneLib.devShell ({
           name = "partner-chains-demo-node-shell";
           # Inherit inputs from other build artifacts
@@ -186,10 +226,11 @@
         checks = {
           # Build the crate as part of `nix flake check'
           inherit partner-chains-demo-node cargoTest cargoFmt devShell;
+          inherit partner-chains-demo-node-nightly cargoTestNightly cargoClippyNightly;
         };
 
         packages = {
-          inherit partner-chains-demo-node;
+          inherit partner-chains-demo-node partner-chains-demo-node-nightly;
           default = partner-chains-demo-node;
           oci-image = n2c.packages.${system}.nix2container.buildImage {
             name = "partner-chains-demo-node";

@@ -93,7 +93,8 @@ jobs:
       - name: Build and push docker image
         run: |
           nix run .#oci-image.copyToDockerDaemon
-          docker tag partner-chains-node:latest ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ github.sha }}
+          SOURCE_IMAGE=$(docker images --filter "reference=partner-chains-demo-node" --format "{{.Repository}}:{{.Tag}}" | head -1)
+          docker tag "$SOURCE_IMAGE" ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ github.sha }}
           docker push ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ github.sha }}
 
       - name: Upload partner-chains-node artifact
@@ -136,17 +137,13 @@ jobs:
         uses: DeterminateSystems/magic-nix-cache-action@main
 
       - name: Build (Nightly)
-        env:
-          WASM_BUILD_WORKSPACE_HINT: ${{ github.workspace }}
-        run: nix develop --accept-flake-config -c bash -c "RUSTUP_TOOLCHAIN=nightly cargo build --locked --release"
+        run: nix build .#partner-chains-demo-node-nightly --print-build-logs
 
       - name: Test (Nightly)
-        env:
-          WASM_BUILD_WORKSPACE_HINT: ${{ github.workspace }}
-        run: nix develop --accept-flake-config -c bash -c "RUSTUP_TOOLCHAIN=nightly cargo test --locked --release --all-features"
+        run: nix build .#checks.x86_64-linux.cargoTestNightly --print-build-logs
 
       - name: Lint (Nightly)
-        run: nix develop --accept-flake-config -c bash -c "RUSTUP_TOOLCHAIN=nightly RUSTFLAGS=-Dwarnings cargo clippy --locked --all-features"
+        run: nix build .#checks.x86_64-linux.cargoClippyNightly --print-build-logs
 
   local-env:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
@@ -290,9 +287,10 @@ jobs:
       - name: Build and push docker image
         run: |
           nix run .#oci-image.copyToDockerDaemon
-          docker tag partner-chains-node:latest ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ steps.get_sha.outputs.sha }}
-          docker tag partner-chains-node:latest ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:latest
-          docker tag partner-chains-node:latest ghcr.io/${{ github.repository }}/partner-chains-node-unstable:latest
+          SOURCE_IMAGE=$(docker images --filter "reference=partner-chains-demo-node" --format "{{.Repository}}:{{.Tag}}" | head -1)
+          docker tag "$SOURCE_IMAGE" ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ steps.get_sha.outputs.sha }}
+          docker tag "$SOURCE_IMAGE" ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:latest
+          docker tag "$SOURCE_IMAGE" ghcr.io/${{ github.repository }}/partner-chains-node-unstable:latest
           docker push ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ steps.get_sha.outputs.sha }}
           docker push ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:latest
           docker push ghcr.io/${{ github.repository }}/partner-chains-node-unstable:latest
@@ -528,7 +526,8 @@ jobs:
       - name: Build and push docker image
         run: |
           nix run .#oci-image.copyToDockerDaemon
-          docker tag partner-chains-node:latest ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ inputs.sha }}
+          SOURCE_IMAGE=$(docker images --filter "reference=partner-chains-demo-node" --format "{{.Repository}}:{{.Tag}}" | head -1)
+          docker tag "$SOURCE_IMAGE" ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ inputs.sha }}
           docker push ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ inputs.sha }}
 
       - name: Rename and prepare artifact for workflow dispatch
