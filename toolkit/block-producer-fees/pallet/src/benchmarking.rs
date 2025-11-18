@@ -24,7 +24,7 @@ mod benchmarks {
 	where
 		<T as crate::Config>::Moment: From<u64>,
 	{
-		let size = T::HistoricalChangesPerProducer::get();
+		let size = T::HistoricalChangesPerProducer::get() + 1;
 		// Pessimistic storage content for is full, because it requires additional removal from the vecdeque.
 		let data = (0..size)
 			.into_iter()
