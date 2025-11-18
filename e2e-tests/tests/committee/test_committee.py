@@ -351,22 +351,37 @@ class TestCommitteeRotation:
     @mark.candidate_status("active")
     @mark.test_key('ETCM-6987')
     def test_active_trustless_candidates_were_in_committee(
-        self, trustless_rotation_candidates: Candidates, get_candidate_participation: int
+        self, trustless_rotation_candidates: Candidates, update_committee_attendance, db: Session, config: ApiConfig
     ):
         """Test that active trustless candidates participated in committees
 
         * get a list of trustless candidates for a given mainchain epoch
         * verify that each active candidate included in committees within an mainchain epoch
+        
+        Note: Committees are selected based on data from the previous epoch, so a candidate
+        who becomes active in epoch N will participate in committees starting from epoch N+1.
         """
-        # Wait for committee data to be available
-        time.sleep(30)
         for candidate in trustless_rotation_candidates:
+            # Committees are selected based on previous epoch data, so check the next epoch
+            participation_epoch = candidate.next_status_epoch + 1
             logging.info(
-                f"Verifying if {candidate.name} is found in committee for MC epoch {candidate.next_status_epoch}"
+                f"Verifying if {candidate.name} is found in committee for MC epoch {participation_epoch} "
+                f"(became active in epoch {candidate.next_status_epoch})"
             )
-            assert get_candidate_participation(candidate) > 0, (
+            
+            # Update attendance for the epoch when candidate should participate
+            update_committee_attendance(participation_epoch)
+            query = (
+                select(StakeDistributionCommittee)
+                .where(StakeDistributionCommittee.mc_epoch == participation_epoch)
+                .where(StakeDistributionCommittee.pc_pub_key == config.nodes_config.nodes[candidate.name].public_key)
+            )
+            committee_entry = db.scalars(query).first()
+            actual_attendance = committee_entry.actual_attendance if committee_entry else 0
+            
+            assert actual_attendance > 0, (
                 f"Trustless candidate {candidate.name} not found in any committees on mc epoch "
-                f"{candidate.next_status_epoch}"
+                f"{participation_epoch} (became active in epoch {candidate.next_status_epoch})"
             )
 
     @mark.candidate_status("inactive")
