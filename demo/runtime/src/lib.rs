@@ -556,7 +556,9 @@ impl pallet_block_producer_fees::Config for Runtime {
 
 	type HistoricalChangesPerProducer = ConstU16<5>;
 
-	fn current_slot() -> sp_consensus_slots::Slot {
+	type Moment = Slot;
+
+	fn current_moment() -> Slot {
 		let slot: u64 = pallet_aura::CurrentSlot::<Runtime>::get().into();
 		sp_consensus_slots::Slot::from(slot)
 	}

@@ -4,7 +4,7 @@
 //! distributing the rest of rewards to his stakers. Precision of the margin fee setting is bounded
 //! to 1/100 of a percent.
 //!
-//! The margin fees are stored together with the slot at which change occurred, so this data can be
+//! The margin fees are stored together with the time at which change occurred, so this data can be
 //! exposed to rewards calculation.
 //!
 //! Log of changes per account is bounded. The oldest entries are dropped when new ones are added.
@@ -31,7 +31,6 @@ pub mod pallet {
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 	use sp_block_producer_fees::PerTenThousands;
-	use sp_consensus_slots::Slot;
 	use sp_std::collections::vec_deque::VecDeque;
 
 	/// Current version of the pallet
@@ -49,15 +48,18 @@ pub mod pallet {
 		/// Weight information on extrinsic in the pallet. For convenience weights in [weights] module can be used.
 		type WeightInfo: WeightInfo;
 
-		/// Should provide the slot number of the current block.
-		fn current_slot() -> Slot;
+		/// Moment in time when a change in fees occured
+		type Moment: Parameter + Default + MaxEncodedLen + PartialOrd;
+
+		/// Should provide the moment for the current block.
+		fn current_moment() -> Self::Moment;
 
 		#[cfg(feature = "runtime-benchmarks")]
 		/// Benchmark helper type used for running benchmarks
 		type BenchmarkHelper: benchmarking::BenchmarkHelper<Self::AccountId>;
 	}
 
-	type FeeChange = (Slot, PerTenThousands);
+	type FeeChangeOf<T> = (<T as Config>::Moment, PerTenThousands);
 
 	/// Stores bounded amount of fee changes per account
 	#[pallet::storage]
@@ -65,7 +67,7 @@ pub mod pallet {
 	pub type FeesChanges<T: Config> = StorageMap<
 		Hasher = Twox64Concat,
 		Key = T::AccountId,
-		Value = VecDeque<FeeChange>,
+		Value = VecDeque<FeeChangeOf<T>>,
 		QueryKind = ValueQuery,
 	>;
 
@@ -83,7 +85,7 @@ pub mod pallet {
 				if fees_log.len() > T::HistoricalChangesPerProducer::get().into() {
 					let _ = fees_log.pop_back();
 				}
-				fees_log.push_front((T::current_slot(), fee_numerator));
+				fees_log.push_front((T::current_moment(), fee_numerator));
 			});
 			Ok(())
 		}
@@ -96,25 +98,28 @@ pub mod pallet {
 		}
 
 		/// Retrieves all stored block producer fees settings. The most recent fees are in front of vecdeque.
-		pub fn get_all() -> impl Iterator<Item = (T::AccountId, VecDeque<FeeChange>)> {
+		pub fn get_all() -> impl Iterator<Item = (T::AccountId, VecDeque<FeeChangeOf<T>>)> {
 			FeesChanges::<T>::iter()
 		}
 
 		/// Retrieves the latest fee settings for all accounts.
-		pub fn get_all_latest() -> impl Iterator<Item = (T::AccountId, FeeChange)> {
+		pub fn get_all_latest() -> impl Iterator<Item = (T::AccountId, FeeChangeOf<T>)> {
 			Self::get_all().map(|(account_id, changes)| {
-				(account_id, *changes.front().expect("There are no empty collections in storage"))
+				(
+					account_id,
+					changes.front().expect("There are no empty collections in storage").clone(),
+				)
 			})
 		}
 
 		/// Retrieves fees settings for the given account id.
 		/// Empty collection is returned if there are no settings stored for given id.
-		pub fn get(id: T::AccountId) -> VecDeque<FeeChange> {
+		pub fn get(id: T::AccountId) -> VecDeque<FeeChangeOf<T>> {
 			FeesChanges::<T>::get(id)
 		}
 
 		/// Gets the latest fee setting for the given account.
-		pub fn get_latest(id: T::AccountId) -> Option<FeeChange> {
+		pub fn get_latest(id: T::AccountId) -> Option<FeeChangeOf<T>> {
 			FeesChanges::<T>::get(id).front().cloned()
 		}
 	}
