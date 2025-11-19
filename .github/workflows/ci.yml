@@ -39,67 +39,25 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
     steps:
-
-      - name: Free up disk space
-        run: |
-          df -h
-          sudo rm -rf /opt/hostedtoolcache || true
-          sudo rm -rf /usr/share/dotnet || true
-          sudo rm -rf /usr/local/lib/android || true
-          docker system prune -af || true
-          df -h
-
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v11
-        with:
-          extra-conf: |
-            experimental-features = nix-command flakes
-            substituters = https://cache.nixos.org/
-            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+        uses: DeterminateSystems/nix-installer-action@main
 
-
-      - name: Setup sccache
-        uses: mozilla-actions/sccache-action@v0.0.9
-
-      - name: Enable sccache
+      - name: Install Attic client
         run: |
-          echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
-          echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
-          echo "SCCACHE_CACHE_SIZE=5G" >> $GITHUB_ENV
+          nix profile install nixpkgs#attic-client
 
-      - name: Cache sccache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/sccache
-          key: sccache-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
-          restore-keys: |
-            sccache-${{ runner.os }}-
-
-      - name: Cache cargo registry
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: cargo-registry-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            cargo-registry-${{ runner.os }}-
-
-      - name: Setup Rust cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          prefix-key: v1
-          shared-key: global
-          cache-all-crates: true
-          cache-targets: true
-          cache-bin: true
-          cache-on-failure: true
-          workspaces: |
-            .
+      - name: Set up Attic cache
+        env:
+          ATTIC_ENDPOINT: ${{ secrets.ATTIC_ENDPOINT }}
+          ATTIC_CACHE: ${{ secrets.ATTIC_CACHE }}
+          ATTIC_TOKEN: ${{ secrets.ATTIC_TOKEN }}
+        run: |
+          attic login --set-default admin "$ATTIC_ENDPOINT" "$ATTIC_TOKEN"
+          attic use "$ATTIC_CACHE"
 
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -113,40 +71,43 @@ jobs:
           registry: ${{ secrets.ECR_REGISTRY_SECRET }}
 
       - name: Formatting
-        run: nix develop --accept-flake-config -c bash -c "cargo fmt --check"
+        run: nix build .#checks.x86_64-linux.cargoFmt --print-build-logs
+
+      - name: Test
+        run: nix build .#checks.x86_64-linux.cargoTest --print-build-logs
 
       - name: Build (Stable)
-        run: nix develop --accept-flake-config -c bash -c "cargo build --locked --release"
+        run: nix build .#partner-chains-demo-node --print-build-logs
 
-      - name: sccache stats
-        if: always()
-        run: sccache -s || true
+      - name: Push to Attic cache
+        env:
+          ATTIC_CACHE: ${{ secrets.ATTIC_CACHE }}
+        run: |
+          nix path-info -r .#checks.x86_64-linux.cargoFmt .#checks.x86_64-linux.cargoTest .#partner-chains-demo-node | attic push --stdin "$ATTIC_CACHE"
 
       - name: Build chain specs
         run: |
-          nix develop --accept-flake-config -c bash -c '
-            source ./dev/envs/devnet/.envrc
-            target/release/partner-chains-demo-node build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json
+          source ./dev/envs/devnet/.envrc
+          result/bin/partner-chains-demo-node build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json
 
-            source ./dev/envs/ci-preview/.envrc
-            target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > ci_preview_chain_spec.json
+          source ./dev/envs/ci-preview/.envrc
+          result/bin/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > ci_preview_chain_spec.json
 
-            source ./dev/envs/staging-preview/.envrc
-            target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
-          '
+          source ./dev/envs/staging-preview/.envrc
+          result/bin/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
           
       - name: Build and push docker image
         run: |
-          cp target/release/partner-chains-demo-node .
-          nix develop --accept-flake-config -c bash -c "patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 partner-chains-demo-node"
-          docker build -f dev/ci/Dockerfile -t ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ github.sha }} .
+          nix run .#oci-image.copyToDockerDaemon
+          SOURCE_IMAGE=$(docker images --filter "reference=partner-chains-demo-node" --format "{{.Repository}}:{{.Tag}}" | head -1)
+          docker tag "$SOURCE_IMAGE" ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ github.sha }}
           docker push ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ github.sha }}
 
       - name: Upload partner-chains-node artifact
         uses: actions/upload-artifact@v4
         with:
           name: partner-chains-node-artifact
-          path: ./partner-chains-demo-node
+          path: result/bin/partner-chains-demo-node
 
       - name: Upload chain spec artifacts
         uses: actions/upload-artifact@v4
@@ -162,84 +123,40 @@ jobs:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
     steps:
 
-      - name: Free up disk space
-        run: |
-          df -h
-          sudo rm -rf /opt/hostedtoolcache || true
-          sudo rm -rf /usr/share/dotnet || true
-          sudo rm -rf /usr/local/lib/android || true
-          docker system prune -af || true
-          df -h
-
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v11
-        with:
-          extra-conf: |
-            experimental-features = nix-command flakes
-            substituters = https://cache.nixos.org/
-            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+        uses: DeterminateSystems/nix-installer-action@main
 
-
-      - name: Setup sccache
-        uses: mozilla-actions/sccache-action@v0.0.9
-
-      - name: Enable sccache
+      - name: Install Attic client
         run: |
-          echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
-          echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
-          echo "SCCACHE_CACHE_SIZE=2G" >> $GITHUB_ENV
-          echo "CARGO_INCREMENTAL=0" >> $GITHUB_ENV
+          nix profile install nixpkgs#attic-client
 
-      - name: Cache sccache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/sccache
-          key: sccache-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
-          restore-keys: |
-            sccache-${{ runner.os }}-
-
-      - name: Cache cargo registry
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: cargo-registry-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            cargo-registry-${{ runner.os }}-
-
-      - name: Setup Rust cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          prefix-key: v1-nightly
-          shared-key: global-nightly
-          cache-all-crates: true
-          cache-targets: true
-          cache-bin: true
-          cache-on-failure: true
-          workspaces: |
-            .
+      - name: Set up Attic cache
+        env:
+          ATTIC_ENDPOINT: ${{ secrets.ATTIC_ENDPOINT }}
+          ATTIC_CACHE: ${{ secrets.ATTIC_CACHE }}
+          ATTIC_TOKEN: ${{ secrets.ATTIC_TOKEN }}
+        run: |
+          attic login --set-default admin "$ATTIC_ENDPOINT" "$ATTIC_TOKEN"
+          attic use "$ATTIC_CACHE"
 
       - name: Build (Nightly)
-        env:
-          WASM_BUILD_WORKSPACE_HINT: ${{ github.workspace }}
-        run: nix develop --accept-flake-config -c bash -c "RUSTUP_TOOLCHAIN=nightly cargo build --locked --release"
+        run: nix build .#partner-chains-demo-node-nightly --print-build-logs
 
       - name: Test (Nightly)
-        env:
-          WASM_BUILD_WORKSPACE_HINT: ${{ github.workspace }}
-        run: nix develop --accept-flake-config -c bash -c "RUSTUP_TOOLCHAIN=nightly cargo test --locked --release --all-features"
+        run: nix build .#checks.x86_64-linux.cargoTestNightly --print-build-logs
 
       - name: Lint (Nightly)
-        run: nix develop --accept-flake-config -c bash -c "RUSTUP_TOOLCHAIN=nightly RUSTFLAGS=-Dwarnings cargo clippy --locked --all-features"
+        run: nix build .#checks.x86_64-linux.cargoClippyNightly --print-build-logs
 
-      - name: sccache stats
-        if: always()
-        run: sccache -s || true
+      - name: Push to Attic cache
+        env:
+          ATTIC_CACHE: ${{ secrets.ATTIC_CACHE }}
+        run: |
+          nix path-info -r .#partner-chains-demo-node-nightly .#checks.x86_64-linux.cargoTestNightly .#checks.x86_64-linux.cargoClippyNightly | attic push --stdin "$ATTIC_CACHE"
 
   local-env:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
@@ -343,52 +260,20 @@ jobs:
         run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v11
-        with:
-          extra-conf: |
-            experimental-features = nix-command flakes
-            substituters = https://cache.nixos.org/
-            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+        uses: DeterminateSystems/nix-installer-action@main
 
-
-      - name: Setup sccache
-        uses: mozilla-actions/sccache-action@v0.0.9
-
-      - name: Enable sccache
+      - name: Install Attic client
         run: |
-          echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
-          echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
-          echo "SCCACHE_CACHE_SIZE=5G" >> $GITHUB_ENV
+          nix profile install nixpkgs#attic-client
 
-      - name: Cache sccache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/sccache
-          key: sccache-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
-          restore-keys: |
-            sccache-${{ runner.os }}-
-
-      - name: Cache cargo registry
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: cargo-registry-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            cargo-registry-${{ runner.os }}-
-
-      - name: Setup Rust cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          prefix-key: v1
-          shared-key: global
-          cache-all-crates: true
-          cache-targets: true
-          cache-bin: true
-          cache-on-failure: true
-          workspaces: |
-            .
+      - name: Set up Attic cache
+        env:
+          ATTIC_ENDPOINT: ${{ secrets.ATTIC_ENDPOINT }}
+          ATTIC_CACHE: ${{ secrets.ATTIC_CACHE }}
+          ATTIC_TOKEN: ${{ secrets.ATTIC_TOKEN }}
+        run: |
+          attic login --set-default admin "$ATTIC_ENDPOINT" "$ATTIC_TOKEN"
+          attic use "$ATTIC_CACHE"
 
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -409,39 +294,39 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build
-        run: nix develop --accept-flake-config -c bash -c "cargo build --locked --profile=release"
+        run: nix build .#partner-chains-demo-node --print-build-logs
 
-      - name: sccache stats
-        if: always()
-        run: sccache -s || true
+      - name: Push to Attic cache
+        env:
+          ATTIC_CACHE: ${{ secrets.ATTIC_CACHE }}
+        run: |
+          nix path-info -r .#partner-chains-demo-node | attic push --stdin "$ATTIC_CACHE"
 
       - name: Build chain specs
         run: |
-          nix develop --accept-flake-config -c bash -c '
-            source ./dev/envs/devnet/.envrc
-            target/release/partner-chains-demo-node build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json
+          source ./dev/envs/devnet/.envrc
+          result/bin/partner-chains-demo-node build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json
 
-            source ./dev/envs/ci-preview/.envrc
-            target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > ci_preview_chain_spec.json
+          source ./dev/envs/ci-preview/.envrc
+          result/bin/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > ci_preview_chain_spec.json
 
-            source ./dev/envs/staging-preview/.envrc
-            target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
-          '
+          source ./dev/envs/staging-preview/.envrc
+          result/bin/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
 
       - name: Build and push docker image
         run: |
-          cp target/release/partner-chains-demo-node .
-          nix develop --accept-flake-config -c bash -c "patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 partner-chains-demo-node"
-          docker build -f dev/ci/Dockerfile -t ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ steps.get_sha.outputs.sha }} .
-          docker tag ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ steps.get_sha.outputs.sha }} ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:latest
-          docker tag ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ steps.get_sha.outputs.sha }} ghcr.io/${{ github.repository }}/partner-chains-node-unstable:latest
+          nix run .#oci-image.copyToDockerDaemon
+          SOURCE_IMAGE=$(docker images --filter "reference=partner-chains-demo-node" --format "{{.Repository}}:{{.Tag}}" | head -1)
+          docker tag "$SOURCE_IMAGE" ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ steps.get_sha.outputs.sha }}
+          docker tag "$SOURCE_IMAGE" ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:latest
+          docker tag "$SOURCE_IMAGE" ghcr.io/${{ github.repository }}/partner-chains-node-unstable:latest
           docker push ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ steps.get_sha.outputs.sha }}
           docker push ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:latest
           docker push ghcr.io/${{ github.repository }}/partner-chains-node-unstable:latest
 
       - name: Rename artifact
         run: |
-          cp ./partner-chains-demo-node partner-chains-node-${{ steps.get_sha.outputs.sha }}-x86_64-linux
+          cp result/bin/partner-chains-demo-node partner-chains-node-${{ steps.get_sha.outputs.sha }}-x86_64-linux
           chmod +x ./partner-chains-node-${{ steps.get_sha.outputs.sha }}-x86_64-linux
           cp ./partner-chains-node-${{ steps.get_sha.outputs.sha }}-x86_64-linux partner-chains-node-binary
 
@@ -623,52 +508,20 @@ jobs:
           ref: ${{ inputs.sha }}
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v11
-        with:
-          extra-conf: |
-            experimental-features = nix-command flakes
-            substituters = https://cache.nixos.org/
-            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+        uses: DeterminateSystems/nix-installer-action@main
 
-
-      - name: Setup sccache
-        uses: mozilla-actions/sccache-action@v0.0.9
-
-      - name: Enable sccache
+      - name: Install Attic client
         run: |
-          echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
-          echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
-          echo "SCCACHE_CACHE_SIZE=5G" >> $GITHUB_ENV
+          nix profile install nixpkgs#attic-client
 
-      - name: Cache sccache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/sccache
-          key: sccache-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
-          restore-keys: |
-            sccache-${{ runner.os }}-
-
-      - name: Cache cargo registry
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: cargo-registry-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            cargo-registry-${{ runner.os }}-
-
-      - name: Setup Rust cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          prefix-key: v1
-          shared-key: global
-          cache-all-crates: true
-          cache-targets: true
-          cache-bin: true
-          cache-on-failure: true
-          workspaces: |
-            .
+      - name: Set up Attic cache
+        env:
+          ATTIC_ENDPOINT: ${{ secrets.ATTIC_ENDPOINT }}
+          ATTIC_CACHE: ${{ secrets.ATTIC_CACHE }}
+          ATTIC_TOKEN: ${{ secrets.ATTIC_TOKEN }}
+        run: |
+          attic login --set-default admin "$ATTIC_ENDPOINT" "$ATTIC_TOKEN"
+          attic use "$ATTIC_CACHE"
 
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -682,20 +535,22 @@ jobs:
           registry: ${{ secrets.ECR_REGISTRY_SECRET }}
 
       - name: Formatting
-        run: nix develop --accept-flake-config -c bash -c "cargo fmt --check"
-
-      - name: Build
-        run: nix develop --accept-flake-config -c bash -c "cargo build --locked --release"
+        run: nix build .#checks.x86_64-linux.cargoFmt --print-build-logs
 
       - name: Test
-        run: nix develop --accept-flake-config -c bash -c "cargo test --locked --release --all-features"
+        run: nix build .#checks.x86_64-linux.cargoTest --print-build-logs
+
+      - name: Build
+        run: nix build .#partner-chains-demo-node --print-build-logs
+
+      - name: Push to Attic cache
+        env:
+          ATTIC_CACHE: ${{ secrets.ATTIC_CACHE }}
+        run: |
+          nix path-info -r .#checks.x86_64-linux.cargoFmt .#checks.x86_64-linux.cargoTest .#partner-chains-demo-node | attic push --stdin "$ATTIC_CACHE"
 
       - name: Lint
         run: nix develop --accept-flake-config -c bash -c "RUSTFLAGS=-Dwarnings cargo clippy --locked --release --all-features"
-
-      - name: sccache stats
-        if: always()
-        run: sccache -s || true
 
       #- name: Run cargo-deny to check licenses
       #  uses: EmbarkStudios/cargo-deny-action@v1
@@ -704,28 +559,26 @@ jobs:
 
       - name: Build chain specs
         run: |
-          nix develop --accept-flake-config -c bash -c '
-            source ./dev/envs/devnet/.envrc
-            target/release/partner-chains-demo-node build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json
+          source ./dev/envs/devnet/.envrc
+          result/bin/partner-chains-demo-node build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json
 
-            source ./dev/envs/ci-preview/.envrc
-            target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > ci_preview_chain_spec.json
+          source ./dev/envs/ci-preview/.envrc
+          result/bin/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > ci_preview_chain_spec.json
 
-            source ./dev/envs/staging-preview/.envrc
-            target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
-          '
+          source ./dev/envs/staging-preview/.envrc
+          result/bin/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
 
       - name: Build and push docker image
         run: |
-          cp target/release/partner-chains-demo-node .
-          nix develop --accept-flake-config -c bash -c "patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 partner-chains-demo-node"
-          docker build -f dev/ci/Dockerfile -t ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ inputs.sha }} .
+          nix run .#oci-image.copyToDockerDaemon
+          SOURCE_IMAGE=$(docker images --filter "reference=partner-chains-demo-node" --format "{{.Repository}}:{{.Tag}}" | head -1)
+          docker tag "$SOURCE_IMAGE" ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ inputs.sha }}
           docker push ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ inputs.sha }}
 
       - name: Rename and prepare artifact for workflow dispatch
         run: |
           ARTIFACT_NAME="partner-chains-node-${{ inputs.sha }}-x86_64-linux"
-          cp ./partner-chains-demo-node "$ARTIFACT_NAME"
+          cp result/bin/partner-chains-demo-node "$ARTIFACT_NAME"
           chmod +x "$ARTIFACT_NAME"
         shell: bash
 
