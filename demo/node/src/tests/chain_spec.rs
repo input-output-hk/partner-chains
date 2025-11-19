@@ -17,6 +17,7 @@ fn pc_create_chain_spec_test() {
 			keys: SessionKeys {
 				aura: sr25519::Public::from([12u8; 32]).into(),
 				grandpa: ed25519::Public::from([13u8; 32]).into(),
+				beefy: ecdsa::Public::from([14; 33]).into(),
 			},
 		}],
 		committee_candidate_address: MainchainAddress::from_str("addr_cca").unwrap(),
