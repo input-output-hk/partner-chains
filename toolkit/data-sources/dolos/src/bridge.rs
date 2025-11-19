@@ -7,12 +7,12 @@ use blockfrost_openapi::models::{
 	tx_content_utxo::TxContentUtxo,
 };
 use cardano_serialization_lib::PlutusData;
+use partner_chains_plutus_data::bridge::{TokenTransferDatum, TokenTransferDatumV1};
 use sidechain_domain::*;
 use sp_partner_chains_bridge::{
 	BridgeDataCheckpoint, BridgeTransferV1, MainChainScripts, TokenBridgeDataSource,
 };
 use std::marker::PhantomData;
-
 pub struct TokenBridgeDataSourceImpl<RecipientAddress> {
 	client: MiniBFClient,
 	_phantom: PhantomData<RecipientAddress>,
@@ -25,14 +25,14 @@ impl<RecipientAddress> TokenBridgeDataSourceImpl<RecipientAddress> {
 }
 
 #[async_trait::async_trait]
-impl<RecipientAddress: Send + Sync> TokenBridgeDataSource<RecipientAddress>
-	for TokenBridgeDataSourceImpl<RecipientAddress>
+impl<RecipientAddress: Send + Sync + std::fmt::Debug + for<'a> TryFrom<&'a [u8]>>
+	TokenBridgeDataSource<RecipientAddress> for TokenBridgeDataSourceImpl<RecipientAddress>
 {
 	async fn get_transfers(
 		&self,
-		_main_chain_scripts: MainChainScripts,
+		main_chain_scripts: MainChainScripts,
 		data_checkpoint: BridgeDataCheckpoint,
-		_max_transfers: u32,
+		max_transfers: u32,
 		current_mc_block_hash: McBlockHash,
 	) -> Result<(Vec<BridgeTransferV1<RecipientAddress>>, BridgeDataCheckpoint)> {
 		let current_mc_block = self.client.blocks_by_id(current_mc_block_hash).await?;
@@ -56,23 +56,26 @@ impl<RecipientAddress: Send + Sync> TokenBridgeDataSource<RecipientAddress>
 			},
 		};
 
-		let asset = Asset {
+		let asset = AssetId {
 			policy_id: main_chain_scripts.token_policy_id.into(),
 			asset_name: main_chain_scripts.token_asset_name.into(),
 		};
+		let to_block =
+			McBlockNumber(current_mc_block.height.unwrap_or_default().try_into().unwrap_or(0u32));
 		let utxos = get_bridge_utxos_tx(
+			&self.client,
 			&main_chain_scripts.illiquid_circulation_supply_validator_address.into(),
 			asset,
 			data_checkpoint,
-			current_mc_block.block_no,
+			to_block,
 			Some(max_transfers),
 		)
 		.await?;
 
 		let new_checkpoint = match utxos.last() {
-			None => BridgeDataCheckpoint::Block(current_mc_block.block_no.into()),
+			None => BridgeDataCheckpoint::Block(to_block),
 			Some(_) if (utxos.len() as u32) < max_transfers => {
-				BridgeDataCheckpoint::Block(current_mc_block.block_no.into())
+				BridgeDataCheckpoint::Block(to_block)
 			},
 			Some(utxo) => BridgeDataCheckpoint::Utxo(utxo.utxo_id()),
 		};
@@ -93,22 +96,38 @@ pub(crate) struct BridgeUtxo {
 	pub(crate) datum: Option<cardano_serialization_lib::PlutusData>,
 }
 
+impl BridgeUtxo {
+	pub(crate) fn utxo_id(&self) -> UtxoId {
+		UtxoId { tx_hash: self.tx_hash, index: self.utxo_ix }
+	}
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct TxBlockInfo {
+	pub(crate) block_number: McBlockNumber,
+	pub(crate) tx_ix: McTxIndexInBlock,
+}
+
 pub(crate) async fn get_block_info_for_utxo(
 	client: &MiniBFClient,
 	tx_hash: McTxHash,
 ) -> Result<Option<TxBlockInfo>> {
-
 	// SELECT
 	// 	block.block_no AS block_number,
 	// 	tx.block_index AS tx_ix
 	// FROM tx
 	// JOIN block  ON block.id = tx.block_id
 	// WHERE tx.hash = $tx_hash
+	let tx: TxContent = client.transaction_by_hash(tx_hash).await?;
+	Ok(Some(TxBlockInfo {
+		block_number: McBlockNumber(tx.block_height as u32),
+		tx_ix: McTxIndexInBlock(tx.index as u32),
+	}))
 }
 
 pub(crate) enum ResolvedBridgeDataCheckpoint {
-	Utxo { block_number: BlockNumber, tx_ix: TxIndexInBlock, tx_out_ix: TxIndex },
-	Block { number: BlockNumber },
+	Utxo { block_number: McBlockNumber, tx_ix: McTxIndexInBlock, tx_out_ix: UtxoIndex },
+	Block { number: McBlockNumber },
 }
 
 pub(crate) async fn get_bridge_utxos_tx(
@@ -119,68 +138,69 @@ pub(crate) async fn get_bridge_utxos_tx(
 	to_block: McBlockNumber,
 	max_utxos: Option<u32>,
 ) -> Result<Vec<BridgeUtxo>> {
-	let x = client.assets_transactions(native_token.clone()).await?;
-	let y = x.into_iter().map(|a| async move {
-		if a.block_height as u32 >= to_block.0 {
+	let asset_txs = client.assets_transactions(native_token.clone()).await?;
+	let futs = asset_txs.into_iter().map(|a| async move {
+		if (a.block_height as u32) <= to_block.0 {
 			let tx_hash = McTxHash::from_hex_unsafe(&a.tx_hash);
-			let x = client.transactions_utxos(tx_hash).await?;
-			let y = client.transaction_by_hash(tx_hash).await?;
-			Result::Ok(Some((x, y)))
+			let utxo = client.transactions_utxos(tx_hash).await?;
+			let tx = client.transaction_by_hash(tx_hash).await?;
+			Result::Ok(Some((utxo, tx)))
 		} else {
 			Result::Ok(None)
 		}
 	});
-	let mut z = futures::future::try_join_all(y)
+	let mut utxos = futures::future::try_join_all(futs)
 		.await?
-		.iter()
+		.into_iter()
 		.flatten()
-		.flat_map(|(x, y): &(TxContentUtxo, TxContent)| {
-			let inputs = x.inputs.iter().filter(|i| i.address == icp_address.to_string());
-			let outputs = x.outputs.iter().filter(|o| o.address == icp_address.to_string());
+		.flat_map(|(utxo, tx): (TxContentUtxo, TxContent)| {
+			let inputs = utxo.inputs.iter().filter(|i| i.address == icp_address.to_string());
+			let outputs = utxo.outputs.iter().filter(|o| o.address == icp_address.to_string());
 			let native_token = native_token.clone();
-			outputs.map(move |output| {
-				let native_token = native_token.clone();
-				let output_tokens = get_all_tokens(&output.amount, &native_token.clone());
-				let input_tokens = inputs
-					.clone()
-					.map(move |input| get_all_tokens(&input.amount, &native_token.clone()))
-					.sum();
-
-				BridgeUtxo {
-					block_number: McBlockNumber(y.block_height as u32),
-					tokens_out: NativeTokenAmount(output_tokens),
-					tokens_in: NativeTokenAmount(input_tokens),
-					datum: output
-						.inline_datum
-						.clone()
-						.map(|d| PlutusData::from_hex(&d).expect("valid datum")),
-					tx_ix: todo!(),
-					tx_hash: todo!(),
-					utxo_ix: todo!(),
-				}
-			})
+			let tx_hash = McTxHash::from_hex_unsafe(&tx.hash);
+			// Precompute total input tokens once per transaction
+			let input_tokens_total: u128 =
+				inputs.clone().map(|input| get_all_tokens(&input.amount, &native_token)).sum();
+			let v: Vec<BridgeUtxo> = outputs
+				.map(move |output| {
+					let output_tokens = get_all_tokens(&output.amount, &native_token);
+					BridgeUtxo {
+						block_number: McBlockNumber(tx.block_height as u32),
+						tx_ix: McTxIndexInBlock(tx.index as u32),
+						tx_hash,
+						utxo_ix: UtxoIndex(output.output_index as u16),
+						tokens_out: NativeTokenAmount(output_tokens),
+						tokens_in: NativeTokenAmount(input_tokens_total),
+						datum: output
+							.inline_datum
+							.clone()
+							.map(|d| PlutusData::from_hex(&d).expect("valid datum")),
+					}
+				})
+				.collect();
+			v.into_iter()
 		})
 		.collect::<Vec<_>>();
 
-	match checkpoint {
-		ResolvedBridgeDataCheckpoint::Block { number } => {
-			query_builder.push(&format!("AND block_no > {} ", number.0));
-		},
+	// Filter by checkpoint
+	utxos.retain(|u| match checkpoint {
+		ResolvedBridgeDataCheckpoint::Block { number } => u.block_number.0 > number.0,
 		ResolvedBridgeDataCheckpoint::Utxo { block_number, tx_ix, tx_out_ix } => {
-			query_builder.push(&format!(
-				"AND (block_no, tx.block_index, outputs.index) > ({}, {}, {}) ",
-				block_number.0, tx_ix.0, tx_out_ix.0
-			));
+			(u.block_number.0, u.tx_ix.0, u.utxo_ix.0) > (block_number.0, tx_ix.0, tx_out_ix.0)
 		},
+	});
+
+	// Sort by (block_no, tx.block_index, outputs.index)
+	utxos.sort_by_key(|u| (u.block_number.0, u.tx_ix.0, u.utxo_ix.0));
+
+	// Limit number of results
+	if let Some(max) = max_utxos {
+		if utxos.len() > max as usize {
+			utxos.truncate(max as usize);
+		}
 	}
 
-	query_builder.push("ORDER BY block.block_no, tx.block_index, outputs.index ");
-
-	if let Some(max_utxos) = max_utxos {
-		query_builder.push(&format!("LIMIT {max_utxos}"));
-	}
-
-	Err("not implemented".into())
+	Ok(utxos)
 }
 
 fn get_all_tokens(amount: &Vec<TxContentOutputAmountInner>, asset_id: &AssetId) -> u128 {
@@ -196,7 +216,41 @@ fn get_all_tokens(amount: &Vec<TxContentOutputAmountInner>, asset_id: &AssetId) 
 		.sum()
 }
 
-// get_bridge_utxos_tx
+fn utxo_to_transfer<RecipientAddress>(
+	utxo: BridgeUtxo,
+) -> Option<BridgeTransferV1<RecipientAddress>>
+where
+	RecipientAddress: for<'a> TryFrom<&'a [u8]>,
+{
+	let token_delta = utxo.tokens_out.0.checked_sub(utxo.tokens_in.0)?;
+
+	if token_delta == 0 {
+		return None;
+	}
+
+	let token_amount = token_delta as u64;
+
+	let Some(datum) = utxo.datum.clone() else {
+		return Some(BridgeTransferV1::InvalidTransfer { token_amount, utxo_id: utxo.utxo_id() });
+	};
+
+	let transfer = match TokenTransferDatum::try_from(datum) {
+		Ok(TokenTransferDatum::V1(TokenTransferDatumV1::UserTransfer { receiver })) => {
+			match RecipientAddress::try_from(receiver.0.as_ref()) {
+				Ok(recipient) => BridgeTransferV1::UserTransfer { token_amount, recipient },
+				Err(_) => {
+					BridgeTransferV1::InvalidTransfer { token_amount, utxo_id: utxo.utxo_id() }
+				},
+			}
+		},
+		Ok(TokenTransferDatum::V1(TokenTransferDatumV1::ReserveTransfer)) => {
+			BridgeTransferV1::ReserveTransfer { token_amount }
+		},
+		Err(_) => BridgeTransferV1::InvalidTransfer { token_amount, utxo_id: utxo.utxo_id() },
+	};
+
+	Some(transfer)
+}
 
 /*
 	* tx block no >= to_block
