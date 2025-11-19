@@ -694,7 +694,7 @@ create_docker_compose() {
       POSTGRES_DB: cexplorer
       POSTGRES_MULTIPLE_DATABASES: cexplorer
     volumes:
-      - postgres-data-${i}:/var/lib/postgresql/data
+      - postgres-data-${i}:/var/lib/postgresql
       - ./configurations/postgres/entrypoint.sh:/usr/local/bin/custom-entrypoint.sh
       - ./configurations/postgres/init.sh:/docker-entrypoint-initdb.d/init.sh
     ports:
