@@ -28,11 +28,15 @@
         };
 
         rustToolchain = fenix.packages.${system}.fromToolchainFile {
+          #dir = ./.; 
           file = ./rust-toolchain.toml;
           sha256 = "SJwZ8g0zF2WrKDVmHrVG3pD2RGoQeo24MEXnNx5FyuI=";
         };
 
-        rustToolchainNightly = fenix.packages.${system}.complete.toolchain;
+        rustToolchainNightly = fenix.packages.${system}.combine [
+          fenix.packages.${system}.complete.toolchain
+          fenix.packages.${system}.targets.wasm32-unknown-unknown.latest.rust-std
+        ];
 
         craneLib = (crane.mkLib pkgs).overrideToolchain rustToolchain;
         craneLibNightly = (crane.mkLib pkgs).overrideToolchain rustToolchainNightly;
