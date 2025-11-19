@@ -46,8 +46,18 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
 
-      - name: Setup Magic Nix Cache
-        uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: Install Attic client
+        run: |
+          nix profile install nixpkgs#attic-client
+
+      - name: Set up Attic cache
+        env:
+          ATTIC_ENDPOINT: ${{ secrets.ATTIC_ENDPOINT }}
+          ATTIC_CACHE: ${{ secrets.ATTIC_CACHE }}
+          ATTIC_TOKEN: ${{ secrets.ATTIC_TOKEN }}
+        run: |
+          attic login --set-default admin "$ATTIC_ENDPOINT" "$ATTIC_TOKEN"
+          attic use "$ATTIC_CACHE"
 
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -68,6 +78,12 @@ jobs:
 
       - name: Build (Stable)
         run: nix build .#partner-chains-demo-node --print-build-logs
+
+      - name: Push to Attic cache
+        env:
+          ATTIC_CACHE: ${{ secrets.ATTIC_CACHE }}
+        run: |
+          nix path-info -r .#checks.x86_64-linux.cargoFmt .#checks.x86_64-linux.cargoTest .#partner-chains-demo-node | attic push --stdin "$ATTIC_CACHE"
 
       - name: Build chain specs
         run: |
@@ -114,8 +130,18 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
 
-      - name: Setup Magic Nix Cache
-        uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: Install Attic client
+        run: |
+          nix profile install nixpkgs#attic-client
+
+      - name: Set up Attic cache
+        env:
+          ATTIC_ENDPOINT: ${{ secrets.ATTIC_ENDPOINT }}
+          ATTIC_CACHE: ${{ secrets.ATTIC_CACHE }}
+          ATTIC_TOKEN: ${{ secrets.ATTIC_TOKEN }}
+        run: |
+          attic login --set-default admin "$ATTIC_ENDPOINT" "$ATTIC_TOKEN"
+          attic use "$ATTIC_CACHE"
 
       - name: Build (Nightly)
         run: nix build .#partner-chains-demo-node-nightly --print-build-logs
@@ -125,6 +151,12 @@ jobs:
 
       - name: Lint (Nightly)
         run: nix build .#checks.x86_64-linux.cargoClippyNightly --print-build-logs
+
+      - name: Push to Attic cache
+        env:
+          ATTIC_CACHE: ${{ secrets.ATTIC_CACHE }}
+        run: |
+          nix path-info -r .#partner-chains-demo-node-nightly .#checks.x86_64-linux.cargoTestNightly .#checks.x86_64-linux.cargoClippyNightly | attic push --stdin "$ATTIC_CACHE"
 
   local-env:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
@@ -230,8 +262,18 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
 
-      - name: Setup Magic Nix Cache
-        uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: Install Attic client
+        run: |
+          nix profile install nixpkgs#attic-client
+
+      - name: Set up Attic cache
+        env:
+          ATTIC_ENDPOINT: ${{ secrets.ATTIC_ENDPOINT }}
+          ATTIC_CACHE: ${{ secrets.ATTIC_CACHE }}
+          ATTIC_TOKEN: ${{ secrets.ATTIC_TOKEN }}
+        run: |
+          attic login --set-default admin "$ATTIC_ENDPOINT" "$ATTIC_TOKEN"
+          attic use "$ATTIC_CACHE"
 
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -253,6 +295,12 @@ jobs:
 
       - name: Build
         run: nix build .#partner-chains-demo-node --print-build-logs
+
+      - name: Push to Attic cache
+        env:
+          ATTIC_CACHE: ${{ secrets.ATTIC_CACHE }}
+        run: |
+          nix path-info -r .#partner-chains-demo-node | attic push --stdin "$ATTIC_CACHE"
 
       - name: Build chain specs
         run: |
@@ -462,8 +510,18 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
 
-      - name: Setup Magic Nix Cache
-        uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: Install Attic client
+        run: |
+          nix profile install nixpkgs#attic-client
+
+      - name: Set up Attic cache
+        env:
+          ATTIC_ENDPOINT: ${{ secrets.ATTIC_ENDPOINT }}
+          ATTIC_CACHE: ${{ secrets.ATTIC_CACHE }}
+          ATTIC_TOKEN: ${{ secrets.ATTIC_TOKEN }}
+        run: |
+          attic login --set-default admin "$ATTIC_ENDPOINT" "$ATTIC_TOKEN"
+          attic use "$ATTIC_CACHE"
 
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -484,6 +542,12 @@ jobs:
 
       - name: Build
         run: nix build .#partner-chains-demo-node --print-build-logs
+
+      - name: Push to Attic cache
+        env:
+          ATTIC_CACHE: ${{ secrets.ATTIC_CACHE }}
+        run: |
+          nix path-info -r .#checks.x86_64-linux.cargoFmt .#checks.x86_64-linux.cargoTest .#partner-chains-demo-node | attic push --stdin "$ATTIC_CACHE"
 
       - name: Lint
         run: nix develop --accept-flake-config -c bash -c "RUSTFLAGS=-Dwarnings cargo clippy --locked --release --all-features"
