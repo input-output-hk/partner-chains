@@ -1,5 +1,7 @@
 #!/bin/bash
 
+mkdir -p /runtime-values
+
 cp /usr/local/bin/partner-chains-node /partner-chains-node
 echo "Using Partner Chains node version:"
 ./partner-chains-node --version
@@ -51,18 +53,19 @@ echo "Generating addresses.json file..."
 
 cp addresses.json /runtime-values/addresses.json
 
-export COMMITTEE_CANDIDATE_ADDRESS=$(jq -r '.addresses.CommitteeCandidateValidator' addresses.json)
+export COMMITTEE_CANDIDATE_ADDRESS=$(jq -r '.addresses.CommitteeCandidateValidator' /runtime-values/addresses.json)
 echo "Committee candidate address: $COMMITTEE_CANDIDATE_ADDRESS"
 
-export D_PARAMETER_POLICY_ID=$(jq -r '.policyIds.DParameter' addresses.json)
+export D_PARAMETER_POLICY_ID=$(jq -r '.policyIds.DParameter' /runtime-values/addresses.json)
 echo "D parameter policy ID: $D_PARAMETER_POLICY_ID"
 
-export PERMISSIONED_CANDIDATES_POLICY_ID=$(jq -r '.policyIds.PermissionedCandidates' addresses.json)
+export PERMISSIONED_CANDIDATES_POLICY_ID=$(jq -r '.policyIds.PermissionedCandidates' /runtime-values/addresses.json)
 echo "Permissioned candidates policy ID: $PERMISSIONED_CANDIDATES_POLICY_ID"
 
 echo "Setting values for NATIVE_TOKEN_POLICY_ID, NATIVE_TOKEN_ASSET_NAME, and ILLIQUID_SUPPLY_VALIDATOR_ADDRESS for chain-spec creation"
-export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS=$(jq -r '.addresses.IlliquidCirculationSupplyValidator' addresses.json)
+export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS=$(jq -r '.addresses.IlliquidCirculationSupplyValidator' /runtime-values/addresses.json)
 echo "Illiquid Circulation Supply Validator address: $ILLIQUID_SUPPLY_VALIDATOR_ADDRESS"
+export ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR_ADDRESS=$(echo $ILLIQUID_SUPPLY_VALIDATOR_ADDRESS)
 export NATIVE_TOKEN_POLICY_ID="1fab25f376bc49a181d03a869ee8eaa3157a3a3d242a619ca7995b2b"
 export NATIVE_TOKEN_ASSET_NAME="52657761726420746f6b656e"
 
@@ -72,9 +75,9 @@ export BRIDGE_TOKEN_ASSET_NAME=$(echo $NATIVE_TOKEN_ASSET_NAME)
 echo "$NATIVE_TOKEN_POLICY_ID" > /runtime-values/NATIVE_TOKEN_POLICY_ID
 echo "$NATIVE_TOKEN_ASSET_NAME" > /runtime-values/NATIVE_TOKEN_ASSET_NAME
 
-export GOVERNED_MAP_VALIDATOR_ADDRESS=$(jq -r '.addresses.GovernedMapValidator' addresses.json)
+export GOVERNED_MAP_VALIDATOR_ADDRESS=$(jq -r '.addresses.GovernedMapValidator' /runtime-values/addresses.json)
 echo "Governed Map Validator Address: $GOVERNED_MAP_VALIDATOR_ADDRESS"
-export GOVERNED_MAP_POLICY_ID=$(jq -r '.policyIds.GovernedMap' addresses.json)
+export GOVERNED_MAP_POLICY_ID=$(jq -r '.policyIds.GovernedMap' /runtime-values/addresses.json)
 echo "Governed Map Policy ID: $GOVERNED_MAP_POLICY_ID"
 
 echo "Inserting D parameter..."
