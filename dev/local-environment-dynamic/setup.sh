@@ -819,6 +819,8 @@ parse_arguments() {
 main() {
     parse_arguments "$@"
 
+    mkdir -p runtime-values
+
     if [ "$non_interactive" -eq 1 ]; then
         echo -e "Running in non-interactive mode with default settings...\n"
         backup_files "non-interactive"
