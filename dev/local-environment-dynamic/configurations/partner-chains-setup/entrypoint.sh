@@ -329,6 +329,7 @@ for ((i=1; i<=NUM_PERMISSIONED_NODES_TO_PROCESS; i++)); do
     cat <<EOF >> initial_validators.json
     [
         "$validator_id",
+        "$validator_id",
         {
             "aura": "$aura_ss58",
             "grandpa": "$grandpa_ss58"
@@ -348,6 +349,7 @@ if [ "$NUM_PERMISSIONED_NODES_TO_PROCESS" -eq 0 ] && [ "$NUM_REGISTERED_NODES_TO
     cat <<EOF >> initial_validators.json
     [
         "$validator_id",
+        "$validator_id",
         {
             "aura": "$aura_ss58",
             "grandpa": "$grandpa_ss58"
@@ -360,8 +362,9 @@ fi
 echo "]" >> initial_validators.json
 
 # Update chain-spec.json with initial validators
-jq --slurpfile validators initial_validators.json '.genesis.runtimeGenesis.config.session.initialValidators = $validators[0]' chain-spec.json > chain-spec.json.tmp
+jq --slurpfile validators initial_validators.json '.genesis.runtimeGenesis.config.session.keys = $validators[0]' chain-spec.json > chain-spec.json.tmp
 mv chain-spec.json.tmp chain-spec.json
+rm initial_validators.json # Clean up temporary file
 
 echo "Configuring Initial Authorities with SS58 Public Key ID..."
 echo "[" > initial_authorities.json
