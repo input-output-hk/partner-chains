@@ -377,6 +377,19 @@ pub mod pallet {
 	pub type MainChainScriptsConfiguration<T: Config> =
 		StorageValue<_, MainChainScripts, ValueQuery>;
 
+	/// Stores the current version of `AuthorityKeys` type.
+	///
+	/// This value is different from the pallet's storage version and is only used for versioning
+	/// `AuthorityKeys` which can change independently from other pallet storages during evolution
+	/// of a Partner Chain.
+	///
+	/// This value should only be modified when the `AuthorityKeys` is changed, by scheduling
+	/// [AuthorityKeysMigration] during runtime upgrade.
+	///
+	/// [AuthorityKeysMigration]: migrations::authority_keys::AuthorityKeysMigration
+	#[pallet::storage]
+	pub type AuthorityKeysVersion<T: Config> = StorageValue<_, u32, ValueQuery, GetDefault>;
+
 	#[pallet::error]
 	pub enum Error<T> {
 		/// [Pallet::set] has been called with epoch number that is not current epoch + 1

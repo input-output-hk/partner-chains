@@ -41,7 +41,7 @@
 //! migration set:
 //! ```rust,ignore
 //! pub type Migrations = (
-//! 	AuthorityKeysMigration<Runtime, LegacySessionKeys>,
+//! 	AuthorityKeysMigration<Runtime, LegacySessionKeys, 0, 1>,
 //! 	// ...other migrations
 //! );
 //!
@@ -57,9 +57,12 @@
 //! >;
 //! ```
 //!
-//! **Important**: Note that this migration is not versioned, and therefore *must* be removed from
-//! the migration set in the code before the next runtime upgrade is performed.
+//! Note that [AuthorityKeysMigration] is parametrized by the session keys versions from which
+//! and to which it migrates, to guarantee idempotency. Current session keys version can be
+//! obtained by reading the [AuthorityKeysVersion] storage and by default starts as 0.
+
 extern crate alloc;
+
 use crate::*;
 use alloc::vec::Vec;
 use core::marker::PhantomData;
@@ -80,16 +83,28 @@ impl<T: crate::Config> UpgradeAuthorityKeys<T> for T::AuthorityKeys {
 	}
 }
 
-/// Migrates existing committee members data in storage to use new types of `AuthorityId` and `AuthorityKeys`
-pub struct AuthorityKeysMigration<T, OldAuthorityKeys>
-where
+/// Migrates existing committee members data in storage to use new type `AuthorityKeys`
+///
+/// This migration is versioned and will only applied when on-chain session keys version
+/// as read from [AuthorityKeysVersion] storage is equal to `FROM_VERSION` and will
+/// set the version to `TO_VERSION`.
+///
+/// **Important**: This migration assumes that the runtime is using [pallet_session] and will
+/// migrate that pallet's key storage as well.
+pub struct AuthorityKeysMigration<
+	T,
+	OldAuthorityKeys,
+	const FROM_VERSION: u32,
+	const TO_VERSION: u32,
+> where
 	T: crate::Config,
 	OldAuthorityKeys: UpgradeAuthorityKeys<T> + Member + Decode + Clone,
 {
 	_phantom: PhantomData<(T, OldAuthorityKeys)>,
 }
 
-impl<T: crate::Config, OldAuthorityKeys> AuthorityKeysMigration<T, OldAuthorityKeys>
+impl<T: crate::Config, OldAuthorityKeys, const FROM_VERSION: u32, const TO_VERSION: u32>
+	AuthorityKeysMigration<T, OldAuthorityKeys, FROM_VERSION, TO_VERSION>
 where
 	OldAuthorityKeys: UpgradeAuthorityKeys<T> + Member + Decode + Clone,
 {
@@ -112,13 +127,29 @@ where
 	}
 }
 
-impl<T, OldAuthorityKeys> OnRuntimeUpgrade for AuthorityKeysMigration<T, OldAuthorityKeys>
+impl<T, OldAuthorityKeys, const FROM_VERSION: u32, const TO_VERSION: u32> OnRuntimeUpgrade
+	for AuthorityKeysMigration<T, OldAuthorityKeys, FROM_VERSION, TO_VERSION>
 where
 	T: crate::Config + pallet_session::Config<Keys = <T as crate::Config>::AuthorityKeys>,
 	OldAuthorityKeys: UpgradeAuthorityKeys<T> + OpaqueKeys + Member + Decode + Clone,
 {
 	fn on_runtime_upgrade() -> sp_runtime::Weight {
-		let mut weight = sp_runtime::Weight::zero();
+		let current_version = crate::AuthorityKeysVersion::<T>::get();
+
+		let mut weight = T::DbWeight::get().reads_writes(1, 0);
+
+		if TO_VERSION <= current_version {
+			log::warn!(
+				"🚚 AuthorityKeysMigration {FROM_VERSION}->{TO_VERSION} can be removed; storage is already at version {current_version}."
+			);
+			return weight;
+		}
+		if current_version != FROM_VERSION {
+			log::warn!(
+				"🚚 AuthorityKeysMigration {FROM_VERSION}->{TO_VERSION} can not be applied to storage at version {current_version}."
+			);
+			return weight;
+		}
 
 		if let Some(new) = CurrentCommittee::<T>::translate::<
 			CommitteeInfo<T::AuthorityId, OldAuthorityKeys, T::MaxValidators>,
@@ -127,7 +158,7 @@ where
 		.expect("Decoding of the old value must succeed")
 		{
 			CurrentCommittee::<T>::put(new);
-			log::info!("ℹ️ Migrated current committee storage");
+			log::info!("🚚️ Migrated current committee storage to version {TO_VERSION}");
 			weight = weight.saturating_add(T::DbWeight::get().reads_writes(1, 1));
 		}
 
@@ -138,13 +169,18 @@ where
 		.expect("Decoding of the old value must succeed")
 		{
 			NextCommittee::<T>::put(new);
-			log::info!("ℹ️ Migrated new committee storage");
+			log::info!("🚚️ Migrated new committee storage to version {TO_VERSION}");
 			weight = weight.saturating_add(T::DbWeight::get().reads_writes(1, 1));
 		}
 
 		pallet_session::Pallet::<T>::upgrade_keys(|_id, old_keys| {
 			OldAuthorityKeys::upgrade(old_keys)
 		});
+		weight.saturating_add(T::DbWeight::get().reads_writes(2, 2));
+		log::info!("🚚️ Migrated keys in pallet_session to version {TO_VERSION}");
+
+		crate::AuthorityKeysVersion::<T>::set(TO_VERSION);
+		weight.saturating_add(T::DbWeight::get().reads_writes(0, 1));
 
 		weight
 	}
