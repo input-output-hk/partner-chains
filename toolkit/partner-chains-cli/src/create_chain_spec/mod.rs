@@ -152,7 +152,7 @@ impl<Keys: MaybeFromCandidateKeys> CreateChainSpecConfig<Keys> {
 	/// Returns [pallet_sidechain::GenesisConfig] derived from the config
 	pub fn pallet_sidechain_config<T: pallet_sidechain::Config>(
 		&self,
-		slots_per_epoch: sidechain_slots::SlotsPerEpoch,
+		slots_per_epoch: pallet_sidechain::SlotsPerEpochType,
 	) -> pallet_sidechain::GenesisConfig<T> {
 		pallet_sidechain::GenesisConfig {
 			genesis_utxo: self.genesis_utxo,

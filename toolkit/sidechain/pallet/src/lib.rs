@@ -125,6 +125,7 @@ pub mod mock;
 mod tests;
 
 pub use pallet::*;
+pub use sidechain_slots::SlotsPerEpoch as SlotsPerEpochType;
 
 #[frame_support::pallet]
 pub mod pallet {

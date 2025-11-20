@@ -7336,7 +7336,6 @@ dependencies = [
  "serde",
  "serde_json",
  "sidechain-domain",
- "sidechain-slots",
  "sp-core",
  "sp-governed-map",
  "sp-partner-chains-bridge",
