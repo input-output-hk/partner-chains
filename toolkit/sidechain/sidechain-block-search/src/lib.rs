@@ -11,9 +11,6 @@
 //!
 //! The binary search feature is provided via the [FindSidechainBlock] trait. This trait is
 //! implemented for any runtime client that implements the [GetSidechainStatus] runtime API.
-//! To query the blockchain, a predicate must be passed to the query that defines the searched
-//! block. Some predefined targets are defined in the [predicates] module, otherwise a new target
-//! type can be defined by implementing the [CompareStrategy] trait.
 //!
 //! Given a runtime client that satisfies the trait bounds, the blockchain can be queried like this:
 //!
@@ -37,13 +34,8 @@
 
 #![deny(missing_docs)]
 
-mod binary_search;
-mod impl_block_info;
-mod impl_find_block;
-
-pub use binary_search::binary_search_by;
-
 use sidechain_domain::{ScEpochNumber, ScSlotNumber};
+use sp_api::ApiError;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::Block as BlockT;
@@ -51,9 +43,31 @@ use sp_runtime::traits::NumberFor;
 #[allow(deprecated)]
 use sp_sidechain::GetSidechainStatus;
 use std::cmp::Ordering;
+use std::ops::{Add, Div, Sub};
 
 #[cfg(test)]
 mod tests;
+
+/// Performs binary search over `range` using ordering provided by `f`
+pub fn binary_search_by<T, F, E>(mut left: T, mut right: T, mut f: F) -> Option<T>
+where
+	F: FnMut(&T) -> Result<Ordering, E>,
+	T: Add<Output = T> + Div<Output = T> + Sub<Output = T> + PartialOrd,
+	T: From<u8>,
+	T: Copy,
+{
+	while left <= right {
+		let middle = (left + right) / 2.into();
+
+		match f(&middle).ok()? {
+			Ordering::Equal => return Some(middle),
+			Ordering::Less => left = middle + 1.into(),
+			Ordering::Greater => right = middle - 1.into(),
+		}
+	}
+
+	None
+}
 
 /// Runtime API client used by the block queries in this crate
 pub trait Client<Block: BlockT>: HeaderBackend<Block> + ProvideRuntimeApi<Block> {}
@@ -78,35 +92,76 @@ pub trait SidechainInfo<Block: BlockT>: Client<Block> {
 	) -> Result<ScEpochNumber, Self::Error>;
 }
 
-/// Comparator used for binary searching the block history
-///
-/// Types implementing this trait represent some _search target_, which is to be found through
-/// binary search over block history. Note that this search target can be a single block defined
-/// by its _slot_ or some other monotonically increasing block property, or a _range_ of blocks
-/// defined by a range of slots or other property.
-pub trait CompareStrategy<Block: BlockT, BlockInfo: Client<Block>> {
-	/// Error type
-	type Error: std::error::Error;
+#[allow(deprecated)]
+impl<C, Block> SidechainInfo<Block> for C
+where
+	C: Client<Block> + Send + Sync + 'static,
+	C::Api: GetSidechainStatus<Block>,
+	Block: BlockT,
+	NumberFor<Block>: From<u32> + Into<u32>,
+{
+	type Error = ApiError;
 
-	/// Compares a block against a search target.
-	///
-	/// # Returns
-	/// - `Ok(Ordering::Less)` if the block is below the target
-	/// - `Ok(Ordering::Equal)` if the block is at target
-	/// - `Ok(Ordering::Greater)` if the block is above the target
-	/// - `Err` if an error occured
-	fn compare_block(
+	fn get_slot_of_block(
 		&self,
-		block: NumberFor<Block>,
-		block_info: &BlockInfo,
-	) -> Result<Ordering, Self::Error>;
+		block_number: NumberFor<Block>,
+	) -> Result<ScSlotNumber, Self::Error> {
+		let api = self.runtime_api();
+		let block_hash = self
+			.hash(block_number)?
+			.ok_or(ApiError::UnknownBlock(format!("Block Number {block_number} does not exist")))?;
+		let sidechain_status = api.get_sidechain_status(block_hash)?;
+		Ok(sidechain_status.slot)
+	}
+
+	fn get_epoch_of_block(
+		&self,
+		block_number: NumberFor<Block>,
+	) -> Result<ScEpochNumber, Self::Error> {
+		let api = self.runtime_api();
+		let block_hash = self
+			.hash(block_number)?
+			.ok_or(ApiError::UnknownBlock(format!("Block Number {block_number} does not exist")))?;
+		let sidechain_status = api.get_sidechain_status(block_hash)?;
+		Ok(sidechain_status.epoch)
+	}
 }
 
-/// Runtime client capable of finding Partner Chain blocks via binary search using some [CompareStrategy].
+/// Runtime client capable of finding Partner Chain blocks via binary search
 pub trait FindSidechainBlock<Block: BlockT>: Client<Block> + Sized {
 	/// Error type
 	type Error: std::error::Error;
 
 	/// Finds any block in the given epoch if it exists
 	fn find_any_block_in_epoch(&self, epoch: ScEpochNumber) -> Result<Block::Hash, Self::Error>;
+}
+
+#[allow(deprecated)]
+impl<C, Block> FindSidechainBlock<Block> for C
+where
+	C: Client<Block> + Send + Sync + 'static,
+	Block: BlockT,
+	NumberFor<Block>: From<u32> + Into<u32>,
+	C::Api: GetSidechainStatus<Block>,
+{
+	type Error = ApiError;
+
+	/// Finds any block in the given epoch if it exists
+	fn find_any_block_in_epoch(&self, epoch: ScEpochNumber) -> Result<Block::Hash, Self::Error> {
+		let left_block = 1u32;
+		let right_block: u32 = self.info().best_number.into();
+
+		let f = |block: &u32| -> Result<Ordering, Self::Error> {
+			let epoch_block = self.get_epoch_of_block((*block).into())?;
+			Ok(epoch_block.cmp(&epoch))
+		};
+
+		let block_number = binary_search_by(left_block, right_block, f)
+			.ok_or(ApiError::Application("Could not find block".to_string().into()))
+			.map(|x| x.into())?;
+
+		Ok(self
+			.hash(block_number)?
+			.expect("Block with given number exists, so its hash should exists as well"))
+	}
 }
