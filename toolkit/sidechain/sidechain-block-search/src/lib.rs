@@ -124,12 +124,6 @@ pub trait FindSidechainBlock<Block: BlockT>: Client<Block> + Sized {
 	/// Error type
 	type Error: std::error::Error;
 
-	/// Finds the number of any block in given epoch if it exists
-	fn find_any_block_number_in_epoch(
-		&self,
-		epoch: ScEpochNumber,
-	) -> Result<NumberFor<Block>, Self::Error>;
-
 	/// Finds any block in the given epoch if it exists
 	fn find_any_block_in_epoch(&self, epoch: ScEpochNumber) -> Result<Block::Hash, Self::Error>;
 }
