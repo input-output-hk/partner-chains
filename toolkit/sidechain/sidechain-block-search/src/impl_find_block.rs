@@ -16,7 +16,10 @@ where
 	fn find_any_block_in_epoch(&self, epoch: ScEpochNumber) -> Result<Block::Hash, Self::Error> {
 		let (left_block, right_block): (u32, u32) = (1u32, self.info().best_number.into());
 		let range = left_block..right_block + 1;
-		let f = |block: &u32| AnyBlockInEpoch { epoch }.compare_block((*block).into(), self);
+		let f = |block: &u32| -> Result<Ordering, Self::Error> {
+			let epoch_block = self.get_epoch_of_block((*block).into())?;
+			Ok(epoch_block.cmp(&epoch))
+		};
 
 		let block_number = binary_search_by(range, f)
 			.ok_or(ApiError::Application("Could not find block".to_string().into()))

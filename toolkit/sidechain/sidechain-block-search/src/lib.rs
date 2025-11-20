@@ -18,7 +18,6 @@
 //! Given a runtime client that satisfies the trait bounds, the blockchain can be queried like this:
 //!
 //! ```rust
-//! use sidechain_block_search::predicates::AnyBlockInEpoch;
 //! use sidechain_block_search::{ FindSidechainBlock, Client };
 //! use sidechain_domain::*;
 //! use sp_api::ProvideRuntimeApi;
@@ -32,10 +31,7 @@
 //!     C: ProvideRuntimeApi<B> + Client<B> + Send + Sync + 'static,
 //!     C::Api: GetSidechainStatus<B>
 //! {
-//!     let search_target = AnyBlockInEpoch {
-//!         epoch: ScEpochNumber(42)
-//!     };
-//!     let result = client.find_block(search_target);
+//!     let result = client.find_any_block_in_epoch(ScEpochNumber(42));
 //! }
 //! ```
 
@@ -43,7 +39,6 @@
 
 mod binary_search;
 mod impl_block_info;
-mod impl_compare_strategy;
 mod impl_find_block;
 
 pub use binary_search::binary_search_by;
@@ -59,18 +54,6 @@ use std::cmp::Ordering;
 
 #[cfg(test)]
 mod tests;
-
-/// Types of binary search queries over Partner Chain blocks
-pub mod predicates {
-	use super::*;
-
-	/// Query for any block in given Partner Chain epoch
-	pub struct AnyBlockInEpoch {
-		/// Queried Partner Chain epoch
-		pub epoch: ScEpochNumber,
-	}
-}
-use predicates::*;
 
 /// Runtime API client used by the block queries in this crate
 pub trait Client<Block: BlockT>: HeaderBackend<Block> + ProvideRuntimeApi<Block> {}
