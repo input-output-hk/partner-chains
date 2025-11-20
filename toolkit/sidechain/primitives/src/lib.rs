@@ -7,6 +7,13 @@ use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use sidechain_domain::{ScEpochNumber, ScSlotNumber, UtxoId};
 
+pub use sidechain_slots::{
+	ScSlotConfig, Slot, SlotDuration, SlotsPerEpoch, runtime_decl_for_slot_api,
+};
+#[cfg(feature = "std")]
+#[allow(deprecated)]
+pub use sidechain_slots::{SlotApi, runtime_api_client};
+
 #[cfg(test)]
 mod tests;
 

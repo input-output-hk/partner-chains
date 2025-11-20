@@ -54,7 +54,6 @@ frame-system = { workspace = true }
 pallet-transaction-payment = { workspace = true }
 sp-block-production-log = { workspace = true }
 sidechain-domain = { workspace = true }
-sidechain-slots = { workspace = true }
 sp-sidechain = { workspace = true }
 pallet-sidechain-rpc = { workspace = true, features = ["legacy-slotapi-compat"] }
 pallet-session-validator-management = { workspace = true }

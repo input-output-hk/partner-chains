@@ -3,9 +3,9 @@ use partner_chains_demo_runtime::{
 	AccountId, CrossChainPublic, SessionConfig, Signature, WASM_BINARY, opaque::SessionKeys,
 };
 use sc_service::ChainType;
-use sidechain_slots::SlotsPerEpoch;
 use sp_core::{Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
+use sp_sidechain::SlotsPerEpoch;
 
 pub type ChainSpec = sc_service::GenericChainSpec;
 

@@ -5,7 +5,6 @@ use partner_chains_demo_runtime::opaque::SessionKeys;
 use partner_chains_demo_runtime::{BlockAuthor, CrossChainPublic};
 use sidechain_domain::*;
 use sidechain_mc_hash::McHashInherentDigest;
-use sidechain_slots::Slot;
 use sp_api::{ApiRef, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_core::ecdsa;
@@ -15,7 +14,7 @@ use sp_runtime::Digest;
 use sp_runtime::key_types::{AURA, GRANDPA};
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT, NumberFor, Zero};
 use sp_session_validator_management::CommitteeMember;
-use sp_sidechain::GetGenesisUtxo;
+use sp_sidechain::{GetGenesisUtxo, Slot};
 use std::collections::HashMap;
 
 type Hash = <Block as BlockT>::Hash;

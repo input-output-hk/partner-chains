@@ -6,10 +6,10 @@ use partner_chains_demo_runtime::{
 };
 use sc_service::{ChainType, Properties};
 use sidechain_domain::*;
-use sidechain_slots::SlotsPerEpoch;
 use sp_core::bytes::from_hex;
 use sp_core::{ed25519, sr25519};
 use sp_session_validator_management::CommitteeMember;
+use sp_sidechain::SlotsPerEpoch;
 use std::str::FromStr;
 
 pub fn authority_keys(

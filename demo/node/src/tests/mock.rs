@@ -6,12 +6,12 @@ use partner_chains_demo_runtime::{BlockAuthor, CrossChainPublic};
 use sc_consensus_aura::SlotDuration;
 use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 use sidechain_domain::*;
-use sidechain_slots::{ScSlotConfig, Slot, SlotsPerEpoch};
 use sp_block_participation::{BlockProducerParticipationData, BlockProductionData};
 use sp_core::{
 	ecdsa,
 	offchain::{Duration, Timestamp},
 };
+use sp_sidechain::{ScSlotConfig, Slot, SlotsPerEpoch};
 use std::sync::Arc;
 
 pub fn mock_genesis_utxo() -> UtxoId {

@@ -7,8 +7,8 @@ use frame_support::{
 	*,
 };
 use sidechain_domain::{McTxHash, ScSlotNumber, UtxoId, UtxoIndex};
-use sidechain_slots::SlotsPerEpoch;
 use sp_core::*;
+use sp_sidechain::SlotsPerEpoch;
 
 pub const MOCK_GENESIS_UTXO: UtxoId = UtxoId { tx_hash: McTxHash([0u8; 32]), index: UtxoIndex(0) };
 pub const MOCK_SLOTS_PER_EPOCH: SlotsPerEpoch = SlotsPerEpoch(10);

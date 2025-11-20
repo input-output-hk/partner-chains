@@ -1,4 +1,5 @@
 //! Module providing helper functions for interacting with [SlotApi]
+#![allow(deprecated)]
 
 use crate::{ScSlotConfig, SlotApi};
 use sp_api::{ApiError, ProvideRuntimeApi};

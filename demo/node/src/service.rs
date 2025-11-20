@@ -134,7 +134,7 @@ pub fn new_partial(
 		telemetry.as_ref().map(|x| x.handle()),
 	)?;
 
-	let sc_slot_config = sidechain_slots::runtime_api_client::slot_config(&*client)
+	let sc_slot_config = sp_sidechain::runtime_api_client::slot_config(&*client)
 		.map_err(sp_blockchain::Error::from)?;
 
 	let time_source = Arc::new(SystemTimeSource);
@@ -317,7 +317,7 @@ pub async fn new_full_base<Network: sc_network::NetworkBackend<Block, <Block as 
 		let proposer_factory: PartnerChainsProposerFactory<_, _, McHashInherentDigest> =
 			PartnerChainsProposerFactory::new(basic_authorship_proposer_factory);
 
-		let sc_slot_config = sidechain_slots::runtime_api_client::slot_config(&*client)
+		let sc_slot_config = sp_sidechain::runtime_api_client::slot_config(&*client)
 			.map_err(sp_blockchain::Error::from)?;
 		let time_source = Arc::new(SystemTimeSource);
 		let mc_epoch_config = MainchainEpochConfig::read_from_env()

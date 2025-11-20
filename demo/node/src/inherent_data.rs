@@ -13,7 +13,6 @@ use sidechain_domain::{
 	DelegatorKey, McBlockHash, ScEpochNumber, mainchain_epoch::MainchainEpochConfig,
 };
 use sidechain_mc_hash::{McHashDataSource, McHashInherentDataProvider as McHashIDP};
-use sidechain_slots::ScSlotConfig;
 use sp_api::ProvideRuntimeApi;
 use sp_block_participation::{
 	BlockParticipationApi,
@@ -33,6 +32,7 @@ use sp_partner_chains_bridge::{
 use sp_partner_chains_consensus_aura::CurrentSlotProvider;
 use sp_runtime::traits::{Block as BlockT, Header, Zero};
 use sp_session_validator_management::SessionValidatorManagementApi;
+use sp_sidechain::ScSlotConfig;
 use sp_timestamp::{InherentDataProvider as TimestampIDP, Timestamp};
 use std::error::Error;
 use time_source::TimeSource;

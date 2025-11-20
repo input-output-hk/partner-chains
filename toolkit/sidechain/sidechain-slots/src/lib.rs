@@ -1,6 +1,13 @@
 //! This crate provides types and logic for handling Partner Chain slots.
 //!
 //! Partner Chain slots are grouped into epochs of equal length.
+//!
+//! # deprecation notice
+//!
+//! Partner Chains toolkit is moving away from any assumptions about the underlying
+//! consensus algorithm being slot-based in order to support variable block time
+//! consensus mechanisms. As such, this crate will be removed in the future and no
+//! new code should use it.
 #![cfg_attr(not(feature = "std"), no_std)]
 #![deny(missing_docs)]
 
@@ -10,7 +17,6 @@ pub mod runtime_api_client;
 use core::{ops::Rem, time::Duration};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
-#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use sidechain_domain::{ScEpochNumber, ScSlotNumber};
 pub use sp_consensus_slots::{Slot, SlotDuration};
@@ -23,8 +29,7 @@ use sp_core::offchain::Timestamp;
 /// that is, Cardano main chain's epoch boundaries should always coincide with
 /// a Partner Chain epoch boundary, or in other words PC epochs should perfectly
 /// cover a Cardano epoch.
-#[derive(Clone, Copy, Debug, Encode, Decode, TypeInfo, MaxEncodedLen)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug, Encode, Decode, TypeInfo, MaxEncodedLen, Serialize, Deserialize)]
 pub struct SlotsPerEpoch(pub u32);
 
 /// Default number of slots per epoch.
@@ -43,7 +48,7 @@ impl Default for SlotsPerEpoch {
 
 impl SlotsPerEpoch {
 	/// Reads [SlotsPerEpoch] from the environment variable `SLOTS_PER_EPOCH` with default.
-	#[cfg(all(feature = "std", feature = "serde"))]
+	#[cfg(all(feature = "std"))]
 	pub fn read_from_env() -> Result<Self, envy::Error> {
 		#[derive(Serialize, Deserialize)]
 		struct SlotsPerEpochEnvConfig {
@@ -149,6 +154,7 @@ pub enum Error {
 
 sp_api::decl_runtime_apis! {
 	/// Runtime API serving slot configuration
+	#[deprecated(since = "1.9.0", note = "See deprecation notice for the encompassing crate.")]
 	pub trait SlotApi {
 		/// Returns the current slot configuration
 		fn slot_config() -> ScSlotConfig;

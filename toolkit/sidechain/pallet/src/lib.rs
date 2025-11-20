@@ -94,7 +94,7 @@
 //! ```rust
 //! # use std::str::FromStr;
 //! # use sidechain_domain::UtxoId;
-//! # use sidechain_slots::SlotsPerEpoch;
+//! # use sp_sidechain::SlotsPerEpoch;
 //! #
 //! # fn create_genesis_config<Runtime>() -> pallet_sidechain::GenesisConfig<Runtime>
 //! # where Runtime: frame_system::Config + pallet_sidechain::Config
@@ -125,7 +125,7 @@ pub mod mock;
 mod tests;
 
 pub use pallet::*;
-pub use sidechain_slots::SlotsPerEpoch as SlotsPerEpochType;
+pub use sp_sidechain as primitives;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -154,7 +154,7 @@ pub mod pallet {
 	/// Number of slots per epoch. Currently this value must not change for a running chain.
 	#[pallet::storage]
 	pub(super) type SlotsPerEpoch<T: Config> =
-		StorageValue<_, sidechain_slots::SlotsPerEpoch, ValueQuery>;
+		StorageValue<_, sp_sidechain::SlotsPerEpoch, ValueQuery>;
 
 	/// Genesis Cardano UTXO of the Partner Chain
 	///
@@ -178,7 +178,7 @@ pub mod pallet {
 		}
 
 		/// Returns the configured number of slots per Partner Chain epoch
-		pub fn slots_per_epoch() -> sidechain_slots::SlotsPerEpoch {
+		pub fn slots_per_epoch() -> sp_sidechain::SlotsPerEpoch {
 			SlotsPerEpoch::<T>::get()
 		}
 	}
@@ -189,7 +189,7 @@ pub mod pallet {
 		/// Genesis UTXO of the Partner Chain. This value is immutable.
 		pub genesis_utxo: UtxoId,
 		/// Number of slots ber Partner Chain epoch. This value is immutable.
-		pub slots_per_epoch: sidechain_slots::SlotsPerEpoch,
+		pub slots_per_epoch: sp_sidechain::SlotsPerEpoch,
 		#[serde(skip)]
 		#[allow(missing_docs)]
 		pub _config: sp_std::marker::PhantomData<T>,

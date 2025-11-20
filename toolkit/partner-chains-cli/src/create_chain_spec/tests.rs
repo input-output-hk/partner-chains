@@ -4,7 +4,7 @@ use crate::tests::runtime::{MockRuntime, TestSessionKeys};
 use crate::tests::{CHAIN_CONFIG_FILE_PATH, MockIO, MockIOContext};
 use crate::{CmdRun, KeyDefinition, verify_json};
 use colored::Colorize;
-use pallet_sidechain::SlotsPerEpochType;
+use pallet_sidechain::primitives::SlotsPerEpoch;
 
 impl PartnerChainRuntime for MockRuntime {
 	type Keys = TestSessionKeys;
@@ -16,7 +16,7 @@ impl PartnerChainRuntime for MockRuntime {
 			"bootnodes": config.bootnodes,
 			"session":config.pallet_partner_chains_session_config::<MockRuntime>(),
 			"sessionCommitteeManagement": config.pallet_session_validator_management_config::<MockRuntime>(),
-			"sidechain": config.pallet_sidechain_config::<MockRuntime>(SlotsPerEpochType(13)),
+			"sidechain": config.pallet_sidechain_config::<MockRuntime>(SlotsPerEpoch(13)),
 			"governedMap":config.governed_map_config::<MockRuntime>(),
 			"bridge":config.bridge_config::<MockRuntime>(),
 		})

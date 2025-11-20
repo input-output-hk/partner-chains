@@ -22,7 +22,6 @@ sp-core = { workspace = true }
 sp-runtime = { workspace = true }
 sp-sidechain = { workspace = true }
 sidechain-domain = { workspace = true }
-sidechain-slots = { workspace = true, features = ["serde"]}
 log = { workspace = true }
 
 [dev-dependencies]
@@ -40,5 +39,4 @@ std = [
 	"sp-sidechain/std",
 	"parity-scale-codec/std",
 	"sidechain-domain/std",
-	"sidechain-slots/std",
 ]

@@ -480,7 +480,7 @@ macro_rules! assert_aura_authorities {
 	}};
 }
 pub(crate) use assert_aura_authorities;
-use sidechain_slots::SlotsPerEpoch;
 use sp_session_validator_management::{CommitteeMember, MainChainScripts};
+use sp_sidechain::SlotsPerEpoch;
 
 use crate::CrossChainPublic;

@@ -79,7 +79,6 @@ pallet-sidechain = { workspace = true }
 pallet-session-validator-management = { workspace = true }
 sp-session-validator-management = { workspace = true, features = ["serde"] }
 sidechain-domain = { workspace = true, features = ["serde", "app-crypto"] }
-sidechain-slots = { workspace = true }
 pallet-address-associations = { workspace = true }
 pallet-block-producer-metadata = { workspace = true }
 sp-block-producer-metadata = { workspace = true }
@@ -158,7 +157,6 @@ std = [
 	"sp-weights/std",
 	"substrate-wasm-builder",
 	"pallet-sidechain/std",
-	"sidechain-slots/std",
 	"sidechain-domain/std",
 	"sp-inherents/std",
 	"sp-block-production-log/std",

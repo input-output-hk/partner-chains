@@ -40,7 +40,6 @@ use sidechain_domain::{
 	CrossChainPublicKey, DelegatorKey, MainchainKeyHash, PermissionedCandidateData,
 	RegistrationData, ScEpochNumber, ScSlotNumber, StakeDelegation, StakePoolPublicKey, UtxoId,
 };
-use sidechain_slots::Slot;
 use sp_api::impl_runtime_apis;
 use sp_block_participation::AsCardanoSPO;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -60,7 +59,7 @@ use sp_runtime::{
 	transaction_validity::{TransactionSource, TransactionValidity},
 };
 use sp_session_validator_management::{AuthoritySelectionInputs, CommitteeMember};
-use sp_sidechain::SidechainStatus;
+use sp_sidechain::{SidechainStatus, Slot};
 use sp_std::prelude::*;
 use sp_version::RuntimeVersion;
 use sp_weights::Weight;
@@ -1071,9 +1070,9 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl sidechain_slots::SlotApi<Block> for Runtime {
-		fn slot_config() -> sidechain_slots::ScSlotConfig {
-			sidechain_slots::ScSlotConfig {
+	impl sp_sidechain::SlotApi<Block> for Runtime {
+		fn slot_config() -> sp_sidechain::ScSlotConfig {
+			sp_sidechain::ScSlotConfig {
 				slots_per_epoch: Sidechain::slots_per_epoch(),
 				slot_duration: <Self as sp_consensus_aura::runtime_decl_for_aura_api::AuraApi<Block, AuraId>>::slot_duration()
 			}
