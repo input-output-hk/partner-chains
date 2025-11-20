@@ -43,7 +43,6 @@ use sp_runtime::traits::NumberFor;
 #[allow(deprecated)]
 use sp_sidechain::GetSidechainStatus;
 use std::cmp::Ordering;
-use std::ops::{Add, Div, Sub};
 
 #[cfg(test)]
 mod tests;

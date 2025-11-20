@@ -38,6 +38,6 @@ pub fn get_last_block_in_epoch(epoch: u32) -> u32 {
 	get_block_number((epoch + 1) * SLOTS_PER_EPOCH - 1)
 }
 
-pub fn get_any_block_in_epoch(epoch: u32) -> Range<u32> {
+pub fn epoch_block_range(epoch: u32) -> Range<u32> {
 	get_first_block_in_epoch(epoch)..get_last_block_in_epoch(epoch) + 1
 }
