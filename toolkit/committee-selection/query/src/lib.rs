@@ -8,7 +8,7 @@ use async_trait::async_trait;
 use authority_selection_inherents::{AuthoritySelectionDataSource, CandidateValidationApi};
 use derive_new::new;
 use parity_scale_codec::{Decode, Encode};
-use sidechain_block_search::{FindSidechainBlock, SidechainInfo, predicates::AnyBlockInEpoch};
+use sidechain_block_search::{FindSidechainBlock, SidechainInfo};
 use sidechain_domain::{McEpochNumber, ScEpochNumber, StakePoolPublicKey};
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_blockchain::{HeaderBackend, Info};
@@ -177,10 +177,8 @@ where
 			self.get_next_committee_versioned(best_hash)?
 				.ok_or(format!("Committee is unknown for the next epoch: {epoch_number}"))
 		} else {
-			let block_hash = self
-				.client
-				.find_block(AnyBlockInEpoch { epoch: epoch_number })
-				.map_err(err_debug)?;
+			let block_hash =
+				self.client.find_any_block_in_epoch(epoch_number).map_err(err_debug)?;
 			self.get_current_committee_versioned(block_hash)
 		}
 	}

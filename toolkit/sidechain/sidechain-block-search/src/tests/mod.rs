@@ -18,7 +18,7 @@ mod find_block_number_tests {
 		fn should_work_if_any_block_in_epoch(epoch in 1u32..get_epoch(BEST_NUMBER)) {
 			let client = Arc::new(TestClient { best_number: BEST_NUMBER });
 
-			let block_number = client.find_block_number(AnyBlockInEpoch { epoch: ScEpochNumber(epoch as u64) }).unwrap();
+			let block_number = client.find_any_block_number_in_epoch(ScEpochNumber(epoch as u64)).unwrap();
 			assert!(get_any_block_in_epoch(epoch).contains(&block_number));
 		}
 
@@ -26,7 +26,7 @@ mod find_block_number_tests {
 		fn should_not_work_if_epoch_does_not_exist(epoch in get_epoch(BEST_NUMBER) + 1..u32::MAX) {
 			let client = Arc::new(TestClient { best_number: BEST_NUMBER });
 
-			assert!(client.find_block_number(AnyBlockInEpoch { epoch: ScEpochNumber(epoch as u64) }).is_err());
+			assert!(client.find_any_block_number_in_epoch(ScEpochNumber(epoch as u64)).is_err());
 		}
 	}
 }
