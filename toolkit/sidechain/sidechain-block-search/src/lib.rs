@@ -56,7 +56,6 @@ use sp_runtime::traits::NumberFor;
 #[allow(deprecated)]
 use sp_sidechain::GetSidechainStatus;
 use std::cmp::Ordering;
-use std::ops::Range;
 
 #[cfg(test)]
 mod tests;
@@ -69,32 +68,6 @@ pub mod predicates {
 	pub struct AnyBlockInEpoch {
 		/// Queried Partner Chain epoch
 		pub epoch: ScEpochNumber,
-	}
-
-	/// Query for the first block in given Partner Chain epoch
-	pub struct FirstBlockInEpoch {
-		/// Queried Partner Chain epoch
-		pub epoch: ScEpochNumber,
-	}
-
-	/// Query for the last block in given Partner Chain epoch
-	pub struct LastBlockInEpoch {
-		/// Queried Partner Chain epoch
-		pub epoch: ScEpochNumber,
-	}
-
-	/// Query for any block in given slot range
-	pub struct AnyBlockInSlotRange {
-		/// Queried slot range. Left-inclusive, right-exclusive
-		pub slot_range: Range<ScSlotNumber>,
-	}
-
-	/// Query for the last block in given slot range with upper block number bound
-	pub struct LatestBlockInSlotRange<Block: BlockT> {
-		/// Queried slot range. Left-inclusive, right-exclusive
-		pub slot_range: Range<ScSlotNumber>,
-		/// Upper bound for the number of returned block
-		pub latest_block: NumberFor<Block>,
 	}
 }
 use predicates::*;
