@@ -12,20 +12,38 @@
 //! For example, if a chain that originally used Aura and Grandpa keys is being upgraded to
 //! also use Beefy, the definition of the legacy keys type could look like this:
 //!
-//! ```rust,ignore
+//! ```rust
+//! use pallet_session_validator_management::migrations::authority_keys::UpgradeAuthorityKeys;
+//! use sp_core::*;
+//! use sp_runtime::impl_opaque_keys;
+//!
+//! # use sp_runtime::BoundToRuntimeAppPublic;
+//!
+//! # pub struct Aura;
+//! # impl BoundToRuntimeAppPublic for Aura { type Public = sp_runtime::app_crypto::sr25519::AppPublic; }
+//! # pub struct Grandpa;
+//! # impl BoundToRuntimeAppPublic for Grandpa { type Public = sp_runtime::app_crypto::ed25519::AppPublic; }
+//! # pub struct Beefy;
+//! # impl BoundToRuntimeAppPublic for Beefy { type Public = sp_runtime::app_crypto::ecdsa::AppPublic; }
+//!
 //! impl_opaque_keys! {
-//! 	#[derive(MaxEncodedLen, PartialOrd, Ord)]
+//! 	pub struct AuthorityKeys {
+//! 		pub aura: Aura,
+//! 		pub grandpa: Grandpa,
+//! 		pub beefy: Beefy,
+//! 	}
+//! }
+//!
+//! impl_opaque_keys! {
 //! 	pub struct LegacyAuthorityKeys {
 //! 		pub aura: Aura,
 //! 		pub grandpa: Grandpa,
 //! 	}
 //! }
 //!
-//! impl UpgradeAuthorityKeys<Runtime> for LegacyAuthorityKeys {
-//! 	fn upgrade(
-//! 		self,
-//! 	) -> <Runtime as pallet_session_validator_management::Config>::AuthorityKeys {
-//! 		SessionKeys {
+//! impl UpgradeAuthorityKeys<AuthorityKeys> for LegacyAuthorityKeys {
+//! 	fn upgrade(self) -> AuthorityKeys {
+//! 		AuthorityKeys {
 //! 			aura: self.aura,
 //! 			grandpa: self.grandpa,
 //! 			beefy: ecdsa::Public::default().into(),
@@ -72,13 +90,13 @@ use sp_runtime::BoundedVec;
 use sp_runtime::traits::{Member, OpaqueKeys};
 
 /// Infallible cast from old to current `T::AuthorityKeys`, used for storage migration
-pub trait UpgradeAuthorityKeys<T: crate::Config> {
+pub trait UpgradeAuthorityKeys<NewAuthorityKeys> {
 	/// Should cast the old session keys type to the new one
-	fn upgrade(self) -> T::AuthorityKeys;
+	fn upgrade(self) -> NewAuthorityKeys;
 }
 
-impl<T: crate::Config> UpgradeAuthorityKeys<T> for T::AuthorityKeys {
-	fn upgrade(self) -> T::AuthorityKeys {
+impl<T> UpgradeAuthorityKeys<T> for T {
+	fn upgrade(self) -> T {
 		self
 	}
 }
@@ -98,7 +116,7 @@ pub struct AuthorityKeysMigration<
 	const TO_VERSION: u32,
 > where
 	T: crate::Config,
-	OldAuthorityKeys: UpgradeAuthorityKeys<T> + Member + Decode + Clone,
+	OldAuthorityKeys: UpgradeAuthorityKeys<T::AuthorityKeys> + Member + Decode + Clone,
 {
 	_phantom: PhantomData<(T, OldAuthorityKeys)>,
 }
@@ -106,7 +124,7 @@ pub struct AuthorityKeysMigration<
 impl<T: crate::Config, OldAuthorityKeys, const FROM_VERSION: u32, const TO_VERSION: u32>
 	AuthorityKeysMigration<T, OldAuthorityKeys, FROM_VERSION, TO_VERSION>
 where
-	OldAuthorityKeys: UpgradeAuthorityKeys<T> + Member + Decode + Clone,
+	OldAuthorityKeys: UpgradeAuthorityKeys<T::AuthorityKeys> + Member + Decode + Clone,
 {
 	/// Casts a [BoundedVec] of old committee member values to the new ones
 	fn upgrade_bounded_vec(
@@ -131,7 +149,7 @@ impl<T, OldAuthorityKeys, const FROM_VERSION: u32, const TO_VERSION: u32> OnRunt
 	for AuthorityKeysMigration<T, OldAuthorityKeys, FROM_VERSION, TO_VERSION>
 where
 	T: crate::Config + pallet_session::Config<Keys = <T as crate::Config>::AuthorityKeys>,
-	OldAuthorityKeys: UpgradeAuthorityKeys<T> + OpaqueKeys + Member + Decode + Clone,
+	OldAuthorityKeys: UpgradeAuthorityKeys<T::AuthorityKeys> + OpaqueKeys + Member + Decode + Clone,
 {
 	fn on_runtime_upgrade() -> sp_runtime::Weight {
 		let current_version = crate::AuthorityKeysVersion::<T>::get();
