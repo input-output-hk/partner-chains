@@ -167,6 +167,7 @@ mod tests {
 	use pallet_session::ShouldEndSession;
 	pub const IRRELEVANT: u64 = 2;
 	use sidechain_domain::ScEpochNumber;
+	use sp_runtime::testing::UintAuthorityId;
 
 	type Manager = crate::Pallet<Test>;
 
@@ -206,6 +207,40 @@ mod tests {
 			// After setting the keys, they should be stored in the session.
 			assert_eq!(Session::load_keys(&dave().account_id()), Some(dave().authority_keys));
 			assert_eq!(Session::load_keys(&eve().account_id()), Some(eve().authority_keys));
+		});
+	}
+
+	#[test]
+	fn reregister_changed_session_keys_for_sitting_authority() {
+		new_test_ext().execute_with(|| {
+			set_validators_directly(&[dave(), eve()], 1).unwrap();
+			// By default, the session keys are not set for the account.
+			assert_eq!(Session::load_keys(&dave().account_id()), None);
+			assert_eq!(Session::load_keys(&eve().account_id()), None);
+			increment_epoch();
+
+			start_session(1);
+
+			// After setting the keys, they should be stored in the session.
+			assert_eq!(Session::load_keys(&dave().account_id()), Some(dave().authority_keys));
+			assert_eq!(Session::load_keys(&eve().account_id()), Some(eve().authority_keys));
+
+			let eve_with_different_keys = MockValidator {
+				name: "Eve with different keys",
+				authority_keys: SessionKeys { foo: UintAuthorityId(44) },
+				..eve()
+			};
+
+			// Eve is re-elected to the committee, but is using different keys now
+			set_validators_directly(&[dave(), eve_with_different_keys.clone()], 2).unwrap();
+			increment_epoch();
+			start_session(2);
+
+			// Eve's keys were updated
+			assert_eq!(
+				Session::load_keys(&eve().account_id()),
+				Some(eve_with_different_keys.authority_keys)
+			);
 		});
 	}
 
