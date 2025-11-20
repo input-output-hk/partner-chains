@@ -48,27 +48,6 @@ use std::ops::{Add, Div, Sub};
 #[cfg(test)]
 mod tests;
 
-/// Performs binary search over `range` using ordering provided by `f`
-pub fn binary_search_by<T, F, E>(mut left: T, mut right: T, mut f: F) -> Option<T>
-where
-	F: FnMut(&T) -> Result<Ordering, E>,
-	T: Add<Output = T> + Div<Output = T> + Sub<Output = T> + PartialOrd,
-	T: From<u8>,
-	T: Copy,
-{
-	while left <= right {
-		let middle = (left + right) / 2.into();
-
-		match f(&middle).ok()? {
-			Ordering::Equal => return Some(middle),
-			Ordering::Less => left = middle + 1.into(),
-			Ordering::Greater => right = middle - 1.into(),
-		}
-	}
-
-	None
-}
-
 /// Runtime API client used by the block queries in this crate
 pub trait Client<Block: BlockT>: HeaderBackend<Block> + ProvideRuntimeApi<Block> {}
 
@@ -148,20 +127,24 @@ where
 
 	/// Finds any block in the given epoch if it exists
 	fn find_any_block_in_epoch(&self, epoch: ScEpochNumber) -> Result<Block::Hash, Self::Error> {
-		let left_block = 1u32;
-		let right_block: u32 = self.info().best_number.into();
+		let mut left = 1u32;
+		let mut right: u32 = self.info().best_number.into();
 
-		let f = |block: &u32| -> Result<Ordering, Self::Error> {
-			let epoch_block = self.get_epoch_of_block((*block).into())?;
-			Ok(epoch_block.cmp(&epoch))
-		};
+		while left <= right {
+			let middle = (left + right) / 2;
+			let block_epoch = self.get_epoch_of_block(middle.into())?;
 
-		let block_number = binary_search_by(left_block, right_block, f)
-			.ok_or(ApiError::Application("Could not find block".to_string().into()))
-			.map(|x| x.into())?;
+			match block_epoch.cmp(&epoch) {
+				Ordering::Less => left = middle + 1,
+				Ordering::Greater => right = middle - 1,
+				Ordering::Equal => {
+					return Ok(self.hash(middle.into())?.expect(
+						"Block with given number exists, so its hash should exists as well",
+					));
+				},
+			}
+		}
 
-		Ok(self
-			.hash(block_number)?
-			.expect("Block with given number exists, so its hash should exists as well"))
+		return Err(ApiError::Application("Could not find block".to_string().into()));
 	}
 }
