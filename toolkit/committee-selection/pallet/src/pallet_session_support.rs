@@ -54,7 +54,7 @@ where
 			if !new_committee_accounts.contains(&account) {
 				new_committee_accounts.insert(account.clone());
 
-				// Members that were already in the old committee have their accounts and keys set up already
+				// Members that were already in the old committee have their accounts provided
 				if !old_committee_accounts.contains(&account) {
 					provide_account::<T>(&account);
 				}
