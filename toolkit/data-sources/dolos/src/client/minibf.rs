@@ -114,6 +114,16 @@ impl MiniBFApi for MiniBFClient {
 		self.paginated_request_all(&format!("addresses/{address}/utxos")).await
 	}
 
+	async fn addresses_utxos_asset(
+		&self,
+		address: MainchainAddress,
+		asset: AssetId,
+	) -> Result<Vec<AddressUtxoContentInner>, DataSourceError> {
+		let asset_id_str = format_asset_id(&asset);
+		self.paginated_request_all(&format!("addresses/{address}/utxos/{asset_id_str}"))
+			.await
+	}
+
 	async fn addresses_transactions(
 		&self,
 		address: MainchainAddress,
