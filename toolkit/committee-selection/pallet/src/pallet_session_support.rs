@@ -136,7 +136,7 @@ fn provide_account<T: crate::Config + pallet_session::Config>(account: &T::Accou
 
 fn unprovide_account<T: crate::Config + pallet_session::Config>(account: &T::AccountId) {
 	log::info!(
-		"➖💼 Decrementing provider count and deregisteringkeys for block producer {account:?}"
+		"➖💼 Decrementing provider count and deregistering keys for block producer {account:?}"
 	);
 	frame_system::Pallet::<T>::dec_providers(&account).expect(
 		"We always match dec_providers with corresponding inc_providers, thus it cannot fail",
