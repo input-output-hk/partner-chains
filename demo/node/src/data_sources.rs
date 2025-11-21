@@ -137,13 +137,9 @@ pub async fn create_dolos_data_sources(
 			),
 		),
 		governed_map: Arc::new(
-			partner_chains_db_sync_data_sources::GovernedMapDataSourceCachedImpl::new(
-				pool.clone(),
-				metrics_opt.clone(),
-				GOVERNED_MAP_CACHE_SIZE,
-				block_dbsync.clone(),
-			)
-			.await?,
+			partner_chains_dolos_data_sources::GovernedMapDataSourceImpl::new(
+				dolos_client.clone(),
+			),
 		),
 		bridge: Arc::new(
 			partner_chains_db_sync_data_sources::CachedTokenBridgeDataSourceImpl::new(
