@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `toolkit/committee-selection/primitives/src/lib.rs`."><title>lib.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-ca0dd0c4.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="sp_session_validator_management" data-themes="" data-resource-suffix="" data-rustdoc-version="1.93.0-nightly (3d461af2a 2025-11-18)" data-channel="nightly" data-search-js="search-680b2199.js" data-stringdex-js="stringdex-a3946164.js" data-settings-js="settings-c38705f0.js" ><script src="../../static.files/storage-e2aeef58.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-a410ff4d.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">sp_session_validator_management/</div>lib.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! # Primitives for Partner Chain committee selection.
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `toolkit/committee-selection/primitives/src/lib.rs`."><title>lib.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-ca0dd0c4.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="sp_session_validator_management" data-themes="" data-resource-suffix="" data-rustdoc-version="1.93.0-nightly (53732d5e0 2025-11-20)" data-channel="nightly" data-search-js="search-680b2199.js" data-stringdex-js="stringdex-a3946164.js" data-settings-js="settings-c38705f0.js" ><script src="../../static.files/storage-e2aeef58.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-a410ff4d.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">sp_session_validator_management/</div>lib.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! # Primitives for Partner Chain committee selection.
 <a href=#2 id=2 data-nosnippet>2</a>//!
 <a href=#3 id=3 data-nosnippet>3</a>//! This crate implements shared types and traits used to implement Partner Chain committee rotation.
 <a href=#4 id=4 data-nosnippet>4</a>
@@ -133,112 +133,125 @@
 <a href=#133 id=133 data-nosnippet>133</a>			<span class="self">Self</span>::Registered { keys, .. } =&gt; keys.clone(),
 <a href=#134 id=134 data-nosnippet>134</a>		}
 <a href=#135 id=135 data-nosnippet>135</a>	}
-<a href=#136 id=136 data-nosnippet>136</a>}
-<a href=#137 id=137 data-nosnippet>137</a>
-<a href=#138 id=138 data-nosnippet>138</a><span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
-<a href=#139 id=139 data-nosnippet>139</a></span><span class="kw">impl </span>From&lt;InherentError&gt; <span class="kw">for </span>sp_inherents::Error {
-<a href=#140 id=140 data-nosnippet>140</a>	<span class="kw">fn </span>from(value: InherentError) -&gt; <span class="self">Self </span>{
-<a href=#141 id=141 data-nosnippet>141</a>		sp_inherents::Error::Application(Box::from(value))
-<a href=#142 id=142 data-nosnippet>142</a>	}
-<a href=#143 id=143 data-nosnippet>143</a>}
-<a href=#144 id=144 data-nosnippet>144</a>
-<a href=#145 id=145 data-nosnippet>145</a><span class="attr">#[derive(Default, Debug, Clone, PartialEq, Eq, TypeInfo, Encode, Decode, MaxEncodedLen)]
-<a href=#146 id=146 data-nosnippet>146</a>#[cfg_attr(feature = <span class="string">"serde"</span>, derive(serde::Serialize, serde::Deserialize))]
-<a href=#147 id=147 data-nosnippet>147</a></span><span class="doccomment">/// Collection of all mainchain script info needed for committee selection
-<a href=#148 id=148 data-nosnippet>148</a></span><span class="kw">pub struct </span>MainChainScripts {
-<a href=#149 id=149 data-nosnippet>149</a>	<span class="doccomment">/// [MainchainAddress] where registration UTXOs are located
-<a href=#150 id=150 data-nosnippet>150</a>	</span><span class="kw">pub </span>committee_candidate_address: MainchainAddress,
-<a href=#151 id=151 data-nosnippet>151</a>	<span class="doccomment">/// [PolicyId] of D-parameter script
-<a href=#152 id=152 data-nosnippet>152</a>	</span><span class="kw">pub </span>d_parameter_policy_id: PolicyId,
-<a href=#153 id=153 data-nosnippet>153</a>	<span class="doccomment">/// [PolicyId] of Permissioned Candidates script
-<a href=#154 id=154 data-nosnippet>154</a>	</span><span class="kw">pub </span>permissioned_candidates_policy_id: PolicyId,
-<a href=#155 id=155 data-nosnippet>155</a>}
-<a href=#156 id=156 data-nosnippet>156</a>
-<a href=#157 id=157 data-nosnippet>157</a><span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
-<a href=#158 id=158 data-nosnippet>158</a></span><span class="kw">impl </span>MainChainScripts {
-<a href=#159 id=159 data-nosnippet>159</a>	<span class="doccomment">/// Reads [MainChainScripts] from env vars:
-<a href=#160 id=160 data-nosnippet>160</a>	/// - COMMITTEE_CANDIDATE_ADDRESS
-<a href=#161 id=161 data-nosnippet>161</a>	/// - D_PARAMETER_POLICY_ID
-<a href=#162 id=162 data-nosnippet>162</a>	/// - PERMISSIONED_CANDIDATES_POLICY_ID
-<a href=#163 id=163 data-nosnippet>163</a>	</span><span class="kw">pub fn </span>read_from_env() -&gt; <span class="prelude-ty">Result</span>&lt;MainChainScripts, envy::Error&gt; {
-<a href=#164 id=164 data-nosnippet>164</a>		<span class="attr">#[derive(serde::Serialize, serde::Deserialize)]
-<a href=#165 id=165 data-nosnippet>165</a>		</span><span class="kw">pub struct </span>MainChainScriptsEnvConfig {
-<a href=#166 id=166 data-nosnippet>166</a>			<span class="kw">pub </span>committee_candidate_address: String,
-<a href=#167 id=167 data-nosnippet>167</a>			<span class="kw">pub </span>d_parameter_policy_id: PolicyId,
-<a href=#168 id=168 data-nosnippet>168</a>			<span class="kw">pub </span>permissioned_candidates_policy_id: PolicyId,
-<a href=#169 id=169 data-nosnippet>169</a>		}
-<a href=#170 id=170 data-nosnippet>170</a>
-<a href=#171 id=171 data-nosnippet>171</a>		<span class="kw">let </span>MainChainScriptsEnvConfig {
-<a href=#172 id=172 data-nosnippet>172</a>			committee_candidate_address,
-<a href=#173 id=173 data-nosnippet>173</a>			d_parameter_policy_id,
-<a href=#174 id=174 data-nosnippet>174</a>			permissioned_candidates_policy_id,
-<a href=#175 id=175 data-nosnippet>175</a>		} = envy::from_env::&lt;MainChainScriptsEnvConfig&gt;()<span class="question-mark">?</span>;
-<a href=#176 id=176 data-nosnippet>176</a>
-<a href=#177 id=177 data-nosnippet>177</a>		<span class="kw">let </span>committee_candidate_address = FromStr::from_str(<span class="kw-2">&amp;</span>committee_candidate_address)
-<a href=#178 id=178 data-nosnippet>178</a>			.map_err(|err| envy::Error::Custom(<span class="macro">format!</span>(<span class="string">"Incorrect main chain address: {}"</span>, err)))<span class="question-mark">?</span>;
-<a href=#179 id=179 data-nosnippet>179</a>
-<a href=#180 id=180 data-nosnippet>180</a>		<span class="prelude-val">Ok</span>(<span class="self">Self </span>{
-<a href=#181 id=181 data-nosnippet>181</a>			committee_candidate_address,
-<a href=#182 id=182 data-nosnippet>182</a>			d_parameter_policy_id,
-<a href=#183 id=183 data-nosnippet>183</a>			permissioned_candidates_policy_id,
-<a href=#184 id=184 data-nosnippet>184</a>		})
-<a href=#185 id=185 data-nosnippet>185</a>	}
-<a href=#186 id=186 data-nosnippet>186</a>}
-<a href=#187 id=187 data-nosnippet>187</a>
-<a href=#188 id=188 data-nosnippet>188</a><span class="doccomment">/// The part of data for selection of authorities that comes from the main chain.
-<a href=#189 id=189 data-nosnippet>189</a>/// It is unfiltered, so the selection algorithm should filter out invalid candidates.
-<a href=#190 id=190 data-nosnippet>190</a></span><span class="attr">#[derive(Clone, Debug, Encode, Decode, DecodeWithMemTracking, TypeInfo, PartialEq, Eq)]
-<a href=#191 id=191 data-nosnippet>191</a></span><span class="kw">pub struct </span>AuthoritySelectionInputs {
-<a href=#192 id=192 data-nosnippet>192</a>	<span class="doccomment">/// D-parameter for Ariadne committee selection. See [DParameter] for details.
-<a href=#193 id=193 data-nosnippet>193</a>	</span><span class="kw">pub </span>d_parameter: DParameter,
-<a href=#194 id=194 data-nosnippet>194</a>	<span class="doccomment">/// List of permissioned candidates for committee selection.
-<a href=#195 id=195 data-nosnippet>195</a>	</span><span class="kw">pub </span>permissioned_candidates: Vec&lt;PermissionedCandidateData&gt;,
-<a href=#196 id=196 data-nosnippet>196</a>	<span class="doccomment">/// List of registered candidates for committee selection
-<a href=#197 id=197 data-nosnippet>197</a>	</span><span class="kw">pub </span>registered_candidates: Vec&lt;CandidateRegistrations&gt;,
-<a href=#198 id=198 data-nosnippet>198</a>	<span class="doccomment">/// Nonce for queried epoch.
-<a href=#199 id=199 data-nosnippet>199</a>	</span><span class="kw">pub </span>epoch_nonce: EpochNonce,
-<a href=#200 id=200 data-nosnippet>200</a>}
-<a href=#201 id=201 data-nosnippet>201</a>
-<a href=#202 id=202 data-nosnippet>202</a><span class="macro">sp_api::decl_runtime_apis!</span> {
-<a href=#203 id=203 data-nosnippet>203</a>	<span class="attr">#[api_version(<span class="number">3</span>)]
-<a href=#204 id=204 data-nosnippet>204</a>	</span><span class="doccomment">/// Runtime API declaration for Session Validator Management
-<a href=#205 id=205 data-nosnippet>205</a>	</span><span class="kw">pub trait </span>SessionValidatorManagementApi&lt;
-<a href=#206 id=206 data-nosnippet>206</a>		AuthorityId,
-<a href=#207 id=207 data-nosnippet>207</a>		AuthorityKeys,
-<a href=#208 id=208 data-nosnippet>208</a>		ScEpochNumber: parity_scale_codec::Encode + parity_scale_codec::Decode
-<a href=#209 id=209 data-nosnippet>209</a>	&gt; <span class="kw">where
-<a href=#210 id=210 data-nosnippet>210</a>		</span>AuthorityId: Encode + Decode,
-<a href=#211 id=211 data-nosnippet>211</a>		AuthorityKeys: Encode + Decode,
-<a href=#212 id=212 data-nosnippet>212</a>	{
-<a href=#213 id=213 data-nosnippet>213</a>		<span class="doccomment">/// Returns main chain scripts
-<a href=#214 id=214 data-nosnippet>214</a>		</span><span class="kw">fn </span>get_main_chain_scripts() -&gt; MainChainScripts;
-<a href=#215 id=215 data-nosnippet>215</a>		<span class="doccomment">/// Returns next unset [sidechain_domain::ScEpochNumber]
-<a href=#216 id=216 data-nosnippet>216</a>		</span><span class="kw">fn </span>get_next_unset_epoch_number() -&gt; ScEpochNumber;
-<a href=#217 id=217 data-nosnippet>217</a>
-<a href=#218 id=218 data-nosnippet>218</a>		<span class="attr">#[changed_in(<span class="number">2</span>)]
-<a href=#219 id=219 data-nosnippet>219</a>		</span><span class="doccomment">/// Returns current committee
-<a href=#220 id=220 data-nosnippet>220</a>		</span><span class="kw">fn </span>get_current_committee() -&gt; (ScEpochNumber, sp_std::vec::Vec&lt;CommitteeMember&lt;AuthorityId, AuthorityKeys&gt;&gt;);
-<a href=#221 id=221 data-nosnippet>221</a>		<span class="doccomment">/// Returns current committee
-<a href=#222 id=222 data-nosnippet>222</a>		</span><span class="kw">fn </span>get_current_committee() -&gt; (ScEpochNumber, sp_std::vec::Vec&lt;CommitteeMember&lt;AuthorityId, AuthorityKeys&gt;&gt;);
-<a href=#223 id=223 data-nosnippet>223</a>
-<a href=#224 id=224 data-nosnippet>224</a>		<span class="attr">#[changed_in(<span class="number">2</span>)]
-<a href=#225 id=225 data-nosnippet>225</a>		</span><span class="doccomment">/// Returns next committee
-<a href=#226 id=226 data-nosnippet>226</a>		</span><span class="kw">fn </span>get_next_committee() -&gt; <span class="prelude-ty">Option</span>&lt;(ScEpochNumber, sp_std::vec::Vec&lt;CommitteeMember&lt;AuthorityId, AuthorityKeys&gt;&gt;)&gt;;
-<a href=#227 id=227 data-nosnippet>227</a>		<span class="doccomment">/// Returns next committee
-<a href=#228 id=228 data-nosnippet>228</a>		</span><span class="kw">fn </span>get_next_committee() -&gt; <span class="prelude-ty">Option</span>&lt;(ScEpochNumber, sp_std::vec::Vec&lt;CommitteeMember&lt;AuthorityId, AuthorityKeys&gt;&gt;)&gt;;
-<a href=#229 id=229 data-nosnippet>229</a>
-<a href=#230 id=230 data-nosnippet>230</a>		<span class="attr">#[changed_in(<span class="number">2</span>)]
-<a href=#231 id=231 data-nosnippet>231</a>		</span><span class="doccomment">/// Calculates committee
-<a href=#232 id=232 data-nosnippet>232</a>		</span><span class="kw">fn </span>calculate_committee(
-<a href=#233 id=233 data-nosnippet>233</a>			authority_selection_inputs: AuthoritySelectionInputs,
-<a href=#234 id=234 data-nosnippet>234</a>			sidechain_epoch: ScEpochNumber
-<a href=#235 id=235 data-nosnippet>235</a>		) -&gt; <span class="prelude-ty">Option</span>&lt;sp_std::vec::Vec&lt;(AuthorityId, AuthorityKeys)&gt;&gt;;
+<a href=#136 id=136 data-nosnippet>136</a>
+<a href=#137 id=137 data-nosnippet>137</a>	<span class="doccomment">/// Maps the authority keys
+<a href=#138 id=138 data-nosnippet>138</a>	</span><span class="kw">pub fn </span>map_authority_keys&lt;NewKeys&gt;(
+<a href=#139 id=139 data-nosnippet>139</a>		<span class="self">self</span>,
+<a href=#140 id=140 data-nosnippet>140</a>		f: <span class="kw">impl </span>Fn(AuthorityKeys) -&gt; NewKeys,
+<a href=#141 id=141 data-nosnippet>141</a>	) -&gt; CommitteeMember&lt;AuthorityId, NewKeys&gt; {
+<a href=#142 id=142 data-nosnippet>142</a>		<span class="kw">match </span><span class="self">self </span>{
+<a href=#143 id=143 data-nosnippet>143</a>			<span class="self">Self</span>::Permissioned { id, keys } =&gt; CommitteeMember::Permissioned { id, keys: f(keys) },
+<a href=#144 id=144 data-nosnippet>144</a>			<span class="self">Self</span>::Registered { id, keys, stake_pool_pub_key } =&gt; {
+<a href=#145 id=145 data-nosnippet>145</a>				CommitteeMember::Registered { id, keys: f(keys), stake_pool_pub_key }
+<a href=#146 id=146 data-nosnippet>146</a>			},
+<a href=#147 id=147 data-nosnippet>147</a>		}
+<a href=#148 id=148 data-nosnippet>148</a>	}
+<a href=#149 id=149 data-nosnippet>149</a>}
+<a href=#150 id=150 data-nosnippet>150</a>
+<a href=#151 id=151 data-nosnippet>151</a><span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
+<a href=#152 id=152 data-nosnippet>152</a></span><span class="kw">impl </span>From&lt;InherentError&gt; <span class="kw">for </span>sp_inherents::Error {
+<a href=#153 id=153 data-nosnippet>153</a>	<span class="kw">fn </span>from(value: InherentError) -&gt; <span class="self">Self </span>{
+<a href=#154 id=154 data-nosnippet>154</a>		sp_inherents::Error::Application(Box::from(value))
+<a href=#155 id=155 data-nosnippet>155</a>	}
+<a href=#156 id=156 data-nosnippet>156</a>}
+<a href=#157 id=157 data-nosnippet>157</a>
+<a href=#158 id=158 data-nosnippet>158</a><span class="attr">#[derive(Default, Debug, Clone, PartialEq, Eq, TypeInfo, Encode, Decode, MaxEncodedLen)]
+<a href=#159 id=159 data-nosnippet>159</a>#[cfg_attr(feature = <span class="string">"serde"</span>, derive(serde::Serialize, serde::Deserialize))]
+<a href=#160 id=160 data-nosnippet>160</a></span><span class="doccomment">/// Collection of all mainchain script info needed for committee selection
+<a href=#161 id=161 data-nosnippet>161</a></span><span class="kw">pub struct </span>MainChainScripts {
+<a href=#162 id=162 data-nosnippet>162</a>	<span class="doccomment">/// [MainchainAddress] where registration UTXOs are located
+<a href=#163 id=163 data-nosnippet>163</a>	</span><span class="kw">pub </span>committee_candidate_address: MainchainAddress,
+<a href=#164 id=164 data-nosnippet>164</a>	<span class="doccomment">/// [PolicyId] of D-parameter script
+<a href=#165 id=165 data-nosnippet>165</a>	</span><span class="kw">pub </span>d_parameter_policy_id: PolicyId,
+<a href=#166 id=166 data-nosnippet>166</a>	<span class="doccomment">/// [PolicyId] of Permissioned Candidates script
+<a href=#167 id=167 data-nosnippet>167</a>	</span><span class="kw">pub </span>permissioned_candidates_policy_id: PolicyId,
+<a href=#168 id=168 data-nosnippet>168</a>}
+<a href=#169 id=169 data-nosnippet>169</a>
+<a href=#170 id=170 data-nosnippet>170</a><span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
+<a href=#171 id=171 data-nosnippet>171</a></span><span class="kw">impl </span>MainChainScripts {
+<a href=#172 id=172 data-nosnippet>172</a>	<span class="doccomment">/// Reads [MainChainScripts] from env vars:
+<a href=#173 id=173 data-nosnippet>173</a>	/// - COMMITTEE_CANDIDATE_ADDRESS
+<a href=#174 id=174 data-nosnippet>174</a>	/// - D_PARAMETER_POLICY_ID
+<a href=#175 id=175 data-nosnippet>175</a>	/// - PERMISSIONED_CANDIDATES_POLICY_ID
+<a href=#176 id=176 data-nosnippet>176</a>	</span><span class="kw">pub fn </span>read_from_env() -&gt; <span class="prelude-ty">Result</span>&lt;MainChainScripts, envy::Error&gt; {
+<a href=#177 id=177 data-nosnippet>177</a>		<span class="attr">#[derive(serde::Serialize, serde::Deserialize)]
+<a href=#178 id=178 data-nosnippet>178</a>		</span><span class="kw">pub struct </span>MainChainScriptsEnvConfig {
+<a href=#179 id=179 data-nosnippet>179</a>			<span class="kw">pub </span>committee_candidate_address: String,
+<a href=#180 id=180 data-nosnippet>180</a>			<span class="kw">pub </span>d_parameter_policy_id: PolicyId,
+<a href=#181 id=181 data-nosnippet>181</a>			<span class="kw">pub </span>permissioned_candidates_policy_id: PolicyId,
+<a href=#182 id=182 data-nosnippet>182</a>		}
+<a href=#183 id=183 data-nosnippet>183</a>
+<a href=#184 id=184 data-nosnippet>184</a>		<span class="kw">let </span>MainChainScriptsEnvConfig {
+<a href=#185 id=185 data-nosnippet>185</a>			committee_candidate_address,
+<a href=#186 id=186 data-nosnippet>186</a>			d_parameter_policy_id,
+<a href=#187 id=187 data-nosnippet>187</a>			permissioned_candidates_policy_id,
+<a href=#188 id=188 data-nosnippet>188</a>		} = envy::from_env::&lt;MainChainScriptsEnvConfig&gt;()<span class="question-mark">?</span>;
+<a href=#189 id=189 data-nosnippet>189</a>
+<a href=#190 id=190 data-nosnippet>190</a>		<span class="kw">let </span>committee_candidate_address = FromStr::from_str(<span class="kw-2">&amp;</span>committee_candidate_address)
+<a href=#191 id=191 data-nosnippet>191</a>			.map_err(|err| envy::Error::Custom(<span class="macro">format!</span>(<span class="string">"Incorrect main chain address: {}"</span>, err)))<span class="question-mark">?</span>;
+<a href=#192 id=192 data-nosnippet>192</a>
+<a href=#193 id=193 data-nosnippet>193</a>		<span class="prelude-val">Ok</span>(<span class="self">Self </span>{
+<a href=#194 id=194 data-nosnippet>194</a>			committee_candidate_address,
+<a href=#195 id=195 data-nosnippet>195</a>			d_parameter_policy_id,
+<a href=#196 id=196 data-nosnippet>196</a>			permissioned_candidates_policy_id,
+<a href=#197 id=197 data-nosnippet>197</a>		})
+<a href=#198 id=198 data-nosnippet>198</a>	}
+<a href=#199 id=199 data-nosnippet>199</a>}
+<a href=#200 id=200 data-nosnippet>200</a>
+<a href=#201 id=201 data-nosnippet>201</a><span class="doccomment">/// The part of data for selection of authorities that comes from the main chain.
+<a href=#202 id=202 data-nosnippet>202</a>/// It is unfiltered, so the selection algorithm should filter out invalid candidates.
+<a href=#203 id=203 data-nosnippet>203</a></span><span class="attr">#[derive(Clone, Debug, Encode, Decode, DecodeWithMemTracking, TypeInfo, PartialEq, Eq)]
+<a href=#204 id=204 data-nosnippet>204</a></span><span class="kw">pub struct </span>AuthoritySelectionInputs {
+<a href=#205 id=205 data-nosnippet>205</a>	<span class="doccomment">/// D-parameter for Ariadne committee selection. See [DParameter] for details.
+<a href=#206 id=206 data-nosnippet>206</a>	</span><span class="kw">pub </span>d_parameter: DParameter,
+<a href=#207 id=207 data-nosnippet>207</a>	<span class="doccomment">/// List of permissioned candidates for committee selection.
+<a href=#208 id=208 data-nosnippet>208</a>	</span><span class="kw">pub </span>permissioned_candidates: Vec&lt;PermissionedCandidateData&gt;,
+<a href=#209 id=209 data-nosnippet>209</a>	<span class="doccomment">/// List of registered candidates for committee selection
+<a href=#210 id=210 data-nosnippet>210</a>	</span><span class="kw">pub </span>registered_candidates: Vec&lt;CandidateRegistrations&gt;,
+<a href=#211 id=211 data-nosnippet>211</a>	<span class="doccomment">/// Nonce for queried epoch.
+<a href=#212 id=212 data-nosnippet>212</a>	</span><span class="kw">pub </span>epoch_nonce: EpochNonce,
+<a href=#213 id=213 data-nosnippet>213</a>}
+<a href=#214 id=214 data-nosnippet>214</a>
+<a href=#215 id=215 data-nosnippet>215</a><span class="macro">sp_api::decl_runtime_apis!</span> {
+<a href=#216 id=216 data-nosnippet>216</a>	<span class="attr">#[api_version(<span class="number">3</span>)]
+<a href=#217 id=217 data-nosnippet>217</a>	</span><span class="doccomment">/// Runtime API declaration for Session Validator Management
+<a href=#218 id=218 data-nosnippet>218</a>	</span><span class="kw">pub trait </span>SessionValidatorManagementApi&lt;
+<a href=#219 id=219 data-nosnippet>219</a>		AuthorityId,
+<a href=#220 id=220 data-nosnippet>220</a>		AuthorityKeys,
+<a href=#221 id=221 data-nosnippet>221</a>		ScEpochNumber: parity_scale_codec::Encode + parity_scale_codec::Decode
+<a href=#222 id=222 data-nosnippet>222</a>	&gt; <span class="kw">where
+<a href=#223 id=223 data-nosnippet>223</a>		</span>AuthorityId: Encode + Decode,
+<a href=#224 id=224 data-nosnippet>224</a>		AuthorityKeys: Encode + Decode,
+<a href=#225 id=225 data-nosnippet>225</a>	{
+<a href=#226 id=226 data-nosnippet>226</a>		<span class="doccomment">/// Returns main chain scripts
+<a href=#227 id=227 data-nosnippet>227</a>		</span><span class="kw">fn </span>get_main_chain_scripts() -&gt; MainChainScripts;
+<a href=#228 id=228 data-nosnippet>228</a>		<span class="doccomment">/// Returns next unset [sidechain_domain::ScEpochNumber]
+<a href=#229 id=229 data-nosnippet>229</a>		</span><span class="kw">fn </span>get_next_unset_epoch_number() -&gt; ScEpochNumber;
+<a href=#230 id=230 data-nosnippet>230</a>
+<a href=#231 id=231 data-nosnippet>231</a>		<span class="attr">#[changed_in(<span class="number">2</span>)]
+<a href=#232 id=232 data-nosnippet>232</a>		</span><span class="doccomment">/// Returns current committee
+<a href=#233 id=233 data-nosnippet>233</a>		</span><span class="kw">fn </span>get_current_committee() -&gt; (ScEpochNumber, sp_std::vec::Vec&lt;CommitteeMember&lt;AuthorityId, AuthorityKeys&gt;&gt;);
+<a href=#234 id=234 data-nosnippet>234</a>		<span class="doccomment">/// Returns current committee
+<a href=#235 id=235 data-nosnippet>235</a>		</span><span class="kw">fn </span>get_current_committee() -&gt; (ScEpochNumber, sp_std::vec::Vec&lt;CommitteeMember&lt;AuthorityId, AuthorityKeys&gt;&gt;);
 <a href=#236 id=236 data-nosnippet>236</a>
-<a href=#237 id=237 data-nosnippet>237</a>		<span class="doccomment">/// Calculates committee
-<a href=#238 id=238 data-nosnippet>238</a>		</span><span class="kw">fn </span>calculate_committee(
-<a href=#239 id=239 data-nosnippet>239</a>			authority_selection_inputs: AuthoritySelectionInputs,
-<a href=#240 id=240 data-nosnippet>240</a>			sidechain_epoch: ScEpochNumber
-<a href=#241 id=241 data-nosnippet>241</a>		) -&gt; <span class="prelude-ty">Option</span>&lt;sp_std::vec::Vec&lt;CommitteeMember&lt;AuthorityId, AuthorityKeys&gt;&gt;&gt;;
-<a href=#242 id=242 data-nosnippet>242</a>	}
-<a href=#243 id=243 data-nosnippet>243</a>}
+<a href=#237 id=237 data-nosnippet>237</a>		<span class="attr">#[changed_in(<span class="number">2</span>)]
+<a href=#238 id=238 data-nosnippet>238</a>		</span><span class="doccomment">/// Returns next committee
+<a href=#239 id=239 data-nosnippet>239</a>		</span><span class="kw">fn </span>get_next_committee() -&gt; <span class="prelude-ty">Option</span>&lt;(ScEpochNumber, sp_std::vec::Vec&lt;CommitteeMember&lt;AuthorityId, AuthorityKeys&gt;&gt;)&gt;;
+<a href=#240 id=240 data-nosnippet>240</a>		<span class="doccomment">/// Returns next committee
+<a href=#241 id=241 data-nosnippet>241</a>		</span><span class="kw">fn </span>get_next_committee() -&gt; <span class="prelude-ty">Option</span>&lt;(ScEpochNumber, sp_std::vec::Vec&lt;CommitteeMember&lt;AuthorityId, AuthorityKeys&gt;&gt;)&gt;;
+<a href=#242 id=242 data-nosnippet>242</a>
+<a href=#243 id=243 data-nosnippet>243</a>		<span class="attr">#[changed_in(<span class="number">2</span>)]
+<a href=#244 id=244 data-nosnippet>244</a>		</span><span class="doccomment">/// Calculates committee
+<a href=#245 id=245 data-nosnippet>245</a>		</span><span class="kw">fn </span>calculate_committee(
+<a href=#246 id=246 data-nosnippet>246</a>			authority_selection_inputs: AuthoritySelectionInputs,
+<a href=#247 id=247 data-nosnippet>247</a>			sidechain_epoch: ScEpochNumber
+<a href=#248 id=248 data-nosnippet>248</a>		) -&gt; <span class="prelude-ty">Option</span>&lt;sp_std::vec::Vec&lt;(AuthorityId, AuthorityKeys)&gt;&gt;;
+<a href=#249 id=249 data-nosnippet>249</a>
+<a href=#250 id=250 data-nosnippet>250</a>		<span class="doccomment">/// Calculates committee
+<a href=#251 id=251 data-nosnippet>251</a>		</span><span class="kw">fn </span>calculate_committee(
+<a href=#252 id=252 data-nosnippet>252</a>			authority_selection_inputs: AuthoritySelectionInputs,
+<a href=#253 id=253 data-nosnippet>253</a>			sidechain_epoch: ScEpochNumber
+<a href=#254 id=254 data-nosnippet>254</a>		) -&gt; <span class="prelude-ty">Option</span>&lt;sp_std::vec::Vec&lt;CommitteeMember&lt;AuthorityId, AuthorityKeys&gt;&gt;&gt;;
+<a href=#255 id=255 data-nosnippet>255</a>	}
+<a href=#256 id=256 data-nosnippet>256</a>}
 </code></pre></div></section></main></body></html>

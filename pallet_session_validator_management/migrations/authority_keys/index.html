@@ -1,0 +1,64 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Implements a re-usable migration for the authority keys type"><title>pallet_session_validator_management::migrations::authority_keys - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-ca0dd0c4.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="pallet_session_validator_management" data-themes="" data-resource-suffix="" data-rustdoc-version="1.93.0-nightly (53732d5e0 2025-11-20)" data-channel="nightly" data-search-js="search-680b2199.js" data-stringdex-js="stringdex-a3946164.js" data-settings-js="settings-c38705f0.js" ><script src="../../../static.files/storage-e2aeef58.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../../static.files/main-a410ff4d.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Module authority_keys</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../pallet_session_validator_management/index.html">pallet_<wbr>session_<wbr>validator_<wbr>management</a><span class="version">1.8.0</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module authority_<wbr>keys</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#usage" title="Usage">Usage</a></li></ul><h3><a href="#structs">Module Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#traits" title="Traits">Traits</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="../index.html">In pallet_<wbr>session_<wbr>validator_<wbr>management::<wbr>migrations</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../../index.html">pallet_session_validator_management</a>::<wbr><a href="../index.html">migrations</a></div><h1>Module <span>authority_<wbr>keys</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../../src/pallet_session_validator_management/migrations/authority_keys.rs.html#1-199">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Implements a re-usable migration for the authority keys type</p>
+<h2 id="usage"><a class="doc-anchor" href="#usage">§</a>Usage</h2>
+<p><strong>Important</strong>: This migration assumes that the runtime is using [pallet_session] and will
+migrate that pallet’s key storage as well.</p>
+<p>Authority keys migration is done by adding <a href="struct.AuthorityKeysMigration.html" title="struct pallet_session_validator_management::migrations::authority_keys::AuthorityKeysMigration">AuthorityKeysMigration</a> to the runtime
+migrations as part of the runtime upgrade that will change the key type.</p>
+<p>Preserve the old authority keys type and implement <a href="trait.UpgradeAuthorityKeys.html" title="trait pallet_session_validator_management::migrations::authority_keys::UpgradeAuthorityKeys">UpgradeAuthorityKeys</a> trait for it.
+For example, if a chain that originally used Aura and Grandpa keys is being upgraded to
+also use Beefy, the definition of the legacy keys type could look like this:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>pallet_session_validator_management::migrations::authority_keys::UpgradeAuthorityKeys;
+<span class="kw">use </span>sp_core::<span class="kw-2">*</span>;
+<span class="kw">use </span>sp_runtime::impl_opaque_keys;
+
+
+
+<span class="macro">impl_opaque_keys!</span> {
+	<span class="kw">pub struct </span>AuthorityKeys {
+		<span class="kw">pub </span>aura: Aura,
+		<span class="kw">pub </span>grandpa: Grandpa,
+		<span class="kw">pub </span>beefy: Beefy,
+	}
+}
+
+<span class="macro">impl_opaque_keys!</span> {
+	<span class="kw">pub struct </span>LegacyAuthorityKeys {
+		<span class="kw">pub </span>aura: Aura,
+		<span class="kw">pub </span>grandpa: Grandpa,
+	}
+}
+
+<span class="kw">impl </span>UpgradeAuthorityKeys&lt;AuthorityKeys&gt; <span class="kw">for </span>LegacyAuthorityKeys {
+	<span class="kw">fn </span>upgrade(<span class="self">self</span>) -&gt; AuthorityKeys {
+		AuthorityKeys {
+			aura: <span class="self">self</span>.aura,
+			grandpa: <span class="self">self</span>.grandpa,
+			beefy: ecdsa::Public::default().into(),
+		}
+	}
+}</code></pre></div>
+<p>The <code>upgrade</code> implementation can arbitrarily transform the data but must not fail for any
+of the migrated key sets.</p>
+<p>After implementing <a href="trait.UpgradeAuthorityKeys.html" title="trait pallet_session_validator_management::migrations::authority_keys::UpgradeAuthorityKeys">UpgradeAuthorityKeys</a>, the migration can be added to the runtime’s
+migration set:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">pub type </span>Migrations = (
+	AuthorityKeysMigration&lt;Runtime, LegacySessionKeys, <span class="number">0</span>, <span class="number">1</span>&gt;,
+	<span class="comment">// ...other migrations
+</span>);
+
+<span class="comment">// ...
+
+</span><span class="kw">pub type </span>Executive = Executive&lt;
+	Runtime,
+	Block,
+	ChainContext&lt;Runtime&gt;,
+	Runtime,
+	AllPalletsWithSystem,
+	Migrations,
+&gt;;</code></pre></div>
+<p>Note that <a href="struct.AuthorityKeysMigration.html" title="struct pallet_session_validator_management::migrations::authority_keys::AuthorityKeysMigration">AuthorityKeysMigration</a> is parametrized by the session keys versions from which
+and to which it migrates, to guarantee idempotency. Current session keys version can be
+obtained by reading the <a href="../../pallet/type.AuthorityKeysVersion.html" title="type pallet_session_validator_management::pallet::AuthorityKeysVersion">AuthorityKeysVersion</a> storage and by default starts as 0.</p>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.AuthorityKeysMigration.html" title="struct pallet_session_validator_management::migrations::authority_keys::AuthorityKeysMigration">Authority<wbr>Keys<wbr>Migration</a></dt><dd>Migrates existing committee members data in storage to use new type <code>AuthorityKeys</code></dd></dl><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><dl class="item-table"><dt><a class="trait" href="trait.UpgradeAuthorityKeys.html" title="trait pallet_session_validator_management::migrations::authority_keys::UpgradeAuthorityKeys">Upgrade<wbr>Authority<wbr>Keys</a></dt><dd>Infallible cast from old to current <code>T::AuthorityKeys</code>, used for storage migration</dd></dl></section></div></main></body></html>

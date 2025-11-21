@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["v0","v1"]};
+window.SIDEBAR_ITEMS = {"mod":["authority_keys","v0","v1"]};

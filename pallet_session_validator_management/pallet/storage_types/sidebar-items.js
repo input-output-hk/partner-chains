@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["CommitteeRotationStage","CurrentCommittee","MainChainScriptsConfiguration","NextCommittee","ProvidedAccounts"]};
+window.SIDEBAR_ITEMS = {"struct":["AuthorityKeysVersion","CommitteeRotationStage","CurrentCommittee","MainChainScriptsConfiguration","NextCommittee","ProvidedAccounts"]};
