@@ -29,7 +29,7 @@ impl BlockParticipationDataSource for StakeDistributionDataSourceImpl {
 				self.client
 					.epochs_stakes_by_pool(epoch_number, *pool_id)
 					.await
-					.map(|ss| ss.iter().map(|s| (pool_id.clone(), s.clone())).collect::<Vec<_>>())
+					.map(|ss| ss.iter().map(|s| (*pool_id, s.clone())).collect::<Vec<_>>())
 			})
 			.collect::<Vec<_>>()
 			.await;
