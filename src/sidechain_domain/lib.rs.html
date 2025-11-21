@@ -774,7 +774,7 @@
 <a href=#774 id=774 data-nosnippet>774</a>/// Because it is subject to Cardano's consensus mechanism and has strong cryptographic guarantees,
 <a href=#775 id=775 data-nosnippet>775</a>/// this value can be used as a tamper-proof shared randomness seed by Partner Chain Toolkit components.
 <a href=#776 id=776 data-nosnippet>776</a></span><span class="attr">#[derive(Default, Clone, Encode, Decode, DecodeWithMemTracking, PartialEq, Eq, TypeInfo)]
-<a href=#777 id=777 data-nosnippet>777</a>#[byte_string(debug, hex_serialize)]
+<a href=#777 id=777 data-nosnippet>777</a>#[byte_string(debug, hex_serialize, decode_hex)]
 <a href=#778 id=778 data-nosnippet>778</a></span><span class="kw">pub struct </span>EpochNonce(<span class="kw">pub </span>Vec&lt;u8&gt;);
 <a href=#779 id=779 data-nosnippet>779</a>
 <a href=#780 id=780 data-nosnippet>780</a><span class="kw">impl </span>EpochNonce {

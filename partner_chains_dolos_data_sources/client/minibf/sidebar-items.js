@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["MiniBFClient"]};
+window.SIDEBAR_ITEMS = {"fn":["format_asset_id"],"struct":["MiniBFClient"]};

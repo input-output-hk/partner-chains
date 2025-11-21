@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["McBlockId"],"trait":["MiniBFApi"]};
+window.SIDEBAR_ITEMS = {"struct":["McBlockId","McPoolId"],"trait":["MiniBFApi"]};
