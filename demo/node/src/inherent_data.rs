@@ -19,7 +19,6 @@ use sp_block_participation::{
 	BlockParticipationApi,
 	inherent_data::{BlockParticipationDataSource, BlockParticipationInherentDataProvider},
 };
-use sp_block_production_log::{BlockAuthorInherentProvider, BlockProductionLogApi};
 use sp_blockchain::HeaderBackend;
 use sp_consensus_aura::{
 	Slot, inherents::InherentDataProvider as AuraIDP, sr25519::AuthorityPair as AuraPair,
@@ -54,7 +53,6 @@ where
 	T: ProvideRuntimeApi<Block> + Send + Sync + 'static,
 	T: HeaderBackend<Block>,
 	T::Api: SessionValidatorManagementApi<Block, CrossChainPublic, SessionKeys, ScEpochNumber>,
-	T::Api: BlockProductionLogApi<Block, BlockAuthor, Slot>,
 	T::Api: BlockParticipationApi<Block, BlockAuthor, Slot>,
 	T::Api: GovernedMapIDPApi<Block>,
 	T::Api: TokenBridgeIDPRuntimeApi<Block>,
@@ -64,7 +62,6 @@ where
 		TimestampIDP,
 		McHashIDP,
 		AriadneIDP,
-		BlockAuthorInherentProvider<Slot, BlockAuthor>,
 		BlockParticipationInherentDataProvider<BlockAuthor, DelegatorKey, Slot>,
 		GovernedMapInherentDataProvider,
 		TokenBridgeInherentDataProvider<AccountId>,
@@ -111,8 +108,6 @@ where
 			mc_hash.mc_epoch(),
 		)
 		.await?;
-		let block_producer_id_provider =
-			BlockAuthorInherentProvider::new(client.as_ref(), parent_hash, *slot)?;
 
 		let payouts = BlockParticipationInherentDataProvider::new(
 			client.as_ref(),
@@ -140,16 +135,7 @@ where
 		)
 		.await?;
 
-		Ok((
-			slot,
-			timestamp,
-			mc_hash,
-			ariadne_data_provider,
-			block_producer_id_provider,
-			payouts,
-			governed_map,
-			bridge,
-		))
+		Ok((slot, timestamp, mc_hash, ariadne_data_provider, payouts, governed_map, bridge))
 	}
 }
 
@@ -175,7 +161,6 @@ impl<T> CreateInherentDataProviders<Block, (Slot, McBlockHash)> for VerifierCIDP
 where
 	T: ProvideRuntimeApi<Block> + Send + Sync + HeaderBackend<Block>,
 	T::Api: SessionValidatorManagementApi<Block, CrossChainPublic, SessionKeys, ScEpochNumber>,
-	T::Api: BlockProductionLogApi<Block, BlockAuthor, Slot>,
 	T::Api: BlockParticipationApi<Block, BlockAuthor, Slot>,
 	T::Api: GovernedMapIDPApi<Block>,
 	T::Api: TokenBridgeIDPRuntimeApi<Block>,
@@ -183,7 +168,6 @@ where
 	type InherentDataProviders = (
 		TimestampIDP,
 		AriadneIDP,
-		BlockAuthorInherentProvider<Slot, BlockAuthor>,
 		BlockParticipationInherentDataProvider<BlockAuthor, DelegatorKey, Slot>,
 		GovernedMapInherentDataProvider,
 		TokenBridgeInherentDataProvider<AccountId>,
@@ -237,9 +221,6 @@ where
 		)
 		.await?;
 
-		let block_producer_id_provider =
-			BlockAuthorInherentProvider::new(client.as_ref(), parent_hash, verified_block_slot)?;
-
 		let payouts = BlockParticipationInherentDataProvider::new(
 			client.as_ref(),
 			block_participation_data_source.as_ref(),
@@ -266,14 +247,7 @@ where
 		)
 		.await?;
 
-		Ok((
-			timestamp,
-			ariadne_data_provider,
-			block_producer_id_provider,
-			payouts,
-			governed_map,
-			bridge,
-		))
+		Ok((timestamp, ariadne_data_provider, payouts, governed_map, bridge))
 	}
 }
 

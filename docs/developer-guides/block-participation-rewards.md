@@ -13,7 +13,7 @@ committee and uses the Ariadne selection algorithm based on D-Param, Validator r
 and a permissioned candidate set, as provided by the `authority-selection-inherents` crate.
 
 The following components will be combined to handle block rewards:
-1. Block production log (implemented through crates `sp-block-production-log` and `pallet-block-production-log`)
+1. Block production log (implemented by `pallet-block-production-log` crate)
    to track information on the author of each block produced in the chain
 2. Address associations (implemented by the `pallet-address-associations` crate) to store and resolve
    mappings between Cardano and Partner Chain identities of SPOs and their delegators.
@@ -92,18 +92,19 @@ having no delegators). As such, this type must implement the `sp_block_participa
 to be constructable from `sidechain_domain::DelegatorKey`. To avoid any boilerplate, `sidechain_domain::DelegatorKey`
 itself can be used.
 
+#### Block production moment
+
+A `Moment` type representing the moment in time when a block was produced. This type can be a timestamp, slot or
+round number or some other monotonically rising value that can be converted to a timestamp. If it represents a time
+range, a representative timestamp, such as the start of the range should be computable from it.
+
 ### Adding the Partner Chains Toolkit components
 
 #### Block Production Log
 
-The pallet should be added to the runtime and configured to use `BlockAuthor` type as its `BlockProducerId`, and
-an inherent data provider of type `BlockAuthorInherentProvider<BlockAuthor>` should be added to both the proposal
-and verification IDP stack of the node.
-
-The runtime should implement the `BlockProductionLogApi` runtime API to expose the current block producer to the
-inherent data provider via the `get_author` method. This method's implementation depends on the consensus used by
-the partner chain. If the consensus mechanism used is Aura, the function `get_current_authority_round_robin`
-exposed by the Session Validator Management pallet should be used, which applies the same round-robin algorithm.
+The pallet should be added to the runtime and configured to use `BlockAuthor` type as its `BlockProducerId`
+and use the `Moment` type. Additionally, it must be provided a source of current block author and moment.
+These are provided out of the box for chains using Aura under feature flag `aura-compat`.
 
 #### Address Associations
 

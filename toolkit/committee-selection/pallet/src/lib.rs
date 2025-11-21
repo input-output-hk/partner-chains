@@ -586,14 +586,14 @@ pub mod pallet {
 				.unwrap_or(CurrentCommittee::<T>::get().epoch + One::one())
 		}
 
-		/// Returns current committee member for an index, repeating them in a round-robin fashion if needed.
-		pub fn get_current_authority_round_robin(index: usize) -> Option<CommitteeMemberOf<T>> {
+		/// Returns current committee member for an index
+		pub fn get_current_authority_at(index: usize) -> Option<CommitteeMemberOf<T>> {
 			let committee = CurrentCommittee::<T>::get().committee;
 			if committee.is_empty() {
 				return None;
 			}
 
-			committee.get(index % committee.len() as usize).cloned()
+			committee.get(index).cloned()
 		}
 
 		/// Returns current committee from storage.

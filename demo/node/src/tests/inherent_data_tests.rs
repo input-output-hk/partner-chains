@@ -7,7 +7,6 @@ use crate::tests::runtime_api_mock::{TestApi, mock_header};
 use authority_selection_inherents::{
 	AuthoritySelectionInputs, mock::MockAuthoritySelectionDataSource,
 };
-use hex_literal::hex;
 use partner_chains_demo_runtime::{AccountId, BlockAuthor};
 use partner_chains_mock_data_sources::StakeDistributionDataSourceMock;
 use partner_chains_mock_data_sources::{GovernedMapDataSourceMock, TokenBridgeDataSourceMock};
@@ -17,9 +16,7 @@ use sidechain_domain::{
 };
 use sidechain_mc_hash::mock::MockMcHashDataSource;
 use sp_block_participation::BlockProductionData;
-use sp_block_production_log::BlockProductionInherentDataV1;
 use sp_consensus_aura::Slot;
-use sp_core::ecdsa;
 use sp_inherents::CreateInherentDataProviders;
 use sp_inherents::{InherentData, InherentDataProvider};
 use sp_timestamp::Timestamp;
@@ -91,22 +88,6 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 	);
 	assert_eq!(
 		inherent_data
-			.get_data::<BlockProductionInherentDataV1<u64, BlockAuthor>>(
-				&sp_block_production_log::INHERENT_IDENTIFIER
-			)
-			.unwrap(),
-		Some(BlockProductionInherentDataV1 {
-			moment: 30,
-			block_producer_id: BlockAuthor::ProBono(
-				ecdsa::Public::from_raw(hex!(
-					"000000000000000000000000000000000000000000000000000000000000000001"
-				))
-				.into()
-			)
-		})
-	);
-	assert_eq!(
-		inherent_data
 			.get_data::<Slot>(&sp_block_participation::INHERENT_IDENTIFIER)
 			.unwrap(),
 		Some(Slot::from(30))
@@ -171,22 +152,6 @@ async fn block_verification_cidp_should_be_created_correctly() {
 			)
 			.unwrap()
 			.is_some()
-	);
-	assert_eq!(
-		inherent_data
-			.get_data::<BlockProductionInherentDataV1<u64, BlockAuthor>>(
-				&sp_block_production_log::INHERENT_IDENTIFIER
-			)
-			.unwrap(),
-		Some(BlockProductionInherentDataV1 {
-			moment: 30,
-			block_producer_id: BlockAuthor::ProBono(
-				ecdsa::Public::from_raw(hex!(
-					"000000000000000000000000000000000000000000000000000000000000000001"
-				))
-				.into()
-			)
-		})
 	);
 	assert_eq!(
 		inherent_data

@@ -20,11 +20,13 @@ log = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 sidechain-domain = { workspace = true }
-sp-block-production-log = { workspace = true }
 sp-runtime = { workspace = true }
 sp-std = { workspace = true }
+pallet-session-validator-management = { workspace = true }
 
 pallet-block-participation = { workspace = true, optional = true }
+pallet-aura = { workspace = true, optional = true }
+sp-consensus-aura = { workspace = true, optional = true }
 
 [dev-dependencies]
 sp-core = { workspace = true }
@@ -40,9 +42,11 @@ std = [
 	"parity-scale-codec/std",
 	"scale-info/std",
 	"sidechain-domain/std",
-	"sp-block-production-log/std",
 	"sp-std/std",
+    "pallet-session-validator-management/std",
 	"pallet-block-participation?/std",
+    "pallet-aura?/std",
+    "sp-consensus-aura?/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking/runtime-benchmarks",
@@ -51,4 +55,8 @@ runtime-benchmarks = [
 ]
 block-participation = [
     "dep:pallet-block-participation",
+]
+aura-compat = [
+    "dep:pallet-aura",
+    "dep:sp-consensus-aura",
 ]
