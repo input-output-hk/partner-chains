@@ -107,12 +107,10 @@ impl AuthoritySelectionDataSource for AuthoritySelectionDataSourceImpl {
 		let candidates = self.get_registered_candidates(epoch, committee_candidate_address).await?;
 		let pools = self.client.pools_extended().await?;
 		let pred = |pool: PoolListExtendedInner| async move {
-			let history = self.client.pools_history(&pool.pool_id).await?;
+			let pool_id = mckeyhash_from_bech32(&pool.pool_id)?;
+			let history = self.client.pools_history(pool_id).await?;
 			Result::Ok(match history.into_iter().find(|h| h.epoch == epoch.0 as i32) {
-				Some(e) => Some((
-					MainchainKeyHash(pool.pool_id.as_bytes().try_into()?), // TODO is pool_id a pool hash?
-					StakeDelegation(e.active_stake.parse::<u64>()?),
-				)),
+				Some(e) => Some((pool_id, StakeDelegation(e.active_stake.parse::<u64>()?))),
 				None => None,
 			})
 		};
@@ -139,12 +137,17 @@ impl AuthoritySelectionDataSource for AuthoritySelectionDataSourceImpl {
 	async fn get_epoch_nonce(&self, epoch_number: McEpochNumber) -> Result<Option<EpochNonce>> {
 		let epoch = self.get_epoch_of_data_storage(epoch_number)?;
 		let nonce: String = self.client.epochs_parameters(epoch).await?.nonce;
-		Ok(Some(EpochNonce(nonce.into())))
+		Ok(Some(EpochNonce::decode_hex(&nonce)?))
 	}
 
 	async fn data_epoch(&self, for_epoch: McEpochNumber) -> Result<McEpochNumber> {
 		self.get_epoch_of_data_storage(for_epoch)
 	}
+}
+
+fn mckeyhash_from_bech32(bech32_str: &str) -> Result<MainchainKeyHash> {
+	let (_hrp, val) = bech32::decode(bech32_str).map_err(|e| e.to_string())?;
+	Ok(MainchainKeyHash(val.try_into().map_err(|_| "failed to convert vec to array")?))
 }
 
 #[derive(Debug)]
@@ -265,9 +268,9 @@ impl AuthoritySelectionDataSourceImpl {
 			output.clone().output_index
 		))?;
 		let datum = cardano_serialization_lib::PlutusData::from_hex(&datum_str)
-			.map_err(|e| e.to_string())?;
+			.map_err(|e| format!("Failed to parse datum string: {e}"))?;
 		let utxo_id = UtxoId {
-			tx_hash: output.tx_hash.as_bytes().try_into()?,
+			tx_hash: McTxHash::decode_hex(&output.tx_hash)?,
 			index: UtxoIndex(output.tx_index.try_into()?),
 		};
 		let register_validator_datum = RegisterValidatorDatum::try_from(datum)
@@ -285,7 +288,7 @@ impl AuthoritySelectionDataSourceImpl {
 			.into_iter()
 			.map(|input| {
 				Ok::<sidechain_domain::UtxoId, Box<dyn std::error::Error + Send + Sync>>(UtxoId {
-					tx_hash: input.tx_hash.as_bytes().try_into()?,
+					tx_hash: McTxHash::decode_hex(&input.tx_hash)?,
 					index: UtxoIndex(input.output_index.try_into()?),
 				})
 			})
@@ -316,7 +319,7 @@ impl AuthoritySelectionDataSourceImpl {
 			.filter_map(|r| match r {
 				Ok(candidate) => Some(candidate.clone()),
 				Err(msg) => {
-					log::error!("{msg}");
+					log::error!("Failed to parse candidate: {msg}");
 					None
 				},
 			})
@@ -359,13 +362,10 @@ impl AuthoritySelectionDataSourceImpl {
 		let active_utxos = match registrations_block_for_epoch_opt {
 			Some(registrations_block_for_epoch) => {
 				let pred = |utxo: AddressUtxoContentInner| async move {
+					let block = self.client.blocks_by_id(utxo.block.clone()).await?;
 					Ok::<bool, ResultErr>(
-						self.client
-							.blocks_by_id(utxo.block.clone())
-							.await?
-							.height
-							.ok_or("committee candidate block height missing")? as u32
-							>= registrations_block_for_epoch
+						block.height.ok_or("committee candidate block height missing")? as u32
+							<= registrations_block_for_epoch
 								.height
 								.ok_or("last_block_for_epoch block height missing")? as u32,
 					)

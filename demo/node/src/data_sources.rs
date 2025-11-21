@@ -107,8 +107,12 @@ pub async fn create_dolos_data_sources(
 ) -> std::result::Result<DataSources, Box<dyn Error + Send + Sync + 'static>> {
 	let dolos_client = partner_chains_dolos_data_sources::get_connection_from_env()?;
 	let pool = partner_chains_db_sync_data_sources::get_connection_from_env().await?;
-	let block = Arc::new(
+	let block_dbsync = Arc::new(
 		partner_chains_db_sync_data_sources::BlockDataSourceImpl::new_from_env(pool.clone())
+			.await?,
+	);
+	let block_dolos = Arc::new(
+		partner_chains_dolos_data_sources::BlockDataSourceImpl::new_from_env(dolos_client.clone())
 			.await?,
 	);
 	Ok(DataSources {
@@ -118,7 +122,7 @@ pub async fn create_dolos_data_sources(
 			),
 		),
 		mc_hash: Arc::new(partner_chains_dolos_data_sources::McHashDataSourceImpl::new(
-			dolos_client.clone(),
+			block_dolos.clone(),
 		)),
 		authority_selection: Arc::new(
 			partner_chains_dolos_data_sources::AuthoritySelectionDataSourceImpl::new(
@@ -137,7 +141,7 @@ pub async fn create_dolos_data_sources(
 				pool.clone(),
 				metrics_opt.clone(),
 				GOVERNED_MAP_CACHE_SIZE,
-				block.clone(),
+				block_dbsync.clone(),
 			)
 			.await?,
 		),
@@ -145,7 +149,7 @@ pub async fn create_dolos_data_sources(
 			partner_chains_db_sync_data_sources::CachedTokenBridgeDataSourceImpl::new(
 				pool,
 				metrics_opt,
-				block,
+				block_dbsync,
 				BRIDGE_TRANSFER_CACHE_LOOKAHEAD,
 			),
 		),

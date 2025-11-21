@@ -28,6 +28,10 @@ mod bridge;
 #[cfg(feature = "bridge")]
 pub use bridge::TokenBridgeDataSourceImpl;
 
+mod block;
+pub use block::BlockDataSourceImpl;
+use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
+
 use crate::client::MiniBFClient;
 
 pub mod client;
@@ -41,9 +45,12 @@ pub enum DataSourceError {
 	/// Indicates that Dolos rejected a request as invalid
 	#[error("Bad request: `{0}`.")]
 	BadRequest(String),
-	/// Indicates that an internal error occured when querying Dolos
-	#[error("Internal error of data source: `{0}`.")]
-	InternalDataSourceError(String),
+	/// Indicates that Dolos client produced an error while calling endpoint
+	#[error("Dolos client call error: `{0}`.")]
+	DolosCallError(String),
+	/// Indicates that Dolos client produced an error while parsing response
+	#[error("Dolos client response parse error: `{0}`.")]
+	DolosResponseParseError(String),
 	/// Indicates that expected data was not found when querying Dolos
 	#[error(
 		"'{0}' not found. Possible causes: data source configuration error, Dolos not synced fully, or data not set on the main chain."
@@ -61,6 +68,7 @@ pub enum DataSourceError {
 /// # Environment variables read:
 /// - `DOLOS_MINIBF_URL`: Dolos MiniBF client, eg. `localhost:3000`
 pub fn get_connection_from_env() -> Result<MiniBFClient> {
+	log::warn!("Dolos data sources are still WIP and should not be used in production");
 	let config = ConnectionConfig::from_env()?;
 	Ok(MiniBFClient::new(config.dolos_minibf_url.as_str(), std::time::Duration::from_secs(30)))
 }
@@ -73,12 +81,21 @@ pub struct ConnectionConfig {
 }
 
 impl ConnectionConfig {
-	/// Reads Postgres connection config from the environment
+	/// Reads Dolos connection config from the environment
 	pub fn from_env() -> Result<Self> {
 		let config: Self = figment::Figment::new()
 			.merge(figment::providers::Env::raw())
 			.extract()
-			.map_err(|e| format!("Failed to read postgres data source connection: {e}"))?;
+			.map_err(|e| format!("Failed to read Dolos data source connection: {e}"))?;
 		Ok(config)
 	}
+}
+
+/// Reads Cardano main chain epoch configuration from the environment.
+///
+/// See documentation of [MainchainEpochConfig::read_from_env] for the list of environment variables read.
+#[cfg(feature = "block-source")]
+pub fn read_mc_epoch_config() -> Result<MainchainEpochConfig> {
+	Ok(MainchainEpochConfig::read_from_env()
+		.map_err(|e| format!("Failed to read main chain config: {}", e))?)
 }

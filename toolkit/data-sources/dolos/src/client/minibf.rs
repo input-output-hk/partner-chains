@@ -4,7 +4,7 @@ use blockfrost_openapi::models::{
 	address_utxo_content_inner::AddressUtxoContentInner,
 	asset_addresses_inner::AssetAddressesInner, asset_transactions_inner::AssetTransactionsInner,
 	block_content::BlockContent, epoch_param_content::EpochParamContent,
-	epoch_stake_pool_content_inner::EpochStakePoolContentInner,
+	epoch_stake_pool_content_inner::EpochStakePoolContentInner, genesis_content::GenesisContent,
 	pool_history_inner::PoolHistoryInner, pool_list_extended_inner::PoolListExtendedInner,
 	tx_content::TxContent, tx_content_utxo::TxContentUtxo,
 };
@@ -13,7 +13,10 @@ use sidechain_domain::*;
 use std::time::Duration;
 use ureq::Agent;
 
-use crate::client::api::{McBlockId, MiniBFApi};
+use crate::{
+	DataSourceError,
+	client::api::{McBlockId, McPoolId, MiniBFApi},
+};
 
 /// Client implementing Dolos MiniBF
 #[derive(Clone)]
@@ -31,15 +34,19 @@ impl MiniBFClient {
 	async fn request<T: DeserializeOwned + std::fmt::Debug>(
 		&self,
 		method: &str,
-	) -> Result<T, String> {
+	) -> Result<T, DataSourceError> {
 		let req = format!("{}/{}", self.addr, method);
 		log::trace!("Dolos request: {req:?}");
 		let resp = self
 			.agent
 			.get(req)
 			.call()
-			.map_err(|e| e.to_string())
-			.and_then(|mut r| r.body_mut().read_json().map_err(|e| e.to_string()));
+			.map_err(|e| DataSourceError::DolosCallError(e.to_string()))
+			.and_then(|mut r| {
+				r.body_mut()
+					.read_json()
+					.map_err(|e| DataSourceError::DolosResponseParseError(e.to_string()))
+			});
 		log::trace!("Dolos response: {resp:?}");
 		resp
 	}
@@ -48,7 +55,7 @@ impl MiniBFClient {
 		&self,
 		method: &str,
 		pagination: Pagination,
-	) -> Result<Vec<T>, String> {
+	) -> Result<Vec<T>, DataSourceError> {
 		let mut query_pairs = url::form_urlencoded::Serializer::new(String::new());
 		query_pairs.extend_pairs([
 			("count", &pagination.count.to_string()),
@@ -62,15 +69,19 @@ impl MiniBFClient {
 			query_pairs.append_pair("to", &to);
 		}
 		let mut req_url =
-			url::Url::parse(&format!("{}/{}", self.addr, method)).map_err(|e| e.to_string())?;
+			url::Url::parse(&format!("{}/{}", self.addr, method)).expect("valid Dolos url");
 		req_url.set_query(Some(&query_pairs.finish()));
 		log::trace!("Dolos request: {req_url:?}");
 		let resp = self
 			.agent
 			.get(req_url.as_str())
 			.call()
-			.map_err(|e| e.to_string())
-			.and_then(|mut r| r.body_mut().read_json().map_err(|e| e.to_string()));
+			.map_err(|e| DataSourceError::DolosCallError(e.to_string()))
+			.and_then(|mut r| {
+				r.body_mut()
+					.read_json()
+					.map_err(|e| DataSourceError::DolosResponseParseError(e.to_string()))
+			});
 		log::trace!("Dolos response: {resp:?}");
 		resp
 	}
@@ -78,7 +89,7 @@ impl MiniBFClient {
 	async fn paginated_request_all<T: DeserializeOwned + std::fmt::Debug>(
 		&self,
 		method: &str,
-	) -> Result<Vec<T>, String> {
+	) -> Result<Vec<T>, DataSourceError> {
 		let mut pagination: Pagination = Pagination::default();
 		let mut have_all_pages = false;
 		let mut res = Vec::new();
@@ -99,21 +110,21 @@ impl MiniBFApi for MiniBFClient {
 	async fn addresses_utxos(
 		&self,
 		address: MainchainAddress,
-	) -> Result<Vec<AddressUtxoContentInner>, String> {
+	) -> Result<Vec<AddressUtxoContentInner>, DataSourceError> {
 		self.paginated_request_all(&format!("addresses/{address}/utxos")).await
 	}
 
 	async fn addresses_transactions(
 		&self,
 		address: MainchainAddress,
-	) -> Result<Vec<AddressTransactionsContentInner>, String> {
+	) -> Result<Vec<AddressTransactionsContentInner>, DataSourceError> {
 		self.paginated_request_all(&format!("addresses/{address}/transactions")).await
 	}
 
 	async fn assets_transactions(
 		&self,
 		asset_id: AssetId,
-	) -> Result<Vec<AssetTransactionsInner>, String> {
+	) -> Result<Vec<AssetTransactionsInner>, DataSourceError> {
 		let asset_id_str = format_asset_id(&asset_id);
 		self.paginated_request_all(&format!("assets/{asset_id_str}/transactions")).await
 	}
@@ -121,76 +132,103 @@ impl MiniBFApi for MiniBFClient {
 	async fn assets_addresses(
 		&self,
 		asset_id: AssetId,
-	) -> Result<Vec<AssetAddressesInner>, String> {
+	) -> Result<Vec<AssetAddressesInner>, DataSourceError> {
 		let asset_id_str = format_asset_id(&asset_id);
 		self.paginated_request_all(&format!("assets/{asset_id_str}/addresses")).await
 	}
 
-	async fn blocks_latest(&self) -> Result<BlockContent, String> {
+	async fn blocks_latest(&self) -> Result<BlockContent, DataSourceError> {
 		self.request("blocks/latest").await
 	}
 
-	async fn blocks_by_id(&self, id: impl Into<McBlockId> + Send) -> Result<BlockContent, String> {
+	async fn blocks_by_id(
+		&self,
+		id: impl Into<McBlockId> + Send,
+	) -> Result<BlockContent, DataSourceError> {
 		let id: McBlockId = id.into();
 		self.request(&format!("blocks/{id}")).await
 	}
 
-	async fn blocks_slot(&self, slot_number: McSlotNumber) -> Result<BlockContent, String> {
+	async fn blocks_slot(
+		&self,
+		slot_number: McSlotNumber,
+	) -> Result<BlockContent, DataSourceError> {
 		self.request(&format!("blocks/slot/{slot_number}")).await
 	}
 
 	async fn blocks_next(
 		&self,
 		id: impl Into<McBlockId> + Send,
-	) -> Result<Vec<BlockContent>, String> {
+	) -> Result<Vec<BlockContent>, DataSourceError> {
 		let id: McBlockId = id.into();
 		self.request(&format!("blocks/{id}/next")).await
 	}
 
-	async fn blocks_txs(&self, id: impl Into<McBlockId> + Send) -> Result<Vec<String>, String> {
+	async fn blocks_txs(
+		&self,
+		id: impl Into<McBlockId> + Send,
+	) -> Result<Vec<String>, DataSourceError> {
 		let id: McBlockId = id.into();
 		self.request(&format!("blocks/{id}/txs")).await
 	}
 
-	async fn epochs_blocks(&self, epoch_number: McEpochNumber) -> Result<Vec<String>, String> {
+	async fn epochs_blocks(
+		&self,
+		epoch_number: McEpochNumber,
+	) -> Result<Vec<String>, DataSourceError> {
 		self.paginated_request_all(&format!("epochs/{epoch_number}/blocks")).await
 	}
 	async fn epochs_parameters(
 		&self,
 		epoch_number: McEpochNumber,
-	) -> Result<EpochParamContent, String> {
+	) -> Result<EpochParamContent, DataSourceError> {
 		self.request(&format!("epochs/{epoch_number}/parameters")).await
 	}
 	async fn epochs_stakes_by_pool(
 		&self,
 		epoch_number: McEpochNumber,
-		pool_id: &str,
-	) -> Result<Vec<EpochStakePoolContentInner>, String> {
+		pool_id: impl Into<McPoolId> + Send,
+	) -> Result<Vec<EpochStakePoolContentInner>, DataSourceError> {
+		let pool_id: McPoolId = pool_id.into();
 		self.paginated_request_all(&format!("epochs/{epoch_number}/stakes/{pool_id}"))
 			.await
 	}
 
-	async fn pools_history(&self, pool_id: &str) -> Result<Vec<PoolHistoryInner>, String> {
+	async fn pools_history(
+		&self,
+		pool_id: impl Into<McPoolId> + Send,
+	) -> Result<Vec<PoolHistoryInner>, DataSourceError> {
+		let pool_id: McPoolId = pool_id.into();
 		self.paginated_request_all(&format!("pools/{pool_id}/history")).await
 	}
-	async fn pools_extended(&self) -> Result<Vec<PoolListExtendedInner>, String> {
+	async fn pools_extended(&self) -> Result<Vec<PoolListExtendedInner>, DataSourceError> {
 		self.paginated_request_all("pools/extended").await
 	}
 
-	async fn scripts_datum_hash(&self, datum_hash: &str) -> Result<Vec<serde_json::Value>, String> {
+	async fn scripts_datum_hash(
+		&self,
+		datum_hash: &str,
+	) -> Result<Vec<serde_json::Value>, DataSourceError> {
 		self.request(&format!("scripts/datum/{datum_hash}")).await
 	}
 
-	async fn transaction_by_hash(&self, tx_hash: McTxHash) -> Result<TxContent, String> {
+	async fn transaction_by_hash(&self, tx_hash: McTxHash) -> Result<TxContent, DataSourceError> {
 		self.request(&format!("txs/{tx_hash}")).await
 	}
 
-	async fn transactions_utxos(&self, tx_hash: McTxHash) -> Result<TxContentUtxo, String> {
+	async fn transactions_utxos(
+		&self,
+		tx_hash: McTxHash,
+	) -> Result<TxContentUtxo, DataSourceError> {
 		self.request(&format!("txs/{tx_hash}/utxos")).await
+	}
+
+	async fn genesis(&self) -> Result<GenesisContent, DataSourceError> {
+		self.request("genesis").await
 	}
 }
 
-fn format_asset_id(asset_id: &AssetId) -> String {
+pub fn format_asset_id(asset_id: &AssetId) -> String {
 	let AssetId { policy_id, asset_name } = asset_id;
 	format!("{}{}", &policy_id.to_hex_string()[2..], &asset_name.to_hex_string()[2..])
 }
