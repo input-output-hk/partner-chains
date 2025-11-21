@@ -95,15 +95,9 @@ pub trait UpgradeAuthorityKeys<NewAuthorityKeys> {
 	fn upgrade(self) -> NewAuthorityKeys;
 }
 
-impl<T> UpgradeAuthorityKeys<T> for T {
-	fn upgrade(self) -> T {
-		self
-	}
-}
-
 /// Migrates existing committee members data in storage to use new type `AuthorityKeys`
 ///
-/// This migration is versioned and will only applied when on-chain session keys version
+/// This migration is versioned and will only be applied when on-chain session keys version
 /// as read from [AuthorityKeysVersion] storage is equal to `FROM_VERSION` and will
 /// set the version to `TO_VERSION`.
 ///
@@ -157,14 +151,14 @@ where
 		let mut weight = T::DbWeight::get().reads_writes(1, 0);
 
 		if TO_VERSION <= current_version {
-			log::warn!(
-				"🚚 AuthorityKeysMigration {FROM_VERSION}->{TO_VERSION} can be removed; storage is already at version {current_version}."
+			log::info!(
+				"🚚 AuthorityKeysMigration {FROM_VERSION}->{TO_VERSION} can be removed; authority keys storage is already at version {current_version}."
 			);
 			return weight;
 		}
 		if current_version != FROM_VERSION {
 			log::warn!(
-				"🚚 AuthorityKeysMigration {FROM_VERSION}->{TO_VERSION} can not be applied to storage at version {current_version}."
+				"🚚 AuthorityKeysMigration {FROM_VERSION}->{TO_VERSION} can not be applied to authority keys storage at version {current_version}."
 			);
 			return weight;
 		}
