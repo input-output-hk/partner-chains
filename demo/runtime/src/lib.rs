@@ -600,7 +600,7 @@ impl pallet_block_participation::Config for Runtime {
 
 	type Moment = Slot;
 
-	type BlockParticipationProvider = BlockProductionLog;
+	type BlockParticipationProvider = TestHelperPallet;
 
 	const TARGET_INHERENT_ID: InherentIdentifier = TestHelperPallet::INHERENT_IDENTIFIER;
 }
