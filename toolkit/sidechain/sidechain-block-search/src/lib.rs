@@ -3,9 +3,9 @@
 //! # Purpose of this crate
 //!
 //! Standard Substrate block storage allows for retrieving blocks based on their number and hash.
-//! However, Partner Chains toolkit introduces two new categories that are not supported by this
-//! lookup: slot and epoch. This crate provides a mechanism to quickly query for blocks based on
-//! their Partner Chain epoch or slot by applying a binary search over historical blocks.
+//! However, Partner Chains toolkit introduces new category that is not supported by this
+//! lookup: epoch number. This crate provides a mechanism to quickly query for blocks based on
+//! their Partner Chain epoch number by applying a binary search over historical blocks.
 //!
 //! # Usage
 //!
