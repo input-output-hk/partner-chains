@@ -4,7 +4,6 @@ use crate::{
 };
 use blockfrost_openapi::models::{
 	tx_content::TxContent, tx_content_output_amount_inner::TxContentOutputAmountInner,
-	tx_content_utxo::TxContentUtxo,
 };
 use cardano_serialization_lib::PlutusData;
 use partner_chains_plutus_data::bridge::{TokenTransferDatum, TokenTransferDatumV1};
@@ -145,7 +144,9 @@ pub(crate) async fn get_bridge_utxos_tx(
 		.await?;
 
 	// Process each UTXO to calculate token deltas and gather transaction info
-	let futs = address_utxos.into_iter().map(|utxo| async move {
+let futs = address_utxos.into_iter().map(|utxo| {
+        let native_token = native_token.clone();
+        async move {
 		let tx_hash = McTxHash::from_hex_unsafe(&utxo.tx_hash);
 		let tx = client.transaction_by_hash(tx_hash).await?;
 		
@@ -182,7 +183,8 @@ pub(crate) async fn get_bridge_utxos_tx(
 		};
 
 		Result::Ok(Some(bridge_utxo))
-	});
+	}
+    });
 
 	let mut utxos = futures::future::try_join_all(futs)
 		.await?

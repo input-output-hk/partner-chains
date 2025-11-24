@@ -32,7 +32,7 @@ impl GovernedMapDataSource for GovernedMapDataSourceImpl {
 		// This uses the optimized endpoint that filters by asset server-side
 		let asset = AssetId {
 			policy_id: main_chain_scripts.asset_policy_id.clone(),
-			asset_name: AssetName(vec![]), // Empty asset name for governance tokens
+			asset_name: AssetName::empty(), // Empty asset name for governance tokens
 		};
 		let utxos = self
 			.client
