@@ -6,6 +6,7 @@ use blockfrost_openapi::models::epoch_stake_pool_content_inner::EpochStakePoolCo
 use futures::StreamExt;
 use sidechain_domain::*;
 use sp_block_participation::inherent_data::BlockParticipationDataSource;
+use std::collections::BTreeMap;
 
 pub struct StakeDistributionDataSourceImpl {
 	client: MiniBFClient,
@@ -70,10 +71,16 @@ fn get_delegator_key(row: &EpochStakePoolContentInner) -> Result<DelegatorKey> {
 		[0xe0 | 0xe1, rest @ ..] => Ok(DelegatorKey::StakeKeyHash(
 			rest.try_into().expect("infallible: stake_address_hash_raw is 29 bytes"),
 		)),
-		[0xf0 | 0xf1, rest @ ..] => Ok(DelegatorKey::ScriptKeyHash {
-			hash_raw: rest.try_into().expect("infallible: stake_address_hash_raw is 29 bytes"),
-			script_hash: [0; 28], // TODO how to get this?
-		}),
+		[0xf0 | 0xf1, rest @ ..] => {
+			// Note: Script delegator keys are not fully supported yet.
+			// The script_hash field is set to zero as the Blockfrost API does not provide
+			// the script hash separately from the stake address hash.
+			// This may require additional API calls or a different data source.
+			Ok(DelegatorKey::ScriptKeyHash {
+				hash_raw: rest.try_into().expect("infallible: stake_address_hash_raw is 29 bytes"),
+				script_hash: [0; 28],
+			})
+		},
 		_ => Err(format!("invalid stake address hash: {}", row.stake_address).into()),
 	}
 }

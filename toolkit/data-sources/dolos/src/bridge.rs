@@ -139,52 +139,56 @@ pub(crate) async fn get_bridge_utxos_tx(
 ) -> Result<Vec<BridgeUtxo>> {
 	// Use the optimized endpoint to get UTXOs at ICS address filtered by the bridge token
 	// This is much more efficient than querying all asset transactions
-	let address_utxos = client
-		.addresses_utxos_asset(icp_address.clone(), native_token.clone())
-		.await?;
+	let address_utxos =
+		client.addresses_utxos_asset(icp_address.clone(), native_token.clone()).await?;
 
 	// Process each UTXO to calculate token deltas and gather transaction info
-let futs = address_utxos.into_iter().map(|utxo| {
-        let native_token = native_token.clone();
-        async move {
-		let tx_hash = McTxHash::from_hex_unsafe(&utxo.tx_hash);
-		let tx = client.transaction_by_hash(tx_hash).await?;
-		
-		// Skip if beyond target block
-		if (tx.block_height as u32) > to_block.0 {
-			return Result::Ok(None);
+	let futs = address_utxos.into_iter().map(|utxo| {
+		let client = client.clone();
+		let native_token = native_token.clone();
+		let icp_address = icp_address.clone();
+		async move {
+			let tx_hash = McTxHash::from_hex_unsafe(&utxo.tx_hash);
+			let tx = client.transaction_by_hash(tx_hash).await?;
+
+			// Skip if beyond target block
+			if (tx.block_height as u32) > to_block.0 {
+				return Result::Ok(None);
+			}
+
+			// Get full transaction UTXOs to calculate input token amounts
+			let tx_utxos = client.transactions_utxos(tx_hash).await?;
+
+			// Calculate total input tokens at ICS address
+			let input_tokens_total: u128 = tx_utxos
+				.inputs
+				.iter()
+				.filter(|i| i.address == icp_address.to_string())
+				.map(|input| get_all_tokens(&input.amount, &native_token))
+				.sum();
+
+			// Get output token amount from this specific UTXO
+			let output_tokens = get_all_tokens(&utxo.amount, &native_token);
+
+			let bridge_utxo = BridgeUtxo {
+				block_number: McBlockNumber(tx.block_height as u32),
+				tx_ix: McTxIndexInBlock(tx.index as u32),
+				tx_hash,
+				utxo_ix: UtxoIndex(utxo.output_index as u16),
+				tokens_out: NativeTokenAmount(output_tokens),
+				tokens_in: NativeTokenAmount(input_tokens_total),
+				datum: utxo.inline_datum.clone().and_then(|d| match PlutusData::from_hex(&d) {
+					Ok(pd) => Some(pd),
+					Err(e) => {
+						log::warn!("Failed to parse PlutusData from hex for tx {}: {}", tx_hash, e);
+						None
+					},
+				}),
+			};
+
+			Result::Ok(Some(bridge_utxo))
 		}
-
-		// Get full transaction UTXOs to calculate input token amounts
-		let tx_utxos = client.transactions_utxos(tx_hash).await?;
-		
-		// Calculate total input tokens at ICS address
-		let input_tokens_total: u128 = tx_utxos
-			.inputs
-			.iter()
-			.filter(|i| i.address == icp_address.to_string())
-			.map(|input| get_all_tokens(&input.amount, &native_token))
-			.sum();
-
-		// Get output token amount from this specific UTXO
-		let output_tokens = get_all_tokens(&utxo.amount, &native_token);
-
-		let bridge_utxo = BridgeUtxo {
-			block_number: McBlockNumber(tx.block_height as u32),
-			tx_ix: McTxIndexInBlock(tx.index as u32),
-			tx_hash,
-			utxo_ix: UtxoIndex(utxo.output_index as u16),
-			tokens_out: NativeTokenAmount(output_tokens),
-			tokens_in: NativeTokenAmount(input_tokens_total),
-			datum: utxo
-				.inline_datum
-				.clone()
-				.map(|d| PlutusData::from_hex(&d).expect("valid datum")),
-		};
-
-		Result::Ok(Some(bridge_utxo))
-	}
-    });
+	});
 
 	let mut utxos = futures::future::try_join_all(futs)
 		.await?
