@@ -1,23 +1,4 @@
-use crate::mock::{
-	//
-	ARBITRARY_FIRST_EPOCH,
-	SLOTS_PER_EPOCH,
-	Test,
-	TestKeys,
-	advance_block,
-	alice,
-	assert_aura_authorities,
-	assert_current_epoch,
-	assert_grandpa_authorities,
-	assert_next_committee,
-	bob,
-	create_inherent_data_struct,
-	for_next_n_blocks,
-	for_next_n_blocks_after_finalizing,
-	new_test_ext,
-	until_epoch,
-	until_epoch_after_finalizing,
-};
+use crate::mock::*;
 use crate::*;
 use frame_support::{
 	dispatch::PostDispatchInfo,
@@ -173,7 +154,7 @@ fn check_cross_chain_committee_rotation() {
 
 fn set_committee_through_inherent_data(expected_authorities: &[TestKeys]) -> PostDispatchInfo {
 	let epoch = Sidechain::current_epoch_number();
-	let slot = *pallet_aura::CurrentSlot::<Test>::get();
+	let slot = *pallet_aura::CurrentSlot::<Runtime>::get();
 	println!(
 		"(slot {slot}, epoch {epoch}) Setting {} authorities for next epoch",
 		expected_authorities.len()
