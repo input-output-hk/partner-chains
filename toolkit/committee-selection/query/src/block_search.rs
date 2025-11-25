@@ -15,14 +15,9 @@ impl<C: HeaderBackend<Block> + ProvideRuntimeApi<Block>, Block: BlockT> Client<B
 
 /// Interface for retrieving information about slot and epoch of Partner Chain blocks
 pub trait SidechainInfo<Block: BlockT>: Client<Block> {
-	/// Error type
-	type Error: std::error::Error;
-
 	/// Finds the Partner Chain eopch number for a given block number
-	fn get_epoch_of_block(
-		&self,
-		block_number: NumberFor<Block>,
-	) -> Result<ScEpochNumber, Self::Error>;
+	fn get_epoch_of_block(&self, block_number: NumberFor<Block>)
+	-> Result<ScEpochNumber, ApiError>;
 }
 
 #[allow(deprecated)]
@@ -33,12 +28,10 @@ where
 	Block: BlockT,
 	NumberFor<Block>: From<u32> + Into<u32>,
 {
-	type Error = ApiError;
-
 	fn get_epoch_of_block(
 		&self,
 		block_number: NumberFor<Block>,
-	) -> Result<ScEpochNumber, Self::Error> {
+	) -> Result<ScEpochNumber, ApiError> {
 		let api = self.runtime_api();
 		let block_hash = self
 			.hash(block_number)?
@@ -50,11 +43,8 @@ where
 
 /// Runtime client capable of finding Partner Chain blocks via binary search
 pub trait FindSidechainBlock<Block: BlockT>: Client<Block> + Sized {
-	/// Error type
-	type Error: std::error::Error;
-
 	/// Finds any block in the given epoch if it exists
-	fn find_any_block_in_epoch(&self, epoch: ScEpochNumber) -> Result<Block::Hash, Self::Error>;
+	fn find_any_block_in_epoch(&self, epoch: ScEpochNumber) -> Result<Block::Hash, ApiError>;
 }
 
 #[allow(deprecated)]
@@ -65,10 +55,8 @@ where
 	NumberFor<Block>: From<u32> + Into<u32>,
 	C::Api: GetSidechainStatus<Block>,
 {
-	type Error = ApiError;
-
 	/// Finds any block in the given epoch if it exists
-	fn find_any_block_in_epoch(&self, epoch: ScEpochNumber) -> Result<Block::Hash, Self::Error> {
+	fn find_any_block_in_epoch(&self, epoch: ScEpochNumber) -> Result<Block::Hash, ApiError> {
 		let mut left = 1u32;
 		let mut right: u32 = self.info().best_number.into();
 
