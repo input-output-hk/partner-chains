@@ -8,14 +8,12 @@ use proptest::prelude::*;
 use rpc_mock::*;
 use std::sync::Arc;
 
-pub const BEST_NUMBER: u32 = 100;
-
 mod find_block_number_tests {
 	use super::*;
 
 	proptest! {
 		#[test]
-		fn should_find_any_block_in_epoch(epoch in 1u32..get_epoch(BEST_NUMBER)) {
+		fn should_find_any_block_in_epoch(epoch in get_epoch(1u32)..get_epoch(BEST_NUMBER)) {
 			let client = Arc::new(TestClient { best_number: BEST_NUMBER });
 
 			let block_hash = client.find_any_block_in_epoch(ScEpochNumber(epoch as u64)).unwrap().into();

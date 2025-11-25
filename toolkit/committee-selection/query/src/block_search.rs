@@ -1,39 +1,3 @@
-//! Binary search queries for Partner Chain slots and epochs
-//!
-//! # Purpose of this crate
-//!
-//! Standard Substrate block storage allows for retrieving blocks based on their number and hash.
-//! However, Partner Chains toolkit introduces new category that is not supported by this
-//! lookup: epoch number. This crate provides a mechanism to quickly query for blocks based on
-//! their Partner Chain epoch number by applying a binary search over historical blocks.
-//!
-//! # Usage
-//!
-//! The binary search feature is provided via the [FindSidechainBlock] trait. This trait is
-//! implemented for any runtime client that implements the [GetSidechainStatus] runtime API.
-//!
-//! Given a runtime client that satisfies the trait bounds, the blockchain can be queried like this:
-//!
-//! ```rust
-//! use sidechain_block_search::{ FindSidechainBlock, Client };
-//! use sidechain_domain::*;
-//! use sp_api::ProvideRuntimeApi;
-//! use sp_runtime::traits::{ Block as BlockT, NumberFor };
-//! use sp_sidechain::GetSidechainStatus;
-//!
-//! fn query_example<B, C>(client: C)
-//! where
-//!     B: BlockT,
-//!     NumberFor<B>: From<u32> + Into<u32>,
-//!     C: ProvideRuntimeApi<B> + Client<B> + Send + Sync + 'static,
-//!     C::Api: GetSidechainStatus<B>
-//! {
-//!     let result = client.find_any_block_in_epoch(ScEpochNumber(42));
-//! }
-//! ```
-
-#![deny(missing_docs)]
-
 use sidechain_domain::ScEpochNumber;
 use sp_api::ApiError;
 use sp_api::ProvideRuntimeApi;
@@ -43,9 +7,6 @@ use sp_runtime::traits::NumberFor;
 #[allow(deprecated)]
 use sp_sidechain::GetSidechainStatus;
 use std::cmp::Ordering;
-
-#[cfg(test)]
-mod tests;
 
 /// Runtime API client used by the block queries in this crate
 pub trait Client<Block: BlockT>: HeaderBackend<Block> + ProvideRuntimeApi<Block> {}

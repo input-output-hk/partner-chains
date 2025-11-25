@@ -32,7 +32,6 @@ members = [
 	"toolkit/sidechain/sidechain-mc-hash",
 	"toolkit/sidechain/pallet",
 	"toolkit/sidechain/rpc",
-	"toolkit/sidechain/sidechain-block-search",
 	"toolkit/sidechain/sidechain-slots",
 	"toolkit/sidechain/primitives",
 	"toolkit/committee-selection/primitives",
@@ -288,7 +287,6 @@ pallet-address-associations = { path = "toolkit/address-associations/pallet", de
 
 # sidechain core
 sidechain-domain = { path = "toolkit/sidechain/domain", default-features = false }
-sidechain-block-search = { path = "toolkit/sidechain/sidechain-block-search", default-features = false }
 sidechain-slots = { path = "toolkit/sidechain/sidechain-slots", default-features = false }
 sidechain-mc-hash = { path = "toolkit/sidechain/sidechain-mc-hash", default-features = false }
 sp-sidechain = { path = "toolkit/sidechain/primitives", default-features = false }

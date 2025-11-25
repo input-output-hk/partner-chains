@@ -20,6 +20,8 @@ use std::borrow::BorrowMut;
 use std::collections::HashMap;
 use std::sync::Arc;
 
+mod block_search;
+
 #[tokio::test]
 async fn get_epoch_committee() {
 	let client = Arc::new(TestApi {});

@@ -2,21 +2,10 @@
 
 use std::ops::Range;
 
-pub const SLOTS_PER_EPOCH: u32 = 6;
-
-pub fn block_number_to_block_hash(block_number: u32) -> [u8; 32] {
-	let mut block_hash: [u8; 32] = [0u8; 32];
-	block_hash[28..32].copy_from_slice(&block_number.to_be_bytes());
-
-	block_hash
-}
-
-pub fn block_hash_to_block_number(block_hash: [u8; 32]) -> u32 {
-	let mut last_four_bytes = [0u8; 4];
-	last_four_bytes.copy_from_slice(&block_hash[28..32]);
-
-	u32::from_be_bytes(last_four_bytes)
-}
+pub use crate::tests::conversion::BEST_NUMBER;
+pub use crate::tests::conversion::SLOTS_PER_EPOCH;
+pub use crate::tests::conversion::block_hash_to_block_number;
+pub use crate::tests::conversion::block_number_to_block_hash;
 
 pub fn get_slot(block_number: u32) -> u32 {
 	block_number

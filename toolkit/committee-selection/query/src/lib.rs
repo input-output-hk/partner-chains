@@ -6,9 +6,9 @@ pub mod types;
 
 use async_trait::async_trait;
 use authority_selection_inherents::{AuthoritySelectionDataSource, CandidateValidationApi};
+use block_search::{FindSidechainBlock, SidechainInfo};
 use derive_new::new;
 use parity_scale_codec::{Decode, Encode};
-use sidechain_block_search::{FindSidechainBlock, SidechainInfo};
 use sidechain_domain::{McEpochNumber, ScEpochNumber, StakePoolPublicKey};
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_blockchain::{HeaderBackend, Info};
@@ -21,6 +21,7 @@ use sp_sidechain::{GetGenesisUtxo, GetSidechainStatus};
 use std::sync::Arc;
 use types::*;
 
+mod block_search;
 #[cfg(test)]
 mod tests;
 
