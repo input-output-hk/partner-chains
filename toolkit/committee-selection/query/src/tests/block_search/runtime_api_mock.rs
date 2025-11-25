@@ -1,4 +1,5 @@
 use super::*;
+use crate::tests::conversion;
 use rpc_mock::*;
 use sidechain_domain::*;
 #[allow(deprecated)]
