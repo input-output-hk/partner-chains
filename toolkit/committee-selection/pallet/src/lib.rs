@@ -326,23 +326,31 @@ pub mod pallet {
 	#[derive(CloneNoBound, Encode, Decode, TypeInfo, MaxEncodedLen)]
 	#[scale_info(skip_type_params(MaxValidators))]
 	/// Committee info type used on-chain.
-	pub struct CommitteeInfo<CommitteeMember: Clone, MaxValidators> {
+	pub struct CommitteeInfo<AuthorityId: Clone, AuthorityKeys: Clone, MaxValidators> {
 		/// Epoch number the committee is selected for.
 		pub epoch: ScEpochNumber,
 		/// List of committee members.
-		pub committee: BoundedVec<CommitteeMember, MaxValidators>,
+		pub committee: BoundedVec<CommitteeMember<AuthorityId, AuthorityKeys>, MaxValidators>,
 	}
 
-	impl<CommitteeMember: Clone, MaxValidators> CommitteeInfo<CommitteeMember, MaxValidators> {
+	/// Committee information type used by the pallet
+	pub type CommitteeInfoOf<T> = CommitteeInfo<
+		<T as Config>::AuthorityId,
+		<T as Config>::AuthorityKeys,
+		<T as Config>::MaxValidators,
+	>;
+
+	impl<AuthorityId: Clone, AuthorityKeys: Clone, MaxValidators>
+		CommitteeInfo<AuthorityId, AuthorityKeys, MaxValidators>
+	{
 		/// Returns committee info as a pair of epoch number and list of committee members
-		pub fn as_pair(self) -> (ScEpochNumber, Vec<CommitteeMember>) {
+		pub fn as_pair(self) -> (ScEpochNumber, Vec<CommitteeMember<AuthorityId, AuthorityKeys>>) {
 			(self.epoch, self.committee.to_vec())
 		}
 	}
 
-	impl<CommitteeMember, MaxValidators> Default for CommitteeInfo<CommitteeMember, MaxValidators>
-	where
-		CommitteeMember: Clone,
+	impl<AuthorityId: Clone, AuthorityKeys: Clone, MaxValidators> Default
+		for CommitteeInfo<AuthorityId, AuthorityKeys, MaxValidators>
 	{
 		fn default() -> Self {
 			Self { epoch: ScEpochNumber::zero(), committee: BoundedVec::new() }
@@ -354,12 +362,10 @@ pub mod pallet {
 		StorageValue<_, BoundedBTreeSet<T::AccountId, T::MaxValidators>, ValueQuery>;
 
 	#[pallet::storage]
-	pub type CurrentCommittee<T: Config> =
-		StorageValue<_, CommitteeInfo<CommitteeMemberOf<T>, T::MaxValidators>, ValueQuery>;
+	pub type CurrentCommittee<T: Config> = StorageValue<_, CommitteeInfoOf<T>, ValueQuery>;
 
 	#[pallet::storage]
-	pub type NextCommittee<T: Config> =
-		StorageValue<_, CommitteeInfo<CommitteeMemberOf<T>, T::MaxValidators>, OptionQuery>;
+	pub type NextCommittee<T: Config> = StorageValue<_, CommitteeInfoOf<T>, OptionQuery>;
 
 	/// Stores the stage of handling the inputs change. Used by session manager, to decide
 	/// if the session should be ended quickly, to speed up using the newly selected committee.
@@ -370,6 +376,19 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type MainChainScriptsConfiguration<T: Config> =
 		StorageValue<_, MainChainScripts, ValueQuery>;
+
+	/// Stores the current version of `AuthorityKeys` type.
+	///
+	/// This value is different from the pallet's storage version and is only used for versioning
+	/// `AuthorityKeys` which can change independently from other pallet storages during evolution
+	/// of a Partner Chain.
+	///
+	/// This value should only be modified when the `AuthorityKeys` is changed, by scheduling
+	/// [AuthorityKeysMigration] during runtime upgrade.
+	///
+	/// [AuthorityKeysMigration]: migrations::authority_keys::AuthorityKeysMigration
+	#[pallet::storage]
+	pub type AuthorityKeysVersion<T: Config> = StorageValue<_, u32, ValueQuery, GetDefault>;
 
 	#[pallet::error]
 	pub enum Error<T> {
@@ -578,14 +597,13 @@ pub mod pallet {
 		}
 
 		/// Returns current committee from storage.
-		pub fn current_committee_storage() -> CommitteeInfo<CommitteeMemberOf<T>, T::MaxValidators>
-		{
+		pub fn current_committee_storage() -> CommitteeInfoOf<T> {
 			CurrentCommittee::<T>::get()
 		}
 
 		/// Returns next committee from storage.
 		pub fn next_committee_storage()
-		-> Option<CommitteeInfo<CommitteeMemberOf<T>, T::MaxValidators>> {
+		-> Option<CommitteeInfo<T::AuthorityId, T::AuthorityKeys, T::MaxValidators>> {
 			NextCommittee::<T>::get()
 		}
 

@@ -1,31 +1,45 @@
 use super::Block;
-use sp_api::{ApiRef, ProvideRuntimeApi};
+use crate::{SidechainRpcClient, mock::mock_utxo_id};
+use sidechain_domain::UtxoId;
 use sp_blockchain::HeaderBackend;
-use sp_consensus_slots::SlotDuration;
+use sp_core::offchain::Duration;
 use sp_runtime::traits::{Block as BlockT, NumberFor, Zero};
 
-#[derive(Default)]
-pub struct TestApi {
-	pub runtime_api: TestRuntimeApi,
-}
-
 #[derive(Clone)]
-pub struct TestRuntimeApi {
-	pub slot_duration: SlotDuration,
-	pub slots_per_epoch: u64,
+pub struct TestApi {
+	pub epoch_duration: u64,
+	#[cfg(feature = "legacy-slotapi-compat")]
+	pub slot_duration: Option<u64>,
 }
 
-impl Default for TestRuntimeApi {
+impl Default for TestApi {
 	fn default() -> Self {
-		Self { slot_duration: SlotDuration::from_millis(6000), slots_per_epoch: 10 }
+		Self {
+			epoch_duration: 6000,
+			#[cfg(feature = "legacy-slotapi-compat")]
+			slot_duration: None,
+		}
 	}
 }
 
-impl ProvideRuntimeApi<Block> for TestApi {
-	type Api = TestRuntimeApi;
+impl SidechainRpcClient<Block> for TestApi {
+	fn get_epoch_duration(
+		&self,
+		_best_block: <Block as BlockT>::Hash,
+	) -> Result<sp_core::offchain::Duration, Box<dyn std::error::Error + Send + Sync>> {
+		Ok(Duration::from_millis(self.epoch_duration))
+	}
 
-	fn runtime_api(&self) -> ApiRef<'_, Self::Api> {
-		self.runtime_api.clone().into()
+	fn get_genesis_utxo(
+		&self,
+		_best_block: <Block as BlockT>::Hash,
+	) -> Result<UtxoId, Box<dyn std::error::Error + Send + Sync>> {
+		Ok(mock_utxo_id())
+	}
+
+	#[cfg(feature = "legacy-slotapi-compat")]
+	fn get_maybe_slot_duration(&self, _best_block: <Block as BlockT>::Hash) -> Option<u64> {
+		self.slot_duration.clone()
 	}
 }
 

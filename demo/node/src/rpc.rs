@@ -25,10 +25,11 @@ use sc_rpc::SubscriptionTaskExecutor;
 use sc_transaction_pool_api::TransactionPool;
 use sidechain_domain::ScEpochNumber;
 use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
-use sp_api::ProvideRuntimeApi;
+use sp_api::{CallApiAt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_session_validator_management_query::SessionValidatorManagementQuery;
+use sp_sidechain::GetEpochDurationApi;
 use std::sync::Arc;
 use time_source::TimeSource;
 
@@ -66,6 +67,7 @@ pub fn create_full<C, P, B, T>(
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
 	C: ProvideRuntimeApi<Block>,
+	C: CallApiAt<Block>,
 	C: HeaderBackend<Block> + HeaderMetadata<Block, Error = BlockChainError> + 'static,
 	C: Send + Sync + 'static,
 	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
@@ -84,6 +86,7 @@ where
 			ScEpochNumber,
 		>,
 	C::Api: CandidateValidationApi<Block>,
+	C::Api: GetEpochDurationApi<Block>,
 	P: TransactionPool + 'static,
 	B: sc_client_api::Backend<Block> + Send + Sync + 'static,
 	B::State: sc_client_api::backend::StateBackend<sp_runtime::traits::HashingFor<Block>>,

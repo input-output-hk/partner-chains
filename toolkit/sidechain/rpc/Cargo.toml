@@ -23,7 +23,6 @@ sp-api = { workspace = true, features = ['std'] }
 sp-blockchain = { workspace = true }
 sp-sidechain = { workspace = true, features = ['std'] }
 sidechain-domain = { workspace = true, features = ['std'] }
-sidechain-slots = { workspace = true, features = ['std', 'serde'] }
 serde_json = { workspace = true, features = ['std'] }
 sp-timestamp = { workspace = true, features = ['std'] }
 hex = { workspace = true, features = ['std'] }
@@ -35,7 +34,7 @@ derive-new = { workspace = true }
 serde_json = { workspace = true }
 pretty_assertions = { workspace = true }
 time-source = { workspace = true, features = ['mock'] }
-sp-consensus-slots = { workspace = true, features = ["std"] }
 
 [features]
 default = []
+legacy-slotapi-compat = []

@@ -1,7 +1,6 @@
 //! Implements storage migration of the `session-validator-management` pallet from v0 to v1.
 #[cfg(feature = "try-runtime")]
 extern crate alloc;
-use crate::CommitteeMemberOf;
 use frame_support::traits::UncheckedOnRuntimeUpgrade;
 #[cfg(feature = "try-runtime")]
 use {alloc::vec::Vec, parity_scale_codec::Encode};
@@ -26,26 +25,24 @@ impl<T: crate::pallet::Config> UncheckedOnRuntimeUpgrade for InnerMigrateV0ToV1<
 		use sp_runtime::BoundedVec;
 
 		let current_committee_v0 = v0::CurrentCommittee::<T>::get();
-		let current_committee_v1 =
-			crate::pallet::CommitteeInfo::<CommitteeMemberOf<T>, T::MaxValidators> {
-				epoch: current_committee_v0.epoch,
-				committee: BoundedVec::truncate_from(
-					current_committee_v0.committee.into_iter().map(From::from).collect(),
-				),
-			};
+		let current_committee_v1 = crate::pallet::CommitteeInfoOf::<T> {
+			epoch: current_committee_v0.epoch,
+			committee: BoundedVec::truncate_from(
+				current_committee_v0.committee.into_iter().map(From::from).collect(),
+			),
+		};
 
 		crate::CurrentCommittee::<T>::put(current_committee_v1);
 
 		let Some(next_committee_v0) = v0::NextCommittee::<T>::get() else {
 			return T::DbWeight::get().reads_writes(2, 1);
 		};
-		let next_committee_v1 =
-			crate::pallet::CommitteeInfo::<CommitteeMemberOf<T>, T::MaxValidators> {
-				epoch: next_committee_v0.epoch,
-				committee: BoundedVec::truncate_from(
-					next_committee_v0.committee.into_iter().map(From::from).collect(),
-				),
-			};
+		let next_committee_v1 = crate::pallet::CommitteeInfoOf::<T> {
+			epoch: next_committee_v0.epoch,
+			committee: BoundedVec::truncate_from(
+				next_committee_v0.committee.into_iter().map(From::from).collect(),
+			),
+		};
 
 		crate::NextCommittee::<T>::put(next_committee_v1);
 

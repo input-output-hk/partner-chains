@@ -39,6 +39,16 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
     steps:
+
+      - name: Free up disk space
+        run: |
+          df -h
+          sudo rm -rf /opt/hostedtoolcache || true
+          sudo rm -rf /usr/share/dotnet || true
+          sudo rm -rf /usr/local/lib/android || true
+          docker system prune -af || true
+          df -h
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -112,18 +122,18 @@ jobs:
         if: always()
         run: sccache -s || true
 
-      - name: Build chain specs
-        run: |
-          nix develop --accept-flake-config -c bash -c '
-            source ./dev/envs/devnet/.envrc
-            target/release/partner-chains-demo-node build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json
-
-            source ./dev/envs/ci-preview/.envrc
-            target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > ci_preview_chain_spec.json
-
-            source ./dev/envs/staging-preview/.envrc
-            target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
-          '
+      # - name: Build chain specs
+      #   run: |
+      #     nix develop --accept-flake-config -c bash -c '
+      #       source ./dev/envs/devnet/.envrc
+      #       target/release/partner-chains-demo-node build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json
+      #
+      #       source ./dev/envs/ci-preview/.envrc
+      #       target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > ci_preview_chain_spec.json
+      #
+      #       source ./dev/envs/staging-preview/.envrc
+      #       target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
+      #     '
           
       - name: Build and push docker image
         run: |
@@ -151,6 +161,16 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
     steps:
+
+      - name: Free up disk space
+        run: |
+          df -h
+          sudo rm -rf /opt/hostedtoolcache || true
+          sudo rm -rf /usr/share/dotnet || true
+          sudo rm -rf /usr/local/lib/android || true
+          docker system prune -af || true
+          df -h
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -262,24 +282,24 @@ jobs:
       - name: Run Documentation Tests
         uses: ./.github/actions/tests/doc-tests
 
-  upload-chain-specs-pre-merge:
-    if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
-    needs: build-linux-x86_64-pre-merge
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - name: Upload chain spec artifacts to Kubernetes
-        uses: ./.github/actions/deploy/upload-chain-specs
-        with:
-          sha: ${{ github.sha }}
-        env:
-          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
-          K8S_SERVER: ${{ secrets.K8S_SERVER }}
-          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
+#   upload-chain-specs-pre-merge:
+#     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
+#     needs: build-linux-x86_64-pre-merge
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0
+#           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+#       - name: Upload chain spec artifacts to Kubernetes
+#         uses: ./.github/actions/deploy/upload-chain-specs
+#         with:
+#           sha: ${{ github.sha }}
+#         env:
+#           kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+#           K8S_SERVER: ${{ secrets.K8S_SERVER }}
+#           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
   pre-merge-checks-complete:
     if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.merged == false }}
@@ -287,7 +307,6 @@ jobs:
       build-linux-x86_64-pre-merge,
       build-nightly-pre-merge,
       local-env,
-      upload-chain-specs-pre-merge,
       documentation-tests
     ]
     runs-on: ubuntu-latest
@@ -297,7 +316,6 @@ jobs:
           if [[ "${{ needs.build-linux-x86_64-pre-merge.result }}" != "success" ||
                 "${{ needs.build-nightly-pre-merge.result }}" != "success" ||
                 "${{ needs.local-env.result }}" != "success" ||
-                "${{ needs.upload-chain-specs-pre-merge.result }}" != "success" ||
                 "${{ needs.documentation-tests.result }}" != "success" ]]; then
             echo "One or more needed jobs failed."
             exit 1
@@ -395,18 +413,18 @@ jobs:
         if: always()
         run: sccache -s || true
 
-      - name: Build chain specs
-        run: |
-          nix develop --accept-flake-config -c bash -c '
-            source ./dev/envs/devnet/.envrc
-            target/release/partner-chains-demo-node build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json
-
-            source ./dev/envs/ci-preview/.envrc
-            target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > ci_preview_chain_spec.json
-
-            source ./dev/envs/staging-preview/.envrc
-            target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
-          '
+      # - name: Build chain specs
+      #   run: |
+      #     nix develop --accept-flake-config -c bash -c '
+      #       source ./dev/envs/devnet/.envrc
+      #       target/release/partner-chains-demo-node build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json
+      #
+      #       source ./dev/envs/ci-preview/.envrc
+      #       target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > ci_preview_chain_spec.json
+      #
+      #       source ./dev/envs/staging-preview/.envrc
+      #       target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
+      #     '
 
       - name: Build and push docker image
         run: |
@@ -466,24 +484,24 @@ jobs:
           AWS_REGION: ${{ env.AWS_REGION }}
           AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_S3_ROLE_ARN_SECRET }}
 
-  upload-chain-specs:
-    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
-    needs: build-linux-x86_64-post-merge
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: master
-      - name: Upload chain spec artifacts to Kubernetes
-        uses: ./.github/actions/deploy/upload-chain-specs
-        with:
-          sha: ${{ needs.build-linux-x86_64-post-merge.outputs.sha }}
-        env:
-          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
-          K8S_SERVER: ${{ secrets.K8S_SERVER }}
-          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
+#   upload-chain-specs:
+#     if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
+#     needs: build-linux-x86_64-post-merge
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0
+#           ref: master
+#       - name: Upload chain spec artifacts to Kubernetes
+#         uses: ./.github/actions/deploy/upload-chain-specs
+#         with:
+#           sha: ${{ needs.build-linux-x86_64-post-merge.outputs.sha }}
+#         env:
+#           kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+#           K8S_SERVER: ${{ secrets.K8S_SERVER }}
+#           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
   deploy-rustdoc:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
@@ -500,69 +518,69 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  deploy-ci-preview:
-    needs:
-      - build-linux-x86_64-post-merge
-    permissions:
-      id-token: write
-      contents: write
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: master
-      - name: Deploy ci-preview
-        uses: ./.github/actions/deploy/deploy-ci-preview
-        with:
-          image:  ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-x86_64-post-merge.outputs.sha }}
-          sha: ${{ needs.build-linux-x86_64-post-merge.outputs.sha }}
-          no-wipe: true
-        env:
-          AWS_REGION: "eu-central-1"
-          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
-          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
-          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
-          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
-          K8S_SERVER: ${{ secrets.K8S_SERVER }}
-          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
+#   deploy-ci-preview:
+#     needs:
+#       - build-linux-x86_64-post-merge
+#     permissions:
+#       id-token: write
+#       contents: write
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0
+#           ref: master
+#       - name: Deploy ci-preview
+#         uses: ./.github/actions/deploy/deploy-ci-preview
+#         with:
+#           image:  ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-x86_64-post-merge.outputs.sha }}
+#           sha: ${{ needs.build-linux-x86_64-post-merge.outputs.sha }}
+#           no-wipe: true
+#         env:
+#           AWS_REGION: "eu-central-1"
+#           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+#           ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+#           AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+#           ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
+#           kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+#           K8S_SERVER: ${{ secrets.K8S_SERVER }}
+#           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
-  ci-preview-tests-post-merge:
-    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
-    needs: deploy-ci-preview
-    runs-on: eks
-    steps:
-      - name: Acquire AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN_ }}
-          aws-region: ${{ env.AWS_REGION }}
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: master
-      - name: Setup tests
-        uses: ./.github/actions/tests/setup-python
-        env:
-          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
-          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
-          K8S_SERVER: ${{ secrets.K8S_SERVER }}
-          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
-      - name: Test against ci-preview
-        uses: ./.github/actions/tests/run-e2e-tests
-        with:
-          env: ci
-          decrypt: true
-          blockchain: substrate
-          markers: ci
-        env:
-          AWS_SESSION_TOKEN: ${{ env.AWS_SESSION_TOKEN }}
-          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: ${{ env.AWS_REGION }}
+#   ci-preview-tests-post-merge:
+#     if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
+#     needs: deploy-ci-preview
+#     runs-on: eks
+#     steps:
+#       - name: Acquire AWS credentials
+#         uses: aws-actions/configure-aws-credentials@v4
+#         with:
+#           role-to-assume: ${{ secrets.AWS_ROLE_ARN_ }}
+#           aws-region: ${{ env.AWS_REGION }}
+#       - name: Checkout
+#         uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0
+#           ref: master
+#       - name: Setup tests
+#         uses: ./.github/actions/tests/setup-python
+#         env:
+#           ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+#           kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+#           K8S_SERVER: ${{ secrets.K8S_SERVER }}
+#           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
+#       - name: Test against ci-preview
+#         uses: ./.github/actions/tests/run-e2e-tests
+#         with:
+#           env: ci
+#           decrypt: true
+#           blockchain: substrate
+#           markers: ci
+#         env:
+#           AWS_SESSION_TOKEN: ${{ env.AWS_SESSION_TOKEN }}
+#           AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+#           AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
+#           AWS_DEFAULT_REGION: ${{ env.AWS_REGION }}
 
   post-merge-actions-complete:
     if: ${{ always() && (github.event_name == 'pull_request' && github.event.pull_request.merged == true) }}
@@ -570,9 +588,6 @@ jobs:
       [
         build-linux-x86_64-post-merge,
         deploy-rustdoc,
-        upload-chain-specs,
-        ci-preview-tests-post-merge,
-        deploy-ci-preview,
         upload-to-s3,
       ]
     runs-on: ubuntu-latest
@@ -581,9 +596,6 @@ jobs:
         run: |
           if [[ "${{ needs.build-linux-x86_64-post-merge.result }}" != "success" ||
                 "${{ needs.deploy-rustdoc.result }}" != "success" ||
-                "${{ needs.upload-chain-specs.result }}" != "success" ||
-                "${{ needs.ci-preview-tests-post-merge.result }}" != "success" ||
-                "${{ needs.deploy-ci-preview.result }}" != "success" ||
                 "${{ needs.upload-to-s3.result }}" != "success" ]]; then
             echo "One or more needed jobs failed."
             exit 1
@@ -682,18 +694,18 @@ jobs:
       #  with:
       #    command: check licenses
 
-      - name: Build chain specs
-        run: |
-          nix develop --accept-flake-config -c bash -c '
-            source ./dev/envs/devnet/.envrc
-            target/release/partner-chains-demo-node build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json
-
-            source ./dev/envs/ci-preview/.envrc
-            target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > ci_preview_chain_spec.json
-
-            source ./dev/envs/staging-preview/.envrc
-            target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
-          '
+      # - name: Build chain specs
+      #   run: |
+      #     nix develop --accept-flake-config -c bash -c '
+      #       source ./dev/envs/devnet/.envrc
+      #       target/release/partner-chains-demo-node build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json
+      #
+      #       source ./dev/envs/ci-preview/.envrc
+      #       target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > ci_preview_chain_spec.json
+      #
+      #       source ./dev/envs/staging-preview/.envrc
+      #       target/release/partner-chains-demo-node build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
+      #     '
 
       - name: Build and push docker image
         run: |
@@ -747,95 +759,92 @@ jobs:
           AWS_REGION: ${{ env.AWS_REGION }}
           AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_S3_ROLE_ARN_SECRET }}
 
-  upload-chain-specs-workflow-dispatch:
-    if: github.event_name == 'workflow_dispatch' && inputs.build_and_publish == true
-    needs: build-linux-x86_64-workflow-dispatch
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout specific SHA
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ inputs.sha }}
-      - name: Upload chain spec artifacts to Kubernetes
-        uses: ./.github/actions/deploy/upload-chain-specs
-        with:
-          sha: ${{ inputs.sha }}
-        env:
-          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
-          K8S_SERVER: ${{ secrets.K8S_SERVER }}
-          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
+#   upload-chain-specs-workflow-dispatch:
+#     if: github.event_name == 'workflow_dispatch' && inputs.build_and_publish == true
+#     needs: build-linux-x86_64-workflow-dispatch
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout specific SHA
+#         uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0
+#           ref: ${{ inputs.sha }}
+#       - name: Upload chain spec artifacts to Kubernetes
+#         uses: ./.github/actions/deploy/upload-chain-specs
+#         with:
+#           sha: ${{ inputs.sha }}
+#         env:
+#           kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+#           K8S_SERVER: ${{ secrets.K8S_SERVER }}
+#           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
-  deploy-ci-preview-workflow-dispatch:
-    if: github.event_name == 'workflow_dispatch' && inputs.run_post_merge_tests == true
-    needs: build-linux-x86_64-workflow-dispatch
-    permissions:
-      id-token: write
-      contents: write
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ inputs.sha }}
-      - name: Deploy ci-preview
-        uses: ./.github/actions/deploy/deploy-ci-preview
-        with:
-          image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ inputs.sha }}
-          sha: ${{ inputs.sha }}
-          no-wipe: true
-        env:
-          AWS_REGION: "eu-central-1"
-          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
-          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
-          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
-          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
-          K8S_SERVER: ${{ secrets.K8S_SERVER }}
-          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
+#   deploy-ci-preview-workflow-dispatch:
+#     if: github.event_name == 'workflow_dispatch' && inputs.run_post_merge_tests == true
+#     needs: build-linux-x86_64-workflow-dispatch
+#     permissions:
+#       id-token: write
+#       contents: write
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0
+#           ref: ${{ inputs.sha }}
+#       - name: Deploy ci-preview
+#         uses: ./.github/actions/deploy/deploy-ci-preview
+#         with:
+#           image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ inputs.sha }}
+#           sha: ${{ inputs.sha }}
+#           no-wipe: true
+#         env:
+#           AWS_REGION: "eu-central-1"
+#           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+#           ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+#           AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+#           ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
+#           kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+#           K8S_SERVER: ${{ secrets.K8S_SERVER }}
+#           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
-  ci-preview-tests-workflow-dispatch:
-    if: github.event_name == 'workflow_dispatch' && inputs.run_post_merge_tests == true
-    runs-on: eks
-    steps:
-      - name: Acquire AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN_ }}
-          aws-region: ${{ env.AWS_REGION }}
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ inputs.sha }}
-      - name: Setup tests
-        uses: ./.github/actions/tests/setup-python
-        env:
-          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
-          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
-          K8S_SERVER: ${{ secrets.K8S_SERVER }}
-          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
-      - name: Test against ci-preview
-        uses: ./.github/actions/tests/run-e2e-tests
-        with:
-          env: ci
-          decrypt: true
-          blockchain: substrate
-        env:
-          AWS_SESSION_TOKEN: ${{ env.AWS_SESSION_TOKEN }}
-          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: ${{ env.AWS_REGION }}
+#   ci-preview-tests-workflow-dispatch:
+#     if: github.event_name == 'workflow_dispatch' && inputs.run_post_merge_tests == true
+#     runs-on: eks
+#     steps:
+#       - name: Acquire AWS credentials
+#         uses: aws-actions/configure-aws-credentials@v4
+#         with:
+#           role-to-assume: ${{ secrets.AWS_ROLE_ARN_ }}
+#           aws-region: ${{ env.AWS_REGION }}
+#       - name: Checkout
+#         uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0
+#           ref: ${{ inputs.sha }}
+#       - name: Setup tests
+#         uses: ./.github/actions/tests/setup-python
+#         env:
+#           ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+#           kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+#           K8S_SERVER: ${{ secrets.K8S_SERVER }}
+#           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
+#       - name: Test against ci-preview
+#         uses: ./.github/actions/tests/run-e2e-tests
+#         with:
+#           env: ci
+#           decrypt: true
+#           blockchain: substrate
+#         env:
+#           AWS_SESSION_TOKEN: ${{ env.AWS_SESSION_TOKEN }}
+#           AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+#           AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
+#           AWS_DEFAULT_REGION: ${{ env.AWS_REGION }}
 
   workflow-dispatch-flow-complete:
     if: ${{ always() && github.event_name == 'workflow_dispatch' }}
     needs: [
       build-linux-x86_64-workflow-dispatch,
-      upload-to-s3-workflow-dispatch,
-      upload-chain-specs-workflow-dispatch,
-      deploy-ci-preview-workflow-dispatch,
-      ci-preview-tests-workflow-dispatch
+      upload-to-s3-workflow-dispatch
     ]
     runs-on: ubuntu-latest
     steps:
@@ -855,22 +864,11 @@ jobs:
               echo "upload-to-s3-workflow-dispatch failed"
               failed=true
             fi
-            if [[ "${{ needs.upload-chain-specs-workflow-dispatch.result }}" == "failure" ]]; then
-              echo "upload-chain-specs-workflow-dispatch failed"
-              failed=true
-            fi
           fi
           
           # Check test jobs (only if run_post_merge_tests is enabled)
           if [[ "${{ inputs.run_post_merge_tests }}" == "true" ]]; then
-            if [[ "${{ needs.deploy-ci-preview-workflow-dispatch.result }}" == "failure" ]]; then
-              echo "deploy-ci-preview-workflow-dispatch failed"
-              failed=true
-            fi
-            if [[ "${{ needs.ci-preview-tests-workflow-dispatch.result }}" == "failure" ]]; then
-              echo "ci-preview-tests-workflow-dispatch failed"
-              failed=true
-            fi
+            # No more test jobs to check, if there were any, they would be here
           fi
           
           if [[ "$failed" == "true" ]]; then

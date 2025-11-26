@@ -4,21 +4,19 @@
 //!
 //! ## Implementing runtime APIs
 //!
-//! Your runtime should implement the [SlotApi] and [GetGenesisUtxo] runtime APIs. For example, if
-//! your chain uses Aura for consensus, they may be implemented similar to this:
+//! Your runtime should implement the [GetGenesisUtxo] and [GetEpochDurationApi] runtime APIs.
+//! For example, if your chain uses Aura for consensus, they may be implemented similar to this:
 //! ```rust,ignore
-//! impl sidechain_slots::SlotApi<Block> for Runtime {
-//!    fn slot_config() -> sidechain_slots::ScSlotConfig {
-//!      sidechain_slots::ScSlotConfig {
-//!        slots_per_epoch: Sidechain::slots_per_epoch(),
-//!        slot_duration: SlotDuration::from(Aura::slot_duration())
-//!      }
-//!    }
-//!  }
 //! impl sp_sidechain::GetGenesisUtxo<Block> for Runtime {
 //!   fn genesis_utxo() -> UtxoId {
 //!     Sidechain::genesis_utxo()
 //!   }
+//! }
+//!
+//! impl sp_sidechain::GetEpochDurationApi<Block> for Runtime {
+//! 	fn get_epoch_duration_millis() -> u64 {
+//! 		BLOCKS_PER_EPOCH * MILLISECS_PER_BLOCK
+//! 	}
 //! }
 //! ```
 //!
@@ -30,10 +28,9 @@
 //! # use jsonrpsee::RpcModule;
 //! # use pallet_sidechain_rpc::{*, types::GetBestHash};
 //! # use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
-//! # use sidechain_slots::SlotApi;
-//! # use sp_api::ProvideRuntimeApi;
+//! # use sp_api::{ CallApiAt, ProvideRuntimeApi };
 //! # use sp_runtime::traits::Block as BlockT;
-//! # use sp_sidechain::GetGenesisUtxo;
+//! # use sp_sidechain::{ GetEpochDurationApi, GetGenesisUtxo };
 //! # use std::sync::Arc;
 //! # use time_source::TimeSource;
 //! fn create_rpc<B: BlockT, C: Send + Sync + 'static>(
@@ -42,8 +39,8 @@
 //!    data_source: Arc<dyn SidechainRpcDataSource + Send + Sync>,
 //! ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 //! where
-//!     C: ProvideRuntimeApi<B> + GetBestHash<B>,
-//!     C::Api: SlotApi<B> + GetGenesisUtxo<B>
+//!     C: ProvideRuntimeApi<B> + GetBestHash<B> + CallApiAt<B>,
+//!     C::Api: GetGenesisUtxo<B> + GetEpochDurationApi<B>
 //! {
 //!
 //!     let mut module = RpcModule::new(());
@@ -66,8 +63,17 @@
 //! data source is provided by the Partner Chain toolkit in the `partner_chains_db_sync_data_sources`
 //! crate.
 //!
+//! ## Legacy compatibility mode
+//!
+//! In previous versions of the Partner Chains toolkit, the RPC services in this crate relied on now
+//! deprecated runtime api `sp_sidechain::SlotApi` to compute Partner Chain epochs and current slot.
+//! For Partner Chains that started before this dependency was removed, a compatibility mode is
+//! provided behind the `legacy-slotapi-compat` feature flag. Enabling this flag will cause the nodes to
+//! use this runtime API when present and optionally include information about current Patner Chain
+//! slot in `sidechain.slot` field of `sidechain_getStatus` response.
+//!
 //! [GetGenesisUtxo]: sp_sidechain::GetGenesisUtxo
-//! [SlotApi]: sidechain_slots::SlotApi
+//! [GetEpochDurationApi]: sp_sidechain::GetEpochDurationApi
 #![deny(missing_docs)]
 use derive_new::new;
 use jsonrpsee::{
@@ -75,19 +81,23 @@ use jsonrpsee::{
 	proc_macros::rpc,
 	types::{ErrorObject, ErrorObjectOwned, error::ErrorCode},
 };
+#[cfg(feature = "legacy-slotapi-compat")]
+use legacy_compat::slots::*;
 use sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
 use sidechain_domain::{MainchainBlock, UtxoId};
-use sidechain_slots::SlotApi;
 use sp_api::ProvideRuntimeApi;
-use sp_core::offchain::Timestamp;
+use sp_core::offchain::{Duration, Timestamp};
 use sp_runtime::traits::Block as BlockT;
-use sp_sidechain::GetGenesisUtxo;
+use sp_sidechain::{GetEpochDurationApi, GetGenesisUtxo};
 use std::sync::Arc;
 use time_source::*;
 use types::*;
 
 /// Response types returned by RPC endpoints for Sidechain pallet
 pub mod types;
+
+#[cfg(feature = "legacy-slotapi-compat")]
+mod legacy_compat;
 
 #[cfg(test)]
 mod tests;
@@ -142,37 +152,89 @@ impl<C, B> SidechainRpc<C, B> {
 	}
 }
 
+/// Runtime client that can serve data to sidechain RPC
+trait SidechainRpcClient<Block: BlockT> {
+	/// Returns Partner Chain epoch duration
+	fn get_epoch_duration(
+		&self,
+		best_block: Block::Hash,
+	) -> Result<Duration, Box<dyn std::error::Error + Send + Sync>>;
+
+	/// Returns the Partner Chain's genesis UTXO
+	fn get_genesis_utxo(
+		&self,
+		best_block: Block::Hash,
+	) -> Result<UtxoId, Box<dyn std::error::Error + Send + Sync>>;
+
+	#[cfg(feature = "legacy-slotapi-compat")]
+	/// Returns slot duration
+	fn get_maybe_slot_duration(&self, best_block: Block::Hash) -> Option<u64>;
+}
+
+impl<Block, Client> SidechainRpcClient<Block> for Client
+where
+	Block: BlockT,
+	Client: sp_api::CallApiAt<Block> + Send + Sync + 'static,
+	Client: ProvideRuntimeApi<Block>,
+	Client::Api: GetEpochDurationApi<Block>,
+	Client::Api: GetGenesisUtxo<Block>,
+{
+	fn get_epoch_duration(
+		&self,
+		best_block: Block::Hash,
+	) -> Result<Duration, Box<dyn std::error::Error + Send + Sync>> {
+		#[cfg(feature = "legacy-slotapi-compat")]
+		if let Some(slot_config) = self.get_sc_slot_config(best_block) {
+			return Ok(Duration::from_millis(
+				u64::from(slot_config.slots_per_epoch) * slot_config.slot_duration_millis,
+			));
+		}
+
+		Ok(Duration::from_millis(self.runtime_api().get_epoch_duration_millis(best_block)?))
+	}
+
+	fn get_genesis_utxo(
+		&self,
+		best_block: Block::Hash,
+	) -> Result<UtxoId, Box<dyn std::error::Error + Send + Sync>> {
+		Ok(self.runtime_api().genesis_utxo(best_block)?)
+	}
+
+	#[cfg(feature = "legacy-slotapi-compat")]
+	fn get_maybe_slot_duration(&self, best_block: Block::Hash) -> Option<u64> {
+		let slot_config = self.get_sc_slot_config(best_block)?;
+		Some(slot_config.slot_duration_millis)
+	}
+}
+
 #[async_trait]
 impl<C, Block> SidechainRpcApiServer for SidechainRpc<C, Block>
 where
 	Block: BlockT,
 	C: Send + Sync + 'static,
-	C: ProvideRuntimeApi<Block>,
+	C: SidechainRpcClient<Block>,
 	C: GetBestHash<Block>,
-	C::Api: SlotApi<Block> + GetGenesisUtxo<Block>,
 {
 	fn get_params(&self) -> RpcResult<GetParamsOutput> {
-		let api = self.client.runtime_api();
 		let best_block = self.client.best_hash();
 
-		let genesis_utxo = api.genesis_utxo(best_block).map_err(error_object_from)?;
+		let genesis_utxo = self.client.get_genesis_utxo(best_block).map_err(error_object_from)?;
 
 		Ok(GetParamsOutput { genesis_utxo })
 	}
 
 	async fn get_status(&self) -> RpcResult<GetStatusResponse> {
-		let api = self.client.runtime_api();
 		let best_block = self.client.best_hash();
 
-		let slot_config = api.slot_config(best_block).map_err(error_object_from)?;
-
 		let current_timestamp = self.get_current_timestamp();
-		let current_sidechain_slot =
-			slot_config.slot_from_timestamp(current_timestamp.unix_millis());
-		let current_sidechain_epoch = slot_config.epoch_number(current_sidechain_slot);
-		let next_sidechain_epoch_timestamp = slot_config
-			.epoch_start_time(current_sidechain_epoch.next())
-			.ok_or(GetStatusRpcError::CannotConvertSidechainSlotToTimestamp)?;
+
+		let sc_epoch_duration: Duration =
+			self.client.get_epoch_duration(best_block).map_err(error_object_from)?;
+
+		let current_sidechain_epoch = current_timestamp.unix_millis() / sc_epoch_duration.millis();
+
+		let next_sidechain_epoch_timestamp =
+			Timestamp::from((current_sidechain_epoch + 1) * sc_epoch_duration.millis());
 
 		let latest_mainchain_block =
 			self.data_source.get_latest_block_info().await.map_err(|err| {
@@ -188,8 +250,10 @@ where
 
 		Ok(GetStatusResponse {
 			sidechain: SidechainData {
-				epoch: current_sidechain_epoch.0,
-				slot: current_sidechain_slot.into(),
+				epoch: current_sidechain_epoch,
+				#[cfg(feature = "legacy-slotapi-compat")]
+				slot: (self.client.get_maybe_slot_duration(best_block))
+					.map(|duration| current_timestamp.unix_millis() / duration),
 				next_epoch_timestamp: next_sidechain_epoch_timestamp,
 			},
 			mainchain: MainchainData {

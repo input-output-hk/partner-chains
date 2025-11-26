@@ -34,12 +34,20 @@ supported by the toolkit, this change is backwards compatible for existing chain
 and instead uses `CommitteeMember` and `AuthoritySelectionInputs` types directly, which were moved from
 `authority_selection_inherents` crate to `sp_session_validator_management`.
 As these types were the only ones supported by the toolkit, this change is backwards compatible for existing chains.
+* `pallet-sidechain-rpc` by default no longer provides information about sidechain slots and uses the newly added
+runtime APIs `sp_sidechain::GetEpochDurationApi` instead of deprecated `sp_sidechain::SlotApi`. Chain builders should
+implement the new API in their runtime. Backward compatibility option can be switched on by enabling `legacy-slotapi-compat`
+feature in the crate, which will cause legacy chain nodes to still use `SlotApi` where present and include the
+`sidechain.slot` as an optional field.
+* `pallet-block-producer-fees` no longer uses slots and is instead configured with a `Moment` type used for identifying
+when an SPO's fee configuration has changed
 
 ## Removed
 
 * `pallet-partner-chains-session` has been removed. Partner Chains should use only the stock Substrate session pallet
 * `PalletSessionSupport` type provided by `pallet-session-validator-management`. The `SessionManager` and `ShouldEndSession`
   implementations were moved directly to the `Pallet` type instead.
+* `sidechain.slots` field in the response of `sidechain_getStatus` RPC method
 
 ## Fixed
 
@@ -53,6 +61,8 @@ types using Substrate's `app_crypto` macro. This should be a drop-in replacement
 for the analogous cross-chain key types that previously had to be defined by each
 Partner Chain separately for use in `pallet_session_validator_management` and
 other pallets that use cross-chain keys.
+* `sp_sidechain::GetEpochDurationApi` runtime API
+* Reusable migration `AuthorityKeysMigration` in `pallet_session_validator_management`
 
 # v1.8.0
 

@@ -56,7 +56,7 @@ sp-block-production-log = { workspace = true }
 sidechain-domain = { workspace = true }
 sidechain-slots = { workspace = true }
 sp-sidechain = { workspace = true }
-pallet-sidechain-rpc = { workspace = true }
+pallet-sidechain-rpc = { workspace = true, features = ["legacy-slotapi-compat"] }
 pallet-session-validator-management = { workspace = true }
 sp-session-validator-management = { workspace = true }
 sp-session-validator-management-query = { workspace = true }
