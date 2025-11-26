@@ -52,6 +52,7 @@ when an SPO's fee configuration has changed
 ## Fixed
 
 * Improper weights for `set_main_chain_scripts` in `pallet_session_validator_management`
+* Overflow error when running with mock data source and debug build.
 
 ## Added
 

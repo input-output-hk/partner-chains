@@ -50,14 +50,14 @@ impl BlockDataSourceMock {
 	) -> Result<Option<MainchainBlock>> {
 		// reverse of computation in `get_latest_stable_block_for`
 		let block_number = u32::from_be_bytes(hash.0[..4].try_into().unwrap());
-		let timestamp = block_number * 20000;
+		let timestamp = u64::from(block_number) * 20000;
 		let epoch = block_number / self.block_per_epoch();
 		Ok(Some(MainchainBlock {
 			number: McBlockNumber(block_number),
 			hash,
 			epoch: McEpochNumber(epoch),
 			slot: McSlotNumber(epoch.into()),
-			timestamp: timestamp.into(),
+			timestamp,
 		}))
 	}
 }
