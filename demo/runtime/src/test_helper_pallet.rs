@@ -4,14 +4,19 @@ pub use pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use crate::{AccountId, Balances, BlockAuthor, MaxKeyLength, MaxValueLength};
+	use crate::{
+		AccountId, Balances, BlockAuthor, BlockProductionLog, MaxKeyLength, MaxValueLength,
+	};
+	use alloc::boxed::Box;
 	use frame_support::pallet_prelude::{StorageMap, *};
 	use frame_support::traits::Currency;
 	use frame_system::pallet_prelude::OriginFor;
 	use frame_system::{ensure_none, ensure_root};
+	use pallet_block_participation::BlockParticipationProvider;
 	use sidechain_domain::byte_string::BoundedString;
 	use sidechain_domain::*;
 	use sp_block_participation::BlockProductionData;
+	use sp_consensus_slots::Slot;
 	use sp_core::bytes::*;
 	use sp_inherents::IsFatalError;
 	use sp_partner_chains_bridge::BridgeTransferV1;
@@ -137,6 +142,25 @@ pub mod pallet {
 					TotalReserveTransfers::<T>::mutate(|v| *v += token_amount);
 				},
 			}
+		}
+	}
+
+	impl<T: Config> BlockParticipationProvider<Slot, BlockAuthor> for Pallet<T> {
+		fn blocks_to_process(slot: &Slot) -> impl Iterator<Item = (Slot, BlockAuthor)> {
+			let period = ParticipationDataReleasePeriod::<T>::get();
+
+			let iterator: Box<dyn Iterator<Item = (Slot, BlockAuthor)>> =
+				if u64::from(*slot) % period == 0 {
+					Box::from(BlockProductionLog::peek_prefix(slot))
+				} else {
+					Box::from(core::iter::empty())
+				};
+
+			iterator
+		}
+
+		fn discard_processed_blocks(slot: &Slot) {
+			BlockProductionLog::drop_prefix(slot)
 		}
 	}
 
