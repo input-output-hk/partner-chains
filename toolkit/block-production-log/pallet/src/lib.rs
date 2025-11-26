@@ -98,7 +98,6 @@ mod mock;
 #[cfg(test)]
 mod test;
 
-use frame_support::traits::FindAuthor;
 pub use pallet::*;
 pub use weights::WeightInfo;
 
@@ -223,7 +222,7 @@ mod block_participation {
 #[cfg(feature = "aura-compat")]
 mod aura_support {
 	use crate::*;
-	use pallet_session_validator_management::CommitteeMemberOf;
+	use pallet_session_validator_management as psvm;
 	use sp_consensus_aura::Slot;
 
 	impl<T: crate::Config + pallet_aura::Config> GetMoment<Slot> for pallet_aura::Pallet<T> {
@@ -234,17 +233,11 @@ mod aura_support {
 
 	impl<BlockProducerId, T> GetAuthor<BlockProducerId> for pallet_aura::Pallet<T>
 	where
-		T: crate::Config + pallet_session_validator_management::Config + pallet_aura::Config,
-		CommitteeMemberOf<T>: Into<BlockProducerId>,
+		T: crate::Config + psvm::Config + pallet_aura::Config,
+		psvm::CommitteeMemberOf<T>: Into<BlockProducerId>,
 	{
 		fn get_author() -> Option<BlockProducerId> {
-			let digest = frame_system::Pallet::<T>::digest();
-			let pre_runtime_digests = digest.logs.iter().filter_map(|d| d.as_pre_runtime());
-			let author_index = Self::find_author(pre_runtime_digests)?;
-			pallet_session_validator_management::Pallet::<T>::get_current_authority_at(
-				author_index as usize,
-			)
-			.map(Into::into)
+			Some(psvm::Pallet::<T>::find_current_authority::<u32, pallet_aura::Pallet<T>>()?.into())
 		}
 	}
 }
