@@ -22,7 +22,8 @@ pub struct SidechainData {
 	/// Current Partner Chain epoch number
 	pub epoch: u64,
 	/// Current Partner Chain slot number
-	pub slot: u64,
+	#[cfg(feature = "legacy-slotapi-compat")]
+	pub slot: Option<u64>,
 	/// Timestamp of the next Partner Chain epoch start
 	pub next_epoch_timestamp: Timestamp,
 }

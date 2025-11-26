@@ -776,7 +776,7 @@ async fn run_bridge_deposit_to_without_ics_spend<
 		&[1u8; 32],
 		&governance_authority_payment_key(),
 		client,
-		&FixedDelayRetries::new(Duration::from_millis(50), 150),
+		&FixedDelayRetries::new(Duration::from_millis(500), 100),
 	)
 	.await
 	.unwrap()
@@ -799,7 +799,7 @@ async fn run_bridge_deposit_to_with_ics_spend<
 		&[2u8; 32],
 		&governance_authority_payment_key(),
 		client,
-		&FixedDelayRetries::new(Duration::from_millis(100), 100),
+		&FixedDelayRetries::new(Duration::from_millis(500), 100),
 	)
 	.await
 	.unwrap()

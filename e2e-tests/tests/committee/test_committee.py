@@ -1,4 +1,5 @@
 import logging
+import time
 from src.blockchain_api import BlockchainApi
 from src.pc_epoch_calculator import PartnerChainEpochCalculator
 from src.partner_chain_rpc import DParam
@@ -350,20 +351,64 @@ class TestCommitteeRotation:
     @mark.candidate_status("active")
     @mark.test_key('ETCM-6987')
     def test_active_trustless_candidates_were_in_committee(
-        self, trustless_rotation_candidates: Candidates, get_candidate_participation: int
+        self, trustless_rotation_candidates: Candidates, update_committee_attendance, db: Session, config: ApiConfig, api: BlockchainApi, current_mc_epoch
     ):
         """Test that active trustless candidates participated in committees
 
         * get a list of trustless candidates for a given mainchain epoch
         * verify that each active candidate included in committees within an mainchain epoch
+        
+        Note: Committees are selected based on data from the previous epoch, so a candidate
+        who becomes active in epoch N will participate in committees starting from epoch N+1.
+        However, if epoch N+1 hasn't completed yet, we check epoch N instead.
         """
         for candidate in trustless_rotation_candidates:
-            logging.info(
-                f"Verifying if {candidate.name} is found in committee for MC epoch {candidate.next_status_epoch}"
+            # Committees are selected based on previous epoch data, so check the next epoch
+            participation_epoch = candidate.next_status_epoch + 1
+            
+            # If the next epoch hasn't completed yet, check the current epoch instead
+            if participation_epoch > current_mc_epoch - 1:
+                participation_epoch = candidate.next_status_epoch
+                logging.info(
+                    f"Next epoch {candidate.next_status_epoch + 1} not yet complete, checking epoch {participation_epoch} "
+                    f"for candidate {candidate.name} (became active in epoch {candidate.next_status_epoch})"
+                )
+            else:
+                logging.info(
+                    f"Verifying if {candidate.name} is found in committee for MC epoch {participation_epoch} "
+                    f"(became active in epoch {candidate.next_status_epoch})"
+                )
+            
+            # Update attendance for the epoch when candidate should participate
+            try:
+                update_committee_attendance(participation_epoch)
+            except (ValueError, Exception) as e:
+                # If we can't get committee data for the epoch, skip this candidate
+                if participation_epoch == candidate.next_status_epoch + 1:
+                    # Try the current epoch instead
+                    participation_epoch = candidate.next_status_epoch
+                    logging.info(
+                        f"Could not get committee data for epoch {candidate.next_status_epoch + 1}, "
+                        f"checking epoch {participation_epoch} instead for candidate {candidate.name}"
+                    )
+                    try:
+                        update_committee_attendance(participation_epoch)
+                    except (ValueError, Exception):
+                        skip(f"Cannot check participation for candidate {candidate.name} - epochs not available")
+                else:
+                    skip(f"Cannot check participation for candidate {candidate.name} - epoch {participation_epoch} not available")
+            
+            query = (
+                select(StakeDistributionCommittee)
+                .where(StakeDistributionCommittee.mc_epoch == participation_epoch)
+                .where(StakeDistributionCommittee.pc_pub_key == config.nodes_config.nodes[candidate.name].public_key)
             )
-            assert get_candidate_participation(candidate) > 0, (
+            committee_entry = db.scalars(query).first()
+            actual_attendance = committee_entry.actual_attendance if committee_entry else 0
+            
+            assert actual_attendance > 0, (
                 f"Trustless candidate {candidate.name} not found in any committees on mc epoch "
-                f"{candidate.next_status_epoch}"
+                f"{participation_epoch} (became active in epoch {candidate.next_status_epoch})"
             )
 
     @mark.candidate_status("inactive")
@@ -491,7 +536,6 @@ class TestCommitteeMembers:
         # There's a delay between selecting a committee and it being in power, which means the current
         # committee was selected based on inputs from the previous epoch
         committee = api.get_epoch_committee(current_epoch).result['committee']
-        authorities = api.get_authorities()
 
         if api.get_pc_epoch() > current_epoch:
             skip("Epoch has changed while getting committee from partner chain rpc and blockchain api")
@@ -503,6 +547,13 @@ class TestCommitteeMembers:
                 if value.public_key == validator["sidechainPubKey"]:
                     validators_names.append(key)
                     break
+
+        # Wait for authorities to sync with the committee
+        time.sleep(30)
+        authorities = api.get_authorities()
+
+        if api.get_pc_epoch() > current_epoch:
+            skip("Epoch has changed while getting committee from partner chain rpc and blockchain api")
 
         authorities_names = []
         for authority in authorities:

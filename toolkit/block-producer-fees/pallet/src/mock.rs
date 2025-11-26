@@ -4,12 +4,13 @@ use frame_support::{
 	traits::{ConstU16, ConstU32, ConstU64, Everything},
 };
 use frame_system::mocking::MockBlock;
-use sp_consensus_slots::Slot;
 use sp_io::TestExternalities;
 use sp_runtime::{
 	AccountId32, BuildStorage,
 	traits::{BlakeTwo256, IdentityLookup},
 };
+
+type Moment = u64;
 
 #[frame_support::pallet]
 pub mod mock_pallet {
@@ -22,7 +23,7 @@ pub mod mock_pallet {
 	pub trait Config: frame_system::Config {}
 
 	#[pallet::storage]
-	pub type CurrentSlot<T: Config> = StorageValue<_, Slot, ValueQuery>;
+	pub type CurrentMoment<T: Config> = StorageValue<_, Moment, ValueQuery>;
 }
 
 construct_runtime! {
@@ -84,8 +85,10 @@ impl crate::pallet::Config for Test {
 	// Stores the current and one historical value, two in total
 	type HistoricalChangesPerProducer = ConstU16<1>;
 
-	fn current_slot() -> Slot {
-		mock_pallet::CurrentSlot::<Test>::get()
+	type Moment = Moment;
+
+	fn current_moment() -> Moment {
+		mock_pallet::CurrentMoment::<Test>::get()
 	}
 
 	#[cfg(feature = "runtime-benchmarks")]

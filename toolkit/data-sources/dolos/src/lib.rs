@@ -28,12 +28,9 @@ mod bridge;
 #[cfg(feature = "bridge")]
 pub use bridge::TokenBridgeDataSourceImpl;
 
-#[cfg(feature = "block-source")]
 mod block;
-#[cfg(feature = "block-source")]
 pub use block::BlockDataSourceImpl;
 
-#[cfg(feature = "block-source")]
 use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 
 use crate::client::MiniBFClient;

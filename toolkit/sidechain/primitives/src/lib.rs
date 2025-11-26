@@ -64,6 +64,12 @@ mod api_declarations {
 			fn genesis_utxo() -> UtxoId;
 		}
 
+		/// Runtime API for retrieving the Partner Chain's epoch duration
+		pub trait GetEpochDurationApi {
+			/// Returns Partner Chain epoch duration in milliseconds
+			fn get_epoch_duration_millis() -> u64;
+		}
+
 		/// Runtime API for getting information about current Partner Chain slot and epoch
 		#[deprecated(since = "1.7.0", note = "Code that needs this data should define its own runtime API instead.")]
 		pub trait GetSidechainStatus {
