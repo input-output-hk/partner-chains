@@ -28,15 +28,12 @@
 //! impl pallet_block_production_log::Config for Runtime {
 //!     type BlockProducerId = BlockAuthor;
 //!
-//! type Moment = Slot;
+//!     type Moment = Slot;
 //!
-//! type GetMoment = Aura;
-//! type GetAuthor = Aura;
+//!     type GetMoment = FromStorage<pallet_aura::CurrentSlot<Runtime>>;
+//!     type GetAuthor = FromFindAuthorIndex<Runtime, Aura, u32>;
 //! }
 //! ```
-//!
-//! Implementations supporting use of Aura and SessionCommitteeManagement as sources of moment and block producer
-//! can be enabled using the `aura-compat` feature flag.
 //!
 //! #### Defining block producer ID
 //!
@@ -98,25 +95,29 @@ mod mock;
 #[cfg(test)]
 mod test;
 
+use core::marker::PhantomData;
+
 pub use pallet::*;
 pub use weights::WeightInfo;
 
 /// Source of the current block's author
-///
-/// An implementation that will fetch block author from `pallet_session_validator_management` based on
-/// an index provided by Aura pallet is provided under feature flag `aura-compat`.
 pub trait GetAuthor<BlockProducerId> {
 	/// Returns the current block's author
 	fn get_author() -> Option<BlockProducerId>;
 }
 
+/// [GetAuthor] implementation that uses a [FindAuthor] instance to get the current block's author index
+/// of type `I` and uses it to read the author from `pallet_session_validator_management`.
+pub struct FromFindAuthorIndex<T, FA, I>(PhantomData<(T, FA, I)>);
+
 /// Source of the current block's moment
-///
-/// Implementation that fetches current slot from Aura pallet is provided under feature flat `aura-compat`.
 pub trait GetMoment<Moment> {
 	/// Returns the current block's moment
 	fn get_moment() -> Option<Moment>;
 }
+
+/// [GetMoment] implementation that fetches current block's `Moment` from storage `S`
+pub struct FromStorage<S>(PhantomData<S>);
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -219,25 +220,40 @@ mod block_participation {
 	}
 }
 
-#[cfg(feature = "aura-compat")]
-mod aura_support {
-	use crate::*;
+mod source_impls {
+	use super::*;
+	use frame_support::{
+		pallet_prelude::StorageValue,
+		storage::types::QueryKindTrait,
+		traits::{FindAuthor, StorageInstance},
+	};
 	use pallet_session_validator_management as psvm;
-	use sp_consensus_aura::Slot;
+	use parity_scale_codec::FullCodec;
+	use sp_runtime::traits::Get;
 
-	impl<T: crate::Config + pallet_aura::Config> GetMoment<Slot> for pallet_aura::Pallet<T> {
-		fn get_moment() -> Option<Slot> {
-			Some(pallet_aura::CurrentSlot::<T>::get())
-		}
-	}
-
-	impl<BlockProducerId, T> GetAuthor<BlockProducerId> for pallet_aura::Pallet<T>
+	impl<BlockProducerId, I, FA, T> GetAuthor<BlockProducerId> for FromFindAuthorIndex<T, FA, I>
 	where
-		T: crate::Config + psvm::Config + pallet_aura::Config,
+		FA: FindAuthor<I>,
+		I: TryInto<usize>,
+		T: psvm::Config,
 		psvm::CommitteeMemberOf<T>: Into<BlockProducerId>,
 	{
 		fn get_author() -> Option<BlockProducerId> {
-			Some(psvm::Pallet::<T>::find_current_authority::<u32, pallet_aura::Pallet<T>>()?.into())
+			Some(psvm::Pallet::<T>::find_current_authority::<I, FA>()?.into())
+		}
+	}
+
+	impl<Prefix, Value, Moment, QueryKind, OnEmpty> GetMoment<Moment>
+		for FromStorage<StorageValue<Prefix, Value, QueryKind, OnEmpty>>
+	where
+		Prefix: StorageInstance,
+		Value: FullCodec,
+		QueryKind: QueryKindTrait<Value, OnEmpty>,
+		OnEmpty: Get<QueryKind::Query> + 'static,
+		Option<Moment>: From<<QueryKind as QueryKindTrait<Value, OnEmpty>>::Query>,
+	{
+		fn get_moment() -> Option<Moment> {
+			StorageValue::<Prefix, Value, QueryKind, OnEmpty>::get().into()
 		}
 	}
 }

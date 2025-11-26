@@ -29,6 +29,7 @@ use frame_support::{
 use frame_system::EnsureRoot;
 use opaque::SessionKeys;
 use pallet_block_producer_metadata;
+use pallet_block_production_log::{FromFindAuthorIndex, FromStorage};
 use pallet_grandpa::AuthorityId as GrandpaId;
 use pallet_session_validator_management::CommitteeMemberOf;
 use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier};
@@ -500,8 +501,8 @@ impl pallet_block_production_log::Config for Runtime {
 
 	type Moment = Slot;
 
-	type GetMoment = Aura;
-	type GetAuthor = Aura;
+	type GetMoment = FromStorage<pallet_aura::CurrentSlot<Runtime>>;
+	type GetAuthor = FromFindAuthorIndex<Runtime, Aura, u32>;
 }
 
 parameter_types! {

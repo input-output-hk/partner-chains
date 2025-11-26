@@ -25,8 +25,6 @@ sp-std = { workspace = true }
 pallet-session-validator-management = { workspace = true }
 
 pallet-block-participation = { workspace = true, optional = true }
-pallet-aura = { workspace = true, optional = true }
-sp-consensus-aura = { workspace = true, optional = true }
 
 [dev-dependencies]
 sp-core = { workspace = true }
@@ -45,8 +43,6 @@ std = [
 	"sp-std/std",
     "pallet-session-validator-management/std",
 	"pallet-block-participation?/std",
-    "pallet-aura?/std",
-    "sp-consensus-aura?/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking/runtime-benchmarks",
@@ -55,8 +51,4 @@ runtime-benchmarks = [
 ]
 block-participation = [
     "dep:pallet-block-participation",
-]
-aura-compat = [
-    "dep:pallet-aura",
-    "dep:sp-consensus-aura",
 ]

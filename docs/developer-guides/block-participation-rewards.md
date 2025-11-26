@@ -104,7 +104,6 @@ range, a representative timestamp, such as the start of the range should be comp
 
 The pallet should be added to the runtime and configured to use `BlockAuthor` type as its `BlockProducerId`
 and use the `Moment` type. Additionally, it must be provided a source of current block author and moment.
-These are provided out of the box for chains using Aura under feature flag `aura-compat`.
 
 #### Address Associations
 
