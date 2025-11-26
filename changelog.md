@@ -48,6 +48,8 @@ when an SPO's fee configuration has changed
 * `PalletSessionSupport` type provided by `pallet-session-validator-management`. The `SessionManager` and `ShouldEndSession`
   implementations were moved directly to the `Pallet` type instead.
 * `sidechain.slots` field in the response of `sidechain_getStatus` RPC method
+* `sidechain-block-search` crate has been removed. All logic used by `sp-session-validator-management-query` has been
+moved to that crate directly.
 
 ## Fixed
 

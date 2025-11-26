@@ -10672,26 +10672,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 
 [[package]]
-name = "sidechain-block-search"
-version = "1.8.0"
-dependencies = [
- "hex",
- "hex-literal 1.0.0",
- "parity-scale-codec",
- "proptest",
- "scale-info",
- "serde",
- "sidechain-domain",
- "sp-api",
- "sp-blockchain",
- "sp-consensus-aura",
- "sp-consensus-slots",
- "sp-core",
- "sp-runtime",
- "sp-sidechain",
-]
-
-[[package]]
 name = "sidechain-domain"
 version = "1.8.0"
 dependencies = [
@@ -11512,10 +11492,10 @@ dependencies = [
  "parity-scale-codec",
  "plutus",
  "plutus-datum-derive",
+ "proptest",
  "scale-info",
  "serde",
  "serde_json",
- "sidechain-block-search",
  "sidechain-domain",
  "sp-api",
  "sp-blockchain",
