@@ -32,7 +32,6 @@ class TestRpc:
         assert partner_chain_status['mainchain']['nextEpochTimestamp']
         assert partner_chain_status['sidechain']['nextEpochTimestamp']
         assert partner_chain_status['sidechain']['epoch']
-        assert partner_chain_status['sidechain']['slot']
 
     @mark.test_key('ETCM-7442')
     def test_get_params(self, api: BlockchainApi):

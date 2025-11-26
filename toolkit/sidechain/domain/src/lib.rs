@@ -774,7 +774,7 @@ const EPOCH_NONCE_LEN: usize = 32;
 /// Because it is subject to Cardano's consensus mechanism and has strong cryptographic guarantees,
 /// this value can be used as a tamper-proof shared randomness seed by Partner Chain Toolkit components.
 #[derive(Default, Clone, Encode, Decode, DecodeWithMemTracking, PartialEq, Eq, TypeInfo)]
-#[byte_string(debug, hex_serialize)]
+#[byte_string(debug, hex_serialize, decode_hex)]
 pub struct EpochNonce(pub Vec<u8>);
 
 impl EpochNonce {
@@ -1189,17 +1189,7 @@ impl DParameter {
 
 /// Opaque key bytes with a 4 bytes identifier
 #[derive(
-	Debug,
-	Clone,
-	PartialEq,
-	Eq,
-	Decode,
-	DecodeWithMemTracking,
-	Encode,
-	TypeInfo,
-	PartialOrd,
-	Ord,
-	Hash,
+	Clone, PartialEq, Eq, Decode, DecodeWithMemTracking, Encode, TypeInfo, PartialOrd, Ord, Hash,
 )]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct CandidateKey {
@@ -1207,6 +1197,15 @@ pub struct CandidateKey {
 	pub id: [u8; 4],
 	/// Bytes of the key
 	pub bytes: Vec<u8>,
+}
+
+impl alloc::fmt::Debug for CandidateKey {
+	fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+		let id = hex::encode(self.id);
+		let id_text = String::from_utf8_lossy(&self.id);
+		let bytes = hex::encode(&self.bytes);
+		f.write_str(&alloc::format!("CandidateKey {{ id: {id}({id_text}), bytes: {bytes} }}"))
+	}
 }
 
 impl FromStr for CandidateKey {

@@ -49,20 +49,29 @@ where
 		let mut new_committee_accounts: BTreeSet<T::AccountId> = BTreeSet::new();
 
 		for member in new_committee.iter() {
-			let account = member.authority_id().into();
+			let account: T::AccountId = member.authority_id().into();
 
 			if !new_committee_accounts.contains(&account) {
 				new_committee_accounts.insert(account.clone());
 
-				// Members that were already in the old committee have their accounts and keys set up already
+				// Members that were already in the old committee have their accounts provided
 				if !old_committee_accounts.contains(&account) {
-					setup_block_producer::<T>(account, member.authority_keys());
+					provide_account::<T>(&account);
+				}
+
+				let new_keys = member.authority_keys();
+				let current_keys = load_keys::<T>(&account);
+
+				if current_keys != Some(new_keys.clone().into()) {
+					purge_keys::<T>(&account);
+					set_keys::<T>(&account, new_keys.clone());
 				}
 			}
 		}
 
 		for account in old_committee_accounts.difference(&new_committee_accounts) {
-			teardown_block_producer::<T>(account)
+			purge_keys::<T>(account);
+			unprovide_account::<T>(account);
 		}
 
 		crate::ProvidedAccounts::<T>::set(new_committee_accounts.clone().try_into().unwrap());
@@ -81,19 +90,19 @@ where
 	}
 }
 
-/// Provides accounts and registers keys for new committee members
-fn setup_block_producer<T: crate::Config + pallet_session::Config>(
-	account: T::AccountId,
+fn load_keys<T: pallet_session::Config>(account: &T::AccountId) -> Option<T::Keys> {
+	<T as pallet_session::Config>::ValidatorId::try_from(account.clone())
+		.ok()
+		.as_ref()
+		.and_then(pallet_session::Pallet::<T>::load_keys)
+}
+
+fn set_keys<T: crate::Config + pallet_session::Config>(
+	account: &T::AccountId,
 	keys: T::AuthorityKeys,
 ) where
 	<T as pallet_session::Config>::Keys: From<T::AuthorityKeys>,
 {
-	log::debug!(
-		"➕💼 Incrementing provider count and registering keys for block producer {account:?}"
-	);
-
-	frame_system::Pallet::<T>::inc_providers(&account);
-
 	let set_keys_result = pallet_session::Call::<T>::set_keys { keys: keys.into(), proof: vec![] }
 		.dispatch_bypass_filter(RawOrigin::Signed(account.clone()).into());
 
@@ -105,8 +114,7 @@ fn setup_block_producer<T: crate::Config + pallet_session::Config>(
 	}
 }
 
-/// Removes account provisions and purges keys for outgoing old committee members
-fn teardown_block_producer<T: crate::Config + pallet_session::Config>(account: &T::AccountId)
+fn purge_keys<T: crate::Config + pallet_session::Config>(account: &T::AccountId)
 where
 	<T as pallet_session::Config>::Keys: From<T::AuthorityKeys>,
 {
@@ -116,8 +124,19 @@ where
 		Ok(_) => debug!("purge_keys for {account:?}"),
 		Err(e) => info!("Could not purge_keys for {account:?}, error: {:?}", e.error),
 	}
+}
+
+fn provide_account<T: crate::Config + pallet_session::Config>(account: &T::AccountId) {
+	log::debug!(
+		"➕💼 Incrementing provider count and registering keys for block producer {account:?}"
+	);
+
+	frame_system::Pallet::<T>::inc_providers(&account);
+}
+
+fn unprovide_account<T: crate::Config + pallet_session::Config>(account: &T::AccountId) {
 	log::info!(
-		"➖💼 Decrementing provider count and deregisteringkeys for block producer {account:?}"
+		"➖💼 Decrementing provider count and deregistering keys for block producer {account:?}"
 	);
 	frame_system::Pallet::<T>::dec_providers(&account).expect(
 		"We always match dec_providers with corresponding inc_providers, thus it cannot fail",
@@ -167,6 +186,7 @@ mod tests {
 	use pallet_session::ShouldEndSession;
 	pub const IRRELEVANT: u64 = 2;
 	use sidechain_domain::ScEpochNumber;
+	use sp_runtime::testing::UintAuthorityId;
 
 	type Manager = crate::Pallet<Test>;
 
@@ -206,6 +226,40 @@ mod tests {
 			// After setting the keys, they should be stored in the session.
 			assert_eq!(Session::load_keys(&dave().account_id()), Some(dave().authority_keys));
 			assert_eq!(Session::load_keys(&eve().account_id()), Some(eve().authority_keys));
+		});
+	}
+
+	#[test]
+	fn reregister_changed_session_keys_for_sitting_authority() {
+		new_test_ext().execute_with(|| {
+			set_validators_directly(&[dave(), eve()], 1).unwrap();
+			// By default, the session keys are not set for the account.
+			assert_eq!(Session::load_keys(&dave().account_id()), None);
+			assert_eq!(Session::load_keys(&eve().account_id()), None);
+			increment_epoch();
+
+			start_session(1);
+
+			// After setting the keys, they should be stored in the session.
+			assert_eq!(Session::load_keys(&dave().account_id()), Some(dave().authority_keys));
+			assert_eq!(Session::load_keys(&eve().account_id()), Some(eve().authority_keys));
+
+			let eve_with_different_keys = MockValidator {
+				name: "Eve with different keys",
+				authority_keys: SessionKeys { foo: UintAuthorityId(44) },
+				..eve()
+			};
+
+			// Eve is re-elected to the committee, but is using different keys now
+			set_validators_directly(&[dave(), eve_with_different_keys.clone()], 2).unwrap();
+			increment_epoch();
+			start_session(2);
+
+			// Eve's keys were updated
+			assert_eq!(
+				Session::load_keys(&eve().account_id()),
+				Some(eve_with_different_keys.authority_keys)
+			);
 		});
 	}
 

@@ -16,7 +16,7 @@ sqlx = { workspace = true }
 db-sync-sqlx = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 futures = { workspace = true }
-chrono = "0.4.31"
+chrono = { workspace = true }
 hex = { workspace = true }
 hex-literal = { workspace = true }
 itertools = { workspace = true }

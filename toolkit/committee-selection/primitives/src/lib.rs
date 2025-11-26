@@ -133,6 +133,19 @@ impl<AuthorityId, AuthorityKeys> CommitteeMember<AuthorityId, AuthorityKeys> {
 			Self::Registered { keys, .. } => keys.clone(),
 		}
 	}
+
+	/// Maps the authority keys
+	pub fn map_authority_keys<NewKeys>(
+		self,
+		f: impl Fn(AuthorityKeys) -> NewKeys,
+	) -> CommitteeMember<AuthorityId, NewKeys> {
+		match self {
+			Self::Permissioned { id, keys } => CommitteeMember::Permissioned { id, keys: f(keys) },
+			Self::Registered { id, keys, stake_pool_pub_key } => {
+				CommitteeMember::Registered { id, keys: f(keys), stake_pool_pub_key }
+			},
+		}
+	}
 }
 
 #[cfg(feature = "std")]

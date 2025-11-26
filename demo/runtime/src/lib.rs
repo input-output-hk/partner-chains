@@ -556,7 +556,9 @@ impl pallet_block_producer_fees::Config for Runtime {
 
 	type HistoricalChangesPerProducer = ConstU16<5>;
 
-	fn current_slot() -> sp_consensus_slots::Slot {
+	type Moment = Slot;
+
+	fn current_moment() -> Slot {
 		let slot: u64 = pallet_aura::CurrentSlot::<Runtime>::get().into();
 		sp_consensus_slots::Slot::from(slot)
 	}
@@ -1060,6 +1062,12 @@ impl_runtime_apis! {
 				slot: ScSlotNumber(*pallet_aura::CurrentSlot::<Runtime>::get()),
 				slots_per_epoch: Sidechain::slots_per_epoch().0,
 			}
+		}
+	}
+
+	impl sp_sidechain::GetEpochDurationApi<Block> for Runtime {
+		fn get_epoch_duration_millis() -> u64 {
+			u64::from(Sidechain::slots_per_epoch().0) * MILLISECS_PER_BLOCK
 		}
 	}
 

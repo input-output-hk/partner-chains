@@ -103,7 +103,7 @@ pub use crate::block::{BlockDataSourceImpl, DbSyncBlockDataSourceConfig};
 #[cfg(feature = "bridge")]
 pub use crate::bridge::{TokenBridgeDataSourceImpl, cache::CachedTokenBridgeDataSourceImpl};
 #[cfg(feature = "candidate-source")]
-pub use crate::candidates::CandidatesDataSourceImpl;
+pub use crate::candidates::{CandidatesDataSourceImpl, cached::CandidateDataSourceCached};
 #[cfg(feature = "governed-map")]
 pub use crate::governed_map::{GovernedMapDataSourceCachedImpl, GovernedMapDataSourceImpl};
 #[cfg(feature = "mc-hash")]
