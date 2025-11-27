@@ -179,6 +179,7 @@ pub fn create_inherent_data_struct(
 			d_parameter: DParameter {
 				num_permissioned_candidates: 0,
 				num_registered_candidates: max(candidates.len() as u16, 1),
+				num_native_stake_candidates: 0,
 			},
 			permissioned_candidates: vec![],
 			registered_candidates: candidates,

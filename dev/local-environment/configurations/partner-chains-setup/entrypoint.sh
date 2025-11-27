@@ -79,6 +79,7 @@ echo "Inserting D parameter..."
     --genesis-utxo $GENESIS_UTXO \
     --permissioned-candidates-count 3 \
     --registered-candidates-count 1 \
+    --native-stake-candidates-count 0 \
     --payment-key-file /keys/funded_address.skey
 
 if [ $? -eq 0 ]; then

@@ -96,6 +96,7 @@ impl<T: PartnerChainRuntime> CmdRun for SetupMainChainStateCmd<T> {
 			d_parameter.unwrap_or(DParameter {
 				num_permissioned_candidates: 0,
 				num_registered_candidates: 0,
+				num_native_stake_candidates: 0,
 			}),
 			chain_config.chain_parameters.genesis_utxo,
 		)?;
@@ -240,8 +241,11 @@ fn set_d_parameter_on_main_chain<C: IOContext>(
 			CARDANO_PAYMENT_SIGNING_KEY_FILE.prompt_with_default_from_file_and_save(context);
 		let payment_signing_key =
 			cardano_key::get_mc_payment_signing_key_from_file(&payment_signing_key_path, context)?;
-		let d_parameter =
-			sidechain_domain::DParameter { num_permissioned_candidates, num_registered_candidates };
+		let d_parameter = sidechain_domain::DParameter {
+			num_permissioned_candidates,
+			num_registered_candidates,
+			num_native_stake_candidates: 0,
+		};
 		let tokio_runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
 		let result = tokio_runtime.block_on(offchain.upsert_d_param(
 			await_tx,

@@ -6,6 +6,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Changed
 
+* DParam now uses new schema, which involves `native_take` validators count.
 * Updated polkadot-sdk dependency to polkadot-stable2509.
 Partner Chains Aura modification follows changes regarding checking inherents that are also present in the new polkadot-sdk release.
 Pallet Session new parameters should be: `type KeyDeposit = ();` and `type Currency = Balances;`.
