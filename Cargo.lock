@@ -6820,10 +6820,10 @@ dependencies = [
  "frame-system",
  "log",
  "pallet-block-participation",
+ "pallet-session-validator-management",
  "parity-scale-codec",
  "scale-info",
  "sidechain-domain",
- "sp-block-production-log",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -7473,7 +7473,6 @@ dependencies = [
  "sp-block-participation",
  "sp-block-producer-fees",
  "sp-block-producer-metadata",
- "sp-block-production-log",
  "sp-blockchain",
  "sp-consensus",
  "sp-consensus-aura",
@@ -7548,7 +7547,6 @@ dependencies = [
  "sp-block-participation",
  "sp-block-producer-fees",
  "sp-block-producer-metadata",
- "sp-block-production-log",
  "sp-consensus-aura",
  "sp-consensus-grandpa",
  "sp-consensus-slots",
@@ -10999,20 +10997,6 @@ dependencies = [
  "parity-scale-codec",
  "sidechain-domain",
  "sp-api",
-]
-
-[[package]]
-name = "sp-block-production-log"
-version = "1.8.0"
-dependencies = [
- "async-trait",
- "hex",
- "parity-scale-codec",
- "sp-api",
- "sp-core",
- "sp-inherents",
- "sp-runtime",
- "thiserror 2.0.16",
 ]
 
 [[package]]

@@ -380,32 +380,26 @@ mod committee_rotation_tests {
 }
 
 #[test]
-fn get_authority_round_robin_works() {
+fn get_authority_at_works() {
 	new_test_ext().execute_with(|| {
 		initialize_first_committee();
 		set_validators_through_inherents(&[bob()]);
 		increment_epoch();
 		assert_eq!(
-			SessionCommitteeManagement::get_current_authority_round_robin(0),
+			SessionCommitteeManagement::get_current_authority_at(0),
 			Some(alice().permissioned())
 		);
 		assert_eq!(
-			SessionCommitteeManagement::get_current_authority_round_robin(1),
+			SessionCommitteeManagement::get_current_authority_at(1),
 			Some(bob().permissioned())
 		);
-		assert_eq!(
-			SessionCommitteeManagement::get_current_authority_round_robin(2),
-			Some(alice().permissioned())
-		);
+		assert_eq!(SessionCommitteeManagement::get_current_authority_at(2), None);
 		assert!(rotate_committee().is_some());
 		assert_eq!(
-			SessionCommitteeManagement::get_current_authority_round_robin(0),
+			SessionCommitteeManagement::get_current_authority_at(0),
 			Some(bob().permissioned())
 		);
-		assert_eq!(
-			SessionCommitteeManagement::get_current_authority_round_robin(1),
-			Some(bob().permissioned())
-		);
+		assert_eq!(SessionCommitteeManagement::get_current_authority_at(1), None);
 	});
 }
 

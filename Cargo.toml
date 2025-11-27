@@ -17,7 +17,6 @@ members = [
 	"toolkit/committee-selection/pallet",
 	"toolkit/committee-selection/rpc",
 	"substrate-extensions/aura/primitives",
-	"toolkit/block-production-log/primitives",
 	"toolkit/sidechain/domain",
 	"toolkit/committee-selection/selection",
 	"toolkit/committee-selection/authority-selection-inherents",
@@ -307,7 +306,6 @@ sp-partner-chains-consensus-aura = { path = "substrate-extensions/aura/primitive
 
 # block production and rewards
 pallet-block-production-log = { path = "toolkit/block-production-log/pallet", default-features = false }
-sp-block-production-log = { path = "toolkit/block-production-log/primitives", default-features = false }
 pallet-block-participation = { path = "toolkit/block-participation/pallet", default-features = false }
 sp-block-participation = { path = "toolkit/block-participation/primitives", default-features = false }
 

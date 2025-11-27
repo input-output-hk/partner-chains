@@ -1,6 +1,5 @@
 use super::mock::mock_genesis_utxo;
 use authority_selection_inherents::AuthoritySelectionInputs;
-use hex_literal::hex;
 use partner_chains_demo_runtime::opaque::SessionKeys;
 use partner_chains_demo_runtime::{BlockAuthor, CrossChainPublic};
 use sidechain_domain::*;
@@ -100,14 +99,6 @@ sp_api::mock_impl_runtime_apis! {
 				d_parameter_policy_id: PolicyId::default(),
 				permissioned_candidates_policy_id: PolicyId::default(),
 			}
-		}
-	}
-
-	impl sp_block_production_log::BlockProductionLogApi<Block, BlockAuthor, Slot> for TestApi {
-		fn get_author(_slot: &Slot) -> Option<BlockAuthor> {
-			Some(BlockAuthor::ProBono(
-				ecdsa::Public::from_raw(hex!("000000000000000000000000000000000000000000000000000000000000000001")).into()
-			))
 		}
 	}
 
