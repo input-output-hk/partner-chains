@@ -20,9 +20,9 @@ log = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 sidechain-domain = { workspace = true }
-sp-block-production-log = { workspace = true }
 sp-runtime = { workspace = true }
 sp-std = { workspace = true }
+pallet-session-validator-management = { workspace = true }
 
 pallet-block-participation = { workspace = true, optional = true }
 
@@ -40,8 +40,8 @@ std = [
 	"parity-scale-codec/std",
 	"scale-info/std",
 	"sidechain-domain/std",
-	"sp-block-production-log/std",
 	"sp-std/std",
+    "pallet-session-validator-management/std",
 	"pallet-block-participation?/std",
 ]
 runtime-benchmarks = [

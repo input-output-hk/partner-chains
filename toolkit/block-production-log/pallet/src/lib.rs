@@ -10,24 +10,28 @@
 //!
 //! ## Usage - PC Builder
 //!
-//! This pallet requires inherent data provided by the inherent data provider defined by `sp_block_production_log`
-//! crate. Consult the crate's documentation for instruction on how to wire it into the node correctly.
-//!
 //! ### Adding to the runtime
 //!
-//! The pallet requires a minimal configuration. Consult the documentation for [pallet::Config] for details.
+//! The feature requires two types to be defind by the chain builders in their code:
+//! - `BlockProducerId`: the type representing the block author
+//! - `Moment`: a moment in time when the block was produced, which carries enough information to
+//!             calculate the block's author. Typcally, this type can be a timestamp, or a slot,
+//!             depending on the consensus mechanism used, but can be a richer type if needed.
 //!
-//! An example configuration for a runtime using Aura consensus might look like this:
+//! In addition, implementations of [GetAuthor] and [GetMoment] must be provided that can be used to
+//! retrieve the current block's author and moment when it was produced.
+//!
+//! An example configuration for a runtime using Aura consensus and Partner Chain toolkit's session management
+//! pallet might look like this:
 //!
 //! ```rust,ignore
 //! impl pallet_block_production_log::Config for Runtime {
 //!     type BlockProducerId = BlockAuthor;
-//!     type WeightInfo = pallet_block_production_log::weights::SubstrateWeight<Runtime>;
 //!
-//!     type Moment = u64;
+//!     type Moment = Slot;
 //!
-//!     #[cfg(feature = "runtime-benchmarks")]
-//!     type BenchmarkHelper = PalletBlockProductionLogBenchmarkHelper;
+//!     type GetMoment = FromStorage<pallet_aura::CurrentSlot<Runtime>>;
+//!     type GetAuthor = FromFindAuthorIndex<Runtime, Aura, u32>;
 //! }
 //! ```
 //!
@@ -51,12 +55,15 @@
 //! Keep in mind that other Partner Chains SDK components put their own constraints on the block author type
 //! that need to be adhered to for a Partner Chain to integrated them.
 //!
+//! #### Defining moment type
+//!
+//! The pallet abstracts away the notion of time when a block was produced and allows the chain builders to
+//! configure it according to their chain's needs by providing a `Moment` type. This type can be a timestamp,
+//! a slot or round number, depending on the consensus mechanism used.
+//!
 //! #### Support for adding to a running chain
 //!
-//! The pallet and its inherent data provider defined in [sp_block_production_log] are written in a way that allows for
-//! adding it to an already live chain. The pallet allows for an initial period where inherent data is unavailable
-//! and considers its inherent extrinsic required only after the first block where inherent data is provided.
-//! Conversely, the inherent data provider is active only when the pallet and its runtime API is present for it to call.
+//! The pallet is written in a way that allows for adding it to an already live chain.
 //!
 //! ### Consuming the log
 //!
@@ -80,7 +87,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![deny(missing_docs)]
 
-pub mod benchmarking;
 pub mod weights;
 
 #[cfg(test)]
@@ -89,15 +95,35 @@ mod mock;
 #[cfg(test)]
 mod test;
 
+use core::marker::PhantomData;
+
 pub use pallet::*;
 pub use weights::WeightInfo;
+
+/// Source of the current block's author
+pub trait GetAuthor<BlockProducerId> {
+	/// Returns the current block's author
+	fn get_author() -> Option<BlockProducerId>;
+}
+
+/// [GetAuthor] implementation that uses a [FindAuthor] instance to get the current block's author index
+/// of type `I` and uses it to read the author from `pallet_session_validator_management`.
+pub struct FromFindAuthorIndex<T, FA, I>(PhantomData<(T, FA, I)>);
+
+/// Source of the current block's moment
+pub trait GetMoment<Moment> {
+	/// Returns the current block's moment
+	fn get_moment() -> Option<Moment>;
+}
+
+/// [GetMoment] implementation that fetches current block's `Moment` from storage `S`
+pub struct FromStorage<S>(PhantomData<S>);
 
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
-	use sp_block_production_log::*;
 	use sp_runtime::traits::Member;
 	use sp_std::vec::Vec;
 
@@ -110,119 +136,45 @@ pub mod pallet {
 		/// This type should be defined by the Partner Chain Depending on its consensus mechanism and possible block producer types.
 		type BlockProducerId: Member + Parameter + MaxEncodedLen;
 
-		/// Weight information on extrinsic in the pallet. For convenience weights in [weights] module can be used.
-		type WeightInfo: WeightInfo;
-
 		/// Type used to identify the moment in time when the block was produced, eg. a timestamp or slot number.
 		type Moment: Member + Parameter + MaxEncodedLen + PartialOrd + Ord + PartialEq + Eq;
 
-		#[cfg(feature = "runtime-benchmarks")]
-		/// Benchmark helper type used for running benchmarks
-		type BenchmarkHelper: benchmarking::BenchmarkHelper<Self::BlockProducerId>;
+		/// Source of current block's author
+		type GetAuthor: GetAuthor<Self::BlockProducerId>;
+
+		/// Source of current block's moment
+		type GetMoment: GetMoment<Self::Moment>;
 	}
 
 	#[pallet::storage]
 	#[pallet::unbounded]
 	pub type Log<T: Config> = StorageValue<_, Vec<(T::Moment, T::BlockProducerId)>, ValueQuery>;
 
-	/// Temporary storage of the current block's producer, to be appended to the log on block finalization.
-	#[pallet::storage]
-	pub type CurrentProducer<T: Config> =
-		StorageValue<_, (T::Moment, T::BlockProducerId), OptionQuery>;
-
-	/// This storage is used to prevent calling `append` multiple times for the same block or for past blocks.
-	#[pallet::storage]
-	pub type LatestBlock<T: Config> = StorageValue<_, BlockNumberFor<T>, OptionQuery>;
-
-	#[pallet::inherent]
-	impl<T: Config> ProvideInherent for Pallet<T> {
-		type Call = Call<T>;
-		type Error = InherentError;
-		const INHERENT_IDENTIFIER: InherentIdentifier = INHERENT_IDENTIFIER;
-
-		fn create_inherent(data: &InherentData) -> Option<Self::Call> {
-			Self::decode_inherent_data(data).unwrap().map(|data| Call::append {
-				moment: data.moment,
-				block_producer_id: data.block_producer_id,
-			})
-		}
-
-		fn is_inherent(call: &Self::Call) -> bool {
-			matches!(call, Call::append { .. })
-		}
-
-		fn is_inherent_required(data: &InherentData) -> Result<Option<Self::Error>, Self::Error> {
-			let has_data = Self::decode_inherent_data(data)?.is_some();
-			if has_data || LatestBlock::<T>::get().is_some() {
-				Ok(Some(Self::Error::InherentRequired))
-			} else {
-				Ok(None)
-			}
-		}
-	}
-
-	#[pallet::error]
-	pub enum Error<T> {
-		/// Call is not allowed, because the log has been already written for a block with same or higher number.
-		BlockNumberNotIncreased,
-	}
-
-	#[pallet::call]
-	impl<T: Config> Pallet<T> {
-		/// Schedules an entry to be appended to the log. Log has to be ordered by a moment and writing the same moment twice is forbidden.
-		#[pallet::call_index(0)]
-		#[pallet::weight((T::WeightInfo::append(), DispatchClass::Mandatory))]
-		pub fn append(
-			origin: OriginFor<T>,
-			moment: T::Moment,
-			block_producer_id: T::BlockProducerId,
-		) -> DispatchResult {
-			ensure_none(origin)?;
-
-			let current_block = <frame_system::Pallet<T>>::block_number();
-			match LatestBlock::<T>::get() {
-				Some(b) if b >= current_block => Err(Error::<T>::BlockNumberNotIncreased),
-				_ => Ok(()),
-			}?;
-			LatestBlock::<T>::put(current_block);
-
-			Ok(CurrentProducer::<T>::put((moment, block_producer_id)))
-		}
-	}
-
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		/// A dummy `on_initialize` to return the amount of weight that `on_finalize` requires to
-		/// execute.
-		fn on_initialize(_n: BlockNumberFor<T>) -> Weight {
-			T::WeightInfo::on_finalize()
-		}
-
-		fn on_finalize(block: BlockNumberFor<T>) {
-			if let Some((moment, block_producer_id)) = CurrentProducer::<T>::take() {
-				log::info!("👷 Block {block:?} producer is {block_producer_id:?}");
-				Log::<T>::append((moment, block_producer_id));
-			} else {
+		/// Block initialization hook that adds current block's author to the log
+		fn on_initialize(block: BlockNumberFor<T>) -> Weight {
+			let Some(author) = T::GetAuthor::get_author() else {
 				log::warn!(
-					"👷 Block {block:?} producer not set. This should occur only at the beginning of the production log pallet's lifetime."
-				)
-			}
+					"👷 Block production log update skipped - could not determine block {block:?} producer"
+				);
+				return T::DbWeight::get().reads(1);
+			};
+			let Some(moment) = T::GetMoment::get_moment() else {
+				log::warn!(
+					"👷 Block production log update skipped - could not determine block {block:?} time"
+				);
+				return T::DbWeight::get().reads(1);
+			};
+
+			log::info!("👷 Block {block:?} producer is {author:?}");
+			Log::<T>::append((moment, author));
+
+			T::DbWeight::get().reads_writes(2, 1)
 		}
 	}
 
 	impl<T: Config> Pallet<T> {
-		fn decode_inherent_data(
-			data: &InherentData,
-		) -> Result<
-			Option<BlockProductionInherentDataV1<T::Moment, T::BlockProducerId>>,
-			InherentError,
-		> {
-			data.get_data::<BlockProductionInherentDataV1<T::Moment, T::BlockProducerId>>(
-				&Self::INHERENT_IDENTIFIER,
-			)
-			.map_err(|_| InherentError::InvalidInherentData)
-		}
-
 		/// Returns all entries up to `moment` (inclusive) and removes them from the log
 		pub fn take_prefix(moment: &T::Moment) -> Vec<(T::Moment, T::BlockProducerId)> {
 			let removed_prefix = Log::<T>::mutate(|log| {
@@ -264,6 +216,44 @@ mod block_participation {
 
 		fn discard_processed_blocks(moment: &T::Moment) {
 			Self::drop_prefix(moment)
+		}
+	}
+}
+
+mod source_impls {
+	use super::*;
+	use frame_support::{
+		pallet_prelude::StorageValue,
+		storage::types::QueryKindTrait,
+		traits::{FindAuthor, StorageInstance},
+	};
+	use pallet_session_validator_management as psvm;
+	use parity_scale_codec::FullCodec;
+	use sp_runtime::traits::Get;
+
+	impl<BlockProducerId, I, FA, T> GetAuthor<BlockProducerId> for FromFindAuthorIndex<T, FA, I>
+	where
+		FA: FindAuthor<I>,
+		I: TryInto<usize>,
+		T: psvm::Config,
+		psvm::CommitteeMemberOf<T>: Into<BlockProducerId>,
+	{
+		fn get_author() -> Option<BlockProducerId> {
+			Some(psvm::Pallet::<T>::find_current_authority::<I, FA>()?.into())
+		}
+	}
+
+	impl<Prefix, Value, Moment, QueryKind, OnEmpty> GetMoment<Moment>
+		for FromStorage<StorageValue<Prefix, Value, QueryKind, OnEmpty>>
+	where
+		Prefix: StorageInstance,
+		Value: FullCodec,
+		QueryKind: QueryKindTrait<Value, OnEmpty>,
+		OnEmpty: Get<QueryKind::Query> + 'static,
+		Option<Moment>: From<<QueryKind as QueryKindTrait<Value, OnEmpty>>::Query>,
+	{
+		fn get_moment() -> Option<Moment> {
+			StorageValue::<Prefix, Value, QueryKind, OnEmpty>::get().into()
 		}
 	}
 }

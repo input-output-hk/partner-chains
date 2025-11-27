@@ -41,6 +41,11 @@ feature in the crate, which will cause legacy chain nodes to still use `SlotApi`
 `sidechain.slot` as an optional field.
 * `pallet-block-producer-fees` no longer uses slots and is instead configured with a `Moment` type used for identifying
 when an SPO's fee configuration has changed
+* `pallet-block-production-log` has been reworked and no longer requires an inherent data provider or runtime API
+to be provided. Instead, it is wired with a runtime-level source of current `Moment` and block `Author`, and updates
+the block production log during block initialization. The crate `sp-block-production-log` was removed as no longer
+needed. Consult the pallet's updated documentation and reference runtime for information and examples on how to use
+it after the rework.
 
 ## Removed
 

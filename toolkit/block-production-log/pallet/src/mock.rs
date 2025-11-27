@@ -9,13 +9,46 @@ use frame_support::*;
 type AccountId = u32;
 type Block = frame_system::mocking::MockBlock<Test>;
 
+pub(crate) type Moment = u64;
+pub(crate) type BlockProducerId = [u8; 32];
+
 #[frame_support::pallet]
 pub mod mock_pallet {
+	use crate::mock::{BlockProducerId, Moment};
+	use frame_support::pallet_prelude::*;
+
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {}
+
+	#[pallet::storage]
+	pub type BlockAuthor<T: Config> = StorageValue<_, BlockProducerId, ValueQuery>;
+
+	#[pallet::storage]
+	pub type CurrentMoment<T: Config> = StorageValue<_, Moment, ValueQuery>;
+
+	impl<T: Config + crate::Config> crate::GetAuthor<BlockProducerId> for Pallet<T> {
+		fn get_author() -> Option<BlockProducerId> {
+			Some(BlockAuthor::<T>::get())
+		}
+	}
+
+	impl<T: Config> crate::GetMoment<Moment> for Pallet<T> {
+		fn get_moment() -> Option<Moment> {
+			Some(CurrentMoment::<T>::get())
+		}
+	}
+
+	impl<T: Config> Pallet<T> {
+		pub fn set_block_author(author: BlockProducerId) {
+			BlockAuthor::<T>::set(author)
+		}
+		pub fn set_moment(moment: Moment) {
+			CurrentMoment::<T>::set(moment)
+		}
+	}
 }
 
 frame_support::construct_runtime!(
@@ -59,23 +92,11 @@ impl frame_system::Config for Test {
 	type PostTransactions = ();
 }
 
-#[cfg(feature = "runtime-benchmarks")]
-pub struct PalletBlockProductionLogBenchmarkHelper;
-
-#[cfg(feature = "runtime-benchmarks")]
-impl crate::benchmarking::BenchmarkHelper<[u8; 32]> for PalletBlockProductionLogBenchmarkHelper {
-	fn producer_id() -> [u8; 32] {
-		Default::default()
-	}
-}
-
 impl crate::pallet::Config for Test {
-	type BlockProducerId = [u8; 32];
-	type WeightInfo = ();
-	type Moment = u64;
-
-	#[cfg(feature = "runtime-benchmarks")]
-	type BenchmarkHelper = PalletBlockProductionLogBenchmarkHelper;
+	type BlockProducerId = BlockProducerId;
+	type Moment = Moment;
+	type GetAuthor = Mock;
+	type GetMoment = Mock;
 }
 
 impl mock_pallet::Config for Test {}
