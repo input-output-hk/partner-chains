@@ -102,8 +102,8 @@ impl AriadneInherentDataProvider {
 		}
 	}
 
-	fn has_data(self) -> bool {
-		match &self {
+	fn has_data(&self) -> bool {
+		match self {
 			AriadneInherentDataProvider::Inert => false,
 			AriadneInherentDataProvider::Legacy(data) => data.is_some(),
 			AriadneInherentDataProvider::V1(data) => data.is_some(),
@@ -268,7 +268,7 @@ mod tests {
 		.await;
 
 		assert!(empty_ariadne_idp.is_ok());
-		assert!(empty_ariadne_idp.unwrap().has_data() == false);
+		assert!(!empty_ariadne_idp.unwrap().has_data());
 	}
 
 	#[tokio::test]
@@ -318,7 +318,7 @@ mod tests {
 		.await;
 
 		assert!(ariadne_idp.is_ok());
-		assert!(ariadne_idp.unwrap().has_data() == true);
+		assert!(ariadne_idp.unwrap().has_data());
 	}
 
 	fn sc_epoch_duration_millis() -> u64 {
