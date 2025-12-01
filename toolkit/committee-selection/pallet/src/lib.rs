@@ -260,6 +260,7 @@ pub use weights::WeightInfo;
 pub mod pallet {
 	use super::*;
 	use frame_support::pallet_prelude::*;
+	use frame_support::traits::FindAuthor;
 	use frame_system::pallet_prelude::*;
 	use log::{info, warn};
 	use sidechain_domain::byte_string::SizedByteString;
@@ -586,14 +587,26 @@ pub mod pallet {
 				.unwrap_or(CurrentCommittee::<T>::get().epoch + One::one())
 		}
 
-		/// Returns current committee member for an index, repeating them in a round-robin fashion if needed.
-		pub fn get_current_authority_round_robin(index: usize) -> Option<CommitteeMemberOf<T>> {
+		/// Returns current committee member for an index
+		pub fn get_current_authority_at(index: usize) -> Option<CommitteeMemberOf<T>> {
 			let committee = CurrentCommittee::<T>::get().committee;
 			if committee.is_empty() {
 				return None;
 			}
 
-			committee.get(index % committee.len() as usize).cloned()
+			committee.get(index).cloned()
+		}
+
+		/// Returns the committee member that is the author of the current block
+		///
+		/// This function requires a `GetAuthor` type that should provide the index of the
+		/// block's author in the current committee through [FindAuthor].
+		pub fn find_current_authority<I: TryInto<usize>, GetAuthor: FindAuthor<I>>()
+		-> Option<CommitteeMemberOf<T>> {
+			let digest = frame_system::Pallet::<T>::digest();
+			let pre_runtime_digests = digest.logs.iter().filter_map(|d| d.as_pre_runtime());
+			let author_index = GetAuthor::find_author(pre_runtime_digests)?;
+			Self::get_current_authority_at(author_index.try_into().ok()?)
 		}
 
 		/// Returns current committee from storage.

@@ -29,6 +29,7 @@ use frame_support::{
 use frame_system::EnsureRoot;
 use opaque::SessionKeys;
 use pallet_block_producer_metadata;
+use pallet_block_production_log::{FromFindAuthorIndex, FromStorage};
 use pallet_grandpa::AuthorityId as GrandpaId;
 use pallet_session_validator_management::CommitteeMemberOf;
 use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier};
@@ -44,8 +45,6 @@ use sidechain_slots::Slot;
 use sp_api::impl_runtime_apis;
 use sp_block_participation::AsCardanoSPO;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-#[cfg(feature = "runtime-benchmarks")]
-use sp_core::ByteArray;
 use sp_core::{OpaqueMetadata, crypto::KeyTypeId};
 use sp_governed_map::MainChainScriptsV1;
 use sp_inherents::InherentIdentifier;
@@ -454,19 +453,6 @@ pub struct BlockProducerMetadataType {
 }
 
 #[cfg(feature = "runtime-benchmarks")]
-pub struct PalletBlockProductionLogBenchmarkHelper;
-
-#[cfg(feature = "runtime-benchmarks")]
-impl pallet_block_production_log::benchmarking::BenchmarkHelper<BlockAuthor>
-	for PalletBlockProductionLogBenchmarkHelper
-{
-	fn producer_id() -> BlockAuthor {
-		let id = sp_core::ecdsa::Public::from_slice(&[0u8; 33]).unwrap().into();
-		BlockAuthor::ProBono(id)
-	}
-}
-
-#[cfg(feature = "runtime-benchmarks")]
 pub struct PalletBlockProducerMetadataBenchmarkHelper;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -512,12 +498,11 @@ impl
 
 impl pallet_block_production_log::Config for Runtime {
 	type BlockProducerId = BlockAuthor;
-	type WeightInfo = pallet_block_production_log::weights::SubstrateWeight<Runtime>;
 
 	type Moment = Slot;
 
-	#[cfg(feature = "runtime-benchmarks")]
-	type BenchmarkHelper = PalletBlockProductionLogBenchmarkHelper;
+	type GetMoment = FromStorage<pallet_aura::CurrentSlot<Runtime>>;
+	type GetAuthor = FromFindAuthorIndex<Runtime, Aura, u32>;
 }
 
 parameter_types! {
@@ -789,7 +774,6 @@ mod benches {
 		[pallet_balances, Balances]
 		[pallet_timestamp, Timestamp]
 		[pallet_sudo, Sudo]
-		[pallet_block_production_log, BlockProductionLog]
 		[pallet_address_associations, AddressAssociations]
 		[pallet_block_producer_fees, BlockProducerFees]
 		[pallet_block_producer_metadata, BlockProducerMetadata]
@@ -1129,13 +1113,6 @@ impl_runtime_apis! {
 		}
 		fn validate_permissioned_candidate_data(candidate: PermissionedCandidateData) -> Option<PermissionedCandidateDataError> {
 			validate_permissioned_candidate_data::<SessionKeys>(candidate).err()
-		}
-	}
-
-	impl sp_block_production_log::BlockProductionLogApi<Block, BlockAuthor, Slot>  for Runtime {
-		fn get_author(slot: &Slot) -> Option<BlockAuthor> {
-			SessionCommitteeManagement::get_current_authority_round_robin(u64::from(*slot) as usize)
-				.map(Into::into)
 		}
 	}
 
