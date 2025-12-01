@@ -41,6 +41,11 @@ feature in the crate, which will cause legacy chain nodes to still use `SlotApi`
 `sidechain.slot` as an optional field.
 * `pallet-block-producer-fees` no longer uses slots and is instead configured with a `Moment` type used for identifying
 when an SPO's fee configuration has changed
+* `pallet-block-production-log` has been reworked and no longer requires an inherent data provider or runtime API
+to be provided. Instead, it is wired with a runtime-level source of current `Moment` and block `Author`, and updates
+the block production log during block initialization. The crate `sp-block-production-log` was removed as no longer
+needed. Consult the pallet's updated documentation and reference runtime for information and examples on how to use
+it after the rework.
 
 ## Removed
 
@@ -48,10 +53,13 @@ when an SPO's fee configuration has changed
 * `PalletSessionSupport` type provided by `pallet-session-validator-management`. The `SessionManager` and `ShouldEndSession`
   implementations were moved directly to the `Pallet` type instead.
 * `sidechain.slots` field in the response of `sidechain_getStatus` RPC method
+* `sidechain-block-search` crate has been removed. All logic used by `sp-session-validator-management-query` has been
+moved to that crate directly.
 
 ## Fixed
 
 * Improper weights for `set_main_chain_scripts` in `pallet_session_validator_management`
+* Overflow error when running with mock data source and debug build.
 
 ## Added
 

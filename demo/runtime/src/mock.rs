@@ -1,242 +1,41 @@
+use crate::*;
 use authority_selection_inherents::{
-	AriadneInherentDataProvider, AuthoritySelectionInputs, MaybeFromCandidateKeys,
-	RegisterValidatorSignedMessage, filter_trustless_candidates_registrations,
+	AriadneInherentDataProvider, AuthoritySelectionInputs, RegisterValidatorSignedMessage,
 };
-use frame_support::{
-	Hashable,
-	pallet_prelude::*,
-	parameter_types,
-	traits::{ConstBool, ConstU64},
-};
-use frame_system::EnsureRoot;
+use frame_support::{Hashable, pallet_prelude::*};
 use hex_literal::hex;
 use pallet_session_validator_management::CommitteeMemberOf;
 use plutus::ToDatum;
 use sidechain_domain::*;
-use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_consensus_grandpa::AuthorityId as GrandpaId;
 use sp_core::crypto::CryptoType;
-use sp_core::sr25519;
-use sp_core::{ByteArray, ConstU128, H256, Pair, crypto::AccountId32, ed25519};
-use sp_runtime::key_types::{AURA, GRANDPA};
-use sp_runtime::{
-	BuildStorage, Digest, DigestItem, KeyTypeId, MultiSigner, impl_opaque_keys,
-	traits::{BlakeTwo256, ConvertInto, IdentifyAccount, IdentityLookup, OpaqueKeys},
-};
+use sp_core::{ByteArray, Pair, crypto::AccountId32, ed25519};
+use sp_runtime::{BuildStorage, Digest, DigestItem, MultiSigner, traits::IdentifyAccount};
 use sp_std::vec::Vec;
 use std::cmp::max;
 
-pub const MILLISECS_PER_BLOCK: u64 = 6000;
-pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
-
 const DUMMY_EPOCH_NONCE: &[u8] = &[1u8, 2u8, 3u8];
-
-pub const EXISTENTIAL_DEPOSIT: u128 = 500;
-
-type Block = frame_system::mocking::MockBlock<Test>;
-type Balance = u128;
-
-// Configure a mock runtime to test the pallet.
-frame_support::construct_runtime!(
-	pub enum Test {
-		System: frame_system,
-		Sidechain: pallet_sidechain,
-		SessionCommitteeManagement: pallet_session_validator_management,
-		Aura: pallet_aura,
-		Grandpa: pallet_grandpa,
-		Balances: pallet_balances,
-		Session: pallet_session,
-	}
-);
-
-parameter_types! {
-	pub const SS58Prefix: u8 = 42;
-}
-impl frame_system::Config for Test {
-	type BaseCallFilter = frame_support::traits::Everything;
-	type BlockWeights = ();
-	type BlockLength = ();
-	type DbWeight = ();
-	type RuntimeOrigin = RuntimeOrigin;
-	type RuntimeCall = RuntimeCall;
-	type Hash = H256;
-	type Hashing = BlakeTwo256;
-	type AccountId = AccountId32;
-	type Lookup = IdentityLookup<Self::AccountId>;
-	type RuntimeEvent = RuntimeEvent;
-	type BlockHashCount = ConstU64<250>;
-	type Version = ();
-	type PalletInfo = PalletInfo;
-	type AccountData = pallet_balances::AccountData<Balance>;
-	type OnNewAccount = ();
-	type OnKilledAccount = ();
-	type SystemWeightInfo = ();
-	type ExtensionsWeightInfo = ();
-	type SS58Prefix = SS58Prefix;
-	type OnSetCode = ();
-	type MaxConsumers = ConstU32<16>;
-	type Nonce = u64;
-	type Block = Block;
-	type RuntimeTask = RuntimeTask;
-	type SingleBlockMigrations = ();
-	type MultiBlockMigrator = ();
-	type PreInherents = ();
-	type PostInherents = ();
-	type PostTransactions = ();
-}
-
-impl pallet_balances::Config for Test {
-	type MaxLocks = ConstU32<50>;
-	type MaxReserves = ();
-	type ReserveIdentifier = [u8; 8];
-	/// The type for recording an account's balance.
-	type Balance = Balance;
-	/// The ubiquitous event type.
-	type RuntimeEvent = RuntimeEvent;
-	type DustRemoval = ();
-	type ExistentialDeposit = ConstU128<EXISTENTIAL_DEPOSIT>;
-	type AccountStore = System;
-	type WeightInfo = pallet_balances::weights::SubstrateWeight<Test>;
-	type FreezeIdentifier = ();
-	type MaxFreezes = ();
-	type RuntimeHoldReason = RuntimeHoldReason;
-	type RuntimeFreezeReason = RuntimeFreezeReason;
-	type DoneSlashHandler = ();
-}
 
 use sp_consensus_aura::AURA_ENGINE_ID;
 
 pub const SLOTS_PER_EPOCH: u32 = 7;
 
-impl_opaque_keys! {
-	#[derive(MaxEncodedLen, PartialOrd, Ord)]
-	pub struct TestSessionKeys {
-		pub aura: Aura,
-		pub grandpa: Grandpa,
-	}
-}
-
-impl MaybeFromCandidateKeys for TestSessionKeys {}
-
-impl From<(sr25519::Public, ed25519::Public)> for TestSessionKeys {
-	fn from((aura, grandpa): (sr25519::Public, ed25519::Public)) -> Self {
-		let aura = AuraId::from(aura);
-		let grandpa = GrandpaId::from(grandpa);
-		Self { aura, grandpa }
-	}
-}
-
-impl TryFrom<CandidateKeys> for TestSessionKeys {
-	type Error = KeyTypeId;
-	fn try_from(value: CandidateKeys) -> Result<Self, Self::Error> {
-		let aura = <[u8; 32]>::try_from(value.find_or_empty(AURA))
-			.map_err(|_| AURA)
-			.map(|bytes| AuraId::from(sr25519::Public::from(bytes)))?;
-		let grandpa = <[u8; 32]>::try_from(value.find_or_empty(GRANDPA))
-			.map_err(|_| GRANDPA)
-			.map(|bytes| GrandpaId::from(ed25519::Public::from(bytes)))?;
-		Ok(Self { aura, grandpa })
-	}
-}
-
-impl pallet_session::Config for Test {
-	type RuntimeEvent = RuntimeEvent;
-	type ValidatorId = <Self as frame_system::Config>::AccountId;
-	type ValidatorIdOf = ConvertInto;
-	type ShouldEndSession = SessionCommitteeManagement;
-	type NextSessionRotation = ();
-	type SessionManager = SessionCommitteeManagement;
-	type SessionHandler = <TestSessionKeys as OpaqueKeys>::KeyTypeIdProviders;
-	type Keys = TestSessionKeys;
-	type DisablingStrategy = pallet_session::disabling::UpToLimitWithReEnablingDisablingStrategy;
-	type WeightInfo = pallet_session::weights::SubstrateWeight<Test>;
-	type Currency = Balances;
-	type KeyDeposit = ();
-}
-
-impl pallet_sidechain::Config for Test {
-	fn current_slot_number() -> ScSlotNumber {
-		ScSlotNumber(*pallet_aura::CurrentSlot::<Test>::get())
-	}
-	type OnNewEpoch = ();
-}
-
-impl pallet_session_validator_management::Config for Test {
-	type MaxValidators = ConstU32<32>;
-	type AuthorityId = CrossChainPublic;
-	type AuthorityKeys = TestSessionKeys;
-	type MainChainScriptsOrigin = EnsureRoot<Self::AccountId>;
-
-	/// Mock simply selects all valid registered candidates as validators.
-	fn select_authorities(
-		input: AuthoritySelectionInputs,
-		_sidechain_epoch: ScEpochNumber,
-	) -> Option<BoundedVec<CommitteeMemberOf<Self>, Self::MaxValidators>> {
-		let candidates: Vec<_> = filter_trustless_candidates_registrations::<
-			Self::AuthorityId,
-			Self::AuthorityKeys,
-		>(input.registered_candidates, Sidechain::genesis_utxo())
-		.into_iter()
-		.map(|(c, _)| c.into())
-		.collect();
-		if candidates.is_empty() { None } else { Some(BoundedVec::truncate_from(candidates)) }
-	}
-
-	fn current_epoch_number() -> ScEpochNumber {
-		Sidechain::current_epoch_number()
-	}
-
-	type WeightInfo = ();
-
-	#[cfg(feature = "runtime-benchmarks")]
-	type BenchmarkHelper = ();
-}
-
-impl pallet_timestamp::Config for Test {
-	/// A timestamp: milliseconds since the unix epoch.
-	type Moment = u64;
-	type OnTimestampSet = Aura;
-	type MinimumPeriod = ConstU64<{ SLOT_DURATION / 2 }>;
-	type WeightInfo = ();
-}
-
-impl pallet_aura::Config for Test {
-	type AuthorityId = AuraId;
-	type DisabledValidators = ();
-	type MaxAuthorities = ConstU32<32>;
-	type AllowMultipleBlocksPerSlot = ConstBool<false>;
-	type SlotDuration = ConstU64<6000>;
-}
-
-impl pallet_grandpa::Config for Test {
-	type RuntimeEvent = RuntimeEvent;
-
-	type WeightInfo = ();
-	type MaxAuthorities = ConstU32<32>;
-	type MaxNominators = ConstU32<0>;
-	type MaxSetIdSessionEntries = ConstU64<0>;
-
-	type KeyOwnerProof = sp_core::Void;
-	type EquivocationReportSystem = ();
-}
-
-// Build genesis storage according to the mock runtime.
+// Build genesis storage
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let mut t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
+	let mut t = frame_system::GenesisConfig::<Runtime>::default().build_storage().unwrap();
 
 	let initial_authorities: Vec<_> = vec![alice().as_permissioned(), bob().as_permissioned()];
 
 	let session_keys: Vec<_> =
 		vec![(alice().account(), alice().session()), (bob().account(), bob().session())];
 	let main_chain_scripts = MainChainScripts::default();
-	pallet_session_validator_management::GenesisConfig::<Test> {
+	pallet_session_validator_management::GenesisConfig::<Runtime> {
 		initial_authorities,
 		main_chain_scripts,
 	}
 	.assimilate_storage(&mut t)
 	.unwrap();
 
-	pallet_session::GenesisConfig::<Test> {
+	pallet_session::GenesisConfig::<Runtime> {
 		keys: session_keys
 			.into_iter()
 			.map(|(cross_chain, session)| (cross_chain.clone().into(), cross_chain.into(), session))
@@ -246,7 +45,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	.assimilate_storage(&mut t)
 	.unwrap();
 
-	pallet_sidechain::GenesisConfig::<Test> {
+	pallet_sidechain::GenesisConfig::<Runtime> {
 		genesis_utxo: UtxoId::new(
 			hex!("abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd"),
 			0,
@@ -262,7 +61,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 
 pub fn slots_to_epoch(epoch: u64, slots_per_epoch: u32) -> u64 {
 	let epoch = ARBITRARY_FIRST_EPOCH + epoch;
-	let current_slot = pallet_aura::CurrentSlot::<Test>::get();
+	let current_slot = pallet_aura::CurrentSlot::<Runtime>::get();
 	let to_slot = epoch * (slots_per_epoch as u64);
 	to_slot - *current_slot
 }
@@ -277,7 +76,7 @@ pub const ARBITRARY_FIRST_SLOT: u64 = 389374234;
 pub const ARBITRARY_FIRST_EPOCH: u64 = ARBITRARY_FIRST_SLOT / (SLOTS_PER_EPOCH as u64);
 
 pub fn initialize_block() {
-	let slot = *pallet_aura::CurrentSlot::<Test>::get() + 1;
+	let slot = *pallet_aura::CurrentSlot::<Runtime>::get() + 1;
 	let slot = if slot == 1 { slot + ARBITRARY_FIRST_SLOT } else { slot };
 	initialize_with_slot_digest_and_increment_block_number(slot);
 
@@ -289,7 +88,7 @@ pub fn initialize_block() {
 
 	let block_number = System::block_number();
 	let epoch = Sidechain::current_epoch_number();
-	assert_eq!(slot, *pallet_aura::CurrentSlot::<Test>::get());
+	assert_eq!(slot, *pallet_aura::CurrentSlot::<Runtime>::get());
 	println!("(slot {slot}, epoch {epoch}) Initialized block {block_number}");
 }
 
@@ -331,7 +130,7 @@ pub fn for_next_n_blocks_after_finalizing(n: u32, f: &dyn Fn()) {
 pub fn create_inherent_data_struct(
 	expected_authorities: &[TestKeys],
 ) -> AriadneInherentDataProvider {
-	let genesis_utxo = pallet_sidechain::Pallet::<Test>::genesis_utxo();
+	let genesis_utxo = pallet_sidechain::Pallet::<Runtime>::genesis_utxo();
 
 	let candidates: Vec<CandidateRegistrations> = expected_authorities
 		.iter()
@@ -407,8 +206,8 @@ impl TestKeys {
 	pub fn account(&self) -> AccountId32 {
 		MultiSigner::from(sp_core::ecdsa::Public::from(self.cross_chain.public())).into_account()
 	}
-	pub fn session(&self) -> TestSessionKeys {
-		TestSessionKeys { aura: self.aura.public(), grandpa: self.grandpa.public() }
+	pub fn session(&self) -> SessionKeys {
+		SessionKeys { aura: self.aura.public(), grandpa: self.grandpa.public() }
 	}
 	pub fn candidate_keys(&self) -> CandidateKeys {
 		CandidateKeys(
@@ -419,7 +218,7 @@ impl TestKeys {
 				.collect(),
 		)
 	}
-	pub fn as_permissioned(&self) -> CommitteeMemberOf<Test> {
+	pub fn as_permissioned(&self) -> CommitteeMemberOf<Runtime> {
 		CommitteeMember::permissioned(self.cross_chain.public(), self.session())
 	}
 }
@@ -475,7 +274,7 @@ pub(crate) use assert_grandpa_authorities;
 macro_rules! assert_aura_authorities {
     ([$($member:expr),*]) => {{
 		let expected_authorities = vec![$($member.aura.public()),*];
-		let actual_authorities = pallet_aura::Authorities::<Test>::get();
+		let actual_authorities = pallet_aura::Authorities::<Runtime>::get();
 		assert_eq!(actual_authorities, expected_authorities);
 	}};
 }
@@ -483,4 +282,4 @@ pub(crate) use assert_aura_authorities;
 use sidechain_slots::SlotsPerEpoch;
 use sp_session_validator_management::{CommitteeMember, MainChainScripts};
 
-use crate::CrossChainPublic;
+use crate::{CrossChainPublic, opaque::SessionKeys};

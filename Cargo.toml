@@ -17,7 +17,6 @@ members = [
 	"toolkit/committee-selection/pallet",
 	"toolkit/committee-selection/rpc",
 	"substrate-extensions/aura/primitives",
-	"toolkit/block-production-log/primitives",
 	"toolkit/sidechain/domain",
 	"toolkit/committee-selection/selection",
 	"toolkit/committee-selection/authority-selection-inherents",
@@ -32,7 +31,6 @@ members = [
 	"toolkit/sidechain/sidechain-mc-hash",
 	"toolkit/sidechain/pallet",
 	"toolkit/sidechain/rpc",
-	"toolkit/sidechain/sidechain-block-search",
 	"toolkit/sidechain/sidechain-slots",
 	"toolkit/sidechain/primitives",
 	"toolkit/committee-selection/primitives",
@@ -288,7 +286,6 @@ pallet-address-associations = { path = "toolkit/address-associations/pallet", de
 
 # sidechain core
 sidechain-domain = { path = "toolkit/sidechain/domain", default-features = false }
-sidechain-block-search = { path = "toolkit/sidechain/sidechain-block-search", default-features = false }
 sidechain-slots = { path = "toolkit/sidechain/sidechain-slots", default-features = false }
 sidechain-mc-hash = { path = "toolkit/sidechain/sidechain-mc-hash", default-features = false }
 sp-sidechain = { path = "toolkit/sidechain/primitives", default-features = false }
@@ -309,7 +306,6 @@ sp-partner-chains-consensus-aura = { path = "substrate-extensions/aura/primitive
 
 # block production and rewards
 pallet-block-production-log = { path = "toolkit/block-production-log/pallet", default-features = false }
-sp-block-production-log = { path = "toolkit/block-production-log/primitives", default-features = false }
 pallet-block-participation = { path = "toolkit/block-participation/pallet", default-features = false }
 sp-block-participation = { path = "toolkit/block-participation/primitives", default-features = false }
 
