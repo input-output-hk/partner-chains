@@ -82,6 +82,7 @@
                 rustToolchain
                 pkgs.libz
                 pkgs.stdenv.cc.cc
+                pkgs.libclang.lib
               ]
             }"
 
