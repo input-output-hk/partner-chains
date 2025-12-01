@@ -12,8 +12,8 @@ use {
 	sp_api::{ApiExt, ProvideRuntimeApi},
 	sp_inherents::{InherentData, InherentIdentifier},
 	sp_runtime::traits::Block as BlockT,
-	sp_session_validator_management::{ INHERENT_IDENTIFIER,
-		InherentError, MainChainScripts, SessionValidatorManagementApi,
+	sp_session_validator_management::{
+		INHERENT_IDENTIFIER, InherentError, MainChainScripts, SessionValidatorManagementApi,
 	},
 };
 

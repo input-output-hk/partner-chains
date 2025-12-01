@@ -154,7 +154,7 @@ mod tests {
 			num_native_stake_candidates: 0,
 		};
 
-		let expected_plutus_data = json_to_plutus_data(v0_datum_json());
+		let expected_plutus_data = json_to_plutus_data(v1_datum_json());
 
 		assert_eq!(d_parameter_to_plutus_data(&d_param), expected_plutus_data)
 	}
@@ -166,9 +166,22 @@ mod tests {
 				{ "list": [
 					{ "int": 17 },
 					{ "int": 42 },
-					{ "int": 0  },
 				] },
 				{ "int": 0 }
+			]
+		})
+	}
+
+	fn v1_datum_json() -> serde_json::Value {
+		serde_json::json!({
+			"list": [
+				{ "constructor": 0, "fields": [] },
+				{ "list": [
+					{ "int": 17 },
+					{ "int": 42 },
+					{ "int": 0  },
+				] },
+				{ "int": 1 }
 			]
 		})
 	}
@@ -179,6 +192,19 @@ mod tests {
 
 		let expected_datum =
 			DParamDatum::V0 { num_permissioned_candidates: 17, num_registered_candidates: 42 };
+
+		assert_eq!(DParamDatum::try_from(plutus_data).unwrap(), expected_datum)
+	}
+
+	#[test]
+	fn valid_v1_d_param() {
+		let plutus_data = json_to_plutus_data(v1_datum_json());
+
+		let expected_datum = DParamDatum::V1 {
+			num_permissioned_candidates: 17,
+			num_registered_candidates: 42,
+			num_native_stake_candidates: 0,
+		};
 
 		assert_eq!(DParamDatum::try_from(plutus_data).unwrap(), expected_datum)
 	}

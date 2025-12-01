@@ -175,16 +175,15 @@ pub fn create_inherent_data_struct(
 		.collect();
 
 	AriadneInherentDataProvider::V1(Some(AuthoritySelectionInputs {
-			d_parameter: DParameter {
-				num_permissioned_candidates: 0,
-				num_registered_candidates: max(candidates.len() as u16, 1),
-				num_native_stake_candidates: 0,
-			},
-			permissioned_candidates: vec![],
-			registered_candidates: candidates,
-			epoch_nonce: EpochNonce(DUMMY_EPOCH_NONCE.to_vec()),
-		}),
-	)
+		d_parameter: DParameter {
+			num_permissioned_candidates: 0,
+			num_registered_candidates: max(candidates.len() as u16, 1),
+			num_native_stake_candidates: 0,
+		},
+		permissioned_candidates: vec![],
+		registered_candidates: candidates,
+		epoch_nonce: EpochNonce(DUMMY_EPOCH_NONCE.to_vec()),
+	}))
 }
 
 pub type CrossChainPair = <CrossChainPublic as CryptoType>::Pair;

@@ -1166,6 +1166,7 @@ impl_runtime_apis! {
 #[cfg(test)]
 mod tests {
 	use crate::mock::*;
+	use authority_selection_inherents::AriadneInherentDataProvider;
 	use frame_support::{
 		dispatch::PostDispatchInfo,
 		inherent::ProvideInherent,
@@ -1175,7 +1176,6 @@ mod tests {
 	use sp_core::{Pair, hexdisplay::HexDisplay};
 	use sp_inherents::InherentData;
 	use std::collections::HashSet;
-	use authority_selection_inherents::AriadneInherentDataProvider;
 
 	#[test]
 	fn check_whitelist() {
@@ -1336,15 +1336,14 @@ mod tests {
 			"(slot {slot}, epoch {epoch}) Setting {} authorities for next epoch",
 			expected_authorities.len()
 		);
-		let AriadneInherentDataProvider::V1(Some(inherent_data_struct)) = create_inherent_data_struct(expected_authorities) else {
+		let AriadneInherentDataProvider::V1(Some(inherent_data_struct)) =
+			create_inherent_data_struct(expected_authorities)
+		else {
 			panic!("Creating inherent data struct should produce valid V1 struct");
 		};
 		let mut inherent_data = InherentData::new();
 		inherent_data
-			.put_data(
-				SessionCommitteeManagement::INHERENT_IDENTIFIER,
-				&inherent_data_struct,
-			)
+			.put_data(SessionCommitteeManagement::INHERENT_IDENTIFIER, &inherent_data_struct)
 			.expect("Setting inherent data should not fail");
 		let call = <SessionCommitteeManagement as ProvideInherent>::create_inherent(&inherent_data)
 			.expect("Creating test inherent should not fail");
