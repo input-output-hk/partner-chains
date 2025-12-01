@@ -26,6 +26,25 @@ pub enum DParamDatum {
 	},
 }
 
+impl DParamDatum {
+	/// Decodes V1 datum.
+	fn decode_v1(data: &PlutusData) -> Result<Self, String> {
+		let d_parameter = data
+			.as_list()
+			.filter(|datum| datum.len() == 3)
+			.and_then(|items| {
+				Some(DParamDatum::V1 {
+					num_permissioned_candidates: items.get(0).as_u16()?,
+					num_registered_candidates: items.get(1).as_u16()?,
+					num_native_stake_candidates: items.get(2).as_u16()?,
+				})
+			})
+			.ok_or("Expected [u16, u16, u16]")?;
+
+		Ok(d_parameter)
+	}
+}
+
 impl TryFrom<PlutusData> for DParamDatum {
 	type Error = DataDecodingError;
 	fn try_from(datum: PlutusData) -> DecodingResult<Self> {
@@ -73,7 +92,7 @@ pub fn d_parameter_to_plutus_data(d_param: &sidechain_domain::DParameter) -> Plu
 	VersionedGenericDatum {
 		datum: PlutusData::new_empty_constr_plutus_data(&0u64.into()),
 		appendix,
-		version: 0,
+		version: 1,
 	}
 	.into()
 }
@@ -103,6 +122,8 @@ impl VersionedDatumWithLegacy for DParamDatum {
 	) -> Result<Self, String> {
 		match version {
 			0 => DParamDatum::decode_legacy(appendix)
+				.map_err(|msg| format!("Cannot parse appendix: {msg}")),
+			1 => DParamDatum::decode_v1(appendix)
 				.map_err(|msg| format!("Cannot parse appendix: {msg}")),
 			_ => Err(format!("Unknown version: {version}")),
 		}

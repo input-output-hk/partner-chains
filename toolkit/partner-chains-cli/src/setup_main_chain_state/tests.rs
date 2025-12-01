@@ -269,13 +269,13 @@ fn insert_d_parameter_io() -> MockIO {
 			"7",
 		),
 		MockIO::prompt(
-			"Enter N, the number of native stake candidates seats, as non-negative integer.",
+			"Enter N, the number of native stake candidates seats, as a non-negative integer.",
 			Some("0"),
 			"0",
 		),
 		prompt(CARDANO_PAYMENT_SIGNING_KEY_FILE, "payment.skey"),
 		MockIO::print(
-			"D-parameter updated to (4, 7). The change will be effective in two main chain epochs.",
+			"D-parameter updated to (4, 7, 0). The change will be effective in two main chain epochs.",
 		),
 	])
 }
@@ -292,9 +292,14 @@ fn update_d_parameter_io() -> MockIO {
 			Some("4"),
 			"7",
 		),
+		MockIO::prompt(
+			"Enter N, the number of native stake candidates seats, as a non-negative integer.",
+			Some("0"),
+			"0",
+		),
 		prompt_with_default(CARDANO_PAYMENT_SIGNING_KEY_FILE, Some("payment.skey"), "payment.skey"),
 		MockIO::print(
-			"D-parameter updated to (4, 7). The change will be effective in two main chain epochs.",
+			"D-parameter updated to (4, 7, 0). The change will be effective in two main chain epochs.",
 		),
 	])
 }

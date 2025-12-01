@@ -238,7 +238,7 @@ fn set_d_parameter_on_main_chain<C: IOContext>(
 		);
 		let num_registered_candidates: u16 = r.parse()?;
 		let n = context.prompt(
-			"Enter N, the number of native stake candidates seats, as non-negative integer.",
+			"Enter N, the number of native stake candidates seats, as a non-negative integer.",
 			Some(&default_d_parameter.num_native_stake_candidates.to_string()),
 		);
 		let num_native_stake_candidates: u16 = n.parse()?;
@@ -259,10 +259,10 @@ fn set_d_parameter_on_main_chain<C: IOContext>(
 			&payment_signing_key,
 		))?;
 		match result {
-			None => context.print(&format!("D-parameter is set to ({}, {}) already.", p, r)),
+			None => context.print(&format!("D-parameter is set to ({}, {}, {}) already.", p, r, n)),
 			Some(MultiSigSmartContractResult::TransactionSubmitted(_)) => context.print(&format!(
-				"D-parameter updated to ({}, {}). The change will be effective in two main chain epochs.",
-				p, r
+				"D-parameter updated to ({}, {}, {}). The change will be effective in two main chain epochs.",
+				p, r, n
 			)),
 			Some(MultiSigSmartContractResult::TransactionToSign(tx_data)) => {
 				print_tx_to_sign_and_instruction(context, "update D-parameter", &tx_data)?
