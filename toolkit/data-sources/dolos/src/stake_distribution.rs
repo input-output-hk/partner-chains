@@ -1,6 +1,5 @@
 use sidechain_domain::*;
 use sp_block_participation::inherent_data::BlockParticipationDataSource;
-use std::collections::BTreeMap;
 
 pub struct StakeDistributionDataSourceImpl;
 

@@ -46,7 +46,13 @@ impl GovernedMapDataSource for GovernedMapDataSourceImpl {
 
 		for utxo in utxos {
 			// Check if this UTXO was created before or at target block
-			let tx_hash = McTxHash::from_hex_unsafe(&utxo.tx_hash);
+			let tx_hash = match McTxHash::decode_hex(&utxo.tx_hash) {
+				Ok(hash) => hash,
+				Err(e) => {
+					log::warn!("Failed to decode tx_hash '{}': {}", utxo.tx_hash, e);
+					continue;
+				}
+			};
 			let tx = self.client.transaction_by_hash(tx_hash).await?;
 			let utxo_block_height = tx.block_height as u32;
 
@@ -62,18 +68,8 @@ impl GovernedMapDataSource for GovernedMapDataSourceImpl {
 
 			// Parse the datum
 			if let Some(datum_hex) = &utxo.inline_datum {
-				match PlutusData::from_hex(datum_hex) {
-					Ok(plutus_data) => match GovernedMapDatum::try_from(plutus_data) {
-						Ok(GovernedMapDatum { key, value }) => {
-							mappings.insert(key, value);
-						},
-						Err(err) => {
-							log::warn!("Failed to parse GovernedMapDatum: {}", err);
-						},
-					},
-					Err(err) => {
-						log::warn!("Failed to parse PlutusData from hex: {}", err);
-					},
+				if let Some((key, value)) = parse_governed_map_datum(datum_hex) {
+					mappings.insert(key, value);
 				}
 			}
 		}
@@ -125,4 +121,21 @@ fn format_asset_unit(policy_id: &PolicyId) -> String {
 	// Asset unit format in blockfrost is policy_id + asset_name (hex)
 	// For empty asset names, it's just the policy_id without "0x" prefix
 	policy_id.to_hex_string()[2..].to_string()
+}
+
+/// Helper function to parse GovernedMapDatum from hex-encoded PlutusData
+fn parse_governed_map_datum(datum_hex: &str) -> Option<(String, ByteString)> {
+	match PlutusData::from_hex(datum_hex) {
+		Ok(plutus_data) => match GovernedMapDatum::try_from(plutus_data) {
+			Ok(GovernedMapDatum { key, value }) => Some((key, value)),
+			Err(err) => {
+				log::warn!("Failed to parse GovernedMapDatum: {}", err);
+				None
+			}
+		},
+		Err(err) => {
+			log::warn!("Failed to parse PlutusData from hex: {}", err);
+			None
+		}
+	}
 }
