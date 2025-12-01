@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["append"]};
+window.SIDEBAR_ITEMS = {};

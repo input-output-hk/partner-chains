@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"constant":["INHERENT_IDENTIFIER"],"enum":["InherentError"],"struct":["BlockAuthorInherentProvider","BlockProductionInherentDataV1"],"trait":["BlockProductionLogApi"]};
