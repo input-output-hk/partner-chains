@@ -148,7 +148,13 @@ pub(crate) async fn get_bridge_utxos_tx(
 		let native_token = native_token.clone();
 		let icp_address = icp_address.clone();
 		async move {
-			let tx_hash = McTxHash::from_hex_unsafe(&utxo.tx_hash);
+			let tx_hash = match McTxHash::decode_hex(&utxo.tx_hash) {
+				Ok(hash) => hash,
+				Err(e) => {
+					log::warn!("Failed to decode tx_hash '{}': {}", utxo.tx_hash, e);
+					return Result::Ok(None);
+				}
+			};
 			let tx = client.transaction_by_hash(tx_hash).await?;
 
 			// Skip if beyond target block
@@ -222,7 +228,13 @@ fn get_all_tokens(amount: &Vec<TxContentOutputAmountInner>, asset_id: &AssetId) 
 		.iter()
 		.map(|v| {
 			if v.unit == format_asset_id(asset_id) {
-				v.quantity.parse::<u128>().expect("valid quantity is u128")
+				match v.quantity.parse::<u128>() {
+					Ok(qty) => qty,
+					Err(e) => {
+						log::warn!("Failed to parse token quantity '{}': {}", v.quantity, e);
+						0u128
+					}
+				}
 			} else {
 				0u128
 			}

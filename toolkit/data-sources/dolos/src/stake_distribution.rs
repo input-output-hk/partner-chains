@@ -51,11 +51,17 @@ fn rows_to_distribution(
 		match get_delegator_key(&stake) {
 			Ok(delegator_key) => {
 				let pool = res.entry(pool_id).or_default();
-				let stake_amount = stake.amount.parse().expect("valid stake amount");
-				pool.delegators
-					.entry(delegator_key)
-					.or_insert(DelegatorStakeAmount(stake_amount));
-				pool.total_stake.0 += stake_amount;
+				match stake.amount.parse::<u64>() {
+					Ok(stake_amount) => {
+						pool.delegators
+							.entry(delegator_key)
+							.or_insert(DelegatorStakeAmount(stake_amount));
+						pool.total_stake.0 += stake_amount;
+					},
+					Err(e) => {
+						log::warn!("Failed to parse stake amount '{}': {}", stake.amount, e);
+					}
+				}
 			},
 			Err(e) => {
 				log::warn!("Failed to parse EpochStakePoolContentInner: {}", e)
