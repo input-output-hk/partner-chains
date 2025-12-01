@@ -6,7 +6,6 @@ use blockfrost_openapi::models::epoch_stake_pool_content_inner::EpochStakePoolCo
 use futures::StreamExt;
 use sidechain_domain::*;
 use sp_block_participation::inherent_data::BlockParticipationDataSource;
-use std::collections::BTreeMap;
 
 pub struct StakeDistributionDataSourceImpl {
 	client: MiniBFClient,
