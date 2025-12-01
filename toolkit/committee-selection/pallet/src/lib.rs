@@ -273,6 +273,9 @@ pub mod pallet {
 
 	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
+	/// Current pallet version
+	pub const PALLET_VERSION: u32 = 1;
+
 	#[pallet::pallet]
 	#[pallet::storage_version(STORAGE_VERSION)]
 	pub struct Pallet<T>(_);
@@ -672,6 +675,11 @@ pub mod pallet {
 		/// Returns main chain scripts.
 		pub fn get_main_chain_scripts() -> MainChainScripts {
 			MainChainScriptsConfiguration::<T>::get()
+		}
+
+		/// Returns current pallet version.
+		pub fn get_version() -> u32 {
+			PALLET_VERSION
 		}
 	}
 }

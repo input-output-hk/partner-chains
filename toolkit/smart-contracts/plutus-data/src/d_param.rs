@@ -15,6 +15,15 @@ pub enum DParamDatum {
 		/// Number of registered candidates in committee.
 		num_registered_candidates: u16,
 	},
+	/// Native stake datum schema
+	V1 {
+		/// Number of permissioned candidates in committee.
+		num_permissioned_candidates: u16,
+		/// Number of registered candidates in committee.
+		num_registered_candidates: u16,
+		/// Number of native stake candidates in committee.
+		num_native_stake_candidates: u16,
+	},
 }
 
 impl TryFrom<PlutusData> for DParamDatum {
@@ -27,8 +36,19 @@ impl TryFrom<PlutusData> for DParamDatum {
 impl From<DParamDatum> for sidechain_domain::DParameter {
 	fn from(datum: DParamDatum) -> Self {
 		match datum {
-			DParamDatum::V0 { num_permissioned_candidates, num_registered_candidates } => {
-				Self { num_permissioned_candidates, num_registered_candidates }
+			DParamDatum::V0 { num_permissioned_candidates, num_registered_candidates } => Self {
+				num_permissioned_candidates,
+				num_registered_candidates,
+				num_native_stake_candidates: 0,
+			},
+			DParamDatum::V1 {
+				num_permissioned_candidates,
+				num_registered_candidates,
+				num_native_stake_candidates,
+			} => Self {
+				num_permissioned_candidates,
+				num_registered_candidates,
+				num_native_stake_candidates,
 			},
 		}
 	}
@@ -48,6 +68,7 @@ pub fn d_parameter_to_plutus_data(d_param: &sidechain_domain::DParameter) -> Plu
 	let mut list = PlutusList::new();
 	list.add(&PlutusData::new_integer(&d_param.num_permissioned_candidates.into()));
 	list.add(&PlutusData::new_integer(&d_param.num_registered_candidates.into()));
+	list.add(&PlutusData::new_integer(&d_param.num_native_stake_candidates.into()));
 	let appendix = PlutusData::new_list(&list);
 	VersionedGenericDatum {
 		datum: PlutusData::new_empty_constr_plutus_data(&0u64.into()),
@@ -109,6 +130,7 @@ mod tests {
 		let d_param = sidechain_domain::DParameter {
 			num_permissioned_candidates: 17,
 			num_registered_candidates: 42,
+			num_native_stake_candidates: 0,
 		};
 
 		let expected_plutus_data = json_to_plutus_data(v0_datum_json());
@@ -122,7 +144,8 @@ mod tests {
 				{ "constructor": 0, "fields": [] },
 				{ "list": [
 					{ "int": 17 },
-					{ "int": 42 }
+					{ "int": 42 },
+					{ "int": 0  },
 				] },
 				{ "int": 0 }
 			]

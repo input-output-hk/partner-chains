@@ -253,7 +253,7 @@ fn upsert_permissioned_candidates_failed_io() -> MockIO {
 }
 
 fn new_d_parameter() -> DParameter {
-	DParameter::new(4, 7)
+	DParameter::new(4, 7, 0)
 }
 
 fn insert_d_parameter_io() -> MockIO {
@@ -267,6 +267,11 @@ fn insert_d_parameter_io() -> MockIO {
 			"Enter R, the number of registered candidates seats, as a non-negative integer.",
 			Some("0"),
 			"7",
+		),
+		MockIO::prompt(
+			"Enter N, the number of native stake candidates seats, as non-negative integer.",
+			Some("0"),
+			"0",
 		),
 		prompt(CARDANO_PAYMENT_SIGNING_KEY_FILE, "payment.skey"),
 		MockIO::print(
@@ -473,7 +478,11 @@ fn mock_with_ariadne_parameters_found() -> OffchainMock {
 	OffchainMock::new()
 		.with_get_d_param(
 			genesis_utxo(),
-			Ok(Some(DParameter { num_permissioned_candidates: 6, num_registered_candidates: 4 })),
+			Ok(Some(DParameter {
+				num_permissioned_candidates: 6,
+				num_registered_candidates: 4,
+				num_native_stake_candidates: 0,
+			})),
 		)
 		.with_get_permissioned_candidates(
 			genesis_utxo(),
@@ -485,7 +494,11 @@ fn mock_with_ariadne_parameters_same_as_in_config_response() -> OffchainMock {
 	OffchainMock::new()
 		.with_get_d_param(
 			genesis_utxo(),
-			Ok(Some(DParameter { num_permissioned_candidates: 6, num_registered_candidates: 4 })),
+			Ok(Some(DParameter {
+				num_permissioned_candidates: 6,
+				num_registered_candidates: 4,
+				num_native_stake_candidates: 0,
+			})),
 		)
 		.with_get_permissioned_candidates(
 			genesis_utxo(),
