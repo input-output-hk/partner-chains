@@ -102,14 +102,6 @@ impl AriadneInherentDataProvider {
 		}
 	}
 
-	fn has_data(&self) -> bool {
-		match self {
-			AriadneInherentDataProvider::Inert => false,
-			AriadneInherentDataProvider::Legacy(data) => data.is_some(),
-			AriadneInherentDataProvider::V1(data) => data.is_some(),
-		}
-	}
-
 	async fn from_mc_data_legacy(
 		candidate_data_source: &(dyn AuthoritySelectionDataSource + Send + Sync),
 		for_epoch: McEpochNumber,
@@ -250,6 +242,14 @@ mod tests {
 
 	const TIMESTAMP: u64 = 400_000;
 
+	fn has_data(provider: &AriadneInherentDataProvider) -> bool {
+		match provider {
+			AriadneInherentDataProvider::Inert => false,
+			AriadneInherentDataProvider::Legacy(data) => data.is_some(),
+			AriadneInherentDataProvider::V1(data) => data.is_some(),
+		}
+	}
+
 	#[tokio::test]
 	async fn return_empty_ariadne_cidp_if_runtime_requests_too_new_epoch() {
 		// This is the epoch number that is too new
@@ -268,7 +268,7 @@ mod tests {
 		.await;
 
 		assert!(empty_ariadne_idp.is_ok());
-		assert!(!empty_ariadne_idp.unwrap().has_data());
+		assert!(!has_data(&empty_ariadne_idp.unwrap()));
 	}
 
 	#[tokio::test]
@@ -318,7 +318,7 @@ mod tests {
 		.await;
 
 		assert!(ariadne_idp.is_ok());
-		assert!(ariadne_idp.unwrap().has_data());
+		assert!(has_data(&ariadne_idp.unwrap()));
 	}
 
 	fn sc_epoch_duration_millis() -> u64 {
