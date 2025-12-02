@@ -72,16 +72,18 @@ impl MiniBFClient {
 			url::Url::parse(&format!("{}/{}", self.addr, method)).expect("valid Dolos url");
 		req_url.set_query(Some(&query_pairs.finish()));
 		log::trace!("Dolos request: {req_url:?}");
-		let resp = self
-			.agent
-			.get(req_url.as_str())
-			.call()
-			.map_err(|e| DataSourceError::DolosCallError(e.to_string()))
-			.and_then(|mut r| {
-				r.body_mut()
-					.read_json()
-					.map_err(|e| DataSourceError::DolosResponseParseError(e.to_string()))
-			});
+		let resp = match self.agent.get(req_url.as_str()).call() {
+			Ok(mut r) => r
+				.body_mut()
+				.read_json()
+				.map_err(|e| DataSourceError::DolosResponseParseError(e.to_string())),
+			Err(ureq::Error::StatusCode(404)) => {
+				// Handle 404 as empty result for paginated requests (e.g., no UTXOs at address)
+				log::debug!("Dolos returned 404 for {req_url:?}, treating as empty result");
+				Ok(Vec::new())
+			}
+			Err(e) => Err(DataSourceError::DolosCallError(e.to_string())),
+		};
 		log::trace!("Dolos response: {resp:?}");
 		resp
 	}
@@ -112,6 +114,16 @@ impl MiniBFApi for MiniBFClient {
 		address: MainchainAddress,
 	) -> Result<Vec<AddressUtxoContentInner>, DataSourceError> {
 		self.paginated_request_all(&format!("addresses/{address}/utxos")).await
+	}
+
+	async fn addresses_utxos_asset(
+		&self,
+		address: MainchainAddress,
+		asset: AssetId,
+	) -> Result<Vec<AddressUtxoContentInner>, DataSourceError> {
+		let asset_id_str = format_asset_id(&asset);
+		self.paginated_request_all(&format!("addresses/{address}/utxos/{asset_id_str}"))
+			.await
 	}
 
 	async fn addresses_transactions(

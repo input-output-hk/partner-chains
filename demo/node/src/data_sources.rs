@@ -103,14 +103,9 @@ pub fn create_mock_data_sources()
 
 // TODO Currently uses db-sync for unimplemented Dolos data sources
 pub async fn create_dolos_data_sources(
-	metrics_opt: Option<McFollowerMetrics>,
+	_metrics_opt: Option<McFollowerMetrics>,
 ) -> std::result::Result<DataSources, Box<dyn Error + Send + Sync + 'static>> {
 	let dolos_client = partner_chains_dolos_data_sources::get_connection_from_env()?;
-	let pool = partner_chains_db_sync_data_sources::get_connection_from_env().await?;
-	let block_dbsync = Arc::new(
-		partner_chains_db_sync_data_sources::BlockDataSourceImpl::new_from_env(pool.clone())
-			.await?,
-	);
 	let block_dolos = Arc::new(
 		partner_chains_dolos_data_sources::BlockDataSourceImpl::new_from_env(dolos_client.clone())
 			.await?,
@@ -130,29 +125,18 @@ pub async fn create_dolos_data_sources(
 			),
 		),
 		block_participation: Arc::new(
-			partner_chains_db_sync_data_sources::StakeDistributionDataSourceImpl::new(
-				pool.clone(),
-				metrics_opt.clone(),
-				STAKE_CACHE_SIZE,
+			partner_chains_dolos_data_sources::StakeDistributionDataSourceImpl::new(
+				dolos_client.clone(),
 			),
 		),
 		governed_map: Arc::new(
-			partner_chains_db_sync_data_sources::GovernedMapDataSourceCachedImpl::new(
-				pool.clone(),
-				metrics_opt.clone(),
-				GOVERNED_MAP_CACHE_SIZE,
-				block_dbsync.clone(),
-			)
-			.await?,
-		),
-		bridge: Arc::new(
-			partner_chains_db_sync_data_sources::CachedTokenBridgeDataSourceImpl::new(
-				pool,
-				metrics_opt,
-				block_dbsync,
-				BRIDGE_TRANSFER_CACHE_LOOKAHEAD,
+			partner_chains_dolos_data_sources::GovernedMapDataSourceImpl::new(
+				dolos_client.clone(),
 			),
 		),
+		bridge: Arc::new(partner_chains_dolos_data_sources::TokenBridgeDataSourceImpl::new(
+			dolos_client,
+		)),
 	})
 }
 
