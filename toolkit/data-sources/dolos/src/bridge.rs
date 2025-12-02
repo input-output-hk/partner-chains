@@ -143,7 +143,7 @@ pub(crate) async fn get_bridge_utxos_tx(
 		client.addresses_utxos_asset(icp_address.clone(), native_token.clone()).await?;
 
 	// Process each UTXO to calculate token deltas and gather transaction info
-	let futs = address_utxos.into_iter().map(|utxo| {
+	let futures = address_utxos.into_iter().map(|utxo| {
 		let client = client.clone();
 		let native_token = native_token.clone();
 		let icp_address = icp_address.clone();
@@ -196,7 +196,7 @@ pub(crate) async fn get_bridge_utxos_tx(
 		}
 	});
 
-	let mut utxos = futures::future::try_join_all(futs)
+	let mut utxos = futures::future::try_join_all(futures)
 		.await?
 		.into_iter()
 		.flatten()
