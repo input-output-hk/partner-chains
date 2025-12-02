@@ -13,8 +13,8 @@ use core::str::FromStr;
 use parity_scale_codec::DecodeWithMemTracking;
 use scale_info::TypeInfo;
 use sidechain_domain::{
-	CandidateRegistrations, DParameter, EpochNonce, MainchainAddress, PermissionedCandidateData,
-	PolicyId, StakePoolPublicKey, byte_string::SizedByteString,
+	CandidateRegistrations, DParameter, DParameterLegacy, EpochNonce, MainchainAddress,
+	PermissionedCandidateData, PolicyId, StakePoolPublicKey, byte_string::SizedByteString,
 };
 use sp_core::{Decode, Encode, MaxEncodedLen};
 use sp_inherents::{InherentIdentifier, IsFatalError};
@@ -201,6 +201,20 @@ impl MainChainScripts {
 /// The part of data for selection of authorities that comes from the main chain.
 /// It is unfiltered, so the selection algorithm should filter out invalid candidates.
 #[derive(Clone, Debug, Encode, Decode, DecodeWithMemTracking, TypeInfo, PartialEq, Eq)]
+pub struct AuthoritySelectionInputsLegacy {
+	/// D-parameter for Ariadne committee selection. See [DParameter] for details.
+	pub d_parameter: DParameterLegacy,
+	/// List of permissioned candidates for committee selection.
+	pub permissioned_candidates: Vec<PermissionedCandidateData>,
+	/// List of registered candidates for committee selection
+	pub registered_candidates: Vec<CandidateRegistrations>,
+	/// Nonce for queried epoch.
+	pub epoch_nonce: EpochNonce,
+}
+
+/// The part of data for selection of authorities that comes from the main chain.
+/// It is unfiltered, so the selection algorithm should filter out invalid candidates.
+#[derive(Clone, Debug, Encode, Decode, DecodeWithMemTracking, TypeInfo, PartialEq, Eq)]
 pub struct AuthoritySelectionInputs {
 	/// D-parameter for Ariadne committee selection. See [DParameter] for details.
 	pub d_parameter: DParameter,
@@ -212,8 +226,30 @@ pub struct AuthoritySelectionInputs {
 	pub epoch_nonce: EpochNonce,
 }
 
+impl From<AuthoritySelectionInputsLegacy> for AuthoritySelectionInputs {
+	fn from(
+		AuthoritySelectionInputsLegacy {
+			d_parameter,
+			permissioned_candidates,
+			registered_candidates,
+			epoch_nonce,
+		}: AuthoritySelectionInputsLegacy,
+	) -> Self {
+		Self {
+			d_parameter: DParameter {
+				num_permissioned_candidates: d_parameter.num_permissioned_candidates,
+				num_registered_candidates: d_parameter.num_registered_candidates,
+				num_native_stake_candidates: 0,
+			},
+			permissioned_candidates,
+			registered_candidates,
+			epoch_nonce,
+		}
+	}
+}
+
 sp_api::decl_runtime_apis! {
-	#[api_version(3)]
+	#[api_version(4)]
 	/// Runtime API declaration for Session Validator Management
 	pub trait SessionValidatorManagementApi<
 		AuthorityId,
@@ -252,5 +288,12 @@ sp_api::decl_runtime_apis! {
 			authority_selection_inputs: AuthoritySelectionInputs,
 			sidechain_epoch: ScEpochNumber
 		) -> Option<sp_std::vec::Vec<CommitteeMember<AuthorityId, AuthorityKeys>>>;
+
+		#[changed_in(4)]
+		/// Returns current pallet version.
+		fn get_pallet_version() -> u32;
+
+		/// Returns current pallet version.
+		fn get_pallet_version() -> u32;
 	}
 }

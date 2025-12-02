@@ -273,6 +273,9 @@ pub mod pallet {
 
 	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
+	/// Current pallet version
+	pub const PALLET_VERSION: u32 = 1;
+
 	#[pallet::pallet]
 	#[pallet::storage_version(STORAGE_VERSION)]
 	pub struct Pallet<T>(_);
@@ -636,13 +639,21 @@ pub mod pallet {
 		fn inherent_data_to_authority_selection_inputs(
 			data: &InherentData,
 		) -> (AuthoritySelectionInputs, SizedByteString<32>) {
-			let decoded_data = data
-				.get_data::<AuthoritySelectionInputs>(&INHERENT_IDENTIFIER)
+			data.get_data::<AuthoritySelectionInputsLegacy>(&INHERENT_IDENTIFIER)
+				.map(|legacy_authority_inputs| {
+					legacy_authority_inputs
+						.map(|x| (x.clone().into(), SizedByteString(blake2_256(&x.encode()))))
+				})
+				.map_err(|_| {
+					data.get_data::<AuthoritySelectionInputs>(&INHERENT_IDENTIFIER).map(
+						|authority_inputs| {
+							authority_inputs
+								.map(|x| (x.clone(), SizedByteString(blake2_256(&x.encode()))))
+						},
+					)
+				})
 				.expect("Validator inherent data not correctly encoded")
-				.expect("Validator inherent data must be provided");
-			let data_hash = SizedByteString(blake2_256(&decoded_data.encode()));
-
-			(decoded_data, data_hash)
+				.expect("Validator inherent data must be provided")
 		}
 
 		/// Calculates committee using configured `select_authorities` function
@@ -672,6 +683,11 @@ pub mod pallet {
 		/// Returns main chain scripts.
 		pub fn get_main_chain_scripts() -> MainChainScripts {
 			MainChainScriptsConfiguration::<T>::get()
+		}
+
+		/// Returns current pallet version.
+		pub fn get_version() -> u32 {
+			PALLET_VERSION
 		}
 	}
 }

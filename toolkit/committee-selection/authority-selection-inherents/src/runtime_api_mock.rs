@@ -45,5 +45,8 @@ sp_api::mock_impl_runtime_apis! {
 				permissioned_candidates_policy_id: PolicyId::default(),
 			}
 		}
+		fn get_pallet_version() -> u32 {
+			1
+		}
 	}
 }
