@@ -226,6 +226,28 @@ pub struct AuthoritySelectionInputs {
 	pub epoch_nonce: EpochNonce,
 }
 
+impl From<AuthoritySelectionInputsLegacy> for AuthoritySelectionInputs {
+	fn from(
+		AuthoritySelectionInputsLegacy {
+			d_parameter,
+			permissioned_candidates,
+			registered_candidates,
+			epoch_nonce,
+		}: AuthoritySelectionInputsLegacy,
+	) -> Self {
+		Self {
+			d_parameter: DParameter {
+				num_permissioned_candidates: d_parameter.num_permissioned_candidates,
+				num_registered_candidates: d_parameter.num_registered_candidates,
+				num_native_stake_candidates: 0,
+			},
+			permissioned_candidates,
+			registered_candidates,
+			epoch_nonce,
+		}
+	}
+}
+
 sp_api::decl_runtime_apis! {
 	#[api_version(4)]
 	/// Runtime API declaration for Session Validator Management

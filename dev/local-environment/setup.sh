@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-PARTNER_CHAINS_NODE_IMAGE="ghcr.io/input-output-hk/partner-chains/partner-chains-node-unstable:latest"
+PARTNER_CHAINS_NODE_IMAGE="docker.io/library/partner-chains-node:latest"
 CARDANO_IMAGE="ghcr.io/intersectmbo/cardano-node:10.5.1"
 DBSYNC_IMAGE="ghcr.io/intersectmbo/cardano-db-sync:13.6.0.5"
 DOLOS_IMAGE="ghcr.io/txpipe/dolos:1.0.0-rc.2"
@@ -388,7 +388,7 @@ create_docker_compose() {
         cat ./modules/db-sync.txt >> docker-compose.yml
         cat ./modules/postgres.txt >> docker-compose.yml
         cat ./modules/dolos.txt >> docker-compose.yml
-        cat ./modules/partner-chains-nodes-dolos.txt >> docker-compose.yml
+        cat ./modules/partner-chains-nodes-jankun.txt >> docker-compose.yml
         cat ./modules/partner-chains-setup.txt >> docker-compose.yml
         ;;
       0)
