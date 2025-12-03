@@ -28,8 +28,12 @@ mod bridge;
 #[cfg(feature = "bridge")]
 pub use bridge::TokenBridgeDataSourceImpl;
 
+#[cfg(feature = "block-source")]
 mod block;
+#[cfg(feature = "block-source")]
 pub use block::BlockDataSourceImpl;
+
+#[cfg(feature = "block-source")]
 use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 
 use crate::client::MiniBFClient;
@@ -68,7 +72,6 @@ pub enum DataSourceError {
 /// # Environment variables read:
 /// - `DOLOS_MINIBF_URL`: Dolos MiniBF client, eg. `localhost:3000`
 pub fn get_connection_from_env() -> Result<MiniBFClient> {
-	log::warn!("Dolos data sources are still WIP and should not be used in production");
 	let config = ConnectionConfig::from_env()?;
 	Ok(MiniBFClient::new(config.dolos_minibf_url.as_str(), std::time::Duration::from_secs(30)))
 }
