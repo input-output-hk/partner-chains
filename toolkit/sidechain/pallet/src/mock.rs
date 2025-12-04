@@ -6,17 +6,17 @@ use frame_support::{
 	},
 	*,
 };
-use sidechain_domain::{McTxHash, ScSlotNumber, UtxoId, UtxoIndex};
-use sidechain_slots::SlotsPerEpoch;
+use sidechain_domain::{McTxHash, UtxoId, UtxoIndex};
 use sp_core::*;
 
 pub const MOCK_GENESIS_UTXO: UtxoId = UtxoId { tx_hash: McTxHash([0u8; 32]), index: UtxoIndex(0) };
-pub const MOCK_SLOTS_PER_EPOCH: SlotsPerEpoch = SlotsPerEpoch(10);
+
+pub(crate) const EPOCH_DURATION: u64 = 36000;
 
 #[frame_support::pallet]
 pub(crate) mod mock_pallet {
 	use frame_support::pallet_prelude::*;
-	use sidechain_domain::{ScEpochNumber, ScSlotNumber};
+	use sidechain_domain::ScEpochNumber;
 
 	use sp_sidechain::OnNewEpoch;
 
@@ -30,9 +30,6 @@ pub(crate) mod mock_pallet {
 	pub type CurrentEpoch<T: Config> = StorageValue<_, ScEpochNumber, ValueQuery>;
 
 	#[pallet::storage]
-	pub type CurrentSlot<T: Config> = StorageValue<_, ScSlotNumber, ValueQuery>;
-
-	#[pallet::storage]
 	pub type OnNewEpochCallCount<T: Config> = StorageValue<_, u32, ValueQuery>;
 
 	impl<T: Config> OnNewEpoch for Pallet<T> {
@@ -43,8 +40,8 @@ pub(crate) mod mock_pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
-		pub fn set_slot(slot: u64) {
-			CurrentSlot::<T>::put(ScSlotNumber(slot))
+		pub fn set_epoch(epoch: u64) {
+			CurrentEpoch::<T>::put(ScEpochNumber(epoch))
 		}
 	}
 }
@@ -94,8 +91,8 @@ impl frame_system::Config for Test {
 }
 
 impl pallet::Config for Test {
-	fn current_slot_number() -> ScSlotNumber {
-		mock_pallet::CurrentSlot::<Test>::get()
+	fn reference_timestamp_millis() -> u64 {
+		mock_pallet::CurrentEpoch::<Test>::get().0 * EPOCH_DURATION
 	}
 	type OnNewEpoch = Mock;
 }
@@ -104,7 +101,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
 	pallet::GenesisConfig::<Test> {
 		genesis_utxo: MOCK_GENESIS_UTXO,
-		slots_per_epoch: MOCK_SLOTS_PER_EPOCH,
+		epoch_duration_millis: EPOCH_DURATION,
 		_config: Default::default(),
 	}
 	.assimilate_storage(&mut t)

@@ -127,7 +127,6 @@ Run `pc-node build-spec --disable-default-bootnode > chain-spec.json`.
 As stated above, the content of the file depends mostly on `pc-node`.
 
 Please consult our [intro doc chain-spec](../intro.md#chain-spec.json) section and update all the required fields, most notably:
-* `genesisUtxo` and `slotsPerEpoch` of Sidechain Pallet
 * `initialValidators` of Partner Chains Session Pallet
 * `initialAuthorities` of Session Validator Management Pallet
 * all occurrances of `mainChainScripts`

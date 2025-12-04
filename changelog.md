@@ -46,6 +46,12 @@ to be provided. Instead, it is wired with a runtime-level source of current `Mom
 the block production log during block initialization. The crate `sp-block-production-log` was removed as no longer
 needed. Consult the pallet's updated documentation and reference runtime for information and examples on how to use
 it after the rework.
+* (STORAGE MIGRATION REQUIRED) `pallet-sidechain` no longer assumes the consensus mechanism to be slot-based.
+This means that:
+- The `current_slot_number` function in the pallet's `Config` has been replaced by `reference_timestamp_millis`
+- The `SlotsPerEpoch` storage is no longer used and will be removed in future versions of the toolkit. A new storage
+`EpochDurationMillis` has been added instead. This value can be configured in the genesis config for new chains.
+Existing chains must add the `LegacyToV1Migration` migration to their runtime before the upgrade.
 
 ## Removed
 

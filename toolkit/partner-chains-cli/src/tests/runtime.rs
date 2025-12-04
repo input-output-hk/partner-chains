@@ -9,7 +9,7 @@ use pallet_session::{SessionHandler, ShouldEndSession};
 use pallet_session_validator_management::CommitteeMemberOf;
 use parity_scale_codec::MaxEncodedLen;
 
-use sidechain_domain::{ScEpochNumber, ScSlotNumber};
+use sidechain_domain::ScEpochNumber;
 use sp_core::{ConstU16, ConstU32, ConstU64, H256, ecdsa};
 use sp_runtime::{
 	AccountId32, BoundToRuntimeAppPublic, KeyTypeId, impl_opaque_keys, traits::ConvertInto,
@@ -108,8 +108,8 @@ impl frame_system::Config for MockRuntime {
 }
 
 impl pallet_sidechain::Config for MockRuntime {
-	fn current_slot_number() -> ScSlotNumber {
-		ScSlotNumber(0)
+	fn reference_timestamp_millis() -> u64 {
+		0
 	}
 	type OnNewEpoch = ();
 }

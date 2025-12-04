@@ -41,7 +41,7 @@ use sidechain_domain::{
 	CrossChainPublicKey, DelegatorKey, MainchainKeyHash, PermissionedCandidateData,
 	RegistrationData, ScEpochNumber, ScSlotNumber, StakeDelegation, StakePoolPublicKey, UtxoId,
 };
-use sidechain_slots::Slot;
+use sidechain_slots::{Slot, SlotsPerEpoch};
 use sp_api::impl_runtime_apis;
 use sp_block_participation::AsCardanoSPO;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -151,7 +151,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	//   `spec_version`, and `authoring_version` are the same between Wasm and native.
 	// This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
 	//   the compatible custom types.
-	spec_version: 180,
+	spec_version: 181,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -378,8 +378,8 @@ parameter_types! {
 }
 
 impl pallet_sidechain::Config for Runtime {
-	fn current_slot_number() -> ScSlotNumber {
-		ScSlotNumber(*pallet_aura::CurrentSlot::<Self>::get())
+	fn reference_timestamp_millis() -> u64 {
+		*pallet_aura::CurrentSlot::<Runtime>::get() * SLOT_DURATION
 	}
 	type OnNewEpoch = TestHelperPallet;
 }
@@ -754,6 +754,7 @@ pub type UncheckedExtrinsic =
 pub type SignedPayload = generic::SignedPayload<RuntimeCall, SignedExtra>;
 pub type Migrations = (
 	pallet_session_validator_management::migrations::v1::LegacyToV1Migration<Runtime>,
+	pallet_sidechain::migrations::v1::LegacyToV1Migration<Runtime, SLOT_DURATION>,
 	// More migrations can be added here
 );
 /// Executive: handles dispatch to the various modules.
@@ -1044,21 +1045,21 @@ impl_runtime_apis! {
 			SidechainStatus {
 				epoch: Sidechain::current_epoch_number(),
 				slot: ScSlotNumber(*pallet_aura::CurrentSlot::<Runtime>::get()),
-				slots_per_epoch: Sidechain::slots_per_epoch().0,
+				slots_per_epoch: (Sidechain::epoch_duration_millis() / SLOT_DURATION) as u32,
 			}
 		}
 	}
 
 	impl sp_sidechain::GetEpochDurationApi<Block> for Runtime {
 		fn get_epoch_duration_millis() -> u64 {
-			u64::from(Sidechain::slots_per_epoch().0) * MILLISECS_PER_BLOCK
+			Sidechain::epoch_duration_millis()
 		}
 	}
 
 	impl sidechain_slots::SlotApi<Block> for Runtime {
 		fn slot_config() -> sidechain_slots::ScSlotConfig {
 			sidechain_slots::ScSlotConfig {
-				slots_per_epoch: Sidechain::slots_per_epoch(),
+				slots_per_epoch: SlotsPerEpoch((Sidechain::epoch_duration_millis() / SLOT_DURATION) as u32),
 				slot_duration: <Self as sp_consensus_aura::runtime_decl_for_aura_api::AuraApi<Block, AuraId>>::slot_duration()
 			}
 		}

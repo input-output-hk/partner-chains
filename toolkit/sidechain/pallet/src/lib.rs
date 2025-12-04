@@ -4,7 +4,7 @@
 //!
 //! This pallet serves as the starting point for building a Partner Chain runtime.
 //! It stores its genesis UTXO which serves as its global identifier and divides
-//! Partner Chain slots into Partner Chain epochs.
+//! time into Partner Chain epochs.
 //!
 //! ## Genesis UTXO
 //!
@@ -22,11 +22,10 @@
 //!
 //! ## Partner Chain Epochs
 //!
-//! When producing blocks, Partner Chains divide time into slots in which a single block
-//! can be produced. These slots are in turn grouped into epochs which other Partner
+//! When producing blocks, Partner Chains divide time epochs which other Partner
 //! Chains features use as boundaries for some of their state transitions (eg. a Partner
-//! Chain block producing committees change at epoch boundaries). Both slot and epoch
-//! durations are constant and immutable throughout a Partner Chain's lifetime.
+//! Chain block producing committees change at epoch boundaries). Epoch duration should
+//! be constant and immutable throughout a Partner Chain's lifetime.
 //!
 //! # Usage
 //!
@@ -35,9 +34,6 @@
 //! Before a Partner Chain can be started, its Cardano governance must be established by
 //! running the _init_ transaction, which also determines the _genesis UTXO_ of the
 //! Partner Chain. Consult `docs/user-guides/governance/governance.md` for instructions.
-//!
-//! As Partner Chains operate on the basis of slots and epochs, your Substrate node should
-//! use a slot-based consensus mechanism such as Aura.
 //!
 //! ### Optional - defining a new epoch hook
 //!
@@ -48,7 +44,7 @@
 //!
 //! To create a new epoch handler, simply define a type and have it implement the [sp_sidechain::OnNewEpoch] trait:
 //! ```rust
-//! use sidechain_domain::{ ScEpochNumber, ScSlotNumber };
+//! use sidechain_domain::ScEpochNumber;
 //! use sp_runtime::Weight;
 //!
 //! struct MyNewEpochHandler;
@@ -64,12 +60,22 @@
 //! ## Adding to runtime
 //!
 //! The pallet requires minimal configuration, as it is only mandatory to inject the function
-//! that provides the current slot. Assuming that Aura consensus is used, the pallet can
-//! be configured like the following:
+//! that provides a *reference timestamp*. This timestamp is not required to be the exact timestamp
+//! of the block but must be close enough to it for the purpose of epoch calculation. For example,
+//! a Partner Chain that uses Aura can use the starting time of the current slot as the reference.
+//!
+//! *Important*: The reference timestamp must be available during block initialization. Due to this,
+//!              the timestamp stored by `pallet_timestamp` can not be used as it is only set during
+//!              block execution. Chain builders that wish to use the exact block timestamp as the
+//!              reference timestamp should store it in the pre-runtime digest.
+//!
+//! A complete configuration can like the following:
 //! ```rust,ignore
+//! pub const SLOT_DURATION: u64 = 6000;
+//!
 //! impl pallet_sidechain::Config for Runtime {
-//!     fn current_slot_number() -> ScSlotNumber {
-//!         ScSlotNumber(*pallet_aura::CurrentSlot::<Self>::get())
+//!     fn reference_timestamp_millis() -> u64 {
+//!         *pallet_aura::CurrentSlot::<Runtime>::get() * SLOT_DURATION
 //!     }
 //!     type OnNewEpoch = MyNewEpochHandler;
 //! }
@@ -94,14 +100,12 @@
 //! ```rust
 //! # use std::str::FromStr;
 //! # use sidechain_domain::UtxoId;
-//! # use sidechain_slots::SlotsPerEpoch;
 //! #
 //! # fn create_genesis_config<Runtime>() -> pallet_sidechain::GenesisConfig<Runtime>
 //! # where Runtime: frame_system::Config + pallet_sidechain::Config
 //! # {
 //! pallet_sidechain::GenesisConfig::<Runtime> {
 //!     genesis_utxo: UtxoId::from_str("0000000000000000000000000000000000000000000000000000000000000000#0").unwrap(),
-//!     slots_per_epoch: SlotsPerEpoch(60),
 //!     ..Default::default()
 //! }
 //! # }
@@ -110,8 +114,7 @@
 //! ```json
 //! {
 //!     "sidechain_pallet": {
-//!         "genesisUtxo": "0000000000000000000000000000000000000000000000000000000000000000#0",
-//!         "slotsPerEpoch": 60
+//!         "genesisUtxo": "0000000000000000000000000000000000000000000000000000000000000000#0"
 //!     }
 //! }
 //! ```
@@ -124,23 +127,36 @@ pub mod mock;
 #[cfg(test)]
 mod tests;
 
+/// Storage migrations for previous versions of `pallet-sidechain`
+pub mod migrations;
+
 pub use pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::BlockNumberFor;
+	use sidechain_domain::ScEpochNumber;
 	use sidechain_domain::UtxoId;
-	use sidechain_domain::{ScEpochNumber, ScSlotNumber};
 	use sp_sidechain::OnNewEpoch;
 
+	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+
 	#[pallet::pallet]
+	#[pallet::storage_version(STORAGE_VERSION)]
 	pub struct Pallet<T>(_);
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
-		/// Should return the slot number of the current block
-		fn current_slot_number() -> ScSlotNumber;
+		/// Should return the reference timestamp of the current block in milliseconds
+		///
+		/// The reference timestamp does not necessarily have to be the exact timestamp of the block
+		/// but must be one close enough for the purpose of epoch calculation, eg. the slot starting
+		/// time in case of chains using a slot-based consensus such as Aura or Babe.
+		///
+		/// Warning: this function must be safe to call during block initialisation, which means that
+		/// in particular block timestamp stored in `pallet_timestamp` can not be used.
+		fn reference_timestamp_millis() -> u64;
 
 		/// Handler that is called at initialization of the first block of a new Partner Chain epoch
 		type OnNewEpoch: OnNewEpoch;
@@ -150,10 +166,17 @@ pub mod pallet {
 	#[pallet::storage]
 	pub(super) type EpochNumber<T: Config> = StorageValue<_, ScEpochNumber, ValueQuery>;
 
+	/// Partner Chain epoch duration in milliseconds. This value must not be changed.
+	#[pallet::storage]
+	pub(crate) type EpochDurationMillis<T: Config> = StorageValue<_, u64, ValueQuery>;
+
 	/// Number of slots per epoch. Currently this value must not change for a running chain.
 	#[pallet::storage]
-	pub(super) type SlotsPerEpoch<T: Config> =
-		StorageValue<_, sidechain_slots::SlotsPerEpoch, ValueQuery>;
+	#[deprecated(
+		since = "1.9.0",
+		note = "This storage is left for migration purposes and will be removed in later version"
+	)]
+	pub(crate) type SlotsPerEpoch<T: Config> = StorageValue<_, u32, ValueQuery>;
 
 	/// Genesis Cardano UTXO of the Partner Chain
 	///
@@ -169,16 +192,14 @@ pub mod pallet {
 			GenesisUtxo::<T>::get()
 		}
 
-		/// Returns current epoch number, based on slot number returned by [Config::current_slot_number]
-		pub fn current_epoch_number() -> ScEpochNumber {
-			let current_slot = T::current_slot_number();
-			let slots_per_epoch = Self::slots_per_epoch();
-			slots_per_epoch.epoch_number_from_sc_slot(current_slot)
+		/// Returns the Partner Chain epoch duration in milliseconds
+		pub fn epoch_duration_millis() -> u64 {
+			EpochDurationMillis::<T>::get()
 		}
 
-		/// Returns the configured number of slots per Partner Chain epoch
-		pub fn slots_per_epoch() -> sidechain_slots::SlotsPerEpoch {
-			SlotsPerEpoch::<T>::get()
+		/// Returns current epoch number
+		pub fn current_epoch_number() -> ScEpochNumber {
+			ScEpochNumber(T::reference_timestamp_millis() / Self::epoch_duration_millis())
 		}
 	}
 
@@ -187,8 +208,8 @@ pub mod pallet {
 	pub struct GenesisConfig<T: Config> {
 		/// Genesis UTXO of the Partner Chain. This value is immutable.
 		pub genesis_utxo: UtxoId,
-		/// Number of slots ber Partner Chain epoch. This value is immutable.
-		pub slots_per_epoch: sidechain_slots::SlotsPerEpoch,
+		/// Duration of Partner Chain epoch in milliseconds
+		pub epoch_duration_millis: u64,
 		#[serde(skip)]
 		#[allow(missing_docs)]
 		pub _config: sp_std::marker::PhantomData<T>,
@@ -198,7 +219,7 @@ pub mod pallet {
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
 			GenesisUtxo::<T>::put(self.genesis_utxo);
-			SlotsPerEpoch::<T>::put(self.slots_per_epoch);
+			EpochDurationMillis::<T>::put(self.epoch_duration_millis);
 		}
 	}
 

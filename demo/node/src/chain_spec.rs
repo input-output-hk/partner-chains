@@ -1,6 +1,7 @@
 use partner_chains_cli::CreateChainSpecConfig;
 use partner_chains_demo_runtime::{
-	AccountId, CrossChainPublic, SessionConfig, Signature, WASM_BINARY, opaque::SessionKeys,
+	AccountId, CrossChainPublic, SLOT_DURATION, SessionConfig, Signature, WASM_BINARY,
+	opaque::SessionKeys,
 };
 use sc_service::ChainType;
 use sidechain_slots::SlotsPerEpoch;
@@ -60,7 +61,8 @@ pub fn pc_create_chain_spec(config: &CreateChainSpecConfig<SessionKeys>) -> serd
 				.collect(),
 			non_authority_keys: vec![],
 		},
-		sidechain: config.pallet_sidechain_config(SlotsPerEpoch::default()),
+		sidechain: config
+			.pallet_sidechain_config(SLOT_DURATION * u64::from(SlotsPerEpoch::default().0)),
 		session_committee_management: config.pallet_session_validator_management_config(),
 		governed_map: config.governed_map_config(),
 		test_helper_pallet: partner_chains_demo_runtime::TestHelperPalletConfig {
