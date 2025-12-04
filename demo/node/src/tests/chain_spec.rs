@@ -64,7 +64,6 @@ fn pc_create_chain_spec_test() {
 		config_obj.get("sidechain").unwrap(),
 		&serde_json::json!({
 			"genesisUtxo": "0101010101010101010101010101010101010101010101010101010101010101#7",
-			"slotsPerEpoch": 60
 		})
 	);
 
