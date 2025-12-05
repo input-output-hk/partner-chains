@@ -84,6 +84,7 @@ Example:
 ```rust
 sidechain: SidechainConfig {
 	genesis_utxo: sp_sidechain::read_genesis_utxo_from_env_with_defaults()?,
+	epoch_duration_millis: 360_000,
 	..Default::default()
 }
 ```
