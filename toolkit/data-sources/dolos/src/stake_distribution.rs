@@ -29,7 +29,7 @@ impl BlockParticipationDataSource for StakeDistributionDataSourceImpl {
 				self.client
 					.epochs_stakes_by_pool(epoch_number, *pool_id)
 					.await
-					.map(|ss| ss.iter().map(|s| (pool_id.clone(), s.clone())).collect::<Vec<_>>())
+					.map(|ss| ss.iter().map(|s| (*pool_id, s.clone())).collect::<Vec<_>>())
 			})
 			.collect::<Vec<_>>()
 			.await;
@@ -72,7 +72,7 @@ fn get_delegator_key(row: &EpochStakePoolContentInner) -> Result<DelegatorKey> {
 		)),
 		[0xf0 | 0xf1, rest @ ..] => Ok(DelegatorKey::ScriptKeyHash {
 			hash_raw: rest.try_into().expect("infallible: stake_address_hash_raw is 29 bytes"),
-			script_hash: [0; 28], // TODO how to get this?
+			script_hash: [0; 28], // TODO add support for this in a follow up PR
 		}),
 		_ => Err(format!("invalid stake address hash: {}", row.stake_address).into()),
 	}
