@@ -97,21 +97,9 @@ impl ScSlotConfig {
 		self.slots_per_epoch.first_slot_number(epoch)
 	}
 
-	/// Returns the slot number that contains `timestamp`
-	pub fn slot_from_timestamp(&self, timestamp: u64) -> Slot {
-		Slot::from_timestamp(timestamp.into(), self.slot_duration)
-	}
-
 	/// Returns the start timestamp of `slot`
 	pub fn slot_start_time(&self, slot: Slot) -> Timestamp {
 		Timestamp::from_unix_millis(self.slot_duration.as_millis() * u64::from(slot))
-	}
-
-	/// Returns the start timestamp of `epoch`
-	pub fn epoch_start_time(&self, epoch: ScEpochNumber) -> Option<Timestamp> {
-		self.first_slot_number(epoch)
-			.timestamp(self.slot_duration)
-			.map(|s| Timestamp::from_unix_millis(s.as_millis()))
 	}
 }
 
@@ -129,11 +117,6 @@ pub fn first_slot_number(epoch: ScEpochNumber, slots_per_epoch: u32) -> Slot {
 pub fn slot_number_in_epoch(slot: Slot, slots_per_epoch: u32) -> u32 {
 	u32::try_from(slot.rem(u64::from(slots_per_epoch)))
 		.expect("slots_per_epoch is u32, thus any modulo reminder of it is also u32")
-}
-
-/// Checks whether `slot` is the last slot of its epoch given `slots_per_epoch`
-pub fn is_last_slot_of_an_epoch(slot: Slot, slots_per_epoch: u32) -> bool {
-	slot_number_in_epoch(slot, slots_per_epoch) == slots_per_epoch - 1
 }
 
 /// Error type returnes by epoch and slot handling functions in this crate
