@@ -41,7 +41,6 @@ use sidechain_domain::{
 	CrossChainPublicKey, DelegatorKey, MainchainKeyHash, PermissionedCandidateData,
 	RegistrationData, ScEpochNumber, StakeDelegation, StakePoolPublicKey, UtxoId,
 };
-use sidechain_slots::SlotsPerEpoch;
 use sp_api::impl_runtime_apis;
 use sp_block_participation::AsCardanoSPO;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -1054,15 +1053,6 @@ impl_runtime_apis! {
 	impl sp_sidechain::GetEpochDurationApi<Block> for Runtime {
 		fn get_epoch_duration_millis() -> u64 {
 			Sidechain::epoch_duration_millis()
-		}
-	}
-
-	impl sidechain_slots::SlotApi<Block> for Runtime {
-		fn slot_config() -> sidechain_slots::ScSlotConfig {
-			sidechain_slots::ScSlotConfig {
-				slots_per_epoch: SlotsPerEpoch((Sidechain::epoch_duration_millis() / SLOT_DURATION) as u32),
-				slot_duration: <Self as sp_consensus_aura::runtime_decl_for_aura_api::AuraApi<Block, AuraId>>::slot_duration()
-			}
 		}
 	}
 

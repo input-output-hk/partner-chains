@@ -7538,7 +7538,6 @@ dependencies = [
  "serde",
  "serde_json",
  "sidechain-domain",
- "sidechain-slots",
  "sp-api",
  "sp-block-builder",
  "sp-block-participation",
