@@ -5,7 +5,7 @@
 use frame_support::pallet_prelude::Weight;
 use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
-use sidechain_domain::{ScEpochNumber, ScSlotNumber, UtxoId};
+use sidechain_domain::{ScEpochNumber, UtxoId};
 
 #[cfg(test)]
 mod tests;
@@ -17,7 +17,7 @@ pub struct SidechainStatus {
 	/// current Partner Chain epoch
 	pub epoch: ScEpochNumber,
 	/// current Partner Chain slot
-	pub slot: ScSlotNumber,
+	pub slot: u64,
 	/// Number of slots per Partner Chain epoch
 	pub slots_per_epoch: u32,
 }

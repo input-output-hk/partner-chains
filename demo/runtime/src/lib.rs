@@ -39,7 +39,7 @@ use serde::{Deserialize, Serialize};
 use sidechain_domain::byte_string::{BoundedString, ByteString, SizedByteString};
 use sidechain_domain::{
 	CrossChainPublicKey, DelegatorKey, MainchainKeyHash, PermissionedCandidateData,
-	RegistrationData, ScEpochNumber, ScSlotNumber, StakeDelegation, StakePoolPublicKey, UtxoId,
+	RegistrationData, ScEpochNumber, StakeDelegation, StakePoolPublicKey, UtxoId,
 };
 use sidechain_slots::{Slot, SlotsPerEpoch};
 use sp_api::impl_runtime_apis;
@@ -1044,7 +1044,7 @@ impl_runtime_apis! {
 		fn get_sidechain_status() -> SidechainStatus {
 			SidechainStatus {
 				epoch: Sidechain::current_epoch_number(),
-				slot: ScSlotNumber(*pallet_aura::CurrentSlot::<Runtime>::get()),
+				slot: *pallet_aura::CurrentSlot::<Runtime>::get(),
 				slots_per_epoch: (Sidechain::epoch_duration_millis() / SLOT_DURATION) as u32,
 			}
 		}
