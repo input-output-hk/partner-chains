@@ -51,7 +51,7 @@ impl GovernedMapDataSource for GovernedMapDataSourceImpl {
 				Err(e) => {
 					log::warn!("Failed to decode tx_hash '{}': {}", utxo.tx_hash, e);
 					continue;
-				}
+				},
 			};
 			let tx = self.client.transaction_by_hash(tx_hash).await?;
 			let utxo_block_height = tx.block_height as u32;
@@ -131,11 +131,11 @@ fn parse_governed_map_datum(datum_hex: &str) -> Option<(String, ByteString)> {
 			Err(err) => {
 				log::warn!("Failed to parse GovernedMapDatum: {}", err);
 				None
-			}
+			},
 		},
 		Err(err) => {
 			log::warn!("Failed to parse PlutusData from hex: {}", err);
 			None
-		}
+		},
 	}
 }
