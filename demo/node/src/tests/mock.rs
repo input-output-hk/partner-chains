@@ -6,7 +6,6 @@ use partner_chains_demo_runtime::{BlockAuthor, CrossChainPublic};
 use sc_consensus_aura::SlotDuration;
 use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 use sidechain_domain::*;
-use sidechain_slots::{ScSlotConfig, SlotsPerEpoch};
 use sp_block_participation::{BlockProducerParticipationData, BlockProductionData};
 use sp_consensus_aura::Slot;
 use sp_core::{
@@ -22,23 +21,16 @@ pub fn mock_genesis_utxo() -> UtxoId {
 	}
 }
 
-pub fn test_slot_config() -> ScSlotConfig {
-	ScSlotConfig {
-		slots_per_epoch: SlotsPerEpoch(10),
-		slot_duration: SlotDuration::from_millis(1000),
-	}
-}
+const SLOT_DURATION: u64 = 1000;
+const SLOTS_PER_EPOCH: u64 = 10;
+const SC_EPOCH_DURATION_MILLIS: u64 = SLOT_DURATION * SLOTS_PER_EPOCH;
+const MC_EPOCH_DURATION_MILLIS: u64 = SC_EPOCH_DURATION_MILLIS * 10;
 
 pub fn test_epoch_config() -> MainchainEpochConfig {
-	let sc_slot_config = test_slot_config();
 	MainchainEpochConfig {
 		first_epoch_timestamp_millis: Timestamp::from_unix_millis(0),
 		first_epoch_number: 0,
-		epoch_duration_millis: Duration::from_millis(
-			u64::from(sc_slot_config.slots_per_epoch.0)
-				* sc_slot_config.slot_duration.as_millis()
-				* 10,
-		),
+		epoch_duration_millis: Duration::from_millis(MC_EPOCH_DURATION_MILLIS),
 		first_slot_number: 0,
 		slot_duration_millis: Duration::from_millis(1000),
 	}
@@ -63,7 +55,8 @@ pub fn block_participation_data() -> BlockProductionData<BlockAuthor, DelegatorK
 pub fn test_create_inherent_data_config() -> CreateInherentDataConfig {
 	CreateInherentDataConfig {
 		mc_epoch_config: test_epoch_config(),
-		sc_slot_config: test_slot_config(),
+		slot_duration: SlotDuration::from_millis(SLOT_DURATION),
+		sc_epoch_duration_millis: MC_EPOCH_DURATION_MILLIS,
 		time_source: Arc::new(time_source::MockedTimeSource { current_time_millis: 30000 }),
 	}
 }

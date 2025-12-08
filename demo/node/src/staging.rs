@@ -153,8 +153,7 @@ pub fn staging_genesis(
 		sidechain: SidechainConfig {
 			genesis_utxo,
 			epoch_duration: ScEpochDuration::from_millis(
-				SLOT_DURATION
-					* u64::from(sidechain_slots::SlotsPerEpoch::read_from_env().unwrap().0),
+				SLOT_DURATION * read_slots_per_epoch_from_env(),
 			),
 			..Default::default()
 		},

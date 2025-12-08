@@ -13,7 +13,6 @@ use sidechain_domain::{
 	DelegatorKey, McBlockHash, ScEpochNumber, mainchain_epoch::MainchainEpochConfig,
 };
 use sidechain_mc_hash::{McHashDataSource, McHashInherentDataProvider as McHashIDP};
-use sidechain_slots::ScSlotConfig;
 use sp_api::ProvideRuntimeApi;
 use sp_block_participation::{
 	BlockParticipationApi,
@@ -81,16 +80,14 @@ where
 			governed_map_data_source,
 			bridge_data_source,
 		} = self;
-		let CreateInherentDataConfig { mc_epoch_config, sc_slot_config, time_source } = config;
+		let CreateInherentDataConfig { mc_epoch_config, slot_duration, time_source, .. } = config;
 
-		let (slot, timestamp) =
-			timestamp_and_slot_cidp(sc_slot_config.slot_duration, time_source.clone());
+		let (slot, timestamp) = timestamp_and_slot_cidp(*slot_duration, time_source.clone());
 		let parent_header = client.expect_header(parent_hash)?;
 
 		// note: We pass slot start time to `McHashIDP` instead of timestamp for backward compatibility
 		// with the old `McHashIDP` version that was slot-based.
-		let slot_start_timestamp =
-			Timestamp::new(sc_slot_config.slot_start_time(*slot).unix_millis());
+		let slot_start_timestamp = config.slot_start_time(*slot);
 		let mc_hash = McHashIDP::new_proposal(
 			parent_header,
 			mc_hash_data_source.as_ref(),
@@ -100,7 +97,7 @@ where
 
 		let ariadne_data_provider = AriadneIDP::new(
 			client.as_ref(),
-			sc_slot_config.epoch_duration().as_millis() as u64,
+			config.sc_epoch_duration_millis,
 			mc_epoch_config,
 			parent_hash,
 			(*timestamp).as_millis(),
@@ -152,7 +149,7 @@ pub struct VerifierCIDP<T> {
 
 impl<T: Send + Sync> CurrentSlotProvider for VerifierCIDP<T> {
 	fn slot(&self) -> Slot {
-		*timestamp_and_slot_cidp(self.config.slot_duration(), self.config.time_source.clone()).0
+		*timestamp_and_slot_cidp(self.config.slot_duration, self.config.time_source.clone()).0
 	}
 }
 
@@ -187,19 +184,16 @@ where
 			governed_map_data_source,
 			bridge_data_source,
 		} = self;
-		let CreateInherentDataConfig { mc_epoch_config, sc_slot_config, .. } = config;
+		let CreateInherentDataConfig { mc_epoch_config, .. } = config;
 
 		// note: Because it's not exposed during block verification, we are approximating the block
 		// timestamp by the starting timestamp of the slots. This is also needed for backward compatibility
 		// of [McHashIDP] for chains that used the old slot-based version of it.
-		let timestamp = TimestampIDP::new(Timestamp::new(
-			sc_slot_config.slot_start_time(verified_block_slot).unix_millis(),
-		));
+		let timestamp = TimestampIDP::new(config.slot_start_time(verified_block_slot));
 
 		let parent_header = client.expect_header(parent_hash)?;
 		let parent_slot = slot_from_predigest(&parent_header)?;
-		let parent_slot_timestamp = parent_slot
-			.map(|slot| Timestamp::new(sc_slot_config.slot_start_time(slot).unix_millis()));
+		let parent_slot_timestamp = parent_slot.map(|slot| config.slot_start_time(slot));
 
 		let mc_state_reference = McHashIDP::new_verification(
 			parent_header,
@@ -212,7 +206,7 @@ where
 
 		let ariadne_data_provider = AriadneIDP::new(
 			client.as_ref(),
-			sc_slot_config.epoch_duration().as_millis() as u64,
+			config.sc_epoch_duration_millis,
 			mc_epoch_config,
 			parent_hash,
 			(*timestamp).as_millis(),
@@ -263,16 +257,16 @@ pub fn slot_from_predigest(
 }
 
 #[derive(new, Clone)]
-pub(crate) struct CreateInherentDataConfig {
+pub struct CreateInherentDataConfig {
 	pub mc_epoch_config: MainchainEpochConfig,
-	// TODO ETCM-4079 make sure that this struct can be instantiated only if sidechain epoch duration is divisible by slot_duration
-	pub sc_slot_config: ScSlotConfig,
+	pub slot_duration: SlotDuration,
+	pub sc_epoch_duration_millis: u64,
 	pub time_source: Arc<dyn TimeSource + Send + Sync>,
 }
 
 impl CreateInherentDataConfig {
-	pub fn slot_duration(&self) -> SlotDuration {
-		self.sc_slot_config.slot_duration
+	pub fn slot_start_time(&self, slot: Slot) -> Timestamp {
+		Timestamp::new(self.slot_duration.as_millis() * u64::from(slot))
 	}
 }
 

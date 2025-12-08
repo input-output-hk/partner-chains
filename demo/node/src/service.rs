@@ -16,9 +16,13 @@ use sc_telemetry::{Telemetry, TelemetryWorker};
 use sc_transaction_pool_api::OffchainTransactionPoolFactory;
 use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 use sidechain_mc_hash::McHashInherentDigest;
+use sp_api::ProvideRuntimeApi;
+use sp_blockchain::HeaderBackend;
+use sp_consensus_aura::AuraApi;
 use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;
 use sp_partner_chains_consensus_aura::block_proposal::PartnerChainsProposerFactory;
 use sp_runtime::traits::Block as BlockT;
+use sp_sidechain::GetEpochDurationApi;
 use std::{sync::Arc, time::Duration};
 use time_source::SystemTimeSource;
 use tokio::task;
@@ -76,6 +80,7 @@ pub fn new_partial(
 			Option<Telemetry>,
 			DataSources,
 			Option<McFollowerMetrics>,
+			CreateInherentDataConfig,
 		),
 	>,
 	ServiceError,
@@ -134,13 +139,24 @@ pub fn new_partial(
 		telemetry.as_ref().map(|x| x.handle()),
 	)?;
 
-	let sc_slot_config = sidechain_slots::runtime_api_client::slot_config(&*client)
-		.map_err(sp_blockchain::Error::from)?;
+	let slot_duration = client
+		.runtime_api()
+		.slot_duration(client.info().best_hash)
+		.expect("Aura slot duration must be configured in the runtime");
+	let sc_epoch_duration_millis = client
+		.runtime_api()
+		.get_epoch_duration_millis(client.info().best_hash)
+		.expect("Epoch duration must be configured in the runtime");
 
 	let time_source = Arc::new(SystemTimeSource);
 	let epoch_config = MainchainEpochConfig::read_from_env()
 		.map_err(|err| ServiceError::Application(err.into()))?;
-	let inherent_config = CreateInherentDataConfig::new(epoch_config, sc_slot_config, time_source);
+	let inherent_config = CreateInherentDataConfig::new(
+		epoch_config,
+		slot_duration,
+		sc_epoch_duration_millis,
+		time_source,
+	);
 
 	let import_queue = partner_chains_aura_import_queue::import_queue::<
 		AuraPair,
@@ -155,7 +171,7 @@ pub fn new_partial(
 		justification_import: Some(Box::new(grandpa_block_import.clone())),
 		client: client.clone(),
 		create_inherent_data_providers: VerifierCIDP::new(
-			inherent_config,
+			inherent_config.clone(),
 			client.clone(),
 			data_sources.mc_hash.clone(),
 			data_sources.authority_selection.clone(),
@@ -178,7 +194,14 @@ pub fn new_partial(
 		keystore_container,
 		select_chain,
 		transaction_pool,
-		other: (grandpa_block_import, grandpa_link, telemetry, data_sources, mc_follower_metrics),
+		other: (
+			grandpa_block_import,
+			grandpa_link,
+			telemetry,
+			data_sources,
+			mc_follower_metrics,
+			inherent_config,
+		),
 	})
 }
 
@@ -210,7 +233,7 @@ pub async fn new_full_base<Network: sc_network::NetworkBackend<Block, <Block as 
 		keystore_container,
 		select_chain,
 		transaction_pool,
-		other: (block_import, grandpa_link, mut telemetry, data_sources, _),
+		other: (block_import, grandpa_link, mut telemetry, data_sources, _, inherent_config),
 	} = new_partial(&config)?;
 
 	let metrics = Network::register_notification_metrics(config.prometheus_registry());
@@ -317,13 +340,6 @@ pub async fn new_full_base<Network: sc_network::NetworkBackend<Block, <Block as 
 		let proposer_factory: PartnerChainsProposerFactory<_, _, McHashInherentDigest> =
 			PartnerChainsProposerFactory::new(basic_authorship_proposer_factory);
 
-		let sc_slot_config = sidechain_slots::runtime_api_client::slot_config(&*client)
-			.map_err(sp_blockchain::Error::from)?;
-		let time_source = Arc::new(SystemTimeSource);
-		let mc_epoch_config = MainchainEpochConfig::read_from_env()
-			.map_err(|err| ServiceError::Application(err.into()))?;
-		let inherent_config =
-			CreateInherentDataConfig::new(mc_epoch_config, sc_slot_config.clone(), time_source);
 		let aura = sc_partner_chains_consensus_aura::start_aura::<
 			AuraPair,
 			_,
@@ -338,7 +354,7 @@ pub async fn new_full_base<Network: sc_network::NetworkBackend<Block, <Block as 
 			_,
 			McHashInherentDigest,
 		>(StartAuraParams {
-			slot_duration: sc_slot_config.slot_duration,
+			slot_duration: inherent_config.slot_duration,
 			client: client.clone(),
 			select_chain,
 			block_import,

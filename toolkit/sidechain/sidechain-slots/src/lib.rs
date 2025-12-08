@@ -27,13 +27,6 @@ use sp_core::offchain::Timestamp;
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct SlotsPerEpoch(pub u32);
 
-/// Default number of slots per epoch.
-///
-/// This value is used by [SlotsPerEpoch::read_from_env] when no other value is set in the environment.
-pub fn default_slots_per_epoch() -> u32 {
-	60
-}
-
 impl Default for SlotsPerEpoch {
 	/// Set to 60 to maintain backwards compatibility with existing chains.
 	fn default() -> Self {
@@ -42,19 +35,6 @@ impl Default for SlotsPerEpoch {
 }
 
 impl SlotsPerEpoch {
-	/// Reads [SlotsPerEpoch] from the environment variable `SLOTS_PER_EPOCH` with default.
-	#[cfg(all(feature = "std", feature = "serde"))]
-	pub fn read_from_env() -> Result<Self, envy::Error> {
-		#[derive(Serialize, Deserialize)]
-		struct SlotsPerEpochEnvConfig {
-			#[serde(default = "default_slots_per_epoch")]
-			slots_per_epoch: u32,
-		}
-
-		let raw = envy::from_env::<SlotsPerEpochEnvConfig>()?;
-		Ok(Self(raw.slots_per_epoch))
-	}
-
 	/// Returns the epoch number of `slot`
 	pub fn epoch_number(&self, slot: Slot) -> ScEpochNumber {
 		epoch_number(slot, self.0)
