@@ -36,7 +36,8 @@ impl GovernedMapDataSource for GovernedMapDataSourceImpl {
 		let utxos = self
 			.client
 			.addresses_utxos(main_chain_scripts.validator_address.clone())
-			.await?;
+			.await
+			.unwrap_or_default();
 
 		// Filter UTXOs that:
 		// 1. Contain the governed map asset

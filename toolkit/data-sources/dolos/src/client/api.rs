@@ -71,12 +71,6 @@ pub trait MiniBFApi {
 		&self,
 		address: MainchainAddress,
 	) -> Result<Vec<AddressUtxoContentInner>, DataSourceError>;
-	/// UTXOs of the address filtered by a specific asset.
-	async fn addresses_utxos_asset(
-		&self,
-		address: MainchainAddress,
-		asset: AssetId,
-	) -> Result<Vec<AddressUtxoContentInner>, DataSourceError>;
 	/// Transactions on the address.
 	async fn addresses_transactions(
 		&self,
