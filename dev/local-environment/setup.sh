@@ -320,15 +320,15 @@ choose_deployment_option() {
   echo "===== CUSTOM STACK MODIFICATIONS ========"
   read -p "Make custom modification to the stack? (Y/N): " modify_stack
   if [[ $modify_stack =~ ^[Yy]$ ]]; then
-  echo "Choose your deployment option:"
-  echo "1) Include only Cardano testnet"
-  echo "2) Include Cardano testnet with Ogmios"
-  echo "3) Include Cardano testnet, Ogmios, DB-Sync and Postgres"
-  echo "4) Deploy a single Partner Chains node with network_mode: \"host\" for external connections (adjust partner-chains-external-node.txt before running this script)"
-  echo "5) Deploy a 3 node Partner Chain network using wizard"
-  echo "6) Include Cardano testnet, Ogmios, DB-Sync, Postgres, Dolos and Partner Chains nodes with Dolos"
-  echo "7) Include Cardano testnet, Ogmios, Dolos (NO DB-Sync/Postgres) and Partner Chains nodes with Dolos"
-  read -p "Enter your choice (1/2/3/4/5/6/7): " deployment_option
+    echo "Choose your deployment option:"
+    echo "1) Include only Cardano testnet"
+    echo "2) Include Cardano testnet with Ogmios"
+    echo "3) Include Cardano testnet, Ogmios, DB-Sync and Postgres"
+    echo "4) Deploy a single Partner Chains node with network_mode: \"host\" for external connections (adjust partner-chains-external-node.txt before running this script)"
+    echo "5) Deploy a 3 node Partner Chain network using wizard"
+    echo "6) Include Cardano testnet, Ogmios, DB-Sync, Postgres, Dolos and Partner Chains nodes with Dolos"
+    echo "7) Include Cardano testnet, Ogmios, Dolos (NO DB-Sync/Postgres) and Partner Chains nodes with Dolos"
+    read -p "Enter your choice (1/2/3/4/5/6/7): " deployment_option
   else
     deployment_option=0
   fi
@@ -383,7 +383,7 @@ create_docker_compose() {
         cat ./modules/partner-chains-wizard.txt >> docker-compose.yml
         ;;
       6)
-        echo -e "Including all services with Dolos data source.\\n"
+        echo -e "Including all services with Dolos data source.\n"
         cat ./modules/cardano.txt >> docker-compose.yml
         cat ./modules/ogmios.txt >> docker-compose.yml
         cat ./modules/db-sync.txt >> docker-compose.yml
@@ -393,7 +393,7 @@ create_docker_compose() {
         cat ./modules/partner-chains-setup.txt >> docker-compose.yml
         ;;
       7)
-        echo -e "Including Cardano testnet, Ogmios, Dolos (no DB-Sync/Postgres) and Partner Chains nodes with Dolos.\\n"
+        echo -e "Including Cardano testnet, Ogmios, Dolos (no DB-Sync/Postgres) and Partner Chains nodes with Dolos.\n"
         cat ./modules/cardano.txt >> docker-compose.yml
         cat ./modules/ogmios.txt >> docker-compose.yml
         cat ./modules/dolos.txt >> docker-compose.yml
@@ -440,7 +440,7 @@ parse_arguments() {
                     deployment_option="$2"
                     shift 2
                 else
-                    echo "Error: Invalid deployment option '$2'. Valid options are 1, 2, 3, 4, 5, 6 or 7."
+                    echo "Error: Invalid deployment option '$2'. Valid options are 1 to 7."
                     exit 1
                 fi
                 ;;
@@ -471,7 +471,7 @@ parse_arguments() {
                 echo "Usage: $0 [OPTION]..."
                 echo "Initialize and configure the Docker environment."
                 echo "  -n, --non-interactive     Run with no interactive prompts and accept sensible default configuration settings."
-                echo "  -d, --deployment-option   Specify one of the custom deployment options (1, 2, 3, 4, 5, 6, or 7)."
+                echo "  -d, --deployment-option   Specify one of the custom deployment options (1 to 7)."
                 echo "  -p, --postgres-password   Set a specific password for PostgreSQL (overrides automatic generation)."
                 echo "  -i, --node-image          Specify a custom Partner Chains Node image."
                 echo "  -t, --tests               Include tests container."

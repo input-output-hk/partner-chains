@@ -130,10 +130,8 @@ pub async fn create_dolos_data_sources(
 			),
 		),
 		block_participation: Arc::new(
-			partner_chains_db_sync_data_sources::StakeDistributionDataSourceImpl::new(
-				pool.clone(),
-				metrics_opt.clone(),
-				STAKE_CACHE_SIZE,
+			partner_chains_dolos_data_sources::StakeDistributionDataSourceImpl::new(
+				dolos_client.clone(),
 			),
 		),
 		governed_map: Arc::new(partner_chains_dolos_data_sources::GovernedMapDataSourceImpl::new(
