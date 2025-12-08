@@ -62,6 +62,10 @@ Existing chains must add the `LegacyToV1Migration` migration to their runtime be
 * `sidechain-block-search` crate has been removed. All logic used by `sp-session-validator-management-query` has been
 moved to that crate directly.
 * `ScSlotNumber` type has been removed from `sidechain_domain` crate as its been obsolete after other changes
+* `sidechain-slots` crate bas been removed after all other components have been decoupled from the notion of slots.
+Legacy chains whose nodes used the `SlotApi` runtime API and the `sidechain_slots::runtime_api_client::slot_config`
+function to read slot duration from the runtime should instead use their respective consensus algorithm's runtime API
+(eg. `AuraApi` and `BabeApi`) or local environment.
 
 ## Fixed
 
