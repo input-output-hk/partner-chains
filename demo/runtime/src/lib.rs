@@ -41,10 +41,11 @@ use sidechain_domain::{
 	CrossChainPublicKey, DelegatorKey, MainchainKeyHash, PermissionedCandidateData,
 	RegistrationData, ScEpochNumber, StakeDelegation, StakePoolPublicKey, UtxoId,
 };
-use sidechain_slots::{Slot, SlotsPerEpoch};
+use sidechain_slots::SlotsPerEpoch;
 use sp_api::impl_runtime_apis;
 use sp_block_participation::AsCardanoSPO;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
+use sp_consensus_slots::Slot;
 use sp_core::{OpaqueMetadata, crypto::KeyTypeId};
 use sp_governed_map::MainChainScriptsV1;
 use sp_inherents::InherentIdentifier;

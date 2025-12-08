@@ -13,7 +13,7 @@ use scale_info::TypeInfo;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use sidechain_domain::ScEpochNumber;
-pub use sp_consensus_slots::{Slot, SlotDuration};
+use sp_consensus_slots::{Slot, SlotDuration};
 use sp_core::offchain::Timestamp;
 
 /// Number of slots in each Partner Chain epoch

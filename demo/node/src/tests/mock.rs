@@ -6,8 +6,9 @@ use partner_chains_demo_runtime::{BlockAuthor, CrossChainPublic};
 use sc_consensus_aura::SlotDuration;
 use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 use sidechain_domain::*;
-use sidechain_slots::{ScSlotConfig, Slot, SlotsPerEpoch};
+use sidechain_slots::{ScSlotConfig, SlotsPerEpoch};
 use sp_block_participation::{BlockProducerParticipationData, BlockProductionData};
+use sp_consensus_aura::Slot;
 use sp_core::{
 	ecdsa,
 	offchain::{Duration, Timestamp},
