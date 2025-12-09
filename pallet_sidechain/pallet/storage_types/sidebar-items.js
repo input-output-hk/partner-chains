@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["EpochNumber","GenesisUtxo","SlotsPerEpoch"]};
+window.SIDEBAR_ITEMS = {"struct":["EpochDurationMillis","EpochNumber","GenesisUtxo","SlotsPerEpoch"]};
