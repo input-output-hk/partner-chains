@@ -63,8 +63,8 @@ fn pc_create_chain_spec_test() {
 	assert_eq!(
 		config_obj.get("sidechain").unwrap(),
 		&serde_json::json!({
+			"epochDuration": 360000,
 			"genesisUtxo": "0101010101010101010101010101010101010101010101010101010101010101#7",
-			"slotsPerEpoch": 60
 		})
 	);
 

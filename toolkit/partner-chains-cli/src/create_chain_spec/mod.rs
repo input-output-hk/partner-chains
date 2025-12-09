@@ -5,7 +5,7 @@ use crate::runtime_bindings::PartnerChainRuntime;
 use crate::{CmdRun, config::config_fields};
 use anyhow::anyhow;
 use authority_selection_inherents::MaybeFromCandidateKeys;
-use sidechain_domain::{AssetName, MainchainAddress, PolicyId, UtxoId};
+use sidechain_domain::{AssetName, MainchainAddress, PolicyId, ScEpochDuration, UtxoId};
 use sp_core::ecdsa;
 use sp_runtime::{AccountId32, DeserializeOwned};
 use sp_session_validator_management::CommitteeMember;
@@ -152,11 +152,11 @@ impl<Keys: MaybeFromCandidateKeys> CreateChainSpecConfig<Keys> {
 	/// Returns [pallet_sidechain::GenesisConfig] derived from the config
 	pub fn pallet_sidechain_config<T: pallet_sidechain::Config>(
 		&self,
-		slots_per_epoch: sidechain_slots::SlotsPerEpoch,
+		epoch_duration: ScEpochDuration,
 	) -> pallet_sidechain::GenesisConfig<T> {
 		pallet_sidechain::GenesisConfig {
 			genesis_utxo: self.genesis_utxo,
-			slots_per_epoch,
+			epoch_duration,
 			_config: PhantomData,
 		}
 	}

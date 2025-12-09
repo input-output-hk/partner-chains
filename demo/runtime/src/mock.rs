@@ -17,8 +17,6 @@ const DUMMY_EPOCH_NONCE: &[u8] = &[1u8, 2u8, 3u8];
 
 use sp_consensus_aura::AURA_ENGINE_ID;
 
-pub const SLOTS_PER_EPOCH: u32 = 7;
-
 // Build genesis storage
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::<Runtime>::default().build_storage().unwrap();
@@ -28,6 +26,18 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	let session_keys: Vec<_> =
 		vec![(alice().account(), alice().session()), (bob().account(), bob().session())];
 	let main_chain_scripts = MainChainScripts::default();
+
+	pallet_sidechain::GenesisConfig::<Runtime> {
+		genesis_utxo: UtxoId::new(
+			hex!("abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd"),
+			0,
+		),
+		epoch_duration: ScEpochDuration::from_millis(360_000),
+		..Default::default()
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
+
 	pallet_session_validator_management::GenesisConfig::<Runtime> {
 		initial_authorities,
 		main_chain_scripts,
@@ -41,17 +51,6 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 			.map(|(cross_chain, session)| (cross_chain.clone().into(), cross_chain.into(), session))
 			.collect(),
 		non_authority_keys: Default::default(),
-	}
-	.assimilate_storage(&mut t)
-	.unwrap();
-
-	pallet_sidechain::GenesisConfig::<Runtime> {
-		genesis_utxo: UtxoId::new(
-			hex!("abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd"),
-			0,
-		),
-		slots_per_epoch: SlotsPerEpoch(SLOTS_PER_EPOCH),
-		..Default::default()
 	}
 	.assimilate_storage(&mut t)
 	.unwrap();
@@ -71,6 +70,7 @@ pub fn advance_block() {
 	initialize_block();
 }
 
+pub const SLOTS_PER_EPOCH: u32 = 60;
 // in real life first slot will be something much bigger than 0, that's why it is here
 pub const ARBITRARY_FIRST_SLOT: u64 = 389374234;
 pub const ARBITRARY_FIRST_EPOCH: u64 = ARBITRARY_FIRST_SLOT / (SLOTS_PER_EPOCH as u64);
@@ -279,7 +279,6 @@ macro_rules! assert_aura_authorities {
 	}};
 }
 pub(crate) use assert_aura_authorities;
-use sidechain_slots::SlotsPerEpoch;
 use sp_session_validator_management::{CommitteeMember, MainChainScripts};
 
 use crate::{CrossChainPublic, opaque::SessionKeys};

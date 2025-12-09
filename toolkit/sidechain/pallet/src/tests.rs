@@ -5,11 +5,11 @@ use crate::mock::*;
 #[test]
 fn on_new_epoch_is_triggered_by_epoch_change() {
 	new_test_ext().execute_with(|| {
-		Mock::set_slot(4);
+		Mock::set_epoch(0);
 		Sidechain::on_initialize(1);
 		assert_eq!(mock_pallet::OnNewEpochCallCount::<Test>::get(), 0);
 
-		Mock::set_slot(MOCK_SLOTS_PER_EPOCH.0.into());
+		Mock::set_epoch(1);
 		Sidechain::on_initialize(3);
 		assert_eq!(mock_pallet::OnNewEpochCallCount::<Test>::get(), 1);
 	})
@@ -18,10 +18,9 @@ fn on_new_epoch_is_triggered_by_epoch_change() {
 #[test]
 fn on_new_epoch_is_not_triggered_without_epoch_change() {
 	new_test_ext().execute_with(|| {
-		Mock::set_slot(1);
+		Mock::set_epoch(0);
 		Sidechain::on_initialize(1);
 		Sidechain::on_initialize(2);
-		Mock::set_slot(u64::from(MOCK_SLOTS_PER_EPOCH.0) - 1);
 		Sidechain::on_initialize(3);
 		assert_eq!(mock_pallet::OnNewEpochCallCount::<Test>::get(), 0);
 	})

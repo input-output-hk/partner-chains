@@ -347,14 +347,10 @@ The command output might look like this:
 
 The sidechain pallet is especially important due to all other Partner Chains toolkit pallets depending
 on it and the fact that the values in its genesis config are immutable throughout the lifetime of a
-single Partner Chain. These values are:
+single Partner Chain. Currenlty there is only one value stored:
 * `genesisUtxo`:
   the genesis UTXO of the Partner Chain, which is used as its identifier in the Partner Chains ecosystem
   and has various other uses in the chain's operation
-* `slotsPerEpoch`:
-  the number of slots per Partner Chain epoch. This value can be arbitrarily chosen, provided that the
-  resulting Partner Chain epochs can't cross Cardano epoch boundary. Keep in mind that other Partner
-  Chains toolkit features may not work properly if Partner Chain epochs are very short.
 
 For example, the sidechain pallet can be configured like this:
 
@@ -362,7 +358,6 @@ For example, the sidechain pallet can be configured like this:
 {
   "sidechain": {
     "genesisUtxo": "c14edd7764339d9877f76259184ecebca240e8cdf41b1a837c34637e7d50b5ed#0",
-    "slotsPerEpoch": 60
   }
 }
 ```

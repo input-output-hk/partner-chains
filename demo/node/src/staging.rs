@@ -2,8 +2,8 @@ use crate::chain_spec::get_account_id_from_seed;
 use crate::chain_spec::*;
 use partner_chains_demo_runtime::{
 	AccountId, AuraConfig, BalancesConfig, BridgeConfig, GovernedMapConfig, GrandpaConfig,
-	RuntimeGenesisConfig, SessionCommitteeManagementConfig, SessionConfig, SidechainConfig,
-	SudoConfig, SystemConfig, TestHelperPalletConfig,
+	RuntimeGenesisConfig, SLOT_DURATION, SessionCommitteeManagementConfig, SessionConfig,
+	SidechainConfig, SudoConfig, SystemConfig, TestHelperPalletConfig,
 };
 use sc_service::{ChainType, Properties};
 use sidechain_domain::*;
@@ -150,7 +150,14 @@ pub fn staging_genesis(
 				.collect(),
 			non_authority_keys: Default::default(),
 		},
-		sidechain: SidechainConfig { genesis_utxo, ..Default::default() },
+		sidechain: SidechainConfig {
+			genesis_utxo,
+			epoch_duration: ScEpochDuration::from_millis(
+				SLOT_DURATION
+					* u64::from(sidechain_slots::SlotsPerEpoch::read_from_env().unwrap().0),
+			),
+			..Default::default()
+		},
 		session_committee_management: SessionCommitteeManagementConfig {
 			initial_authorities: initial_authorities
 				.into_iter()

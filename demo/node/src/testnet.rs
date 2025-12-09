@@ -1,12 +1,11 @@
 use crate::chain_spec::*;
 use partner_chains_demo_runtime::{
 	AccountId, AuraConfig, BalancesConfig, BridgeConfig, GovernedMapConfig, GrandpaConfig,
-	RuntimeGenesisConfig, SessionCommitteeManagementConfig, SessionConfig, SidechainConfig,
-	SudoConfig, SystemConfig, TestHelperPalletConfig,
+	RuntimeGenesisConfig, SLOT_DURATION, SessionCommitteeManagementConfig, SessionConfig,
+	SidechainConfig, SudoConfig, SystemConfig, TestHelperPalletConfig,
 };
 use sc_service::{ChainType, Properties};
 use sidechain_domain::*;
-use sidechain_slots::SlotsPerEpoch;
 use sp_core::bytes::from_hex;
 use sp_core::{ed25519, sr25519};
 use sp_session_validator_management::CommitteeMember;
@@ -210,7 +209,10 @@ pub fn testnet_genesis(
 		},
 		sidechain: SidechainConfig {
 			genesis_utxo,
-			slots_per_epoch: SlotsPerEpoch::read_from_env()?,
+			epoch_duration: ScEpochDuration::from_millis(
+				SLOT_DURATION
+					* u64::from(sidechain_slots::SlotsPerEpoch::read_from_env().unwrap().0),
+			),
 			..Default::default()
 		},
 		session_committee_management: SessionCommitteeManagementConfig {
