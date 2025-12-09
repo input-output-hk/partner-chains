@@ -136,6 +136,7 @@ pub use pallet::*;
 pub mod pallet {
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::BlockNumberFor;
+	use sidechain_domain::ScEpochDuration;
 	use sidechain_domain::ScEpochNumber;
 	use sidechain_domain::UtxoId;
 	use sp_sidechain::OnNewEpoch;
@@ -168,7 +169,7 @@ pub mod pallet {
 
 	/// Partner Chain epoch duration in milliseconds. This value must not be changed.
 	#[pallet::storage]
-	pub(crate) type EpochDurationMillis<T: Config> = StorageValue<_, u64, ValueQuery>;
+	pub(crate) type EpochDurationMillis<T: Config> = StorageValue<_, ScEpochDuration, ValueQuery>;
 
 	/// Number of slots per epoch. Currently this value must not change for a running chain.
 	#[pallet::storage]
@@ -194,7 +195,7 @@ pub mod pallet {
 
 		/// Returns the Partner Chain epoch duration in milliseconds
 		pub fn epoch_duration_millis() -> u64 {
-			EpochDurationMillis::<T>::get()
+			EpochDurationMillis::<T>::get().millis()
 		}
 
 		/// Returns current epoch number
@@ -209,7 +210,7 @@ pub mod pallet {
 		/// Genesis UTXO of the Partner Chain. This value is immutable.
 		pub genesis_utxo: UtxoId,
 		/// Duration of Partner Chain epoch in milliseconds
-		pub epoch_duration_millis: u64,
+		pub epoch_duration: ScEpochDuration,
 		#[serde(skip)]
 		#[allow(missing_docs)]
 		pub _config: sp_std::marker::PhantomData<T>,
@@ -219,7 +220,7 @@ pub mod pallet {
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
 			GenesisUtxo::<T>::put(self.genesis_utxo);
-			EpochDurationMillis::<T>::put(self.epoch_duration_millis);
+			EpochDurationMillis::<T>::put(self.epoch_duration);
 		}
 	}
 

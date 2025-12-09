@@ -209,8 +209,10 @@ pub fn testnet_genesis(
 		},
 		sidechain: SidechainConfig {
 			genesis_utxo,
-			epoch_duration_millis: SLOT_DURATION
-				* u64::from(sidechain_slots::SlotsPerEpoch::read_from_env().unwrap().0),
+			epoch_duration: ScEpochDuration::from_millis(
+				SLOT_DURATION
+					* u64::from(sidechain_slots::SlotsPerEpoch::read_from_env().unwrap().0),
+			),
 			..Default::default()
 		},
 		session_committee_management: SessionCommitteeManagementConfig {

@@ -25,6 +25,7 @@ mod _impl {
 
 	use frame_support::traits::Get;
 	use frame_support::traits::UncheckedOnRuntimeUpgrade;
+	use sidechain_domain::ScEpochDuration;
 
 	/// Helper type used internally by [LegacyToV1Migration]
 	pub struct InnerMigrateV0ToV1<T: crate::Config, const SLOT_DURATION_MILLIS: u64>(
@@ -36,11 +37,12 @@ mod _impl {
 	{
 		fn on_runtime_upgrade() -> sp_runtime::Weight {
 			let slots_per_epoch = crate::SlotsPerEpoch::<T>::get();
-			let epoch_duration_millis = slots_per_epoch as u64 * SLOT_DURATION_MILLIS;
+			let epoch_duration_millis =
+				ScEpochDuration::from_millis(slots_per_epoch as u64 * SLOT_DURATION_MILLIS);
 			crate::EpochDurationMillis::<T>::put(epoch_duration_millis);
 
 			log::info!(
-				"⬆️ Migrated pallet-sidechain to version 1, with epoch duration of {epoch_duration_millis} ms = {slots_per_epoch} slots × {SLOT_DURATION_MILLIS} ms"
+				"⬆️ Migrated pallet-sidechain to version 1, with epoch duration of {epoch_duration_millis:?} ms = {slots_per_epoch} slots × {SLOT_DURATION_MILLIS} ms"
 			);
 
 			T::DbWeight::get().reads_writes(1, 1)

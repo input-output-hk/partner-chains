@@ -642,6 +642,41 @@ impl ScEpochNumber {
 
 #[derive(
 	Clone,
+	Copy,
+	Debug,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	TypeInfo,
+	MaxEncodedLen,
+	PartialEq,
+	Eq,
+	Serialize,
+	Deserialize,
+)]
+/// Partner Chain epoch duration in milliseconds
+pub struct ScEpochDuration(u64);
+
+impl ScEpochDuration {
+	/// Creates epoch duration from number of milliseconds
+	pub fn from_millis(millis: u64) -> Self {
+		Self(millis)
+	}
+
+	/// Returns epoch duration in milliseconds
+	pub fn millis(&self) -> u64 {
+		self.0
+	}
+}
+
+impl Default for ScEpochDuration {
+	fn default() -> Self {
+		Self(60_000)
+	}
+}
+
+#[derive(
+	Clone,
 	PartialEq,
 	Eq,
 	Encode,

@@ -114,15 +114,15 @@ fn check_aura_authorities_rotation() {
 		});
 		set_committee_through_inherent_data(&[bob(), alice()]);
 		for_next_n_blocks_after_finalizing(SLOTS_PER_EPOCH, &|| {
-			assert_aura_authorities!([bob(), alice()]);
+			assert_aura_authorities!([alice(), bob()]);
 		});
 		for_next_n_blocks_after_finalizing(SLOTS_PER_EPOCH, &|| {
-			assert_aura_authorities!([bob(), alice()]);
+			assert_aura_authorities!([alice(), bob()]);
 		});
 
 		// When there's no new committees being scheduled, the last committee stays in power
 		for_next_n_blocks_after_finalizing(SLOTS_PER_EPOCH * 3, &|| {
-			assert_aura_authorities!([bob(), alice()]);
+			assert_aura_authorities!([alice(), bob()]);
 		});
 	});
 }

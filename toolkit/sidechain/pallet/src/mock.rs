@@ -6,12 +6,12 @@ use frame_support::{
 	},
 	*,
 };
-use sidechain_domain::{McTxHash, UtxoId, UtxoIndex};
+use sidechain_domain::{McTxHash, ScEpochDuration, UtxoId, UtxoIndex};
 use sp_core::*;
 
 pub const MOCK_GENESIS_UTXO: UtxoId = UtxoId { tx_hash: McTxHash([0u8; 32]), index: UtxoIndex(0) };
 
-pub(crate) const EPOCH_DURATION: u64 = 36000;
+pub(crate) const EPOCH_DURATION_MILLIS: u64 = 36000;
 
 #[frame_support::pallet]
 pub(crate) mod mock_pallet {
@@ -92,7 +92,7 @@ impl frame_system::Config for Test {
 
 impl pallet::Config for Test {
 	fn reference_timestamp_millis() -> u64 {
-		mock_pallet::CurrentEpoch::<Test>::get().0 * EPOCH_DURATION
+		mock_pallet::CurrentEpoch::<Test>::get().0 * EPOCH_DURATION_MILLIS
 	}
 	type OnNewEpoch = Mock;
 }
@@ -101,7 +101,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
 	pallet::GenesisConfig::<Test> {
 		genesis_utxo: MOCK_GENESIS_UTXO,
-		epoch_duration_millis: EPOCH_DURATION,
+		epoch_duration: ScEpochDuration::from_millis(EPOCH_DURATION_MILLIS),
 		_config: Default::default(),
 	}
 	.assimilate_storage(&mut t)

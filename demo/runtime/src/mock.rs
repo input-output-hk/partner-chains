@@ -26,6 +26,18 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	let session_keys: Vec<_> =
 		vec![(alice().account(), alice().session()), (bob().account(), bob().session())];
 	let main_chain_scripts = MainChainScripts::default();
+
+	pallet_sidechain::GenesisConfig::<Runtime> {
+		genesis_utxo: UtxoId::new(
+			hex!("abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd"),
+			0,
+		),
+		epoch_duration: ScEpochDuration::from_millis(360_000),
+		..Default::default()
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
+
 	pallet_session_validator_management::GenesisConfig::<Runtime> {
 		initial_authorities,
 		main_chain_scripts,
@@ -39,17 +51,6 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 			.map(|(cross_chain, session)| (cross_chain.clone().into(), cross_chain.into(), session))
 			.collect(),
 		non_authority_keys: Default::default(),
-	}
-	.assimilate_storage(&mut t)
-	.unwrap();
-
-	pallet_sidechain::GenesisConfig::<Runtime> {
-		genesis_utxo: UtxoId::new(
-			hex!("abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd"),
-			0,
-		),
-		epoch_duration_millis: 360_000,
-		..Default::default()
 	}
 	.assimilate_storage(&mut t)
 	.unwrap();
