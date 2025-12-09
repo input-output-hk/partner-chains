@@ -252,7 +252,7 @@ fn generated_chain_spec() -> serde_json::Value {
 				}
 			},
 			"sidechain":{
-				"epochDurationMillis": 60000,
+				"epochDuration": 60000,
 				"genesisUtxo": "0000000000000000000000000000000000000000000000000000000000000000#0",
 			},
 			"governedMap": {

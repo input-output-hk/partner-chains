@@ -468,7 +468,7 @@ else
 fi
 
 echo "Configuring Epoch Length..."
-jq '.genesis.runtimeGenesis.config.sidechain.epochDurationMillis = 30000' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
+jq '.genesis.runtimeGenesis.config.sidechain.epochDuration = 30000' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
 
 cp chain-spec.json /shared/chain-spec.json
 echo "chain-spec.json generation complete."
