@@ -61,7 +61,7 @@ fi
 
 SPEC_FILE="$RUNTIME_VALUES/chain-spec.json"
 if [ -f "$SPEC_FILE" ]; then
-    export SLOTS_PER_EPOCH=$(jq -r '.genesis.runtimeGenesis.config.sidechain.slotsPerEpoch' "$SPEC_FILE")
+    export SLOTS_PER_EPOCH=$(jq -r ".genesis.runtimeGenesis.config.sidechain.epochDurationMillis / ${MC__SLOT_DURATION_MILLIS:=6000}" "$SPEC_FILE")
 else
     echo "Partner Chain chain spec file $SPEC_FILE not present"
 fi
