@@ -62,7 +62,7 @@ mod _impl {
 			let epoch_duration_millis = crate::EpochDurationMillis::<T>::get();
 
 			frame_support::ensure!(
-				slots_per_epoch as u64 * SLOT_DURATION_MILLIS == epoch_duration_millis,
+				slots_per_epoch as u64 * SLOT_DURATION_MILLIS == epoch_duration_millis.millis(),
 				sp_runtime::TryRuntimeError::Corruption
 			);
 
