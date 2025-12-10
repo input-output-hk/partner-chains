@@ -56,7 +56,7 @@ pub fn test_create_inherent_data_config() -> CreateInherentDataConfig {
 	CreateInherentDataConfig {
 		mc_epoch_config: test_epoch_config(),
 		slot_duration: SlotDuration::from_millis(SLOT_DURATION),
-		sc_epoch_duration_millis: MC_EPOCH_DURATION_MILLIS,
+		sc_epoch_duration_millis: SC_EPOCH_DURATION_MILLIS,
 		time_source: Arc::new(time_source::MockedTimeSource { current_time_millis: 30000 }),
 	}
 }
