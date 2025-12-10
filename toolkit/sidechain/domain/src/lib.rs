@@ -200,26 +200,6 @@ impl Display for McSlotNumber {
 	}
 }
 
-#[derive(
-	Default,
-	Debug,
-	Copy,
-	Clone,
-	PartialEq,
-	Eq,
-	Encode,
-	Decode,
-	DecodeWithMemTracking,
-	TypeInfo,
-	Hash,
-	MaxEncodedLen,
-	PartialOrd,
-	Ord,
-)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize, FromStr))]
-/// Partner Chain slot number
-pub struct ScSlotNumber(pub u64);
-
 /// Data describing a Cardano block
 #[derive(Debug, Clone, PartialEq, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]

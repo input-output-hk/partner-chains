@@ -12,7 +12,7 @@ use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-use sidechain_domain::{ScEpochNumber, ScSlotNumber};
+use sidechain_domain::ScEpochNumber;
 pub use sp_consensus_slots::{Slot, SlotDuration};
 use sp_core::offchain::Timestamp;
 
@@ -58,11 +58,6 @@ impl SlotsPerEpoch {
 	/// Returns the epoch number of `slot`
 	pub fn epoch_number(&self, slot: Slot) -> ScEpochNumber {
 		epoch_number(slot, self.0)
-	}
-
-	/// Returns the epoch number of `slot`
-	pub fn epoch_number_from_sc_slot(&self, slot: ScSlotNumber) -> ScEpochNumber {
-		epoch_number(Slot::from(slot.0), self.0)
 	}
 
 	/// Returns the number of first slot in `epoch`

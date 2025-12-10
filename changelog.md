@@ -61,6 +61,7 @@ Existing chains must add the `LegacyToV1Migration` migration to their runtime be
 * `sidechain.slots` field in the response of `sidechain_getStatus` RPC method
 * `sidechain-block-search` crate has been removed. All logic used by `sp-session-validator-management-query` has been
 moved to that crate directly.
+* `ScSlotNumber` type has been removed from `sidechain_domain` crate as its been obsolete after other changes
 
 ## Fixed
 
