@@ -81,7 +81,7 @@ pub(crate) async fn create_cached_data_sources(
 			ServiceError::Application(format!("Failed to create mock data sources: {err}").into())
 		}),
 
-		DataSourceType::Dolos => create_dolos_data_sources(metrics_opt).await.map_err(|err| {
+		DataSourceType::Dolos => create_dolos_data_sources().await.map_err(|err| {
 			ServiceError::Application(format!("Failed to create dolos data sources: {err}").into())
 		}),
 	}
@@ -101,50 +101,34 @@ pub fn create_mock_data_sources()
 	})
 }
 
-// TODO Currently uses db-sync for unimplemented Dolos data sources
-pub async fn create_dolos_data_sources(
-	metrics_opt: Option<McFollowerMetrics>,
-) -> std::result::Result<DataSources, Box<dyn Error + Send + Sync + 'static>> {
-	let dolos_client = partner_chains_dolos_data_sources::get_connection_from_env()?;
-	let pool = partner_chains_db_sync_data_sources::get_connection_from_env().await?;
-	let block_dbsync = Arc::new(
-		partner_chains_db_sync_data_sources::BlockDataSourceImpl::new_from_env(pool.clone())
-			.await?,
-	);
-	let block_dolos = Arc::new(
-		partner_chains_dolos_data_sources::BlockDataSourceImpl::new_from_env(dolos_client.clone())
+pub async fn create_dolos_data_sources()
+-> std::result::Result<DataSources, Box<dyn Error + Send + Sync + 'static>> {
+	let client = partner_chains_dolos_data_sources::get_connection_from_env()?;
+	let block = Arc::new(
+		partner_chains_dolos_data_sources::BlockDataSourceImpl::new_from_env(client.clone())
 			.await?,
 	);
 	Ok(DataSources {
 		sidechain_rpc: Arc::new(
-			partner_chains_dolos_data_sources::SidechainRpcDataSourceImpl::new(
-				dolos_client.clone(),
-			),
+			partner_chains_dolos_data_sources::SidechainRpcDataSourceImpl::new(client.clone()),
 		),
 		mc_hash: Arc::new(partner_chains_dolos_data_sources::McHashDataSourceImpl::new(
-			block_dolos.clone(),
+			block.clone(),
 		)),
 		authority_selection: Arc::new(
 			partner_chains_dolos_data_sources::AuthoritySelectionDataSourceImpl::new(
-				dolos_client.clone(),
+				client.clone(),
 			),
 		),
 		block_participation: Arc::new(
-			partner_chains_dolos_data_sources::StakeDistributionDataSourceImpl::new(
-				dolos_client.clone(),
-			),
+			partner_chains_dolos_data_sources::StakeDistributionDataSourceImpl::new(client.clone()),
 		),
 		governed_map: Arc::new(partner_chains_dolos_data_sources::GovernedMapDataSourceImpl::new(
-			dolos_client.clone(),
+			client.clone(),
 		)),
-		bridge: Arc::new(
-			partner_chains_db_sync_data_sources::CachedTokenBridgeDataSourceImpl::new(
-				pool,
-				metrics_opt,
-				block_dbsync,
-				BRIDGE_TRANSFER_CACHE_LOOKAHEAD,
-			),
-		),
+		bridge: Arc::new(partner_chains_dolos_data_sources::TokenBridgeDataSourceImpl::new(
+			client.clone(),
+		)),
 	})
 }
 
