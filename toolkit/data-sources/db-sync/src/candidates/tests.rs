@@ -38,7 +38,7 @@ macro_rules! with_migration_versions {
 with_migration_versions! {
 	async fn test_get_candidates_for_epoch(pool: PgPool, tx_in_cfg: TxInConfiguration) {
 		let source = make_source(pool, tx_in_cfg);
-		let result = source.get_candidates(McEpochNumber(191), candidates_address()).await.unwrap();
+		let result = source.get_candidates(McEpochNumber(189), candidates_address()).await.unwrap();
 		let mut candidates = result;
 		candidates.sort_by(|c1, c2| c1.mainchain_pub_key().0.cmp(&c2.mainchain_pub_key().0));
 		assert_eq!(candidates, vec![leader_candidate_spo_a(), leader_candidate_spo_b()])
@@ -46,7 +46,7 @@ with_migration_versions! {
 
 	async fn test_get_candidates_after_some_deregistrations(pool: PgPool, tx_in_cfg: TxInConfiguration) {
 		let source = make_source(pool, tx_in_cfg);
-		let result = source.get_candidates(McEpochNumber(195), candidates_address()).await.unwrap();
+		let result = source.get_candidates(McEpochNumber(193), candidates_address()).await.unwrap();
 		let mut candidates = result;
 		candidates.sort_by(|c1, c2| c1.mainchain_pub_key().0.cmp(&c2.mainchain_pub_key().0));
 		assert_eq!(candidates, vec![leader_candidate_spo_c(), leader_candidate_spo_b()])
@@ -57,7 +57,7 @@ with_migration_versions! {
 		let epoch_189_nonce = EpochNonce(
 			hex!("ABEED7FB0067F14D6F6436C7F7DEDB27CE3CEB4D2D18FF249D43B22D86FAE3F1").to_vec(),
 		);
-		let result = source.get_epoch_nonce(McEpochNumber(191)).await.unwrap();
+		let result = source.get_epoch_nonce(McEpochNumber(189)).await.unwrap();
 		assert_eq!(result, Some(epoch_189_nonce));
 	}
 
@@ -66,7 +66,7 @@ with_migration_versions! {
 		// The first permissioned candidates tx was submitted at epoch 190
 		let result = source
 			.get_ariadne_parameters(
-				McEpochNumber(3),
+				McEpochNumber(1),
 				d_parameter_policy(),
 				permissioned_candidates_policy(),
 			)
@@ -79,7 +79,7 @@ with_migration_versions! {
 		// The last tx was submitted at epoch 192
 		let result = source
 			.get_ariadne_parameters(
-				McEpochNumber(200),
+				McEpochNumber(198),
 				d_parameter_policy(),
 				permissioned_candidates_policy(),
 			)
@@ -100,7 +100,7 @@ with_migration_versions! {
 		// see 6_insert_transactions.sql
 		let result = source
 			.get_ariadne_parameters(
-				McEpochNumber(192),
+				McEpochNumber(190),
 				d_parameter_policy(),
 				permissioned_candidates_policy(),
 			)
@@ -117,7 +117,7 @@ with_migration_versions! {
 		let source = make_source(pool, tx_in_cfg);
 		let result = source
 			.get_ariadne_parameters(
-				McEpochNumber(191),
+				McEpochNumber(189),
 				d_parameter_policy(),
 				permissioned_candidates_policy(),
 			)
@@ -135,7 +135,7 @@ with_migration_versions! {
 		// The last tx was submitted at epoch 192
 		let result = source
 			.get_ariadne_parameters(
-				McEpochNumber(2000),
+				McEpochNumber(1998),
 				d_parameter_policy(),
 				permissioned_candidates_policy(),
 			)
@@ -170,10 +170,10 @@ mod candidate_caching {
 			// With security parameter 2, block 3 (from epoch 191) is the latest stable block, so epoch 190 is the latest stable epoch.
 			// get_candidates(192) uses data from the last block of epoch 190 (block 2), so result should be cached.
 			let epoch_192_candidates =
-				service.get_candidates(McEpochNumber(192), candidates_address()).await.unwrap();
+				service.get_candidates(McEpochNumber(190), candidates_address()).await.unwrap();
 			// get_candidates(193) uses data from the last block of epoch 191 (block 3), so result should not be cached.
 			let epoch_193_candidates =
-				service.get_candidates(McEpochNumber(193), candidates_address()).await.unwrap();
+				service.get_candidates(McEpochNumber(191), candidates_address()).await.unwrap();
 			assert!(!epoch_193_candidates.is_empty());
 			// Remove all registrations to prove that one request was cached and the other not
 			sqlx::raw_sql("DELETE FROM tx WHERE block_id >= 0")
@@ -181,10 +181,10 @@ mod candidate_caching {
 				.await
 				.unwrap();
 			let epoch_192_candidates_after_txs_removal =
-				service.get_candidates(McEpochNumber(192), candidates_address()).await.unwrap();
+				service.get_candidates(McEpochNumber(190), candidates_address()).await.unwrap();
 			assert_eq!(epoch_192_candidates, epoch_192_candidates_after_txs_removal);
 			let epoch_193_candidates_after_txs_removal =
-				service.get_candidates(McEpochNumber(193), candidates_address()).await.unwrap();
+				service.get_candidates(McEpochNumber(191), candidates_address()).await.unwrap();
 			// Proves epoch 193 candidates were not cached
 			assert_ne!(epoch_193_candidates, epoch_193_candidates_after_txs_removal);
 		}
@@ -198,9 +198,9 @@ mod candidate_caching {
 			// With security parameter 2, block 3 (from epoch 191) is the latest stable block, so epoch 190 is the latest stable epoch.
 			// get_candidates(192) uses data from the last block of epoch 190 (block 2), so result should be cached.
 			let epoch_192_candidates =
-				service.get_candidates(McEpochNumber(192), candidates_address()).await.unwrap();
+				service.get_candidates(McEpochNumber(190), candidates_address()).await.unwrap();
 			let epoch_192_candidates_from_different_address = service
-				.get_candidates(McEpochNumber(192), MainchainAddress::from_str("script_addr2").unwrap())
+				.get_candidates(McEpochNumber(190), MainchainAddress::from_str("script_addr2").unwrap())
 				.await
 				.unwrap();
 			assert!(!epoch_192_candidates.is_empty());
@@ -219,7 +219,7 @@ mod candidate_caching {
 			// get_ariadne_parameters(192) uses data from the last block of epoch 190 (block 2), so result should be cached.
 			let epoch_192_ariadne_parameters = service
 				.get_ariadne_parameters(
-					McEpochNumber(192),
+					McEpochNumber(190),
 					d_parameter_policy(),
 					permissioned_candidates_policy(),
 				)
@@ -228,7 +228,7 @@ mod candidate_caching {
 			// get_ariadne_parameters(193) uses data from the last block of epoch 191 (block 3), so result should not be cached.
 			let epoch_193_ariadne_parameters = service
 				.get_ariadne_parameters(
-					McEpochNumber(193),
+					McEpochNumber(191),
 					d_parameter_policy(),
 					permissioned_candidates_policy(),
 				)
@@ -245,7 +245,7 @@ mod candidate_caching {
 				.unwrap();
 			let epoch_192_ariadne_parameters_after_tx_removal = service
 				.get_ariadne_parameters(
-					McEpochNumber(192),
+					McEpochNumber(190),
 					d_parameter_policy(),
 					permissioned_candidates_policy(),
 				)
@@ -254,7 +254,7 @@ mod candidate_caching {
 			assert_eq!(epoch_192_ariadne_parameters, epoch_192_ariadne_parameters_after_tx_removal);
 			let epoch_193_ariadne_parameters_after_txs_removal = service
 				.get_ariadne_parameters(
-					McEpochNumber(193),
+					McEpochNumber(191),
 					d_parameter_policy(),
 					permissioned_candidates_policy(),
 				)
@@ -273,14 +273,14 @@ mod candidate_caching {
 			// get_ariadne_parameters(192) uses data from the last block of epoch 190 (block 2), so result should be cached.
 			let epoch_192_ariadne_parameters_result = service
 				.get_ariadne_parameters(
-					McEpochNumber(192),
+					McEpochNumber(190),
 					d_parameter_policy(),
 					permissioned_candidates_policy(),
 				)
 				.await;
 			let epoch_192_ariadne_parameters_for_different_policy_result = service
 				.get_ariadne_parameters(
-					McEpochNumber(192),
+					McEpochNumber(190),
 					PolicyId(hex!("aabb00000000000000000000000000000000434845434b504f494e69")),
 					permissioned_candidates_policy(),
 				)

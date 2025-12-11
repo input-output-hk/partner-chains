@@ -295,8 +295,4 @@ impl AuthoritySelectionDataSource for AuthoritySelectionDataSourceMock {
 		);
 		Ok(Some(EpochNonce(epoch_conf.nonce.clone().0)))
 	}
-
-	async fn data_epoch(&self, for_epoch: McEpochNumber) -> Result<McEpochNumber> {
-		Ok(McEpochNumber(for_epoch.0 - 2))
-	}
 }

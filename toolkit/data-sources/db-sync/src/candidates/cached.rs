@@ -71,13 +71,6 @@ impl AuthoritySelectionDataSource for CandidateDataSourceCached {
 	) -> Result<Option<EpochNonce>, Box<dyn std::error::Error + Send + Sync>> {
 		self.inner.get_epoch_nonce(epoch).await
 	}
-
-	async fn data_epoch(
-		&self,
-		for_epoch: McEpochNumber,
-	) -> Result<McEpochNumber, Box<dyn std::error::Error + Send + Sync>> {
-		self.inner.data_epoch(for_epoch).await
-	}
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -176,9 +169,8 @@ impl CandidateDataSourceCached {
 
 	async fn can_use_caching_for_request(
 		&self,
-		request_epoch: McEpochNumber,
+		data_epoch: McEpochNumber,
 	) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
-		let data_epoch = self.inner.data_epoch(request_epoch).await?;
 		if let Ok(stable_epoch) = self.highest_seen_stable_epoch.lock() {
 			if stable_epoch.map_or(false, |stable_epoch| stable_epoch >= data_epoch) {
 				return Ok(true);

@@ -62,13 +62,15 @@ impl AriadneInherentDataProvider {
 			timestamp_millis,
 		)?;
 
-		let data_epoch = data_source.data_epoch(for_mc_epoch).await?;
+		let data_epoch = offset_data_epoch(&for_mc_epoch).map_err(|offset| {
+			InherentProviderCreationError::McEpochOffsetError(offset, for_mc_epoch)
+		})?;
+
 		// We could accept mc_reference at last slot of data_epoch, but calculations are much easier like that.
 		// Additionally, in current implementation, the inequality below is always true, thus there is no need to make it more accurate.
 		let scripts = client.runtime_api().get_main_chain_scripts(parent_hash)?;
 		if data_epoch < mc_reference_epoch {
-			Ok(AriadneInherentDataProvider::from_mc_data(data_source, for_mc_epoch, scripts)
-				.await?)
+			Ok(AriadneInherentDataProvider::from_mc_data(data_source, data_epoch, scripts).await?)
 		} else {
 			Ok(AriadneInherentDataProvider { data: None })
 		}
@@ -76,14 +78,14 @@ impl AriadneInherentDataProvider {
 
 	async fn from_mc_data(
 		candidate_data_source: &(dyn AuthoritySelectionDataSource + Send + Sync),
-		for_epoch: McEpochNumber,
+		data_epoch: McEpochNumber,
 		scripts: MainChainScripts,
 	) -> Result<Self, InherentProviderCreationError> {
 		use crate::authority_selection_inputs::authority_selection_inputs_from_mc_data;
 
 		Ok(Self {
 			data: Some(
-				authority_selection_inputs_from_mc_data(candidate_data_source, for_epoch, scripts)
+				authority_selection_inputs_from_mc_data(candidate_data_source, data_epoch, scripts)
 					.await?,
 			),
 		})
@@ -97,6 +99,10 @@ pub enum InherentProviderCreationError {
 	/// Couldn't convert timestamp to main chain epoch.
 	#[error("Couldn't convert timestamp to main chain epoch: {0}")]
 	McEpochDerivationError(#[from] sidechain_domain::mainchain_epoch::EpochDerivationError),
+	#[error(
+		"Could not apply data offset of {0} to MC epoch {1:?} for authority selection; this is caused either by a node misconfiguration or a bug."
+	)]
+	McEpochOffsetError(u32, McEpochNumber),
 	/// Runtime API call failed.
 	#[error("Runtime API call failed: {0}")]
 	ApiError(#[from] sp_api::ApiError),
