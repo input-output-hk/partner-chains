@@ -61,7 +61,7 @@ impl AuthoritySelectionDataSource for CandidatesDataSourceImpl {
 			d_parameter_policy: PolicyId,
 			permissioned_candidate_policy: PolicyId
 	) -> Result<AriadneParameters, Box<dyn std::error::Error + Send + Sync>> {
-		let epoch = EpochNumber::from(self.get_epoch_of_data_storage(epoch)?);
+		let epoch = EpochNumber::from(epoch);
 		let d_parameter_asset = Asset::new(d_parameter_policy);
 		let permissioned_candidate_asset = Asset::new(permissioned_candidate_policy);
 
@@ -97,7 +97,7 @@ impl AuthoritySelectionDataSource for CandidatesDataSourceImpl {
 			epoch: McEpochNumber,
 			committee_candidate_address: MainchainAddress
 	)-> Result<Vec<CandidateRegistrations>, Box<dyn std::error::Error + Send + Sync>> {
-		let epoch = EpochNumber::from(self.get_epoch_of_data_storage(epoch)?);
+		let epoch = EpochNumber::from(epoch);
 		let candidates = self.get_registered_candidates(epoch, committee_candidate_address).await?;
 		let stake_map = Self::make_stake_map(db_model::get_stake_distribution(&self.pool, epoch).await?);
 		Ok(Self::group_candidates_by_mc_pub_key(candidates).into_iter().map(|(mainchain_pub_key, candidate_registrations)| {
@@ -110,13 +110,8 @@ impl AuthoritySelectionDataSource for CandidatesDataSourceImpl {
 	}
 
 	async fn get_epoch_nonce(&self, epoch: McEpochNumber) -> Result<Option<EpochNonce>, Box<dyn std::error::Error + Send + Sync>> {
-		let epoch = self.get_epoch_of_data_storage(epoch)?;
 		let nonce = db_model::get_epoch_nonce(&self.pool, EpochNumber(epoch.0)).await?;
 		Ok(nonce.map(|n| EpochNonce(n.0)))
-	}
-
-	async fn data_epoch(&self, for_epoch: McEpochNumber) -> Result<McEpochNumber, Box<dyn std::error::Error + Send + Sync>> {
-		self.get_epoch_of_data_storage(for_epoch)
 	}
 });
 
@@ -309,18 +304,5 @@ impl CandidatesDataSourceImpl {
 				},
 			})
 			.collect()
-	}
-
-	fn get_epoch_of_data_storage(
-		&self,
-		epoch_of_data_usage: McEpochNumber,
-	) -> Result<McEpochNumber, Box<dyn std::error::Error + Send + Sync>> {
-		offset_data_epoch(&epoch_of_data_usage).map_err(|offset| {
-			BadRequest(format!(
-				"Minimum supported epoch of data usage is {offset}, but {} was provided",
-				epoch_of_data_usage.0
-			))
-			.into()
-		})
 	}
 }

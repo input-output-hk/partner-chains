@@ -72,12 +72,10 @@ async fn get_token_utxo_datum_for_epoch(
 impl AuthoritySelectionDataSource for AuthoritySelectionDataSourceImpl {
 	async fn get_ariadne_parameters(
 		&self,
-		epoch_number: McEpochNumber,
+		epoch: McEpochNumber,
 		d_parameter_policy: PolicyId,
 		permissioned_candidate_policy: PolicyId,
 	) -> Result<AriadneParameters> {
-		let epoch = self.get_epoch_of_data_storage(epoch_number)?;
-
 		let (candidates_output_opt, d_output_opt) = tokio::try_join!(
 			get_token_utxo_datum_for_epoch(&self.client, permissioned_candidate_policy, epoch),
 			get_token_utxo_datum_for_epoch(&self.client, d_parameter_policy, epoch)
@@ -100,10 +98,9 @@ impl AuthoritySelectionDataSource for AuthoritySelectionDataSourceImpl {
 
 	async fn get_candidates(
 		&self,
-		epoch_number: McEpochNumber,
+		epoch: McEpochNumber,
 		committee_candidate_address: MainchainAddress,
 	) -> Result<Vec<CandidateRegistrations>> {
-		let epoch = self.get_epoch_of_data_storage(epoch_number)?;
 		let candidates = self.get_registered_candidates(epoch, committee_candidate_address).await?;
 		let pools = self.client.pools_extended().await?;
 		let pred = |pool: PoolListExtendedInner| async move {
@@ -134,14 +131,9 @@ impl AuthoritySelectionDataSource for AuthoritySelectionDataSourceImpl {
 			.collect())
 	}
 
-	async fn get_epoch_nonce(&self, epoch_number: McEpochNumber) -> Result<Option<EpochNonce>> {
-		let epoch = self.get_epoch_of_data_storage(epoch_number)?;
+	async fn get_epoch_nonce(&self, epoch: McEpochNumber) -> Result<Option<EpochNonce>> {
 		let nonce: String = self.client.epochs_parameters(epoch).await?.nonce;
 		Ok(Some(EpochNonce::decode_hex(&nonce)?))
-	}
-
-	async fn data_epoch(&self, for_epoch: McEpochNumber) -> Result<McEpochNumber> {
-		self.get_epoch_of_data_storage(for_epoch)
 	}
 }
 
@@ -324,19 +316,6 @@ impl AuthoritySelectionDataSourceImpl {
 				},
 			})
 			.collect()
-	}
-
-	fn get_epoch_of_data_storage(
-		&self,
-		epoch_of_data_usage: McEpochNumber,
-	) -> Result<McEpochNumber> {
-		offset_data_epoch(&epoch_of_data_usage).map_err(|offset| {
-			DataSourceError::BadRequest(format!(
-				"Minimum supported epoch of data usage is {offset}, but {} was provided",
-				epoch_of_data_usage.0
-			))
-			.into()
-		})
 	}
 
 	/// Registrations state up to this block are considered as "active", after it - as "pending".

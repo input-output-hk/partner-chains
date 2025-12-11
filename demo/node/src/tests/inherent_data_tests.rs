@@ -43,7 +43,7 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 
 	let inherent_data_providers = ProposalCIDP::new(
 		test_create_inherent_data_config(),
-		TestApi::new(ScEpochNumber(2))
+		TestApi::new(ScEpochNumber(20))
 			.with_headers([(mock_header().hash(), mock_header())])
 			.with_pariticipation_data(vec![(past_block_slot(), past_block_author())])
 			.into(),
@@ -124,7 +124,7 @@ async fn block_verification_cidp_should_be_created_correctly() {
 
 	let verifier_cidp = VerifierCIDP::new(
 		create_inherent_data_config.clone(),
-		TestApi::new(ScEpochNumber(2))
+		TestApi::new(ScEpochNumber(20))
 			.with_pariticipation_data(vec![(past_block_slot(), past_block_author())])
 			.into(),
 		Arc::new(mc_hash_data_source),
