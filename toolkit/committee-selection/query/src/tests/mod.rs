@@ -353,6 +353,7 @@ mod get_registration_tests {
 			d_parameter: types::DParameter {
 				num_permissioned_candidates: 3,
 				num_registered_candidates: 2,
+				num_native_stake_candidates: 0,
 			},
 			permissioned_candidates: Some(
 				permissioned_candidates
