@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-PARTNER_CHAINS_NODE_IMAGE="ghcr.io/input-output-hk/partner-chains/partner-chains-node-unstable:latest"
+PARTNER_CHAINS_NODE_IMAGE="docker.io/library/partner-chains-node:latest"
 CARDANO_IMAGE="ghcr.io/intersectmbo/cardano-node:10.5.1"
 DBSYNC_IMAGE="ghcr.io/intersectmbo/cardano-db-sync:13.6.0.5"
-DOLOS_IMAGE="ghcr.io/txpipe/dolos:1.0.0-rc.2"
+DOLOS_IMAGE="ghcr.io/txpipe/dolos:1.0.0-rc.3"
 OGMIOS_IMAGE="cardanosolutions/ogmios:v6.13.0"
 POSTGRES_IMAGE="postgres:17.2"
 TESTS_IMAGE="python:3.12-slim"
@@ -326,9 +326,11 @@ choose_deployment_option() {
     echo "3) Include Cardano testnet, Ogmios, DB-Sync and Postgres"
     echo "4) Deploy a single Partner Chains node with network_mode: \"host\" for external connections (adjust partner-chains-external-node.txt before running this script)"
     echo "5) Deploy a 3 node Partner Chain network using wizard"
-    echo "6) Include Cardano testnet, Ogmios, DB-Sync, Postgres, Dolos and Partner Chains nodes with Dolos"
+    echo "6) Including all services with Dolos data source"
     echo "7) Include Cardano testnet, Ogmios, Dolos (NO DB-Sync/Postgres) and Partner Chains nodes with Dolos"
-    read -p "Enter your choice (1/2/3/4/5/6/7): " deployment_option
+    echo "8) Including all services with 2 nodes DB-Sync and 3 nodes using Dolos data sources"
+
+    read -p "Enter your choice (1 to 8): " deployment_option
   else
     deployment_option=0
   fi
@@ -400,6 +402,16 @@ create_docker_compose() {
         cat ./modules/partner-chains-nodes-dolos.txt >> docker-compose.yml
         cat ./modules/partner-chains-setup.txt >> docker-compose.yml
         ;;
+      8)
+        echo -e "Including all services with nodes using both DB-Sync and Dolos data sources.\n"
+        cat ./modules/cardano.txt >> docker-compose.yml
+        cat ./modules/ogmios.txt >> docker-compose.yml
+        cat ./modules/db-sync.txt >> docker-compose.yml
+        cat ./modules/postgres.txt >> docker-compose.yml
+        cat ./modules/dolos.txt >> docker-compose.yml
+        cat ./modules/partner-chains-nodes-dolos-dbsync-mix.txt >> docker-compose.yml
+        cat ./modules/partner-chains-setup.txt >> docker-compose.yml
+        ;;
       0)
         echo -e "Including all services.\n"
         cat ./modules/cardano.txt >> docker-compose.yml
@@ -436,11 +448,11 @@ parse_arguments() {
                 shift
                 ;;
             -d|--deployment-option)
-                if [[ -n "$2" && "$2" =~ ^[1-7]$ ]]; then
+                if [[ -n "$2" && "$2" =~ ^[1-8]$ ]]; then
                     deployment_option="$2"
                     shift 2
                 else
-                    echo "Error: Invalid deployment option '$2'. Valid options are 1 to 7."
+                    echo "Error: Invalid deployment option '$2'. Valid options are 1 to 8."
                     exit 1
                 fi
                 ;;
@@ -471,7 +483,7 @@ parse_arguments() {
                 echo "Usage: $0 [OPTION]..."
                 echo "Initialize and configure the Docker environment."
                 echo "  -n, --non-interactive     Run with no interactive prompts and accept sensible default configuration settings."
-                echo "  -d, --deployment-option   Specify one of the custom deployment options (1 to 7)."
+                echo "  -d, --deployment-option   Specify one of the custom deployment options (1 to 8)."
                 echo "  -p, --postgres-password   Set a specific password for PostgreSQL (overrides automatic generation)."
                 echo "  -i, --node-image          Specify a custom Partner Chains Node image."
                 echo "  -t, --tests               Include tests container."
