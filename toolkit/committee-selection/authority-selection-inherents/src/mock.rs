@@ -20,7 +20,7 @@ impl Default for MockAuthoritySelectionDataSource {
 	fn default() -> Self {
 		Self {
 			candidates: vec![vec![], vec![]],
-			permissioned_candidates: vec![Some(vec![]), Some(vec![])],
+			permissioned_candidates: vec![Some(vec![]), Some(vec![]), Some(vec![])],
 			num_permissioned_candidates: 3,
 		}
 	}
@@ -79,12 +79,5 @@ impl AuthoritySelectionDataSource for MockAuthoritySelectionDataSource {
 		_epoch: McEpochNumber,
 	) -> Result<Option<EpochNonce>, Box<dyn std::error::Error + Send + Sync>> {
 		Ok(Some(EpochNonce(vec![42u8])))
-	}
-
-	async fn data_epoch(
-		&self,
-		for_epoch: McEpochNumber,
-	) -> Result<McEpochNumber, Box<dyn std::error::Error + Send + Sync>> {
-		Ok(for_epoch)
 	}
 }

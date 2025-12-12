@@ -50,7 +50,6 @@ pub struct AriadneParameters {
 #[async_trait::async_trait]
 pub trait AuthoritySelectionDataSource {
 	/// Returns D-parameter and list of permissioned candidates that is effective for the given epoch.
-	/// The data from the latest block of `data_epoch(epoch)` will be used if available, otherwise returns data at the latest block of the chain.
 	async fn get_ariadne_parameters(
 		&self,
 		epoch_number: McEpochNumber,
@@ -59,7 +58,6 @@ pub trait AuthoritySelectionDataSource {
 	) -> Result<AriadneParameters, Box<dyn std::error::Error + Send + Sync>>;
 
 	/// Returns the list of registrations that is effective for the given epoch.
-	/// The data from the latest block of `data_epoch(epoch)` will be used if available, otherwise returns data at the latest block of the chain.
 	/// Each item is a list of one candidate registrations.
 	async fn get_candidates(
 		&self,
@@ -72,37 +70,24 @@ pub trait AuthoritySelectionDataSource {
 		&self,
 		epoch: McEpochNumber,
 	) -> Result<Option<EpochNonce>, Box<dyn std::error::Error + Send + Sync>>;
-
-	///
-	/// # Arguments
-	///
-	/// * `for_epoch`: main chain epoch number during which candidate data is meant to be used
-	///
-	/// returns: Result<McEpochNumber, Box<dyn std::error::Error + Send + Sync>> - data source methods called with `for_epoch` will query only for data which was stored on main chain in the returned epoch or earlier
-	///
-	///
-	async fn data_epoch(
-		&self,
-		for_epoch: McEpochNumber,
-	) -> Result<McEpochNumber, Box<dyn std::error::Error + Send + Sync>>;
 }
 
 #[cfg(feature = "std")]
 pub(crate) async fn authority_selection_inputs_from_mc_data(
 	candidate_data_source: &(dyn AuthoritySelectionDataSource + Send + Sync),
-	for_epoch: McEpochNumber,
+	data_epoch: McEpochNumber,
 	scripts: sp_session_validator_management::MainChainScripts,
 ) -> Result<AuthoritySelectionInputs, AuthoritySelectionInputsCreationError> {
 	let ariadne_parameters_response = candidate_data_source
 		.get_ariadne_parameters(
-			for_epoch,
+			data_epoch,
 			scripts.d_parameter_policy_id.clone(),
 			scripts.permissioned_candidates_policy_id.clone(),
 		)
 		.await
 		.map_err(|err| {
 			AuthoritySelectionInputsCreationError::AriadneParametersQuery(
-				for_epoch,
+				data_epoch,
 				scripts.d_parameter_policy_id.clone(),
 				scripts.permissioned_candidates_policy_id.clone(),
 				err,
@@ -115,7 +100,7 @@ pub(crate) async fn authority_selection_inputs_from_mc_data(
 		None if no_permissioned_candidates_expected => Vec::new(),
 		None => {
 			return Err(AuthoritySelectionInputsCreationError::AriadneParametersQuery(
-				for_epoch,
+				data_epoch,
 				scripts.d_parameter_policy_id,
 				scripts.permissioned_candidates_policy_id,
 				("Expected Data Not Found: Permissioned Candidates List".to_string()).into(),
@@ -125,19 +110,19 @@ pub(crate) async fn authority_selection_inputs_from_mc_data(
 	};
 
 	let registered_candidates: Vec<CandidateRegistrations> = candidate_data_source
-		.get_candidates(for_epoch, scripts.committee_candidate_address.clone())
+		.get_candidates(data_epoch, scripts.committee_candidate_address.clone())
 		.await
 		.map_err(|err| {
 			AuthoritySelectionInputsCreationError::GetCandidatesQuery(
-				for_epoch,
+				data_epoch,
 				scripts.committee_candidate_address.to_string(),
 				err,
 			)
 		})?;
-	let epoch_nonce_response = candidate_data_source
-		.get_epoch_nonce(for_epoch)
-		.await
-		.map_err(|err| AuthoritySelectionInputsCreationError::GetEpochNonceQuery(for_epoch, err))?;
+	let epoch_nonce_response =
+		candidate_data_source.get_epoch_nonce(data_epoch).await.map_err(|err| {
+			AuthoritySelectionInputsCreationError::GetEpochNonceQuery(data_epoch, err)
+		})?;
 	let epoch_nonce = epoch_nonce_response.unwrap_or(EpochNonce(vec![]));
 
 	Ok(AuthoritySelectionInputs {
