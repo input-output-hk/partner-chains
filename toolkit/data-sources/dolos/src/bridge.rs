@@ -13,22 +13,20 @@ use sp_partner_chains_bridge::{
 	BridgeDataCheckpoint, BridgeTransferV1, MainChainScripts, TokenBridgeDataSource,
 };
 use std::fmt::Debug;
-use std::marker::PhantomData;
 
-pub struct TokenBridgeDataSourceImpl<RecipientAddress> {
+pub struct TokenBridgeDataSourceImpl {
 	client: MiniBFClient,
-	_phantom: PhantomData<RecipientAddress>,
 }
 
-impl<RecipientAddress> TokenBridgeDataSourceImpl<RecipientAddress> {
+impl TokenBridgeDataSourceImpl {
 	pub fn new(client: MiniBFClient) -> Self {
-		Self { client, _phantom: PhantomData::default() }
+		Self { client }
 	}
 }
 
 #[async_trait::async_trait]
 impl<RecipientAddress: Send + Sync> TokenBridgeDataSource<RecipientAddress>
-	for TokenBridgeDataSourceImpl<RecipientAddress>
+	for TokenBridgeDataSourceImpl
 where
 	RecipientAddress: Debug,
 	RecipientAddress: (for<'a> TryFrom<&'a [u8]>),
