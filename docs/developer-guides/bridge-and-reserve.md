@@ -86,7 +86,7 @@ The release schedule is only required if the reserve feature is used.
 
 - You need to provide the logic for `VFunction`, which determines how tokens are released
 
-- This logic can be written using native or Plutus scripts as well as Aiken scripts. The code should be compiled and attached as a reference script to UTXO
+- This logic can be written using Plutus scripts or Aiken scripts. The code should be compiled and attached as a reference script to UTXO
 
 - For reference, you can check the [example VFunction](https://github.com/input-output-hk/partner-chains-smart-contracts/blob/master/onchain/src/TrustlessSidechain/ExampleVFunction.hs) in the partner-chains-smart-contracts repository.
 
