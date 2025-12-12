@@ -210,33 +210,32 @@
 <a href=#210 id=210 data-nosnippet>210</a>		sidechain: SidechainConfig {
 <a href=#211 id=211 data-nosnippet>211</a>			genesis_utxo,
 <a href=#212 id=212 data-nosnippet>212</a>			epoch_duration: ScEpochDuration::from_millis(
-<a href=#213 id=213 data-nosnippet>213</a>				SLOT_DURATION
-<a href=#214 id=214 data-nosnippet>214</a>					* u64::from(sidechain_slots::SlotsPerEpoch::read_from_env().unwrap().<span class="number">0</span>),
-<a href=#215 id=215 data-nosnippet>215</a>			),
-<a href=#216 id=216 data-nosnippet>216</a>			..Default::default()
-<a href=#217 id=217 data-nosnippet>217</a>		},
-<a href=#218 id=218 data-nosnippet>218</a>		session_committee_management: SessionCommitteeManagementConfig {
-<a href=#219 id=219 data-nosnippet>219</a>			initial_authorities: initial_authorities
-<a href=#220 id=220 data-nosnippet>220</a>				.into_iter()
-<a href=#221 id=221 data-nosnippet>221</a>				.map(|keys| CommitteeMember::permissioned(keys.cross_chain, keys.session))
-<a href=#222 id=222 data-nosnippet>222</a>				.collect(),
-<a href=#223 id=223 data-nosnippet>223</a>			main_chain_scripts: sp_session_validator_management::MainChainScripts::read_from_env()<span class="question-mark">?</span>,
-<a href=#224 id=224 data-nosnippet>224</a>		},
-<a href=#225 id=225 data-nosnippet>225</a>		governed_map: GovernedMapConfig {
-<a href=#226 id=226 data-nosnippet>226</a>			main_chain_scripts: <span class="prelude-val">Some</span>(sp_governed_map::MainChainScriptsV1::read_from_env()<span class="question-mark">?</span>),
-<a href=#227 id=227 data-nosnippet>227</a>			..Default::default()
-<a href=#228 id=228 data-nosnippet>228</a>		},
-<a href=#229 id=229 data-nosnippet>229</a>		test_helper_pallet: TestHelperPalletConfig {
-<a href=#230 id=230 data-nosnippet>230</a>			participation_data_release_period: <span class="number">30</span>,
-<a href=#231 id=231 data-nosnippet>231</a>			..Default::default()
-<a href=#232 id=232 data-nosnippet>232</a>		},
-<a href=#233 id=233 data-nosnippet>233</a>		bridge: BridgeConfig {
-<a href=#234 id=234 data-nosnippet>234</a>			main_chain_scripts: <span class="prelude-val">Some</span>(sp_partner_chains_bridge::MainChainScripts::read_from_env()<span class="question-mark">?</span>),
-<a href=#235 id=235 data-nosnippet>235</a>			initial_checkpoint: <span class="prelude-val">Some</span>(genesis_utxo),
-<a href=#236 id=236 data-nosnippet>236</a>			..Default::default()
-<a href=#237 id=237 data-nosnippet>237</a>		},
-<a href=#238 id=238 data-nosnippet>238</a>	};
-<a href=#239 id=239 data-nosnippet>239</a>
-<a href=#240 id=240 data-nosnippet>240</a>	<span class="prelude-val">Ok</span>(serde_json::to_value(config).expect(<span class="string">"Genesis config must be serialized correctly"</span>))
-<a href=#241 id=241 data-nosnippet>241</a>}
+<a href=#213 id=213 data-nosnippet>213</a>				SLOT_DURATION * read_slots_per_epoch_from_env(),
+<a href=#214 id=214 data-nosnippet>214</a>			),
+<a href=#215 id=215 data-nosnippet>215</a>			..Default::default()
+<a href=#216 id=216 data-nosnippet>216</a>		},
+<a href=#217 id=217 data-nosnippet>217</a>		session_committee_management: SessionCommitteeManagementConfig {
+<a href=#218 id=218 data-nosnippet>218</a>			initial_authorities: initial_authorities
+<a href=#219 id=219 data-nosnippet>219</a>				.into_iter()
+<a href=#220 id=220 data-nosnippet>220</a>				.map(|keys| CommitteeMember::permissioned(keys.cross_chain, keys.session))
+<a href=#221 id=221 data-nosnippet>221</a>				.collect(),
+<a href=#222 id=222 data-nosnippet>222</a>			main_chain_scripts: sp_session_validator_management::MainChainScripts::read_from_env()<span class="question-mark">?</span>,
+<a href=#223 id=223 data-nosnippet>223</a>		},
+<a href=#224 id=224 data-nosnippet>224</a>		governed_map: GovernedMapConfig {
+<a href=#225 id=225 data-nosnippet>225</a>			main_chain_scripts: <span class="prelude-val">Some</span>(sp_governed_map::MainChainScriptsV1::read_from_env()<span class="question-mark">?</span>),
+<a href=#226 id=226 data-nosnippet>226</a>			..Default::default()
+<a href=#227 id=227 data-nosnippet>227</a>		},
+<a href=#228 id=228 data-nosnippet>228</a>		test_helper_pallet: TestHelperPalletConfig {
+<a href=#229 id=229 data-nosnippet>229</a>			participation_data_release_period: <span class="number">30</span>,
+<a href=#230 id=230 data-nosnippet>230</a>			..Default::default()
+<a href=#231 id=231 data-nosnippet>231</a>		},
+<a href=#232 id=232 data-nosnippet>232</a>		bridge: BridgeConfig {
+<a href=#233 id=233 data-nosnippet>233</a>			main_chain_scripts: <span class="prelude-val">Some</span>(sp_partner_chains_bridge::MainChainScripts::read_from_env()<span class="question-mark">?</span>),
+<a href=#234 id=234 data-nosnippet>234</a>			initial_checkpoint: <span class="prelude-val">Some</span>(genesis_utxo),
+<a href=#235 id=235 data-nosnippet>235</a>			..Default::default()
+<a href=#236 id=236 data-nosnippet>236</a>		},
+<a href=#237 id=237 data-nosnippet>237</a>	};
+<a href=#238 id=238 data-nosnippet>238</a>
+<a href=#239 id=239 data-nosnippet>239</a>	<span class="prelude-val">Ok</span>(serde_json::to_value(config).expect(<span class="string">"Genesis config must be serialized correctly"</span>))
+<a href=#240 id=240 data-nosnippet>240</a>}
 </code></pre></div></section></main></body></html>

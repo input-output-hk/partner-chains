@@ -74,74 +74,73 @@
 <a href=#74 id=74 data-nosnippet>74</a>	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi&lt;Block, Balance&gt;,
 <a href=#75 id=75 data-nosnippet>75</a>	C::Api: BlockBuilder&lt;Block&gt;,
 <a href=#76 id=76 data-nosnippet>76</a>	C::Api: sp_consensus_aura::AuraApi&lt;Block, sp_consensus_aura::sr25519::AuthorityId&gt;,
-<a href=#77 id=77 data-nosnippet>77</a>	C::Api: sidechain_slots::SlotApi&lt;Block&gt;,
-<a href=#78 id=78 data-nosnippet>78</a>	C::Api: sp_sidechain::GetGenesisUtxo&lt;Block&gt;,
-<a href=#79 id=79 data-nosnippet>79</a>	C::Api: sp_sidechain::GetSidechainStatus&lt;Block&gt;,
-<a href=#80 id=80 data-nosnippet>80</a>	C::Api: sp_block_producer_fees::BlockProducerFeesApi&lt;Block, AccountId&gt;,
-<a href=#81 id=81 data-nosnippet>81</a>	C::Api: sp_block_producer_metadata::BlockProducerMetadataApi&lt;Block, BlockProducerMetadataType&gt;,
-<a href=#82 id=82 data-nosnippet>82</a>	C::Api: sp_session_validator_management::SessionValidatorManagementApi&lt;
-<a href=#83 id=83 data-nosnippet>83</a>			Block,
-<a href=#84 id=84 data-nosnippet>84</a>			CrossChainPublic,
-<a href=#85 id=85 data-nosnippet>85</a>			SessionKeys,
-<a href=#86 id=86 data-nosnippet>86</a>			ScEpochNumber,
-<a href=#87 id=87 data-nosnippet>87</a>		&gt;,
-<a href=#88 id=88 data-nosnippet>88</a>	C::Api: CandidateValidationApi&lt;Block&gt;,
-<a href=#89 id=89 data-nosnippet>89</a>	C::Api: GetEpochDurationApi&lt;Block&gt;,
-<a href=#90 id=90 data-nosnippet>90</a>	P: TransactionPool + <span class="lifetime">'static</span>,
-<a href=#91 id=91 data-nosnippet>91</a>	B: sc_client_api::Backend&lt;Block&gt; + Send + Sync + <span class="lifetime">'static</span>,
-<a href=#92 id=92 data-nosnippet>92</a>	B::State: sc_client_api::backend::StateBackend&lt;sp_runtime::traits::HashingFor&lt;Block&gt;&gt;,
-<a href=#93 id=93 data-nosnippet>93</a>	T: TimeSource + Send + Sync + <span class="lifetime">'static</span>,
-<a href=#94 id=94 data-nosnippet>94</a>{
-<a href=#95 id=95 data-nosnippet>95</a>	<span class="kw">use </span>pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
-<a href=#96 id=96 data-nosnippet>96</a>	<span class="kw">use </span>substrate_frame_rpc_system::{System, SystemApiServer};
-<a href=#97 id=97 data-nosnippet>97</a>
-<a href=#98 id=98 data-nosnippet>98</a>	<span class="kw">let </span><span class="kw-2">mut </span>module = RpcModule::new(());
-<a href=#99 id=99 data-nosnippet>99</a>	<span class="kw">let </span>FullDeps { client, pool, grandpa, data_sources, time_source } = deps;
-<a href=#100 id=100 data-nosnippet>100</a>
-<a href=#101 id=101 data-nosnippet>101</a>	module.merge(System::new(client.clone(), pool.clone()).into_rpc())<span class="question-mark">?</span>;
-<a href=#102 id=102 data-nosnippet>102</a>	module.merge(TransactionPayment::new(client.clone()).into_rpc())<span class="question-mark">?</span>;
-<a href=#103 id=103 data-nosnippet>103</a>	module.merge(
-<a href=#104 id=104 data-nosnippet>104</a>		SidechainRpc::new(
-<a href=#105 id=105 data-nosnippet>105</a>			client.clone(),
-<a href=#106 id=106 data-nosnippet>106</a>			MainchainEpochConfig::read_from_env().unwrap(),
-<a href=#107 id=107 data-nosnippet>107</a>			data_sources.sidechain_rpc.clone(),
-<a href=#108 id=108 data-nosnippet>108</a>			time_source.clone(),
-<a href=#109 id=109 data-nosnippet>109</a>		)
-<a href=#110 id=110 data-nosnippet>110</a>		.into_rpc(),
-<a href=#111 id=111 data-nosnippet>111</a>	)<span class="question-mark">?</span>;
-<a href=#112 id=112 data-nosnippet>112</a>	module.merge(BlockProducerFeesRpc::new(client.clone()).into_rpc())<span class="question-mark">?</span>;
-<a href=#113 id=113 data-nosnippet>113</a>	module.merge(BlockProducerMetadataRpc::new(client.clone()).into_rpc())<span class="question-mark">?</span>;
-<a href=#114 id=114 data-nosnippet>114</a>
-<a href=#115 id=115 data-nosnippet>115</a>	<span class="kw">let </span>GrandpaDeps {
-<a href=#116 id=116 data-nosnippet>116</a>		shared_voter_state,
-<a href=#117 id=117 data-nosnippet>117</a>		shared_authority_set,
-<a href=#118 id=118 data-nosnippet>118</a>		justification_stream,
-<a href=#119 id=119 data-nosnippet>119</a>		subscription_executor,
-<a href=#120 id=120 data-nosnippet>120</a>		finality_provider,
-<a href=#121 id=121 data-nosnippet>121</a>	} = grandpa;
-<a href=#122 id=122 data-nosnippet>122</a>	module.merge(
-<a href=#123 id=123 data-nosnippet>123</a>		Grandpa::new(
-<a href=#124 id=124 data-nosnippet>124</a>			subscription_executor,
-<a href=#125 id=125 data-nosnippet>125</a>			shared_authority_set.clone(),
-<a href=#126 id=126 data-nosnippet>126</a>			shared_voter_state,
-<a href=#127 id=127 data-nosnippet>127</a>			justification_stream,
-<a href=#128 id=128 data-nosnippet>128</a>			finality_provider,
-<a href=#129 id=129 data-nosnippet>129</a>		)
-<a href=#130 id=130 data-nosnippet>130</a>		.into_rpc(),
-<a href=#131 id=131 data-nosnippet>131</a>	)<span class="question-mark">?</span>;
-<a href=#132 id=132 data-nosnippet>132</a>	module.merge(
-<a href=#133 id=133 data-nosnippet>133</a>		SessionValidatorManagementRpc::new(Arc::new(SessionValidatorManagementQuery::new(
-<a href=#134 id=134 data-nosnippet>134</a>			client.clone(),
-<a href=#135 id=135 data-nosnippet>135</a>			data_sources.authority_selection.clone(),
-<a href=#136 id=136 data-nosnippet>136</a>		)))
-<a href=#137 id=137 data-nosnippet>137</a>		.into_rpc(),
-<a href=#138 id=138 data-nosnippet>138</a>	)<span class="question-mark">?</span>;
-<a href=#139 id=139 data-nosnippet>139</a>
-<a href=#140 id=140 data-nosnippet>140</a>	<span class="comment">// Extend this RPC with a custom API by using the following syntax.
-<a href=#141 id=141 data-nosnippet>141</a>	// `YourRpcStruct` should have a reference to a client, which is needed
-<a href=#142 id=142 data-nosnippet>142</a>	// to call into the runtime.
-<a href=#143 id=143 data-nosnippet>143</a>	// `module.merge(YourRpcTrait::into_rpc(YourRpcStruct::new(ReferenceToClient, ...)))?;`
-<a href=#144 id=144 data-nosnippet>144</a>
-<a href=#145 id=145 data-nosnippet>145</a>	</span><span class="prelude-val">Ok</span>(module)
-<a href=#146 id=146 data-nosnippet>146</a>}
+<a href=#77 id=77 data-nosnippet>77</a>	C::Api: sp_sidechain::GetGenesisUtxo&lt;Block&gt;,
+<a href=#78 id=78 data-nosnippet>78</a>	C::Api: sp_sidechain::GetSidechainStatus&lt;Block&gt;,
+<a href=#79 id=79 data-nosnippet>79</a>	C::Api: sp_block_producer_fees::BlockProducerFeesApi&lt;Block, AccountId&gt;,
+<a href=#80 id=80 data-nosnippet>80</a>	C::Api: sp_block_producer_metadata::BlockProducerMetadataApi&lt;Block, BlockProducerMetadataType&gt;,
+<a href=#81 id=81 data-nosnippet>81</a>	C::Api: sp_session_validator_management::SessionValidatorManagementApi&lt;
+<a href=#82 id=82 data-nosnippet>82</a>			Block,
+<a href=#83 id=83 data-nosnippet>83</a>			CrossChainPublic,
+<a href=#84 id=84 data-nosnippet>84</a>			SessionKeys,
+<a href=#85 id=85 data-nosnippet>85</a>			ScEpochNumber,
+<a href=#86 id=86 data-nosnippet>86</a>		&gt;,
+<a href=#87 id=87 data-nosnippet>87</a>	C::Api: CandidateValidationApi&lt;Block&gt;,
+<a href=#88 id=88 data-nosnippet>88</a>	C::Api: GetEpochDurationApi&lt;Block&gt;,
+<a href=#89 id=89 data-nosnippet>89</a>	P: TransactionPool + <span class="lifetime">'static</span>,
+<a href=#90 id=90 data-nosnippet>90</a>	B: sc_client_api::Backend&lt;Block&gt; + Send + Sync + <span class="lifetime">'static</span>,
+<a href=#91 id=91 data-nosnippet>91</a>	B::State: sc_client_api::backend::StateBackend&lt;sp_runtime::traits::HashingFor&lt;Block&gt;&gt;,
+<a href=#92 id=92 data-nosnippet>92</a>	T: TimeSource + Send + Sync + <span class="lifetime">'static</span>,
+<a href=#93 id=93 data-nosnippet>93</a>{
+<a href=#94 id=94 data-nosnippet>94</a>	<span class="kw">use </span>pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
+<a href=#95 id=95 data-nosnippet>95</a>	<span class="kw">use </span>substrate_frame_rpc_system::{System, SystemApiServer};
+<a href=#96 id=96 data-nosnippet>96</a>
+<a href=#97 id=97 data-nosnippet>97</a>	<span class="kw">let </span><span class="kw-2">mut </span>module = RpcModule::new(());
+<a href=#98 id=98 data-nosnippet>98</a>	<span class="kw">let </span>FullDeps { client, pool, grandpa, data_sources, time_source } = deps;
+<a href=#99 id=99 data-nosnippet>99</a>
+<a href=#100 id=100 data-nosnippet>100</a>	module.merge(System::new(client.clone(), pool.clone()).into_rpc())<span class="question-mark">?</span>;
+<a href=#101 id=101 data-nosnippet>101</a>	module.merge(TransactionPayment::new(client.clone()).into_rpc())<span class="question-mark">?</span>;
+<a href=#102 id=102 data-nosnippet>102</a>	module.merge(
+<a href=#103 id=103 data-nosnippet>103</a>		SidechainRpc::new(
+<a href=#104 id=104 data-nosnippet>104</a>			client.clone(),
+<a href=#105 id=105 data-nosnippet>105</a>			MainchainEpochConfig::read_from_env().unwrap(),
+<a href=#106 id=106 data-nosnippet>106</a>			data_sources.sidechain_rpc.clone(),
+<a href=#107 id=107 data-nosnippet>107</a>			time_source.clone(),
+<a href=#108 id=108 data-nosnippet>108</a>		)
+<a href=#109 id=109 data-nosnippet>109</a>		.into_rpc(),
+<a href=#110 id=110 data-nosnippet>110</a>	)<span class="question-mark">?</span>;
+<a href=#111 id=111 data-nosnippet>111</a>	module.merge(BlockProducerFeesRpc::new(client.clone()).into_rpc())<span class="question-mark">?</span>;
+<a href=#112 id=112 data-nosnippet>112</a>	module.merge(BlockProducerMetadataRpc::new(client.clone()).into_rpc())<span class="question-mark">?</span>;
+<a href=#113 id=113 data-nosnippet>113</a>
+<a href=#114 id=114 data-nosnippet>114</a>	<span class="kw">let </span>GrandpaDeps {
+<a href=#115 id=115 data-nosnippet>115</a>		shared_voter_state,
+<a href=#116 id=116 data-nosnippet>116</a>		shared_authority_set,
+<a href=#117 id=117 data-nosnippet>117</a>		justification_stream,
+<a href=#118 id=118 data-nosnippet>118</a>		subscription_executor,
+<a href=#119 id=119 data-nosnippet>119</a>		finality_provider,
+<a href=#120 id=120 data-nosnippet>120</a>	} = grandpa;
+<a href=#121 id=121 data-nosnippet>121</a>	module.merge(
+<a href=#122 id=122 data-nosnippet>122</a>		Grandpa::new(
+<a href=#123 id=123 data-nosnippet>123</a>			subscription_executor,
+<a href=#124 id=124 data-nosnippet>124</a>			shared_authority_set.clone(),
+<a href=#125 id=125 data-nosnippet>125</a>			shared_voter_state,
+<a href=#126 id=126 data-nosnippet>126</a>			justification_stream,
+<a href=#127 id=127 data-nosnippet>127</a>			finality_provider,
+<a href=#128 id=128 data-nosnippet>128</a>		)
+<a href=#129 id=129 data-nosnippet>129</a>		.into_rpc(),
+<a href=#130 id=130 data-nosnippet>130</a>	)<span class="question-mark">?</span>;
+<a href=#131 id=131 data-nosnippet>131</a>	module.merge(
+<a href=#132 id=132 data-nosnippet>132</a>		SessionValidatorManagementRpc::new(Arc::new(SessionValidatorManagementQuery::new(
+<a href=#133 id=133 data-nosnippet>133</a>			client.clone(),
+<a href=#134 id=134 data-nosnippet>134</a>			data_sources.authority_selection.clone(),
+<a href=#135 id=135 data-nosnippet>135</a>		)))
+<a href=#136 id=136 data-nosnippet>136</a>		.into_rpc(),
+<a href=#137 id=137 data-nosnippet>137</a>	)<span class="question-mark">?</span>;
+<a href=#138 id=138 data-nosnippet>138</a>
+<a href=#139 id=139 data-nosnippet>139</a>	<span class="comment">// Extend this RPC with a custom API by using the following syntax.
+<a href=#140 id=140 data-nosnippet>140</a>	// `YourRpcStruct` should have a reference to a client, which is needed
+<a href=#141 id=141 data-nosnippet>141</a>	// to call into the runtime.
+<a href=#142 id=142 data-nosnippet>142</a>	// `module.merge(YourRpcTrait::into_rpc(YourRpcStruct::new(ReferenceToClient, ...)))?;`
+<a href=#143 id=143 data-nosnippet>143</a>
+<a href=#144 id=144 data-nosnippet>144</a>	</span><span class="prelude-val">Ok</span>(module)
+<a href=#145 id=145 data-nosnippet>145</a>}
 </code></pre></div></section></main></body></html>
