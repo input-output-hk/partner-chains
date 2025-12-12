@@ -5,7 +5,6 @@ use partner_chains_demo_runtime::{
 };
 use sc_service::ChainType;
 use sidechain_domain::ScEpochDuration;
-use sidechain_slots::SlotsPerEpoch;
 use sp_core::{Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
@@ -37,6 +36,8 @@ pub fn runtime_wasm() -> &'static [u8] {
 	WASM_BINARY.expect("Runtime wasm not available")
 }
 
+pub const DEFAULT_SLOTS_PER_EPOCH: u64 = 60;
+
 /// Creates chain-spec according to the config obtained by wizards.
 /// [serde_json::Value] is returned instead of [sc_service::GenericChainSpec] in order to avoid
 /// GPL code in the toolkit.
@@ -63,7 +64,7 @@ pub fn pc_create_chain_spec(config: &CreateChainSpecConfig<SessionKeys>) -> serd
 			non_authority_keys: vec![],
 		},
 		sidechain: config.pallet_sidechain_config(ScEpochDuration::from_millis(
-			SLOT_DURATION * u64::from(SlotsPerEpoch::default().0),
+			SLOT_DURATION * DEFAULT_SLOTS_PER_EPOCH,
 		)),
 		session_committee_management: config.pallet_session_validator_management_config(),
 		governed_map: config.governed_map_config(),
@@ -85,4 +86,11 @@ pub fn pc_create_chain_spec(config: &CreateChainSpecConfig<SessionKeys>) -> serd
 	let raw = false;
 	let chain_spec_str = chain_spec.as_json(raw).expect("Chain spec serialization can not fail");
 	serde_json::from_str(&chain_spec_str).unwrap()
+}
+
+pub(crate) fn read_slots_per_epoch_from_env() -> u64 {
+	std::env::var("SLOTS_PER_EPOCH")
+		.ok()
+		.and_then(|s| s.parse().ok())
+		.unwrap_or(DEFAULT_SLOTS_PER_EPOCH)
 }

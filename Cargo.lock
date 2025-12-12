@@ -7465,7 +7465,6 @@ dependencies = [
  "serde_json",
  "sidechain-domain",
  "sidechain-mc-hash",
- "sidechain-slots",
  "sp-api",
  "sp-block-builder",
  "sp-block-participation",
@@ -7539,7 +7538,6 @@ dependencies = [
  "serde",
  "serde_json",
  "sidechain-domain",
- "sidechain-slots",
  "sp-api",
  "sp-block-builder",
  "sp-block-participation",
@@ -10715,23 +10713,6 @@ dependencies = [
  "sp-timestamp",
  "thiserror 2.0.16",
  "tokio",
-]
-
-[[package]]
-name = "sidechain-slots"
-version = "1.8.0"
-dependencies = [
- "envy",
- "parity-scale-codec",
- "proptest",
- "scale-info",
- "serde",
- "sidechain-domain",
- "sp-api",
- "sp-blockchain",
- "sp-consensus-slots",
- "sp-core",
- "sp-runtime",
 ]
 
 [[package]]
