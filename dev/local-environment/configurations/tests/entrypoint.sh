@@ -1,4 +1,5 @@
 #!/bin/bash
+set -ex  # Exit on any error, print commands
 
 # Verify the e2e-tests directory exists and cd into it
 if [ -d "/e2e-tests" ]; then
@@ -26,11 +27,17 @@ rm /tmp/sops.deb
 apt-get clean
 rm -rf /var/lib/apt/lists/*
 
-# 5) Create and initialize the virtual environment
-python -m venv venv
-source venv/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
+# 5) Install uv and sync dependencies
+curl -LsSf https://astral.sh/uv/install.sh | sh
+export PATH="/root/.local/bin:$PATH"
+echo "uv version: $(uv --version)"
+echo "Creating virtual environment with uv sync..."
+uv sync --verbose
+echo "Virtual environment created at: $(pwd)/.venv"
+ls -la .venv/bin/
+
+set +x  # Stop printing commands
+echo "===== Environment setup complete ====="
 
 # Keep the container running
 tail -f /dev/null
