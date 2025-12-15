@@ -104,13 +104,13 @@ runs:
           echo "Running tests via docker exec"
           docker exec tests bash -c "
             cd /e2e-tests &&
-            source venv/bin/activate &&
+            source .venv/bin/activate &&
             $pytest_cmd
           "
         else
           echo "Running tests locally"
           cd e2e-tests
-          source venv/bin/activate
+          source .venv/bin/activate
           eval "$pytest_cmd"
         fi
       env:
