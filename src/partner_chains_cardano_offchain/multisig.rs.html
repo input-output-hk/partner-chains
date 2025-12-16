@@ -167,7 +167,7 @@
 <a href=#167 id=167 data-nosnippet>167</a>	<span class="kw">let </span>funding_tx = funding_tx_builder.balance_update_and_build(<span class="kw-2">&amp;</span>payment_ctx)<span class="question-mark">?</span>;
 <a href=#168 id=168 data-nosnippet>168</a>	<span class="kw">let </span>tx_hash: [u8; <span class="number">32</span>] = blake2b(funding_tx.body().to_bytes().as_ref());
 <a href=#169 id=169 data-nosnippet>169</a>	<span class="macro">log::info!</span>(
-<a href=#170 id=170 data-nosnippet>170</a>		<span class="string">"Founding temporary wallet {} with {} in transaction: {}"</span>,
+<a href=#170 id=170 data-nosnippet>170</a>		<span class="string">"Funding temporary wallet {} with {} in transaction: {}"</span>,
 <a href=#171 id=171 data-nosnippet>171</a>		<span class="kw-2">&amp;</span>address.to_bech32(<span class="prelude-val">None</span>)<span class="question-mark">?</span>,
 <a href=#172 id=172 data-nosnippet>172</a>		serde_json::to_string(<span class="kw-2">&amp;</span>value)<span class="question-mark">?</span>,
 <a href=#173 id=173 data-nosnippet>173</a>		<span class="kw-2">&amp;</span>hex::encode(tx_hash)
