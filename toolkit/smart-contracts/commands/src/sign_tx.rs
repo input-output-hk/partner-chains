@@ -24,7 +24,8 @@ impl SignTxCmd {
 
 		// Try to extract cborHex from the input
 		let cbor_hex = extract_cbor_hex(&self.transaction)?;
-		let transaction_cbor: TransactionCbor = cbor_hex.parse()
+		let transaction_cbor: TransactionCbor = cbor_hex
+			.parse()
 			.map_err(|e| anyhow::anyhow!("Failed to parse transaction CBOR: {}", e))?;
 
 		let vkey_witness = sign_tx(transaction_cbor.0, &payment_key)?;
@@ -44,7 +45,7 @@ impl SignTxCmd {
 /// Uses deterministic order: file path -> JSON parsing -> hex string
 fn extract_cbor_hex(input: &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
 	let trimmed = input.trim();
-	
+
 	// Case 1: Check if it's a file path that exists
 	let json_str = if std::path::Path::new(trimmed).exists() {
 		std::fs::read_to_string(trimmed)
@@ -56,16 +57,18 @@ fn extract_cbor_hex(input: &str) -> Result<String, Box<dyn std::error::Error + S
 		// Case 3: Treat as direct hex string
 		return Ok(trimmed.to_string());
 	};
-	
+
 	// If we read from file, parse the JSON and extract cborHex
 	let json_value: serde_json::Value = serde_json::from_str(&json_str)
 		.map_err(|e| format!("Failed to parse JSON from file: {}", e))?;
-	
+
 	extract_cbor_from_json(&json_value)
 }
 
 /// Extracts cborHex from a JSON value
-fn extract_cbor_from_json(json_value: &serde_json::Value) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+fn extract_cbor_from_json(
+	json_value: &serde_json::Value,
+) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
 	// Try to extract cborHex from transaction_to_sign format
 	if let Some(cbor_hex) = json_value
 		.get("transaction_to_sign")
@@ -75,11 +78,11 @@ fn extract_cbor_from_json(json_value: &serde_json::Value) -> Result<String, Box<
 	{
 		return Ok(cbor_hex.to_string());
 	}
-	
+
 	// Try to extract cborHex from direct tx format
 	if let Some(cbor_hex) = json_value.get("cborHex").and_then(|v| v.as_str()) {
 		return Ok(cbor_hex.to_string());
 	}
-	
+
 	Err("Could not extract cborHex from JSON. Expected 'transaction_to_sign.tx.cborHex' or 'cborHex' field.".into())
 }

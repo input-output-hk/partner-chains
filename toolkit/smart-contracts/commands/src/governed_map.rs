@@ -224,17 +224,21 @@ fn print_result_json(
 		Err(err) => Err(err)?,
 		Ok(Some(res)) => {
 			// If out_file is specified and this is a multisig transaction, save cborHex
-			if let (Some(path), crate::MultiSigSmartContractResult::TransactionToSign(tx_data)) = (&out_file, &res) {
+			if let (Some(path), crate::MultiSigSmartContractResult::TransactionToSign(tx_data)) =
+				(&out_file, &res)
+			{
 				// Extract cborHex from the serialized transaction
 				let tx_json = serde_json::to_value(&tx_data.tx)?;
 				if let Some(cbor_hex) = tx_json.get("cborHex").and_then(|v| v.as_str()) {
-					std::fs::write(path, cbor_hex)
-						.map_err(|e| anyhow::anyhow!("Failed to write CBOR to file {}: {}", path.display(), e))?;
+					std::fs::write(path, cbor_hex).map_err(|e| {
+						anyhow::anyhow!("Failed to write CBOR to file {}: {}", path.display(), e)
+					})?;
 					eprintln!("✓ Wrote transaction CBOR hex to: {}", path.display());
 				} else {
 					return Err(anyhow::anyhow!(
 						"--out-file specified but could not extract cborHex from transaction"
-					).into());
+					)
+					.into());
 				}
 			}
 			Ok(json!(res))
