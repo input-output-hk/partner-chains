@@ -5,6 +5,7 @@ use partner_chains_cardano_offchain::governed_map::{
 use serde_json::json;
 use sidechain_domain::byte_string::ByteString;
 use std::collections::HashMap;
+use std::path::PathBuf;
 
 #[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
@@ -55,6 +56,9 @@ pub struct InsertCmd {
 	#[clap(flatten)]
 	/// Genesis UTXO
 	genesis_utxo: GenesisUtxo,
+	#[arg(long, value_hint = clap::ValueHint::FilePath)]
+	/// Optional file path to save the transaction CBOR hex (for multisig flow)
+	out_file: Option<PathBuf>,
 }
 
 impl InsertCmd {
@@ -73,7 +77,7 @@ impl InsertCmd {
 			&self.common_arguments.retries(),
 		)
 		.await;
-		print_result_json(result)
+		print_result_json(result, self.out_file)
 	}
 }
 
@@ -97,6 +101,9 @@ pub struct UpdateCmd {
 	#[clap(flatten)]
 	/// Genesis UTXO
 	genesis_utxo: GenesisUtxo,
+	#[arg(long, value_hint = clap::ValueHint::FilePath)]
+	/// Optional file path to save the transaction CBOR hex (for multisig flow)
+	out_file: Option<PathBuf>,
 }
 
 impl UpdateCmd {
@@ -116,7 +123,7 @@ impl UpdateCmd {
 			&self.common_arguments.retries(),
 		)
 		.await;
-		print_result_json(result)
+		print_result_json(result, self.out_file)
 	}
 }
 
@@ -134,6 +141,9 @@ pub struct RemoveCmd {
 	#[clap(flatten)]
 	/// Genesis UTXO
 	genesis_utxo: GenesisUtxo,
+	#[arg(long, value_hint = clap::ValueHint::FilePath)]
+	/// Optional file path to save the transaction CBOR hex (for multisig flow)
+	out_file: Option<PathBuf>,
 }
 
 impl RemoveCmd {
@@ -151,7 +161,7 @@ impl RemoveCmd {
 			&self.common_arguments.retries(),
 		)
 		.await;
-		print_result_json(result)
+		print_result_json(result, self.out_file)
 	}
 }
 
@@ -205,12 +215,34 @@ impl GetCmd {
 }
 
 /// Converts the result of a command into a JSON object.
+/// If out_file is provided and the result is a TransactionToSign, saves the cborHex to the file.
 fn print_result_json(
 	result: anyhow::Result<Option<crate::MultiSigSmartContractResult>>,
+	out_file: Option<PathBuf>,
 ) -> crate::SubCmdResult {
 	match result {
 		Err(err) => Err(err)?,
-		Ok(Some(res)) => Ok(json!(res)),
+		Ok(Some(res)) => {
+			// If out_file is specified and this is a multisig transaction, save cborHex
+			if let (Some(path), crate::MultiSigSmartContractResult::TransactionToSign(tx_data)) =
+				(&out_file, &res)
+			{
+				// Extract cborHex from the serialized transaction
+				let tx_json = serde_json::to_value(&tx_data.tx)?;
+				if let Some(cbor_hex) = tx_json.get("cborHex").and_then(|v| v.as_str()) {
+					std::fs::write(path, cbor_hex).map_err(|e| {
+						anyhow::anyhow!("Failed to write CBOR to file {}: {}", path.display(), e)
+					})?;
+					eprintln!("✓ Wrote transaction CBOR hex to: {}", path.display());
+				} else {
+					return Err(anyhow::anyhow!(
+						"--out-file specified but could not extract cborHex from transaction"
+					)
+					.into());
+				}
+			}
+			Ok(json!(res))
+		},
 		Ok(None) => Ok(json!({})),
 	}
 }

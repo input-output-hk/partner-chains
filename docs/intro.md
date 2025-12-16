@@ -983,12 +983,16 @@ $ pc-node sign-tx
     --payment-key-file <PAYMENT_KEY_FILE>
 ```
 
-`TRANSACTION` should be a CBOR-encoded transaction. The command will output a CBOR-encoded
-witness that can be passed to `assemble-and-submit-tx`.
+`TRANSACTION` can be:
+- A file path to a JSON file containing the transaction
+- A JSON string with the transaction
+- A CBOR-encoded transaction hex string
+
+The command will output a CBOR-encoded witness that can be passed to `assemble-and-submit-tx`.
 
 ##### governed-map
 
-Set of subcommands for managing the Governed Map key-value store on Cardano
+Set of subcommands for managing the Governed Map key-value store on Cardano. When multisig governance is configured, these commands support an optional `--out-file` parameter to save the transaction CBOR hex directly to a file for easier sharing and signing.
 
 ###### insert
 
@@ -1000,9 +1004,10 @@ $ pc-node governed-map insert
     --value <VALUE>
     --payment-key-file <PAYMENT_KEY_FILE>
     --genesis-utxo <GENESIS_UTXO>
+    [ --out-file <FILE_PATH> ]
 ```
 
-If the value for the key already exists it won't be updated.
+If the value for the key already exists it won't be updated. The optional `--out-file` parameter saves the transaction CBOR hex to the specified file when multisig governance is in use.
 
 ###### update
 
@@ -1015,11 +1020,12 @@ $ pc-node governed-map update
     --payment-key-file <PAYMENT_KEY_FILE>
     --genesis-utxo <GENESIS_UTXO>
     [ --current-value <CURRENT_VALUE> ]
+    [ --out-file <FILE_PATH> ]
 ```
 
 If the key does not already exist it won't be inserted.
 If the optional `--current-value` argument is passed, the transaction will fail if the current
-value doesn't match the argument.
+value doesn't match the argument. The optional `--out-file` parameter saves the transaction CBOR hex to the specified file when multisig governance is in use.
 
 ###### remove
 
@@ -1030,7 +1036,10 @@ $ pc-node governed-map remove
     --key <KEY>
     --payment-key-file <PAYMENT_KEY_FILE>
     --genesis-utxo <GENESIS_UTXO>
+    [ --out-file <FILE_PATH> ]
 ```
+
+The optional `--out-file` parameter saves the transaction CBOR hex to the specified file when multisig governance is in use.
 
 ###### list
 

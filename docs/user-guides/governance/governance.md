@@ -79,7 +79,9 @@ In version v1.4 this functionality is available in the smart contracts CLI appli
 
 ## Multi Signature Governance
 
-All the `smart-contracts` sub-commands that require Governance: `governance update`, `upsert-d-parameter`, `upsert-permissioned-candidates`, `reserve init|create|deposit|handover|update-settings`, and `governed-map insert|update|remove` will now submit the transaction only if the governance is "1 of 1". Otherwise these commands return a transaction CBOR that can be submitted with the new command `assemble-and-submit-tx`. Signatures can be obtained using `sign-tx`. Example of executed commands, invoked by owners of `key1` and `key2` are:
+All the `smart-contracts` sub-commands that require Governance: `governance update`, `upsert-d-parameter`, `upsert-permissioned-candidates`, `reserve init|create|deposit|handover|update-settings`, and `governed-map insert|update|remove` will now submit the transaction only if the governance is "1 of 1". Otherwise these commands return a transaction CBOR that can be submitted with the new command `assemble-and-submit-tx`. Signatures can be obtained using `sign-tx`.
+
+For convenience, governance commands support an optional `--out-file` parameter that saves the transaction CBOR hex directly to a file, eliminating the need for manual extraction using tools like `jq`. Example of executed commands, invoked by owners of `key1` and `key2` are:
 
 Owner of `key1` initialized Governance with two key hashes `e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b` and `7fa48bb8fb5d6804fad26237738ce490d849e4567161e38ab8415ff3`(that are hashes of `key1` and `key2`), and sets requried number of signatures to `2`.
 ```
@@ -100,15 +102,17 @@ Owner of `key1` wants to set D-parameter to (7, 5).
 -c f8fbe7316561e57de9ecd1c86ee8f8b512a314ba86499ba9a584bfa8fe2edc8d#0 \
 --permissioned-candidates-count 7 \
 --registered-candidates-count 5 \
--k key1.skey | jq .
+-k key1.skey \
+--out-file tx.cbor
 ...
+✓ Wrote transaction CBOR hex to: tx.cbor
 {"transaction_to_sign":{"temporary_wallet":{"address":"addr_test1vzeg2g6gcnlvnemk9hgvsaxxktf8suxwd63hm54w9erxuwc49exyq","funded_by_tx":"0xed99c5eb6d12053c514915fcb0445c9ce9839b65570db042fcd1c9d9cc9fbcf8","private_key":"0x730f9c6f26666da41dedbe596f6b2f7d36a98ce768591010b537e4f48417448f"},"tx":{"cborHex":"84aa00..transaction bytes redacted..f6","description":"","type":"Tx ConwayEra"},"tx_name":"Insert D-parameter"}}
 ```
-The user gets the transaction data. It already contains the `key1` signature. Transaction requires signature of `key2` owner, before it can be submitted.
+The user gets the transaction data. It already contains the `key1` signature. The transaction CBOR hex has been saved to `tx.cbor`. Transaction requires signature of `key2` owner, before it can be submitted.
 
-`key2` owner has to get this transaction data, perhaps from `key1` owner, *inspect the transaction* and then sign `cborHex` value from the previous output:
+`key2` owner has to get this transaction data, perhaps from `key1` owner, *inspect the transaction* and then sign it. The `sign-tx` command can accept the CBOR hex as a file path, JSON string, or direct hex:
 ```
-./partner-chains-node smart-contracts sign-tx -k key2.skey --transaction 84aa00..<transaction-bytes-redacted>..f6
+./partner-chains-node smart-contracts sign-tx -k key2.skey --transaction tx.cbor
 ...
 {"cborHex":"82008258202bebcb7fbc74a6e0fd6e00a311698b047b7b659f0e047ff5349dbd984aefc52c58409dfff5d837ec7b864502c7acac5ad5885f74d94cb68458413ee4565ff52f6dcb1ff3df272566662b4f00766fc9586a12532bfce68e56280f93dd57d6e22b9705","description":"","type":"TxWitness ConwayEra"}
 ```
