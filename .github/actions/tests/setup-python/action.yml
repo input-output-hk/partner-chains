@@ -19,8 +19,5 @@ runs:
       run: |
         cd e2e-tests
         curl -L --silent https://github.com/getsops/sops/releases/download/v3.7.3/sops_3.7.3_amd64.deb > sops.deb && sudo dpkg -i sops.deb && rm sops.deb
-        python -m venv venv
-        source venv/bin/activate
-        pip install -r requirements.txt
-        cd ..
+        nix develop
       shell: bash

@@ -2,7 +2,8 @@ VERSION 0.7
 FROM python:3.12
 WORKDIR /test
 
-COPY --dir ./config ./secrets ./tests ./src ./requirements.txt ./pytest.ini ./tox.ini .
+COPY --dir ./config ./secrets ./tests ./src ./pytest.ini ./tox.ini .
+COPY pyproject.toml uv.lock .
 
 ARG AWS_DEFAULT_REGION=eu-central-1
 ARG blockchain=substrate
@@ -47,7 +48,9 @@ build:
   RUN kubectl config set-context my-context --cluster=my-cluster --user=github-actions --namespace=default
   RUN kubectl config use-context my-context
   RUN curl -L --silent https://github.com/getsops/sops/releases/download/v3.7.3/sops_3.7.3_${USERARCH}.deb > sops.deb && dpkg -i sops.deb && rm sops.deb
-  RUN pip install -r requirements.txt
+  RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+  ENV PATH="/root/.local/bin:$PATH"
+  RUN uv sync
 
 test:
   # ATTENTION! +test target saves exit code to a file and returns success even when tests fail.
@@ -56,9 +59,9 @@ test:
   FROM +build
   ARG CI_RUN
   IF [ "$CI_RUN" = "true" ]
-    RUN --secret AWS_SECRET_ACCESS_KEY --secret AWS_ACCESS_KEY_ID --secret AWS_SESSION_TOKEN --no-cache eval $pytest_cmd --ci-run || true
+    RUN --secret AWS_SECRET_ACCESS_KEY --secret AWS_ACCESS_KEY_ID --secret AWS_SESSION_TOKEN --no-cache source .venv/bin/activate && eval $pytest_cmd --ci-run || true
   ELSE
-    RUN --mount=type=secret,target=/root/.aws/credentials,id=aws --mount=type=secret,target=/root/.kube/config,id=kube --no-cache eval $pytest_cmd || true
+    RUN --mount=type=secret,target=/root/.aws/credentials,id=aws --mount=type=secret,target=/root/.kube/config,id=kube --no-cache source .venv/bin/activate && eval $pytest_cmd || true
   END
 
 test-artifacts:
