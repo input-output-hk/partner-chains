@@ -1,6 +1,8 @@
 //! This crate contains datum types used by Plutus smart contracts from [raw_scripts::SCRIPTS].
 #![deny(missing_docs)]
-use cardano_serialization_lib::{PlutusData, PlutusList};
+use cardano_serialization_lib::{
+	Int, JsError, MetadataMap, PlutusData, PlutusList, TransactionMetadatum,
+};
 
 pub mod bridge;
 pub mod candidate_keys;
@@ -134,6 +136,42 @@ impl From<VersionedGenericDatum> for PlutusData {
 	}
 }
 
+/// Trait that provides decoding of versioned transaction metadata
+///
+/// Versioned metadata is encoded as a map with two fields:
+/// - `v`: version number
+/// - `p`: version-specific payload
+///
+/// This trait is similar to [VersionedDatum] but simpler because metadata does not need to
+/// conform to any Plutus validator logic
+pub trait VersionedMetadatum: Sized {
+	/// Parses versioned metadata
+	fn decode(data: TransactionMetadatum) -> Result<Self, JsError> {
+		let version = data.as_map()?.get_str("v")?.as_int()?.as_i32_or_fail()?;
+		let payload = data.as_map()?.get_str("p")?;
+		Self::decode_version(version, payload)
+	}
+
+	/// Decodes payload for a specific version of the metadata
+	fn decode_version(version: i32, payload: TransactionMetadatum) -> Result<Self, JsError>;
+
+	/// Returns the version number of the metadata
+	fn version(&self) -> i32;
+
+	/// Encodes metadata
+	fn encode(&self) -> Result<TransactionMetadatum, JsError> {
+		let mut map = MetadataMap::new();
+
+		map.insert_str("p", &self.encode_payload()?)?;
+		map.insert_str("v", &TransactionMetadatum::new_int(&Int::new_i32(self.version())))?;
+
+		Ok(TransactionMetadatum::new_map(&map))
+	}
+
+	/// Encodes payload for a specific version of the metadata
+	fn encode_payload(&self) -> Result<TransactionMetadatum, JsError>;
+}
+
 /// Script hash of plutus scripts for encoding into PlutusData
 #[derive(Clone, Debug, PartialEq)]
 pub struct ScriptHash([u8; 28]);
@@ -179,6 +217,17 @@ pub(crate) mod test_helpers {
 		};
 	}
 	pub(crate) use test_plutus_data;
+
+	macro_rules! test_tx_metadata {
+		($json:tt) => {
+			cardano_serialization_lib::encode_json_value_to_metadatum(
+				serde_json::json!($json),
+				cardano_serialization_lib::MetadataJsonSchema::BasicConversions,
+			)
+			.expect("test data is valid")
+		};
+	}
+	pub(crate) use test_tx_metadata;
 
 	pub(crate) fn json_to_plutus_data(json: serde_json::Value) -> PlutusData {
 		cardano_serialization_lib::encode_json_value_to_plutus_datum(
