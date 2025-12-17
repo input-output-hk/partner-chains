@@ -190,6 +190,7 @@ impl AuthoritySelectionDataSourceImpl {
 		stake_map: &HashMap<MainchainKeyHash, StakeDelegation>,
 		stake_pool_pub_key: &StakePoolPublicKey,
 	) -> Option<StakeDelegation> {
+		// TODO: investigate why stake_map is empty here when it shouldn't be
 		if stake_map.is_empty() {
 			None
 		} else {
