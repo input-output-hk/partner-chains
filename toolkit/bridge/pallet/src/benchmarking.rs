@@ -2,7 +2,7 @@ use super::*;
 use frame_benchmarking::v2::*;
 use frame_support::{BoundedVec, assert_ok, traits::Get};
 use frame_system::RawOrigin;
-use sidechain_domain::{McBlockNumber, UtxoId};
+use sidechain_domain::{McBlockNumber, McTxHash};
 use sp_core::{H256, crypto::UncheckedFrom};
 use sp_partner_chains_bridge::*;
 
@@ -28,12 +28,12 @@ where
 		use BridgeTransferV1::*;
 
 		let recipient = T::Recipient::unchecked_from(Default::default());
-		let utxo_id = UtxoId::default();
+		let tx_hash = McTxHash::default();
 
 		let transfers = alloc::vec![
 			UserTransfer { token_amount: 1000, recipient },
 			ReserveTransfer { token_amount: 1000 },
-			InvalidTransfer { token_amount: 1000, utxo_id },
+			InvalidTransfer { token_amount: 1000, tx_hash },
 		]
 		.into_iter()
 		.cycle()

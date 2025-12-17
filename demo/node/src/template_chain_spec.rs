@@ -54,7 +54,7 @@ pub fn chain_spec() -> Result<ChainSpec, envy::Error> {
 		},
 		bridge: BridgeConfig {
 			main_chain_scripts: Some(sp_partner_chains_bridge::MainChainScripts::read_from_env()?),
-			initial_checkpoint: Some(genesis_utxo),
+			initial_checkpoint: Some(genesis_utxo.tx_hash),
 			..Default::default()
 		},
 	};

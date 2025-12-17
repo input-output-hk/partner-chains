@@ -124,10 +124,8 @@ pub mod pallet {
 	impl<T: Config> pallet_partner_chains_bridge::TransferHandler<AccountId> for Pallet<T> {
 		fn handle_incoming_transfer(transfer: BridgeTransferV1<AccountId>) {
 			match transfer {
-				BridgeTransferV1::InvalidTransfer { token_amount, utxo_id } => {
-					log::warn!(
-						"⚠️ Recorded an invalid transfer of {token_amount} (utxo {utxo_id})"
-					);
+				BridgeTransferV1::InvalidTransfer { token_amount, tx_hash } => {
+					log::warn!("⚠️ Recorded an invalid transfer of {token_amount} (tx {tx_hash})");
 					TotalInvalidTransfers::<T>::mutate(|v| *v + token_amount);
 				},
 				BridgeTransferV1::UserTransfer { token_amount, recipient } => {

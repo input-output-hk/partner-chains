@@ -128,7 +128,7 @@ use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sidechain_domain::{
-	AssetId, AssetName, MainchainAddress, McBlockHash, McBlockNumber, PolicyId, UtxoId,
+	AssetId, AssetName, MainchainAddress, McBlockHash, McBlockNumber, McTxHash, PolicyId,
 };
 use sp_inherents::*;
 
@@ -219,14 +219,14 @@ pub enum BridgeTransferV1<RecipientAddress> {
 		/// Amount of tokens tranfered
 		token_amount: u64,
 	},
-	/// Invalid transfer coming from a UTXO on Cardano that does not contain a datum that can be
+	/// Invalid transfer coming from a Transaction on Cardano that does not contain a metadata that can be
 	/// correctly interpreted. These transfers can either be ignored and considered lost or recovered
 	/// through some custom mechanism.
 	InvalidTransfer {
 		/// Amount of tokens tranfered
 		token_amount: u64,
 		/// ID of the UTXO containing an invalid transfer
-		utxo_id: sidechain_domain::UtxoId,
+		tx_hash: sidechain_domain::McTxHash,
 	},
 }
 
@@ -286,8 +286,8 @@ pub enum TokenBridgeInherentDataProvider<RecipientAddress> {
 	Clone, Debug, Encode, Decode, DecodeWithMemTracking, TypeInfo, PartialEq, Eq, MaxEncodedLen,
 )]
 pub enum BridgeDataCheckpoint {
-	/// Last transfer utxo that has been processed
-	Utxo(UtxoId),
+	/// The last transaction that has been processed
+	Tx(McTxHash),
 	/// Cardano block up to which data has been processed
 	Block(McBlockNumber),
 }

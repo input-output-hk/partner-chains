@@ -220,7 +220,7 @@ impl<Keys: MaybeFromCandidateKeys> CreateChainSpecConfig<Keys> {
 					.illiquid_circulation_supply_validator_address
 					.clone(),
 			}),
-			initial_checkpoint: Some(self.genesis_utxo),
+			initial_checkpoint: Some(self.genesis_utxo.tx_hash),
 			_marker: PhantomData,
 		}
 	}
