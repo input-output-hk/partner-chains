@@ -12,12 +12,12 @@ use crate::{
 	cardano_keys::CardanoPaymentSigningKey,
 	csl::{
 		CostStore, Costs, MultiAssetExt, OgmiosUtxoExt, TransactionBuilderExt, TransactionContext,
-		TransactionOutputAmountBuilderExt, get_builder_config,
+		TransactionOutputAmountBuilderExt, get_builder_config, unit_plutus_data,
 	},
 };
 use cardano_serialization_lib::{
-	Address, AssetName, BigNum, MultiAsset, PlutusData, ScriptHash, Transaction,
-	TransactionBuilder, TransactionOutputBuilder, TxInputsBuilder,
+	Address, AssetName, BigNum, JsError, MultiAsset, ScriptHash, Transaction, TransactionBuilder,
+	TransactionMetadatum, TransactionOutputBuilder, TxInputsBuilder,
 };
 use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
@@ -25,7 +25,10 @@ use ogmios_client::{
 	transactions::Transactions,
 	types::OgmiosUtxo,
 };
-use partner_chains_plutus_data::bridge::TokenTransferDatumV1;
+use partner_chains_plutus_data::{
+	VersionedMetadatum,
+	bridge::{TokenTransferMetadatum, TokenTransferMetadatumV1},
+};
 use sidechain_domain::{AssetId, McTxHash, UtxoId, byte_string::ByteString};
 use std::num::NonZero;
 
@@ -99,9 +102,10 @@ fn deposit_only_tx(
 	ctx: &TransactionContext,
 ) -> anyhow::Result<Transaction> {
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
+	tx_builder.add_metadatum(&0u64.into(), &to_user_transfer_metadatum(pc_address)?);
 	let output_builder = TransactionOutputBuilder::new()
 		.with_address(ics_address)
-		.with_plutus_data(&to_user_transfer_datum(pc_address))
+		.with_plutus_data(&unit_plutus_data())
 		.next()?;
 	let ma = MultiAsset::new().with_asset_amount(&token_amount.token, token_amount.amount)?;
 	let output = output_builder.with_minimum_ada_and_asset(&ma, ctx)?.build()?;
@@ -195,9 +199,10 @@ fn deposit_tx(
 	costs: Costs,
 ) -> anyhow::Result<Transaction> {
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
+	tx_builder.add_metadatum(&0u64.into(), &to_user_transfer_metadatum(pc_address)?);
 	let output_builder = TransactionOutputBuilder::new()
 		.with_address(ics_address)
-		.with_plutus_data(&to_user_transfer_datum(pc_address))
+		.with_plutus_data(&unit_plutus_data())
 		.next()?;
 	let mut ma = ics_utxo
 		.to_csl()
@@ -237,6 +242,9 @@ fn deposit_tx(
 	Ok(tx_builder.balance_update_and_build(ctx)?)
 }
 
-fn to_user_transfer_datum(pc_address: &[u8]) -> PlutusData {
-	TokenTransferDatumV1::UserTransfer { receiver: ByteString(pc_address.to_vec()) }.into()
+fn to_user_transfer_metadatum(pc_address: &[u8]) -> Result<TransactionMetadatum, JsError> {
+	Ok(TokenTransferMetadatum::V1(TokenTransferMetadatumV1::UserTransfer {
+		receiver: ByteString(pc_address.to_vec()),
+	})
+	.encode()?)
 }

@@ -27,6 +27,7 @@ use crate::{
 	csl::{
 		AssetIdExt, CostStore, Costs, OgmiosUtxoExt, Script, TransactionBuilderExt,
 		TransactionContext, TransactionExt, TransactionOutputAmountBuilderExt, get_builder_config,
+		unit_plutus_data,
 	},
 	governance::GovernanceData,
 	multisig::{MultiSigSmartContractResult, submit_or_create_tx_to_sign},
@@ -40,7 +41,9 @@ use ogmios_client::{
 	transactions::Transactions,
 	types::OgmiosUtxo,
 };
-use partner_chains_plutus_data::{bridge::TokenTransferDatumV1, reserve::ReserveRedeemer};
+use partner_chains_plutus_data::{
+	VersionedMetadatum, bridge::TokenTransferMetadatum, reserve::ReserveRedeemer,
+};
 use sidechain_domain::UtxoId;
 
 /// Spends current UTXO at validator address to illiquid supply validator and burn reserve auth policy token, preventing further operations.
@@ -92,6 +95,8 @@ fn build_tx(
 
 	let reserve_auth_policy_spend_cost = costs.get_one_spend();
 
+	tx_builder.add_metadatum(&0u64.into(), &TokenTransferMetadatum::reserve_v1().encode()?);
+
 	// mint goveranance token
 	tx_builder.add_mint_one_script_token_using_reference_script(
 		&governance.policy.script(),
@@ -138,9 +143,7 @@ fn illiquid_supply_validator_output(
 		TransactionOutputBuilder::new().with_address(&scripts.validator.address(ctx.network));
 	if output_value.amount > 0 {
 		let ma = output_value.token.to_multi_asset(output_value.amount)?;
-		let amount_builder = tx_output_builder
-			.with_plutus_data(&TokenTransferDatumV1::ReserveTransfer.into())
-			.next()?;
+		let amount_builder = tx_output_builder.with_plutus_data(&unit_plutus_data()).next()?;
 		amount_builder.with_minimum_ada_and_asset(&ma, ctx)?.build()
 	} else {
 		// Smart-contract requires to deposit exactly one UTXO in the illiquid supply validator,
