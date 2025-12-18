@@ -1,13 +1,17 @@
 use crate::{
 	Result,
-	client::{MiniBFClient, api::MiniBFApi, minibf::format_asset_id},
+	client::{
+		MiniBFClient, api::MiniBFApi, conversions::metadata_from_response, minibf::format_asset_id,
+	},
 };
 use blockfrost_openapi::models::{
-	tx_content::TxContent, tx_content_output_amount_inner::TxContentOutputAmountInner,
-	tx_content_utxo::TxContentUtxo,
+	tx_content::TxContent, tx_content_metadata_inner::TxContentMetadataInner,
+	tx_content_output_amount_inner::TxContentOutputAmountInner, tx_content_utxo::TxContentUtxo,
 };
-use cardano_serialization_lib::PlutusData;
-use partner_chains_plutus_data::bridge::{TokenTransferDatum, TokenTransferDatumV1};
+use partner_chains_plutus_data::{
+	VersionedMetadatum,
+	bridge::{TokenTransferMetadatum, TokenTransferMetadatumV1},
+};
 use sidechain_domain::*;
 use sp_partner_chains_bridge::{
 	BridgeDataCheckpoint, BridgeTransferV1, MainChainScripts, TokenBridgeDataSource,
@@ -43,18 +47,12 @@ where
 		let current_mc_block = self.client.blocks_by_id(current_mc_block_hash).await?;
 
 		let data_checkpoint = match data_checkpoint {
-			BridgeDataCheckpoint::Utxo(utxo) => {
+			BridgeDataCheckpoint::Tx(tx_hash) => {
 				let TxBlockInfo { block_number, tx_ix } =
-					get_block_info_for_utxo(&self.client, utxo.tx_hash.into()).await?.ok_or(
-						format!(
-							"Could not find block info for data checkpoint: {data_checkpoint:?}"
-						),
-					)?;
-				ResolvedBridgeDataCheckpoint::Utxo {
-					block_number,
-					tx_ix,
-					tx_out_ix: utxo.index.into(),
-				}
+					get_block_info_for_utxo(&self.client, tx_hash).await?.ok_or(format!(
+						"Could not find block info for data checkpoint: {data_checkpoint:?}"
+					))?;
+				ResolvedBridgeDataCheckpoint::Tx { block_number, tx_ix }
 			},
 			BridgeDataCheckpoint::Block(number) => {
 				ResolvedBridgeDataCheckpoint::Block { number: number.into() }
@@ -83,7 +81,7 @@ where
 			Some(_) if (utxos.len() as u32) < max_transfers => {
 				BridgeDataCheckpoint::Block(current_mc_block_height)
 			},
-			Some(utxo) => BridgeDataCheckpoint::Utxo(utxo.utxo_id()),
+			Some(utxo) => BridgeDataCheckpoint::Tx(utxo.tx_hash),
 		};
 
 		let transfers = utxos.into_iter().flat_map(utxo_to_transfer).collect();
@@ -107,22 +105,20 @@ where
 	let token_amount = token_delta as u64;
 
 	let Some(datum) = utxo.datum.clone() else {
-		return Some(BridgeTransferV1::InvalidTransfer { token_amount, utxo_id: utxo.utxo_id() });
+		return Some(BridgeTransferV1::InvalidTransfer { token_amount, tx_hash: utxo.tx_hash });
 	};
 
-	let transfer = match TokenTransferDatum::try_from(datum) {
-		Ok(TokenTransferDatum::V1(TokenTransferDatumV1::UserTransfer { receiver })) => {
+	let transfer = match TokenTransferMetadatum::decode(datum) {
+		Ok(TokenTransferMetadatum::V1(TokenTransferMetadatumV1::UserTransfer { receiver })) => {
 			match RecipientAddress::try_from(receiver.0.as_ref()) {
 				Ok(recipient) => BridgeTransferV1::UserTransfer { token_amount, recipient },
-				Err(_) => {
-					BridgeTransferV1::InvalidTransfer { token_amount, utxo_id: utxo.utxo_id() }
-				},
+				Err(_) => BridgeTransferV1::InvalidTransfer { token_amount, tx_hash: utxo.tx_hash },
 			}
 		},
-		Ok(TokenTransferDatum::V1(TokenTransferDatumV1::ReserveTransfer)) => {
+		Ok(TokenTransferMetadatum::V1(TokenTransferMetadatumV1::ReserveTransfer)) => {
 			BridgeTransferV1::ReserveTransfer { token_amount }
 		},
-		Err(_) => BridgeTransferV1::InvalidTransfer { token_amount, utxo_id: utxo.utxo_id() },
+		Err(_) => BridgeTransferV1::InvalidTransfer { token_amount, tx_hash: utxo.tx_hash },
 	};
 
 	Some(transfer)
@@ -132,23 +128,18 @@ pub(crate) struct BridgeUtxo {
 	pub(crate) block_number: McBlockNumber,
 	pub(crate) tx_ix: McTxIndexInBlock,
 	pub(crate) tx_hash: McTxHash,
-	pub(crate) utxo_ix: UtxoIndex,
 	pub(crate) tokens_out: NativeTokenAmount,
 	pub(crate) tokens_in: NativeTokenAmount,
-	pub(crate) datum: Option<cardano_serialization_lib::PlutusData>,
+	pub(crate) datum: Option<cardano_serialization_lib::TransactionMetadatum>,
 }
 
 impl BridgeUtxo {
-	pub(crate) fn utxo_id(&self) -> UtxoId {
-		UtxoId { tx_hash: self.tx_hash.into(), index: self.utxo_ix.into() }
-	}
-
 	pub(crate) fn ordering_key(&self) -> UtxoOrderingKey {
-		(self.block_number, self.tx_ix, self.utxo_ix)
+		(self.block_number, self.tx_ix)
 	}
 }
 
-pub(crate) type UtxoOrderingKey = (McBlockNumber, McTxIndexInBlock, UtxoIndex);
+pub(crate) type UtxoOrderingKey = (McBlockNumber, McTxIndexInBlock);
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct TxBlockInfo {
@@ -169,14 +160,14 @@ pub(crate) async fn get_block_info_for_utxo(
 
 #[derive(Clone)]
 pub(crate) enum ResolvedBridgeDataCheckpoint {
-	Utxo { block_number: McBlockNumber, tx_ix: McTxIndexInBlock, tx_out_ix: UtxoIndex },
+	Tx { block_number: McBlockNumber, tx_ix: McTxIndexInBlock },
 	Block { number: McBlockNumber },
 }
 
 impl ResolvedBridgeDataCheckpoint {
 	fn block_number(&self) -> McBlockNumber {
 		match self {
-			ResolvedBridgeDataCheckpoint::Utxo { block_number, .. } => *block_number,
+			ResolvedBridgeDataCheckpoint::Tx { block_number, .. } => *block_number,
 			ResolvedBridgeDataCheckpoint::Block { number } => *number,
 		}
 	}
@@ -198,48 +189,53 @@ pub(crate) async fn get_bridge_utxos_tx(
 			let tx_hash = McTxHash::from_hex_unsafe(&a.tx_hash);
 			let utxos = client.transactions_utxos(tx_hash).await?;
 			let tx = client.transaction_by_hash(tx_hash).await?;
-			Result::Ok(Some((utxos, tx)))
+			let tx_metadata =
+				client.transaction_metadata(&McTxHash::from_hex_unsafe(&tx.hash)).await?;
+			Result::Ok(Some((utxos, tx_metadata, tx)))
 		} else {
 			Result::Ok(None)
 		}
 	});
 	let mut bridge_utxos = futures::future::try_join_all(futures)
 		.await?
-		.iter()
+		.into_iter()
 		.flatten()
-		.flat_map(|(utxos, tx): &(TxContentUtxo, TxContent)| {
-			let inputs = utxos.inputs.iter().filter(|i| i.address == icp_address.to_string());
-			let outputs = utxos.outputs.iter().filter(|o| o.address == icp_address.to_string());
+		.filter(|(_, _, tx)| match checkpoint {
+			ResolvedBridgeDataCheckpoint::Tx { block_number, tx_ix }
+				if (tx.block_height, tx.index) <= (block_number.0 as i32, tx_ix.0 as i32) =>
+			{
+				false
+			},
+			ResolvedBridgeDataCheckpoint::Block { number }
+				if tx.block_height <= number.0 as i32 =>
+			{
+				false
+			},
+			_ => true,
+		})
+		.flat_map(|(utxos, tx_metadata, tx): (TxContentUtxo, TxContentMetadataInner, TxContent)| {
 			let native_token = native_token.clone();
-			let checkpoint_clone = checkpoint.clone();
-			outputs.filter_map(move |output| {
-				let native_token = native_token.clone();
-				let output_tokens = get_all_tokens(&output.amount, &native_token.clone());
-				let input_tokens = inputs
-					.clone()
-					.map(move |input| get_all_tokens(&input.amount, &native_token.clone()))
-					.sum();
+			let input_tokens = utxos
+				.inputs
+				.iter()
+				.filter(|i| i.address == icp_address.to_string())
+				.map(|input| get_all_tokens(&input.amount, &native_token))
+				.sum();
 
-				match checkpoint_clone {
-					ResolvedBridgeDataCheckpoint::Utxo { tx_ix, tx_out_ix, .. }
-						if tx.block_height <= tx_ix.0 as i32
-							&& output.output_index <= tx_out_ix.0.into() =>
-					{
-						None
-					},
-					_ => Some(BridgeUtxo {
-						block_number: McBlockNumber(tx.block_height as u32),
-						tokens_out: NativeTokenAmount(output_tokens),
-						tokens_in: NativeTokenAmount(input_tokens),
-						datum: output
-							.inline_datum
-							.clone()
-							.map(|d| PlutusData::from_hex(&d).expect("valid datum")),
-						tx_ix: McTxIndexInBlock(tx.index as u32),
-						tx_hash: McTxHash::from_hex_unsafe(&tx.hash),
-						utxo_ix: UtxoIndex(output.output_index as u16),
-					}),
-				}
+			let output_tokens = utxos
+				.outputs
+				.iter()
+				.filter(|o| o.address == icp_address.to_string())
+				.map(|input| get_all_tokens(&input.amount, &native_token))
+				.sum();
+
+			Some(BridgeUtxo {
+				block_number: McBlockNumber(tx.block_height as u32),
+				tokens_out: NativeTokenAmount(output_tokens),
+				tokens_in: NativeTokenAmount(input_tokens),
+				datum: Some(metadata_from_response(tx_metadata).ok()?),
+				tx_ix: McTxIndexInBlock(tx.index as u32),
+				tx_hash: McTxHash::from_hex_unsafe(&tx.hash),
 			})
 		})
 		.collect::<Vec<_>>();
