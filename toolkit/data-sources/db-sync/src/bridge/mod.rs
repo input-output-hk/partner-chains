@@ -45,7 +45,8 @@
 
 use crate::db_model::*;
 use partner_chains_data_source_metrics::{McFollowerMetrics, observed_async_trait};
-use partner_chains_plutus_data::bridge::{TokenTransferDatum, TokenTransferDatumV1};
+use partner_chains_plutus_data::VersionedMetadatum;
+use partner_chains_plutus_data::bridge::{TokenTransferMetadatum, TokenTransferMetadatumV1};
 use sidechain_domain::McBlockHash;
 use sp_partner_chains_bridge::*;
 use sqlx::PgPool;
@@ -99,25 +100,21 @@ observed_async_trait!(
 				.ok_or(format!("Could not find block for hash {current_mc_block_hash:?}"))?;
 
 			let data_checkpoint = match data_checkpoint {
-				BridgeDataCheckpoint::Utxo(utxo) => {
+				BridgeDataCheckpoint::Tx(tx_hash) => {
 					let TxBlockInfo { block_number, tx_ix } =
-						get_block_info_for_utxo(&self.pool, utxo.tx_hash.into()).await?.ok_or(
+						get_block_info_for_tx_hash(&self.pool, tx_hash.into()).await?.ok_or(
 							format!(
 								"Could not find block info for data checkpoint: {data_checkpoint:?}"
 							),
 						)?;
-					ResolvedBridgeDataCheckpoint::Utxo {
-						block_number,
-						tx_ix,
-						tx_out_ix: utxo.index.into(),
-					}
+					ResolvedBridgeDataCheckpoint::Tx { block_number, tx_ix }
 				},
 				BridgeDataCheckpoint::Block(number) => {
 					ResolvedBridgeDataCheckpoint::Block { number: number.into() }
 				},
 			};
 
-			let utxos = get_bridge_utxos_tx(
+			let txs = get_bridge_txs(
 				self.db_sync_config.get_tx_in_config().await?,
 				&self.pool,
 				&main_chain_scripts.illiquid_circulation_supply_validator_address.into(),
@@ -128,28 +125,26 @@ observed_async_trait!(
 			)
 			.await?;
 
-			let new_checkpoint = match utxos.last() {
+			let new_checkpoint = match txs.last() {
 				None => BridgeDataCheckpoint::Block(current_mc_block.block_no.into()),
-				Some(_) if (utxos.len() as u32) < max_transfers => {
+				Some(_) if (txs.len() as u32) < max_transfers => {
 					BridgeDataCheckpoint::Block(current_mc_block.block_no.into())
 				},
-				Some(utxo) => BridgeDataCheckpoint::Utxo(utxo.utxo_id()),
+				Some(tx) => BridgeDataCheckpoint::Tx(tx.tx_id()),
 			};
 
-			let transfers = utxos.into_iter().flat_map(utxo_to_transfer).collect();
+			let transfers = txs.into_iter().flat_map(tx_to_transfer).collect();
 
 			Ok((transfers, new_checkpoint))
 		}
 	}
 );
 
-fn utxo_to_transfer<RecipientAddress>(
-	utxo: BridgeUtxo,
-) -> Option<BridgeTransferV1<RecipientAddress>>
+fn tx_to_transfer<RecipientAddress>(tx: BridgeTx) -> Option<BridgeTransferV1<RecipientAddress>>
 where
 	RecipientAddress: for<'a> TryFrom<&'a [u8]>,
 {
-	let token_delta = utxo.tokens_out.checked_sub(utxo.tokens_in)?;
+	let token_delta = tx.tokens_out.checked_sub(tx.tokens_in)?;
 
 	if token_delta.is_zero() {
 		return None;
@@ -157,23 +152,21 @@ where
 
 	let token_amount = token_delta.0 as u64;
 
-	let Some(datum) = utxo.datum.clone() else {
-		return Some(BridgeTransferV1::InvalidTransfer { token_amount, utxo_id: utxo.utxo_id() });
+	let Some(metadata) = tx.metadata.clone() else {
+		return Some(BridgeTransferV1::InvalidTransfer { token_amount, tx_hash: tx.tx_id() });
 	};
 
-	let transfer = match TokenTransferDatum::try_from(datum.0) {
-		Ok(TokenTransferDatum::V1(TokenTransferDatumV1::UserTransfer { receiver })) => {
+	let transfer = match TokenTransferMetadatum::decode(metadata.0) {
+		Ok(TokenTransferMetadatum::V1(TokenTransferMetadatumV1::UserTransfer { receiver })) => {
 			match RecipientAddress::try_from(receiver.0.as_ref()) {
 				Ok(recipient) => BridgeTransferV1::UserTransfer { token_amount, recipient },
-				Err(_) => {
-					BridgeTransferV1::InvalidTransfer { token_amount, utxo_id: utxo.utxo_id() }
-				},
+				Err(_) => BridgeTransferV1::InvalidTransfer { token_amount, tx_hash: tx.tx_id() },
 			}
 		},
-		Ok(TokenTransferDatum::V1(TokenTransferDatumV1::ReserveTransfer)) => {
+		Ok(TokenTransferMetadatum::V1(TokenTransferMetadatumV1::ReserveTransfer)) => {
 			BridgeTransferV1::ReserveTransfer { token_amount }
 		},
-		Err(_) => BridgeTransferV1::InvalidTransfer { token_amount, utxo_id: utxo.utxo_id() },
+		Err(_) => BridgeTransferV1::InvalidTransfer { token_amount, tx_hash: tx.tx_id() },
 	};
 
 	Some(transfer)

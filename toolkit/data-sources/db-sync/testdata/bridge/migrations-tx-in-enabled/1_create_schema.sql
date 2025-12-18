@@ -211,3 +211,13 @@ CREATE TABLE public.ma_tx_out (
 	-- CONSTRAINT ma_tx_out_tx_out_id_fkey FOREIGN KEY (tx_out_id) REFERENCES public.tx_out(id) ON DELETE CASCADE ON UPDATE RESTRICT
 );
 CREATE INDEX idx_ma_tx_out_tx_out_id ON public.ma_tx_out USING btree (tx_out_id);
+
+CREATE TABLE tx_metadata (
+	id SERIAL8  PRIMARY KEY UNIQUE,
+	"key" word64type NOT NULL,
+	json jsonb NULL,
+	bytes bytea NOT NULL,
+	tx_id INT8 NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_tx_metadata_tx_id ON tx_metadata(tx_id) ;

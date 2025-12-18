@@ -17,10 +17,7 @@ impl sqlx::Type<Postgres> for DbDatum {
 	}
 }
 
-impl<'r> sqlx::Decode<'r, Postgres> for DbDatum
-where
-	JsonValue: Decode<'r, Postgres>,
-{
+impl<'r> sqlx::Decode<'r, Postgres> for DbDatum {
 	fn decode(value: <Postgres as Database>::ValueRef<'r>) -> Result<Self, BoxDynError> {
 		let value: JsonValue = <JsonValue as Decode<Postgres>>::decode(value)?;
 		let datum = encode_json_value_to_plutus_datum(value, DetailedSchema);

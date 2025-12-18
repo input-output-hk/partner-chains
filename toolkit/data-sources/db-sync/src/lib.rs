@@ -115,6 +115,7 @@ pub use crate::stake_distribution::StakeDistributionDataSourceImpl;
 
 mod data_sources;
 mod db_datum;
+mod db_metadatum;
 mod db_model;
 
 #[cfg(feature = "block-source")]
