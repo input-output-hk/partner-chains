@@ -367,7 +367,11 @@ fn token_policy_id() -> [u8; 28] {
 }
 
 fn input_d_param() -> DParameter {
-	DParameter { num_registered_candidates: 30, num_permissioned_candidates: 40 }
+	DParameter {
+		num_registered_candidates: 30,
+		num_permissioned_candidates: 40,
+		num_native_stake_candidates: 0,
+	}
 }
 
 fn expected_plutus_data() -> PlutusData {

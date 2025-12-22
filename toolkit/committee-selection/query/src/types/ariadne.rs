@@ -24,6 +24,8 @@ pub struct DParameter {
 	pub num_permissioned_candidates: u16,
 	/// The number of registered candidates
 	pub num_registered_candidates: u16,
+	/// The number of native stake candidates
+	pub num_native_stake_candidates: u16,
 }
 
 impl From<sidechain_domain::DParameter> for DParameter {
@@ -31,9 +33,10 @@ impl From<sidechain_domain::DParameter> for DParameter {
 		sidechain_domain::DParameter {
 			num_permissioned_candidates,
 			num_registered_candidates,
+			num_native_stake_candidates,
 		}: sidechain_domain::DParameter,
 	) -> Self {
-		Self { num_permissioned_candidates, num_registered_candidates }
+		Self { num_permissioned_candidates, num_registered_candidates, num_native_stake_candidates }
 	}
 }
 

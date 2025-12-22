@@ -96,6 +96,7 @@ impl<T: PartnerChainRuntime> CmdRun for SetupMainChainStateCmd<T> {
 			d_parameter.unwrap_or(DParameter {
 				num_permissioned_candidates: 0,
 				num_registered_candidates: 0,
+				num_native_stake_candidates: 0,
 			}),
 			chain_config.chain_parameters.genesis_utxo,
 		)?;
@@ -236,12 +237,20 @@ fn set_d_parameter_on_main_chain<C: IOContext>(
 			Some(&default_d_parameter.num_registered_candidates.to_string()),
 		);
 		let num_registered_candidates: u16 = r.parse()?;
+		let n = context.prompt(
+			"Enter N, the number of native stake candidates seats, as a non-negative integer.",
+			Some(&default_d_parameter.num_native_stake_candidates.to_string()),
+		);
+		let num_native_stake_candidates: u16 = n.parse()?;
 		let payment_signing_key_path =
 			CARDANO_PAYMENT_SIGNING_KEY_FILE.prompt_with_default_from_file_and_save(context);
 		let payment_signing_key =
 			cardano_key::get_mc_payment_signing_key_from_file(&payment_signing_key_path, context)?;
-		let d_parameter =
-			sidechain_domain::DParameter { num_permissioned_candidates, num_registered_candidates };
+		let d_parameter = sidechain_domain::DParameter {
+			num_permissioned_candidates,
+			num_registered_candidates,
+			num_native_stake_candidates,
+		};
 		let tokio_runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
 		let result = tokio_runtime.block_on(offchain.upsert_d_param(
 			await_tx,
@@ -250,10 +259,10 @@ fn set_d_parameter_on_main_chain<C: IOContext>(
 			&payment_signing_key,
 		))?;
 		match result {
-			None => context.print(&format!("D-parameter is set to ({}, {}) already.", p, r)),
+			None => context.print(&format!("D-parameter is set to ({}, {}, {}) already.", p, r, n)),
 			Some(MultiSigSmartContractResult::TransactionSubmitted(_)) => context.print(&format!(
-				"D-parameter updated to ({}, {}). The change will be effective in two main chain epochs.",
-				p, r
+				"D-parameter updated to ({}, {}, {}). The change will be effective in two main chain epochs.",
+				p, r, n
 			)),
 			Some(MultiSigSmartContractResult::TransactionToSign(tx_data)) => {
 				print_tx_to_sign_and_instruction(context, "update D-parameter", &tx_data)?
