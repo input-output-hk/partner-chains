@@ -15,6 +15,34 @@ pub enum DParamDatum {
 		/// Number of registered candidates in committee.
 		num_registered_candidates: u16,
 	},
+	/// Native stake datum schema
+	V1 {
+		/// Number of permissioned candidates in committee.
+		num_permissioned_candidates: u16,
+		/// Number of registered candidates in committee.
+		num_registered_candidates: u16,
+		/// Number of native stake candidates in committee.
+		num_native_stake_candidates: u16,
+	},
+}
+
+impl DParamDatum {
+	/// Decodes V1 datum.
+	fn decode_v1(data: &PlutusData) -> Result<Self, String> {
+		let d_parameter = data
+			.as_list()
+			.filter(|datum| datum.len() == 3)
+			.and_then(|items| {
+				Some(DParamDatum::V1 {
+					num_permissioned_candidates: items.get(0).as_u16()?,
+					num_registered_candidates: items.get(1).as_u16()?,
+					num_native_stake_candidates: items.get(2).as_u16()?,
+				})
+			})
+			.ok_or("Expected [u16, u16, u16]")?;
+
+		Ok(d_parameter)
+	}
 }
 
 impl TryFrom<PlutusData> for DParamDatum {
@@ -27,8 +55,19 @@ impl TryFrom<PlutusData> for DParamDatum {
 impl From<DParamDatum> for sidechain_domain::DParameter {
 	fn from(datum: DParamDatum) -> Self {
 		match datum {
-			DParamDatum::V0 { num_permissioned_candidates, num_registered_candidates } => {
-				Self { num_permissioned_candidates, num_registered_candidates }
+			DParamDatum::V0 { num_permissioned_candidates, num_registered_candidates } => Self {
+				num_permissioned_candidates,
+				num_registered_candidates,
+				num_native_stake_candidates: 0,
+			},
+			DParamDatum::V1 {
+				num_permissioned_candidates,
+				num_registered_candidates,
+				num_native_stake_candidates,
+			} => Self {
+				num_permissioned_candidates,
+				num_registered_candidates,
+				num_native_stake_candidates,
 			},
 		}
 	}
@@ -48,11 +87,12 @@ pub fn d_parameter_to_plutus_data(d_param: &sidechain_domain::DParameter) -> Plu
 	let mut list = PlutusList::new();
 	list.add(&PlutusData::new_integer(&d_param.num_permissioned_candidates.into()));
 	list.add(&PlutusData::new_integer(&d_param.num_registered_candidates.into()));
+	list.add(&PlutusData::new_integer(&d_param.num_native_stake_candidates.into()));
 	let appendix = PlutusData::new_list(&list);
 	VersionedGenericDatum {
 		datum: PlutusData::new_empty_constr_plutus_data(&0u64.into()),
 		appendix,
-		version: 0,
+		version: 1,
 	}
 	.into()
 }
@@ -83,6 +123,8 @@ impl VersionedDatumWithLegacy for DParamDatum {
 		match version {
 			0 => DParamDatum::decode_legacy(appendix)
 				.map_err(|msg| format!("Cannot parse appendix: {msg}")),
+			1 => DParamDatum::decode_v1(appendix)
+				.map_err(|msg| format!("Cannot parse appendix: {msg}")),
 			_ => Err(format!("Unknown version: {version}")),
 		}
 	}
@@ -109,9 +151,10 @@ mod tests {
 		let d_param = sidechain_domain::DParameter {
 			num_permissioned_candidates: 17,
 			num_registered_candidates: 42,
+			num_native_stake_candidates: 0,
 		};
 
-		let expected_plutus_data = json_to_plutus_data(v0_datum_json());
+		let expected_plutus_data = json_to_plutus_data(v1_datum_json());
 
 		assert_eq!(d_parameter_to_plutus_data(&d_param), expected_plutus_data)
 	}
@@ -122,9 +165,23 @@ mod tests {
 				{ "constructor": 0, "fields": [] },
 				{ "list": [
 					{ "int": 17 },
-					{ "int": 42 }
+					{ "int": 42 },
 				] },
 				{ "int": 0 }
+			]
+		})
+	}
+
+	fn v1_datum_json() -> serde_json::Value {
+		serde_json::json!({
+			"list": [
+				{ "constructor": 0, "fields": [] },
+				{ "list": [
+					{ "int": 17 },
+					{ "int": 42 },
+					{ "int": 0  },
+				] },
+				{ "int": 1 }
 			]
 		})
 	}
@@ -135,6 +192,19 @@ mod tests {
 
 		let expected_datum =
 			DParamDatum::V0 { num_permissioned_candidates: 17, num_registered_candidates: 42 };
+
+		assert_eq!(DParamDatum::try_from(plutus_data).unwrap(), expected_datum)
+	}
+
+	#[test]
+	fn valid_v1_d_param() {
+		let plutus_data = json_to_plutus_data(v1_datum_json());
+
+		let expected_datum = DParamDatum::V1 {
+			num_permissioned_candidates: 17,
+			num_registered_candidates: 42,
+			num_native_stake_candidates: 0,
+		};
 
 		assert_eq!(DParamDatum::try_from(plutus_data).unwrap(), expected_datum)
 	}

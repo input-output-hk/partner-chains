@@ -315,7 +315,11 @@ pub fn set_validators_directly(
 pub fn create_inherent_data(validators: &[MockValidator]) -> (InherentData, SizedByteString<32>) {
 	let mut inherent_data = InherentData::new();
 	let data = AuthoritySelectionInputs {
-		d_parameter: DParameter { num_permissioned_candidates: 10, num_registered_candidates: 10 },
+		d_parameter: DParameter {
+			num_permissioned_candidates: 10,
+			num_registered_candidates: 10,
+			num_native_stake_candidates: 0,
+		},
 		permissioned_candidates: validators
 			.iter()
 			.cloned()

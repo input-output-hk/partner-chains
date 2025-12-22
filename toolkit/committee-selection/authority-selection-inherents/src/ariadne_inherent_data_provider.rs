@@ -2,13 +2,14 @@
 #[cfg(feature = "std")]
 use crate::authority_selection_inputs::AuthoritySelectionDataSource;
 use crate::authority_selection_inputs::AuthoritySelectionInputs;
+use crate::authority_selection_inputs::AuthoritySelectionInputsLegacy;
 use parity_scale_codec::{Decode, Encode};
 #[cfg(feature = "std")]
 use {
 	crate::authority_selection_inputs::AuthoritySelectionInputsCreationError,
 	sidechain_domain::mainchain_epoch::MainchainEpochDerivation,
 	sidechain_domain::*,
-	sp_api::ProvideRuntimeApi,
+	sp_api::{ApiExt, ProvideRuntimeApi},
 	sp_inherents::{InherentData, InherentIdentifier},
 	sp_runtime::traits::Block as BlockT,
 	sp_session_validator_management::{
@@ -21,9 +22,13 @@ pub use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 
 #[derive(Clone, Debug, Encode, Decode)]
 /// Inherent data provider providing inputs for authority selection.
-pub struct AriadneInherentDataProvider {
-	/// Authority selection inputs.
-	pub data: Option<AuthoritySelectionInputs>,
+pub enum AriadneInherentDataProvider {
+	/// No data available.
+	Inert,
+	/// Legacy authority selection inputs.
+	Legacy(Option<AuthoritySelectionInputsLegacy>),
+	/// Authority selection inputs with native stake support.
+	V1(Option<AuthoritySelectionInputs>),
 }
 
 #[cfg(feature = "std")]
@@ -66,27 +71,71 @@ impl AriadneInherentDataProvider {
 		// We could accept mc_reference at last slot of data_epoch, but calculations are much easier like that.
 		// Additionally, in current implementation, the inequality below is always true, thus there is no need to make it more accurate.
 		let scripts = client.runtime_api().get_main_chain_scripts(parent_hash)?;
-		if data_epoch < mc_reference_epoch {
-			Ok(AriadneInherentDataProvider::from_mc_data(data_source, for_mc_epoch, scripts)
-				.await?)
-		} else {
-			Ok(AriadneInherentDataProvider { data: None })
+
+		let api = client.runtime_api();
+
+		if !api
+			.has_api::<dyn SessionValidatorManagementApi<Block, AuthorityId, AuthorityKeys, ScEpochNumber>>(
+				parent_hash,
+			)? {
+			log::info!("💤 Legacy DParam observation. Pallet not detected in the runtime.");
+			return Ok(AriadneInherentDataProvider::from_mc_data_legacy(
+				data_source,
+				for_mc_epoch,
+				scripts,
+			)
+			.await?);
+		}
+
+		if data_epoch >= mc_reference_epoch {
+			return Ok(AriadneInherentDataProvider::Legacy(None));
+		}
+
+		match api.get_pallet_version(parent_hash).ok() {
+			None => Ok(AriadneInherentDataProvider::from_mc_data_legacy(
+				data_source,
+				for_mc_epoch,
+				scripts,
+			)
+			.await?),
+			Some(1) => {
+				Ok(AriadneInherentDataProvider::from_mc_data_v1(data_source, for_mc_epoch, scripts)
+					.await?)
+			},
+			unsupported_version => {
+				Err(InherentProviderCreationError::UnsupportedPalletVersion(unsupported_version, 1))
+			},
 		}
 	}
 
-	async fn from_mc_data(
+	async fn from_mc_data_legacy(
 		candidate_data_source: &(dyn AuthoritySelectionDataSource + Send + Sync),
 		for_epoch: McEpochNumber,
 		scripts: MainChainScripts,
 	) -> Result<Self, InherentProviderCreationError> {
-		use crate::authority_selection_inputs::authority_selection_inputs_from_mc_data;
+		use crate::authority_selection_inputs::authority_selection_inputs_from_mc_data_legacy;
 
-		Ok(Self {
-			data: Some(
-				authority_selection_inputs_from_mc_data(candidate_data_source, for_epoch, scripts)
-					.await?,
-			),
-		})
+		Ok(Self::Legacy(Some(
+			authority_selection_inputs_from_mc_data_legacy(
+				candidate_data_source,
+				for_epoch,
+				scripts,
+			)
+			.await?,
+		)))
+	}
+
+	async fn from_mc_data_v1(
+		candidate_data_source: &(dyn AuthoritySelectionDataSource + Send + Sync),
+		for_epoch: McEpochNumber,
+		scripts: MainChainScripts,
+	) -> Result<Self, InherentProviderCreationError> {
+		use crate::authority_selection_inputs::authority_selection_inputs_from_mc_data_v1;
+
+		Ok(Self::V1(Some(
+			authority_selection_inputs_from_mc_data_v1(candidate_data_source, for_epoch, scripts)
+				.await?,
+		)))
 	}
 }
 
@@ -106,6 +155,9 @@ pub enum InherentProviderCreationError {
 	/// Data source call failed.
 	#[error("Data source call failed: {0}")]
 	DataSourceError(#[from] Box<dyn std::error::Error + Send + Sync>),
+	/// Unsupported pallet version.
+	#[error("Unsupported pallet version: got {0:?}, expected {1}")]
+	UnsupportedPalletVersion(Option<u32>, u32),
 }
 
 #[cfg(feature = "std")]
@@ -154,9 +206,16 @@ impl sp_inherents::InherentDataProvider for AriadneInherentDataProvider {
 		&self,
 		inherent_data: &mut InherentData,
 	) -> Result<(), sp_inherents::Error> {
-		match &self.data {
-			None => Ok(()),
-			Some(data) => inherent_data.put_data(INHERENT_IDENTIFIER, data),
+		match &self {
+			AriadneInherentDataProvider::Inert => Ok(()),
+			AriadneInherentDataProvider::Legacy(data) => match data {
+				None => Ok(()),
+				Some(data) => inherent_data.put_data(INHERENT_IDENTIFIER, data),
+			},
+			AriadneInherentDataProvider::V1(data) => match data {
+				None => Ok(()),
+				Some(data) => inherent_data.put_data(INHERENT_IDENTIFIER, data),
+			},
 		}
 	}
 
@@ -189,6 +248,14 @@ mod tests {
 
 	const TIMESTAMP: u64 = 400_000;
 
+	fn has_data(provider: &AriadneInherentDataProvider) -> bool {
+		match provider {
+			AriadneInherentDataProvider::Inert => false,
+			AriadneInherentDataProvider::Legacy(data) => data.is_some(),
+			AriadneInherentDataProvider::V1(data) => data.is_some(),
+		}
+	}
+
 	#[tokio::test]
 	async fn return_empty_ariadne_cidp_if_runtime_requests_too_new_epoch() {
 		// This is the epoch number that is too new
@@ -207,7 +274,7 @@ mod tests {
 		.await;
 
 		assert!(empty_ariadne_idp.is_ok());
-		assert!(empty_ariadne_idp.unwrap().data.is_none());
+		assert!(!has_data(&empty_ariadne_idp.unwrap()));
 	}
 
 	#[tokio::test]
@@ -257,7 +324,7 @@ mod tests {
 		.await;
 
 		assert!(ariadne_idp.is_ok());
-		assert!(ariadne_idp.unwrap().data.is_some());
+		assert!(has_data(&ariadne_idp.unwrap()));
 	}
 
 	fn sc_epoch_duration_millis() -> u64 {

@@ -124,6 +124,7 @@ impl From<MockPermissionedCandidate> for PermissionedCandidateData {
 pub struct MockDParam {
 	permissioned: u16,
 	registered: u16,
+	native_stake: u16,
 }
 
 impl MockDParam {
@@ -133,8 +134,12 @@ impl MockDParam {
 }
 
 impl From<MockDParam> for DParameter {
-	fn from(MockDParam { permissioned, registered }: MockDParam) -> Self {
-		Self { num_permissioned_candidates: permissioned, num_registered_candidates: registered }
+	fn from(MockDParam { permissioned, registered, native_stake }: MockDParam) -> Self {
+		Self {
+			num_permissioned_candidates: permissioned,
+			num_registered_candidates: registered,
+			num_native_stake_candidates: native_stake,
+		}
 	}
 }
 
