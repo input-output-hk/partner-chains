@@ -243,8 +243,8 @@ fn deposit_tx(
 }
 
 fn to_user_transfer_metadatum(pc_address: &[u8]) -> Result<TransactionMetadatum, JsError> {
-	Ok(TokenTransferMetadatum::V1(TokenTransferMetadatumV1::UserTransfer {
+	TokenTransferMetadatum::V1(TokenTransferMetadatumV1::UserTransfer {
 		receiver: ByteString(pc_address.to_vec()),
 	})
-	.encode()?)
+	.encode()
 }
