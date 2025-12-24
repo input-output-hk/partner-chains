@@ -117,6 +117,20 @@ def pytest_sessionstart(session):
     # set partner chain status on main thread
     if not hasattr(session.config, 'workerinput'):
         session.config.partner_chain_status = partner_chain_rpc_api.partner_chain_get_status().result
+        
+        # Auto-calculate init_timestamp if not provided via CLI
+        if not session.config.getoption("--init-timestamp"):
+            current_mc_epoch = session.config.partner_chain_status["mainchain"]["epoch"]
+            current_time = int(time.time())
+            epoch_duration = _config.main_chain.epoch_length * _config.main_chain.slot_length
+            calculated_init_timestamp = current_time - (current_mc_epoch * epoch_duration)
+            
+            # Update config with calculated value
+            _config.main_chain.init_timestamp = calculated_init_timestamp
+            logging.info(
+                f"Auto-calculated init_timestamp: {calculated_init_timestamp} "
+                f"(current MC epoch: {current_mc_epoch}, time: {current_time})"
+            )
 
 
 def pytest_configure_node(node):
