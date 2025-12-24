@@ -19,6 +19,7 @@ use sqlx::encode::IsNull;
 use sqlx::error::BoxDynError;
 use sqlx::postgres::PgTypeInfo;
 use sqlx::*;
+use std::fmt::{Debug, Formatter};
 
 /// Macro to handle numeric types that are non-negative but are stored by Db-Sync using
 /// signed SQL types.
@@ -121,8 +122,14 @@ sqlx_implementations_for_wrapper!(i16, "INT2", TxIndex, UtxoIndex);
 pub struct TxIndexInBlock(pub u32);
 sqlx_implementations_for_wrapper!(i32, "INT4", TxIndexInBlock, McTxIndexInBlock);
 
-#[derive(Debug, Clone, Copy, PartialOrd, Ord, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialOrd, Ord, PartialEq, Eq)]
 pub struct TxHash(pub [u8; 32]);
+
+impl Debug for TxHash {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		write!(f, "TxHash(0x{})", hex::encode(self.0))
+	}
+}
 
 impl sqlx::Type<Postgres> for TxHash {
 	fn type_info() -> <Postgres as sqlx::Database>::TypeInfo {

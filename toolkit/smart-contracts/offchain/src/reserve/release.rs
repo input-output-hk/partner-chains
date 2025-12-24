@@ -39,7 +39,9 @@ use ogmios_client::{
 	query_ledger_state::*, query_network::QueryNetwork, transactions::Transactions,
 	types::OgmiosUtxo,
 };
-use partner_chains_plutus_data::{bridge::TokenTransferDatumV1, reserve::ReserveRedeemer};
+use partner_chains_plutus_data::{
+	VersionedMetadatum, bridge::TokenTransferMetadatum, reserve::ReserveRedeemer,
+};
 use sidechain_domain::{McTxHash, UtxoId};
 use std::num::NonZero;
 
@@ -129,6 +131,8 @@ fn reserve_release_tx(
 	let left_in_reserve = reserve_balance.checked_sub(amount_to_transfer)
 		.ok_or_else(||anyhow!("Not enough funds in the reserve to transfer {amount_to_transfer} tokens (reserve balance: {reserve_balance})"))?;
 
+	tx_builder.add_metadatum(&0u64.into(), &TokenTransferMetadatum::reserve_v1().encode()?);
+
 	// Additional reference scripts
 	tx_builder.add_script_reference_input(
 		&reserve_data.auth_policy_version_utxo.to_csl_tx_input(),
@@ -201,7 +205,7 @@ fn reserve_release_tx(
 	tx_builder.add_output(&{
 		TransactionOutputBuilder::new()
 			.with_address(&ics_data.scripts.validator.address(ctx.network))
-			.with_plutus_data(&TokenTransferDatumV1::ReserveTransfer.into())
+			.with_plutus_data(&unit_plutus_data())
 			.next()?
 			.with_minimum_ada_and_asset(&ics_tokens, ctx)?
 			.build()?

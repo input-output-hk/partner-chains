@@ -4,7 +4,7 @@ use hex_literal::hex;
 use sidechain_domain::byte_string::ByteString;
 use sidechain_domain::mainchain_epoch::{Duration, MainchainEpochConfig, Timestamp};
 use sidechain_domain::{
-	AssetName, MainchainAddress, McBlockHash, McBlockNumber, McTxHash, PolicyId, UtxoId,
+	AssetName, MainchainAddress, McBlockHash, McBlockNumber, McTxHash, PolicyId,
 };
 use sp_partner_chains_bridge::{
 	BridgeDataCheckpoint, BridgeTransferV1, MainChainScripts, TokenBridgeDataSource,
@@ -45,10 +45,6 @@ fn init_ics_tx_hash() -> McTxHash {
 	McTxHash(hex!("c000000000000000000000000000000000000000000000000000000000000001"))
 }
 
-fn last_ics_init_utxo() -> UtxoId {
-	UtxoId::new(init_ics_tx_hash().0, 3)
-}
-
 fn reserve_transfer() -> BridgeTransferV1<ByteString> {
 	BridgeTransferV1::<ByteString>::ReserveTransfer { token_amount: 100 }
 }
@@ -74,29 +70,29 @@ fn invalid_transfer_1() -> BridgeTransferV1<ByteString> {
 	BridgeTransferV1::InvalidTransfer {
 		// invalid transfer consumes utxo from user transfer 2
 		token_amount: 1000 - 120,
-		utxo_id: invalid_transfer_1_utxo(),
+		tx_hash: invalid_transfer_1_tx(),
 	}
 }
 
 // transfer with no datum
 fn invalid_transfer_2() -> BridgeTransferV1<ByteString> {
-	BridgeTransferV1::InvalidTransfer { token_amount: 1000, utxo_id: invalid_transfer_2_utxo() }
+	BridgeTransferV1::InvalidTransfer { token_amount: 1000, tx_hash: invalid_transfer_2_tx() }
 }
 
-fn reserve_transfer_utxo() -> UtxoId {
-	UtxoId::new(hex!("c000000000000000000000000000000000000000000000000000000000000002"), 0)
+fn reserve_transfer_tx() -> McTxHash {
+	McTxHash(hex!("c000000000000000000000000000000000000000000000000000000000000002"))
 }
 
-fn user_transfer_1_utxo() -> UtxoId {
-	UtxoId::new(hex!("c000000000000000000000000000000000000000000000000000000000000003"), 0)
+fn user_transfer_1_tx() -> McTxHash {
+	McTxHash(hex!("c000000000000000000000000000000000000000000000000000000000000003"))
 }
 
-fn invalid_transfer_1_utxo() -> UtxoId {
-	UtxoId::new(hex!("c000000000000000000000000000000000000000000000000000000000000005"), 0)
+fn invalid_transfer_1_tx() -> McTxHash {
+	McTxHash(hex!("c000000000000000000000000000000000000000000000000000000000000005"))
 }
 
-fn invalid_transfer_2_utxo() -> UtxoId {
-	UtxoId::new(hex!("c000000000000000000000000000000000000000000000000000000000000006"), 0)
+fn invalid_transfer_2_tx() -> McTxHash {
+	McTxHash(hex!("c000000000000000000000000000000000000000000000000000000000000006"))
 }
 
 fn main_chain_scripts() -> MainChainScripts {
@@ -187,7 +183,7 @@ fn create_cached_source(pool: PgPool) -> CachedTokenBridgeDataSourceImpl {
 
 with_migration_versions_and_caching! {
 	async fn gets_transfers_from_init_to_block_2(data_source: &dyn TokenBridgeDataSource<ByteString>) {
-		let data_checkpoint = BridgeDataCheckpoint::Utxo(last_ics_init_utxo());
+		let data_checkpoint = BridgeDataCheckpoint::Tx(init_ics_tx_hash());
 		let current_mc_block = block_2_hash();
 		let max_transfers = 2;
 
@@ -199,11 +195,11 @@ with_migration_versions_and_caching! {
 		// There's two transfers done in block 2
 		assert_eq!(transfers, vec![reserve_transfer(), user_transfer_1()]);
 
-		assert_eq!(new_checkpoint, BridgeDataCheckpoint::Utxo(user_transfer_1_utxo()))
+		assert_eq!(new_checkpoint, BridgeDataCheckpoint::Tx(user_transfer_1_tx()))
 	}
 
 	async fn gets_transfers_from_init_to_block_4(data_source: &dyn TokenBridgeDataSource<ByteString>) {
-		let data_checkpoint = BridgeDataCheckpoint::Utxo(last_ics_init_utxo());
+		let data_checkpoint = BridgeDataCheckpoint::Tx(init_ics_tx_hash());
 		let current_mc_block = block_4_hash();
 		let max_transfers = 5;
 
@@ -218,7 +214,7 @@ with_migration_versions_and_caching! {
 			vec![reserve_transfer(), user_transfer_1(), user_transfer_2(), invalid_transfer_1(), invalid_transfer_2()]
 		);
 
-		assert_eq!(new_checkpoint, BridgeDataCheckpoint::Utxo(invalid_transfer_2_utxo()))
+		assert_eq!(new_checkpoint, BridgeDataCheckpoint::Tx(invalid_transfer_2_tx()))
 	}
 
 	async fn accepts_block_checkpoint(data_source: &dyn TokenBridgeDataSource<ByteString>) {
@@ -237,7 +233,7 @@ with_migration_versions_and_caching! {
 			vec![reserve_transfer(), user_transfer_1(), user_transfer_2(), invalid_transfer_1(), invalid_transfer_2()]
 		);
 
-		assert_eq!(new_checkpoint, BridgeDataCheckpoint::Utxo(invalid_transfer_2_utxo()))
+		assert_eq!(new_checkpoint, BridgeDataCheckpoint::Tx(invalid_transfer_2_tx()))
 	}
 
 	async fn returns_block_checkpoint_when_no_transfers_are_found(data_source: &dyn TokenBridgeDataSource<ByteString>) {
@@ -274,7 +270,7 @@ with_migration_versions_and_caching! {
 	}
 
 	async fn truncates_output_and_returns_utxo_checkpoint_if_max_output_is_reached(data_source: &dyn TokenBridgeDataSource<ByteString>) {
-		let data_checkpoint = BridgeDataCheckpoint::Utxo(last_ics_init_utxo());
+		let data_checkpoint = BridgeDataCheckpoint::Tx(init_ics_tx_hash());
 		let current_mc_block = block_2_hash();
 		let max_transfers = 1;
 
@@ -286,7 +282,7 @@ with_migration_versions_and_caching! {
 		// There's two transfers done in block 2
 		assert_eq!(transfers, vec![reserve_transfer()]);
 
-		assert_eq!(new_checkpoint, BridgeDataCheckpoint::Utxo(reserve_transfer_utxo()))
+		assert_eq!(new_checkpoint, BridgeDataCheckpoint::Tx(reserve_transfer_tx()))
 	}
 
 	async fn utxos_from_checkpoint_block_are_not_included_in_result(data_source: &dyn TokenBridgeDataSource<ByteString>) {
