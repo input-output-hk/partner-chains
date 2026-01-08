@@ -8,7 +8,7 @@ import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
-# Default list of nodes
+# Default list of nodes (20 nodes in the environment)
 DEFAULT_NODES = [
     "alice",
     "bob",
@@ -19,7 +19,17 @@ DEFAULT_NODES = [
     "george",
     "henry",
     "iris",
-    "jack"
+    "jack",
+    "kate",
+    "leo",
+    "mike",
+    "nina",
+    "oliver",
+    "paul",
+    "quinn",
+    "rita",
+    "sam",
+    "tom"
 ]
 
 def load_config(config_file):
@@ -166,7 +176,7 @@ def main():
     
     parser.add_argument("--label", default="host", help="Loki label to filter by (default: host)")
     parser.add_argument("--header", action='append', help="Custom header 'Key: Value'. Can be used multiple times (overrides config file).")
-    parser.add_argument("--output-dir", dest="output_dir", default="logs", help="Output directory for log files (default: logs)")
+    parser.add_argument("--output-dir", dest="output_dir", default="logs", help="Base output directory for log files (default: logs)")
     
     args = parser.parse_args()
     
@@ -212,21 +222,41 @@ def main():
         nodes = DEFAULT_NODES
         print(f"No nodes specified, using default list: {', '.join(nodes)}")
     
-    # Create output directory if it doesn't exist
-    output_dir = Path(args.output_dir)
+    # Generate timestamp for the run
+    run_timestamp = datetime.now(timezone.utc).strftime("%Y_%m_%d_%H_%M_%S")
+    
+    # Create timestamped output directory
+    base_output_dir = Path(args.output_dir)
+    output_dir = base_output_dir / run_timestamp
     output_dir.mkdir(parents=True, exist_ok=True)
     print(f"Output directory: {output_dir}")
+    
+    # Create log_run_details file with command parameters
+    run_details = {
+        "run_timestamp": run_timestamp,
+        "start_time": args.start_time,
+        "end_time": args.end_time,
+        "nodes": nodes,
+        "url": url,
+        "label": args.label,
+        "output_dir": str(output_dir)
+    }
+    
+    details_file = output_dir / "log_run_details.json"
+    try:
+        with open(details_file, 'w', encoding='utf-8') as f:
+            json.dump(run_details, f, indent=2)
+        print(f"Run details saved to: {details_file}")
+    except Exception as e:
+        print(f"Warning: Failed to save run details: {e}")
         
     print(f"Downloading logs from {url}")
     print(f"Time range: {args.start_time} to {args.end_time}")
     
-    # Generate timestamp for filenames
-    timestamp = datetime.now(timezone.utc).strftime("%Y_%m_%d_%H_%M_%S")
-    
     for node in nodes:
         print(f"Processing node: {node}...")
         query = f'{{{args.label}="{node}"}}'
-        output_filename = output_dir / f"{node}_{timestamp}.txt"
+        output_filename = output_dir / f"{node}.txt"
         
         count = 0
         try:

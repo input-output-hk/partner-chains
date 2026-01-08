@@ -39,11 +39,11 @@ To download logs from Grafana, you need a service account token:
 
 ### Downloading Logs
 
-Download logs from Loki/Grafana using `download_logs.py`:
+Download logs from Loki/Grafana using `download_logs.py` (located in the parent `utils/` directory):
 
    **Using encrypted config file (recommended):**
    ```bash
-   python3 download_logs.py \
+   python3 ../download_logs.py \
      --config ../../secrets/substrate/performance/performance.json \
      --from-time "2026-01-07T10:00:00Z" \
      --to-time "2026-01-07T10:10:00Z" \
@@ -58,7 +58,7 @@ Download logs from Loki/Grafana using `download_logs.py`:
    
    **Using command-line arguments (alternative):**
    ```bash
-   python3 download_logs.py \
+   python3 ../download_logs.py \
      --url "https://tools.node.sc.iog.io/api/datasources/proxy/uid/P8E80F9AEF21F6940" \
      --header "Authorization: Bearer <your_token>" \
      --from-time "2026-01-07T10:00:00Z" \
@@ -71,18 +71,19 @@ Download logs from Loki/Grafana using `download_logs.py`:
    **Node selection options:**
    - `--node <name>`: Specify individual nodes (can be used multiple times)
    - `--nodes-file <file>`: Read node list from a file (one node per line)
-   - If neither is specified, uses default list: alice, bob, charlie, dave, eve, ferdie, george, henry, iris, jack
+   - If neither is specified, uses default list of 20 nodes: alice, bob, charlie, dave, eve, ferdie, george, henry, iris, jack, kate, leo, mike, nina, oliver, paul, quinn, rita, sam, tom
    
    **Output directory:**
-   - `--output-dir <path>`: Directory to save log files (default: `logs/`)
-   - The directory will be created automatically if it doesn't exist
-   - Files are saved as: `<output-dir>/<node>_YYYY_MM_DD_HH_MM_SS.txt`
+   - `--output-dir <path>`: Base directory for log output (default: `logs/`)
+   - A timestamped subdirectory is created for each run: `<output-dir>/YYYY_MM_DD_HH_MM_SS/`
+   - Log files are saved without timestamps: `<output-dir>/YYYY_MM_DD_HH_MM_SS/<node>.txt`
+   - A `log_run_details.json` file is created in each run directory with the command parameters
 
 4. Extract data from logs:
    ```bash
    python3 extractor.py alice bob charlie
    ```
-   Note: extractor.py expects log files in the current directory, so you may need to copy files from `logs/` or run it from within the logs directory.
+   Note: extractor.py expects log files in the current directory. You'll need to navigate to the timestamped log directory (e.g., `logs/YYYY_MM_DD_HH_MM_SS/`) before running the extractor.
 
 5. Generate statistics by node:
    ```bash

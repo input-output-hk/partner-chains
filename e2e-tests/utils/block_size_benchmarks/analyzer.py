@@ -177,7 +177,17 @@ def main():
         "george",
         "henry",
         "iris",
-        "jack"
+        "jack",
+        "kate",
+        "leo",
+        "mike",
+        "nina",
+        "oliver",
+        "paul",
+        "quinn",
+        "rita",
+        "sam",
+        "tom"
     ]
 
     if len(sys.argv) < 3:
