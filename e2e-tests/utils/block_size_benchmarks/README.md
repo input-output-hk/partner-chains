@@ -37,55 +37,50 @@ To download logs from Grafana, you need a service account token:
    # Save and exit (sops will automatically re-encrypt)
    ```
 
-### Downloading Logs
+### Running the Benchmark
 
-Download logs from Loki/Grafana using `download_logs.py` (located in the parent `utils/` directory):
+The `run_benchmark.py` script automates the entire workflow: downloading logs, extracting data, and generating analysis.
 
-   **Using encrypted config file (recommended):**
-   ```bash
-   python3 ../download_logs.py \
-     --config ../../secrets/substrate/performance/performance.json \
-     --from-time "2026-01-07T10:00:00Z" \
-     --to-time "2026-01-07T10:10:00Z" \
-     --node alice --node bob --node charlie
-   ```
-   
-   The config file is encrypted with sops and contains:
-   - Grafana/Loki URL
-   - Authentication token
-   
-   The script automatically decrypts the config using sops (requires `sops` and proper age/pgp keys).
-   
-   **Using command-line arguments (alternative):**
-   ```bash
-   python3 ../download_logs.py \
-     --url "https://tools.node.sc.iog.io/api/datasources/proxy/uid/P8E80F9AEF21F6940" \
-     --header "Authorization: Bearer <your_token>" \
-     --from-time "2026-01-07T10:00:00Z" \
-     --to-time "2026-01-07T10:10:00Z" \
-     --node alice --node bob --node charlie
-   ```
-   
-   Command-line arguments override values from the config file.
-   
-   **Node selection options:**
-   - `--node <name>`: Specify individual nodes (can be used multiple times)
-   - `--nodes-file <file>`: Read node list from a file (one node per line)
-   - If neither is specified, uses default list of 20 nodes: alice, bob, charlie, dave, eve, ferdie, george, henry, iris, jack, kate, leo, mike, nina, oliver, paul, quinn, rita, sam, tom
-   
-   **Output directory:**
-   - `--output-dir <path>`: Base directory for log output (default: `logs/`)
-   - A timestamped subdirectory is created for each run: `<output-dir>/YYYY_MM_DD_HH_MM_SS/`
-   - Log files are saved without timestamps: `<output-dir>/YYYY_MM_DD_HH_MM_SS/<node>.txt`
-   - A `log_run_details.json` file is created in each run directory with the command parameters
+**Using encrypted config file (recommended):**
+```bash
+python3 run_benchmark.py \
+  --config ../../secrets/substrate/performance/performance.json \
+  --from-time "2026-01-07T10:00:00Z" \
+  --to-time "2026-01-07T10:10:00Z" \
+  --node alice --node bob --node charlie
+```
 
-4. Extract data from logs:
-   ```bash
-   python3 extractor.py alice bob charlie
-   ```
-   Note: extractor.py expects log files in the current directory. You'll need to navigate to the timestamped log directory (e.g., `logs/YYYY_MM_DD_HH_MM_SS/`) before running the extractor.
+**Using command-line arguments (alternative):**
+```bash
+python3 run_benchmark.py \
+  --url "https://tools.node.sc.iog.io/api/datasources/proxy/uid/P8E80F9AEF21F6940" \
+  --header "Authorization: Bearer <your_token>" \
+  --from-time "2026-01-07T10:00:00Z" \
+  --to-time "2026-01-07T10:10:00Z" \
+  --node alice --node bob --node charlie
+```
 
-5. Generate statistics by node:
-   ```bash
-   python3 analyzer.py block_propagation_report.txt analysis.txt alice bob charlie
-   ```
+**Re-analyzing existing logs:**
+
+If you already have logs downloaded, you can skip the download step:
+```bash
+python3 run_benchmark.py \
+  --skip-download \
+  --log-dir logs/2026_01_07_10_00_00 \
+  --from-time "2026-01-07T10:00:00Z" \
+  --to-time "2026-01-07T10:10:00Z"
+```
+
+**Node selection options:**
+- `--node <name>`: Specify individual nodes (can be used multiple times)
+- `--nodes-file <file>`: Read node list from a file (one per line)
+- If neither is specified, uses default list of 20 nodes: alice, bob, charlie, dave, eve, ferdie, george, henry, iris, jack, kate, leo, mike, nina, oliver, paul, quinn, rita, sam, tom
+- When using `--skip-download`, nodes are automatically detected from the log files
+
+**Output:**
+
+All files are saved in a timestamped directory: `logs/YYYY_MM_DD_HH_MM_SS/`
+- `<node>.txt` - Downloaded logs for each node
+- `log_run_details.json` - Run metadata
+- `block_propagation_report.txt` - Block propagation report
+- `analysis.txt` - Summary statistics by node
