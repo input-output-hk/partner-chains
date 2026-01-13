@@ -5,8 +5,9 @@ import re
 import sys
 import time
 import concurrent.futures
-import shutil
 import tempfile
+import json
+import argparse
 
 RELAYS = [
     "ferdie",
@@ -20,63 +21,87 @@ RELAYS = [
     "sam",
     "tom"
 ]
-DB_PATH = "toolkit.db"
 
 def submit_single_tx(i, tx_file, total_files, toolkit_path):
-    relay_name = RELAYS[i % len(RELAYS)]
-    dest_url = f"ws://{relay_name}.node.sc.iog.io:9944"
-    
     # Ensure absolute path for the source file since we change CWD
     abs_tx_file = os.path.abspath(tx_file)
 
-    cmd = [
-        toolkit_path, "generate-txs", "send",
-        "--src-file", abs_tx_file,
-        "--dest-url", dest_url
-    ]
+    start_relay_idx = i % len(RELAYS)
 
-    try:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # Copy toolkit.db to temp_dir to avoid locking
-            db_copy_start = time.time()
-            if os.path.exists(DB_PATH):
-                shutil.copy(DB_PATH, os.path.join(temp_dir, "toolkit.db"))
-            db_copy_time = time.time() - db_copy_start
+    for r_offset in range(len(RELAYS)):
+        relay_idx = (start_relay_idx + r_offset) % len(RELAYS)
+        relay_name = RELAYS[relay_idx]
+        dest_url = f"ws://{relay_name}.node.sc.iog.io:9944"
 
-            exec_start = time.time()
-            result = subprocess.run(
-                cmd, capture_output=True, text=True, check=True, cwd=temp_dir
-            )
-            exec_time = time.time() - exec_start
+        cmd = [
+            toolkit_path, "generate-txs", "send",
+            "--src-file", abs_tx_file,
+            "--fetch-cache", "inmemory",
+            "--dest-url", dest_url
+        ]
 
-        if result.stderr:
-            print(f"⚠️  {tx_file}: {result.stderr}")
-        print(f"✅ [{i}/{total_files}] Sent {tx_file} to {relay_name} [DB Copy: {db_copy_time:.4f}s, Exec: {exec_time:.4f}s]")
+        try:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                exec_start = time.time()
+                result = subprocess.run(
+                    cmd, capture_output=True, text=True, check=True, cwd=temp_dir
+                )
+                exec_time = time.time() - exec_start
 
-    except subprocess.CalledProcessError as e:
-        print(f"\n❌ Failed to submit {tx_file} to {relay_name}!")
-        print("Error Output:", e.stderr)
+            chain_latency = 0.0
+            sent_ts = 0
+            finalized_ts = 0
+
+            if result.stderr:
+                print(f"⚠️  {tx_file}: {result.stderr}")
+                try:
+                    for line in result.stderr.splitlines():
+                        if '"message":"SENT"' in line:
+                            sent_ts = json.loads(line[line.find("{"):])["timestamp"]
+                        elif '"message":"FINALIZED"' in line:
+                            finalized_ts = json.loads(line[line.find("{"):])["timestamp"]
+                    if sent_ts and finalized_ts:
+                        chain_latency = (finalized_ts - sent_ts) / 1000.0
+                except Exception:
+                    pass
+
+            print(f"✅ [{i}/{total_files}] Sent {tx_file} to {relay_name} [Chain Latency: {chain_latency:.2f}s, Exec: {exec_time:.4f}s]")
+            time.sleep(0.1)
+            return
+
+        except subprocess.CalledProcessError as e:
+            if r_offset == len(RELAYS) - 1:
+                print(f"\n❌ Failed to submit {tx_file} to {relay_name}!")
+                print("Error Output:", e.stderr)
+            else:
+                print(f"⚠️  Failed to submit {tx_file} to {relay_name}, trying next node...")
 
 def submit_transactions(toolkit_path="midnight-node-toolkit"):
-    global DB_PATH
-    if not os.path.exists(DB_PATH):
-        print(f"⚠️  Warning: '{DB_PATH}' not found in current directory.")
-        user_input = input("Please enter the full path to toolkit.db: ").strip()
-        if not user_input:
-            print("❌ No path provided. Exiting.")
-            sys.exit(1)
-        
-        DB_PATH = user_input
-        if not os.path.exists(DB_PATH):
-            print(f"❌ Error: File '{DB_PATH}' not found.")
-            sys.exit(1)
+    parser = argparse.ArgumentParser(description="Submit batch transactions.")
+    parser.add_argument("--start", type=int, help="Start index")
+    parser.add_argument("--end", type=int, help="End index")
+    args = parser.parse_args()
 
     start_time = time.time()
     # 1. Find all matching files
-    files = glob.glob(os.path.join("txs", "tx_*.json"))
+    all_files = glob.glob(os.path.join("txs", "tx_*.mn"))
     
+    files = []
+    if args.start is not None and args.end is not None:
+        for f in all_files:
+            try:
+                basename = os.path.basename(f)
+                index = int(os.path.splitext(basename)[0].split('_')[-1])
+                if args.start <= index <= args.end:
+                    files.append(f)
+            except (ValueError, IndexError):
+                continue
+    else:
+        files = all_files
+
     if not files:
-        print("❌ No files found matching 'tx_*.json'")
+        msg = f" in range {args.start}-{args.end}" if args.start is not None else ""
+        print(f"❌ No files found matching 'tx_*.mn'{msg}")
         sys.exit(1)
 
     print(f"🚀 Found {len(files)} transaction files to submit.")

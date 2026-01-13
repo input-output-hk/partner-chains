@@ -26,8 +26,8 @@ RELAYS = [
 TOOLKIT_CMD = "midnight-node-toolkit"
 TOKEN_TYPE = "0000000000000000000000000000000000000000000000000000000000000000"
 BASE_AMOUNT = 1000000
-START_INDEX = 20
-END_INDEX = 25
+START_INDEX = 10
+END_INDEX = 99
 DB_PATH = "toolkit.db"
 
 def run_command(cmd, cwd=None, verbose=False, exit_on_error=True):
@@ -94,9 +94,10 @@ def send_transaction(source_index, dest_address, amount_val, save_to_file=True, 
 
         if save_to_file:
             timestamp = int(time.time())
-            filename = os.path.join("txs", f"tx_{timestamp}_{source_index}.json")
+            filename = os.path.join("txs", f"tx_{timestamp}_{source_index}.mn")
             filename = os.path.abspath(filename)
             cmd.extend(["--dest-file", filename])
+            cmd.extend(["--to-bytes"])
         else:
             cmd.extend(["--dest-url", node_url])
 
