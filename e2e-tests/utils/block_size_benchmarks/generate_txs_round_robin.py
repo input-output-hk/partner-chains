@@ -27,7 +27,7 @@ TOOLKIT_CMD = "midnight-node-toolkit"
 TOKEN_TYPE = "0000000000000000000000000000000000000000000000000000000000000000"
 BASE_AMOUNT = 1000000
 START_INDEX = 10
-END_INDEX = 99
+END_INDEX = 499
 DB_PATH = "toolkit.db"
 
 def run_command(cmd, cwd=None, verbose=False, exit_on_error=True):
