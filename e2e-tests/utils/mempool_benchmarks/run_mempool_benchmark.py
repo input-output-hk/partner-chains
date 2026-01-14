@@ -51,21 +51,22 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # With config file (recommended)
+  # Analyze Ferdie (relay node, default)
   python3 run_mempool_benchmark.py \\
     --config ../../secrets/substrate/performance/performance.json \\
     --from-time "2026-01-08T10:00:00Z" \\
     --to-time "2026-01-08T10:10:00Z"
 
-  # With explicit URL and auth header
+  # Analyze Charlie (validator node)
   python3 run_mempool_benchmark.py \\
-    --url "https://grafana.example.com" \\
-    --header "Authorization: Bearer token123" \\
+    --node charlie \\
+    --config ../../secrets/substrate/performance/performance.json \\
     --from-time "2026-01-08T10:00:00Z" \\
     --to-time "2026-01-08T10:10:00Z"
 
   # Custom time window for analysis (500ms instead of default 1s)
   python3 run_mempool_benchmark.py \\
+    --node charlie \\
     --config config.json \\
     --from-time "2026-01-08T10:00:00Z" \\
     --to-time "2026-01-08T10:10:00Z" \\
@@ -73,6 +74,10 @@ Examples:
         """
     )
 
+    # Node selection
+    parser.add_argument("--node", default="ferdie", 
+                       help="Node to download logs from (default: ferdie)")
+    
     # Download options
     parser.add_argument("--config", help="Path to encrypted config file with Grafana credentials")
     parser.add_argument("--url", help="Loki API URL (overrides config file)")
@@ -107,6 +112,7 @@ Examples:
     print(f"\n{'#'*60}")
     print(f"# MEMPOOL BENCHMARK RUNNER")
     print(f"{'#'*60}")
+    print(f"Node: {args.node}")
     print(f"Time range: {args.start_time} to {args.end_time}")
     print(f"Analysis window: {args.window}ms")
     print(f"Output directory: {output_dir}")
@@ -117,7 +123,7 @@ Examples:
         download_cmd = [
             "python3",
             str(script_dir / "../download_logs.py"),
-            "--node", "ferdie",
+            "--node", args.node,
             "--from-time", args.start_time,
             "--to-time", args.end_time,
             "--output-dir", str(output_dir)
@@ -131,30 +137,30 @@ Examples:
             for header in args.header:
                 download_cmd.extend(["--header", header])
 
-        if not run_command(download_cmd, "Step 1: Downloading Ferdie's logs"):
+        if not run_command(download_cmd, f"Step 1: Downloading {args.node}'s logs"):
             sys.exit(1)
 
-        # Find the downloaded log file (has timestamp in name)
-        log_files = list(output_dir.glob("ferdie_*.txt"))
-        if not log_files:
-            print("ERROR: No log files found after download!")
+        # Find the most recent timestamped directory
+        subdirs = [d for d in output_dir.iterdir() if d.is_dir()]
+        if not subdirs:
+            print("ERROR: No timestamped directories found after download!")
             sys.exit(1)
-
-        # Use the most recent one
-        log_file = max(log_files, key=lambda p: p.stat().st_mtime)
-        print(f"\nUsing log file: {log_file}")
-
-        # Create symlink to ferdie.txt for easier processing
-        ferdie_link = output_dir / "ferdie.txt"
-        if ferdie_link.exists() or ferdie_link.is_symlink():
-            ferdie_link.unlink()
-        ferdie_link.symlink_to(log_file.name)
-        print(f"Created symlink: ferdie.txt -> {log_file.name}")
+        
+        # Get the most recent directory
+        log_dir = max(subdirs, key=lambda d: d.stat().st_mtime)
+        print(f"\nUsing log directory: {log_dir}")
+        
+        # Check that node log file exists in the directory
+        node_file = log_dir / f"{args.node}.txt"
+        if not node_file.exists():
+            print(f"ERROR: {node_file} not found in downloaded directory!")
+            sys.exit(1)
     else:
         print("\nStep 1: SKIPPED (using existing logs)")
-        ferdie_link = output_dir / "ferdie.txt"
-        if not ferdie_link.exists():
-            print(f"ERROR: {ferdie_link} not found!")
+        log_dir = output_dir
+        node_file = log_dir / f"{args.node}.txt"
+        if not node_file.exists():
+            print(f"ERROR: {node_file} not found!")
             sys.exit(1)
 
     # Step 2: Extract metrics
@@ -162,28 +168,28 @@ Examples:
         extract_cmd = [
             "python3",
             str(script_dir / "extractor.py"),
-            "ferdie"
+            args.node
         ]
 
-        if not run_command(extract_cmd, "Step 2: Extracting mempool metrics", cwd=output_dir):
+        if not run_command(extract_cmd, "Step 2: Extracting mempool metrics", cwd=log_dir):
             sys.exit(1)
 
         # Check if report was created
-        report_file = output_dir / "mempool_report.txt"
+        report_file = log_dir / "mempool_report.txt"
         if not report_file.exists():
             print("ERROR: mempool_report.txt was not created!")
             sys.exit(1)
         print(f"\n✓ Created: {report_file}")
     else:
         print("\nStep 2: SKIPPED (using existing mempool_report.txt)")
-        report_file = output_dir / "mempool_report.txt"
+        report_file = log_dir / "mempool_report.txt"
         if not report_file.exists():
             print(f"ERROR: {report_file} not found!")
             sys.exit(1)
 
     # Step 3: Analyze metrics
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    analysis_file = output_dir / f"mempool_analysis_{timestamp}.txt"
+    analysis_file = log_dir / f"mempool_analysis_{timestamp}.txt"
 
     analyze_cmd = [
         "python3",
@@ -193,17 +199,19 @@ Examples:
         str(args.window)
     ]
 
-    if not run_command(analyze_cmd, "Step 3: Analyzing metrics", cwd=output_dir):
+    if not run_command(analyze_cmd, "Step 3: Analyzing metrics", cwd=log_dir):
         sys.exit(1)
 
     # Print summary
     print(f"\n{'='*60}")
     print("SUCCESS! Mempool benchmark complete.")
     print(f"{'='*60}")
-    print(f"\nOutput files in: {output_dir}")
-    print(f"  - ferdie.txt (or ferdie_*.txt): Downloaded logs")
+    print(f"\nOutput files in: {log_dir}")
+    print(f"  - {args.node}.txt: Downloaded logs")
     print(f"  - mempool_report.txt: Extracted time-series data")
+    print(f"  - mempool_events.csv: Raw event data (CSV)")
     print(f"  - {analysis_file.name}: Analysis and statistics")
+    print(f"  - {analysis_file.name.rsplit('.', 1)[0]}_timeseries.csv: Time-series data (CSV)")
     print(f"\nTo view analysis:")
     print(f"  cat {analysis_file}")
     print()

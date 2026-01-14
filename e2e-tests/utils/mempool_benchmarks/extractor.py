@@ -68,7 +68,7 @@ def extract_maintain_event(line: str, timestamp: datetime, node: str) -> Optiona
 
 def extract_value(line: str, key: str) -> Optional[int]:
     """Extract integer value for a given key from log line."""
-    pattern = f'{key}=(\d+)'
+    pattern = f'{key}=(\\d+)'
     match = re.search(pattern, line)
     return int(match.group(1)) if match else None
 
@@ -160,6 +160,38 @@ def extract_reverified_event(line: str, timestamp: datetime, node: str) -> Optio
     return None
 
 
+def extract_revalidation_event(line: str, timestamp: datetime, node: str) -> Optional[MempoolEvent]:
+    """
+    Extract data from 'view::finish_revalidation' event.
+    Example: view::finish_revalidation: applying revalidation result invalid=0 revalidated=22 at_hash=...
+    """
+    if "view::finish_revalidation" not in line or "revalidated=" not in line:
+        return None
+    
+    revalidated = extract_value(line, 'revalidated')
+    if revalidated is not None and revalidated > 0:  # Only capture non-zero revalidations
+        return MempoolEvent(timestamp, node, -1, -1, None, None,
+                          None, revalidated, None, None)
+    
+    return None
+
+
+def extract_validation_event(line: str, timestamp: datetime, node: str) -> Optional[MempoolEvent]:
+    """
+    Extract data from 'mempool::revalidate_inner' event.
+    Example: mempool::revalidate_inner finalized_block=... validated_count=5 total_count=10 ...
+    """
+    if "mempool::revalidate_inner" not in line or "validated_count=" not in line:
+        return None
+    
+    validated_count = extract_value(line, 'validated_count')
+    if validated_count is not None and validated_count > 0:  # Only capture non-zero validations
+        return MempoolEvent(timestamp, node, -1, -1, None, None,
+                          validated_count, None, None, None)
+    
+    return None
+
+
 def parse_logs(nodes: List[str]) -> List[MempoolEvent]:
     """Parse log files for all nodes and extract mempool events."""
     events = []
@@ -184,7 +216,7 @@ def parse_logs(nodes: List[str]) -> List[MempoolEvent]:
                     # Try to extract different event types
                     event = None
                     
-                    # Priority order: maintain > xts_count > update_view_with_mempool > pruned > reverified
+                    # Priority order: maintain > xts_count > update_view_with_mempool > revalidation > validation > pruned > reverified
                     event = extract_maintain_event(line, timestamp, node_name)
                     
                     if not event:
@@ -192,6 +224,12 @@ def parse_logs(nodes: List[str]) -> List[MempoolEvent]:
                     
                     if not event:
                         event = extract_update_view_event(line, timestamp, node_name)
+                    
+                    if not event:
+                        event = extract_revalidation_event(line, timestamp, node_name)
+                    
+                    if not event:
+                        event = extract_validation_event(line, timestamp, node_name)
                     
                     if not event:
                         event = extract_pruned_event(line, timestamp, node_name)
@@ -231,14 +269,14 @@ def generate_report(events: List[MempoolEvent]) -> str:
     report_lines.append(f"Time range: {events[0].timestamp} to {events[-1].timestamp}")
     report_lines.append("")
     report_lines.append("Column Definitions:")
-    report_lines.append("  Ready    - Valid transactions ready to execute immediately")
-    report_lines.append("  Future   - Valid transactions waiting for dependencies")
-    report_lines.append("  MemLen   - Total mempool size (tracked transaction count)")
-    report_lines.append("  Submit   - New transactions submitted in this event")
-    report_lines.append("  Valid    - Transactions validated (checked for correctness)")
-    report_lines.append("  Reval    - Transactions revalidated after chain updates")
-    report_lines.append("  Pruned   - Transactions included in finalized blocks")
-    report_lines.append("  Reverif  - Transactions resubmitted after reorg")
+    report_lines.append("  Ready    - Number of ready transactions in the mempool (transactions that can be included in the next block)")
+    report_lines.append("  Future   - Number of future transactions waiting for dependencies (e.g., higher nonce transactions)")
+    report_lines.append("  MemLen   - Total number of transactions being tracked in the mempool")
+    report_lines.append("  Submit   - Number of new transactions submitted to the mempool in this event")
+    report_lines.append("  Valid    - Number of newly submitted transactions validated (initial validation check)")
+    report_lines.append("  Reval    - Number of existing transactions revalidated after new blocks are imported")
+    report_lines.append("  Pruned   - Number of transactions removed because they were included in finalized blocks")
+    report_lines.append("  Reverif  - Number of transactions reverified after a chain reorganization")
     report_lines.append("")
     report_lines.append("-" * 160)
     report_lines.append(
@@ -258,6 +296,20 @@ def generate_report(events: List[MempoolEvent]) -> str:
         pruned_str = str(event.pruned_count) if event.pruned_count is not None else "N/A"
         reverified_str = str(event.reverified_txs) if event.reverified_txs is not None else "N/A"
         
+        # Skip rows where all data columns are N/A
+        all_na = all([
+            ready_str == "N/A",
+            future_str == "N/A",
+            mempool_str == "N/A",
+            submitted_str == "N/A",
+            validated_str == "N/A",
+            revalidated_str == "N/A",
+            pruned_str == "N/A",
+            reverified_str == "N/A"
+        ])
+        if all_na:
+            continue
+        
         report_lines.append(
             f"{timestamp_str:<26} {event.node:<10} {ready_str:>7} {future_str:>7} {mempool_str:>7} "
             f"{submitted_str:>7} {validated_str:>7} {revalidated_str:>7} {pruned_str:>7} {reverified_str:>7}"
@@ -267,6 +319,27 @@ def generate_report(events: List[MempoolEvent]) -> str:
     report_lines.append("")
     
     return "\n".join(report_lines)
+
+
+def export_events_csv(events: List[MempoolEvent], output_file: str):
+    """Export events to CSV for analysis."""
+    with open(output_file, 'w') as f:
+        # Write header
+        f.write("timestamp,node,ready,future,mempool_len,submitted_count,validated_count,revalidated,pruned_count,reverified_txs\n")
+        
+        # Write data
+        for event in events:
+            timestamp_str = event.timestamp.strftime("%Y-%m-%d %H:%M:%S.%f")
+            ready = event.ready if event.ready >= 0 else ""
+            future = event.future if event.future >= 0 else ""
+            mempool_len = event.mempool_len if event.mempool_len is not None else ""
+            submitted = event.submitted_count if event.submitted_count is not None else ""
+            validated = event.validated_count if event.validated_count is not None else ""
+            revalidated = event.revalidated if event.revalidated is not None else ""
+            pruned = event.pruned_count if event.pruned_count is not None else ""
+            reverified = event.reverified_txs if event.reverified_txs is not None else ""
+            
+            f.write(f"{timestamp_str},{event.node},{ready},{future},{mempool_len},{submitted},{validated},{revalidated},{pruned},{reverified}\n")
 
 
 def main():
@@ -291,6 +364,11 @@ def main():
         f.write(report)
     
     print(f"Report saved to {output_file}")
+    
+    # Export CSV
+    csv_file = "mempool_events.csv"
+    export_events_csv(events, csv_file)
+    print(f"Event CSV saved to {csv_file}")
 
 
 if __name__ == "__main__":

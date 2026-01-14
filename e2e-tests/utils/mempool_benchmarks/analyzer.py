@@ -3,7 +3,7 @@
 import sys
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
 
@@ -14,12 +14,12 @@ class MempoolPoint:
     node: str
     ready: int
     future: int
-    mempool_len: int | None
-    submitted_count: int | None
-    validated_count: int | None
-    revalidated: int | None
-    pruned_count: int | None
-    reverified_txs: int | None
+    mempool_len: Optional[int]
+    submitted_count: Optional[int]
+    validated_count: Optional[int]
+    revalidated: Optional[int]
+    pruned_count: Optional[int]
+    reverified_txs: Optional[int]
 
 
 TS_FMT = "%Y-%m-%d %H:%M:%S.%f"
@@ -123,21 +123,21 @@ def resample_metrics(df: pd.DataFrame, window_ms: int) -> pd.DataFrame:
     return pd.concat(all_nodes, ignore_index=True)
 
 
-def summarize(df: pd.DataFrame) -> str:
+def summarize(resampled_df: pd.DataFrame, original_df: pd.DataFrame) -> str:
     lines = [
         "=== MEMPOOL STATISTICS BY NODE ===",
         "",
         "Metrics Explained:",
-        "  Ready Txs     - Valid transactions that can execute immediately",
-        "  Future Txs    - Valid transactions waiting for dependencies (e.g., nonce)",
-        "  Admission Rate- Transactions submitted per second (TPS)",
-        "  Validated     - Transactions checked for correctness",
-        "  Revalidated   - Transactions re-validated after new blocks",
-        "  Pruned        - Transactions included in finalized blocks",
-        "  Reverified    - Transactions resubmitted after chain reorganization",
+        "  Ready Txs     - Average number of ready transactions (can be included in next block)",
+        "  Future Txs    - Average number of future transactions (waiting for dependencies like higher nonce)",
+        "  Admission Rate- Average rate of new transaction submissions per second (TPS)",
+        "  Validated     - Total count of newly submitted transactions that were validated",
+        "  Revalidated   - Total count of existing transactions revalidated after new blocks imported",
+        "  Pruned        - Total count of transactions removed (included in finalized blocks)",
+        "  Reverified    - Total count of transactions reverified after chain reorganization",
         ""
     ]
-    for node, group in df.groupby("node"):
+    for node, group in resampled_df.groupby("node"):
         g = group.dropna(subset=["ready", "future"])
         avg_ready = g["ready"].mean() if not g.empty else 0
         avg_future = g["future"].mean() if not g.empty else 0
@@ -145,11 +145,12 @@ def summarize(df: pd.DataFrame) -> str:
         peak_future = g["future"].max() if not g.empty else 0
         avg_adm = group["admission_tps"].mean() if "admission_tps" in group else 0
         
-        # Additional metrics
-        total_validated = group["validated"].sum() if "validated" in group else 0
-        total_revalidated = group["revalidated"].sum() if "revalidated" in group else 0
-        total_pruned = group["pruned"].sum() if "pruned" in group else 0
-        total_reverified = group["reverified"].sum() if "reverified" in group else 0
+        # Get event counts from original dataframe
+        node_orig = original_df[original_df["node"] == node]
+        total_validated = node_orig["validated"].sum() if "validated" in node_orig else 0
+        total_revalidated = node_orig["revalidated"].sum() if "revalidated" in node_orig else 0
+        total_pruned = node_orig["pruned"].sum() if "pruned" in node_orig else 0
+        total_reverified = node_orig["reverified"].sum() if "reverified" in node_orig else 0
         
         lines.append(f"Node: {node}")
         lines.append(f"  Average Ready Txs: {avg_ready:.2f}")
@@ -165,6 +166,159 @@ def summarize(df: pd.DataFrame) -> str:
     return "\n".join(lines)
 
 
+def generate_insights(resampled_df: pd.DataFrame, original_df: pd.DataFrame) -> str:
+    """Generate insights and observations from the mempool data."""
+    insights = []
+    insights.append("=== KEY INSIGHTS ===")
+    insights.append("")
+    
+    for node, group in resampled_df.groupby("node"):
+        insights.append(f"Node: {node}")
+        insights.append("")
+        
+        # Get node data from original dataframe
+        node_orig = original_df[original_df["node"] == node]
+        
+        # Mempool size analysis
+        g = group.dropna(subset=["ready", "future"])
+        if not g.empty:
+            avg_ready = g["ready"].mean()
+            peak_ready = g["ready"].max()
+            avg_future = g["future"].mean()
+            peak_future = g["future"].max()
+            
+            # Memory pool utilization
+            if avg_ready < 10:
+                insights.append("📊 Mempool Utilization: LOW")
+                insights.append(f"   - Average ready transactions: {avg_ready:.1f}")
+                insights.append("   - The mempool is relatively empty, indicating low transaction volume.")
+                insights.append("   - This is typical for relay nodes or periods of low network activity.")
+            elif avg_ready < 50:
+                insights.append("📊 Mempool Utilization: MODERATE")
+                insights.append(f"   - Average ready transactions: {avg_ready:.1f}")
+                insights.append("   - Moderate transaction throughput with occasional spikes.")
+            else:
+                insights.append("📊 Mempool Utilization: HIGH")
+                insights.append(f"   - Average ready transactions: {avg_ready:.1f}")
+                insights.append("   - High mempool utilization may indicate network congestion.")
+                insights.append("   - Consider monitoring block production capacity.")
+            
+            # Peak analysis
+            if peak_ready > avg_ready * 3:
+                insights.append("")
+                insights.append(f"⚠️  Transaction Spikes Detected: Peak of {int(peak_ready)} transactions")
+                insights.append(f"   - Peak is {peak_ready / avg_ready:.1f}x higher than average.")
+                insights.append("   - May indicate burst transaction submission or temporary processing delays.")
+            
+            # Future transactions
+            if avg_future > 1:
+                insights.append("")
+                insights.append(f"🔮 Future Transactions: Average {avg_future:.1f} transactions waiting")
+                insights.append("   - Transactions are waiting for dependencies (e.g., nonce ordering).")
+                insights.append("   - This is normal for accounts sending multiple transactions.")
+        
+        # Event-based metrics
+        total_validated = node_orig["validated"].sum() if "validated" in node_orig else 0
+        total_revalidated = node_orig["revalidated"].sum() if "revalidated" in node_orig else 0
+        total_pruned = node_orig["pruned"].sum() if "pruned" in node_orig else 0
+        total_reverified = node_orig["reverified"].sum() if "reverified" in node_orig else 0
+        
+        insights.append("")
+        insights.append("📈 Transaction Lifecycle:")
+        
+        # Validation insights
+        if total_validated == 0:
+            insights.append("   - ✓ No new transaction validations detected.")
+            insights.append("     → This node is likely a relay or not receiving direct tx submissions.")
+        else:
+            insights.append(f"   - ✓ {int(total_validated)} new transactions validated.")
+        
+        # Revalidation insights
+        if total_revalidated > 0:
+            insights.append(f"   - 🔄 {int(total_revalidated)} transactions revalidated after block imports.")
+            if total_revalidated > total_pruned:
+                insights.append("     → High revalidation suggests many transactions remain pending.")
+            else:
+                insights.append("     → Normal revalidation activity as blocks are processed.")
+        
+        # Pruning insights
+        if total_pruned > 0:
+            insights.append(f"   - ✂️  {int(total_pruned)} transactions pruned (included in finalized blocks).")
+            avg_pruned_per_block = total_pruned / max(1, len(g) / 6)  # Approximate blocks
+            if avg_pruned_per_block > 5:
+                insights.append(f"     → High throughput: ~{avg_pruned_per_block:.1f} txs per block on average.")
+        
+        # Reorg insights
+        if total_reverified > 0:
+            insights.append(f"   - ⚡ {int(total_reverified)} transactions reverified after chain reorgs.")
+            if total_reverified > 50:
+                insights.append("     → Significant reorg activity detected. Monitor chain stability.")
+            else:
+                insights.append("     → Minor reorg activity is normal in blockchain networks.")
+        
+        # Efficiency ratio
+        if total_pruned > 0 and total_revalidated > 0:
+            efficiency = total_pruned / (total_revalidated + total_pruned) * 100
+            insights.append("")
+            insights.append(f"💡 Mempool Efficiency: {efficiency:.1f}%")
+            if efficiency > 60:
+                insights.append("   - High efficiency: Most revalidated transactions are eventually included.")
+            elif efficiency > 30:
+                insights.append("   - Moderate efficiency: Some transactions are revalidated multiple times.")
+            else:
+                insights.append("   - Low efficiency: Many revalidations without finalization.")
+                insights.append("   - This may indicate transaction replacement or expiration.")
+        
+        insights.append("")
+        insights.append("-" * 80)
+        insights.append("")
+    
+    # Add visualization recommendations
+    insights.append("")
+    insights.append("=== RECOMMENDED VISUALIZATIONS ===")
+    insights.append("")
+    insights.append("Use the generated CSV files to create the following charts:")
+    insights.append("")
+    insights.append("1. 📊 Mempool Size Over Time (Line Chart)")
+    insights.append("   - X-axis: timestamp")
+    insights.append("   - Y-axis: ready, future")
+    insights.append("   - Shows mempool growth and spikes")
+    insights.append("   - File: *_timeseries.csv")
+    insights.append("")
+    insights.append("2. 🔄 Transaction Events Timeline (Stacked Area/Bar Chart)")
+    insights.append("   - X-axis: timestamp")
+    insights.append("   - Y-axis: pruned_count, reverified_txs, revalidated (stacked)")
+    insights.append("   - Shows transaction processing activity")
+    insights.append("   - File: mempool_events.csv")
+    insights.append("")
+    insights.append("3. 📈 Ready vs Future Transactions (Dual-Axis Line Chart)")
+    insights.append("   - Primary Y-axis: ready transactions")
+    insights.append("   - Secondary Y-axis: future transactions")
+    insights.append("   - Shows dependency patterns")
+    insights.append("   - File: *_timeseries.csv")
+    insights.append("")
+    insights.append("4. 🎯 Mempool Efficiency Trend (Line Chart)")
+    insights.append("   - Calculate rolling ratio: pruned / (pruned + revalidated)")
+    insights.append("   - Shows how efficiently transactions move through the mempool")
+    insights.append("   - File: mempool_events.csv (requires calculation)")
+    insights.append("")
+    insights.append("5. ⚡ Reorg Impact (Event Timeline)")
+    insights.append("   - Mark timestamps where reverified_txs > 0")
+    insights.append("   - Shows when chain reorganizations occur")
+    insights.append("   - File: mempool_events.csv")
+    insights.append("")
+    
+    return "\n".join(insights)
+
+
+def export_csv(df: pd.DataFrame, output_path: str):
+    """Export resampled dataframe to CSV for graphing."""
+    # Format timestamp for CSV
+    df_export = df.copy()
+    df_export['timestamp'] = df_export['timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S.%f')
+    df_export.to_csv(output_path, index=False)
+
+
 def main():
     if len(sys.argv) < 3:
         print("Usage: python analyzer.py <mempool_report.txt> <analysis.txt> [window_ms]")
@@ -176,14 +330,23 @@ def main():
     points = parse_report(report_path)
     df = to_dataframe(points)
     res = resample_metrics(df, window_ms)
-    summary = summarize(res)
+    summary = summarize(res, df)
+    insights = generate_insights(res, df)
 
+    # Save summary analysis with insights
     with open(out_path, "w") as f:
         f.write("# Mempool Analysis\n\n")
         f.write(f"Window: {window_ms} ms\n\n")
         f.write(summary)
+        f.write("\n\n")
+        f.write(insights)
 
     print(f"Analysis saved to: {out_path}")
+    
+    # Export CSV for graphing
+    csv_path = out_path.rsplit('.', 1)[0] + '_timeseries.csv'
+    export_csv(res, csv_path)
+    print(f"Time-series CSV saved to: {csv_path}")
 
 
 if __name__ == "__main__":
