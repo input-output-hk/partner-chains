@@ -35,10 +35,17 @@ NODE_URL = "ws://ferdie.node.sc.iog.io:9944" # "ws://localhost:9944"
 FUNDING_AMOUNT = 3000000
 FUNDING_SEEDS = []
 
-def run_command(cmd, cwd=None):
+def run_command(cmd, cwd=None, verbose=False):
     """Runs a command and returns stdout if successful, exits otherwise."""
+    if verbose:
+        print(f"Running: {' '.join(cmd)}")
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, check=True, cwd=cwd)
+        if verbose:
+            if result.stdout:
+                print(f"STDOUT: {result.stdout.strip()}")
+            if result.stderr:
+                print(f"STDERR: {result.stderr.strip()}")
         return result.stdout.strip()
     except subprocess.CalledProcessError as e:
         print(f"\n❌ Error executing command: {' '.join(cmd)}")
@@ -49,7 +56,7 @@ def run_command(cmd, cwd=None):
         print(f"\n❌ Error: Executable '{cmd[0]}' not found. Ensure it is in your PATH.")
         sys.exit(1)
 
-def get_wallet_address(index, cwd=None):
+def get_wallet_address(index, cwd=None, verbose=False):
     """Creates a wallet seed and retrieves its address."""
     # Seed format: 00..xx padded to 64 chars
     seed = f"{index:064}"
@@ -60,7 +67,7 @@ def get_wallet_address(index, cwd=None):
         "--seed", seed
     ]
 
-    output = run_command(cmd, cwd=cwd)
+    output = run_command(cmd, cwd=cwd, verbose=verbose)
     try:
         data = json.loads(output)
         return data["unshielded"]
@@ -71,7 +78,7 @@ def get_wallet_address(index, cwd=None):
         print(f"\n❌ JSON output does not contain 'unshielded' field: {output}")
         sys.exit(1)
 
-def fund_address(address, funding_seed, node_url, cwd=None):
+def fund_address(address, funding_seed, node_url, cwd=None, verbose=False):
     """Funds the given address using the source seed."""
 
     cmd = [
@@ -85,9 +92,9 @@ def fund_address(address, funding_seed, node_url, cwd=None):
     ]
 
     # Run the command (output is captured but we assume success if no error raised)
-    run_command(cmd, cwd=cwd)
+    run_command(cmd, cwd=cwd, verbose=verbose)
 
-def process_chunk(target_indices, funding_seeds, node_url):
+def process_chunk(target_indices, funding_seeds, node_url, verbose=False):
     failed_seeds = []
     try:
         relay_name = node_url.split('//')[1].split('.')[0]
@@ -103,11 +110,11 @@ def process_chunk(target_indices, funding_seeds, node_url):
         for i, seed in zip(target_indices, funding_seeds):
             try:
                 print(f"[Chunk {seed[-4:]}] Generating wallet {i}...", end=" ", flush=True)
-                addr = get_wallet_address(i, cwd=temp_dir)
+                addr = get_wallet_address(i, cwd=temp_dir, verbose=verbose)
                 print(f"✅ {addr}")
 
                 print(f"[Chunk {seed[-4:]}] Funding {addr}...", end=" ", flush=True)
-                fund_address(addr, seed, node_url, cwd=temp_dir)
+                fund_address(addr, seed, node_url, cwd=temp_dir, verbose=verbose)
                 print("✅ Sent")
 
                 # Wait a bit between transactions to ensure nonce propagation
@@ -124,14 +131,15 @@ def main():
     parser.add_argument("--end", type=int, default=TARGET_END_INDEX, help="Ending seed to be funded")
     parser.add_argument("--funding-start", type=int, default=FUNDING_START_INDEX, help="Starting funding seed index")
     parser.add_argument("--funding-end", type=int, default=FUNDING_END_INDEX, help="Ending funding seed index")
-    parser.add_argument("--night-amount", type=int, default=FUNDING_AMOUNT, help="Amount of NIGHT tokens to fund")
+    parser.add_argument("--night-amount", type=float, default=FUNDING_AMOUNT, help="Amount of NIGHT tokens to fund")
+    parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
     parser.add_argument("--funding-indices", nargs='+', help="List of specific funding seed indices (space or comma-separated, overrides --funding-start/--funding-end)")
     parser.add_argument("--indices", nargs='+', help="List of specific seed indices to fund (space or comma-separated, overrides --start/--end)")
     parser.add_argument("--node-url", type=str, default=NODE_URL, help="Node URL. 'ferdie' will be replaced by relay names if present.")
     args = parser.parse_args()
 
     global AMOUNT
-    AMOUNT = args.night_amount * 10**6
+    AMOUNT = int(args.night_amount * 10**6)
 
     if args.indices:
         target_indices = []
@@ -194,7 +202,7 @@ def main():
             chunk_len = len(chunk_indices)
             chunk_seeds = [source_seeds[(i * chunk_size + k) % len(source_seeds)] for k in range(chunk_len)]
 
-            futures.append(executor.submit(process_chunk, chunk_indices, chunk_seeds, node_url))
+            futures.append(executor.submit(process_chunk, chunk_indices, chunk_seeds, node_url, args.verbose))
 
         failed_seeds = []
         for future in concurrent.futures.as_completed(futures):

@@ -23,8 +23,8 @@ RELAYS = [
     "sam",
     "tom"
 ]
-START_INDEX = 1
-END_INDEX = 10
+START_INDEX = 118
+END_INDEX = 120
 DB_PATH = "toolkit.db"
 NODE_URL = "ws://ferdie.node.sc.iog.io:9944" # "ws://localhost:9944"
 
