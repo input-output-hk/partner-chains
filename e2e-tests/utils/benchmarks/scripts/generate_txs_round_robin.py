@@ -157,9 +157,9 @@ def process_transfer(i, start_index, end_index, node_url_pattern, max_retries, s
 def main():
     parser = argparse.ArgumentParser(description="Generate or submit round-robin transactions.")
     parser.add_argument("--submit", action="store_true", help="Submit transactions directly instead of saving to file.")
-    parser.add_argument("--verbose", action="store_true", help="Enable verbose output from toolkit commands.")
-    parser.add_argument("--start", type=int, default=START_INDEX, help="Starting seed to generate txs")
-    parser.add_argument("--end", type=int, default=END_INDEX, help="Ending seed to generate txs")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output from toolkit commands.")
+    parser.add_argument("-s", "--start", type=int, default=START_INDEX, help="Starting seed to generate txs")
+    parser.add_argument("-e", "--end", type=int, default=END_INDEX, help="Ending seed to generate txs")
     parser.add_argument("--node-url", type=str, default=NODE_URL, help="Node URL. 'ferdie' will be replaced by relay names if present.")
     parser.add_argument("--delay", type=float, default=DELAY, help="Delay in seconds after each transaction generation.")
     parser.add_argument("--max-retries", type=int, default=MAX_RETRIES, help="Maximum number of attempts per transaction.")

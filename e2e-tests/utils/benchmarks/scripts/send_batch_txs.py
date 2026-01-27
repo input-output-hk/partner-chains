@@ -109,9 +109,9 @@ def submit_transactions(toolkit_path="midnight-node-toolkit"):
     os.environ["MN_DONT_WATCH_PROGRESS"] = "true"
 
     parser = argparse.ArgumentParser(description="Submit batch transactions.")
-    parser.add_argument("--start", type=int, help="Start index")
-    parser.add_argument("--end", type=int, help="End index")
-    parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
+    parser.add_argument("-s", "--start", type=int, help="Start index")
+    parser.add_argument("-e", "--end", type=int, help="End index")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output")
     parser.add_argument("--workers", type=int, help="Number of concurrent workers")
     parser.add_argument("--node-url", type=str, default=NODE_URL, help="Node URL. 'ferdie' will be replaced by relay names if present.")
     parser.add_argument("--max-retries", type=int, default=MAX_RETRIES, help="Maximum number of attempts per transaction.")
