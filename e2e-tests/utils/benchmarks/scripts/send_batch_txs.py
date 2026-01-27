@@ -116,7 +116,7 @@ def submit_transactions(toolkit_path="midnight-node-toolkit"):
     parser.add_argument("--node-url", type=str, default=NODE_URL, help="Node URL. 'ferdie' will be replaced by relay names if present.")
     parser.add_argument("--max-retries", type=int, default=MAX_RETRIES, help="Maximum number of attempts per transaction.")
     parser.add_argument("--delay", type=float, default=DELAY, help="Delay in seconds after each transaction submission.")
-    parser.add_argument("--batch-size", type=int, default=20, help="Number of transactions to submit per batch.")
+    parser.add_argument("--batch-size", type=int, default=0, help="Number of transactions to submit per batch. Default: 0 (submit all at once).")
     parser.add_argument("--batch-delay", type=float, default=6.0, help="Delay in seconds between batches.")
     args = parser.parse_args()
 
@@ -146,6 +146,11 @@ def submit_transactions(toolkit_path="midnight-node-toolkit"):
         sys.exit(1)
 
     print(f"🚀 Found {len(files)} transaction files to submit.")
+
+    if args.batch_size > 0:
+        print(f"📦 Batching enabled: {args.batch_size} txs/batch, {args.batch_delay}s delay between batches.")
+    else:
+        print(f"📦 Batching disabled: Submitting all transactions in a single batch.")
 
     if args.workers:
         max_workers = args.workers

@@ -337,6 +337,8 @@ python3 send_batch_txs.py --workers 5 --verbose
 - `--end 50`: (Optional) Only submit transactions up to seed index 50
 - `--workers 5`: (Optional) Number of concurrent submission threads (default: CPU count)
 - `--verbose`: (Optional) Show detailed command output
+- `--batch-size 20`: (Optional) Number of transactions to submit per batch (default: 0, submit all at once).
+- `--batch-delay 6.0`: (Optional) Delay in seconds between batches (default: 6.0s).
 
 **What it does:**
 - Scans the `txs/` directory for transaction files matching `tx_*.mn`
