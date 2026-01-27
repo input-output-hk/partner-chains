@@ -125,7 +125,8 @@ def process_chunk(target_indices, funding_seeds, node_url, verbose=False):
     return failed_seeds
 
 def main():
-    os.environ["MN_DONT_WATCH_PROGRESS"] = "false"
+    if "MN_DONT_WATCH_PROGRESS" in os.environ:
+        del os.environ["MN_DONT_WATCH_PROGRESS"]
     parser = argparse.ArgumentParser(description="Fund wallets.")
     parser.add_argument("--start", type=int, default=TARGET_START_INDEX, help="Starting seed to be funded")
     parser.add_argument("--end", type=int, default=TARGET_END_INDEX, help="Ending seed to be funded")
@@ -222,6 +223,7 @@ def main():
         print(f"📊 Average time per funding: {total_duration / total_wallets:.2f} seconds")
     if failed_seeds:
         print(f"❌ Failed seeds: {sorted(failed_seeds)}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

@@ -3,6 +3,7 @@ import argparse
 import subprocess
 import sys
 import os
+import time
 
 # Configuration
 # Assumes the applied script is in the same directory as this script
@@ -24,9 +25,10 @@ def run_applied_script(script_name, funding_start, funding_end, target_start, ta
     print(f"Running: {' '.join(cmd)}")
     try:
         subprocess.run(cmd, check=True)
+        return True
     except subprocess.CalledProcessError:
         print(f"❌ Error executing {script_name}.py")
-        sys.exit(1)
+        return False
 
 def main():
     parser = argparse.ArgumentParser(description="Recursively fund wallets using binary expansion.")
@@ -94,13 +96,14 @@ def main():
     print(f"ℹ️  Initial funding seeds ({args.funding_start}-{args.funding_end}) need at least: {initial_req:.2f} NIGHT each.")
     print("-" * 40)
     
+    failed_batches = []
     for i, batch in enumerate(batches):
         amount = batch_amounts[i]
         if args.script == "fund_wallets":
             print(f"🚀 Batch {i+1}/{len(batches)}: Funding {batch['dest_start']}-{batch['dest_end']} with {amount:.2f} NIGHT")
         else:
             print(f"🚀 Batch {i+1}/{len(batches)}: Registering Dust on {batch['dest_start']}-{batch['dest_end']}")
-        run_applied_script(
+        success = run_applied_script(
             args.script,
             batch['funding_start'], 
             batch['funding_end'], 
@@ -108,7 +111,20 @@ def main():
             batch['dest_end'], 
             amount
         )
-        print("✅ Batch complete.\n")
+        if success:
+            print("✅ Batch complete.\n")
+        else:
+            print("⚠️  Batch failed. Continuing...\n")
+            failed_batches.append(f"Batch {i+1} ({batch['dest_start']}-{batch['dest_end']})")
+        time.sleep(2)
+
+    if failed_batches:
+        print("\n❌ Summary: The following batches failed:")
+        for fb in failed_batches:
+            print(f"  - {fb}")
+        sys.exit(1)
+    else:
+        print("\n🎉 All batches completed successfully.")
 
 if __name__ == "__main__":
     main()

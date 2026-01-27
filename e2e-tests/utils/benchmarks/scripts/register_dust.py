@@ -93,7 +93,8 @@ def register_chunk(indices, funding_seed, node_url, toolkit_path, verbose=False)
 
 
 def register_dust_addresses():
-    os.environ["MN_DONT_WATCH_PROGRESS"] = "false"
+    if "MN_DONT_WATCH_PROGRESS" in os.environ:
+        del os.environ["MN_DONT_WATCH_PROGRESS"]
     parser = argparse.ArgumentParser(description="Register dust addresses.")
     parser.add_argument("--start", type=int, default=TARGET_START_INDEX, help="Starting seed to be registered")
     parser.add_argument("--end", type=int, default=TARGET_END_INDEX, help="Ending seed to be registered")
@@ -181,6 +182,7 @@ def register_dust_addresses():
         print(f"📊 Average time per registration: {total_duration / total_wallets:.2f} seconds")
     if failed_seeds:
         print(f"❌ Failed seeds: {sorted(failed_seeds)}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     register_dust_addresses()
