@@ -116,6 +116,8 @@ def submit_transactions(toolkit_path="midnight-node-toolkit"):
     parser.add_argument("--node-url", type=str, default=NODE_URL, help="Node URL. 'ferdie' will be replaced by relay names if present.")
     parser.add_argument("--max-retries", type=int, default=MAX_RETRIES, help="Maximum number of attempts per transaction.")
     parser.add_argument("--delay", type=float, default=DELAY, help="Delay in seconds after each transaction submission.")
+    parser.add_argument("--batch-size", type=int, default=20, help="Number of transactions to submit per batch.")
+    parser.add_argument("--batch-delay", type=float, default=6.0, help="Delay in seconds between batches.")
     args = parser.parse_args()
 
     start_time = time.time()
@@ -155,22 +157,39 @@ def submit_transactions(toolkit_path="midnight-node-toolkit"):
 
     results = []
     failed_seeds = []
-    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        future_to_file = {executor.submit(submit_single_tx, i, tx_file, len(files), toolkit_path, args.node_url, args.max_retries, verbose=args.verbose, max_workers=max_workers, delay=args.delay): tx_file for i, tx_file in enumerate(files, 1)}
-        for future in concurrent.futures.as_completed(future_to_file):
-            tx_file = future_to_file[future]
-            try:
-                res = future.result()
-                results.append(res)
-                if res is False:
+
+    # Determine batches
+    if args.batch_size and args.batch_size > 0:
+        batches = [files[i:i + args.batch_size] for i in range(0, len(files), args.batch_size)]
+    else:
+        batches = [files]
+
+    total_files_count = len(files)
+    global_index = 1
+
+    for batch_idx, batch in enumerate(batches):
+        if batch_idx > 0:
+            print(f"⏳ Waiting {args.batch_delay}s before next batch...")
+            time.sleep(args.batch_delay)
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            future_to_file = {executor.submit(submit_single_tx, global_index + i, tx_file, total_files_count, toolkit_path, args.node_url, args.max_retries, verbose=args.verbose, max_workers=max_workers, delay=args.delay): tx_file for i, tx_file in enumerate(batch)}
+            for future in concurrent.futures.as_completed(future_to_file):
+                tx_file = future_to_file[future]
+                try:
+                    res = future.result()
+                    results.append(res)
+                    if res is False:
+                        basename = os.path.basename(tx_file)
+                        seed = os.path.splitext(basename)[0].split('_')[-1]
+                        failed_seeds.append(seed)
+                except Exception:
+                    results.append(False)
                     basename = os.path.basename(tx_file)
                     seed = os.path.splitext(basename)[0].split('_')[-1]
                     failed_seeds.append(seed)
-            except Exception:
-                results.append(False)
-                basename = os.path.basename(tx_file)
-                seed = os.path.splitext(basename)[0].split('_')[-1]
-                failed_seeds.append(seed)
+
+        global_index += len(batch)
 
     end_time = time.time()
     print("\n🎉 Batch submission complete.")
