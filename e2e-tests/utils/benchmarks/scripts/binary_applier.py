@@ -9,14 +9,14 @@ import time
 # Assumes the applied script is in the same directory as this script
 APPLIED_SCRIPT = "fund_wallets"
 
-def run_applied_script(script_name, funding_start, funding_end, target_start, target_end, amount):
+def run_applied_script(script_name, fund_start, fund_end, target_start, target_end, amount):
     script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), f"{script_name}.py")
     cmd = [
         sys.executable, script_path,
-        "--funding-start", str(funding_start),
-        "--funding-end", str(funding_end),
-        "--start", str(target_start),
-        "--end", str(target_end)
+        "--fund-start", str(fund_start),
+        "--fund-end", str(fund_end),
+        "--dest-start", str(target_start),
+        "--dest-end", str(target_end)
     ]
 
     if script_name == "fund_wallets":
@@ -32,8 +32,8 @@ def run_applied_script(script_name, funding_start, funding_end, target_start, ta
 
 def main():
     parser = argparse.ArgumentParser(description="Recursively fund wallets using binary expansion.")
-    parser.add_argument("--funding-start", type=int, required=True, help="Initial funding start index")
-    parser.add_argument("--funding-end", type=int, required=True, help="Initial funding end index")
+    parser.add_argument("--fund-start", type=int, required=True, help="Initial funding start index")
+    parser.add_argument("--fund-end", type=int, required=True, help="Initial funding end index")
     parser.add_argument("--dest-start", type=int, required=True, help="Destination start index")
     parser.add_argument("--dest-end", type=int, required=True, help="Destination end index")
     parser.add_argument("--night-amount", type=float, required=True, help="Target NIGHT amount per wallet")
@@ -47,12 +47,12 @@ def main():
 
     # 1. Plan the batches
     batches = []
-    current_funding_start = args.funding_start
-    current_funding_end = args.funding_end
+    current_fund_start = args.fund_start
+    current_fund_end = args.fund_end
     next_dest_start = args.dest_start
     
     while next_dest_start <= args.dest_end:
-        num_sources = current_funding_end - current_funding_start + 1
+        num_sources = current_fund_end - current_fund_start + 1
         batch_size = num_sources
         
         batch_dest_end = next_dest_start + batch_size - 1
@@ -60,13 +60,13 @@ def main():
             batch_dest_end = args.dest_end
             
         batches.append({
-            "funding_start": current_funding_start,
-            "funding_end": current_funding_end,
+            "fund_start": current_fund_start,
+            "fund_end": current_fund_end,
             "dest_start": next_dest_start,
             "dest_end": batch_dest_end
         })
         
-        current_funding_end = batch_dest_end
+        current_fund_end = batch_dest_end
         next_dest_start = batch_dest_end + 1
 
     print(f"📋 Planned {len(batches)} batches.")
@@ -93,7 +93,7 @@ def main():
     print(f"💰 Target Amount: {target_amount} NIGHT")
     
     initial_req = target_amount + cumulative_future_cost
-    print(f"ℹ️  Initial funding seeds ({args.funding_start}-{args.funding_end}) need at least: {initial_req:.2f} NIGHT each.")
+    print(f"ℹ️  Initial funding seeds ({args.fund_start}-{args.fund_end}) need at least: {initial_req:.2f} NIGHT each.")
     print("-" * 40)
     
     failed_batches = []
@@ -105,8 +105,8 @@ def main():
             print(f"🚀 Batch {i+1}/{len(batches)}: Registering Dust on {batch['dest_start']}-{batch['dest_end']}")
         success = run_applied_script(
             args.script,
-            batch['funding_start'], 
-            batch['funding_end'], 
+            batch['fund_start'], 
+            batch['fund_end'], 
             batch['dest_start'], 
             batch['dest_end'], 
             amount

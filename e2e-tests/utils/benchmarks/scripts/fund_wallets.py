@@ -128,43 +128,43 @@ def main():
     if "MN_DONT_WATCH_PROGRESS" in os.environ:
         del os.environ["MN_DONT_WATCH_PROGRESS"]
     parser = argparse.ArgumentParser(description="Fund wallets.")
-    parser.add_argument("--start", type=int, default=TARGET_START_INDEX, help="Starting seed to be funded")
-    parser.add_argument("--end", type=int, default=TARGET_END_INDEX, help="Ending seed to be funded")
-    parser.add_argument("--funding-start", type=int, default=FUNDING_START_INDEX, help="Starting funding seed index")
-    parser.add_argument("--funding-end", type=int, default=FUNDING_END_INDEX, help="Ending funding seed index")
+    parser.add_argument("--dest-start", type=int, default=TARGET_START_INDEX, help="Starting seed to be funded")
+    parser.add_argument("--dest-end", type=int, default=TARGET_END_INDEX, help="Ending seed to be funded")
+    parser.add_argument("--fund-start", type=int, default=FUNDING_START_INDEX, help="Starting funding seed index")
+    parser.add_argument("--fund-end", type=int, default=FUNDING_END_INDEX, help="Ending funding seed index")
     parser.add_argument("--night-amount", type=float, default=FUNDING_AMOUNT, help="Amount of NIGHT tokens to fund")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
-    parser.add_argument("--funding-indices", nargs='+', help="List of specific funding seed indices (space or comma-separated, overrides --funding-start/--funding-end)")
-    parser.add_argument("--indices", nargs='+', help="List of specific seed indices to fund (space or comma-separated, overrides --start/--end)")
+    parser.add_argument("--fund-indices", nargs='+', help="List of specific funding seed indices (space or comma-separated, overrides --fund-start/--fund-end)")
+    parser.add_argument("--dest-indices", nargs='+', help="List of specific seed indices to fund (space or comma-separated, overrides --dest-start/--dest-end)")
     parser.add_argument("--node-url", type=str, default=NODE_URL, help="Node URL. 'ferdie' will be replaced by relay names if present.")
     args = parser.parse_args()
 
     global AMOUNT
     AMOUNT = int(args.night_amount * 10**6)
 
-    if args.indices:
+    if args.dest_indices:
         target_indices = []
-        for item in args.indices:
+        for item in args.dest_indices:
             try:
                 target_indices.extend([int(i.strip()) for i in item.split(',') if i.strip()])
             except ValueError:
-                print(f"❌ Error: Invalid value in --indices: '{item}'. Please provide a list of integers.")
+                print(f"❌ Error: Invalid value in --dest-indices: '{item}'. Please provide a list of integers.")
                 sys.exit(1)
     else:
-        target_indices = list(range(args.start, args.end + 1))
+        target_indices = list(range(args.dest_start, args.dest_end + 1))
 
-    if args.funding_indices:
+    if args.fund_indices:
         funding_indices = []
-        for item in args.funding_indices:
+        for item in args.fund_indices:
             try:
                 funding_indices.extend([int(i.strip()) for i in item.split(',') if i.strip()])
             except ValueError:
-                print(f"❌ Error: Invalid value in --funding-indices: '{item}'. Please provide a list of integers.")
+                print(f"❌ Error: Invalid value in --fund-indices: '{item}'. Please provide a list of integers.")
                 sys.exit(1)
     elif FUNDING_SEEDS:
         funding_indices = FUNDING_SEEDS
     else:
-        funding_indices = list(range(args.funding_start, args.funding_end + 1))
+        funding_indices = list(range(args.fund_start, args.fund_end + 1))
 
     source_seeds = [f"{i:064}" for i in funding_indices]
 

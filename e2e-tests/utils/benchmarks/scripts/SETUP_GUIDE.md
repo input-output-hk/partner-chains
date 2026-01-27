@@ -145,7 +145,7 @@ python3 get_balances.py --start 1 --end 3
 
 **Command:**
 ```bash
-python3 register_dust.py --start 10 --end 100 --funding-start 1 --funding-end 3
+python3 register_dust.py --dest-start 10 --dest-end 100 --fund-start 1 --fund-end 3
 ```
 
 **Parameters:**
