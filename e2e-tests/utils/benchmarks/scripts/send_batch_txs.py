@@ -123,17 +123,20 @@ def submit_transactions(toolkit_path="midnight-node-toolkit"):
     all_files = glob.glob(os.path.join("txs", "tx_*.mn"))
 
     files = []
-    if args.start is not None and args.end is not None:
+    if args.start is None and args.end is None:
+        files = all_files
+    else:
         for f in all_files:
             try:
                 basename = os.path.basename(f)
                 index = int(os.path.splitext(basename)[0].split('_')[-1])
-                if args.start <= index <= args.end:
-                    files.append(f)
+                if args.start is not None and index < args.start:
+                    continue
+                if args.end is not None and index > args.end:
+                    continue
+                files.append(f)
             except (ValueError, IndexError):
                 continue
-    else:
-        files = all_files
 
     if not files:
         msg = f" in range {args.start}-{args.end}" if args.start is not None else ""
