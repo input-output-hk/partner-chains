@@ -96,7 +96,10 @@ def main():
     
     for i, batch in enumerate(batches):
         amount = batch_amounts[i]
-        print(f"🚀 Batch {i+1}/{len(batches)}: Funding {batch['dest_start']}-{batch['dest_end']} with {amount:.2f} NIGHT")
+        if args.script == "fund_wallets":
+            print(f"🚀 Batch {i+1}/{len(batches)}: Funding {batch['dest_start']}-{batch['dest_end']} with {amount:.2f} NIGHT")
+        else:
+            print(f"🚀 Batch {i+1}/{len(batches)}: Registering Dust on {batch['dest_start']}-{batch['dest_end']}")
         run_applied_script(
             args.script,
             batch['funding_start'], 
