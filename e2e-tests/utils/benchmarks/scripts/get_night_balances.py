@@ -89,7 +89,7 @@ def get_balance(index, node_url_pattern, verbose=False):
         utxos = data.get("utxos") or []
 
         total_balance = sum(int(utxo.get("value", 0)) for utxo in utxos)
-        print(f"Seed {index:4}: {total_balance} [DB Copy: {db_copy_time:.4f}s, Exec: {exec_time:.4f}s]")
+        print(f"Seed {index:4}: {total_balance:<28} [DB Copy: {db_copy_time:.4f}s, Exec: {exec_time:.4f}s]")
         return total_balance
 
     except subprocess.CalledProcessError as e:

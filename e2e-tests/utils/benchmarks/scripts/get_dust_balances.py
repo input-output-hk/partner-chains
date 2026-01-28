@@ -91,7 +91,7 @@ def get_dust_balance(index, node_url_pattern, verbose=False):
         else:
             total_balance = int(total_balance)
 
-        print(f"Seed {index:4}: {total_balance} [DB Copy: {db_copy_time:.4f}s, Exec: {exec_time:.4f}s]")
+        print(f"Seed {index:4}: {total_balance:<28} [DB Copy: {db_copy_time:.4f}s, Exec: {exec_time:.4f}s]")
         return total_balance
 
     except subprocess.CalledProcessError as e:
