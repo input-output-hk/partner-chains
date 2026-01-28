@@ -32,7 +32,7 @@ TOOLKIT_PATH = "midnight-node-toolkit"
 DB_PATH = "toolkit.db"
 NODE_URL = "ws://ferdie.node.sc.iog.io:9944" # "ws://localhost:9944"
 DELAY = 0.25
-MAX_RETRIES = 3
+MAX_RETRIES = 10
 
 
 def register_chunk(indices, funding_seed, node_url, toolkit_path, verbose=False):
@@ -90,7 +90,7 @@ def register_chunk(indices, funding_seed, node_url, toolkit_path, verbose=False)
                 except subprocess.CalledProcessError as e:
                     if attempt < MAX_RETRIES - 1:
                         print(f"⚠️  Failed to register seed ...{i}, retrying ({attempt+1}/{MAX_RETRIES})...")
-                        time.sleep(2 * (attempt + 1))
+                        time.sleep(random.uniform(2, 5) + (attempt * 2))
                     else:
                         print(f"\n❌ Failed to register seed ...{i}!")
                         if verbose:
@@ -219,7 +219,7 @@ def register_dust_addresses():
     total_wallets = len(target_indices)
     # Determine the number of workers based on the minimum of available resources
     cpu_count = os.cpu_count() or 1
-    max_threads = max(1, int(cpu_count * 0.9))
+    max_threads = max(1, int(cpu_count * 0.5))
     num_workers = min(total_wallets, len(funding_seeds), max_threads)
     print(f"ℹ️  Using {num_workers} threads for execution.")
 

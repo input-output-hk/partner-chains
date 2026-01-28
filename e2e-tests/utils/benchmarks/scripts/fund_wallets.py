@@ -34,6 +34,7 @@ DB_PATH = "toolkit.db"
 NODE_URL = "ws://ferdie.node.sc.iog.io:9944" # "ws://localhost:9944"
 FUNDING_AMOUNT = 3000000
 FUNDING_SEEDS = []
+MAX_RETRIES = 10
 DELAY = 0.25
 
 def run_command(cmd, cwd=None, verbose=False):
@@ -122,8 +123,17 @@ def process_chunk(target_indices, funding_seeds, node_url, verbose=False):
                 time.sleep(random.uniform(DELAY * 0.5, DELAY * 1.5))
 
                 print(f"[Chunk {seed[-4:]}] Funding {addr}...", end=" ", flush=True)
-                fund_address(addr, seed, node_url, cwd=temp_dir, verbose=verbose)
-                print("✅ Sent")
+                for attempt in range(MAX_RETRIES):
+                    try:
+                        fund_address(addr, seed, node_url, cwd=temp_dir, verbose=verbose)
+                        print("✅ Sent")
+                        break
+                    except subprocess.CalledProcessError:
+                        if attempt < MAX_RETRIES - 1:
+                            print(f"⚠️  Retry {attempt+1}/{MAX_RETRIES}...", end=" ", flush=True)
+                            time.sleep(random.uniform(2, 5) + (attempt * 2))
+                        else:
+                            raise
 
                 # Wait a bit between transactions to ensure nonce propagation
                 time.sleep(2)
@@ -305,7 +315,7 @@ def main():
     total_wallets = len(target_indices)
     # Determine the number of workers based on the minimum of available resources
     cpu_count = os.cpu_count() or 1
-    max_threads = max(1, int(cpu_count * 0.9))
+    max_threads = max(1, int(cpu_count * 0.5))
     num_workers = min(len(source_seeds), max_threads)
     print(f"ℹ️  Using {num_workers} threads for execution.")
 
