@@ -9,6 +9,7 @@ import logging
 # Configuration
 TOOLKIT_CMD = "midnight-node-toolkit"
 NODE_URL = "ws://ferdie.node.sc.iog.io:9944" # "ws://localhost:9944"
+NIGHT_AMOUNT = 1000000
 
 def setup_logging(logfile=None):
     """Configures logging to a file if specified, otherwise suppresses logs."""
@@ -95,7 +96,7 @@ def main():
     parser.add_argument("--fund-end", type=int, required=True, help="Initial funding end index")
     parser.add_argument("--dest-start", type=int, required=True, help="Destination start index")
     parser.add_argument("--dest-end", type=int, required=True, help="Destination end index")
-    parser.add_argument("--night-amount", type=float, required=True, help="Target NIGHT amount for each final wallet")
+    parser.add_argument("--night-amount", type=float, default=NIGHT_AMOUNT, help="Target NIGHT amount for each final wallet")
     parser.add_argument("--logfile", type=str, default=f"log_{int(time.time())}.txt", help="Path to store all stdout and stderr logs.")
     parser.add_argument("--node-url", type=str, default=NODE_URL, help="Node URL to fetch state from.")
     args = parser.parse_args()
