@@ -127,6 +127,59 @@ def process_chunk(target_indices, funding_seeds, node_url, verbose=False):
                 failed_seeds.append(i)
     return failed_seeds
 
+def check_balances(funding_indices, amount_per_wallet, total_wallets, node_url):
+    """
+    Checks if funding seeds have sufficient balance and returns a list of valid seeds.
+    """
+    num_seeds = len(funding_indices)
+    if num_seeds == 0: return []
+
+    wallets_per_seed = math.ceil(total_wallets / num_seeds)
+    required_star = (wallets_per_seed * amount_per_wallet) + (2 * amount_per_wallet)
+
+    print(f"🔍 Checking balances for {num_seeds} funding seeds...")
+    print(f"   Est. required per seed: {required_star/1_000_000:.2f} NIGHT (includes 2x buffer)")
+
+    script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "get_night_balances.py")
+    if not os.path.exists(script_path):
+        print(f"⚠️  Warning: {script_path} not found. Skipping balance check.")
+        return funding_indices
+
+    # We check all funding indices at once
+    indices_str = ",".join(map(str, funding_indices))
+    cmd = [sys.executable, script_path, "--indices", indices_str, "--node-url", node_url]
+
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+
+        insufficient_seeds = {} # Using a dict to store balance info
+        for line in result.stdout.splitlines():
+            if line.strip().startswith("Seed "):
+                parts = line.split()
+                try:
+                    seed_idx = int(parts[1].rstrip(':'))
+                    balance = int(parts[2])
+                    if balance < required_star:
+                        insufficient_seeds[seed_idx] = balance
+                except (ValueError, IndexError):
+                    continue
+
+        valid_indices = [idx for idx in funding_indices if idx not in insufficient_seeds]
+
+        if insufficient_seeds:
+            print("⚠️  Insufficient funds detected in some seeds. They will be excluded from funding.")
+            for seed_idx, balance in sorted(insufficient_seeds.items()):
+                print(f"   - Seed {seed_idx}: Has {balance/1_000_000:.2f} NIGHT, needs {required_star/1_000_000:.2f} NIGHT")
+
+        if len(valid_indices) == len(funding_indices):
+             print("✅ All funding seeds have sufficient balances.")
+
+        return valid_indices
+
+    except subprocess.CalledProcessError:
+        print("❌ Error running get_night_balances.py. Cannot verify balances.")
+        return []
+
 def main():
     if "MN_DONT_WATCH_PROGRESS" in os.environ:
         del os.environ["MN_DONT_WATCH_PROGRESS"]
@@ -168,6 +221,17 @@ def main():
         funding_indices = FUNDING_SEEDS
     else:
         funding_indices = list(range(args.fund_start, args.fund_end + 1))
+
+    # Check balances before proceeding
+    original_seed_count = len(funding_indices)
+    funding_indices = check_balances(funding_indices, AMOUNT, len(target_indices), args.node_url)
+
+    if not funding_indices:
+        print("❌ No funding seeds with sufficient balance available. Aborting.")
+        sys.exit(1)
+
+    if len(funding_indices) < original_seed_count:
+        print(f"ℹ️  Continuing with {len(funding_indices)} of {original_seed_count} funding seeds.")
 
     source_seeds = [f"{i:064}" for i in funding_indices]
 
