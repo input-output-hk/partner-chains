@@ -8,6 +8,7 @@ import time
 # Configuration
 # Assumes the applied script is in the same directory as this script
 APPLIED_SCRIPT = "fund_wallets"
+NIGHT_AMOUNT = 1000000
 
 def run_applied_script(script_name, fund_start, fund_end, target_start, target_end, amount):
     script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), f"{script_name}.py")
@@ -36,9 +37,12 @@ def main():
     parser.add_argument("--fund-end", type=int, required=True, help="Initial funding end index")
     parser.add_argument("--dest-start", type=int, required=True, help="Destination start index")
     parser.add_argument("--dest-end", type=int, required=True, help="Destination end index")
-    parser.add_argument("--night-amount", type=float, required=True, help="Target NIGHT amount per wallet")
+    parser.add_argument("--night-amount", type=float, default=NIGHT_AMOUNT, required=False, help="Target NIGHT amount per wallet")
     parser.add_argument("--script", type=str, default=APPLIED_SCRIPT, help="Script to run (fund_wallets or register_dust)")
     args = parser.parse_args()
+
+    if args.script != "register_dust" and args.night_amount is None:
+        parser.error("--night-amount is required unless script is register_dust")
 
     script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), f"{args.script}.py")
     if not os.path.exists(script_path):
