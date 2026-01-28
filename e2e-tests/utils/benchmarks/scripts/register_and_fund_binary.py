@@ -46,7 +46,8 @@ def run_batch_actions(fund_start, fund_end, dest_start, dest_end, amount, node_u
         "--fund-end", str(fund_end),
         "--dest-start", str(dest_start),
         "--dest-end", str(dest_end),
-        "--node-url", node_url
+        "--node-url", node_url,
+        "--verbose"
     ]
     log_msg(f"   Running: {' '.join(register_cmd)}")
     try:
@@ -73,7 +74,8 @@ def run_batch_actions(fund_start, fund_end, dest_start, dest_end, amount, node_u
         "--dest-start", str(dest_start),
         "--dest-end", str(dest_end),
         "--night-amount", str(amount),
-        "--node-url", node_url
+        "--node-url", node_url,
+        "--verbose"
     ]
     log_msg(f"   Running: {' '.join(fund_cmd)}")
     try:
