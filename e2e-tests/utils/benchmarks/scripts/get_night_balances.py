@@ -8,6 +8,7 @@ import shutil
 import tempfile
 import concurrent.futures
 import argparse
+import random
 
 # Configuration
 TOOLKIT_CMD = "midnight-node-toolkit"
@@ -27,10 +28,12 @@ START_INDEX = 118
 END_INDEX = 120
 DB_PATH = "toolkit.db"
 NODE_URL = "ws://ferdie.node.sc.iog.io:9944" # "ws://localhost:9944"
+DELAY = 0.25
 
 
 def get_balance(index, node_url_pattern, verbose=False):
     """Gets the balance for a given seed index."""
+    time.sleep(random.uniform(DELAY * 0.5, DELAY * 1.5))
     seed = f"{index:064}"
 
     relay_name = RELAYS[index % len(RELAYS)]
