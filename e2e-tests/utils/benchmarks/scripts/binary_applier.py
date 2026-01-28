@@ -54,7 +54,7 @@ def main():
     current_fund_start = args.fund_start
     current_fund_end = args.fund_end
     next_dest_start = args.dest_start
-    
+
     while next_dest_start <= args.dest_end:
         num_sources = current_fund_end - current_fund_start + 1
         batch_size = num_sources
@@ -62,14 +62,14 @@ def main():
         batch_dest_end = next_dest_start + batch_size - 1
         if batch_dest_end > args.dest_end:
             batch_dest_end = args.dest_end
-            
+
         batches.append({
             "fund_start": current_fund_start,
             "fund_end": current_fund_end,
             "dest_start": next_dest_start,
             "dest_end": batch_dest_end
         })
-        
+
         current_fund_end = batch_dest_end
         next_dest_start = batch_dest_end + 1
 
@@ -79,27 +79,28 @@ def main():
     # A wallet funded in batch `i` needs to cover costs for batches `i+1` to `N` where it acts as source.
     # It acts as source in ALL subsequent batches.
     # Cost per batch as source = Amount_for_that_batch + Fee.
-    
+
     batch_amounts = [0.0] * len(batches)
     cumulative_future_cost = 0.0
-    
+
     if args.script == "register_dust":
         target_amount = 0.0
     else:
         target_amount = args.night_amount
-    
+
     for i in range(len(batches) - 1, -1, -1):
         required_amount = target_amount + cumulative_future_cost
         batch_amounts[i] = required_amount
         cumulative_future_cost += required_amount
 
     # 3. Execute
-    print(f"💰 Target Amount: {target_amount} NIGHT")
-    
-    initial_req = target_amount + cumulative_future_cost
-    print(f"ℹ️  Initial funding seeds ({args.fund_start}-{args.fund_end}) need at least: {initial_req:.2f} NIGHT each.")
+    if args.script != "register_dust":
+        print(f"💰 Target Amount: {target_amount} NIGHT")
+
+        initial_req = target_amount + cumulative_future_cost
+        print(f"ℹ️  Initial funding seeds ({args.fund_start}-{args.fund_end}) need at least: {initial_req:.2f} NIGHT each.")
     print("-" * 40)
-    
+
     failed_batches = []
     for i, batch in enumerate(batches):
         amount = batch_amounts[i]
