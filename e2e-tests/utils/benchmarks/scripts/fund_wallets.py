@@ -131,6 +131,15 @@ def process_chunk(target_indices, funding_seeds, node_url, verbose=False):
                     except subprocess.CalledProcessError:
                         if attempt < MAX_RETRIES - 1:
                             print(f"⚠️  Retry {attempt+1}/{MAX_RETRIES}...", end=" ", flush=True)
+
+                            # Rotate relay node if possible
+                            for r in RELAYS:
+                                if r in node_url:
+                                    next_r = RELAYS[(RELAYS.index(r) + 1) % len(RELAYS)]
+                                    node_url = node_url.replace(r, next_r)
+                                    print(f" [Switched to {next_r}]", end="", flush=True)
+                                    break
+
                             time.sleep(random.uniform(2, 5) + (attempt * 2))
                         else:
                             raise

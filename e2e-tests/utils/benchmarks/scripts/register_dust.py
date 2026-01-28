@@ -55,19 +55,19 @@ def register_chunk(indices, funding_seed, node_url, toolkit_path, verbose=False)
 
             print(f"[Chunk {funding_seed[-2:]}] Registering dust for seed ...{i}...")
 
-            cmd = [
-                toolkit_path, "generate-txs",
-                "--src-url", node_url,
-                "--dest-url", node_url,
-                "register-dust-address",
-                "--wallet-seed", wallet_seed,
-                "--funding-seed", funding_seed
-            ]
-
-            if verbose:
-                print(f"CMD: {' '.join(cmd)}")
-
             for attempt in range(MAX_RETRIES):
+                cmd = [
+                    toolkit_path, "generate-txs",
+                    "--src-url", node_url,
+                    "--dest-url", node_url,
+                    "register-dust-address",
+                    "--wallet-seed", wallet_seed,
+                    "--funding-seed", funding_seed
+                ]
+
+                if verbose:
+                    print(f"CMD: {' '.join(cmd)}")
+
                 try:
                     result = subprocess.run(
                         cmd,
@@ -90,6 +90,15 @@ def register_chunk(indices, funding_seed, node_url, toolkit_path, verbose=False)
                 except subprocess.CalledProcessError as e:
                     if attempt < MAX_RETRIES - 1:
                         print(f"⚠️  Failed to register seed ...{i}, retrying ({attempt+1}/{MAX_RETRIES})...")
+
+                        # Rotate relay node if possible
+                        for r in RELAYS:
+                            if r in node_url:
+                                next_r = RELAYS[(RELAYS.index(r) + 1) % len(RELAYS)]
+                                node_url = node_url.replace(r, next_r)
+                                print(f"   🔄 Switching to node: {next_r}")
+                                break
+
                         time.sleep(random.uniform(2, 5) + (attempt * 2))
                     else:
                         print(f"\n❌ Failed to register seed ...{i}!")
