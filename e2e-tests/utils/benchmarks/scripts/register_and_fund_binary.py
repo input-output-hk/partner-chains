@@ -6,6 +6,10 @@ import os
 import time
 import logging
 
+# Configuration
+TOOLKIT_CMD = "midnight-node-toolkit"
+NODE_URL = "ws://ferdie.node.sc.iog.io:9944" # "ws://localhost:9944"
+
 def setup_logging(logfile=None):
     """Configures logging to a file if specified, otherwise suppresses logs."""
     log_format = "%(asctime)s - %(levelname)s - %(message)s"
@@ -30,7 +34,7 @@ def log_msg(message, level=logging.INFO, to_console=True):
         print(message)
     logging.log(level, message)
 
-def run_batch_actions(fund_start, fund_end, dest_start, dest_end, amount):
+def run_batch_actions(fund_start, fund_end, dest_start, dest_end, amount, node_url):
     """Runs dust registration and then funds the wallets for a given batch."""
     # --- Register Dust ---
     log_msg(f"-> Step 1: Registering dust for wallets {dest_start}-{dest_end}")
@@ -40,7 +44,8 @@ def run_batch_actions(fund_start, fund_end, dest_start, dest_end, amount):
         "--fund-start", str(fund_start),
         "--fund-end", str(fund_end),
         "--dest-start", str(dest_start),
-        "--dest-end", str(dest_end)
+        "--dest-end", str(dest_end),
+        "--node-url", node_url
     ]
     log_msg(f"   Running: {' '.join(register_cmd)}")
     try:
@@ -66,7 +71,8 @@ def run_batch_actions(fund_start, fund_end, dest_start, dest_end, amount):
         "--fund-end", str(fund_end),
         "--dest-start", str(dest_start),
         "--dest-end", str(dest_end),
-        "--night-amount", str(amount)
+        "--night-amount", str(amount),
+        "--node-url", node_url
     ]
     log_msg(f"   Running: {' '.join(fund_cmd)}")
     try:
@@ -91,6 +97,7 @@ def main():
     parser.add_argument("--dest-end", type=int, required=True, help="Destination end index")
     parser.add_argument("--night-amount", type=float, required=True, help="Target NIGHT amount for each final wallet")
     parser.add_argument("--logfile", type=str, default=f"log_{int(time.time())}.txt", help="Path to store all stdout and stderr logs.")
+    parser.add_argument("--node-url", type=str, default=NODE_URL, help="Node URL to fetch state from.")
     args = parser.parse_args()
 
     # Setup logging
@@ -153,12 +160,28 @@ def main():
         amount = batch_amounts[i]
         log_msg(f"🚀 Batch {i+1}/{len(batches)}: Registering and Funding wallets {batch['dest_start']}-{batch['dest_end']}")
         
+        log_msg(f"🔄 Fetching latest chain state from {args.node_url}...")
+        try:
+            fetch_cmd = [TOOLKIT_CMD, "fetch", "-s", args.node_url]
+            log_msg(f"   Running: {' '.join(fetch_cmd)}", to_console=False)
+            result = subprocess.run(fetch_cmd, check=True, capture_output=True, text=True)
+            if result.stdout: log_msg(f"   STDOUT from fetch:\n{result.stdout.strip()}", to_console=False)
+            if result.stderr: log_msg(f"   STDERR from fetch:\n{result.stderr.strip()}", level=logging.WARNING, to_console=False)
+        except (subprocess.CalledProcessError, FileNotFoundError) as e:
+            log_msg("   ❌ Error executing toolkit fetch", level=logging.ERROR)
+            if hasattr(e, 'stdout') and e.stdout: log_msg(f"   STDOUT: {e.stdout.strip()}", level=logging.ERROR, to_console=False)
+            if hasattr(e, 'stderr') and e.stderr: log_msg(f"   STDERR: {e.stderr.strip()}", level=logging.ERROR, to_console=False)
+            log_msg(f"⚠️  Batch {i+1}/{len(batches)} failed during state fetch. Halting execution.", level=logging.WARNING)
+            failed_batches.append(f"Batch {i+1} ({batch['dest_start']}-{batch['dest_end']}) - Fetch failed")
+            break
+        
         success = run_batch_actions(
             batch['fund_start'], 
             batch['fund_end'], 
             batch['dest_start'], 
             batch['dest_end'], 
-            amount
+            amount,
+            args.node_url
         )
         if success:
             log_msg(f"✅ Batch {i+1}/{len(batches)} complete.\n")
@@ -169,7 +192,7 @@ def main():
             break
         
         if i < len(batches) - 1:
-            time.sleep(2)
+            time.sleep(12)
 
     if failed_batches:
         log_msg("\n❌ Summary: The following batch failed:", level=logging.ERROR)
