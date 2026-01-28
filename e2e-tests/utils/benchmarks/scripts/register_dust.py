@@ -32,6 +32,7 @@ TOOLKIT_PATH = "midnight-node-toolkit"
 DB_PATH = "toolkit.db"
 NODE_URL = "ws://ferdie.node.sc.iog.io:9944" # "ws://localhost:9944"
 DELAY = 0.25
+MAX_RETRIES = 3
 
 
 def register_chunk(indices, funding_seed, node_url, toolkit_path, verbose=False):
@@ -66,38 +67,44 @@ def register_chunk(indices, funding_seed, node_url, toolkit_path, verbose=False)
             if verbose:
                 print(f"CMD: {' '.join(cmd)}")
 
-            try:
-                result = subprocess.run(
-                    cmd,
-                    capture_output=True,
-                    text=True,
-                    check=True,
-                    cwd=temp_dir
-                )
+            for attempt in range(MAX_RETRIES):
+                try:
+                    result = subprocess.run(
+                        cmd,
+                        capture_output=True,
+                        text=True,
+                        check=True,
+                        cwd=temp_dir
+                    )
 
-                # Check for RPC errors that might not cause a non-zero exit code
-                if "RPC error" in result.stdout or "RPC error" in result.stderr:
-                    raise subprocess.CalledProcessError(result.returncode, cmd, output=result.stdout, stderr=result.stderr)
+                    # Check for RPC errors that might not cause a non-zero exit code
+                    if "RPC error" in result.stdout or "RPC error" in result.stderr:
+                        raise subprocess.CalledProcessError(result.returncode, cmd, output=result.stdout, stderr=result.stderr)
 
-                print(f"✅ Success (Seed ...{i})")
-                if verbose:
-                    print(f"STDOUT:\n{result.stdout}")
-                    print(f"STDERR:\n{result.stderr}")
+                    print(f"✅ Success (Seed ...{i})")
+                    if verbose:
+                        print(f"STDOUT:\n{result.stdout}")
+                        print(f"STDERR:\n{result.stderr}")
+                    break # Success, exit retry loop
 
-            except subprocess.CalledProcessError as e:
-                print(f"\n❌ Failed to register seed ...{i}!")
-                if verbose:
-                    print(f"STDOUT:\n{e.stdout}")
-                    print(f"STDERR:\n{e.stderr}")
-                if "len (is 0)" in e.stderr:
-                    print("💡 Hint: The funding wallet likely has no funds (0 UTXOs).")
-                print("Error Output:", e.stderr)
-                # We continue to the next one even if one fails
-                failed_seeds.append(i)
+                except subprocess.CalledProcessError as e:
+                    if attempt < MAX_RETRIES - 1:
+                        print(f"⚠️  Failed to register seed ...{i}, retrying ({attempt+1}/{MAX_RETRIES})...")
+                        time.sleep(2 * (attempt + 1))
+                    else:
+                        print(f"\n❌ Failed to register seed ...{i}!")
+                        if verbose:
+                            print(f"STDOUT:\n{e.stdout}")
+                            print(f"STDERR:\n{e.stderr}")
+                        if "len (is 0)" in e.stderr:
+                            print("💡 Hint: The funding wallet likely has no funds (0 UTXOs).")
+                        print("Error Output:", e.stderr)
+                        # We continue to the next one even if one fails
+                        failed_seeds.append(i)
 
-            except FileNotFoundError:
-                print(f"\n❌ Error: Could not find '{toolkit_path}'.")
-                sys.exit(1)
+                except FileNotFoundError:
+                    print(f"\n❌ Error: Could not find '{toolkit_path}'.")
+                    sys.exit(1)
     return failed_seeds
 
 
@@ -217,6 +224,9 @@ def register_dust_addresses():
     print(f"ℹ️  Using {num_workers} threads for execution.")
 
     if num_workers == 0:
+        if total_wallets == 0:
+            print("ℹ️  No wallets to register.")
+            sys.exit(0)
         print("❌ No funding seeds or relays configured. Exiting.")
         sys.exit(1)
 

@@ -106,6 +106,14 @@ def main():
     # Setup logging
     setup_logging(args.logfile)
 
+    # Validate ranges
+    if args.fund_start > args.fund_end:
+        log_msg(f"❌ Error: --fund-start ({args.fund_start}) cannot be greater than --fund-end ({args.fund_end})", level=logging.ERROR)
+        sys.exit(1)
+    if args.dest_start > args.dest_end:
+        log_msg(f"ℹ️  Info: --dest-start ({args.dest_start}) is greater than --dest-end ({args.dest_end}). Nothing to do.", level=logging.INFO)
+        sys.exit(0)
+
     # Check for required scripts
     for script_name in ["register_dust.py", "fund_wallets.py"]:
         script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), script_name)

@@ -310,6 +310,9 @@ def main():
     print(f"ℹ️  Using {num_workers} threads for execution.")
 
     if num_workers == 0:
+        if total_wallets == 0:
+            print("ℹ️  No wallets to fund.")
+            sys.exit(0)
         print("❌ No funding seeds or relays configured. Exiting.")
         sys.exit(1)
     chunk_size = math.ceil(total_wallets / num_workers)
