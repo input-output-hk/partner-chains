@@ -7,6 +7,7 @@ import shutil
 import tempfile
 import os
 import argparse
+import random
 
 
 # Configuration
@@ -30,6 +31,7 @@ RELAYS = [
 TOOLKIT_PATH = "midnight-node-toolkit"
 DB_PATH = "toolkit.db"
 NODE_URL = "ws://ferdie.node.sc.iog.io:9944" # "ws://localhost:9944"
+DELAY = 0.25
 
 
 def register_chunk(indices, funding_seed, node_url, toolkit_path, verbose=False):
@@ -47,6 +49,8 @@ def register_chunk(indices, funding_seed, node_url, toolkit_path, verbose=False)
         for i in indices:
             # Format the seed: Pad '20' to '000...00020' (64 chars total)
             wallet_seed = f"{i:064}"
+
+            time.sleep(random.uniform(DELAY * 0.5, DELAY * 1.5))
 
             print(f"[Chunk {funding_seed[-2:]}] Registering dust for seed ...{i}...")
 

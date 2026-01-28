@@ -34,6 +34,7 @@ DB_PATH = "toolkit.db"
 NODE_URL = "ws://ferdie.node.sc.iog.io:9944" # "ws://localhost:9944"
 FUNDING_AMOUNT = 3000000
 FUNDING_SEEDS = []
+DELAY = 0.25
 
 def run_command(cmd, cwd=None, verbose=False):
     """Runs a command and returns stdout if successful, exits otherwise."""
@@ -112,6 +113,8 @@ def process_chunk(target_indices, funding_seeds, node_url, verbose=False):
                 print(f"[Chunk {seed[-4:]}] Generating wallet {i}...", end=" ", flush=True)
                 addr = get_wallet_address(i, cwd=temp_dir, verbose=verbose)
                 print(f"✅ {addr}")
+
+                time.sleep(random.uniform(DELAY * 0.5, DELAY * 1.5))
 
                 print(f"[Chunk {seed[-4:]}] Funding {addr}...", end=" ", flush=True)
                 fund_address(addr, seed, node_url, cwd=temp_dir, verbose=verbose)
