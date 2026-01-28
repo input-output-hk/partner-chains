@@ -35,6 +35,54 @@ def log_msg(message, level=logging.INFO, to_console=True):
         print(message)
     logging.log(level, message)
 
+def check_initial_balances(fund_start, fund_end, required_night, node_url):
+    """Checks if initial funding seeds have sufficient balance."""
+    required_star = required_night * 1_000_000
+    log_msg(f"🔍 Checking initial balances for seeds {fund_start}-{fund_end}...")
+    log_msg(f"   Required per wallet: {required_night:.2f} NIGHT ({int(required_star)} star)")
+
+    script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "get_night_balances.py")
+    if not os.path.exists(script_path):
+        log_msg(f"⚠️  Warning: {script_path} not found. Skipping balance check.", level=logging.WARNING)
+        return True
+
+    cmd = [
+        sys.executable, script_path,
+        "--start", str(fund_start),
+        "--end", str(fund_end),
+        "--node-url", node_url
+    ]
+    
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        
+        insufficient_funds = []
+        for line in result.stdout.splitlines():
+            if line.strip().startswith("Seed "):
+                parts = line.split()
+                try:
+                    seed_idx = int(parts[1].rstrip(':'))
+                    balance = int(parts[2])
+                    if balance < required_star:
+                        insufficient_funds.append((seed_idx, balance))
+                except (ValueError, IndexError):
+                    continue
+        
+        if insufficient_funds:
+            log_msg("❌ Insufficient funds detected in initial seeds:", level=logging.ERROR)
+            for seed_idx, balance in insufficient_funds:
+                log_msg(f"   Seed {seed_idx}: Has {balance/1_000_000:.2f} NIGHT, needs {required_night:.2f} NIGHT", level=logging.ERROR)
+            return False
+            
+        log_msg("✅ All initial seeds have sufficient funds.")
+        return True
+
+    except subprocess.CalledProcessError as e:
+        log_msg("❌ Error running get_night_balances.py", level=logging.ERROR)
+        if e.stdout: log_msg(f"STDOUT: {e.stdout.strip()}", level=logging.ERROR, to_console=False)
+        if e.stderr: log_msg(f"STDERR: {e.stderr.strip()}", level=logging.ERROR, to_console=False)
+        return False
+
 def run_batch_actions(fund_start, fund_end, dest_start, dest_end, amount, node_url):
     """Runs dust registration and then funds the wallets for a given batch."""
     # --- Register Dust ---
@@ -152,9 +200,13 @@ def main():
 
     # 3. Execute the planned batches
     log_msg(f"💰 Target Amount for final wallets: {target_amount} NIGHT")
-    initial_req = target_amount + cumulative_future_cost
+    initial_req = (2 * target_amount) + cumulative_future_cost
     log_msg(f"ℹ️  Initial funding seeds ({args.fund_start}-{args.fund_end}) need at least: {initial_req:.2f} NIGHT each.")
     log_msg("-" * 40)
+
+    if not check_initial_balances(args.fund_start, args.fund_end, initial_req, args.node_url):
+        log_msg("❌ Initial balance check failed. Aborting.", level=logging.ERROR)
+        sys.exit(1)
 
     failed_batches = []
     for i, batch in enumerate(batches):
