@@ -96,6 +96,61 @@ def register_chunk(indices, funding_seed, node_url, toolkit_path, verbose=False)
     return failed_seeds
 
 
+def check_dust_balances(funding_indices, total_wallets, node_url):
+    """
+    Checks if funding seeds have sufficient dust balance and returns a list of valid seeds.
+    """
+    num_seeds = len(funding_indices)
+    if num_seeds == 0: return []
+
+    # Assuming 1 dust per registration + buffer
+    DUST_PER_REG = 1
+    wallets_per_seed = math.ceil(total_wallets / num_seeds)
+    required_dust = (wallets_per_seed * DUST_PER_REG) + (2 * DUST_PER_REG)
+
+    print(f"🔍 Checking dust balances for {num_seeds} funding seeds...")
+    print(f"   Est. required per seed: {required_dust} DUST")
+
+    script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "get_dust_balances.py")
+    if not os.path.exists(script_path):
+        print(f"⚠️  Warning: {script_path} not found. Skipping balance check.")
+        return funding_indices
+
+    # We check all funding indices at once
+    indices_str = ",".join(map(str, funding_indices))
+    cmd = [sys.executable, script_path, "--indices", indices_str, "--node-url", node_url]
+
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+
+        insufficient_seeds = {}
+        for line in result.stdout.splitlines():
+            if line.strip().startswith("Seed "):
+                parts = line.split()
+                try:
+                    seed_idx = int(parts[1].rstrip(':'))
+                    balance = int(parts[2])
+                    if balance < required_dust:
+                        insufficient_seeds[seed_idx] = balance
+                except (ValueError, IndexError):
+                    continue
+
+        valid_indices = [idx for idx in funding_indices if idx not in insufficient_seeds]
+
+        if insufficient_seeds:
+            print("⚠️  Insufficient dust detected in some seeds. They will be excluded from funding.")
+            for seed_idx, balance in sorted(insufficient_seeds.items()):
+                print(f"   - Seed {seed_idx}: Has {balance} DUST, needs {required_dust} DUST")
+
+        if len(valid_indices) == len(funding_indices):
+             print("✅ All funding seeds have sufficient dust balances.")
+
+        return valid_indices
+
+    except subprocess.CalledProcessError:
+        print("❌ Error running get_dust_balances.py. Cannot verify balances.")
+        return []
+
 def register_dust_addresses():
     if "MN_DONT_WATCH_PROGRESS" in os.environ:
         del os.environ["MN_DONT_WATCH_PROGRESS"]
@@ -133,6 +188,17 @@ def register_dust_addresses():
         funding_indices = FUNDING_SEEDS
     else:
         funding_indices = list(range(args.fund_start, args.fund_end + 1))
+
+    # Check balances before proceeding
+    original_seed_count = len(funding_indices)
+    funding_indices = check_dust_balances(funding_indices, len(target_indices), args.node_url)
+
+    if not funding_indices:
+        print("❌ No funding seeds with sufficient dust balance available. Aborting.")
+        sys.exit(1)
+
+    if len(funding_indices) < original_seed_count:
+        print(f"ℹ️  Continuing with {len(funding_indices)} of {original_seed_count} funding seeds.")
 
     funding_seeds = [f"{i:064}" for i in funding_indices]
 

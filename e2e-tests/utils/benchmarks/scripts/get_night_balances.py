@@ -156,7 +156,7 @@ def main():
                 empty_seeds.append(index)
 
     end_time = time.time()
-    print(f"\n💰 Total Balance: {total_sum}")
+    print(f"\n💰 Total Night Balance: {total_sum}")
     if empty_seeds:
         print(f"Empty wallet seeds: {sorted(empty_seeds)}")
     print(f"⏱️ Total execution time: {end_time - start_time:.2f} seconds")

@@ -193,6 +193,7 @@ def main():
             break
         
         if i < len(batches) - 1:
+            print("\n⏳ Waiting for 12 seconds to allow for some dust accumulation")
             time.sleep(12)
 
     if failed_batches:

@@ -47,6 +47,11 @@ def run_command(cmd, cwd=None, verbose=False):
                 print(f"STDOUT: {result.stdout.strip()}")
             if result.stderr:
                 print(f"STDERR: {result.stderr.strip()}")
+
+        # Check for RPC errors that might not cause a non-zero exit code
+        if "RPC error" in result.stdout or "RPC error" in result.stderr:
+            raise subprocess.CalledProcessError(result.returncode, cmd, output=result.stdout, stderr=result.stderr)
+
         return result.stdout.strip()
     except subprocess.CalledProcessError as e:
         print(f"\n❌ Error executing command: {' '.join(cmd)}")
