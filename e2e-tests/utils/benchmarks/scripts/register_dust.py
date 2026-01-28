@@ -74,6 +74,11 @@ def register_chunk(indices, funding_seed, node_url, toolkit_path, verbose=False)
                     check=True,
                     cwd=temp_dir
                 )
+
+                # Check for RPC errors that might not cause a non-zero exit code
+                if "RPC error" in result.stdout or "RPC error" in result.stderr:
+                    raise subprocess.CalledProcessError(result.returncode, cmd, output=result.stdout, stderr=result.stderr)
+
                 print(f"✅ Success (Seed ...{i})")
                 if verbose:
                     print(f"STDOUT:\n{result.stdout}")
