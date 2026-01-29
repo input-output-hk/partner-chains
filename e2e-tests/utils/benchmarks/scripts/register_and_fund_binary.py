@@ -58,7 +58,7 @@ def run_command_with_streaming(cmd):
     if return_code != 0:
         raise subprocess.CalledProcessError(return_code, cmd)
 
-def run_batch_actions(fund_indices, dest_indices, amount, node_url):
+def run_batch_actions(fund_indices, dest_indices, amount, node_url, verbose=False):
     """Runs dust registration and then funds the wallets for a given batch."""
     dest_start = dest_indices[0]
     dest_end = dest_indices[-1]
@@ -75,8 +75,10 @@ def run_batch_actions(fund_indices, dest_indices, amount, node_url):
         "--fund-indices", *fund_indices_str,
         "--dest-indices", *dest_indices_str,
         "--node-url", node_url,
-        "--verbose"
     ]
+    if verbose:
+        register_cmd.append("--verbose")
+
     log_msg(f"   Running: {' '.join(register_cmd)}")
     try:
         run_command_with_streaming(register_cmd)
@@ -96,8 +98,10 @@ def run_batch_actions(fund_indices, dest_indices, amount, node_url):
         "--dest-indices", *dest_indices_str,
         "-a", str(amount / 1_000_000), # fund_wallets expects NIGHT, not smallest unit
         "--node-url", node_url,
-        "--verbose"
     ]
+    if verbose:
+        fund_cmd.append("--verbose")
+
     log_msg(f"   Running: {' '.join(fund_cmd)}")
     try:
         run_command_with_streaming(fund_cmd)
@@ -110,25 +114,56 @@ def run_batch_actions(fund_indices, dest_indices, amount, node_url):
 
 def main():
     parser = argparse.ArgumentParser(description="Recursively register and fund wallets using binary expansion.")
-    parser.add_argument("--fund-start", type=int, required=True, help="Initial funding start index")
-    parser.add_argument("--fund-end", type=int, required=True, help="Initial funding end index")
-    parser.add_argument("-s", "--dest-start", type=int, required=True, help="Destination start index")
-    parser.add_argument("-e", "--dest-end", type=int, required=True, help="Destination end index")
+    parser.add_argument("--fund-start", type=int, help="Initial funding start index")
+    parser.add_argument("--fund-end", type=int, help="Initial funding end index")
+    parser.add_argument("-s", "--dest-start", type=int, help="Destination start index")
+    parser.add_argument("-e", "--dest-end", type=int, help="Destination end index")
+    parser.add_argument("--fund-indices", nargs='+', help="List of specific funding seed indices (space or comma-separated)")
+    parser.add_argument("-i", "--dest-indices", nargs='+', help="List of specific destination seed indices (space or comma-separated)")
     parser.add_argument("-a", "--night-amount", type=float, default=NIGHT_AMOUNT, help="Target NIGHT amount for each final wallet")
     parser.add_argument("--logfile", type=str, default=f"log_{int(time.time())}.txt", help="Path to store all stdout and stderr logs.")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output")
     parser.add_argument("--node-url", type=str, default=NODE_URL, help="Node URL to fetch state from.")
     args = parser.parse_args()
 
     # Setup logging
     setup_logging(args.logfile)
 
-    # Validate ranges
-    if args.fund_start > args.fund_end:
-        log_msg(f"❌ Error: --fund-start ({args.fund_start}) cannot be greater than --fund-end ({args.fund_end})", level=logging.ERROR)
+    # Resolve funding indices
+    funding_indices = []
+    if args.fund_indices:
+        for item in args.fund_indices:
+            try:
+                funding_indices.extend([int(i.strip()) for i in item.split(',') if i.strip()])
+            except ValueError:
+                log_msg(f"❌ Error: Invalid value in --fund-indices: '{item}'", level=logging.ERROR)
+                sys.exit(1)
+    elif args.fund_start is not None and args.fund_end is not None:
+        if args.fund_start > args.fund_end:
+            log_msg(f"❌ Error: --fund-start ({args.fund_start}) cannot be greater than --fund-end ({args.fund_end})", level=logging.ERROR)
+            sys.exit(1)
+        funding_indices = list(range(args.fund_start, args.fund_end + 1))
+    else:
+        log_msg("❌ Error: You must provide either --fund-indices or both --fund-start and --fund-end.", level=logging.ERROR)
         sys.exit(1)
-    if args.dest_start > args.dest_end:
-        log_msg(f"ℹ️  Info: --dest-start ({args.dest_start}) is greater than --dest-end ({args.dest_end}). Nothing to do.", level=logging.INFO)
-        sys.exit(0)
+
+    # Resolve destination indices
+    all_dest_indices = []
+    if args.dest_indices:
+        for item in args.dest_indices:
+            try:
+                all_dest_indices.extend([int(i.strip()) for i in item.split(',') if i.strip()])
+            except ValueError:
+                log_msg(f"❌ Error: Invalid value in --dest-indices: '{item}'", level=logging.ERROR)
+                sys.exit(1)
+    elif args.dest_start is not None and args.dest_end is not None:
+        if args.dest_start > args.dest_end:
+            log_msg(f"ℹ️  Info: --dest-start ({args.dest_start}) is greater than --dest-end ({args.dest_end}). Nothing to do.", level=logging.INFO)
+            sys.exit(0)
+        all_dest_indices = list(range(args.dest_start, args.dest_end + 1))
+    else:
+        log_msg("❌ Error: You must provide either --dest-indices or both --dest-start and --dest-end.", level=logging.ERROR)
+        sys.exit(1)
 
     # Check for required scripts
     for script_name in ["register_dust.py", "fund_wallets.py"]:
@@ -139,27 +174,24 @@ def main():
 
     # 1. Plan the batches using binary expansion
     batches = []
-    funding_indices = list(range(args.fund_start, args.fund_end + 1))
-    next_dest_start = args.dest_start
+    # We work with a copy of dest indices to slice from
+    remaining_dest_indices = list(all_dest_indices)
+    current_funding_indices = list(funding_indices)
 
-    while next_dest_start <= args.dest_end:
-        num_sources = len(funding_indices)
+    while remaining_dest_indices:
+        num_sources = len(current_funding_indices)
         batch_size = num_sources
         
-        batch_dest_end = next_dest_start + batch_size - 1
-        if batch_dest_end > args.dest_end:
-            batch_dest_end = args.dest_end
-
-        dest_indices = list(range(next_dest_start, batch_dest_end + 1))
+        batch_dest_indices = remaining_dest_indices[:batch_size]
+        remaining_dest_indices = remaining_dest_indices[batch_size:]
 
         batches.append({
-            "fund_indices": list(funding_indices), # Store a copy for this batch
-            "dest_indices": dest_indices,
+            "fund_indices": list(current_funding_indices), # Store a copy for this batch
+            "dest_indices": batch_dest_indices,
         })
 
         # The funding pool for the next batch expands to include the newly funded wallets.
-        funding_indices.extend(dest_indices)
-        next_dest_start = batch_dest_end + 1
+        current_funding_indices.extend(batch_dest_indices)
 
     log_msg(f"📋 Planned {len(batches)} batches.")
 
@@ -178,7 +210,12 @@ def main():
     # 3. Execute the planned batches
     log_msg(f"💰 Target Amount for final wallets: {args.night_amount} NIGHT")
     initial_req = target_amount + cumulative_future_cost
-    log_msg(f"ℹ️  Initial funding seeds ({args.fund_start}-{args.fund_end}) need at least: {initial_req/1_000_000:.2f} NIGHT each.")
+    
+    if args.fund_start is not None and args.fund_end is not None:
+        log_msg(f"ℹ️  Initial funding seeds ({args.fund_start}-{args.fund_end}) need at least: {initial_req/1_000_000:.2f} NIGHT each.")
+    else:
+        log_msg(f"ℹ️  Initial funding seeds (count: {len(funding_indices)}) need at least: {initial_req/1_000_000:.2f} NIGHT each.")
+        
     log_msg("-" * 40)
 
     failed_batches = []
@@ -188,7 +225,7 @@ def main():
         dest_end = batch['dest_indices'][-1]
         log_msg(f"� Batch {i+1}/{len(batches)}: Registering and Funding wallets {dest_start}-{dest_end}")
         
-        log_msg(f"�🔄 Fetching latest chain state from {args.node_url}...")
+        log_msg(f"��🔄 Fetching latest chain state from {args.node_url}...")
         try:
             fetch_cmd = [TOOLKIT_CMD, "fetch", "-s", args.node_url]
             log_msg(f"   Running: {' '.join(fetch_cmd)}", to_console=False)
@@ -207,7 +244,8 @@ def main():
             batch['fund_indices'], 
             batch['dest_indices'], 
             amount,
-            args.node_url
+            args.node_url,
+            verbose=args.verbose
         )
         if success:
             log_msg(f"✅ Batch {i+1}/{len(batches)} complete.\n")
