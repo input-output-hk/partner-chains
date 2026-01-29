@@ -116,13 +116,13 @@ def process_chunk(target_indices, funding_seeds, node_url, verbose=False):
 
         for i, seed in zip(target_indices, funding_seeds):
             try:
-                print(f"[Chunk {seed[-4:]}] Generating wallet {i}...", end=" ", flush=True)
+                print(f"[Chunk {seed[-4:]}] Generating wallet {i}...\n", end=" ", flush=True)
                 addr = get_wallet_address(i, cwd=temp_dir, verbose=verbose)
                 print(f"✅ {addr}")
 
                 time.sleep(random.uniform(DELAY * 0.5, DELAY * 1.5))
 
-                print(f"[Chunk {seed[-4:]}] Funding {addr}...", end=" ", flush=True)
+                print(f"[Chunk {seed[-4:]}] Funding {addr}...\n", end=" ", flush=True)
                 for attempt in range(MAX_RETRIES):
                     try:
                         fund_address(addr, seed, node_url, cwd=temp_dir, verbose=verbose)
