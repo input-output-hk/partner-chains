@@ -259,6 +259,19 @@ def check_dust_balances(funding_indices, total_wallets, node_url):
         print("❌ Error running get_dust_balances.py. Cannot verify balances.")
         return []
 
+def format_indices_string(indices):
+    """Returns a string representation of indices (range if consecutive, list otherwise)."""
+    if not indices:
+        return "None"
+
+    sorted_indices = sorted(indices)
+    is_consecutive = (sorted_indices[-1] - sorted_indices[0] == len(sorted_indices) - 1)
+
+    if is_consecutive and len(indices) > 1:
+        return f"{sorted_indices[0]}-{sorted_indices[-1]}"
+    else:
+        return ", ".join(map(str, sorted_indices))
+
 def main():
     if "MN_DONT_WATCH_PROGRESS" in os.environ:
         del os.environ["MN_DONT_WATCH_PROGRESS"]
@@ -319,7 +332,7 @@ def main():
 
     source_seeds = [f"{i:064}" for i in funding_indices]
 
-    print("🚀 Starting wallet creation and funding script...")
+    print(f"🚀 Starting wallet creation and funding script for seeds {format_indices_string(target_indices)}...")
 
     total_wallets = len(target_indices)
     # Determine the number of workers based on the minimum of available resources

@@ -58,17 +58,29 @@ def run_command_with_streaming(cmd):
     if return_code != 0:
         raise subprocess.CalledProcessError(return_code, cmd)
 
+def format_indices_string(indices):
+    """Returns a string representation of indices (range if consecutive, list otherwise)."""
+    if not indices:
+        return "None"
+
+    sorted_indices = sorted(indices)
+    is_consecutive = (sorted_indices[-1] - sorted_indices[0] == len(sorted_indices) - 1)
+
+    if is_consecutive and len(indices) > 1:
+        return f"{sorted_indices[0]}-{sorted_indices[-1]}"
+    else:
+        return ", ".join(map(str, sorted_indices))
+
 def run_batch_actions(fund_indices, dest_indices, amount, node_url, verbose=False):
     """Runs dust registration and then funds the wallets for a given batch."""
-    dest_start = dest_indices[0]
-    dest_end = dest_indices[-1]
+    indices_str = format_indices_string(dest_indices)
 
     # Convert lists of ints to strings for the command line
     fund_indices_str = [str(i) for i in fund_indices]
     dest_indices_str = [str(i) for i in dest_indices]
 
     # --- Register Dust ---
-    log_msg(f"-> Step 1: Registering dust for wallets {dest_start}-{dest_end}")
+    log_msg(f"-> Step 1: Registering dust for wallets {indices_str}")
     register_script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "register_dust.py")
     register_cmd = [
         sys.executable, register_script_path,
@@ -90,7 +102,7 @@ def run_batch_actions(fund_indices, dest_indices, amount, node_url, verbose=Fals
     time.sleep(1) # Small delay between steps
 
     # --- Fund Wallets ---
-    log_msg(f"-> Step 2: Funding wallets {dest_start}-{dest_end} with {amount/1_000_000:.2f} NIGHT")
+    log_msg(f"-> Step 2: Funding wallets {indices_str} with {amount/1_000_000:.2f} NIGHT")
     fund_script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fund_wallets.py")
     fund_cmd = [
         sys.executable, fund_script_path,
@@ -108,7 +120,7 @@ def run_batch_actions(fund_indices, dest_indices, amount, node_url, verbose=Fals
     except subprocess.CalledProcessError:
         log_msg("   ❌ Error executing fund_wallets.py", level=logging.ERROR)
         return False
-    
+
     log_msg("   ✅ Wallet funding complete for this batch.")
     return True
 
@@ -181,7 +193,7 @@ def main():
     while remaining_dest_indices:
         num_sources = len(current_funding_indices)
         batch_size = num_sources
-        
+
         batch_dest_indices = remaining_dest_indices[:batch_size]
         remaining_dest_indices = remaining_dest_indices[batch_size:]
 
@@ -210,21 +222,20 @@ def main():
     # 3. Execute the planned batches
     log_msg(f"💰 Target Amount for final wallets: {args.night_amount} NIGHT")
     initial_req = target_amount + cumulative_future_cost
-    
+
     if args.fund_start is not None and args.fund_end is not None:
         log_msg(f"ℹ️  Initial funding seeds ({args.fund_start}-{args.fund_end}) need at least: {initial_req/1_000_000:.2f} NIGHT each.")
     else:
         log_msg(f"ℹ️  Initial funding seeds (count: {len(funding_indices)}) need at least: {initial_req/1_000_000:.2f} NIGHT each.")
-        
+
     log_msg("-" * 40)
 
     failed_batches = []
     for i, batch in enumerate(batches):
         amount = batch_amounts[i]
-        dest_start = batch['dest_indices'][0]
-        dest_end = batch['dest_indices'][-1]
-        log_msg(f"� Batch {i+1}/{len(batches)}: Registering and Funding wallets {dest_start}-{dest_end}")
-        
+        indices_str = format_indices_string(batch['dest_indices'])
+        log_msg(f"🚀 Batch {i+1}/{len(batches)}: Registering and Funding wallets {indices_str}")
+
         log_msg(f"��🔄 Fetching latest chain state from {args.node_url}...")
         try:
             fetch_cmd = [TOOLKIT_CMD, "fetch", "-s", args.node_url]
@@ -237,9 +248,9 @@ def main():
             if hasattr(e, 'stdout') and e.stdout: log_msg(f"   STDOUT: {e.stdout.strip()}", level=logging.ERROR, to_console=False)
             if hasattr(e, 'stderr') and e.stderr: log_msg(f"   STDERR: {e.stderr.strip()}", level=logging.ERROR, to_console=False)
             log_msg(f"⚠️  Batch {i+1}/{len(batches)} failed during state fetch. Halting execution.", level=logging.WARNING)
-            failed_batches.append(f"Batch {i+1} ({dest_start}-{dest_end}) - Fetch failed")
+            failed_batches.append(f"Batch {i+1} ({indices_str}) - Fetch failed")
             break
-        
+
         success = run_batch_actions(
             batch['fund_indices'], 
             batch['dest_indices'], 
@@ -251,10 +262,10 @@ def main():
             log_msg(f"✅ Batch {i+1}/{len(batches)} complete.\n")
         else:
             log_msg(f"⚠️  Batch {i+1}/{len(batches)} failed. Halting execution.", level=logging.WARNING)
-            failed_batches.append(f"Batch {i+1} ({dest_start}-{dest_end})")
+            failed_batches.append(f"Batch {i+1} ({indices_str})")
             # Stop if a batch fails, as subsequent batches depend on it.
             break
-        
+
         if i < len(batches) - 1:
             print("\n⏳ Waiting for 12 seconds to allow for some dust accumulation")
             time.sleep(12)
