@@ -35,6 +35,29 @@ def log_msg(message, level=logging.INFO, to_console=True):
         print(message)
     logging.log(level, message)
 
+def run_command_with_streaming(cmd):
+    """Runs a command, streaming stdout/stderr to console and log file."""
+    # Ensure unbuffered output for Python scripts so logs appear immediately
+    if cmd[0] == sys.executable and "-u" not in cmd:
+        cmd.insert(1, "-u")
+
+    process = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1
+    )
+
+    for line in process.stdout:
+        line = line.rstrip()
+        print(line)
+        logging.info(line)
+
+    return_code = process.wait()
+    if return_code != 0:
+        raise subprocess.CalledProcessError(return_code, cmd)
+
 def run_batch_actions(fund_start, fund_end, dest_start, dest_end, amount, node_url):
     """Runs dust registration and then funds the wallets for a given batch."""
     # --- Register Dust ---
@@ -51,14 +74,9 @@ def run_batch_actions(fund_start, fund_end, dest_start, dest_end, amount, node_u
     ]
     log_msg(f"   Running: {' '.join(register_cmd)}")
     try:
-        result = subprocess.run(register_cmd, check=True, capture_output=True, text=True)
-        # Only log verbose output to file, not console
-        if result.stdout: log_msg(f"   STDOUT from register_dust.py:\n{result.stdout.strip()}", to_console=False)
-        if result.stderr: log_msg(f"   STDERR from register_dust.py:\n{result.stderr.strip()}", level=logging.WARNING, to_console=False)
+        run_command_with_streaming(register_cmd)
     except subprocess.CalledProcessError as e:
         log_msg("   ❌ Error executing register_dust.py", level=logging.ERROR)
-        if e.stdout: log_msg(f"   STDOUT: {e.stdout.strip()}", level=logging.ERROR, to_console=False)
-        if e.stderr: log_msg(f"   STDERR: {e.stderr.strip()}", level=logging.ERROR, to_console=False)
         return False
 
     log_msg("   ✅ Dust registration complete for this batch.")
@@ -79,14 +97,9 @@ def run_batch_actions(fund_start, fund_end, dest_start, dest_end, amount, node_u
     ]
     log_msg(f"   Running: {' '.join(fund_cmd)}")
     try:
-        result = subprocess.run(fund_cmd, check=True, capture_output=True, text=True)
-        # Only log verbose output to file, not console
-        if result.stdout: log_msg(f"   STDOUT from fund_wallets.py:\n{result.stdout.strip()}", to_console=False)
-        if result.stderr: log_msg(f"   STDERR from fund_wallets.py:\n{result.stderr.strip()}", level=logging.WARNING, to_console=False)
+        run_command_with_streaming(fund_cmd)
     except subprocess.CalledProcessError as e:
         log_msg("   ❌ Error executing fund_wallets.py", level=logging.ERROR)
-        if e.stdout: log_msg(f"   STDOUT: {e.stdout.strip()}", level=logging.ERROR, to_console=False)
-        if e.stderr: log_msg(f"   STDERR: {e.stderr.strip()}", level=logging.ERROR, to_console=False)
         return False
     
     log_msg("   ✅ Wallet funding complete for this batch.")
