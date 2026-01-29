@@ -109,8 +109,8 @@ def submit_transactions(toolkit_path="midnight-node-toolkit"):
     os.environ["MN_DONT_WATCH_PROGRESS"] = "true"
 
     parser = argparse.ArgumentParser(description="Submit batch transactions.")
-    parser.add_argument("-s", "--start", type=int, help="Start index")
-    parser.add_argument("-e", "--end", type=int, help="End index")
+    parser.add_argument("-s", "--dest-start", type=int, help="Start index")
+    parser.add_argument("-e", "--dest-end", type=int, help="End index")
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output")
     parser.add_argument("--workers", type=int, help="Number of concurrent workers")
     parser.add_argument("--node-url", type=str, default=NODE_URL, help="Node URL. 'ferdie' will be replaced by relay names if present.")
@@ -126,23 +126,23 @@ def submit_transactions(toolkit_path="midnight-node-toolkit"):
     all_files.sort()
 
     files = []
-    if args.start is None and args.end is None:
+    if args.dest_start is None and args.dest_end is None:
         files = all_files
     else:
         for f in all_files:
             try:
                 basename = os.path.basename(f)
                 index = int(os.path.splitext(basename)[0].split('_')[-1])
-                if args.start is not None and index < args.start:
+                if args.dest_start is not None and index < args.dest_start:
                     continue
-                if args.end is not None and index > args.end:
+                if args.dest_end is not None and index > args.dest_end:
                     continue
                 files.append(f)
             except (ValueError, IndexError):
                 continue
 
     if not files:
-        msg = f" in range {args.start}-{args.end}" if args.start is not None else ""
+        msg = f" in range {args.dest_start}-{args.dest_end}" if args.dest_start is not None else ""
         print(f"❌ No files found matching 'tx_*.mn'{msg}")
         sys.exit(1)
 

@@ -107,23 +107,23 @@ def get_balance(index, node_url_pattern, verbose=False):
 
 def main():
     parser = argparse.ArgumentParser(description="Check wallet balances.")
-    parser.add_argument("-s", "--start", type=int, default=START_INDEX, help="Starting seed index")
-    parser.add_argument("-e", "--end", type=int, default=END_INDEX, help="Ending seed index")
-    parser.add_argument("-i", "--indices", nargs='+', help="List of specific seed indices (space or comma-separated, overrides --start/--end)")
+    parser.add_argument("-s", "--dest-start", type=int, default=START_INDEX, help="Starting seed index")
+    parser.add_argument("-e", "--dest-end", type=int, default=END_INDEX, help="Ending seed index")
+    parser.add_argument("-i", "--dest-indices", nargs='+', help="List of specific seed indices (space or comma-separated, overrides --dest-start/--dest-end)")
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output")
     parser.add_argument("--node-url", type=str, default=NODE_URL, help="Node URL. 'ferdie' will be replaced by relay names if present.")
     args = parser.parse_args()
 
-    if args.indices:
+    if args.dest_indices:
         target_indices = []
-        for item in args.indices:
+        for item in args.dest_indices:
             try:
                 target_indices.extend([int(i.strip()) for i in item.split(',') if i.strip()])
             except ValueError:
-                print(f"❌ Error: Invalid value in --indices: '{item}'. Please provide a list of integers.")
+                print(f"❌ Error: Invalid value in --dest-indices: '{item}'. Please provide a list of integers.")
                 sys.exit(1)
     else:
-        target_indices = list(range(args.start, args.end + 1))
+        target_indices = list(range(args.dest_start, args.dest_end + 1))
 
     global DB_PATH
     if not os.path.exists(DB_PATH):
