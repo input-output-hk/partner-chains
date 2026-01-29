@@ -171,7 +171,7 @@ def check_night_balances(funding_indices, amount_per_wallet, total_wallets, node
 
     # We check all funding indices at once
     indices_str = ",".join(map(str, funding_indices))
-    cmd = [sys.executable, script_path, "--indices", indices_str, "--node-url", node_url]
+    cmd = [sys.executable, script_path, "--dest-indices", indices_str, "--node-url", node_url]
 
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
@@ -226,7 +226,7 @@ def check_dust_balances(funding_indices, total_wallets, node_url):
 
     # We check all funding indices at once
     indices_str = ",".join(map(str, funding_indices))
-    cmd = [sys.executable, script_path, "--indices", indices_str, "--node-url", node_url]
+    cmd = [sys.executable, script_path, "--dest-indices", indices_str, "--node-url", node_url]
 
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
@@ -267,7 +267,7 @@ def main():
     parser.add_argument("-e", "--dest-end", type=int, default=TARGET_END_INDEX, help="Ending seed to be funded")
     parser.add_argument("--fund-start", type=int, default=FUNDING_START_INDEX, help="Starting funding seed index")
     parser.add_argument("--fund-end", type=int, default=FUNDING_END_INDEX, help="Ending funding seed index")
-    parser.add_argument("--night-amount", type=float, default=FUNDING_AMOUNT, help="Amount of NIGHT tokens to fund")
+    parser.add_argument("-a", "--night-amount", type=float, default=FUNDING_AMOUNT, help="Amount of NIGHT tokens to fund")
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output")
     parser.add_argument("--fund-indices", nargs='+', help="List of specific funding seed indices (space or comma-separated, overrides --fund-start/--fund-end)")
     parser.add_argument("--dest-indices", nargs='+', help="List of specific seed indices to fund (space or comma-separated, overrides --dest-start/--dest-end)")

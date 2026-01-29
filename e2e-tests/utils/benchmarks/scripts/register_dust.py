@@ -139,7 +139,7 @@ def check_dust_balances(funding_indices, total_wallets, node_url):
 
     # We check all funding indices at once
     indices_str = ",".join(map(str, funding_indices))
-    cmd = [sys.executable, script_path, "--indices", indices_str, "--node-url", node_url]
+    cmd = [sys.executable, script_path, "--dest-indices", indices_str, "--node-url", node_url]
 
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)

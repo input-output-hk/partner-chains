@@ -111,7 +111,7 @@ def main():
     parser.add_argument("--fund-end", type=int, required=True, help="Initial funding end index")
     parser.add_argument("-s", "--dest-start", type=int, required=True, help="Destination start index")
     parser.add_argument("-e", "--dest-end", type=int, required=True, help="Destination end index")
-    parser.add_argument("--night-amount", type=float, default=NIGHT_AMOUNT, help="Target NIGHT amount for each final wallet")
+    parser.add_argument("-a", "--night-amount", type=float, default=NIGHT_AMOUNT, help="Target NIGHT amount for each final wallet")
     parser.add_argument("--logfile", type=str, default=f"log_{int(time.time())}.txt", help="Path to store all stdout and stderr logs.")
     parser.add_argument("--node-url", type=str, default=NODE_URL, help="Node URL to fetch state from.")
     args = parser.parse_args()
