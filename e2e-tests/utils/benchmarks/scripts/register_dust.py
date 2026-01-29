@@ -195,7 +195,7 @@ def register_dust_addresses():
     parser.add_argument("--fund-end", type=int, default=FUNDING_END_INDEX, help="Ending funding seed index")
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output")
     parser.add_argument("--fund-indices", nargs='+', help="List of specific funding seed indices (space or comma-separated, overrides --fund-start/--fund-end)")
-    parser.add_argument("--dest-indices", nargs='+', help="List of specific seed indices to register (space or comma-separated, overrides --dest-start/--dest-end)")
+    parser.add_argument("-i", "--dest-indices", nargs='+', help="List of specific seed indices to register (space or comma-separated, overrides --dest-start/--dest-end)")
     parser.add_argument("--node-url", type=str, default=NODE_URL, help="Node URL. 'ferdie' will be replaced by other relay names if present.")
     args = parser.parse_args()
 
