@@ -58,24 +58,29 @@ def run_command_with_streaming(cmd):
     if return_code != 0:
         raise subprocess.CalledProcessError(return_code, cmd)
 
-def run_batch_actions(fund_start, fund_end, dest_start, dest_end, amount, node_url):
+def run_batch_actions(fund_indices, dest_indices, amount, node_url):
     """Runs dust registration and then funds the wallets for a given batch."""
+    dest_start = dest_indices[0]
+    dest_end = dest_indices[-1]
+
+    # Convert lists of ints to strings for the command line
+    fund_indices_str = [str(i) for i in fund_indices]
+    dest_indices_str = [str(i) for i in dest_indices]
+
     # --- Register Dust ---
     log_msg(f"-> Step 1: Registering dust for wallets {dest_start}-{dest_end}")
     register_script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "register_dust.py")
     register_cmd = [
         sys.executable, register_script_path,
-        "--fund-start", str(fund_start),
-        "--fund-end", str(fund_end),
-        "--dest-start", str(dest_start),
-        "--dest-end", str(dest_end),
+        "--fund-indices", *fund_indices_str,
+        "--dest-indices", *dest_indices_str,
         "--node-url", node_url,
         "--verbose"
     ]
     log_msg(f"   Running: {' '.join(register_cmd)}")
     try:
         run_command_with_streaming(register_cmd)
-    except subprocess.CalledProcessError as e:
+    except subprocess.CalledProcessError:
         log_msg("   ❌ Error executing register_dust.py", level=logging.ERROR)
         return False
 
@@ -83,22 +88,20 @@ def run_batch_actions(fund_start, fund_end, dest_start, dest_end, amount, node_u
     time.sleep(1) # Small delay between steps
 
     # --- Fund Wallets ---
-    log_msg(f"-> Step 2: Funding wallets {dest_start}-{dest_end} with {amount:.2f} NIGHT")
+    log_msg(f"-> Step 2: Funding wallets {dest_start}-{dest_end} with {amount/1_000_000:.2f} NIGHT")
     fund_script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fund_wallets.py")
     fund_cmd = [
         sys.executable, fund_script_path,
-        "--fund-start", str(fund_start),
-        "--fund-end", str(fund_end),
-        "--dest-start", str(dest_start),
-        "--dest-end", str(dest_end),
-        "--night-amount", str(amount),
+        "--fund-indices", *fund_indices_str,
+        "--dest-indices", *dest_indices_str,
+        "-a", str(amount / 1_000_000), # fund_wallets expects NIGHT, not smallest unit
         "--node-url", node_url,
         "--verbose"
     ]
     log_msg(f"   Running: {' '.join(fund_cmd)}")
     try:
         run_command_with_streaming(fund_cmd)
-    except subprocess.CalledProcessError as e:
+    except subprocess.CalledProcessError:
         log_msg("   ❌ Error executing fund_wallets.py", level=logging.ERROR)
         return False
     
@@ -136,27 +139,26 @@ def main():
 
     # 1. Plan the batches using binary expansion
     batches = []
-    current_fund_start = args.fund_start
-    current_fund_end = args.fund_end
+    funding_indices = list(range(args.fund_start, args.fund_end + 1))
     next_dest_start = args.dest_start
 
     while next_dest_start <= args.dest_end:
-        num_sources = current_fund_end - current_fund_start + 1
+        num_sources = len(funding_indices)
         batch_size = num_sources
         
         batch_dest_end = next_dest_start + batch_size - 1
         if batch_dest_end > args.dest_end:
             batch_dest_end = args.dest_end
 
+        dest_indices = list(range(next_dest_start, batch_dest_end + 1))
+
         batches.append({
-            "fund_start": current_fund_start,
-            "fund_end": current_fund_end,
-            "dest_start": next_dest_start,
-            "dest_end": batch_dest_end
+            "fund_indices": list(funding_indices), # Store a copy for this batch
+            "dest_indices": dest_indices,
         })
 
         # The funding pool for the next batch expands to include the newly funded wallets.
-        current_fund_end = batch_dest_end
+        funding_indices.extend(dest_indices)
         next_dest_start = batch_dest_end + 1
 
     log_msg(f"📋 Planned {len(batches)} batches.")
@@ -164,7 +166,7 @@ def main():
     # 2. Calculate required amounts for each batch in reverse order
     batch_amounts = [0.0] * len(batches)
     cumulative_future_cost = 0.0
-    target_amount = args.night_amount
+    target_amount = args.night_amount * 1_000_000 # Convert to smallest unit
 
     for i in range(len(batches) - 1, -1, -1):
         # A wallet needs enough for its own target amount, plus the total amount it will
@@ -174,17 +176,19 @@ def main():
         cumulative_future_cost += required_amount
 
     # 3. Execute the planned batches
-    log_msg(f"💰 Target Amount for final wallets: {target_amount} NIGHT")
+    log_msg(f"💰 Target Amount for final wallets: {args.night_amount} NIGHT")
     initial_req = target_amount + cumulative_future_cost
-    log_msg(f"ℹ️  Initial funding seeds ({args.fund_start}-{args.fund_end}) need at least: {initial_req:.2f} NIGHT each.")
+    log_msg(f"ℹ️  Initial funding seeds ({args.fund_start}-{args.fund_end}) need at least: {initial_req/1_000_000:.2f} NIGHT each.")
     log_msg("-" * 40)
 
     failed_batches = []
     for i, batch in enumerate(batches):
         amount = batch_amounts[i]
-        log_msg(f"🚀 Batch {i+1}/{len(batches)}: Registering and Funding wallets {batch['dest_start']}-{batch['dest_end']}")
+        dest_start = batch['dest_indices'][0]
+        dest_end = batch['dest_indices'][-1]
+        log_msg(f"� Batch {i+1}/{len(batches)}: Registering and Funding wallets {dest_start}-{dest_end}")
         
-        log_msg(f"🔄 Fetching latest chain state from {args.node_url}...")
+        log_msg(f"�🔄 Fetching latest chain state from {args.node_url}...")
         try:
             fetch_cmd = [TOOLKIT_CMD, "fetch", "-s", args.node_url]
             log_msg(f"   Running: {' '.join(fetch_cmd)}", to_console=False)
@@ -196,14 +200,12 @@ def main():
             if hasattr(e, 'stdout') and e.stdout: log_msg(f"   STDOUT: {e.stdout.strip()}", level=logging.ERROR, to_console=False)
             if hasattr(e, 'stderr') and e.stderr: log_msg(f"   STDERR: {e.stderr.strip()}", level=logging.ERROR, to_console=False)
             log_msg(f"⚠️  Batch {i+1}/{len(batches)} failed during state fetch. Halting execution.", level=logging.WARNING)
-            failed_batches.append(f"Batch {i+1} ({batch['dest_start']}-{batch['dest_end']}) - Fetch failed")
+            failed_batches.append(f"Batch {i+1} ({dest_start}-{dest_end}) - Fetch failed")
             break
         
         success = run_batch_actions(
-            batch['fund_start'], 
-            batch['fund_end'], 
-            batch['dest_start'], 
-            batch['dest_end'], 
+            batch['fund_indices'], 
+            batch['dest_indices'], 
             amount,
             args.node_url
         )
@@ -211,7 +213,7 @@ def main():
             log_msg(f"✅ Batch {i+1}/{len(batches)} complete.\n")
         else:
             log_msg(f"⚠️  Batch {i+1}/{len(batches)} failed. Halting execution.", level=logging.WARNING)
-            failed_batches.append(f"Batch {i+1} ({batch['dest_start']}-{batch['dest_end']})")
+            failed_batches.append(f"Batch {i+1} ({dest_start}-{dest_end})")
             # Stop if a batch fails, as subsequent batches depend on it.
             break
         
