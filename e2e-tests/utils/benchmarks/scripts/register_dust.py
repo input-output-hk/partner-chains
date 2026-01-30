@@ -16,7 +16,7 @@ TARGET_END_INDEX = 499
 FUNDING_START_INDEX = 1
 FUNDING_END_INDEX = 3
 FUNDING_SEEDS = []
-RELAYS = [
+REMOTE_RELAYS = [
     "ferdie",
     "george",
     "henry",
@@ -28,6 +28,14 @@ RELAYS = [
     "sam",
     "tom"
 ]
+LOCAL_RELAYS = [
+    "ws://localhost:9933",
+    "ws://localhost:9934",
+    "ws://localhost:9935",
+    "ws://localhost:9936",
+    "ws://localhost:9937",
+]
+RELAYS = REMOTE_RELAYS
 TOOLKIT_PATH = "midnight-node-toolkit"
 DB_PATH = "toolkit.db"
 NODE_URL = "ws://ferdie.node.sc.iog.io:9944" # "ws://localhost:9944"
@@ -197,6 +205,7 @@ def register_dust_addresses():
     parser.add_argument("--fund-indices", nargs='+', help="List of specific funding seed indices (space or comma-separated, overrides --fund-start/--fund-end)")
     parser.add_argument("-i", "--dest-indices", nargs='+', help="List of specific seed indices to register (space or comma-separated, overrides --dest-start/--dest-end)")
     parser.add_argument("--node-url", type=str, default=NODE_URL, help="Node URL. 'ferdie' will be replaced by other relay names if present.")
+    parser.add_argument("--check-balances", action="store_true", help="Perform balance checks (default: False)")
     args = parser.parse_args()
 
     if args.dest_indices:
@@ -224,15 +233,16 @@ def register_dust_addresses():
         funding_indices = list(range(args.fund_start, args.fund_end + 1))
 
     # Check balances before proceeding
-    original_seed_count = len(funding_indices)
-    funding_indices = check_dust_balances(funding_indices, len(target_indices), args.node_url)
+    if args.check_balances:
+        original_seed_count = len(funding_indices)
+        funding_indices = check_dust_balances(funding_indices, len(target_indices), args.node_url)
 
-    if not funding_indices:
-        print("❌ No funding seeds with sufficient dust balance available. Aborting.")
-        sys.exit(1)
+        if not funding_indices:
+            print("❌ No funding seeds with sufficient dust balance available. Aborting.")
+            sys.exit(1)
 
-    if len(funding_indices) < original_seed_count:
-        print(f"ℹ️  Continuing with {len(funding_indices)} of {original_seed_count} funding seeds.")
+        if len(funding_indices) < original_seed_count:
+            print(f"ℹ️  Continuing with {len(funding_indices)} of {original_seed_count} funding seeds.")
 
     funding_seeds = [f"{i:064}" for i in funding_indices]
 
@@ -265,7 +275,9 @@ def register_dust_addresses():
 
             # Round-robin selection of relay node
             relay_name = RELAYS[i % len(RELAYS)]
-            if "ferdie" in args.node_url:
+            if relay_name.startswith("ws://") or relay_name.startswith("wss://"):
+                node_url = relay_name
+            elif "ferdie" in args.node_url:
                 node_url = args.node_url.replace("ferdie", relay_name)
             else:
                 node_url = args.node_url

@@ -12,7 +12,7 @@ import random
 
 # Configuration
 TOOLKIT_CMD = "midnight-node-toolkit"
-RELAYS = [
+REMOTE_RELAYS = [
     "ferdie",
     "george",
     "henry",
@@ -24,8 +24,16 @@ RELAYS = [
     "sam",
     "tom"
 ]
-START_INDEX = 118
-END_INDEX = 120
+LOCAL_RELAYS = [
+    "ws://localhost:9933",
+    "ws://localhost:9934",
+    "ws://localhost:9935",
+    "ws://localhost:9936",
+    "ws://localhost:9937",
+]
+RELAYS = REMOTE_RELAYS
+START_INDEX = 1
+END_INDEX = 50
 DB_PATH = "toolkit.db"
 NODE_URL = "ws://ferdie.node.sc.iog.io:9944" # "ws://localhost:9944"
 DELAY = 0.25
@@ -37,7 +45,9 @@ def get_balance(index, node_url_pattern, verbose=False):
     seed = f"{index:064}"
 
     relay_name = RELAYS[index % len(RELAYS)]
-    if "ferdie" in node_url_pattern:
+    if relay_name.startswith("ws://") or relay_name.startswith("wss://"):
+        node_url = relay_name
+    elif "ferdie" in node_url_pattern:
         node_url = node_url_pattern.replace("ferdie", relay_name)
     else:
         node_url = node_url_pattern
@@ -139,7 +149,7 @@ def main():
             sys.exit(1)
 
     start_time = time.time()
-    print(f"🚀 Checking balances for {len(target_indices)} seeds across {len(RELAYS)} nodes...")
+    print(f"🚀 Checking night balances for {len(target_indices)} seeds across {len(RELAYS)} nodes...")
 
     total_wallets = len(target_indices)
     cpu_count = os.cpu_count() or 1

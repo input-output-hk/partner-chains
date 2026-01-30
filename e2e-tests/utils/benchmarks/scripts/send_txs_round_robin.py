@@ -10,7 +10,7 @@ import tempfile
 import shutil
 
 # Configuration
-RELAYS = [
+REMOTE_RELAYS = [
     "ferdie",
     "george",
     "henry",
@@ -22,6 +22,14 @@ RELAYS = [
     "sam",
     "tom"
 ]
+LOCAL_RELAYS = [
+    "ws://localhost:9933",
+    "ws://localhost:9934",
+    "ws://localhost:9935",
+    "ws://localhost:9936",
+    "ws://localhost:9937",
+]
+RELAYS = REMOTE_RELAYS
 TOOLKIT_CMD = "midnight-node-toolkit"
 TOKEN_TYPE = "0000000000000000000000000000000000000000000000000000000000000000"
 BASE_AMOUNT = 1000000
@@ -68,7 +76,10 @@ def send_transaction(source_index, dest_address, amount_val, cwd=None):
     
     # Round-robin selection of relay node
     relay_name = RELAYS[source_index % len(RELAYS)]
-    node_url = f"ws://{relay_name}.node.sc.iog.io:9944"
+    if relay_name.startswith("ws://") or relay_name.startswith("wss://"):
+        node_url = relay_name
+    else:
+        node_url = f"ws://{relay_name}.node.sc.iog.io:9944"
     
     cmd = [
         TOOLKIT_CMD, "generate-txs", "single-tx",

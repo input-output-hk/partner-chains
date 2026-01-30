@@ -10,6 +10,10 @@ import logging
 TOOLKIT_CMD = "midnight-node-toolkit"
 NODE_URL = "ws://ferdie.node.sc.iog.io:9944" # "ws://localhost:9944"
 NIGHT_AMOUNT = 1000000
+FUND_START = 1
+FUND_END = 3
+DEST_START = 4
+DEST_END = 500
 
 def setup_logging(logfile=None):
     """Configures logging to a file if specified, otherwise suppresses logs."""
@@ -71,7 +75,7 @@ def format_indices_string(indices):
     else:
         return ", ".join(map(str, sorted_indices))
 
-def run_batch_actions(fund_indices, dest_indices, amount, node_url, verbose=False):
+def run_batch_actions(fund_indices, dest_indices, amount, node_url, verbose=False, check_balances=False):
     """Runs dust registration and then funds the wallets for a given batch."""
     indices_str = format_indices_string(dest_indices)
 
@@ -90,6 +94,8 @@ def run_batch_actions(fund_indices, dest_indices, amount, node_url, verbose=Fals
     ]
     if verbose:
         register_cmd.append("--verbose")
+    if check_balances:
+        register_cmd.append("--check-balances")
 
     log_msg(f"   Running: {' '.join(register_cmd)}")
     try:
@@ -113,6 +119,8 @@ def run_batch_actions(fund_indices, dest_indices, amount, node_url, verbose=Fals
     ]
     if verbose:
         fund_cmd.append("--verbose")
+    if check_balances:
+        fund_cmd.append("--check-balances")
 
     log_msg(f"   Running: {' '.join(fund_cmd)}")
     try:
@@ -126,16 +134,17 @@ def run_batch_actions(fund_indices, dest_indices, amount, node_url, verbose=Fals
 
 def main():
     parser = argparse.ArgumentParser(description="Recursively register and fund wallets using binary expansion.")
-    parser.add_argument("--fund-start", type=int, help="Initial funding start index")
-    parser.add_argument("--fund-end", type=int, help="Initial funding end index")
-    parser.add_argument("-s", "--dest-start", type=int, help="Destination start index")
-    parser.add_argument("-e", "--dest-end", type=int, help="Destination end index")
+    parser.add_argument("--fund-start", type=int, default=FUND_START, help="Initial funding start index")
+    parser.add_argument("--fund-end", type=int, default=FUND_END, help="Initial funding end index")
+    parser.add_argument("-s", "--dest-start", type=int, default=DEST_START, help="Destination start index")
+    parser.add_argument("-e", "--dest-end", type=int, default=DEST_END, help="Destination end index")
     parser.add_argument("--fund-indices", nargs='+', help="List of specific funding seed indices (space or comma-separated)")
     parser.add_argument("-i", "--dest-indices", nargs='+', help="List of specific destination seed indices (space or comma-separated)")
     parser.add_argument("-a", "--night-amount", type=float, default=NIGHT_AMOUNT, help="Target NIGHT amount for each final wallet")
     parser.add_argument("--logfile", type=str, default=f"log_{int(time.time())}.txt", help="Path to store all stdout and stderr logs.")
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output")
     parser.add_argument("--node-url", type=str, default=NODE_URL, help="Node URL to fetch state from.")
+    parser.add_argument("--check-balances", action="store_true", help="Perform balance checks (default: False)")
     args = parser.parse_args()
 
     # Setup logging
@@ -259,7 +268,8 @@ def main():
             batch['dest_indices'], 
             amount,
             args.node_url,
-            verbose=args.verbose
+            verbose=args.verbose,
+            check_balances=args.check_balances
         )
         if success:
             log_msg(f"✅ Batch {i+1}/{len(batches)} complete.\n")

@@ -10,7 +10,7 @@ import json
 import argparse
 import random
 
-RELAYS = [
+REMOTE_RELAYS = [
     "ferdie",
     "george",
     "henry",
@@ -22,6 +22,14 @@ RELAYS = [
     "sam",
     "tom"
 ]
+LOCAL_RELAYS = [
+    "ws://localhost:9933",
+    "ws://localhost:9934",
+    "ws://localhost:9935",
+    "ws://localhost:9936",
+    "ws://localhost:9937",
+]
+RELAYS = REMOTE_RELAYS
 NODE_URL = "ws://ferdie.node.sc.iog.io:9944" # "ws://localhost:9944"
 MAX_RETRIES = 5
 DELAY = 0.25
@@ -36,7 +44,9 @@ def submit_single_tx(i, tx_file, total_files, toolkit_path, node_url_pattern, ma
     for r_offset in range(num_attempts):
         relay_idx = (start_relay_idx + r_offset) % len(RELAYS)
         relay_name = RELAYS[relay_idx]
-        if "ferdie" in node_url_pattern:
+        if relay_name.startswith("ws://") or relay_name.startswith("wss://"):
+            dest_url = relay_name
+        elif "ferdie" in node_url_pattern:
             dest_url = node_url_pattern.replace("ferdie", relay_name)
         else:
             dest_url = node_url_pattern
