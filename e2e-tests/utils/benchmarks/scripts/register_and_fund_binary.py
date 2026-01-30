@@ -230,6 +230,9 @@ def main():
 
     log_msg("-" * 40)
 
+    # Start timing
+    start_time = time.time()
+
     failed_batches = []
     for i, batch in enumerate(batches):
         amount = batch_amounts[i]
@@ -277,7 +280,17 @@ def main():
         log_msg("Subsequent batches were not attempted.", level=logging.ERROR)
         sys.exit(1)
     else:
-        log_msg("\n🎉 All batches completed successfully.")
+        # Calculate total execution time
+        total_time = time.time() - start_time
+        minutes = int(total_time // 60)
+        seconds = int(total_time % 60)
+
+        if minutes > 0:
+            time_str = f"{minutes} minute{'s' if minutes != 1 else ''} {seconds} second{'s' if seconds != 1 else ''}"
+        else:
+            time_str = f"{seconds} second{'s' if seconds != 1 else ''}"
+
+        log_msg(f"\n🎉 All batches completed successfully in {time_str}.")
 
 if __name__ == "__main__":
     main()
