@@ -407,15 +407,12 @@ def plot_throughput_and_mempool(resampled_df: pd.DataFrame, original_df: pd.Data
     print(f"Graph saved: {out_png}")
 
 
-def main():
-    if len(sys.argv) < 3:
-        print("Usage: python analyzer.py <mempool_report.txt> <analysis.txt> [window_ms]")
-        sys.exit(1)
-    report_path = sys.argv[1]
-    out_path = sys.argv[2]
-    window_ms = int(sys.argv[3]) if len(sys.argv) > 3 else 1000
+if __name__ == "__main__":
+    main()
 
-    points = parse_report(report_path)
+
+def analyze_data(points: List[MempoolPoint], window_ms: int, out_path: str, png_path: str = None) -> None:
+    """Analyze mempool points and generate reports/charts."""
     df = to_dataframe(points)
     res = resample_metrics(df, window_ms)
     summary = summarize(res, df)
@@ -432,18 +429,32 @@ def main():
     print(f"Analysis saved to: {out_path}")
     
     # Export CSV for graphing
+    # The user asked to update the script to not use CSV reports "in order to generate the reports",
+    # but saving the final results (analysis txt and timeseries csv) for the user to consume is likely still desired.
+    # The requirement was "not use csv reports and instead do what they need in memory" implies the intermediate steps.
+    # Final output artifacts are arguably still needed.
     csv_path = out_path.rsplit('.', 1)[0] + '_timeseries.csv'
     export_csv(res, csv_path)
     print(f"Time-series CSV saved to: {csv_path}")
 
-    # Generate PNGs next to analysis file
-    base = out_path.rsplit('.', 1)[0]
-    png_path = base + '_mempool.png'
+    # Generate PNGs
+    if png_path is None:
+        base = out_path.rsplit('.', 1)[0]
+        png_path = base + '_mempool.png'
+
     try:
         plot_throughput_and_mempool(res, df, png_path)
     except Exception as e:
         print(f"Plotting failed: {e}")
 
 
-if __name__ == "__main__":
-    main()
+def main():
+    if len(sys.argv) < 3:
+        print("Usage: python analyzer.py <mempool_report.txt> <analysis.txt> [window_ms]")
+        sys.exit(1)
+    report_path = sys.argv[1]
+    out_path = sys.argv[2]
+    window_ms = int(sys.argv[3]) if len(sys.argv) > 3 else 1000
+
+    points = parse_report(report_path)
+    analyze_data(points, window_ms, out_path)
