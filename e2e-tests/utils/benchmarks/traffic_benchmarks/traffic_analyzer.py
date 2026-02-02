@@ -12,9 +12,8 @@ def count_validated_transactions(log_directory, nodes):
     node_stats = {}
     files_processed = 0
 
-    # Regex matches: 📋 Validated transaction 59bbd9c722cde20d... for mempool
-    # Also supports old format: Validated Midnight transaction "618804..."
-    tx_pattern = re.compile(r'Validated (?:Midnight )?transaction (?:")?([a-fA-F0-9]+)(?:")?(?: for mempool)?')
+    # Regex matches: Validated Midnight transaction "618804..."
+    tx_pattern = re.compile(r'Validated Midnight transaction "([a-fA-F0-9]+)"')
 
     print(f"Scanning logs in: {log_directory}\n")
 
@@ -22,12 +21,12 @@ def count_validated_transactions(log_directory, nodes):
         file_path = os.path.join(log_directory, f"{node}.txt")
         # Fallback to .log if .txt doesn't exist (seen in other snippets)
         if not os.path.exists(file_path):
-            file_path_log = os.path.join(log_directory, f"{node}.log")
-            if os.path.exists(file_path_log):
-                file_path = file_path_log
-            else:
-                node_stats[node] = 0
-                continue
+             file_path_log = os.path.join(log_directory, f"{node}.log")
+             if os.path.exists(file_path_log):
+                 file_path = file_path_log
+             else:
+                 node_stats[node] = 0
+                 continue
         
         node_unique_txs = set()
         try:
@@ -54,7 +53,7 @@ def analyze_block_production(log_directory, producers):
     Analyzes block production logs to determine traffic stats.
     Returns dictionaries for tx counts, creation times, and finalization times.
     """
-    # # print("Scanning Block Producers for Active Window (Non-empty blocks)...")  # Disabled to match original
+    print("Scanning Block Producers for Active Window (Non-empty blocks)...")
     
     # Regex definitions
     rx_prepared = re.compile(r'^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}).*Prepared block for proposing at (\d+).*extrinsics_count: (\d+)')
@@ -89,9 +88,8 @@ def analyze_block_production(log_directory, producers):
                         if ext_count > 2:
                             # Subtract 2 system extrinsics (Timestamp + Inherent)
                             user_txs = ext_count - 2
-                            
-                            # Use the minimum transaction count per block to avoid duplication
-                            if blk_num not in block_tx_counts or user_txs < block_tx_counts[blk_num]:
+                            # Keep max count seen for this block
+                            if blk_num not in block_tx_counts or user_txs > block_tx_counts[blk_num]:
                                 block_tx_counts[blk_num] = user_txs
                             
                             ts = datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S.%f")
@@ -146,31 +144,27 @@ def print_traffic_report(tx_counts, creation_times, finalization_times):
         print(f"#{blk:<7} | {tx_counts[blk]:<10} | {str(c_time):<26} | {str(f_time):<26}")
 
     print("-" * 75)
-    
+    print(f"TOTAL_TXS_VALIDATED:     {TOTAL_TXS_VALIDATED}")
+    print(f"MAX_TXS_IN_SINGLE_BLOCK: {MAX_TXS_IN_SINGLE_BLOCK}")
+
     duration = 0
     avg_tps = 0
     peak_tps = 0
-    start_time = None
-    end_time = None
-    last_finalized_block = None
 
     if sorted_blocks and len(sorted_blocks) > 1:
+        # Calculate duration based on creation times (Processing Window)
         start_time = creation_times.get(sorted_blocks[0])
-        
-        # Find the last block that has a finalization time
-        for blk in reversed(sorted_blocks):
-            if blk in finalization_times:
-                last_finalized_block = blk
-                break
-        
-        end_time = finalization_times.get(last_finalized_block) if last_finalized_block else creation_times.get(sorted_blocks[-1])
+        end_time = creation_times.get(sorted_blocks[-1])
         
         if start_time and end_time and isinstance(start_time, datetime) and isinstance(end_time, datetime):
             duration = (end_time - start_time).total_seconds()
             if duration < 1: duration = 1
             avg_tps = TOTAL_TXS_VALIDATED / duration
             
-            # Calculate Peak Instantaneous TPS for return stats (even if not printed)
+            print(f"\nActive Duration:             {duration:.2f} seconds")
+            print(f"Average TPS (Global):        {avg_tps:.2f} TX/s")
+            
+            # Calculate Peak Instantaneous TPS
             for i in range(1, len(sorted_blocks)):
                 b_curr = sorted_blocks[i]
                 b_prev = sorted_blocks[i-1]
@@ -183,19 +177,23 @@ def print_traffic_report(tx_counts, creation_times, finalization_times):
                         inst_tps = tx_counts[b_curr] / delta
                         if inst_tps > peak_tps:
                             peak_tps = inst_tps
-
-    print(f"TOTAL_TXS_VALIDATED: {TOTAL_TXS_VALIDATED}")
-    print(f"MAX_TXS_IN_SINGLE_BLOCK: {MAX_TXS_IN_SINGLE_BLOCK}")
-    
-    if duration > 0:
-        print(f"Time Duration (First Block Start -> Last Block Finalized): {duration:.3f} seconds")
-        print(f"Start Block ({sorted_blocks[0]}): {start_time}")
-        if last_finalized_block:
-            print(f"End Block ({last_finalized_block}): {end_time}")
+            
+            print(f"Peak Instantaneous TPS:      {peak_tps:.2f} TX/s")
+            print(f"Mempool Drain Rate:          {avg_tps:.2f} TX/s")  # Approx
+            
         else:
-            print(f"End Block ({sorted_blocks[-1]}): {end_time}")
+             print("\nTime timestamps missing for duration calc.")
+    else:
+        print("\nInsufficient data for duration calculation (need >1 block).")
 
     print("=" * 50)
+    
+    # Determine start/end times from sorted blocks
+    start_time_val = None
+    end_time_val = None
+    if sorted_blocks:
+        start_time_val = creation_times.get(sorted_blocks[0])
+        end_time_val = finalization_times.get(sorted_blocks[-1]) or creation_times.get(sorted_blocks[-1])
     
     return {
         "total_txs": TOTAL_TXS_VALIDATED,
@@ -203,6 +201,6 @@ def print_traffic_report(tx_counts, creation_times, finalization_times):
         "duration": duration,
         "avg_tps": avg_tps,
         "peak_tps": peak_tps,
-        "start_time": start_time,
-        "end_time": end_time,
+        "start_time": start_time_val,
+        "end_time": end_time_val,
     }
