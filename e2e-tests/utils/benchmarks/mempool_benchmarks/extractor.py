@@ -2,6 +2,7 @@
 
 import re
 import sys
+import os
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 
@@ -192,12 +193,12 @@ def extract_validation_event(line: str, timestamp: datetime, node: str) -> Optio
     return None
 
 
-def parse_logs(nodes: List[str]) -> List[MempoolEvent]:
+def parse_logs(nodes: List[str], log_dir: str = ".") -> List[MempoolEvent]:
     """Parse log files for all nodes and extract mempool events."""
     events = []
     
     for node_name in nodes:
-        log_file = f"{node_name}.txt"
+        log_file = os.path.join(log_dir, f"{node_name}.txt")
         
         try:
             with open(log_file, "r") as f:
