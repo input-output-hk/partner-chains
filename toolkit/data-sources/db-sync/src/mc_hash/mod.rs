@@ -54,5 +54,11 @@ impl McHashDataSource for McHashDataSourceImpl {
 	) -> std::result::Result<Option<MainchainBlock>, Box<dyn std::error::Error + Send + Sync>> {
 		Ok(self.inner.get_block_by_hash(hash).await?)
 	}
+
+	async fn get_cardano_tip(
+		&self,
+	) -> std::result::Result<Option<MainchainBlock>, Box<dyn std::error::Error + Send + Sync>> {
+		Ok(Some(self.inner.get_latest_block_info().await?))
+	}
 }
 );

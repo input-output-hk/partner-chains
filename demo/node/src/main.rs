@@ -7,6 +7,7 @@ mod cli;
 mod command;
 mod data_sources;
 mod inherent_data;
+mod mc_hash_block_import;
 mod rpc;
 mod service;
 mod staging;

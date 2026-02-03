@@ -11,9 +11,10 @@ use partner_chains_demo_runtime::{
 use sc_consensus_aura::{SlotDuration, find_pre_digest};
 use sc_service::Arc;
 use sidechain_domain::{
-	DelegatorKey, McBlockHash, ScEpochNumber, mainchain_epoch::MainchainEpochConfig,
+	DelegatorKey, McBlockHash, ScEpochNumber,
+	mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation, Timestamp as McTimestamp},
 };
-use sidechain_mc_hash::{McHashDataSource, McHashInherentDataProvider as McHashIDP};
+use sidechain_mc_hash::{McHashDataSource, McHashInherentDataProvider as McHashIDP, McHashInherentDigest};
 use sidechain_slots::ScSlotConfig;
 use sp_api::ProvideRuntimeApi;
 use sp_block_participation::{
@@ -31,6 +32,7 @@ use sp_inherents::CreateInherentDataProviders;
 use sp_partner_chains_bridge::{
 	TokenBridgeDataSource, TokenBridgeIDPRuntimeApi, TokenBridgeInherentDataProvider,
 };
+use sp_partner_chains_consensus_aura::inherent_digest::InherentDigest;
 use sp_partner_chains_consensus_aura::CurrentSlotProvider;
 use sp_runtime::traits::{Block as BlockT, Header, Zero};
 use sp_session_validator_management::SessionValidatorManagementApi;
@@ -165,6 +167,9 @@ pub struct VerifierCIDP<T> {
 	block_participation_data_source: Arc<dyn BlockParticipationDataSource + Send + Sync>,
 	governed_map_data_source: Arc<dyn GovernedMapDataSource + Send + Sync>,
 	bridge_data_source: Arc<dyn TokenBridgeDataSource<AccountId> + Send + Sync>,
+	/// Main chain epoch configuration for deriving mc_epoch from slot timestamp.
+	/// Used by new_deferred() to compute the epoch without querying db-sync.
+	mc_epoch_config: MainchainEpochConfig,
 }
 
 impl<T: Send + Sync> CurrentSlotProvider for VerifierCIDP<T> {
@@ -205,26 +210,40 @@ where
 		let Self {
 			config,
 			client,
-			mc_hash_data_source,
+			mc_hash_data_source: _, // Not used - mc_hash verification is deferred to McHashVerifyingBlockImport
 			authority_selection_data_source,
 			block_participation_data_source,
 			governed_map_data_source,
 			bridge_data_source,
+			mc_epoch_config,
 		} = self;
-		let CreateInherentDataConfig { mc_epoch_config, sc_slot_config, time_source, .. } = config;
+		let CreateInherentDataConfig { mc_epoch_config: _, sc_slot_config, time_source, .. } = config;
 
 		let timestamp = TimestampIDP::new(Timestamp::new(time_source.get_current_time_millis()));
 		let parent_header = client.expect_header(parent_hash)?;
-		let parent_slot = slot_from_predigest(&parent_header)?;
-		let mc_state_reference = McHashIDP::new_verification(
-			parent_header,
-			parent_slot,
-			verified_block_slot,
-			mc_hash.clone(),
-			config.slot_duration(),
-			mc_hash_data_source.as_ref(),
-		)
-		.await?;
+
+		// Derive mc_epoch from slot timestamp using MainchainEpochDerivation.
+		// This avoids querying db-sync - the actual mc_hash verification is deferred
+		// to McHashVerifyingBlockImport which performs the two-step check.
+		let slot_timestamp = verified_block_slot
+			.timestamp(config.slot_duration())
+			.ok_or("Slot represents a timestamp bigger than u64::MAX")?;
+		// Convert sp_timestamp::Timestamp to sidechain_domain::mainchain_epoch::Timestamp
+		let mc_timestamp = McTimestamp::from_unix_millis(slot_timestamp.as_millis());
+		let mc_epoch = mc_epoch_config.timestamp_to_mainchain_epoch(mc_timestamp)?;
+
+		// Extract previous mc_hash from parent header digest (for governed_map IDP)
+		let previous_mc_hash = if parent_header.number().is_zero() {
+			None
+		} else {
+			Some(
+				McHashInherentDigest::value_from_digest(parent_header.digest().logs())
+					.map_err(|e| format!("Failed to get mc_hash from parent header: {}", e))?,
+			)
+		};
+
+		// Create deferred McHashIDP - verification happens in McHashVerifyingBlockImport
+		let mc_state_reference = McHashIDP::new_deferred(mc_hash.clone(), mc_epoch, previous_mc_hash.clone());
 
 		let ariadne_data_provider = AriadneIDP::new(
 			client.as_ref(),
@@ -233,7 +252,7 @@ where
 			parent_hash,
 			verified_block_slot,
 			authority_selection_data_source.as_ref(),
-			mc_state_reference.epoch,
+			mc_state_reference.mc_epoch(),
 		)
 		.await?;
 
@@ -254,7 +273,7 @@ where
 			client.as_ref(),
 			parent_hash,
 			mc_hash.clone(),
-			mc_state_reference.previous_mc_hash(),
+			previous_mc_hash,
 			governed_map_data_source.as_ref(),
 		)
 		.await?;

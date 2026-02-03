@@ -4,6 +4,7 @@
 pub mod chain_spec;
 mod data_sources;
 mod inherent_data;
+mod mc_hash_block_import;
 pub mod rpc;
 pub mod service;
 pub mod staging;

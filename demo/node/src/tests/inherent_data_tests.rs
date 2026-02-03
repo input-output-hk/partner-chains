@@ -1,5 +1,5 @@
 use crate::inherent_data::{ProposalCIDP, VerifierCIDP};
-use crate::tests::mock::{test_client, test_create_inherent_data_config};
+use crate::tests::mock::{test_client, test_create_inherent_data_config, test_epoch_config};
 use crate::tests::runtime_api_mock;
 use crate::tests::runtime_api_mock::{TestApi, mock_header};
 use authority_selection_inherents::{
@@ -140,6 +140,7 @@ async fn block_verification_cidp_should_be_created_correctly() {
 		Arc::new(StakeDistributionDataSourceMock::new()),
 		Arc::new(GovernedMapDataSourceMock::default()),
 		Arc::new(TokenBridgeDataSourceMock::new()),
+		test_epoch_config(),
 	);
 
 	let inherent_data_providers = verifier_cidp

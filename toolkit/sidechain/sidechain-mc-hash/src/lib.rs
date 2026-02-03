@@ -308,6 +308,16 @@ pub trait McHashDataSource {
 		&self,
 		hash: McBlockHash,
 	) -> Result<Option<MainchainBlock>, Box<dyn std::error::Error + Send + Sync>>;
+
+	/// Returns the latest known Cardano block (regardless of stability).
+	/// Used to detect when db-sync is lagging and shouldn't penalize peers.
+	///
+	/// # Returns
+	/// * `Some(block)` - the latest block known to the data source
+	/// * `None` - no blocks available (data source may be unavailable)
+	async fn get_cardano_tip(
+		&self,
+	) -> Result<Option<MainchainBlock>, Box<dyn std::error::Error + Send + Sync>>;
 }
 
 impl McHashInherentDataProvider {
@@ -439,6 +449,46 @@ impl McHashInherentDataProvider {
 	/// Returns the previous reference block's hash
 	pub fn previous_mc_hash(&self) -> Option<McBlockHash> {
 		self.previous_mc_block.as_ref().map(|block| block.hash.clone())
+	}
+
+	/// Creates a new [McHashInherentDataProvider] that defers mc_hash stability verification to BlockImport.
+	///
+	/// This constructor does NOT query db-sync for stability verification. It is used when the
+	/// mc_hash verification is handled by [McHashVerifyingBlockImport] at block import time,
+	/// which implements the two-step check (existence then stability).
+	///
+	/// # Arguments
+	/// - `mc_hash`: The main chain block hash from the block header digest
+	/// - `mc_epoch`: The Cardano epoch (derived from slot timestamp)
+	/// - `previous_mc_hash`: The main chain hash from the parent block (None for genesis)
+	///
+	/// # Note
+	/// The block number and other fields are set to placeholder values since they are not needed
+	/// for inherent data provision. The actual verification happens in [McHashVerifyingBlockImport].
+	pub fn new_deferred(
+		mc_hash: McBlockHash,
+		mc_epoch: McEpochNumber,
+		previous_mc_hash: Option<McBlockHash>,
+	) -> Self {
+		// Create stub MainchainBlock with just the hash and epoch
+		// Other fields are placeholders since they're not used for inherent data provision
+		let mc_block = MainchainBlock {
+			hash: mc_hash,
+			epoch: mc_epoch,
+			slot: McSlotNumber(0),
+			timestamp: 0,
+			number: McBlockNumber(0),
+		};
+
+		let previous_mc_block = previous_mc_hash.map(|hash| MainchainBlock {
+			hash,
+			epoch: McEpochNumber(0),
+			slot: McSlotNumber(0),
+			timestamp: 0,
+			number: McBlockNumber(0),
+		});
+
+		Self { mc_block, previous_mc_block }
 	}
 }
 
@@ -630,6 +680,13 @@ pub mod mock {
 				.find(|b| b.hash == hash)
 				.cloned()
 				.or_else(|| self.unstable_blocks.iter().find(|b| b.hash == hash).cloned()))
+		}
+
+		async fn get_cardano_tip(
+			&self,
+		) -> Result<Option<MainchainBlock>, Box<dyn std::error::Error + Send + Sync>> {
+			// Return latest from either unstable or stable blocks
+			Ok(self.unstable_blocks.last().or(self.stable_blocks.last()).cloned())
 		}
 	}
 }

@@ -22,6 +22,7 @@ workspace = true
 [dependencies]
 async-trait = { workspace = true }
 clap = { workspace = true }
+figment = { workspace = true }
 futures = { workspace = true }
 log = { workspace = true }
 sc-cli = { workspace = true, features = ["rocksdb"] }
@@ -37,6 +38,7 @@ sc-partner-chains-consensus-aura = { workspace = true }
 sp-consensus-aura = { workspace = true }
 sp-partner-chains-consensus-aura = { workspace = true }
 sp-consensus = { workspace = true }
+sp-consensus-slots = { workspace = true }
 sc-consensus = { workspace = true }
 sc-consensus-grandpa = { workspace = true }
 sc-consensus-grandpa-rpc = { workspace = true }

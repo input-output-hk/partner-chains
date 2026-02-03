@@ -45,4 +45,8 @@ impl sidechain_mc_hash::McHashDataSource for McHashDataSourceMock {
 	async fn get_block_by_hash(&self, hash: McBlockHash) -> Result<Option<MainchainBlock>> {
 		Ok(self.block_source.get_block_by_hash(hash).await?)
 	}
+
+	async fn get_cardano_tip(&self) -> Result<Option<MainchainBlock>> {
+		Ok(Some(self.block_source.get_latest_block_info().await?))
+	}
 }
