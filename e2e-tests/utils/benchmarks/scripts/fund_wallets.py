@@ -13,7 +13,7 @@ import argparse
 
 # Configuration
 TOOLKIT_CMD = "midnight-node-toolkit"
-RELAYS = [
+REMOTE_RELAYS = [
     "ferdie",
     "george",
     "henry",
@@ -25,6 +25,15 @@ RELAYS = [
     "sam",
     "tom"
 ]
+LOCAL_RELAYS = [
+    "ws://localhost:9933",
+    "ws://localhost:9934",
+    "ws://localhost:9935",
+    "ws://localhost:9936",
+    "ws://localhost:9937",
+
+]
+RELAYS = REMOTE_RELAYS
 TARGET_START_INDEX = 4
 TARGET_END_INDEX = 10
 FUNDING_START_INDEX = 1
@@ -116,30 +125,30 @@ def process_chunk(target_indices, funding_seeds, node_url, verbose=False):
 
         for i, seed in zip(target_indices, funding_seeds):
             try:
-                print(f"[Chunk {seed[-4:]}] Generating wallet {i}...", end=" ", flush=True)
+                print(f"[Chunk {seed[-4:]}] Generating wallet {i}...")
                 addr = get_wallet_address(i, cwd=temp_dir, verbose=verbose)
-                print(f"✅ {addr}")
+                print(f"✅ Wallet {i}: {addr}")
 
                 time.sleep(random.uniform(DELAY * 0.5, DELAY * 1.5))
 
-                print(f"[Chunk {seed[-4:]}] Funding {addr}...", end=" ", flush=True)
+                print(f"[Chunk {seed[-4:]}] Funding {addr}...")
                 for attempt in range(MAX_RETRIES):
                     try:
                         fund_address(addr, seed, node_url, cwd=temp_dir, verbose=verbose)
-                        print("✅ Sent")
+                        print(f"✅ Funding sent to {addr}")
                         break
                     except subprocess.CalledProcessError:
                         if attempt < MAX_RETRIES - 1:
-                            print(f"⚠️  Retry {attempt+1}/{MAX_RETRIES}...", end=" ", flush=True)
+                            msg = f"⚠️  Retry {attempt+1}/{MAX_RETRIES} for {addr}..."
 
                             # Rotate relay node if possible
                             for r in RELAYS:
                                 if r in node_url:
                                     next_r = RELAYS[(RELAYS.index(r) + 1) % len(RELAYS)]
                                     node_url = node_url.replace(r, next_r)
-                                    print(f" [Switched to {next_r}]", end="", flush=True)
+                                    msg += f" [Switched to {next_r}]"
                                     break
-
+                            print(msg)
                             time.sleep(random.uniform(2, 5) + (attempt * 2))
                         else:
                             raise
@@ -171,7 +180,7 @@ def check_night_balances(funding_indices, amount_per_wallet, total_wallets, node
 
     # We check all funding indices at once
     indices_str = ",".join(map(str, funding_indices))
-    cmd = [sys.executable, script_path, "--indices", indices_str, "--node-url", node_url]
+    cmd = [sys.executable, script_path, "--dest-indices", indices_str, "--node-url", node_url]
 
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
@@ -226,7 +235,7 @@ def check_dust_balances(funding_indices, total_wallets, node_url):
 
     # We check all funding indices at once
     indices_str = ",".join(map(str, funding_indices))
-    cmd = [sys.executable, script_path, "--indices", indices_str, "--node-url", node_url]
+    cmd = [sys.executable, script_path, "--dest-indices", indices_str, "--node-url", node_url]
 
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
@@ -259,6 +268,19 @@ def check_dust_balances(funding_indices, total_wallets, node_url):
         print("❌ Error running get_dust_balances.py. Cannot verify balances.")
         return []
 
+def format_indices_string(indices):
+    """Returns a string representation of indices (range if consecutive, list otherwise)."""
+    if not indices:
+        return "None"
+
+    sorted_indices = sorted(indices)
+    is_consecutive = (sorted_indices[-1] - sorted_indices[0] == len(sorted_indices) - 1)
+
+    if is_consecutive and len(indices) > 1:
+        return f"{sorted_indices[0]}-{sorted_indices[-1]}"
+    else:
+        return ", ".join(map(str, sorted_indices))
+
 def main():
     if "MN_DONT_WATCH_PROGRESS" in os.environ:
         del os.environ["MN_DONT_WATCH_PROGRESS"]
@@ -267,11 +289,12 @@ def main():
     parser.add_argument("-e", "--dest-end", type=int, default=TARGET_END_INDEX, help="Ending seed to be funded")
     parser.add_argument("--fund-start", type=int, default=FUNDING_START_INDEX, help="Starting funding seed index")
     parser.add_argument("--fund-end", type=int, default=FUNDING_END_INDEX, help="Ending funding seed index")
-    parser.add_argument("--night-amount", type=float, default=FUNDING_AMOUNT, help="Amount of NIGHT tokens to fund")
+    parser.add_argument("-a", "--night-amount", type=float, default=FUNDING_AMOUNT, help="Amount of NIGHT tokens to fund")
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output")
     parser.add_argument("--fund-indices", nargs='+', help="List of specific funding seed indices (space or comma-separated, overrides --fund-start/--fund-end)")
-    parser.add_argument("--dest-indices", nargs='+', help="List of specific seed indices to fund (space or comma-separated, overrides --dest-start/--dest-end)")
+    parser.add_argument("-i", "--dest-indices", nargs='+', help="List of specific seed indices to fund (space or comma-separated, overrides --dest-start/--dest-end)")
     parser.add_argument("--node-url", type=str, default=NODE_URL, help="Node URL. 'ferdie' will be replaced by relay names if present.")
+    parser.add_argument("--check-balances", action="store_true", help="Perform balance checks (default: False)")
     args = parser.parse_args()
 
     global AMOUNT
@@ -302,24 +325,25 @@ def main():
         funding_indices = list(range(args.fund_start, args.fund_end + 1))
 
     # Check balances before proceeding
-    original_seed_count = len(funding_indices)
-    funding_indices = check_night_balances(funding_indices, AMOUNT, len(target_indices), args.node_url)
+    if args.check_balances:
+        original_seed_count = len(funding_indices)
+        funding_indices = check_night_balances(funding_indices, AMOUNT, len(target_indices), args.node_url)
 
-    if not funding_indices:
-        print("❌ No funding seeds with sufficient balance available. Aborting.")
-        sys.exit(1)
+        if not funding_indices:
+            print("❌ No funding seeds with sufficient balance available. Aborting.")
+            sys.exit(1)
 
-    funding_indices = check_dust_balances(funding_indices, len(target_indices), args.node_url)
-    if not funding_indices:
-        print("❌ No funding seeds with sufficient dust balance available. Aborting.")
-        sys.exit(1)
+        funding_indices = check_dust_balances(funding_indices, len(target_indices), args.node_url)
+        if not funding_indices:
+            print("❌ No funding seeds with sufficient dust balance available. Aborting.")
+            sys.exit(1)
 
-    if len(funding_indices) < original_seed_count:
-        print(f"ℹ️  Continuing with {len(funding_indices)} of {original_seed_count} funding seeds.")
+        if len(funding_indices) < original_seed_count:
+            print(f"ℹ️  Continuing with {len(funding_indices)} of {original_seed_count} funding seeds.")
 
     source_seeds = [f"{i:064}" for i in funding_indices]
 
-    print("🚀 Starting wallet creation and funding script...")
+    print(f"🚀 Starting wallet creation and funding script for seeds {format_indices_string(target_indices)}...")
 
     total_wallets = len(target_indices)
     # Determine the number of workers based on the minimum of available resources
@@ -347,7 +371,9 @@ def main():
 
             # Round-robin selection of relay node
             relay_name = RELAYS[i % len(RELAYS)]
-            if "ferdie" in args.node_url:
+            if relay_name.startswith("ws://") or relay_name.startswith("wss://"):
+                node_url = relay_name
+            elif "ferdie" in args.node_url:
                 node_url = args.node_url.replace("ferdie", relay_name)
             else:
                 node_url = args.node_url

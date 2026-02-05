@@ -11,7 +11,7 @@ import shutil
 import tempfile
 
 # Configuration
-RELAYS = [
+REMOTE_RELAYS = [
     "ferdie",
     "george",
     "henry",
@@ -23,11 +23,20 @@ RELAYS = [
     "sam",
     "tom"
 ]
+LOCAL_RELAYS = [
+    "ws://localhost:9933",
+    "ws://localhost:9934",
+    "ws://localhost:9935",
+    "ws://localhost:9936",
+    "ws://localhost:9937",
+
+]
+RELAYS = REMOTE_RELAYS
 TOOLKIT_CMD = "midnight-node-toolkit"
 TOKEN_TYPE = "0000000000000000000000000000000000000000000000000000000000000000"
 BASE_AMOUNT = 1000000
 START_INDEX = 1
-END_INDEX = 499
+END_INDEX = 500
 DB_PATH = "toolkit.db"
 NODE_URL = "ws://ferdie.node.sc.iog.io:9944" # "ws://localhost:9944"
 DELAY = 0.25
@@ -86,7 +95,9 @@ def send_transaction(source_index, dest_address, amount_val, node_url_pattern, m
     for i in range(num_attempts):
         relay_idx = (start_relay_idx + i) % len(RELAYS)
         relay_name = RELAYS[relay_idx]
-        if "ferdie" in node_url_pattern:
+        if relay_name.startswith("ws://") or relay_name.startswith("wss://"):
+            node_url = relay_name
+        elif "ferdie" in node_url_pattern:
             node_url = node_url_pattern.replace("ferdie", relay_name)
         else:
             node_url = node_url_pattern
@@ -158,16 +169,16 @@ def main():
     parser = argparse.ArgumentParser(description="Generate or submit round-robin transactions.")
     parser.add_argument("--submit", action="store_true", help="Submit transactions directly instead of saving to file.")
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output from toolkit commands.")
-    parser.add_argument("-s", "--start", type=int, default=START_INDEX, help="Starting seed to generate txs")
-    parser.add_argument("-e", "--end", type=int, default=END_INDEX, help="Ending seed to generate txs")
+    parser.add_argument("-s", "--dest-start", type=int, default=START_INDEX, help="Starting seed to generate txs")
+    parser.add_argument("-e", "--dest-end", type=int, default=END_INDEX, help="Ending seed to generate txs")
     parser.add_argument("--node-url", type=str, default=NODE_URL, help="Node URL. 'ferdie' will be replaced by relay names if present.")
     parser.add_argument("--delay", type=float, default=DELAY, help="Delay in seconds after each transaction generation.")
     parser.add_argument("--max-retries", type=int, default=MAX_RETRIES, help="Maximum number of attempts per transaction.")
     args = parser.parse_args()
     save_to_file = not args.submit
     verbose = args.verbose
-    start_index = args.start
-    end_index = args.end
+    start_index = args.dest_start
+    end_index = args.dest_end
 
     global DB_PATH
     if not os.path.exists(DB_PATH):

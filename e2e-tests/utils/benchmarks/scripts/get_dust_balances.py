@@ -12,7 +12,7 @@ import random
 
 # Configuration
 TOOLKIT_CMD = "midnight-node-toolkit"
-RELAYS = [
+REMOTE_RELAYS = [
     "ferdie",
     "george",
     "henry",
@@ -24,8 +24,17 @@ RELAYS = [
     "sam",
     "tom"
 ]
-START_INDEX = 118
-END_INDEX = 120
+LOCAL_RELAYS = [
+    "ws://localhost:9933",
+    "ws://localhost:9934",
+    "ws://localhost:9935",
+    "ws://localhost:9936",
+    "ws://localhost:9937",
+
+]
+RELAYS = REMOTE_RELAYS
+START_INDEX = 1
+END_INDEX = 500
 DB_PATH = "toolkit.db"
 NODE_URL = "ws://ferdie.node.sc.iog.io:9944" # "ws://localhost:9944"
 DELAY = 0.25
@@ -37,7 +46,9 @@ def get_dust_balance(index, node_url_pattern, verbose=False):
     seed = f"{index:064}"
 
     relay_name = RELAYS[index % len(RELAYS)]
-    if "ferdie" in node_url_pattern:
+    if relay_name.startswith("ws://") or relay_name.startswith("wss://"):
+        node_url = relay_name
+    elif "ferdie" in node_url_pattern:
         node_url = node_url_pattern.replace("ferdie", relay_name)
     else:
         node_url = node_url_pattern
@@ -109,23 +120,23 @@ def get_dust_balance(index, node_url_pattern, verbose=False):
 
 def main():
     parser = argparse.ArgumentParser(description="Check dust balances.")
-    parser.add_argument("-s", "--start", type=int, default=START_INDEX, help="Starting seed index")
-    parser.add_argument("-e", "--end", type=int, default=END_INDEX, help="Ending seed index")
-    parser.add_argument("-i", "--indices", nargs='+', help="List of specific seed indices (space or comma-separated, overrides --start/--end)")
+    parser.add_argument("-s", "--dest-start", type=int, default=START_INDEX, help="Starting seed index")
+    parser.add_argument("-e", "--dest-end", type=int, default=END_INDEX, help="Ending seed index")
+    parser.add_argument("-i", "--dest-indices", nargs='+', help="List of specific seed indices (space or comma-separated, overrides --dest-start/--dest-end)")
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output")
     parser.add_argument("--node-url", type=str, default=NODE_URL, help="Node URL. 'ferdie' will be replaced by relay names if present.")
     args = parser.parse_args()
 
-    if args.indices:
+    if args.dest_indices:
         target_indices = []
-        for item in args.indices:
+        for item in args.dest_indices:
             try:
                 target_indices.extend([int(i.strip()) for i in item.split(',') if i.strip()])
             except ValueError:
-                print(f"❌ Error: Invalid value in --indices: '{item}'. Please provide a list of integers.")
+                print(f"❌ Error: Invalid value in --dest-indices: '{item}'. Please provide a list of integers.")
                 sys.exit(1)
     else:
-        target_indices = list(range(args.start, args.end + 1))
+        target_indices = list(range(args.dest_start, args.dest_end + 1))
 
     global DB_PATH
     if not os.path.exists(DB_PATH):
