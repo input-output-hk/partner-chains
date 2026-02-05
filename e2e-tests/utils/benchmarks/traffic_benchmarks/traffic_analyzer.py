@@ -12,8 +12,9 @@ def count_validated_transactions(log_directory, nodes):
     node_stats = {}
     files_processed = 0
 
-    # Regex matches: Validated Midnight transaction "618804..."
-    tx_pattern = re.compile(r'Validated Midnight transaction "([a-fA-F0-9]+)"')
+    # Regex matches: 📋 Validated transaction 59bbd9c722cde20d... for mempool
+    # Also supports old format: Validated Midnight transaction "618804..."
+    tx_pattern = re.compile(r'Validated (?:Midnight )?transaction (?:")?([a-fA-F0-9]+)(?:")?(?: for mempool)?')
 
     print(f"Scanning logs in: {log_directory}\n")
 
@@ -142,7 +143,7 @@ def print_traffic_report(tx_counts, creation_times, finalization_times):
     for blk in sorted_blocks:
         c_time = creation_times.get(blk, "N/A")
         f_time = finalization_times.get(blk, "N/A")
-        print(f"{blk:<8} | {tx_counts[blk]:<10} | {str(c_time):<26} | {str(f_time):<26}")
+        print(f"#{blk:<7} | {tx_counts[blk]:<10} | {str(c_time):<26} | {str(f_time):<26}")
 
     print("-" * 75)
     

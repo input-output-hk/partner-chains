@@ -115,6 +115,39 @@ python3 tx-counter.py path/to/node.txt
 - `--url` - Grafana/Loki URL
 - `--log-dir` - Path to existing log directory
 
+### deploy_mint_contract.sh
+
+Deploys a minting contract.
+
+**Note:** In order to deploy a minting contract, you have to use `toolkit-js` from the `midnight-node` GitHub repository.
+
+This script performs the following actions:
+1. Builds the compact contract from the `midnight-node` repository.
+2. Generates contract-specific files in the `toolkit-js` directory:
+   - In `mint/`: Generates `mint.config.js` from `mint.compact` and `mint.config.ts`.
+   - In `mint/out/`: Creates `compiler`, `contract`, `keys`, and `zkir` directories with associated files.
+3. Generates transaction and state files in the working directory (`WORK_DIR`):
+   - `contract_state.mn`, `deploy_tx.mn`, `deploy.bin`, `deploy_zswap.json`
+   - `mint.bin`, `mint_zswap.json`
+   - `private_state.json`, `private_state2.json`
+All these output are necessary for calling the mint contract.
+
+**Usage:**
+```bash
+./deploy_mint_contract.sh
+```
+
+### call_mint_contract.py
+
+Calls a deployed minting contract.
+
+**Note:** Run the deployment script first. You must obtain the files created at `midnight-node/util/toolkit-js/mint` and WORK_DIR to use them with this script.
+
+**Usage:**
+```bash
+python3 call_mint_contract.py --toolkit-js-path /path/to/midnight-node/util/toolkit-js
+```
+
 ## Prerequisites
 
 1. Install the Midnight Node Toolkit:

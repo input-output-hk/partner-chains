@@ -128,11 +128,12 @@ def submit_transactions(toolkit_path="midnight-node-toolkit"):
     parser.add_argument("--delay", type=float, default=DELAY, help="Delay in seconds after each transaction submission.")
     parser.add_argument("--batch-size", type=int, default=0, help="Number of transactions to submit per batch. Default: 0 (submit all at once).")
     parser.add_argument("--batch-delay", type=float, default=6.0, help="Delay in seconds between batches.")
+    parser.add_argument("--tx-dir", type=str, default="txs", help="Directory containing transaction files.")
     args = parser.parse_args()
 
     start_time = time.time()
     # 1. Find all matching files
-    all_files = glob.glob(os.path.join("txs", "tx_*.mn"))
+    all_files = glob.glob(os.path.join(args.tx_dir, "tx_*.mn"))
     all_files.sort()
 
     files = []
