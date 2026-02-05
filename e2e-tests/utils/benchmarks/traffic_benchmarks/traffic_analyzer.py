@@ -12,8 +12,9 @@ def count_validated_transactions(log_directory, nodes):
     node_stats = {}
     files_processed = 0
 
-    # Regex matches: Validated Midnight transaction "618804..."
-    tx_pattern = re.compile(r'Validated Midnight transaction "([a-fA-F0-9]+)"')
+    # Regex matches: 📋 Validated transaction 59bbd9c722cde20d... for mempool
+    # Also supports old format: Validated Midnight transaction "618804..."
+    tx_pattern = re.compile(r'Validated (?:Midnight )?transaction (?:")?([a-fA-F0-9]+)(?:")?(?: for mempool)?')
 
     print(f"Scanning logs in: {log_directory}\n")
 
