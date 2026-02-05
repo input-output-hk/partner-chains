@@ -88,7 +88,10 @@ def analyze_block_production(log_directory, producers):
                         if ext_count > 2:
                             # Subtract 2 system extrinsics (Timestamp + Inherent)
                             user_txs = ext_count - 2
-                            block_tx_counts[blk_num] = user_txs
+                            
+                            # Use the minimum transaction count per block to avoid duplication
+                            if blk_num not in block_tx_counts or user_txs < block_tx_counts[blk_num]:
+                                block_tx_counts[blk_num] = user_txs
                             
                             ts = datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S.%f")
                             if blk_num not in block_creation_times or ts < block_creation_times[blk_num]:
@@ -139,7 +142,7 @@ def print_traffic_report(tx_counts, creation_times, finalization_times):
     for blk in sorted_blocks:
         c_time = creation_times.get(blk, "N/A")
         f_time = finalization_times.get(blk, "N/A")
-        print(f"#{blk:<7} | {tx_counts[blk]:<10} | {str(c_time):<26} | {str(f_time):<26}")
+        print(f"{blk:<8} | {tx_counts[blk]:<10} | {str(c_time):<26} | {str(f_time):<26}")
 
     print("-" * 75)
     
