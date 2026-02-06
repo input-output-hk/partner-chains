@@ -300,7 +300,7 @@ def register_dust_addresses():
     if total_wallets > 0:
         print(f"📊 Average time per registration: {total_duration / total_wallets:.2f} seconds")
     if failed_seeds:
-        print(f"❌ Failed seeds: {sorted(failed_seeds)}")
+        print(f"❌ Failed {len(failed_seeds)} seeds: {sorted(failed_seeds)}")
         sys.exit(1)
 
 if __name__ == "__main__":

@@ -219,7 +219,7 @@ def submit_transactions(toolkit_path="midnight-node-toolkit"):
             failed_seeds.sort(key=int)
         except ValueError:
             failed_seeds.sort()
-        print(f"❌ Failed seeds: {failed_seeds}")
+        print(f"❌ Failed {len(failed_seeds)} seeds: {failed_seeds}")
     print(f"⏱️ Total execution time: {end_time - start_time:.2f} seconds")
 
 if __name__ == "__main__":

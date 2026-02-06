@@ -228,7 +228,7 @@ def main():
     print("\n🎉 Batch processing complete.")
     print(f"Valid: {results.count(True)}, Invalid: {results.count(False)}")
     if failed_seeds:
-        print(f"❌ Failed seeds: {sorted(failed_seeds)}")
+        print(f"❌ Failed {len(failed_seeds)} seeds: {sorted(failed_seeds)}")
     print(f"⏱️ Total execution time: {end_time - start_time:.2f} seconds")
 
 if __name__ == "__main__":
