@@ -190,7 +190,7 @@ def submit_transactions(toolkit_path="midnight-node-toolkit"):
             time.sleep(args.batch_delay)
 
         if args.batch_size > 0:
-            print(f"🚀 Processing Batch {batch_idx + 1}/{len(batches)}: {len(batch)} transactions")
+            print(f"\n\n🚀 Processing Batch {batch_idx + 1}/{len(batches)}: {len(batch)} transactions")
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             future_to_file = {executor.submit(submit_single_tx, global_index + i, tx_file, total_files_count, toolkit_path, args.node_url, args.max_retries, verbose=args.verbose, max_workers=max_workers, delay=args.delay): tx_file for i, tx_file in enumerate(batch)}

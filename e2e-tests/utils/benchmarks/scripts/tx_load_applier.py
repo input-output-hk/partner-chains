@@ -5,6 +5,20 @@ import os
 import shutil
 import sys
 import re
+import threading
+
+def stream_output(process, log_file_path):
+    """Read process output in real-time and write to both stdout and log file."""
+    with open(log_file_path, 'w') as log_f:
+        for line in iter(process.stdout.readline, ''):
+            if line:
+                # Write to both stdout and log file
+                print(line, end='')
+                log_f.write(line)
+                log_f.flush()
+            else:
+                break
+    process.stdout.close()
 
 def main():
     parser = argparse.ArgumentParser(description="Apply transaction load by generating and submitting batches continuously.")
@@ -31,8 +45,8 @@ def main():
 
     submission_process = None
     previous_tx_dir = None
-    submission_log_f = None
     submission_log_path = None
+    stream_thread = None
 
     # Ensure base txs dir exists
     if not os.path.exists("txs"):
@@ -85,19 +99,20 @@ def main():
             # Wait for previous submission to finish
             if submission_process:
                 if submission_process.poll() is None:
-                    print("⏳ Waiting for previous submission batch to complete...")
+                    print("\n⏳ Waiting for previous submission batch to complete...")
                     submission_process.wait()
                     print("✅ Previous submission completed.")
                 else:
                     print("⚠️  Warning: Previous submission finished before generation. Network might have been idle.")
 
-                if submission_log_f:
-                    submission_log_f.close()
+                # Wait for stream thread to finish writing
+                if stream_thread and stream_thread.is_alive():
+                    stream_thread.join(timeout=5)
 
+                # Read log file to extract valid transaction count
                 if submission_log_path and os.path.exists(submission_log_path):
                     with open(submission_log_path, 'r') as f:
                         output = f.read()
-                        print(output)
                         match = re.search(r"Valid: (\d+)", output)
                         if match:
                             total_successful_txs += int(match.group(1))
@@ -120,13 +135,26 @@ def main():
                     submit_cmd.append("--verbose")
 
                 submission_log_path = f"submission_{iteration}.log"
-                submission_log_f = open(submission_log_path, "w")
-                # Run in background
-                submission_process = subprocess.Popen(submit_cmd, stdout=submission_log_f, stderr=subprocess.STDOUT)
+                # Run in background with PIPE to capture output
+                submission_process = subprocess.Popen(
+                    submit_cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    bufsize=1  # Line buffered
+                )
+                # Start thread to stream output in real-time
+                stream_thread = threading.Thread(
+                    target=stream_output,
+                    args=(submission_process, submission_log_path),
+                    daemon=True
+                )
+                stream_thread.start()
                 previous_tx_dir = batch_tx_dir
             else:
                 print("⚠️  No transactions generated. Skipping submission.")
                 submission_process = None
+                stream_thread = None
                 previous_tx_dir = None
 
             current_seed = end_seed + 1
@@ -137,16 +165,17 @@ def main():
     finally:
         if submission_process:
             if submission_process.poll() is None:
-                print("⏳ Waiting for final submission to complete...")
+                print("\n⏳ Waiting for final submission to complete...")
                 submission_process.wait()
-            
-            if submission_log_f:
-                submission_log_f.close()
 
+            # Wait for stream thread to finish writing
+            if stream_thread and stream_thread.is_alive():
+                stream_thread.join(timeout=5)
+
+            # Read log file to extract valid transaction count
             if submission_log_path and os.path.exists(submission_log_path):
                 with open(submission_log_path, 'r') as f:
                     output = f.read()
-                    print(output)
                     match = re.search(r"Valid: (\d+)", output)
                     if match:
                         total_successful_txs += int(match.group(1))
