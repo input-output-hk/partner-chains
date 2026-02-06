@@ -126,7 +126,7 @@ def main():
                 # Start submission
                 print(f"🚀 Starting submission for {batch_tx_dir}")
                 submit_cmd = [
-                    "python3", "send_batch_txs.py",
+                    "python3", "-u", "send_batch_txs.py",  # -u for unbuffered output
                     "--tx-dir", batch_tx_dir,
                     "--batch-size", str(args.batch_size),
                     "--batch-delay", str(args.batch_delay)
