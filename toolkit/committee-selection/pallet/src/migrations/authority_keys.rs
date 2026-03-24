@@ -188,11 +188,11 @@ where
 		pallet_session::Pallet::<T>::upgrade_keys(|_id, old_keys| {
 			OldAuthorityKeys::upgrade(old_keys)
 		});
-		weight.saturating_add(T::DbWeight::get().reads_writes(2, 2));
+		weight = weight.saturating_add(T::DbWeight::get().reads_writes(2, 2));
 		log::info!("🚚️ Migrated keys in pallet_session to version {TO_VERSION}");
 
 		crate::AuthorityKeysVersion::<T>::set(TO_VERSION);
-		weight.saturating_add(T::DbWeight::get().reads_writes(0, 1));
+		weight = weight.saturating_add(T::DbWeight::get().reads_writes(0, 1));
 
 		weight
 	}

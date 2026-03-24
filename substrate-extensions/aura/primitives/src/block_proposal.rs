@@ -1,12 +1,10 @@
 use crate::InherentDigest;
 use futures::FutureExt;
-use sp_consensus::{Environment, Proposer};
-use sp_inherents::InherentData;
+use sp_consensus::{Environment, ProposeArgs, Proposer};
 use sp_runtime::traits::Block as BlockT;
 use sp_runtime::{Digest, DigestItem};
 use std::future::Future;
 use std::marker::PhantomData;
-use std::time;
 
 /// Proposer factory for PartnerChainsProposer. Allows passing ID: InherentDigest type parameter.
 pub struct PartnerChainsProposerFactory<B: BlockT, E: Environment<B>, ID> {
@@ -52,23 +50,29 @@ impl<B: BlockT, P: Proposer<B>, ID: InherentDigest> Proposer<B>
 {
 	type Error = <P as Proposer<B>>::Error;
 	type Proposal = <P as Proposer<B>>::Proposal;
-	type ProofRecording = <P as Proposer<B>>::ProofRecording;
-	type Proof = <P as Proposer<B>>::Proof;
 
-	fn propose(
-		self,
-		inherent_data: InherentData,
-		inherent_digests: Digest,
-		max_duration: time::Duration,
-		block_size_limit: Option<usize>,
-	) -> Self::Proposal {
+	fn propose(self, args: ProposeArgs<B>) -> Self::Proposal {
+		let ProposeArgs {
+			inherent_data,
+			inherent_digests,
+			max_duration,
+			block_size_limit,
+			storage_proof_recorder,
+			extra_extensions,
+		} = args;
 		let mut logs: Vec<DigestItem> = Vec::from(inherent_digests.logs());
 		// It is a programmatic error to try to propose a block that has inherent data from which declared InherentDigest cannot be created.
 		let mut inherent_logs = ID::from_inherent_data(&inherent_data)
 			.expect("InherentDigest can be created from inherent data");
 		logs.append(&mut inherent_logs);
-		self.proposer
-			.propose(inherent_data, Digest { logs }, max_duration, block_size_limit)
+		self.proposer.propose(ProposeArgs {
+			inherent_data,
+			inherent_digests: Digest { logs },
+			max_duration,
+			block_size_limit,
+			storage_proof_recorder,
+			extra_extensions,
+		})
 	}
 }
 
@@ -77,7 +81,7 @@ mod tests {
 	use crate::InherentDigest;
 	use crate::block_proposal::PartnerChainsProposer;
 	use futures::future;
-	use sp_consensus::{DisableProofRecording, Proposal, Proposer};
+	use sp_consensus::{Proposal, ProposeArgs, Proposer};
 	use sp_inherents::InherentData;
 	use sp_runtime::generic::Header;
 	use sp_runtime::traits::BlakeTwo256;
@@ -118,17 +122,10 @@ mod tests {
 
 	impl Proposer<Block> for TestProposer {
 		type Error = sp_blockchain::Error;
-		type Proposal = future::Ready<Result<Proposal<Block, ()>, sp_blockchain::Error>>;
-		type ProofRecording = DisableProofRecording;
-		type Proof = ();
+		type Proposal = future::Ready<Result<Proposal<Block>, sp_blockchain::Error>>;
 
-		fn propose(
-			self,
-			_inherent_data: InherentData,
-			inherent_digests: Digest,
-			_max_duration: std::time::Duration,
-			_block_size_limit: Option<usize>,
-		) -> Self::Proposal {
+		fn propose(self, args: ProposeArgs<Block>) -> Self::Proposal {
+			let inherent_digests = args.inherent_digests;
 			let result = if inherent_digests != self.expected_digest {
 				Err(sp_blockchain::Error::Application(
 					"Inherent digest does not match expected digest".into(),
@@ -144,7 +141,7 @@ mod tests {
 					},
 					extrinsics: Default::default(),
 				};
-				Ok(Proposal { block, proof: (), storage_changes: Default::default() })
+				Ok(Proposal { block, storage_changes: Default::default() })
 			};
 			futures::future::ready(result)
 		}
@@ -159,7 +156,13 @@ mod tests {
 		let proposer: PartnerChainsProposer<Block, TestProposer, TestInherentDigest> =
 			PartnerChainsProposer::new(test_proposer);
 		let proposal = proposer
-			.propose(inherent_data, inherent_digests, std::time::Duration::from_secs(0), None)
+			.propose(ProposeArgs {
+				inherent_data,
+				inherent_digests,
+				max_duration: std::time::Duration::from_secs(0),
+				block_size_limit: None,
+				..Default::default()
+			})
 			.into_inner();
 		assert!(proposal.is_ok());
 	}

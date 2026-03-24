@@ -55,8 +55,8 @@ fn default_slot_duration() -> Duration {
 }
 
 /// Error type returned by calculations related to Cardano epochs and slots
-#[derive(Encode, PartialEq, Eq)]
-#[cfg_attr(feature = "std", derive(Decode, thiserror::Error, sp_core::RuntimeDebug))]
+#[derive(Debug, Encode, PartialEq, Eq)]
+#[cfg_attr(feature = "std", derive(Decode, thiserror::Error))]
 pub enum EpochDerivationError {
 	/// Signals that a function was passed a timestamp before the first Shelley era
 	#[cfg_attr(feature = "std", error("Timestamp before first Mainchain Epoch"))]

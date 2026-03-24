@@ -22,7 +22,7 @@ use sp_inherents::{InherentIdentifier, IsFatalError};
 /// Inherent identifier used by the Committee Selection pallet
 pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"/ariadne";
 
-#[derive(Encode, sp_runtime::RuntimeDebug, PartialEq, Eq)]
+#[derive(Debug, Encode, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Decode, thiserror::Error))]
 /// Error type used for failing calls of the Committee Selection inherent.
 pub enum InherentError {

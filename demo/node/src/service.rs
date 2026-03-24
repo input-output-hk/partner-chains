@@ -8,7 +8,7 @@ use partner_chains_data_source_metrics::{McFollowerMetrics, register_metrics_war
 use partner_chains_demo_runtime::{self, RuntimeApi, opaque::Block};
 use sc_client_api::BlockBackend;
 use sc_consensus_aura::{ImportQueueParams, SlotProportion, StartAuraParams};
-use sc_consensus_grandpa::SharedVoterState;
+use sc_consensus_grandpa::{GrandpaPruningFilter, SharedVoterState};
 pub use sc_executor::WasmExecutor;
 use sc_partner_chains_consensus_aura::import_queue as partner_chains_aura_import_queue;
 use sc_service::{Configuration, TaskManager, WarpSyncConfig, error::Error as ServiceError};
@@ -53,8 +53,12 @@ pub fn new_pc_command_deps(
 			.block_on(crate::data_sources::create_cached_data_sources(None))
 	})?;
 	let executor = sc_service::new_wasm_executor(&config.executor);
-	let (client, _, _, task_manager) =
-		sc_service::new_full_parts::<Block, RuntimeApi, _>(config, None, executor)?;
+	let (client, _, _, task_manager) = sc_service::new_full_parts::<Block, RuntimeApi, _>(
+		config,
+		None,
+		executor,
+		vec![Arc::new(GrandpaPruningFilter)],
+	)?;
 	let client = Arc::new(client);
 	Ok((client, task_manager, data_sources.authority_selection))
 }
@@ -110,6 +114,7 @@ pub fn new_partial(
 			config,
 			telemetry.as_ref().map(|(_, telemetry)| telemetry.handle()),
 			executor,
+			vec![Arc::new(GrandpaPruningFilter)],
 		)?;
 	let client = Arc::new(client);
 
@@ -268,6 +273,7 @@ pub async fn new_full_base<Network: sc_network::NetworkBackend<Block, <Block as 
 			client: client.clone(),
 			transaction_pool: transaction_pool.clone(),
 			spawn_handle: task_manager.spawn_handle(),
+			spawn_essential_handle: task_manager.spawn_essential_handle(),
 			import_queue,
 			block_announce_validator_builder: None,
 			warp_sync_config: Some(WarpSyncConfig::WithProvider(warp_sync)),
