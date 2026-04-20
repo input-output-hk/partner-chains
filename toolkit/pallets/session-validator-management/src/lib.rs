@@ -173,8 +173,21 @@ pub mod pallet {
 				None
 			} else {
 				let for_epoch_number = CurrentCommittee::<T>::get().epoch + One::one();
+				// MATERIOS PATCH: if inherent data is missing or malformed, skip producing
+				// the inherent for this block instead of panicking. The committee will
+				// remain unchanged (the next successful author will re-emit the set()).
+				// Upstream panicked at lib.rs:339 via `.expect("Validator inherent data
+				// must be provided")` whenever the IDP returned None.
 				let (authority_selection_inputs, selection_inputs_hash) =
-					Self::inherent_data_to_authority_selection_inputs(data);
+					match Self::inherent_data_to_authority_selection_inputs(data) {
+						Some(pair) => pair,
+						None => {
+							warn!(
+								"[materios-patch] validator inherent data unavailable; skipping set() for epoch {for_epoch_number}"
+							);
+							return None;
+						},
+					};
 				if let Some(validators) =
 					T::select_authorities(authority_selection_inputs, for_epoch_number)
 				{
@@ -199,8 +212,22 @@ pub mod pallet {
 				_ => return Ok(()),
 			};
 
+			// MATERIOS PATCH: if inherent data is absent we cannot recompute the
+			// committee selection. The proposer should not have emitted a `set`
+			// inherent in that case (see create_inherent above which also returns
+			// None). If we see a `set` here but have no data to verify it, accept
+			// the proposer's choice rather than panicking. Upstream panic was at
+			// lib.rs:339 via the same helper.
 			let (authority_selection_inputs, computed_selection_inputs_hash) =
-				Self::inherent_data_to_authority_selection_inputs(data);
+				match Self::inherent_data_to_authority_selection_inputs(data) {
+					Some(pair) => pair,
+					None => {
+						log::warn!(
+							"[materios-patch] validator inherent data unavailable during check_inherent; accepting proposer committee for epoch {for_epoch_number_param}"
+						);
+						return Ok(());
+					},
+				};
 			let validators =
 				T::select_authorities(authority_selection_inputs, *for_epoch_number_param)
 					.unwrap_or_else(|| {
@@ -232,8 +259,20 @@ pub mod pallet {
 			matches!(call, Call::set { .. })
 		}
 
-		fn is_inherent_required(_: &InherentData) -> Result<Option<Self::Error>, Self::Error> {
-			if !NextCommittee::<T>::exists() {
+		fn is_inherent_required(data: &InherentData) -> Result<Option<Self::Error>, Self::Error> {
+			// MATERIOS PATCH: only require the inherent when there is actual IDP
+			// data AND NextCommittee is missing. If the IDP returned no data
+			// (transient db-sync outage, etc.), let the block be produced
+			// without the committee-rotation inherent. The existing committee
+			// stays in place; the next successful block with IDP data will
+			// re-emit the set(). Upstream unconditionally required the inherent
+			// whenever NextCommittee was absent, which caused chain stalls when
+			// create_inherent skipped it for the same reason.
+			let has_data = matches!(
+				data.get_data::<T::AuthoritySelectionInputs>(&INHERENT_IDENTIFIER),
+				Ok(Some(_))
+			);
+			if has_data && !NextCommittee::<T>::exists() {
 				Ok(Some(InherentError::CommitteeNeedsToBeStoredOneEpochInAdvance)) // change error
 			} else {
 				Ok(None)
@@ -330,16 +369,20 @@ pub mod pallet {
 			))
 		}
 
+		/// MATERIOS PATCH: return `Option` instead of panicking. Callers
+		/// (`create_inherent`, `check_inherent`) handle `None` by skipping the
+		/// inherent for this block — the existing committee continues. Upstream
+		/// would panic with "Validator inherent data must be provided" (or
+		/// "...not correctly encoded") and wedge the partner-chain.
 		fn inherent_data_to_authority_selection_inputs(
 			data: &InherentData,
-		) -> (T::AuthoritySelectionInputs, SizedByteString<32>) {
+		) -> Option<(T::AuthoritySelectionInputs, SizedByteString<32>)> {
 			let decoded_data = data
 				.get_data::<T::AuthoritySelectionInputs>(&INHERENT_IDENTIFIER)
-				.expect("Validator inherent data not correctly encoded")
-				.expect("Validator inherent data must be provided");
+				.ok()??;
 			let data_hash = SizedByteString(blake2_256(&decoded_data.encode()));
 
-			(decoded_data, data_hash)
+			Some((decoded_data, data_hash))
 		}
 
 		pub fn calculate_committee(
