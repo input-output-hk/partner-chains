@@ -82,6 +82,8 @@ Partner Chain separately for use in `pallet_session_validator_management` and
 other pallets that use cross-chain keys.
 * `sp_sidechain::GetEpochDurationApi` runtime API
 * Reusable migration `AuthorityKeysMigration` in `pallet_session_validator_management`
+* Added `--out-file` parameter to governed-map commands (`insert`, `update`, `remove`) to save transaction CBOR hex directly to a file, simplifying multisig workflows
+* Enhanced `sign-tx` command to accept multiple input formats: file path to JSON, JSON string, or direct CBOR hex, improving flexibility in multisig transaction workflows
 
 # v1.8.0
 
