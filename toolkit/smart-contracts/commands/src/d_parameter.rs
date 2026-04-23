@@ -13,6 +13,9 @@ pub struct UpsertDParameterCmd {
 	#[arg(long)]
 	/// Number of registered candidates
 	registered_candidates_count: u16,
+	#[arg(long)]
+	/// Number of native stake candidates
+	native_stake_candidates_count: u16,
 	#[clap(flatten)]
 	/// Path to the payment key file
 	payment_key_file: PaymentFilePath,
@@ -28,6 +31,7 @@ impl UpsertDParameterCmd {
 		let d_param = DParameter {
 			num_permissioned_candidates: self.permissioned_candidates_count,
 			num_registered_candidates: self.registered_candidates_count,
+			num_native_stake_candidates: self.native_stake_candidates_count,
 		};
 		let client = self.common_arguments.get_ogmios_client().await?;
 

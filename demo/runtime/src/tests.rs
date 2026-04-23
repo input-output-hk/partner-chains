@@ -1,5 +1,6 @@
 use crate::mock::*;
 use crate::*;
+use authority_selection_inherents::AriadneInherentDataProvider;
 use frame_support::{
 	dispatch::PostDispatchInfo,
 	inherent::ProvideInherent,
@@ -160,12 +161,15 @@ fn set_committee_through_inherent_data(expected_authorities: &[TestKeys]) -> Pos
 		expected_authorities.len()
 	);
 	let inherent_data_struct = create_inherent_data_struct(expected_authorities);
+	let ariadne_selection_inputs = match inherent_data_struct {
+		AriadneInherentDataProvider::Inert => panic!("Inert inherent data provider"),
+		AriadneInherentDataProvider::Legacy(inputs) => inputs.unwrap().into(),
+		AriadneInherentDataProvider::V1(inputs) => inputs.unwrap(),
+	};
+
 	let mut inherent_data = InherentData::new();
 	inherent_data
-		.put_data(
-			SessionCommitteeManagement::INHERENT_IDENTIFIER,
-			&inherent_data_struct.data.unwrap(),
-		)
+		.put_data(SessionCommitteeManagement::INHERENT_IDENTIFIER, &ariadne_selection_inputs)
 		.expect("Setting inherent data should not fail");
 	let call = <SessionCommitteeManagement as ProvideInherent>::create_inherent(&inherent_data)
 		.expect("Creating test inherent should not fail");

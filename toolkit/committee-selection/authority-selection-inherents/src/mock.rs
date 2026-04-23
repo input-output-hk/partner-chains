@@ -59,6 +59,7 @@ impl AuthoritySelectionDataSource for MockAuthoritySelectionDataSource {
 				d_parameter: DParameter {
 					num_permissioned_candidates: self.num_permissioned_candidates,
 					num_registered_candidates: 2,
+					num_native_stake_candidates: 0,
 				},
 				permissioned_candidates: candidates.clone(),
 			}),

@@ -1072,7 +1072,7 @@ impl_runtime_apis! {
 		}
 	}
 
-	#[api_version(3)]
+	#[api_version(4)]
 	impl sp_session_validator_management::SessionValidatorManagementApi<
 		Block,
 		CrossChainPublic,
@@ -1093,6 +1093,9 @@ impl_runtime_apis! {
 		}
 		fn get_main_chain_scripts() -> sp_session_validator_management::MainChainScripts {
 			SessionCommitteeManagement::get_main_chain_scripts()
+		}
+		fn get_pallet_version() -> u32 {
+			SessionCommitteeManagement::get_version()
 		}
 	}
 

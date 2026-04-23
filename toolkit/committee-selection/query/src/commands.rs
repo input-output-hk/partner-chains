@@ -87,8 +87,11 @@ mod tests {
 
 	#[tokio::test]
 	async fn ariadne_parameters_returns_correct_json_string() {
-		let d_parameter =
-			DParameter { num_permissioned_candidates: 1, num_registered_candidates: 2 };
+		let d_parameter = DParameter {
+			num_permissioned_candidates: 1,
+			num_registered_candidates: 2,
+			num_native_stake_candidates: 0,
+		};
 		let permissioned_candidates = vec![PermissionedCandidateData {
 			sidechain_public_key: SidechainPublicKey(
 				hex!("0389411795514af1627765eceffcbd002719f031604fadd7d188e2dc585b4e1afb").to_vec(),
@@ -131,7 +134,8 @@ mod tests {
 			serde_json::json!({
 				"dParameter": {
 					"numPermissionedCandidates": 1,
-					"numRegisteredCandidates": 2
+					"numRegisteredCandidates": 2,
+					"numNativeStakeCandidates": 0,
 				},
 				"candidateRegistrations": {},
 				"permissionedCandidates":[

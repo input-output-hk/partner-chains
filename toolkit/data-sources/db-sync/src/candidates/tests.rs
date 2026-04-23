@@ -87,7 +87,7 @@ with_migration_versions! {
 			.unwrap();
 		assert_eq!(
 			result.d_parameter,
-			DParameter { num_permissioned_candidates: 1, num_registered_candidates: 3 }
+			DParameter { num_permissioned_candidates: 1, num_registered_candidates: 3, num_native_stake_candidates: 0 }
 		)
 	}
 
@@ -109,7 +109,7 @@ with_migration_versions! {
 		assert_eq!(result.permissioned_candidates, Some(latest_permissioned_candidates()));
 		assert_eq!(
 			result.d_parameter,
-			DParameter { num_permissioned_candidates: 1, num_registered_candidates: 3 }
+			DParameter { num_permissioned_candidates: 1, num_registered_candidates: 3, num_native_stake_candidates: 0 }
 		)
 	}
 
@@ -125,7 +125,7 @@ with_migration_versions! {
 			.unwrap();
 		assert_eq!(
 			result.d_parameter,
-			DParameter { num_permissioned_candidates: 1, num_registered_candidates: 2 }
+			DParameter { num_permissioned_candidates: 1, num_registered_candidates: 2, num_native_stake_candidates: 0 }
 		);
 		assert_eq!(result.permissioned_candidates, None)
 	}
@@ -236,7 +236,7 @@ mod candidate_caching {
 				.unwrap();
 			assert_eq!(
 				epoch_193_ariadne_parameters.d_parameter,
-				DParameter { num_permissioned_candidates: 1, num_registered_candidates: 3 }
+				DParameter { num_permissioned_candidates: 1, num_registered_candidates: 3, num_native_stake_candidates: 0 }
 			);
 			// Remove all registrations to prove that one request was cached and the other not
 			sqlx::raw_sql("DELETE FROM tx WHERE block_id >= 0")

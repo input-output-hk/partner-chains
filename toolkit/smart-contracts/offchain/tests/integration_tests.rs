@@ -137,21 +137,25 @@ async fn upsert_d_param() {
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_governance(&client).await;
 	assert!(
-		run_upsert_d_param(genesis_utxo, 0, 1, &governance_authority_payment_key(), &client)
+		run_upsert_d_param(genesis_utxo, 0, 1, 0, &governance_authority_payment_key(), &client)
 			.await
 			.is_some()
 	);
 	assert!(
-		run_upsert_d_param(genesis_utxo, 0, 1, &governance_authority_payment_key(), &client)
+		run_upsert_d_param(genesis_utxo, 0, 1, 0, &governance_authority_payment_key(), &client)
 			.await
 			.is_none()
 	);
 	assert_eq!(
 		d_param::get_d_param(genesis_utxo, &client).await.unwrap().unwrap(),
-		DParameter { num_registered_candidates: 1, num_permissioned_candidates: 0 }
+		DParameter {
+			num_registered_candidates: 1,
+			num_permissioned_candidates: 0,
+			num_native_stake_candidates: 0
+		}
 	);
 	assert!(
-		run_upsert_d_param(genesis_utxo, 1, 1, &governance_authority_payment_key(), &client)
+		run_upsert_d_param(genesis_utxo, 1, 1, 0, &governance_authority_payment_key(), &client)
 			.await
 			.is_some()
 	)
@@ -429,7 +433,7 @@ async fn governance_action_can_be_initiated_by_non_governance() {
 	let container = image.start().await.unwrap();
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_governance(&client).await;
-	let tx_to_sign = run_upsert_d_param(genesis_utxo, 1, 1, &eve_payment_key(), &client)
+	let tx_to_sign = run_upsert_d_param(genesis_utxo, 1, 1, 0, &eve_payment_key(), &client)
 		.await
 		.unwrap();
 	run_assemble_and_sign(tx_to_sign, &[GOVERNANCE_AUTHORITY_KEY], &client).await;
@@ -593,12 +597,17 @@ async fn run_upsert_d_param<
 	genesis_utxo: UtxoId,
 	num_permissioned_candidates: u16,
 	num_registered_candidates: u16,
+	num_native_stake_candidates: u16,
 	pkey: &CardanoPaymentSigningKey,
 	client: &T,
 ) -> Option<MultiSigSmartContractResult> {
 	let result = d_param::upsert_d_param(
 		genesis_utxo,
-		&DParameter { num_permissioned_candidates, num_registered_candidates },
+		&DParameter {
+			num_permissioned_candidates,
+			num_registered_candidates,
+			num_native_stake_candidates,
+		},
 		pkey,
 		client,
 		&FixedDelayRetries::new(Duration::from_millis(500), 100),
