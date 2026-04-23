@@ -1,5 +1,9 @@
 # Partner Chains Toolkit
 
+### :warning: Archived
+Partner chains is now directly part of [Midnight](https://github.com/midnightntwrk/midnight-node). Please see that repository for continued development.
+
+
 :chains: Toolkit for maintaining and securing [Substrate](https://polkadot.com/) based blockchains with the Cardano ecosystem
 
 ![polkadot-sdk](https://img.shields.io/badge/polkadot--sdk-stable2509-blue)
