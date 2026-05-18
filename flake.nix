@@ -79,6 +79,7 @@
               docker-compose
               earthly
               gawk
+              git
               gnumake
               kubectl
               libiconv
