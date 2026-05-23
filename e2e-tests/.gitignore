@@ -2,9 +2,28 @@
 **/__pycache__/
 .decrypted~*
 *.decrypted
-venv/
+**/venv/
 contractlog.json
 reports
 logs/
 .vscode/settings.json
 my_env/
+
+# Toolkit database
+toolkit.db
+
+# Mempool benchmark results
+utils/mempool_benchmarks/results/
+
+# Block size benchmark logs
+utils/block_size_benchmarks/logs/
+utils/benchmarks/block_size_benchmarks/block_size_analysis/block_size_analysis_*
+
+# Jupyter notebook
+utils/benchmarks/jupyter/.ipynb_checkpoints
+utils/benchmarks/jupyter/*.png
+utils/benchmarks/jupyter/*.html
+utils/benchmarks/jupyter/*.pdf
+
+
+

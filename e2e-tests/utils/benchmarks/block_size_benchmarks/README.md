@@ -37,6 +37,18 @@ To download logs from Grafana, you need a service account token:
    # Save and exit (sops will automatically re-encrypt)
    ```
 
+## Transaction Utilities
+
+Transaction creation and submission utilities have been moved to `../utils/` for shared use across benchmarks:
+- `fund_wallets.py` - Fund test wallets
+- `register_dust.py` - Register dust addresses  
+- `generate_txs_round_robin.py` - Generate round-robin transactions
+- `send_batch_txs.py` - Submit transaction batches
+- `send_txs_round_robin.py` - Submit round-robin transactions
+- `tx-counter.py` - Count validated transactions in logs
+
+Refer to individual script files for usage instructions.
+
 ### Running the Benchmark
 
 The `run_benchmark.py` script automates the entire workflow: downloading logs, extracting data, and generating analysis.
@@ -44,7 +56,7 @@ The `run_benchmark.py` script automates the entire workflow: downloading logs, e
 **Using encrypted config file (recommended):**
 ```bash
 python3 run_benchmark.py \
-  --config ../../secrets/substrate/performance/performance.json \
+  --config ../../../secrets/substrate/performance/performance.json \
   --from-time "2026-01-07T10:00:00Z" \
   --to-time "2026-01-07T10:10:00Z" \
   --node alice --node bob --node charlie

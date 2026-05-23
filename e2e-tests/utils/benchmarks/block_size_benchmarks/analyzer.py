@@ -30,6 +30,7 @@ class BlockPropagationAnalyzer:
             raise ValueError("At least one node must be specified")
         self.all_nodes = [node.lower() for node in nodes]
         self.blocks: List[Block] = []
+        self.active_nodes: List[str] = []  # Will be populated after parsing
 
     def parse_file(self, filename: str) -> None:
         try:
@@ -60,6 +61,9 @@ class BlockPropagationAnalyzer:
                     current_block.add_import(node, delay)
             elif 'Creator unknown' in line and current_block:
                 current_block.creator = 'unknown'
+        
+        # Detect which nodes are actually active
+        self._detect_active_nodes()
 
     def _parse_block_header(self, line: str) -> Optional[Block]:
         block_match = re.search(r'Block #(\d+)', line)
@@ -87,10 +91,29 @@ class BlockPropagationAnalyzer:
             delay = float(delay_str) if delay_str else 0.0
             return node, delay
         return None, 0.0
+    
+    def _detect_active_nodes(self) -> None:
+        """Detect which nodes are actually active based on parsed data."""
+        active_set = set()
+        for block in self.blocks:
+            if block.creator and block.creator != 'unknown':
+                active_set.add(block.creator)
+            active_set.update(block.imports.keys())
+        
+        # Keep only nodes from all_nodes that are actually active
+        self.active_nodes = [node for node in self.all_nodes if node in active_set]
+        
+        if not self.active_nodes:
+            self.active_nodes = self.all_nodes
+        
+        inactive_nodes = set(self.all_nodes) - active_set
+        if inactive_nodes:
+            print(f"Note: The following nodes appear to be offline: {', '.join(sorted(inactive_nodes))}")
 
     def get_complete_blocks(self) -> List[Block]:
+        """Get blocks that have data from all active nodes."""
         return [block for block in self.blocks
-                if block.is_complete(self.all_nodes)]
+                if block.is_complete(self.active_nodes)]
 
     def _format_table_row(self, values: List[str], widths: List[int]) -> str:
         formatted_values = []
@@ -107,7 +130,7 @@ class BlockPropagationAnalyzer:
         lines.append("")
 
         stats = {}
-        for node in self.all_nodes:
+        for node in self.active_nodes:
             blocks_created = len([block for block in complete_blocks if block.creator == node])
 
             import_times = [
@@ -131,7 +154,7 @@ class BlockPropagationAnalyzer:
         lines.append(header)
         lines.append(separator)
 
-        for node in self.all_nodes:
+        for node in self.active_nodes:
             s = stats[node]
             row = (f"| {node.capitalize():<7} | {s['blocks_created']:<14} | "
                    f"{s['blocks_imported']:<15} | {s['min_import']:<15.0f} | "
@@ -146,8 +169,9 @@ class BlockPropagationAnalyzer:
         print(f"Parsing file: {input_filename}")
         self.parse_file(input_filename)
         print(f"Total blocks parsed: {len(self.blocks)}")
+        print(f"Active nodes detected: {', '.join(self.active_nodes)}")
         complete_blocks = self.get_complete_blocks()
-        print(f"Complete blocks: {len(complete_blocks)}")
+        print(f"Complete blocks (with all active nodes): {len(complete_blocks)}")
         if not complete_blocks:
             print("No complete blocks found. Exiting.")
             sys.exit(1)
@@ -155,7 +179,7 @@ class BlockPropagationAnalyzer:
         try:
             with open(output_filename, 'w', encoding='utf-8') as file:
                 file.write("# Block Propagation Analysis\n\n")
-                nodes = ', '.join(node.capitalize() for node in self.all_nodes)
+                nodes = ', '.join(node.capitalize() for node in self.active_nodes)
                 file.write(f"**Nodes analyzed:** {nodes}")
                 file.write("\n\n")
                 file.write(stats_table)

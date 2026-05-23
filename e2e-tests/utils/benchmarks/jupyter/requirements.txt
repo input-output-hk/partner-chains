@@ -1,0 +1,8 @@
+jupyterlab
+notebook
+matplotlib
+requests
+pandas
+seaborn
+substrate-interface
+ipykernel
