@@ -6,7 +6,7 @@
     "slot_length": 1,
     "active_slots_coeff": 0.4,
     "security_param": 5,
-    "init_timestamp": 1742993000,
+    "init_timestamp": 1766496559,
     "block_stability_margin": 0
   },
   "nodes_config": {
