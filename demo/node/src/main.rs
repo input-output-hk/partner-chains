@@ -6,6 +6,7 @@ mod chain_spec;
 mod cli;
 mod command;
 mod data_sources;
+mod diff_sources;
 mod inherent_data;
 mod rpc;
 mod service;
